@@ -119,23 +119,16 @@ impl MechFunctionFactory for AtomEq {
         FunctionValueRepresentation::Atom,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs: Ref<MechAtom> = lhs.try_ref()?;
+        let rhs: Ref<MechAtom> = rhs.try_ref()?;
+        let out: Ref<bool> = out.try_ref()?;
+        Ok(Box::new(AtomEq { lhs, rhs, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechAtom> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<MechAtom> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(AtomEq { lhs, rhs, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "atom")]
@@ -184,23 +177,16 @@ impl MechFunctionFactory for TableEq {
         FunctionValueRepresentation::Table,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs: Ref<MechTable> = lhs.try_ref()?;
+        let rhs: Ref<MechTable> = rhs.try_ref()?;
+        let out: Ref<bool> = out.try_ref()?;
+        Ok(Box::new(TableEq { lhs, rhs, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechTable> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<MechTable> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(TableEq { lhs, rhs, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "table")]
@@ -279,3 +265,91 @@ fn impl_eq_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dy
 
 #[cfg(feature = "source")]
 impl_mech_binop_fxn!(CompareEqual, impl_eq_fxn, "compare/eq");
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "f64",
+    feature = "bool",
+    feature = "matrix2",
+    feature = "atom",
+    feature = "table"
+))]
+mod invocation_port_tests {
+    use super::*;
+    use nalgebra::Matrix2;
+
+    fn binary_args<T, O>(out: &Ref<O>, lhs: &Ref<T>, rhs: &Ref<T>) -> FunctionArgs
+    where
+        Ref<T>: ToValue,
+        Ref<O>: ToValue,
+    {
+        FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value())
+    }
+
+    #[test]
+    fn scalar_legacy_and_invocation_entries_are_equivalent() {
+        let lhs = Ref::new(3.0_f64);
+        let rhs = Ref::new(3.0_f64);
+        let legacy_out = Ref::new(false);
+        let invocation_out = Ref::new(false);
+
+        let legacy = EQSS::<f64>::new(binary_args(&legacy_out, &lhs, &rhs)).unwrap();
+        let invocation = EQSS::<f64>::new_invocation(
+            binary_args(&invocation_out, &lhs, &rhs).into(),
+        )
+        .unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+
+        assert!(*legacy_out.borrow());
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+    }
+
+    #[test]
+    fn fixed_matrix_atom_and_table_factories_use_exact_ports() {
+        let lhs = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
+        let rhs = Ref::new(Matrix2::new(1.0_f64, 0.0, 3.0, 5.0));
+        let out = Ref::new(Matrix2::from_element(false));
+        let function = EQM2M2::<f64>::new_invocation(binary_args(&out, &lhs, &rhs).into()).unwrap();
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), Matrix2::new(true, false, true, false));
+
+        let atom_lhs = Ref::new(MechAtom::from_name("same"));
+        let atom_rhs = Ref::new(MechAtom::from_name("same"));
+        let atom_out = Ref::new(false);
+        let atom = AtomEq::new_invocation(binary_args(&atom_out, &atom_lhs, &atom_rhs).into())
+            .unwrap();
+        atom.solve_result().unwrap();
+        assert!(*atom_out.borrow());
+
+        let table_lhs = Ref::new(MechTable::from_parts(0, 0, Vec::new(), Vec::new()));
+        let table_rhs = Ref::new(MechTable::from_parts(0, 0, Vec::new(), Vec::new()));
+        let table_out = Ref::new(false);
+        let table =
+            TableEq::new_invocation(binary_args(&table_out, &table_lhs, &table_rhs).into())
+                .unwrap();
+        table.solve_result().unwrap();
+        assert!(*table_out.borrow());
+    }
+
+    #[test]
+    fn comparison_ports_reject_wrong_types_and_layouts() {
+        let out = Ref::new(false);
+        let lhs = Ref::new(1.0_f64);
+        let rhs = Ref::new(1_i8);
+        let type_error = EQSS::<f64>::new_invocation(
+            FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value()).into(),
+        )
+        .err()
+        .expect("wrong exact input representation must fail");
+        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
+
+        let arity_error = EQSS::<f64>::new_invocation(
+            FunctionArgs::Unary(out.to_value(), lhs.to_value()).into(),
+        )
+        .err()
+        .expect("wrong layout must fail");
+        assert_eq!(arity_error.kind_name(), "IncorrectNumberOfArguments");
+    }
+}

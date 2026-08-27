@@ -21,31 +21,24 @@ where
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
-    T: FunctionRuntimeType,
+    T: FunctionRuntimeType + FunctionPortBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(T::REPRESENTATION, T::REPRESENTATION);
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg) = invocation.expect_unary()?;
+        let arg: Ref<T> = arg.try_ref()?;
+        let out: Ref<T> = out.try_ref()?;
+        Ok(Box::new(Self {
+            arg,
+            out,
+            _marker: PhantomData::default(),
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Unary(out, arg) => {
-                let arg: Ref<T> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let out: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    arg,
-                    out,
-                    _marker: PhantomData::default(),
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 impl<T> MechFunctionImpl for NotS<T>
@@ -112,31 +105,24 @@ where
     #[cfg(feature = "semantic-compiler")]
     MatA: CompileConst + ConstElem,
     Ref<MatA>: ToValue,
-    MatA: FunctionRuntimeType,
+    MatA: FunctionRuntimeType + FunctionPortBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(MatA::REPRESENTATION, MatA::REPRESENTATION);
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg) = invocation.expect_unary()?;
+        let arg: Ref<MatA> = arg.try_ref()?;
+        let out: Ref<MatA> = out.try_ref()?;
+        Ok(Box::new(Self {
+            arg,
+            out,
+            _marker: PhantomData::default(),
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Unary(out, arg) => {
-                let arg: Ref<MatA> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let out: Ref<MatA> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    arg,
-                    out,
-                    _marker: PhantomData::default(),
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 impl<T, MatA> MechFunctionImpl for NotV<T, MatA>

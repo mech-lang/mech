@@ -202,26 +202,18 @@ macro_rules! impl_logic_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
+                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { lhs, rhs, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let rhs: Ref<$arg2_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { lhs, rhs, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl MechFunctionImpl for $struct_name {
@@ -263,4 +255,103 @@ macro_rules! impl_logic_fxns {
     ($lib:ident) => {
         impl_fxns!($lib, bool, bool, impl_logic_binop);
     };
+}
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "and",
+    feature = "not",
+    feature = "bool",
+    feature = "matrix2",
+    feature = "matrixd"
+))]
+mod invocation_port_tests {
+    use super::*;
+    use nalgebra::{DMatrix, Matrix2};
+
+    fn binary_args<T>(out: &Ref<T>, lhs: &Ref<T>, rhs: &Ref<T>) -> FunctionArgs
+    where
+        Ref<T>: ToValue,
+    {
+        FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value())
+    }
+
+    #[test]
+    fn scalar_binary_and_unary_factories_use_invocation_ports() {
+        let lhs = Ref::new(true);
+        let rhs = Ref::new(false);
+        let binary_out = Ref::new(true);
+        let binary = crate::and::AndSS::new_invocation(
+            binary_args(&binary_out, &lhs, &rhs).into(),
+        )
+        .unwrap();
+        binary.solve_result().unwrap();
+        assert!(!*binary_out.borrow());
+
+        let unary_out = Ref::new(false);
+        let unary = crate::not::NotS::<bool>::new_invocation(
+            FunctionArgs::Unary(unary_out.to_value(), lhs.to_value()).into(),
+        )
+        .unwrap();
+        unary.solve_result().unwrap();
+        assert!(!*unary_out.borrow());
+    }
+
+    #[test]
+    fn fixed_and_dynamic_matrix_factories_preserve_storage() {
+        let fixed_lhs = Ref::new(Matrix2::new(true, true, false, false));
+        let fixed_rhs = Ref::new(Matrix2::new(true, false, true, false));
+        let fixed_out = Ref::new(Matrix2::from_element(false));
+        let fixed = crate::and::AndM2M2::new_invocation(
+            binary_args(&fixed_out, &fixed_lhs, &fixed_rhs).into(),
+        )
+        .unwrap();
+        fixed.solve_result().unwrap();
+        assert_eq!(
+            *fixed_out.borrow(),
+            Matrix2::new(true, false, false, false)
+        );
+
+        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(
+            2,
+            2,
+            &[true, true, false, false],
+        ));
+        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(
+            2,
+            2,
+            &[true, false, true, false],
+        ));
+        let dynamic_out = Ref::new(DMatrix::from_element(2, 2, false));
+        let dynamic = crate::and::AndMDMD::new_invocation(
+            binary_args(&dynamic_out, &dynamic_lhs, &dynamic_rhs).into(),
+        )
+        .unwrap();
+        dynamic.solve_result().unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            DMatrix::from_row_slice(2, 2, &[true, false, false, false])
+        );
+    }
+
+    #[test]
+    fn logic_ports_reject_wrong_types_and_layouts() {
+        let out = Ref::new(false);
+        let scalar = Ref::new(true);
+        let matrix = Ref::new(Matrix2::from_element(true));
+        let type_error = crate::and::AndSS::new_invocation(
+            FunctionArgs::Binary(out.to_value(), matrix.to_value(), scalar.to_value()).into(),
+        )
+        .err()
+        .expect("wrong exact input representation must fail");
+        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
+
+        let arity_error = crate::and::AndSS::new_invocation(
+            FunctionArgs::Unary(out.to_value(), scalar.to_value()).into(),
+        )
+        .err()
+        .expect("wrong layout must fail");
+        assert_eq!(arity_error.kind_name(), "IncorrectNumberOfArguments");
+    }
 }

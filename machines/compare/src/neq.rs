@@ -119,23 +119,16 @@ impl MechFunctionFactory for AtomNeq {
         FunctionValueRepresentation::Atom,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs: Ref<MechAtom> = lhs.try_ref()?;
+        let rhs: Ref<MechAtom> = rhs.try_ref()?;
+        let out: Ref<bool> = out.try_ref()?;
+        Ok(Box::new(AtomNeq { lhs, rhs, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechAtom> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<MechAtom> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(AtomNeq { lhs, rhs, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "atom")]
@@ -184,23 +177,16 @@ impl MechFunctionFactory for TableNeq {
         FunctionValueRepresentation::Table,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs: Ref<MechTable> = lhs.try_ref()?;
+        let rhs: Ref<MechTable> = rhs.try_ref()?;
+        let out: Ref<bool> = out.try_ref()?;
+        Ok(Box::new(TableNeq { lhs, rhs, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechTable> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<MechTable> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(TableNeq { lhs, rhs, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "table")]
