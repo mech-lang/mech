@@ -206,3 +206,81 @@ mod checked_dot_tests {
         assert_eq!(*out.borrow(), 200);
     }
 }
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "f64",
+    feature = "vector2",
+    feature = "matrixd"
+))]
+mod invocation_port_tests {
+    use super::*;
+
+    fn binary_args<L, R, O>(out: &Ref<O>, lhs: &Ref<L>, rhs: &Ref<R>) -> FunctionArgs
+    where
+        Ref<L>: ToValue,
+        Ref<R>: ToValue,
+        Ref<O>: ToValue,
+    {
+        FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value())
+    }
+
+    #[test]
+    fn scalar_and_matrix_factories_preserve_legacy_behavior() {
+        let scalar_lhs = Ref::new(2.5_f64);
+        let scalar_rhs = Ref::new(4.0_f64);
+        let legacy_out = Ref::new(0.0_f64);
+        let invocation_out = Ref::new(0.0_f64);
+
+        let legacy =
+            DotScalar::<f64>::new(binary_args(&legacy_out, &scalar_lhs, &scalar_rhs)).unwrap();
+        let invocation = DotScalar::<f64>::new_invocation(
+            binary_args(&invocation_out, &scalar_lhs, &scalar_rhs).into(),
+        )
+        .unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), 10.0);
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+
+        let fixed_lhs = Ref::new(Vector2::new(1.0_f64, 2.0));
+        let fixed_rhs = Ref::new(Vector2::new(3.0_f64, 4.0));
+        let fixed_out = Ref::new(0.0_f64);
+        DotV2V2::<f64>::new_invocation(binary_args(&fixed_out, &fixed_lhs, &fixed_rhs).into())
+            .unwrap()
+            .solve_result()
+            .unwrap();
+        assert_eq!(*fixed_out.borrow(), 11.0);
+
+        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(2, 2, &[1.0_f64, 2.0, 3.0, 4.0]));
+        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(2, 2, &[2.0_f64, 0.0, 1.0, 2.0]));
+        let dynamic_out = Ref::new(0.0_f64);
+        DotMDMD::<f64>::new_invocation(
+            binary_args(&dynamic_out, &dynamic_lhs, &dynamic_rhs).into(),
+        )
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(*dynamic_out.borrow(), 13.0);
+    }
+
+    #[test]
+    fn dot_invocation_rejects_wrong_exact_type_and_layout() {
+        let out = Ref::new(0.0_f64);
+        let rhs = Ref::new(Vector2::new(1.0_f64, 2.0));
+        let wrong_lhs = Ref::new(1.0_f64);
+
+        let type_error = DotV2V2::<f64>::new_invocation(binary_args(&out, &wrong_lhs, &rhs).into())
+            .err()
+            .expect("wrong exact input type must be rejected");
+        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
+
+        let arity_error = DotV2V2::<f64>::new_invocation(
+            FunctionArgs::Unary(out.to_value(), rhs.to_value()).into(),
+        )
+        .err()
+        .expect("wrong invocation layout must be rejected");
+        assert_eq!(arity_error.kind_name(), "IncorrectNumberOfArguments");
+    }
+}

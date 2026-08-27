@@ -424,3 +424,136 @@ mod checked_matmul_tests {
         assert_eq!(out.borrow()[(0, 0)], 200);
     }
 }
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "f64",
+    feature = "matrix2",
+    feature = "vector2",
+    feature = "matrixd",
+    feature = "vectord"
+))]
+mod invocation_port_tests {
+    use super::*;
+
+    fn binary_args<L, R, O>(out: &Ref<O>, lhs: &Ref<L>, rhs: &Ref<R>) -> FunctionArgs
+    where
+        Ref<L>: ToValue,
+        Ref<R>: ToValue,
+        Ref<O>: ToValue,
+    {
+        FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value())
+    }
+
+    #[test]
+    fn scalar_fixed_and_dynamic_products_use_exact_invocation_ports() {
+        let scalar_lhs = Ref::new(2.5_f64);
+        let scalar_rhs = Ref::new(4.0_f64);
+        let legacy_out = Ref::new(0.0_f64);
+        let invocation_out = Ref::new(0.0_f64);
+        let legacy =
+            MatMulScalar::<f64>::new(binary_args(&legacy_out, &scalar_lhs, &scalar_rhs)).unwrap();
+        let invocation = MatMulScalar::<f64>::new_invocation(
+            binary_args(&invocation_out, &scalar_lhs, &scalar_rhs).into(),
+        )
+        .unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), 10.0);
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+
+        let fixed_lhs = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
+        let fixed_rhs = Ref::new(Matrix2::new(5.0_f64, 6.0, 7.0, 8.0));
+        let fixed_out = Ref::new(Matrix2::zeros());
+        MatMulM2M2::<f64>::new_invocation(binary_args(&fixed_out, &fixed_lhs, &fixed_rhs).into())
+            .unwrap()
+            .solve_result()
+            .unwrap();
+        assert_eq!(*fixed_out.borrow(), Matrix2::new(19.0, 22.0, 43.0, 50.0));
+
+        let vector = Ref::new(Vector2::new(2.0_f64, 3.0));
+        let vector_out = Ref::new(Vector2::zeros());
+        MatMulM2V2::<f64>::new_invocation(binary_args(&vector_out, &fixed_lhs, &vector).into())
+            .unwrap()
+            .solve_result()
+            .unwrap();
+        assert_eq!(*vector_out.borrow(), Vector2::new(8.0, 18.0));
+
+        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(
+            2,
+            3,
+            &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
+        ));
+        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(
+            3,
+            2,
+            &[7.0_f64, 8.0, 9.0, 10.0, 11.0, 12.0],
+        ));
+        let dynamic_out = Ref::new(DMatrix::zeros(2, 2));
+        MatMulMDMD::<f64>::new_invocation(
+            binary_args(&dynamic_out, &dynamic_lhs, &dynamic_rhs).into(),
+        )
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            DMatrix::from_row_slice(2, 2, &[58.0, 64.0, 139.0, 154.0])
+        );
+
+        let dynamic_vector = Ref::new(DVector::from_vec(vec![1.0_f64, 2.0, 3.0]));
+        let dynamic_vector_out = Ref::new(DVector::zeros(2));
+        MatMulMDVD::<f64>::new_invocation(
+            binary_args(&dynamic_vector_out, &dynamic_lhs, &dynamic_vector).into(),
+        )
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(
+            *dynamic_vector_out.borrow(),
+            DVector::from_vec(vec![14.0, 32.0])
+        );
+    }
+
+    #[test]
+    fn dimension_failure_does_not_publish_a_partial_product() {
+        let lhs = Ref::new(DMatrix::from_element(2, 3, 2.0_f64));
+        let rhs = Ref::new(DMatrix::from_element(2, 2, 3.0_f64));
+        let original = DMatrix::from_element(2, 2, 17.0_f64);
+        let out = Ref::new(original.clone());
+        let function =
+            MatMulMDMD::<f64>::new_invocation(binary_args(&out, &lhs, &rhs).into()).unwrap();
+
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "DimensionMismatch");
+        assert_eq!(*out.borrow(), original);
+    }
+}
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "f64",
+    feature = "row_vectord",
+    feature = "vectord",
+    feature = "matrixd",
+    not(feature = "matrix1")
+))]
+mod dynamic_fallback_invocation_tests {
+    use super::*;
+
+    #[test]
+    fn row_vector_product_uses_dynamic_matrix_fallback_without_matrix1() {
+        let lhs = Ref::new(RowDVector::from_vec(vec![1.0_f64, 2.0]));
+        let rhs = Ref::new(DVector::from_vec(vec![3.0_f64, 4.0]));
+        let out = Ref::new(DMatrix::zeros(1, 1));
+        let function = MatMulRDVDMD::<f64>::new_invocation(
+            FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value()).into(),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), DMatrix::from_element(1, 1, 11.0));
+    }
+}
