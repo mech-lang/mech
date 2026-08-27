@@ -740,6 +740,7 @@ fn compiled_fixture(
         instruction_roles,
         register_collection_cardinalities: vec![None; register_kinds.len()],
         register_state_initializers: vec![None; register_kinds.len()],
+        matrix_literals: BTreeMap::new(),
         register_kinds,
         symbol_definitions: Vec::new(),
         return_register,

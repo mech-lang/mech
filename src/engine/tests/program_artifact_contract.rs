@@ -2,6 +2,7 @@
 
 use mech_engine::*;
 
+use mech_core::matrix::Matrix;
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BytecodeProgram,
     CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder,
@@ -11,14 +12,14 @@ use mech_core::{
     InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr, LegacyOpaqueOperationContract,
     LegacyValue, NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
     OperationContractDeclaration, OperationContractId, OperationContractTable,
-    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, RegionPolicy,
+    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, Ref, RegionPolicy,
     ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, ResourceDelivery,
     ResourceIntent, SchemaBody, SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder,
-    ShapeContractReference, ShapeRule, Value, ValueDataDraft, ValueDraft,
+    ShapeContractReference, ShapeRule, Value, ValueData, ValueDataDraft, ValueDraft,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
-        MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SnapshotValidationContext,
-        TableColumnDraft,
+        MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SequenceView,
+        SnapshotValidationContext, TableColumnDraft,
     },
     write_bytecode_with_artifact,
 };
@@ -629,7 +630,7 @@ fn pure_state_rmw_contract(base_input: u16) -> OperationContractDeclaration {
 fn build_both_with_contracts(
     data: &FixtureData,
     graph: SourceProgram,
-    declarations: &[Option<&'static OperationContractDeclaration>],
+    declarations: &[Option<&OperationContractDeclaration>],
 ) -> (ProgramArtifact, ProgramArtifact) {
     let mut source_context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     let source =
@@ -693,14 +694,10 @@ fn synthetic_ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids
     let declarations = graph
         .nodes
         .iter()
-        .map(|node| {
-            Some(Box::leak(Box::new(pure_full_write_contract(
-                node.inputs.len(),
-                node.outputs.len(),
-            ))) as &'static OperationContractDeclaration)
-        })
+        .map(|node| pure_full_write_contract(node.inputs.len(), node.outputs.len()))
         .collect::<Vec<_>>();
-    let (source, bytecode) = build_both_with_contracts(&data, graph, &declarations);
+    let declaration_refs = declarations.iter().map(Some).collect::<Vec<_>>();
+    let (source, bytecode) = build_both_with_contracts(&data, graph, &declaration_refs);
 
     assert!(
         source
@@ -862,25 +859,13 @@ fn state_reads_depend_on_the_latest_preceding_writer() {
         .into_boxed_slice(),
         ..SourceProgram::default()
     };
-    let write = Box::leak(Box::new(pure_state_rmw_contract(1)));
-    let read = Box::leak(Box::new(pure_full_write_contract(1, 1)));
+    let write = pure_state_rmw_contract(1);
+    let read = pure_full_write_contract(1, 1);
     let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     assert!(matches!(
-        compile_source_program_with_contracts(&graph, &mut context, &[Some(write), Some(read)],),
+        compile_source_program_with_contracts(&graph, &mut context, &[Some(&write), Some(&read)],),
         Err(ArtifactBuildError::CombinationalCycle)
     ));
-}
-
-#[test]
-fn compiler_pseudo_values_never_enter_snapshot_constants() {
-    assert_eq!(
-        compiler_ir_from_legacy_pseudo_value(&LegacyValue::Empty).unwrap(),
-        ExpressionIR::Empty
-    );
-    assert_eq!(
-        compiler_ir_from_legacy_pseudo_value(&LegacyValue::IndexAll).unwrap(),
-        ExpressionIR::Selection(SelectionIR::All)
-    );
 }
 
 #[test]
@@ -919,7 +904,296 @@ fn matrix_literal_resolution_is_homogeneous_and_structured() {
     };
     assert!(matches!(
         unresolved.resolve_constant(data.schema.matrix2, &data.schemas, &data.constants),
-        Err(CompilerIrError::MatrixLiteralElementNotConstant { index: 0 })
+        Err(CompilerIrError::UnresolvedMatrixLiteralElement { index: 0 })
+    ));
+
+    let malformed_shape = MatrixLiteralIR {
+        rows: 2,
+        columns: 2,
+        elements: vec![ExpressionIR::Constant(data.constant.one); 3].into_boxed_slice(),
+    };
+    assert!(matches!(
+        malformed_shape.resolve_constant(data.schema.matrix2, &data.schemas, &data.constants),
+        Err(CompilerIrError::MatrixLiteralShapeMismatch {
+            actual_elements: 3,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn matrix_literal_resolution_canonicalizes_optional_elements() {
+    let mut schemas = SchemaTableBuilder::new();
+    let f64_schema = schemas
+        .insert(schema(SchemaBody::FloatingPoint(FloatWidth::W64)))
+        .unwrap();
+    let option_schema = schemas
+        .insert(schema(SchemaBody::Option(Box::new(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+        ))))
+        .unwrap();
+    let matrix_schema = schemas
+        .insert(schema(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(
+                FloatWidth::W64,
+            )))),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(3)]
+                .into_boxed_slice(),
+        }))
+        .unwrap();
+    let build = schemas.finish().unwrap();
+    let f64_schema = build.resolve(f64_schema).unwrap();
+    let option_schema = build.resolve(option_schema).unwrap();
+    let matrix_schema = build.resolve(matrix_schema).unwrap();
+    let (schemas, _) = build.into_parts();
+    let validation = SnapshotValidationContext::new(&schemas);
+    let mut constants = ConstantStoreBuilder::new(&schemas);
+    let bare = constants
+        .insert(scalar_value(&schemas, f64_schema, 1.0))
+        .unwrap();
+    let wrapped = constants
+        .insert(
+            ValueDraft {
+                schema: option_schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Option(OptionDraft {
+                    present: true,
+                    value: Some(Box::new(ValueDataDraft::F64(F64Bits::from_f64(2.0)))),
+                }),
+            }
+            .finalize(&validation)
+            .unwrap(),
+        )
+        .unwrap();
+    let build = constants.finish().unwrap();
+    let bare = build.resolve(bare).unwrap();
+    let wrapped = build.resolve(wrapped).unwrap();
+    let (constants, _) = build.into_parts();
+
+    let literal = MatrixLiteralIR {
+        rows: 1,
+        columns: 3,
+        elements: vec![
+            ExpressionIR::Empty,
+            ExpressionIR::Constant(bare),
+            ExpressionIR::Constant(wrapped),
+        ]
+        .into_boxed_slice(),
+    };
+    let value = literal
+        .resolve_constant(matrix_schema, &schemas, &constants)
+        .unwrap();
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("optional matrix literal must resolve to matrix data");
+    };
+    let SequenceView::Values(elements) = matrix.elements() else {
+        panic!("option matrix elements must use canonical value storage");
+    };
+    assert!(matches!(elements[0], ValueData::Option(None)));
+    assert!(matches!(elements[1], ValueData::Option(Some(_))));
+    assert!(matches!(elements[2], ValueData::Option(Some(_))));
+
+    let data = fixture_data();
+    let empty_f64 = MatrixLiteralIR {
+        rows: 2,
+        columns: 1,
+        elements: vec![
+            ExpressionIR::Empty,
+            ExpressionIR::Constant(data.constant.one),
+        ]
+        .into_boxed_slice(),
+    };
+    assert!(matches!(
+        empty_f64.resolve_constant(data.schema.vector2, &data.schemas, &data.constants),
+        Err(CompilerIrError::EmptyMatrixLiteralElementRequiresOption { index: 0 })
+    ));
+}
+
+#[test]
+fn matrix_literal_dynamic_classification_is_recursive() {
+    let literal = MatrixLiteralIR {
+        rows: 1,
+        columns: 2,
+        elements: vec![
+            ExpressionIR::Selection(SelectionIR::Index(Box::new(ExpressionIR::Slot(
+                CellSlotId::new(0),
+            )))),
+            ExpressionIR::MatrixLiteral(MatrixLiteralIR {
+                rows: 1,
+                columns: 1,
+                elements: vec![ExpressionIR::Empty].into_boxed_slice(),
+            }),
+        ]
+        .into_boxed_slice(),
+    };
+    assert!(literal.contains_slots());
+    assert!(literal.contains_empty());
+}
+
+fn compiled_generic_matrix(
+    values: Vec<LegacyValue>,
+    rows: usize,
+    columns: usize,
+) -> CompiledBytecode {
+    let matrix = LegacyValue::MatrixValue(Matrix::from_vec(values, rows, columns));
+    let mut context = CompileCtx::new();
+    let output = context.resolve_value_register(&matrix).unwrap();
+    context.finish_program(output).unwrap()
+}
+
+#[test]
+fn compiled_matrix_sidecars_fold_static_literals_through_canonical_ir() {
+    let compiled = compiled_generic_matrix(
+        [1.0, 3.0, 2.0, 4.0]
+            .into_iter()
+            .map(|value| LegacyValue::F64(Ref::new(value)))
+            .collect(),
+        2,
+        2,
+    );
+    let artifact = compile_executable_program_artifact(&compiled, &empty_function_catalog())
+        .expect("a valid static matrix sidecar must compile");
+    assert!(artifact.nodes().iter().all(|node| {
+        node.operation.module_path.as_ref() != ["matrix"]
+            || node.operation.operation_name != "literal"
+    }));
+    let output = &artifact.outputs()[0];
+    let slot = &artifact.slots()[output.source.get() as usize];
+    let Some(InitializerReference::Constant(constant)) = slot.initializer else {
+        panic!("a folded matrix output must be initialized by one canonical constant");
+    };
+    let value = artifact.constants().get(constant).unwrap();
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("the folded output constant must be matrix data");
+    };
+    let SequenceView::F64(values) = matrix.elements() else {
+        panic!("the folded homogeneous f64 matrix must use f64 storage");
+    };
+    assert_eq!(
+        values
+            .iter()
+            .map(|value| value.to_f64())
+            .collect::<Vec<_>>(),
+        vec![1.0, 2.0, 3.0, 4.0]
+    );
+}
+
+#[test]
+fn compiled_matrix_sidecars_emit_fixed_row_major_dynamic_bindings() {
+    let mut compiled = compiled_generic_matrix(
+        vec![
+            LegacyValue::F64(Ref::new(1.0)),
+            LegacyValue::F64(Ref::new(2.0)),
+        ],
+        1,
+        2,
+    );
+    let literal = compiled
+        .matrix_literals
+        .get(&compiled.return_register)
+        .unwrap();
+    let first = literal.elements[0].register();
+    compiled.symbol_definitions.push(CompiledSymbolDefinition {
+        id: mech_core::hash_str("live"),
+        name: "live".to_owned(),
+        register: first,
+        mutable: false,
+        root_visible: true,
+        ordinal: 0,
+    });
+    let artifact = compile_executable_program_artifact_with_outputs_and_external_inputs(
+        &compiled,
+        &[],
+        &empty_function_catalog(),
+        &BTreeSet::from(["live".to_owned()]),
+    )
+    .expect("a live matrix element must lower to matrix/literal");
+    let node = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.operation.module_path.as_ref() == ["matrix"]
+                && node.operation.operation_name == "literal"
+        })
+        .expect("dynamic matrix lowering must emit one matrix/literal node");
+    let bindings =
+        &artifact.bindings()[node.input_bindings.start as usize..node.input_bindings.end as usize];
+    assert_eq!(
+        bindings.len(),
+        2,
+        "the kind template is not an artifact input"
+    );
+    let BindingDeclaration::Input {
+        port_ordinal: 0,
+        source: ArtifactSource::Slot(first_slot),
+        ..
+    } = &bindings[0]
+    else {
+        panic!("the live first element must bind from an artifact slot");
+    };
+    assert_ne!(
+        first_slot.get(),
+        first,
+        "the fixture must distinguish bytecode register and artifact slot identities",
+    );
+    assert!(matches!(
+        bindings[1],
+        BindingDeclaration::Input {
+            port_ordinal: 1,
+            source: ArtifactSource::Constant(_),
+            ..
+        }
+    ));
+}
+
+#[test]
+fn compiled_matrix_sidecar_disagreement_fails_before_lowering() {
+    let mut compiled = compiled_generic_matrix(
+        vec![
+            LegacyValue::F64(Ref::new(1.0)),
+            LegacyValue::F64(Ref::new(2.0)),
+        ],
+        1,
+        2,
+    );
+    compiled
+        .matrix_literals
+        .get_mut(&compiled.return_register)
+        .unwrap()
+        .elements
+        .swap(0, 1);
+    assert!(matches!(
+        compile_executable_program_artifact(&compiled, &empty_function_catalog()),
+        Err(ArtifactBuildError::MatrixLiteralMetadataMismatch { .. })
+    ));
+}
+
+#[test]
+fn dynamic_matrix_sidecars_reject_empty_pseudo_values() {
+    let mut compiled = compiled_generic_matrix(
+        vec![LegacyValue::Empty, LegacyValue::F64(Ref::new(2.0))],
+        1,
+        2,
+    );
+    let second = compiled.matrix_literals[&compiled.return_register].elements[1].register();
+    compiled.symbol_definitions.push(CompiledSymbolDefinition {
+        id: mech_core::hash_str("live"),
+        name: "live".to_owned(),
+        register: second,
+        mutable: false,
+        root_visible: true,
+        ordinal: 0,
+    });
+    assert!(matches!(
+        compile_executable_program_artifact_with_outputs_and_external_inputs(
+            &compiled,
+            &[],
+            &empty_function_catalog(),
+            &BTreeSet::from(["live".to_owned()]),
+        ),
+        Err(ArtifactBuildError::CompilerIr(
+            CompilerIrError::DynamicEmptyMatrixLiteralUnsupported { index: 0 }
+        ))
     ));
 }
 

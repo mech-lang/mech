@@ -10,6 +10,8 @@ use mech_core::{
     SchemaTable, SemanticModelError, SnapshotValueError, validate_declaration,
 };
 
+use super::CompilerIrError;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComputeRegionDeclaration {
     pub id: ComputeRegionId,
@@ -291,7 +293,7 @@ impl ProgramArtifactDraft {
 
     pub(super) fn attach_contracts(
         mut self,
-        declarations: &[Option<&'static OperationContractDeclaration>],
+        declarations: &[Option<&OperationContractDeclaration>],
     ) -> Result<Self, ArtifactBuildError> {
         if declarations.len() != self.nodes.len() {
             return Err(ArtifactBuildError::CompiledMetadataLengthMismatch {
@@ -443,6 +445,13 @@ pub enum ArtifactBuildError {
         table: &'static str,
         expected: usize,
         actual: usize,
+    },
+    MatrixLiteralMetadataMismatch {
+        output: u32,
+        reason: &'static str,
+    },
+    UnresolvedEmptyRegister {
+        register: u32,
     },
     InvalidDeclarationMarker {
         instruction: u32,
@@ -642,6 +651,7 @@ pub enum ArtifactBuildError {
     LegacySnapshot(LegacySnapshotError),
     CoreBytecode(MechError),
     OperationContract(OperationContractError),
+    CompilerIr(CompilerIrError),
 }
 
 impl From<SnapshotValueError> for ArtifactBuildError {
@@ -671,5 +681,11 @@ impl From<OperationContractError> for ArtifactBuildError {
 impl From<MechError> for ArtifactBuildError {
     fn from(error: MechError) -> Self {
         Self::CoreBytecode(error)
+    }
+}
+
+impl From<CompilerIrError> for ArtifactBuildError {
+    fn from(error: CompilerIrError) -> Self {
+        Self::CompilerIr(error)
     }
 }
