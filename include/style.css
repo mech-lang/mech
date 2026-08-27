@@ -58,7 +58,7 @@ html, body {
   color: var(--text-primary);
   background: var(--bg-primary);
   scroll-behavior: smooth;
-  scrollbar-color: var(--mech-scrollbar) transparent;
+  scrollbar-color: var(--mech-brand) transparent;
   scrollbar-width: thin;
   overflow-x: hidden;
   max-width: 100%;
@@ -70,8 +70,8 @@ body {
 
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
-  height: 6px;
-  width: 6px;
+  height: 8px;
+  width: 8px;
 }
 
 html::-webkit-scrollbar-track,
@@ -81,13 +81,16 @@ body::-webkit-scrollbar-track {
 
 html::-webkit-scrollbar-thumb,
 body::-webkit-scrollbar-thumb {
-  background: var(--mech-scrollbar);
+  background: var(--mech-brand);
+  background-clip: content-box;
+  border: 2px solid transparent;
   border-radius: 999px;
 }
 
 html::-webkit-scrollbar-thumb:hover,
 body::-webkit-scrollbar-thumb:hover {
-  background: var(--mech-scrollbar-hover);
+  background: var(--mech-nav-hover);
+  background-clip: content-box;
 }
 
 body { min-height: 100vh; }
@@ -231,11 +234,11 @@ a { color: inherit; text-decoration: none; }
   top: var(--header-height);
   align-self: start;
   scrollbar-width: thin;
-  scrollbar-color: var(--bg-accent) transparent;
+  scrollbar-color: var(--mech-brand) transparent;
 }
 
 .content-shell::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .content-shell::-webkit-scrollbar-track {
@@ -243,12 +246,15 @@ a { color: inherit; text-decoration: none; }
 }
 
 .content-shell::-webkit-scrollbar-thumb {
-  background: var(--mech-scrollbar);
+  background: var(--mech-brand);
+  background-clip: content-box;
+  border: 2px solid transparent;
   border-radius: 999px;
 }
 
 .content-shell::-webkit-scrollbar-thumb:hover {
-  background: var(--mech-scrollbar-hover);
+  background: var(--mech-nav-hover);
+  background-clip: content-box;
 }
 
 .content-shell {

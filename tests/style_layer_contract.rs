@@ -283,7 +283,9 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(page.contains(".toc li.expanded > .toc-sub"));
     assert!(page.contains("border-left: 1px dotted var(--toc-accent-soft)"));
     assert!(page.contains(".article-layout.is-toc-open > .main-content"));
-    assert!(page.contains("scrollbar-color: var(--mech-scrollbar) transparent"));
+    assert!(page.contains("scrollbar-color: var(--mech-brand) transparent"));
+    assert!(page.contains("background: var(--mech-nav-hover)"));
+    assert!(page.contains("background-clip: content-box"));
 
     let repl = include("mech-repl.css");
     assert!(repl.contains(".mech-console-error-count"));
