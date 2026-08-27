@@ -20,6 +20,9 @@ impl MechFunctionImpl for StrictEqValue {
         *self.out.borrow_mut() = lhs == rhs;
         Ok(())
     }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
@@ -34,6 +37,10 @@ impl MechFunctionImpl for StrictEqValue {
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 
@@ -86,3 +93,46 @@ fn impl_seq_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<d
 
 #[cfg(feature = "source")]
 impl_mech_binop_fxn!(CompareStrictEqual, impl_seq_fxn, "compare/seq");
+
+#[cfg(all(test, feature = "runtime", feature = "bool", feature = "sneq"))]
+mod state_port_tests {
+    use super::*;
+    use crate::StrictNotEqValue;
+
+    #[test]
+    fn strict_comparison_outputs_use_typed_identity_and_checkpoint_state() {
+        let equal_out = Ref::new(false);
+        let equal = StrictEqValue {
+            lhs: LegacyValue::Index(Ref::new(1)),
+            rhs: LegacyValue::Index(Ref::new(1)),
+            out: equal_out.clone(),
+        };
+        equal.solve_result().unwrap();
+        assert_eq!(
+            equal.reactive_output_cell_ids(),
+            equal.out().reactive_root_cell_ids(),
+        );
+
+        let not_equal_out = Ref::new(false);
+        let not_equal = StrictNotEqValue {
+            lhs: LegacyValue::Index(Ref::new(1)),
+            rhs: LegacyValue::Index(Ref::new(2)),
+            out: not_equal_out.clone(),
+        };
+        not_equal.solve_result().unwrap();
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&equal)?;
+            participant.capture_function_state(&not_equal)?;
+            *equal_out.borrow_mut() = false;
+            *not_equal_out.borrow_mut() = false;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+
+        assert!(*equal_out.borrow());
+        assert!(*not_equal_out.borrow());
+    }
+}

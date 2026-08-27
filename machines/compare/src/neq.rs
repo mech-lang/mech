@@ -142,6 +142,9 @@ impl MechFunctionImpl for AtomNeq {
         };
         Ok(())
     }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
@@ -151,6 +154,10 @@ impl MechFunctionImpl for AtomNeq {
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "atom")]
@@ -200,6 +207,9 @@ impl MechFunctionImpl for TableNeq {
         };
         Ok(())
     }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
@@ -209,6 +219,10 @@ impl MechFunctionImpl for TableNeq {
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "table")]

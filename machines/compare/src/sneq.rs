@@ -20,6 +20,9 @@ impl MechFunctionImpl for StrictNotEqValue {
         *self.out.borrow_mut() = lhs != rhs;
         Ok(())
     }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
@@ -34,6 +37,10 @@ impl MechFunctionImpl for StrictNotEqValue {
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 

@@ -142,6 +142,9 @@ impl MechFunctionImpl for AtomEq {
         };
         Ok(())
     }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
@@ -151,6 +154,10 @@ impl MechFunctionImpl for AtomEq {
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "atom")]
@@ -200,6 +207,9 @@ impl MechFunctionImpl for TableEq {
         };
         Ok(())
     }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
@@ -209,6 +219,10 @@ impl MechFunctionImpl for TableEq {
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "table")]
@@ -272,12 +286,13 @@ impl_mech_binop_fxn!(CompareEqual, impl_eq_fxn, "compare/eq");
     feature = "f64",
     feature = "bool",
     feature = "matrix2",
+    feature = "matrixd",
     feature = "atom",
     feature = "table"
 ))]
 mod invocation_port_tests {
     use super::*;
-    use nalgebra::Matrix2;
+    use nalgebra::{DMatrix, Matrix2};
 
     fn binary_args<T, O>(out: &Ref<O>, lhs: &Ref<T>, rhs: &Ref<T>) -> FunctionArgs
     where
@@ -304,6 +319,20 @@ mod invocation_port_tests {
 
         assert!(*legacy_out.borrow());
         assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+        assert_eq!(
+            invocation.reactive_output_cell_ids(),
+            invocation.out().reactive_root_cell_ids(),
+        );
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*invocation)?;
+            *invocation_out.borrow_mut() = false;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert!(*invocation_out.borrow());
     }
 
     #[test]
@@ -314,6 +343,36 @@ mod invocation_port_tests {
         let function = EQM2M2::<f64>::new_invocation(binary_args(&out, &lhs, &rhs).into()).unwrap();
         function.solve_result().unwrap();
         assert_eq!(*out.borrow(), Matrix2::new(true, false, true, false));
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*function)?;
+            *out.borrow_mut() = Matrix2::from_element(false);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(*out.borrow(), Matrix2::new(true, false, true, false));
+
+        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(1, 2, &[1.0_f64, 2.0]));
+        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(1, 2, &[1.0_f64, 0.0]));
+        let dynamic_out = Ref::new(DMatrix::from_element(1, 2, false));
+        let dynamic = EQMDMD::<f64>::new_invocation(
+            binary_args(&dynamic_out, &dynamic_lhs, &dynamic_rhs).into(),
+        )
+        .unwrap();
+        dynamic.solve_result().unwrap();
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*dynamic)?;
+            *dynamic_out.borrow_mut() = DMatrix::from_element(2, 1, false);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            DMatrix::from_row_slice(1, 2, &[true, false]),
+        );
 
         let atom_lhs = Ref::new(MechAtom::from_name("same"));
         let atom_rhs = Ref::new(MechAtom::from_name("same"));
@@ -322,6 +381,10 @@ mod invocation_port_tests {
             .unwrap();
         atom.solve_result().unwrap();
         assert!(*atom_out.borrow());
+        assert_eq!(
+            atom.reactive_output_cell_ids(),
+            atom.out().reactive_root_cell_ids(),
+        );
 
         let table_lhs = Ref::new(MechTable::from_parts(0, 0, Vec::new(), Vec::new()));
         let table_rhs = Ref::new(MechTable::from_parts(0, 0, Vec::new(), Vec::new()));
@@ -331,6 +394,10 @@ mod invocation_port_tests {
                 .unwrap();
         table.solve_result().unwrap();
         assert!(*table_out.borrow());
+        assert_eq!(
+            table.reactive_output_cell_ids(),
+            table.out().reactive_root_cell_ids(),
+        );
     }
 
     #[test]

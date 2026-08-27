@@ -21,7 +21,7 @@ where
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
-    T: FunctionRuntimeType + FunctionPortBacking,
+    T: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(T::REPRESENTATION, T::REPRESENTATION);
@@ -51,7 +51,7 @@ where
         + PartialEq
         + 'static
         + Not<Output = T>
-        + FunctionRuntimeType,
+        + FunctionStateBacking,
     Ref<T>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
@@ -61,6 +61,9 @@ where
             *out_ptr = !*arg_ptr;
         };
         Ok(())
+    }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
@@ -74,6 +77,10 @@ where
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "semantic-compiler")]
@@ -105,7 +112,7 @@ where
     #[cfg(feature = "semantic-compiler")]
     MatA: CompileConst + ConstElem,
     Ref<MatA>: ToValue,
-    MatA: FunctionRuntimeType + FunctionPortBacking,
+    MatA: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(MatA::REPRESENTATION, MatA::REPRESENTATION);
@@ -131,7 +138,7 @@ where
     T: Debug + Clone + Sync + Send + 'static + AsValueKind + Not<Output = T>,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-    MatA: Debug + FunctionRuntimeType,
+    MatA: Debug + FunctionStateBacking,
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
@@ -145,6 +152,9 @@ where
         };
         Ok(())
     }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
@@ -157,6 +167,10 @@ where
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "semantic-compiler")]

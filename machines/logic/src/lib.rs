@@ -224,6 +224,9 @@ macro_rules! impl_logic_binop {
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
             }
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
@@ -238,6 +241,10 @@ macro_rules! impl_logic_binop {
 
             fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
+            }
+
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -288,6 +295,10 @@ mod invocation_port_tests {
         .unwrap();
         binary.solve_result().unwrap();
         assert!(!*binary_out.borrow());
+        assert_eq!(
+            binary.reactive_output_cell_ids(),
+            binary.out().reactive_root_cell_ids(),
+        );
 
         let unary_out = Ref::new(false);
         let unary = crate::not::NotS::<bool>::new_invocation(
@@ -295,6 +306,19 @@ mod invocation_port_tests {
         )
         .unwrap();
         unary.solve_result().unwrap();
+        assert!(!*unary_out.borrow());
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*binary)?;
+            participant.capture_function_state(&*unary)?;
+            *binary_out.borrow_mut() = true;
+            *unary_out.borrow_mut() = true;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert!(!*binary_out.borrow());
         assert!(!*unary_out.borrow());
     }
 
@@ -311,6 +335,18 @@ mod invocation_port_tests {
         assert_eq!(
             *fixed_out.borrow(),
             Matrix2::new(true, false, false, false)
+        );
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*fixed)?;
+            *fixed_out.borrow_mut() = Matrix2::from_element(true);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            *fixed_out.borrow(),
+            Matrix2::new(true, false, false, false),
         );
 
         let dynamic_lhs = Ref::new(DMatrix::from_row_slice(
@@ -332,6 +368,18 @@ mod invocation_port_tests {
         assert_eq!(
             *dynamic_out.borrow(),
             DMatrix::from_row_slice(2, 2, &[true, false, false, false])
+        );
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*dynamic)?;
+            *dynamic_out.borrow_mut() = DMatrix::from_element(1, 1, true);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            DMatrix::from_row_slice(2, 2, &[true, false, false, false]),
         );
     }
 
