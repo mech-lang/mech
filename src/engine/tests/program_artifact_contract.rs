@@ -1197,6 +1197,73 @@ fn dynamic_matrix_sidecars_reject_empty_pseudo_values() {
     ));
 }
 
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn dynamic_matrix_literal_artifacts_execute_and_update_resident_output() {
+    use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
+
+    let mut compiled = compiled_generic_matrix(
+        [1.0, 3.0, 2.0, 4.0]
+            .into_iter()
+            .map(|value| LegacyValue::F64(Ref::new(value)))
+            .collect(),
+        2,
+        2,
+    );
+    let first = compiled.matrix_literals[&compiled.return_register].elements[0].register();
+    compiled.symbol_definitions.push(CompiledSymbolDefinition {
+        id: mech_core::hash_str("live"),
+        name: "live".to_owned(),
+        register: first,
+        mutable: false,
+        root_visible: true,
+        ordinal: 0,
+    });
+    let mut catalog = mech_core::FunctionCatalogBuilder::new();
+    install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let artifact = compile_executable_program_artifact_with_outputs_and_external_inputs(
+        &compiled,
+        &[],
+        &catalog,
+        &BTreeSet::from(["live".to_owned()]),
+    )
+    .unwrap();
+    let mut instance = activate(
+        mech_core::ReactiveInstanceId::new(1, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for (live, expected) in [
+        (9.0, vec![9.0, 2.0, 3.0, 4.0]),
+        (7.0, vec![7.0, 2.0, 3.0, 4.0]),
+    ] {
+        let live = [live];
+        instance
+            .turn_without_summary(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: mech_core::ResidentValueRef::F64(&live),
+            }])
+            .unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let ValueData::Matrix(matrix) = output.data() else {
+            panic!("resident matrix/literal output must remain canonical matrix data");
+        };
+        let SequenceView::F64(values) = matrix.elements() else {
+            panic!("resident f64 literal must preserve f64 matrix storage");
+        };
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_f64())
+                .collect::<Vec<_>>(),
+            expected
+        );
+    }
+}
+
 #[test]
 fn matrix_literal_resolution_accepts_homogeneous_aggregate_elements() {
     let mut schemas = SchemaTableBuilder::new();

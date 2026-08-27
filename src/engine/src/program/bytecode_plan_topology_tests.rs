@@ -9,7 +9,6 @@ use crate::{
     CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
     CompiledNodeKind, CompiledSymbolDefinition,
 };
-#[cfg(feature = "native-plan")]
 use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
@@ -242,6 +241,58 @@ fn compile_artifact_fixture(source: &str) -> MResult<(ProgramArtifact, ProgramAr
     assert_frozen_v1_topology_parity(&source_artifact, &bytecode_artifact);
     assert_eq!(source_artifact.revision(), bytecode_artifact.revision());
     Ok((source_artifact, bytecode_artifact))
+}
+
+fn output_initializer(artifact: &ProgramArtifact) -> &mech_core::Value {
+    let output = &artifact.outputs()[0];
+    let slot = &artifact.slots()[output.source.get() as usize];
+    let Some(InitializerReference::Constant(constant)) = slot.initializer else {
+        panic!("static source output must have a canonical constant initializer");
+    };
+    artifact.constants().get(constant).unwrap()
+}
+
+#[test]
+fn generic_source_matrix_literals_fold_without_legacy_artifact_nodes() -> MResult<()> {
+    let (empty, _) = compile_artifact_fixture("x := []\nx")?;
+    let empty_value = output_initializer(&empty);
+    let ValueData::Matrix(_) = empty_value.data() else {
+        panic!("empty source literal must become a canonical matrix constant");
+    };
+    assert!(matches!(
+        empty.schemas().get(empty_value.schema()).unwrap().body(),
+        SchemaBody::Matrix { dimensions, .. }
+            if dimensions.as_ref()
+                == [DimensionExpr::Constant(0), DimensionExpr::Constant(0)]
+    ));
+    assert!(empty.nodes().iter().all(|node| {
+        node.operation.module_path.as_ref() != ["matrix"]
+            || node.operation.operation_name != "literal"
+    }));
+
+    let (optional, _) = compile_artifact_fixture("x := [1.0 _]\nx")?;
+    let ValueData::Matrix(matrix) = output_initializer(&optional).data() else {
+        panic!("optional source literal must become a canonical matrix constant");
+    };
+    let SequenceView::Values(elements) = matrix.elements() else {
+        panic!("optional matrix elements must retain canonical option values");
+    };
+    assert!(matches!(elements[0], ValueData::Option(Some(_))));
+    assert!(matches!(elements[1], ValueData::Option(None)));
+    Ok(())
+}
+
+#[test]
+fn heterogeneous_source_matrix_literal_fails_structurally() -> MResult<()> {
+    let mut program = source_program();
+    program.plan_source_for_test("x := [1.0 \"x\"]\nx")?;
+    let error = program.compile_program_product().unwrap_err();
+    assert_eq!(error.kind_name(), "ProgramArtifactCompilationError");
+    assert!(
+        error.kind_message().contains("HeterogeneousMatrixLiteral"),
+        "{error:?}"
+    );
+    Ok(())
 }
 
 #[test]

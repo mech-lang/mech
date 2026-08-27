@@ -44,6 +44,22 @@ static PURE_HORIZONTAL_UNARY_BUILD_CONTRACT: LazyLock<OperationContractDeclarati
         ))
     });
 
+#[cfg(all(feature = "semantic-compiler", feature = "matrixd"))]
+fn heterogeneous_horizontal_literal(arguments: &[LegacyValue]) -> Box<dyn MechFunction> {
+    let inputs = arguments
+        .iter()
+        .cloned()
+        .map(|argument| HorizontalConcatenateInput::Scalar(Ref::new(argument)))
+        .collect();
+    let out = Ref::new(DMatrix::from_vec(1, arguments.len(), arguments.to_vec()));
+    Box::new(HorizontalConcatenateNArgs { e0: inputs, out })
+}
+
+#[cfg(all(feature = "semantic-compiler", feature = "matrixd"))]
+fn same_or_option_element_kind(left: &ValueKind, right: &ValueKind) -> bool {
+    left == right || left.option_inner() == Some(right) || right.option_inner() == Some(left)
+}
+
 // Horizontal Concatenate -----------------------------------------------------
 
 #[cfg(any(
@@ -854,7 +870,7 @@ where
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for HorizontalConcatenateNArgs<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    T: Debug + Clone + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
@@ -891,8 +907,21 @@ where
 impl<T> MechFunctionCompiler for HorizontalConcatenateNArgs<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
+    Ref<DMatrix<T>>: ToValue,
 {
+    fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
+        if T::as_value_kind().is_any() {
+            let output = self.out.to_value();
+            compile_value_register(&output, self.out.addr(), ctx)?;
+        }
+        Ok(())
+    }
+
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        if T::as_value_kind().is_any() {
+            let output = self.out.to_value();
+            return compile_value_register(&output, self.out.addr(), ctx);
+        }
         let mut registers = [0, 0];
         registers[0] = compile_register!(self.out, ctx);
 
@@ -6766,6 +6795,22 @@ pub(crate) fn impl_horzcat_fxn(arguments: &[LegacyValue]) -> MResult<Box<dyn Mec
         })
         .unwrap_or_else(|| kinds[0].clone());
 
+    #[cfg(all(feature = "semantic-compiler", feature = "matrixd"))]
+    if arguments
+        .iter()
+        .all(|argument| argument.is_scalar() || argument.is_legacy_empty())
+        && kinds.iter().zip(arguments).any(|(kind, argument)| {
+            if argument.is_legacy_empty() {
+                return false;
+            }
+            !ValueKind::is_compatible(target_kind.clone(), kind.clone())
+                && !ValueKind::is_compatible(kind.clone(), target_kind.clone())
+                && !same_or_option_element_kind(kind, &target_kind)
+        })
+    {
+        return Ok(heterogeneous_horizontal_literal(arguments));
+    }
+
     #[cfg(feature = "f64")]
     {
         if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64) {
@@ -6876,6 +6921,14 @@ pub(crate) fn impl_horzcat_fxn(arguments: &[LegacyValue]) -> MResult<Box<dyn Mec
         if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) {
             return impl_horzcat_arms!(C64, arguments, C64::default());
         }
+    }
+
+    #[cfg(all(feature = "semantic-compiler", feature = "matrixd"))]
+    if arguments
+        .iter()
+        .all(|argument| argument.is_scalar() || argument.is_legacy_empty())
+    {
+        return Ok(heterogeneous_horizontal_literal(arguments));
     }
 
     Err(MechError::new(

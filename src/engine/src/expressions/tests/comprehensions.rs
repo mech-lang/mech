@@ -161,3 +161,41 @@ fn matrix_comprehension_bytecode_reuses_repeated_child_registers() {
                 && arguments[0] == arguments[1]
     )));
 }
+
+#[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
+#[test]
+fn empty_matrix_comprehension_keeps_legacy_seed_without_a_literal_sidecar() {
+    let function = ValueMatrixComprehension {
+        arguments: Vec::new(),
+        out: Ref::new(LegacyValue::MatrixValue(Matrix::from_vec(Vec::new(), 0, 0))),
+    };
+    let mut context = CompileCtx::new();
+    let output = function.compile(&mut context).unwrap();
+    let compiled = context.finish_program(output).unwrap();
+
+    assert!(!compiled.matrix_literals.contains_key(&output));
+    assert!(
+        compiled
+            .program
+            .instructions
+            .iter()
+            .any(|instruction| matches!(
+                instruction,
+                BytecodeInstruction::RuntimeVariadic { function, dst, arguments }
+                    if *function == hash_str("matrix/comprehension")
+                        && *dst == output
+                        && arguments.is_empty()
+            ))
+    );
+    assert!(
+        compiled
+            .program
+            .instructions
+            .iter()
+            .any(|instruction| matches!(
+                instruction,
+                BytecodeInstruction::CompositePack { dst, children, .. }
+                    if *dst == output && children.is_empty()
+            ))
+    );
+}

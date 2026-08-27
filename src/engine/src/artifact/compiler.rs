@@ -884,7 +884,13 @@ fn validate_compiled_matrix_literals(
             .instructions
             .iter()
             .enumerate()
-            .filter(|(_, instruction)| instruction_destination(instruction) == Some(output))
+            .filter(|(index, instruction)| {
+                instruction_destination(instruction) == Some(output)
+                    && !matches!(
+                        compiled.instruction_roles[*index],
+                        Some(CompiledInstructionRole::DeclarationMarker)
+                    )
+            })
             .collect::<Vec<_>>();
         let [
             (

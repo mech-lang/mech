@@ -10,6 +10,8 @@ mod full_write;
 pub(crate) mod general;
 mod kernel;
 #[cfg(feature = "resident-artifact")]
+pub(crate) mod matrix_literal;
+#[cfg(feature = "resident-artifact")]
 pub(crate) mod numeric;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod set;

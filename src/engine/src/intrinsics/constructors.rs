@@ -294,7 +294,23 @@ impl MechFunctionFactory for ValueMatrixComprehension {
 impl MechFunctionCompiler for ValueMatrixComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = self.out.borrow().clone();
-        let destination = compile_value_register(&output, self.out.addr(), ctx)?;
+        let output_kind = output.kind();
+        let destination = if output_kind
+            .matrix_parts()
+            .is_some_and(|(element, _)| element.is_any())
+        {
+            let (destination, initialize) =
+                ctx.register_for_ptr_with_initialization_status(self.out.addr());
+            ctx.record_register_kind(destination, output_kind)?;
+            if initialize {
+                let template = output.compile_const(ctx)?;
+                ctx.record_register_constant_metadata(destination, template)?;
+                ctx.emit_composite_pack(destination, template, Vec::new());
+            }
+            destination
+        } else {
+            compile_value_register(&output, self.out.addr(), ctx)?
+        };
         let arguments = self
             .arguments
             .iter()
