@@ -3,11 +3,13 @@ pub mod catalog;
 pub mod contract;
 pub mod resident;
 pub mod signature;
+pub mod state;
 pub use argument::*;
 pub use catalog::*;
 pub use contract::*;
 pub use resident::*;
 pub use signature::*;
+pub use state::*;
 
 use crate::legacy_value::*;
 use crate::nodes::*;
@@ -406,6 +408,19 @@ pub trait MechFunctionImpl {
         )
         .with_compiler_loc())
     }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        None
+    }
+    fn reactive_output_state_ports(&self) -> Option<Vec<FunctionStatePort<'_>>> {
+        self.primary_output_state_port().map(|output| vec![output])
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(None)
+    }
+    /// Returns the function output through the legacy universal-value bridge.
+    ///
+    /// This compatibility API remains required until every function family has
+    /// migrated to typed state ports.
     fn out(&self) -> LegacyValue;
     fn reactive_dependency_kinds(
         &self,
@@ -419,11 +434,14 @@ pub trait MechFunctionImpl {
     ) -> Option<Vec<ReactiveDependencyScope>> {
         None
     }
+    /// Returns reactive outputs through the legacy universal-value bridge.
+    ///
+    /// This compatibility API remains available for unmigrated functions.
     fn reactive_output_values(&self) -> Vec<LegacyValue> {
         vec![self.out()]
     }
-    /// Returns every `Value`-backed cell that contains retained mutable state
-    /// owned by this function.
+    /// Returns every legacy `Value`-backed cell that contains retained mutable
+    /// state owned by this function.
     ///
     /// Reactive outputs cover the common case. Functions with hidden retained
     /// cells must return those cells, while functions whose retained state
@@ -640,6 +658,18 @@ impl MechFunctionImpl for SemanticMechFunction {
 
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
         self.function.stage_register()
+    }
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        self.function.primary_output_state_port()
+    }
+
+    fn reactive_output_state_ports(&self) -> Option<Vec<FunctionStatePort<'_>>> {
+        self.function.reactive_output_state_ports()
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        self.function.transaction_state_ports()
     }
 
     fn out(&self) -> LegacyValue {
