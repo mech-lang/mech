@@ -7,11 +7,11 @@ use std::sync::LazyLock;
 use crate::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
-    ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction, InputPortLayout,
-    InputPortPolicy, LegacyValue, MResult, MechError, OperationContractDeclaration,
-    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueCell, ValueKind,
-    compare_application_requirements, compile_value_register, hash_str,
-    value_kind_from_runtime_type, write_bytecode,
+    CompiledMatrixLiteral, ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction,
+    InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ParsedProgram, Register,
+    ShapeRule, ValueCell, ValueKind, compare_application_requirements, compile_value_register,
+    hash_str, value_kind_from_runtime_type, write_bytecode,
 };
 
 static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -114,6 +114,9 @@ pub struct CompiledBytecode {
     /// register space. This is compilation sidecar metadata, not an
     /// executable instruction.
     pub register_state_initializers: Vec<Option<u32>>,
+    /// Generic matrix constructions keyed by their destination register.
+    /// This semantic sidecar is intentionally not serialized in bytecode v1.
+    pub matrix_literals: BTreeMap<Register, CompiledMatrixLiteral>,
     /// Exact first-definition order, unlike the canonically sorted symbol map.
     pub symbol_definitions: Vec<CompiledSymbolDefinition>,
     pub return_register: Register,
@@ -157,6 +160,8 @@ pub struct CompileCtx {
     register_kinds: BTreeMap<Register, ValueKind>,
     register_collection_cardinalities: BTreeMap<Register, usize>,
     register_state_initializers: BTreeMap<Register, u32>,
+    matrix_literals: BTreeMap<Register, CompiledMatrixLiteral>,
+    runtime_produced_registers: BTreeSet<Register>,
     next_register_kind_override: Option<ValueKind>,
     symbol_definitions: Vec<CompiledSymbolDefinition>,
     current_node_kind: Option<CompiledNodeKind>,
@@ -191,6 +196,8 @@ impl Default for CompileCtx {
             register_kinds: BTreeMap::new(),
             register_collection_cardinalities: BTreeMap::new(),
             register_state_initializers: BTreeMap::new(),
+            matrix_literals: BTreeMap::new(),
+            runtime_produced_registers: BTreeSet::new(),
             next_register_kind_override: None,
             symbol_definitions: Vec::new(),
             current_node_kind: None,
@@ -648,6 +655,7 @@ impl CompileCtx {
             register_kinds,
             register_collection_cardinalities,
             register_state_initializers,
+            matrix_literals: self.matrix_literals.clone(),
             symbol_definitions: self.symbol_definitions.clone(),
             return_register,
             integrity_constraints: self.integrity_constraints.clone(),
@@ -881,10 +889,51 @@ impl BytecodeCompilerContext for CompileCtx {
             ));
         }
         let Some((index, constant)) = initializers.first().copied() else {
+            self.matrix_literals.remove(&register);
+            self.runtime_produced_registers.insert(register);
             return Ok(());
         };
         self.remove_instruction(index);
         self.remove_constant_if_unreferenced(constant);
+        self.matrix_literals.remove(&register);
+        self.runtime_produced_registers.insert(register);
+        Ok(())
+    }
+
+    fn record_matrix_literal(&mut self, literal: CompiledMatrixLiteral) -> MResult<()> {
+        if literal.output >= self.next_register {
+            return invalid(format!(
+                "matrix literal output register {} is outside register count {}",
+                literal.output, self.next_register,
+            ));
+        }
+        if let Some(element) = literal
+            .elements
+            .iter()
+            .find(|element| element.register() >= self.next_register)
+        {
+            return invalid(format!(
+                "matrix literal element register {} is outside register count {}",
+                element.register(),
+                self.next_register,
+            ));
+        }
+        if self.runtime_produced_registers.contains(&literal.output) {
+            return invalid(format!(
+                "runtime-produced register {} has no executable matrix literal construction",
+                literal.output,
+            ));
+        }
+        if let Some(existing) = self.matrix_literals.get(&literal.output) {
+            if existing != &literal {
+                return invalid(format!(
+                    "matrix literal output register {} has conflicting descriptors",
+                    literal.output,
+                ));
+            }
+            return Ok(());
+        }
+        self.matrix_literals.insert(literal.output, literal);
         Ok(())
     }
 
@@ -1371,6 +1420,87 @@ mod tests {
         assert_eq!(
             context.register_for_ptr_with_initialization_status(100),
             (0, true),
+        );
+    }
+
+    #[test]
+    fn matrix_literal_descriptors_are_deterministic_and_emit_no_instructions() {
+        let mut context = CompileCtx::new();
+        let registers = allocate_registers(&mut context, 3);
+        let literal = CompiledMatrixLiteral::new(
+            registers[2],
+            1,
+            2,
+            vec![
+                crate::CompiledMatrixLiteralElement::Value {
+                    register: registers[0],
+                },
+                crate::CompiledMatrixLiteralElement::Value {
+                    register: registers[1],
+                },
+            ]
+            .into_boxed_slice(),
+        )
+        .unwrap();
+
+        context.record_matrix_literal(literal.clone()).unwrap();
+        context.record_matrix_literal(literal.clone()).unwrap();
+        assert!(context.instructions.is_empty());
+
+        let conflicting = CompiledMatrixLiteral::new(
+            registers[2],
+            1,
+            2,
+            vec![
+                crate::CompiledMatrixLiteralElement::Value {
+                    register: registers[1],
+                },
+                crate::CompiledMatrixLiteralElement::Value {
+                    register: registers[0],
+                },
+            ]
+            .into_boxed_slice(),
+        )
+        .unwrap();
+        let error = context.record_matrix_literal(conflicting).unwrap_err();
+        assert!(error.kind_message().contains("conflicting descriptors"));
+
+        let compiled = context.finish_program(registers[2]).unwrap();
+        assert_eq!(compiled.matrix_literals.get(&registers[2]), Some(&literal));
+    }
+
+    #[test]
+    fn matrix_literal_descriptor_requires_allocated_non_runtime_registers() {
+        let mut context = CompileCtx::new();
+        let registers = allocate_registers(&mut context, 2);
+        let unallocated_output = CompiledMatrixLiteral::new(2, 0, 0, Box::new([])).unwrap();
+        assert!(
+            context
+                .record_matrix_literal(unallocated_output)
+                .unwrap_err()
+                .kind_message()
+                .contains("outside register count")
+        );
+
+        context
+            .record_runtime_produced_register(registers[1])
+            .unwrap();
+        let runtime_output = CompiledMatrixLiteral::new(
+            registers[1],
+            1,
+            1,
+            vec![crate::CompiledMatrixLiteralElement::Value {
+                register: registers[0],
+            }]
+            .into_boxed_slice(),
+        )
+        .unwrap();
+        assert!(
+            context
+                .record_matrix_literal(runtime_output)
+                .unwrap_err()
+                .kind_message()
+                .contains("no executable matrix literal construction")
         );
     }
 

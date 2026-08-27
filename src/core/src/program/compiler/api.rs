@@ -6,7 +6,7 @@ use crate::{
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
 
-use super::{CompileConst, Register, compile_annotated_constant};
+use super::{CompileConst, CompiledMatrixLiteral, Register, compile_annotated_constant};
 
 /// Canonical producer identity used when assigning bytecode registers.
 ///
@@ -118,6 +118,13 @@ pub trait BytecodeCompilerContext {
     /// use this hook to discard that provisional initializer before emitting
     /// the producer instruction.
     fn record_runtime_produced_register(&mut self, _register: Register) -> MResult<()> {
+        Ok(())
+    }
+
+    /// Records deterministic, in-memory construction metadata for a generic
+    /// matrix literal. Contexts that do not build semantic artifacts may
+    /// ignore it.
+    fn record_matrix_literal(&mut self, _literal: CompiledMatrixLiteral) -> MResult<()> {
         Ok(())
     }
 
