@@ -20,7 +20,7 @@ html[data-mech-shim="blog"] body::-webkit-scrollbar {
 }
 
 html[data-mech-shim="blog"] .content-shell {
-  scrollbar-color: var(--mech-surface-accent) transparent;
+  scrollbar-color: var(--mech-scrollbar) transparent;
 }
 
 html[data-mech-shim="blog"] .content-shell::-webkit-scrollbar {
@@ -28,13 +28,13 @@ html[data-mech-shim="blog"] .content-shell::-webkit-scrollbar {
 }
 
 html[data-mech-shim="blog"] .content-shell::-webkit-scrollbar-thumb {
-  background: var(--mech-brand);
+  background: var(--mech-scrollbar);
   background-clip: content-box;
   border: 2px solid transparent;
 }
 
 html[data-mech-shim="blog"] .content-shell::-webkit-scrollbar-thumb:hover {
-  background: var(--mech-nav-hover);
+  background: var(--mech-scrollbar-hover);
   background-clip: content-box;
 }
 
