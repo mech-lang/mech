@@ -372,6 +372,7 @@ fn canonical_palette_is_a_single_token_layer_without_gradients() {
         "--mech-control-border: #777",
         "--mech-text-reading: hsl(40 100% 95%)",
         "--mech-text-primary: #f3f3e6",
+        "--mech-text-subheading: rgb(242, 234, 217)",
         "--mech-text-body: hsl(206 24% 90%)",
         "--mech-text-code: hsl(41 49% 90%)",
         "--mech-console-text: #e6edf3",
