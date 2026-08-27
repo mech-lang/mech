@@ -363,10 +363,13 @@ fn write_generated_file(path: &Path, bytes: &[u8]) -> MResult<()> {
     })();
 
     if let Err(error) = result {
-        let _ = fs::remove_file(&temporary);
+        let cleanup = fs::remove_file(&temporary).err();
+        let cleanup = cleanup
+            .map(|cleanup| format!("; temporary-file cleanup also failed: {cleanup}"))
+            .unwrap_or_default();
         return project_invalid(format!(
-            "failed to write generated file `{}`: {error}",
-            path.display()
+            "failed to write generated file `{}`: {error}{cleanup}",
+            path.display(),
         ));
     }
     Ok(())

@@ -1,28 +1,23 @@
 //! Generic runtime operation health and savepoint coordination.
 
+#[cfg(feature = "source")]
 use super::{RuntimeContextCheckpoint, RuntimeOperationSavepoint};
+#[cfg(feature = "source")]
+use crate::RuntimeContext;
 use crate::runtime::MechRuntime;
+#[cfg(feature = "source")]
 use crate::runtime::state::ScopedRuntimeState;
+#[cfg(feature = "source")]
+use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId, RuntimeEventKind};
 use crate::{
-    ActiveRuntimeEffectPhase, RuntimeContext, RuntimeEffectId, RuntimeEffectOperationReentrant,
-    RuntimeEventKind, RuntimeHealth, RuntimeOperationRollbackFailed, RuntimePoisonRecord,
-    RuntimePoisoned, TransactionId,
+    RuntimeEffectOperationReentrant, RuntimeHealth, RuntimeOperationRollbackFailed,
+    RuntimePoisonRecord, RuntimePoisoned, TransactionId,
 };
 use mech_core::{MResult, MechError};
+#[cfg(feature = "source")]
 use std::collections::HashSet;
 
 impl MechRuntime {
-    #[cfg(feature = "runtime_bench_probes")]
-    #[doc(hidden)]
-    pub fn gate_a_capture_runtime_operation_savepoint(
-        &self,
-        context: &mut RuntimeContext,
-    ) -> MResult<()> {
-        let transaction_id = Self::context_transaction_id(context)?;
-        let _savepoint = self.capture_runtime_operation_savepoint(context, transaction_id)?;
-        Ok(())
-    }
-
     pub(in crate::runtime) fn ensure_runtime_healthy(
         &self,
         operation: &'static str,
@@ -90,6 +85,7 @@ impl MechRuntime {
         )
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn capture_runtime_operation_savepoint(
         &self,
         context: &mut RuntimeContext,
@@ -110,6 +106,7 @@ impl MechRuntime {
         })
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn rollback_runtime_operation(
         &mut self,
         context: &mut RuntimeContext,
@@ -164,10 +161,10 @@ impl MechRuntime {
                     if failed_effects.contains(&effect_id) {
                         continue;
                     }
-                    let _ = self.emit_effect_event_outside_transaction(
+                    drop(self.emit_effect_event_outside_transaction(
                         context,
                         RuntimeEventKind::EffectAborted { effect_id },
-                    );
+                    ));
                 }
             }
             None => failures.push(format!(

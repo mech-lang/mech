@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::intrinsics::*;
 
 // Record Access --------------------------------------------------------------
@@ -87,7 +86,7 @@ impl FunctionSpecializer for RecordAccess {
                 LegacyValue::MutableReference(rcrd) => {
                     impl_access_record_fxn(rcrd.borrow().clone(), key.clone())
                 }
-                x => Err(MechError::new(
+                _ => Err(MechError::new(
                     UnhandledFunctionArgumentKind2 {
                         arg: (src.kind(), key.kind()),
                         fxn_name: "RecordAccess".to_string(),

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 #[cfg(any(feature = "n_choose_k", feature = "dynamic-module"))]
 pub mod n_choose_k {
     use core::ops::{Add, AddAssign, Div, Mul, Sub};

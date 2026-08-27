@@ -1,7 +1,6 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 
 // Not Equal ---------------------------------------------------------------
 
@@ -46,7 +45,7 @@ macro_rules! neq_op {
 macro_rules! neq_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let out_deref = &mut (*$out);
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
             for (mut col, lhs_col) in out_deref.column_iter_mut().zip(lhs_deref.column_iter()) {
@@ -61,7 +60,7 @@ macro_rules! neq_mat_vec_op {
 macro_rules! neq_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let out_deref = &mut (*$out);
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
             for (mut col, rhs_col) in out_deref.column_iter_mut().zip(rhs_deref.column_iter()) {
@@ -76,7 +75,7 @@ macro_rules! neq_vec_mat_op {
 macro_rules! neq_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let out_deref = &mut (*$out);
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
             for (mut row, lhs_row) in out_deref.row_iter_mut().zip(lhs_deref.row_iter()) {
@@ -91,7 +90,7 @@ macro_rules! neq_mat_row_op {
 macro_rules! neq_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let out_deref = &mut (*$out);
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
             for (mut row, rhs_row) in out_deref.row_iter_mut().zip(rhs_deref.row_iter()) {
@@ -144,7 +143,7 @@ impl MechFunctionImpl for AtomNeq {
     fn solve_result(&self) -> MResult<()> {
         let lhs_ptr = self.lhs.as_ptr();
         let rhs_ptr = self.rhs.as_ptr();
-        let mut out_ptr = self.out.as_mut_ptr();
+        let out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = (*lhs_ptr) != (*rhs_ptr);
         };
@@ -209,7 +208,7 @@ impl MechFunctionImpl for TableNeq {
     fn solve_result(&self) -> MResult<()> {
         let lhs_ptr = self.lhs.as_ptr();
         let rhs_ptr = self.rhs.as_ptr();
-        let mut out_ptr = self.out.as_mut_ptr();
+        let out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = (*lhs_ptr) != (*rhs_ptr);
         };

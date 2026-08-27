@@ -1,6 +1,4 @@
-#[macro_use]
 use crate::intrinsics::*;
-use crate::intrinsics::access::*;
 
 // Table Access ---------------------------------------------------------------
 
@@ -183,7 +181,7 @@ impl FunctionSpecializer for TableAccessColumn {
                 (LegacyValue::MutableReference(tbl), _) => {
                     impl_access_column_table_fxn(tbl.borrow().clone(), key.clone())
                 }
-                x => Err(MechError::new(
+                _ => Err(MechError::new(
                     UnhandledFunctionArgumentKind2 {
                         arg: (tbl.kind(), key.kind()),
                         fxn_name: "TableAccessColumn".to_string(),
@@ -243,7 +241,7 @@ impl MechFunctionImpl for TableAccessScalarF {
         let table = self.source.borrow();
         let mut record = self.out.borrow_mut();
         let row_ix = *self.ix.borrow();
-        for (key, (kind, matrix)) in table.data.iter() {
+        for (key, (_, matrix)) in table.data.iter() {
             let value = matrix.index1d(row_ix);
             record.data.insert(*key, value.clone());
         }
@@ -379,7 +377,7 @@ impl MechFunctionImpl for TableAccessRangeIndex {
         let mut out_table = self.out.borrow_mut();
         let ix_brrw = self.ix.borrow();
 
-        for (key, (_kind, matrix)) in table.data.iter() {
+        for (key, (_, matrix)) in table.data.iter() {
             let (_out_kind, out_matrix) = out_table.data.get_mut(key).unwrap();
             for (out_i, i) in ix_brrw.iter().enumerate() {
                 let value = matrix.index1d(*i);
@@ -434,11 +432,11 @@ impl MechFunctionImpl for TableAccessRangeBool {
 
         let mut out_table = self.out.borrow_mut();
 
-        for (key, (_kind, matrix)) in table.data.iter() {
+        for (key, (_, matrix)) in table.data.iter() {
             let (_out_kind, out_matrix) = out_table.data.get_mut(key).unwrap();
 
             // Resize output to match number of true entries
-            out_matrix.resize_vertically(true_count, LegacyValue::Empty);
+            out_matrix.resize_vertically(true_count, LegacyValue::Empty)?;
 
             // Fill with contiguous values
             let mut push_index = 0;

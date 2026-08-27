@@ -1,4 +1,3 @@
-#[macro_use]
 pub use crate::*;
 #[cfg(feature = "acos")]
 pub mod acos;
@@ -39,41 +38,41 @@ pub mod tan;
 #[cfg(feature = "tanh")]
 pub mod tanh;
 
-#[cfg(feature = "acos")]
+#[cfg(all(feature = "acos", feature = "source"))]
 pub use self::acos::*;
-#[cfg(feature = "acosh")]
+#[cfg(all(feature = "acosh", feature = "source"))]
 pub use self::acosh::*;
-#[cfg(feature = "acot")]
+#[cfg(all(feature = "acot", feature = "source"))]
 pub use self::acot::*;
-#[cfg(feature = "acsc")]
+#[cfg(all(feature = "acsc", feature = "source"))]
 pub use self::acsc::*;
-#[cfg(feature = "asec")]
+#[cfg(all(feature = "asec", feature = "source"))]
 pub use self::asec::*;
-#[cfg(feature = "asin")]
+#[cfg(all(feature = "asin", feature = "source"))]
 pub use self::asin::*;
-#[cfg(feature = "asinh")]
+#[cfg(all(feature = "asinh", feature = "source"))]
 pub use self::asinh::*;
-#[cfg(feature = "atan")]
+#[cfg(all(feature = "atan", feature = "source"))]
 pub use self::atan::*;
-#[cfg(feature = "atan2")]
+#[cfg(all(feature = "atan2", feature = "source"))]
 pub use self::atan2::*;
-#[cfg(feature = "atanh")]
+#[cfg(all(feature = "atanh", feature = "source"))]
 pub use self::atanh::*;
-#[cfg(feature = "cos")]
+#[cfg(all(feature = "cos", feature = "source"))]
 pub use self::cos::*;
-#[cfg(feature = "cosh")]
+#[cfg(all(feature = "cosh", feature = "source"))]
 pub use self::cosh::*;
-#[cfg(feature = "cot")]
+#[cfg(all(feature = "cot", feature = "source"))]
 pub use self::cot::*;
-#[cfg(feature = "csc")]
+#[cfg(all(feature = "csc", feature = "source"))]
 pub use self::csc::*;
-#[cfg(feature = "sec")]
+#[cfg(all(feature = "sec", feature = "source"))]
 pub use self::sec::*;
-#[cfg(feature = "sin")]
+#[cfg(all(feature = "sin", feature = "source"))]
 pub use self::sin::*;
-#[cfg(feature = "sinh")]
+#[cfg(all(feature = "sinh", feature = "source"))]
 pub use self::sinh::*;
-#[cfg(feature = "tan")]
+#[cfg(all(feature = "tan", feature = "source"))]
 pub use self::tan::*;
-#[cfg(feature = "tanh")]
+#[cfg(all(feature = "tanh", feature = "source"))]
 pub use self::tanh::*;

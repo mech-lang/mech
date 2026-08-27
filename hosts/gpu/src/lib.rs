@@ -48,7 +48,7 @@ mod execution_plan;
 pub use execution_plan::*;
 pub const WORKGROUP_SIZE: u32 = 64;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "native"))]
 fn empty_compute_program() -> ComputeProgram {
     ComputeProgram::new(
         Default::default(),

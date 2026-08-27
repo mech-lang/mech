@@ -81,6 +81,13 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("scripts/check-value-system-contract.py", block)
         self.assertNotIn("allow-only-c0-gate-b-evidence-stale", block)
 
+    def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):
+        block = job_block(FULL, "architecture-contracts")
+        fetch = "cargo +nightly-2026-03-03 fetch --locked"
+        projection = "python3 scripts/generate-d2-contract.py --check"
+        self.assertIn(fetch, block)
+        self.assertLess(block.index(fetch), block.index(projection))
+
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):
         block = job_block(FULL, "function-system-contracts")
         install = "sudo apt-get install --yes ripgrep"

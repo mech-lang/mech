@@ -1,11 +1,10 @@
-#[macro_use]
 pub use crate::*;
 #[cfg(feature = "cbrt")]
 pub mod cbrt;
 #[cfg(feature = "sqrt")]
 pub mod sqrt;
 
-#[cfg(feature = "cbrt")]
+#[cfg(all(feature = "cbrt", feature = "source"))]
 pub use self::cbrt::*;
-#[cfg(feature = "sqrt")]
+#[cfg(all(feature = "sqrt", feature = "source"))]
 pub use self::sqrt::*;

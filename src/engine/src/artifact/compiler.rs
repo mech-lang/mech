@@ -4,13 +4,17 @@
 //! and its decoder reconstructs and validates the same artifact; it does not
 //! feed a separate compatibility graph back into this compiler.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
+#[cfg(feature = "semantic-compiler")]
+use std::collections::BTreeSet;
 #[cfg(feature = "semantic-compiler")]
 use std::sync::LazyLock;
 
+#[cfg(feature = "semantic-compiler")]
+use mech_core::MResult;
 use mech_core::{
     ApplicationRequirementId, BindingId, CellSlotId, ConstantId, ConstantStore, InputId,
-    IntegrityConstraintId, MResult, NodeId, OperationContractDeclaration, OperationContractId,
+    IntegrityConstraintId, NodeId, OperationContractDeclaration, OperationContractId,
     OperationContractTable, OutputId, SchemaId, SchemaTable,
 };
 
@@ -27,18 +31,19 @@ use mech_core::{
     DimensionEnvironmentBuilder, DimensionExpr, ExternalInteraction, FunctionCatalog,
     InputPortLayout, InputPortPolicy, KindId, LegacyEmptyPolicy, LegacyExtentRole,
     LegacyExtentSite, LegacyNominalResolution, LegacyReferencePolicy, LegacyResolvedExtent,
-    LegacySemanticContext, LegacySnapshotContext, LegacyValue, NamedKindPathResolver, NominalKind,
+    LegacySemanticContext, LegacySnapshotContext, NamedKindPathResolver, NominalKind,
     OperationContractError, OutputConstruction, OutputPortPolicy, Register, SchemaBody,
     SchemaHandle, SchemaTableBuilder, SemanticModelError, ShapeRule, ValueKind,
     schema_from_legacy_value_kind, snapshot_from_legacy,
 };
 
+#[cfg(feature = "semantic-compiler")]
+use super::ComputeRegionDeclaration;
 use super::{
     ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
-    ComputeRegionDeclaration, InitializerReference, InputDeclaration,
-    IntegrityConstraintDeclaration, InteractiveSymbolBinding, NodeDeclaration, OperationReference,
-    OutputDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration,
-    SlotRole,
+    InitializerReference, InputDeclaration, IntegrityConstraintDeclaration,
+    InteractiveSymbolBinding, NodeDeclaration, OperationReference, OutputDeclaration,
+    ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -837,9 +842,9 @@ fn compile_executable_program_artifact_with_identity(
                     if *dst == register
             )
         });
-        let explicitly_external = definitions
-            .iter()
-            .any(|definition| external_input_names.contains(&definition.name));
+        let explicitly_external = definitions.iter().any(|definition| {
+            definition.root_visible && external_input_names.contains(&definition.name)
+        });
         register_constant_roles[register_index] = Some(if has_mutable {
             CompilerConstantRole::StateInitializer
         } else if explicitly_external

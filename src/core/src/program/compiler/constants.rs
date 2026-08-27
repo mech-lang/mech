@@ -17,7 +17,15 @@ struct ConstantCodecContext {
     depth: usize,
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table"
+    )
+))]
 enum AnnotatedChild {
     Concrete(EncodedConstant),
     AbsentOption { declared: RuntimeType },
@@ -47,7 +55,15 @@ impl ConstantCodecContext {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table"
+    )
+))]
 fn encode_annotated_child(
     value: &LegacyValue,
     declared: &RuntimeType,
@@ -100,7 +116,15 @@ fn encode_annotated_child(
     Ok(AnnotatedChild::Concrete(context.encode_child(value)?))
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table"
+    )
+))]
 fn encode_absent_option(runtime_type: RuntimeType) -> MResult<EncodedConstant> {
     if !matches!(runtime_type, RuntimeType::Option(_)) {
         return Err(unsupported_constant(
@@ -112,7 +136,15 @@ fn encode_absent_option(runtime_type: RuntimeType) -> MResult<EncodedConstant> {
     Ok(encoded_constant(runtime_type, 1, vec![0]))
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table"
+    )
+))]
 fn finalize_annotated_children(
     declared: &RuntimeType,
     children: Vec<AnnotatedChild>,
@@ -371,7 +403,11 @@ fn runtime_type_matches_annotation(actual: &RuntimeType, declared: &RuntimeType)
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "table",
+    feature = "semantic-compiler",
+    not(feature = "vectord")
+))]
 fn unsupported_value_kind(kind: ValueKind, reason: &'static str) -> MResult<u32> {
     Err(unsupported_constant(
         runtime_type_from_value_kind(&kind)?,
@@ -439,12 +475,12 @@ pub trait CompileConst {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32>;
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(feature = "semantic-compiler", feature = "matrix"))]
 struct CapturingConstantContext {
     constant: Option<EncodedConstant>,
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(feature = "semantic-compiler", feature = "matrix"))]
 impl BytecodeCompilerContext for CapturingConstantContext {
     fn register_for_ptr_with_initialization_status(&mut self, _pointer: usize) -> (Register, bool) {
         (0, false)
@@ -528,7 +564,7 @@ impl BytecodeCompilerContext for CapturingConstantContext {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(feature = "semantic-compiler", feature = "matrix"))]
 fn capture_constant<T: CompileConst + ?Sized>(value: &T) -> MResult<EncodedConstant> {
     let mut context = CapturingConstantContext { constant: None };
     value.compile_const(&mut context)?;
@@ -551,7 +587,6 @@ fn encode_constant_value(
     value: &LegacyValue,
     context: &mut ConstantCodecContext,
 ) -> MResult<EncodedConstant> {
-    let _ = context;
     match value {
         #[cfg(any(feature = "bool", feature = "variable_define"))]
         LegacyValue::Bool(value) => Ok(encoded_constant(
@@ -773,14 +808,6 @@ fn encode_constant_value(
             ValueKind::Empty,
             "IndexAll constants do not have a bytecode-v1 encoding",
         )),
-        other => {
-            let kind = other.kind();
-            Err(unsupported_constant(
-                runtime_type_from_value_kind(&kind)?,
-                kind,
-                "the constant value is not yet supported by the bytecode-v1 codec",
-            ))
-        }
     }
 }
 
@@ -798,7 +825,17 @@ fn append_child_payload(payload: &mut Vec<u8>, child: &EncodedConstant) -> MResu
     Ok(())
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "tuple",
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table",
+        feature = "enum"
+    )
+))]
 fn checked_count(
     count: usize,
     runtime_type: RuntimeType,
@@ -1404,6 +1441,16 @@ impl CompileConst for usize {
     }
 }
 
+#[cfg(any(
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128",
+))]
 macro_rules! impl_compile_const {
     ($feature:literal, $t:tt, $runtime_type:ident, $alignment:literal) => {
         paste! {
@@ -1491,203 +1538,6 @@ impl CompileConst for C64 {
             ]
             .concat(),
         })
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-trait MatrixConstantElement: AsValueKind + 'static {
-    fn runtime_type() -> Option<RuntimeType>;
-    fn alignment() -> u8;
-    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()>;
-}
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-macro_rules! impl_matrix_constant_element {
-    ($feature:literal, $type:ty, $runtime_type:ident, $alignment:literal) => {
-        #[cfg(feature = $feature)]
-        impl MatrixConstantElement for $type {
-            fn runtime_type() -> Option<RuntimeType> {
-                Some(RuntimeType::$runtime_type)
-            }
-
-            fn alignment() -> u8 {
-                $alignment
-            }
-
-            fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
-                payload.extend_from_slice(&self.to_le_bytes());
-                Ok(())
-            }
-        }
-    };
-}
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "bool"))]
-impl MatrixConstantElement for bool {
-    fn runtime_type() -> Option<RuntimeType> {
-        Some(RuntimeType::Bool)
-    }
-
-    fn alignment() -> u8 {
-        1
-    }
-
-    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
-        payload.push(if *self { 1 } else { 0 });
-        Ok(())
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("u8", u8, U8, 1);
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("u16", u16, U16, 2);
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("u32", u32, U32, 4);
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("u64", u64, U64, 8);
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("u128", u128, U128, 16);
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("i8", i8, I8, 1);
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("i16", i16, I16, 2);
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("i32", i32, I32, 4);
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("i64", i64, I64, 8);
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl_matrix_constant_element!("i128", i128, I128, 16);
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "f32"))]
-impl MatrixConstantElement for f32 {
-    fn runtime_type() -> Option<RuntimeType> {
-        Some(RuntimeType::F32)
-    }
-
-    fn alignment() -> u8 {
-        4
-    }
-
-    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
-        payload.extend_from_slice(&self.to_bits().to_le_bytes());
-        Ok(())
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "f64"))]
-impl MatrixConstantElement for f64 {
-    fn runtime_type() -> Option<RuntimeType> {
-        Some(RuntimeType::F64)
-    }
-
-    fn alignment() -> u8 {
-        8
-    }
-
-    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
-        payload.extend_from_slice(&self.to_bits().to_le_bytes());
-        Ok(())
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "string"))]
-impl MatrixConstantElement for String {
-    fn runtime_type() -> Option<RuntimeType> {
-        Some(RuntimeType::String)
-    }
-
-    fn alignment() -> u8 {
-        4
-    }
-
-    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
-        let length = u32::try_from(self.len()).map_err(|_| {
-            unsupported_constant(
-                RuntimeType::String,
-                ValueKind::String,
-                "String matrix element length exceeds u32",
-            )
-        })?;
-        payload.extend_from_slice(&length.to_le_bytes());
-        payload.extend_from_slice(self.as_bytes());
-        Ok(())
-    }
-}
-
-#[cfg(all(
-    feature = "matrix",
-    feature = "semantic-compiler",
-    feature = "rational"
-))]
-impl MatrixConstantElement for R64 {
-    fn runtime_type() -> Option<RuntimeType> {
-        Some(RuntimeType::R64)
-    }
-
-    fn alignment() -> u8 {
-        8
-    }
-
-    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
-        payload.extend_from_slice(&self.numer().to_le_bytes());
-        payload.extend_from_slice(&self.denom().to_le_bytes());
-        Ok(())
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "complex"))]
-impl MatrixConstantElement for C64 {
-    fn runtime_type() -> Option<RuntimeType> {
-        Some(RuntimeType::C64)
-    }
-
-    fn alignment() -> u8 {
-        8
-    }
-
-    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
-        payload.extend_from_slice(&self.0.re.to_bits().to_le_bytes());
-        payload.extend_from_slice(&self.0.im.to_bits().to_le_bytes());
-        Ok(())
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl MatrixConstantElement for usize {
-    fn runtime_type() -> Option<RuntimeType> {
-        Some(RuntimeType::Index)
-    }
-
-    fn alignment() -> u8 {
-        8
-    }
-
-    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
-        let value = u64::try_from(*self).map_err(|_| {
-            unsupported_constant(
-                RuntimeType::Index,
-                ValueKind::Index,
-                "Index matrix element cannot be represented as u64",
-            )
-        })?;
-        payload.extend_from_slice(&value.to_le_bytes());
-        Ok(())
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
-impl MatrixConstantElement for LegacyValue {
-    fn runtime_type() -> Option<RuntimeType> {
-        None
-    }
-
-    fn alignment() -> u8 {
-        1
-    }
-
-    fn encode_matrix_element(&self, _payload: &mut Vec<u8>) -> MResult<()> {
-        unreachable!("Matrix<Value> constants are rejected before their elements are encoded")
     }
 }
 
@@ -1835,6 +1685,23 @@ fn encode_matrix_element<T: 'static>(
     }
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "matrixd",
+    feature = "vectord",
+    feature = "row_vectord"
+))]
 macro_rules! impl_compile_const_matrix {
     ($matrix_type:ty, $storage:expr) => {
         #[cfg(feature = "semantic-compiler")]

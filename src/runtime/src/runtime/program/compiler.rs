@@ -466,6 +466,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &operations,
+            #[cfg(feature = "compute")]
             compute_interface: None,
             #[cfg(feature = "compute")]
             compute_activation_inputs: BTreeMap::new(),
@@ -540,6 +541,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &operations,
+            #[cfg(feature = "compute")]
             compute_interface,
             #[cfg(feature = "compute")]
             compute_activation_inputs: BTreeMap::new(),
@@ -754,6 +756,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &operations,
+            #[cfg(feature = "compute")]
             compute_interface: None,
             #[cfg(feature = "compute")]
             compute_activation_inputs: BTreeMap::new(),
@@ -1262,6 +1265,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &resource_send_operations,
+            #[cfg(feature = "compute")]
             compute_interface,
             #[cfg(feature = "compute")]
             compute_activation_inputs: BTreeMap::new(),
@@ -2077,6 +2081,7 @@ fn install_environment(
 struct CompilerPlanningServices<'a> {
     providers: &'a RuntimeResourceRegistry,
     resource_send_operations: &'a [CompiledResourceSendOperation],
+    #[cfg(feature = "compute")]
     compute_interface: Option<&'a ComputeRegionInterface>,
     #[cfg(feature = "compute")]
     compute_activation_inputs: BTreeMap<String, ComputeValue>,
@@ -2321,6 +2326,7 @@ fn plan_compute_write(
     Ok(Some((name.to_owned(), value)))
 }
 
+#[cfg(feature = "compute")]
 fn compute_planning_error(message: impl Into<String>) -> MechError {
     route_failure(
         ResidentRouteFailureClass::InvalidArtifact,

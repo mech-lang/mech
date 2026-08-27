@@ -21,6 +21,10 @@ use mech_runtime::{
     RuntimeWorkspaceWatchEvent, SERVE_HOST_SUBJECT, ServerWorkspaceSession, SourceKind,
     SourceResolutionEntry, check_fs_capability, validate_source_resolution_entries,
 };
+use mech_syntax::{
+    formatter::{Formatter, HtmlShimExtraSlots, HtmlStyleSheets, validate_shipped_shim_render},
+    parser,
+};
 use warp::Filter;
 
 use crate::*;
@@ -689,6 +693,7 @@ pub struct MechServer {
     registry: Arc<RwLock<ServerSourceRegistry>>,
     events: Arc<RwLock<Vec<RuntimeEvent>>>,
     workspace_session: Option<Arc<Mutex<ServerWorkspaceSession>>>,
+    workspace_changed: Arc<tokio::sync::Notify>,
     workspace_root: Option<PathBuf>,
     project_overlay: Option<ConfiguredProjectOverlay>,
     js: Vec<u8>,
@@ -727,8 +732,7 @@ impl ServerShutdown {
         {
             return false;
         }
-        let _ = self.sender.send(true);
-        true
+        self.sender.send(true).is_ok()
     }
 }
 
@@ -854,6 +858,7 @@ impl MechServer {
             registry: Arc::new(RwLock::new(ServerSourceRegistry::default())),
             events: Arc::new(RwLock::new(Vec::new())),
             workspace_session: None,
+            workspace_changed: Arc::new(tokio::sync::Notify::new()),
             workspace_root: None,
             project_overlay: None,
             js,
@@ -1158,6 +1163,10 @@ impl MechServer {
                 self.runtime_config.clone(),
                 mech_stdlib::source_catalog(),
             )?;
+        let workspace_changed = self.workspace_changed.clone();
+        session.set_watch_event_notifier(move || workspace_changed.notify_one());
+        // Drain any events queued while the workspace and notifier were being set up.
+        self.workspace_changed.notify_one();
         println!(
             "{} Runtime workspace session opened in {:?}.",
             self.badge(),
@@ -1323,17 +1332,16 @@ impl MechServer {
         let (_addr, server) =
             warp::serve(routes).bind_with_graceful_shutdown(socket_address, async move {
                 if !*server_shutdown_rx.borrow() {
-                    let _ = server_shutdown_rx.changed().await;
+                    drop(server_shutdown_rx.changed().await);
                 }
             });
         if let (Some(session), Some(root)) = (&self.workspace_session, &root) {
             let html_shim = self.injected_html_shim()?;
             let generated_html_backing_paths = self.generated_html_backing_paths();
-            let mut interval = tokio::time::interval(std::time::Duration::from_millis(100));
             tokio::pin!(server);
             let requested = loop {
                 tokio::select! {
-                  _ = interval.tick() => {
+                  _ = self.workspace_changed.notified() => {
                     if let Err(error) = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheets, &html_shim, &generated_html_backing_paths, project_overlay.as_ref(), server_event_retention(&self.runtime_config)) {
                       eprintln!("[Mech Server] Workspace poll failed: {:?}", error);
                     }
@@ -1415,6 +1423,9 @@ fn poll_workspace_once(
         max_events,
     };
     let poll = session.poll_and_emit(module_options(), &mut sink)?;
+    if poll.events.is_empty() && poll.refresh.is_none() {
+        return Ok(());
+    }
     if !poll.events.is_empty() {
         println!("[Mech Server] Watch events: {}", poll.events.len());
         for event in &poll.events {
@@ -2893,7 +2904,9 @@ mod tests {
                 let server_future = server.serve_until_shutdown(shutdown_rx);
                 let shutdown_future = async move {
                     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-                    let _ = shutdown_tx.send(true);
+                    shutdown_tx
+                        .send(true)
+                        .expect("test server shutdown receiver must remain live");
                 };
 
                 tokio::time::timeout(std::time::Duration::from_secs(2), async move {
@@ -4213,6 +4226,52 @@ mod tests {
             .map(|event| event.id)
             .collect::<Vec<_>>();
         assert_eq!(ids, vec![EventId(2), EventId(3)]);
+    }
+
+    #[test]
+    fn empty_workspace_poll_does_not_clone_the_served_registry() {
+        let root = temp_root("empty-poll-registry");
+        let session =
+            ServerWorkspaceSession::open(&root, vec![], vec![], module_options()).unwrap();
+        let session = Arc::new(Mutex::new(session));
+
+        let mut served = ServerSourceRegistry::default();
+        served.insert_asset("known.txt", asset(b"known", "text/plain", None, Vec::new()));
+        let registry = Arc::new(RwLock::new(served));
+        let original_bytes = registry
+            .read()
+            .unwrap()
+            .assets
+            .get("known.txt")
+            .unwrap()
+            .bytes
+            .as_ptr();
+
+        poll_workspace_once(
+            &session,
+            &registry,
+            &Arc::new(RwLock::new(Vec::new())),
+            &root,
+            &HtmlStyleSheets::default(),
+            "",
+            &[],
+            None,
+            None,
+        )
+        .unwrap();
+
+        let current_bytes = registry
+            .read()
+            .unwrap()
+            .assets
+            .get("known.txt")
+            .unwrap()
+            .bytes
+            .as_ptr();
+        assert_eq!(current_bytes, original_bytes);
+
+        drop(session);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

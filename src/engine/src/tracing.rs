@@ -1,3 +1,4 @@
+#[cfg(any(feature = "trace", feature = "state_machines"))]
 use crate::*;
 
 #[cfg(feature = "trace")]
@@ -84,10 +85,12 @@ fn push_json_string(out: &mut String, value: &str) {
     out.push('"');
 }
 
+#[cfg(all(feature = "semantic-compiler", feature = "trace"))]
 pub(crate) fn format_trace(scope: &str, message: String) -> String {
     format!("[trace][{scope}] {message}")
 }
 
+#[cfg(all(feature = "semantic-compiler", feature = "trace"))]
 pub(crate) fn format_trace_args(values: &Vec<LegacyValue>) -> String {
     values
         .iter()
@@ -96,12 +99,14 @@ pub(crate) fn format_trace_args(values: &Vec<LegacyValue>) -> String {
         .join(", ")
 }
 
+#[cfg(all(feature = "semantic-compiler", feature = "trace"))]
 pub(crate) fn summarize_function_value(value: &LegacyValue) -> String {
     const MAX_TRACE_CHARS: usize = 96;
     let rendered = trace_single_line_text(&summarize_function_value_compact(value, 0));
     trace_truncate(&rendered, MAX_TRACE_CHARS)
 }
 
+#[cfg(all(feature = "semantic-compiler", feature = "trace"))]
 fn summarize_function_value_compact(value: &LegacyValue, depth: usize) -> String {
     if depth > 2 {
         return format!("{}(..)", value.kind().to_string());
@@ -139,7 +144,7 @@ fn summarize_function_value_compact(value: &LegacyValue, depth: usize) -> String
     }
 }
 
-#[cfg(feature = "tuple")]
+#[cfg(all(feature = "semantic-compiler", feature = "trace", feature = "tuple"))]
 fn summarize_function_tuple_value(tuple_ref: &Ref<MechTuple>, depth: usize) -> String {
     let tuple = tuple_ref.borrow();
     let mut parts = Vec::new();
@@ -157,10 +162,12 @@ fn summarize_function_tuple_value(tuple_ref: &Ref<MechTuple>, depth: usize) -> S
     )
 }
 
+#[cfg(all(feature = "semantic-compiler", feature = "trace"))]
 fn trace_short_addr(addr: usize) -> u16 {
     (addr & 0xffff) as u16
 }
 
+#[cfg(all(feature = "semantic-compiler", feature = "trace"))]
 pub(crate) fn summarize_values_with_kinds(values: &Vec<LegacyValue>) -> String {
     values
         .iter()
@@ -176,6 +183,7 @@ pub(crate) fn summarize_values_with_kinds(values: &Vec<LegacyValue>) -> String {
         .join(", ")
 }
 
+#[cfg(all(feature = "semantic-compiler", feature = "trace"))]
 pub(crate) fn summarize_function_pattern(pattern: &Pattern) -> String {
     match pattern {
         Pattern::Wildcard => "_".to_string(),
@@ -202,6 +210,7 @@ pub(crate) fn summarize_function_pattern(pattern: &Pattern) -> String {
     }
 }
 
+#[cfg(all(feature = "semantic-compiler", feature = "trace"))]
 fn trace_truncate(text: &str, max_chars: usize) -> String {
     let text = trace_single_line_text(text);
     if text.chars().count() <= max_chars {
@@ -212,18 +221,22 @@ fn trace_truncate(text: &str, max_chars: usize) -> String {
     truncated
 }
 
+#[cfg(all(
+    feature = "trace",
+    any(feature = "semantic-compiler", feature = "state_machines")
+))]
 fn trace_single_line_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 pub fn summarize_value(value: &LegacyValue) -> String {
     const MAX_TRACE_CHARS: usize = 1000;
     let rendered = trace_single_line_text(&summarize_value_compact(value, 0));
     truncate_for_trace(&rendered, MAX_TRACE_CHARS)
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 fn summarize_value_compact(value: &LegacyValue, depth: usize) -> String {
     if depth > 2 {
         return format!("{}(..)", value.kind().to_string());
@@ -253,7 +266,7 @@ fn summarize_value_compact(value: &LegacyValue, depth: usize) -> String {
     }
 }
 
-#[cfg(all(feature = "state_machines", feature = "tuple"))]
+#[cfg(all(feature = "state_machines", feature = "trace", feature = "tuple"))]
 fn summarize_tuple_value(tuple_ref: &Ref<MechTuple>, depth: usize) -> String {
     let tuple = tuple_ref.borrow();
     if let Some(first) = tuple.elements.first() {
@@ -295,7 +308,7 @@ fn summarize_tuple_value(tuple_ref: &Ref<MechTuple>, depth: usize) -> String {
     )
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 fn short_addr(addr: usize) -> u16 {
     (addr & 0xffff) as u16
 }
@@ -329,7 +342,7 @@ pub fn summarize_pattern(pattern: &Pattern) -> String {
     }
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 pub fn summarize_guard_condition(pattern: &Pattern) -> String {
     match pattern {
         Pattern::Wildcard => "*".to_string(),
@@ -338,7 +351,7 @@ pub fn summarize_guard_condition(pattern: &Pattern) -> String {
     }
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 fn summarize_expression(expr: &Expression) -> String {
     match expr {
         Expression::Formula(factor) => summarize_factor(factor),
@@ -348,7 +361,7 @@ fn summarize_expression(expr: &Expression) -> String {
     }
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 fn summarize_factor(factor: &Factor) -> String {
     match factor {
         Factor::Expression(expr) => summarize_expression(expr),
@@ -360,7 +373,7 @@ fn summarize_factor(factor: &Factor) -> String {
     }
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 fn summarize_term(term: &Term) -> String {
     let mut out = summarize_factor(&term.lhs);
     for (op, rhs) in &term.rhs {
@@ -372,7 +385,7 @@ fn summarize_term(term: &Term) -> String {
     out
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 fn summarize_literal(lit: &Literal) -> String {
     match lit {
         Literal::Number(number) => number.to_string(),
@@ -383,7 +396,7 @@ fn summarize_literal(lit: &Literal) -> String {
     }
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 fn formula_operator_symbol(op: &FormulaOperator) -> &'static str {
     match op {
         FormulaOperator::Comparison(ComparisonOp::Equal) => "==",
@@ -418,7 +431,7 @@ fn truncate_for_trace(text: &str, max_chars: usize) -> String {
     truncated
 }
 
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "state_machines", feature = "trace"))]
 pub fn format_fsm_trace(label: &str, message: String) -> String {
     format!("[trace][fsm][{label:>6}] {message}")
 }

@@ -1,11 +1,10 @@
-#[macro_use]
 pub use crate::*;
 #[cfg(feature = "lgamma")]
 pub mod lgamma;
 #[cfg(feature = "tgamma")]
 pub mod tgamma;
 
-#[cfg(feature = "lgamma")]
+#[cfg(all(feature = "lgamma", feature = "source"))]
 pub use self::lgamma::*;
-#[cfg(feature = "tgamma")]
+#[cfg(all(feature = "tgamma", feature = "source"))]
 pub use self::tgamma::*;

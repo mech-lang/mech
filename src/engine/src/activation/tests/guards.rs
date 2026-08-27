@@ -1,10 +1,9 @@
 use super::support::{
-    ActivationPatternGuardMustBePure, Arc, AtomicUsize, EagerGuardTestSpecializer, LegacyValue,
-    Ordering, Pattern, ReactiveDependencyKind, Ref, arm_pulse_generation, assert_dispatch_turn,
-    body_output_f64, committed_capture_value, hash_str, install_function_extension, interpret,
-    interpret_more, plan_snapshot, proposed_capture_value, registration, root_cell,
-    selected_arm_index, set_atom_tuple_event, set_f64_matrix_event, symbol, turn_changed_nodes,
-    turn_executed_nodes, turn_unchanged_nodes,
+    Arc, AtomicUsize, EagerGuardTestSpecializer, LegacyValue, Ordering, Pattern,
+    ReactiveDependencyKind, Ref, arm_pulse_generation, assert_dispatch_turn, body_output_f64,
+    committed_capture_value, install_function_extension, interpret, interpret_more, plan_snapshot,
+    proposed_capture_value, registration, root_cell, selected_arm_index, set_atom_tuple_event,
+    set_f64_matrix_event, symbol, turn_changed_nodes, turn_executed_nodes, turn_unchanged_nodes,
 };
 
 #[test]

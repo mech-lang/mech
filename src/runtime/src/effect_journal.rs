@@ -42,12 +42,14 @@ pub(in crate::runtime) struct RuntimeEffectStepFailure {
 }
 
 #[derive(Debug)]
+#[cfg(feature = "resident-external")]
 pub(in crate::runtime) struct RuntimeEffectStageFailure {
     pub(in crate::runtime) error: MechError,
     pub(in crate::runtime) cleanup: Vec<RuntimeEffectFailure>,
 }
 
 #[derive(Debug)]
+#[cfg(feature = "resident-external")]
 pub(in crate::runtime) struct RuntimeAfterCommitValidationFailure {
     pub(in crate::runtime) failure: RuntimeEffectFailure,
     pub(in crate::runtime) cleanup: Vec<RuntimeEffectFailure>,
@@ -144,6 +146,7 @@ impl RuntimeEffectJournal {
             .collect()
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn abortable_ids_after(&self, mark: usize) -> Vec<RuntimeEffectId> {
         self.entries
             .get(mark..)
@@ -195,12 +198,12 @@ impl RuntimeEffectJournal {
         failures
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "source"))]
     pub(in crate::runtime) fn len(&self) -> usize {
         self.entries.len()
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "source"))]
     pub(in crate::runtime) fn next_sequence(&self) -> u64 {
         self.next_sequence
     }
@@ -213,6 +216,7 @@ impl RuntimeEffectJournal {
         self.stage_entry(transaction, effect, None)
     }
 
+    #[cfg(feature = "resident-external")]
     pub(in crate::runtime) fn stage_exact(
         &mut self,
         id: RuntimeEffectId,
@@ -535,6 +539,7 @@ impl RuntimeEffectJournal {
         failures
     }
 
+    #[cfg(feature = "resident-external")]
     pub(in crate::runtime) fn deliver_after_commit_exact(
         &mut self,
         id: RuntimeEffectId,
@@ -549,6 +554,7 @@ impl RuntimeEffectJournal {
         deliver_prepared_after_commit(id, &mut entry.effect)
     }
 
+    #[cfg(feature = "resident-external")]
     pub(in crate::runtime) fn validate_after_commit_exact(
         &mut self,
         id: RuntimeEffectId,
@@ -567,6 +573,7 @@ impl RuntimeEffectJournal {
     }
 }
 
+#[cfg(feature = "resident-external")]
 pub(in crate::runtime) fn validate_prepared_after_commit(
     id: RuntimeEffectId,
     effect: &mut PreparedRuntimeEffect,
@@ -610,6 +617,7 @@ pub(in crate::runtime) fn validate_prepared_after_commit(
     })
 }
 
+#[cfg(feature = "resident-external")]
 pub(in crate::runtime) fn deliver_prepared_after_commit(
     id: RuntimeEffectId,
     effect: &mut PreparedRuntimeEffect,

@@ -15,34 +15,6 @@
   <style data-mech-style-layer="repl">{{MECH_REPL_STYLESHEET}}</style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="header-inner">
-      <div class="brand">
-        <a href="https://mech-lang.org" aria-label="Mech home">
-          <img src="https://mech-lang.org/img/logo.png" alt="Mech Programming Language" height="35">
-        </a>
-      </div>
-      <nav class="top-nav" aria-label="Primary">
-        <a href="https://about.mech-lang.org">About</a>
-        <a href="https://mech-lang.org/blog" class="active" aria-current="page">Blog</a>
-        <a href="https://mech-lang.org/community">Community</a>
-        <a href="https://docs.mech-lang.org">Docs</a>
-        <a href="https://try.mech-lang.org">Explore</a>
-      </nav>
-      <div class="header-actions">
-        <div class="widget widget-lg">
-          <a class="btn" href="https://github.com/mech-lang/mech" rel="noopener" target="_blank" aria-label="View mech-lang/mech on GitHub">
-            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-              <path fill="currentColor" d="M6.766 11.328c-2.063-.25-3.516-1.734-3.516-3.656 0-.781.281-1.625.75-2.188-.203-.515-.172-1.609.063-2.062.625-.078 1.468.25 1.968.703.594-.187 1.219-.281 1.985-.281.765 0 1.39.094 1.953.265.484-.437 1.344-.765 1.969-.687.218.422.25 1.515.046 2.047.5.593.766 1.39.766 2.203 0 1.922-1.453 3.375-3.547 3.64.531.344.89 1.094.89 1.954v1.625c0 .468.391.734.86.547C13.781 14.359 16 11.53 16 8.03 16 3.61 12.406 0 7.984 0 3.563 0 0 3.61 0 8.031a7.88 7.88 0 0 0 5.172 7.422c.422.156.828-.125.828-.547v-1.25c-.219.094-.5.156-.75.156-1.031 0-1.64-.562-2.078-1.609-.172-.422-.36-.672-.719-.719-.187-.015-.25-.093-.25-.187 0-.188.313-.328.625-.328.453 0 .844.281 1.25.86.313.452.64.655 1.031.655s.641-.14 1-.5c.266-.265.47-.5.657-.656"></path>
-            </svg>
-            <span>GitHub</span>
-          </a>
-          <a class="social-count" href="https://github.com/mech-lang/mech/stargazers" rel="noopener" target="_blank" aria-label="View Mech stargazers">Stars</a>
-        </div>
-      </div>
-    </div>
-  </header>
-
   <main
     class="workspace mech-root"
     id="workspace"
@@ -55,18 +27,6 @@
     data-mech-repl-host>
     <section class="content-shell" id="contentShell">
       <div class="content-column">
-        <nav class="breadcrumbs" aria-label="Breadcrumb">
-          <a href="https://mech-lang.org" aria-label="Mech home">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-          </a>
-          <span class="sep" aria-hidden="true">⟩</span>
-          <a href="https://mech-lang.org/blog">Blog</a>
-          <span class="sep" aria-hidden="true">⟩</span>
-          <a href="https://mech-lang.org/blog/announcements">{{KICKER}}</a>
-          <span class="sep" aria-hidden="true">⟩</span>
-          <span aria-current="page">{{TITLE}}</span>
-        </nav>
-
         <section class="hero" aria-labelledby="document-title">
           <div class="hero-panel">
             <div class="hero-heading">
@@ -90,8 +50,6 @@
           </article>
         </div>
 
-        <div class="mika-separator" aria-hidden="true"></div>
-
         <section class="article-backmatter" aria-label="Notes and Works Cited">
           <div class="backmatter-row backmatter-notes">
             <div class="backmatter-body" data-mechdown>{{FOOTNOTES}}</div>
@@ -101,91 +59,6 @@
           </div>
         </section>
 
-        <nav class="post-pagination" aria-label="Post navigation">
-          <div class="post-pagination-prev">
-            <span class="post-pagination-label">Previous post</span>
-            {{PREVIOUS}}
-          </div>
-          <div class="post-pagination-next">
-            <span class="post-pagination-label">Next post</span>
-            {{NEXT}}
-          </div>
-        </nav>
-
-        <footer class="footer">
-          <div class="footer-inner">
-            <div class="footer-main">
-              <div class="footer-robot">
-                <img src="https://gitlab.com/mech-lang/assets/-/raw/main/images/mika/mika-pose-point.png?ref_type=heads" alt="Mika the Mech">
-                <div class="mika-glyph" aria-hidden="true">
-                  <div class="mika-glyph-art-wrap">
-                    <pre class="mika-glyph-art mika-glyph-art--mini">╭(˙◯˙)─</pre>
-                    <pre class="mika-glyph-art mika-glyph-art--micro">╭⦿─</pre>
-                  </div>
-                </div>
-              </div>
-
-              <div class="footer-links">
-                <div class="footer-group">
-                  <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><span class="footer-heading-text">Platform</span></div>
-                  <a href="https://mech-lang.org">Mech</a>
-                  <a href="https://docs.mech-lang.org">Mechdown</a>
-                  <a href="https://mech-lang.org/blog">Mika</a>
-                  <a href="https://docs.mech-lang.org">Standard Library</a>
-                </div>
-
-                <div class="footer-group">
-                  <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg></span><span class="footer-heading-text">Community</span></div>
-                  <a href="https://groups.google.com/g/mechtalk">Mailing List</a>
-                  <a href="https://discord.gg/asqP25NNTH">Discord</a>
-                  <a href="https://github.com/mech-lang">GitHub</a>
-                  <a href="https://www.youtube.com/@MechLang">YouTube</a>
-                </div>
-
-                <div class="footer-group">
-                  <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M16 12h2"/><path d="M16 8h2"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/><path d="M6 12h2"/><path d="M6 8h2"/></svg></span><span class="footer-heading-text">Resources</span></div>
-                  <a href="https://docs.mech-lang.org/getting-started/index.html">Getting Started</a>
-                  <a href="https://docs.mech-lang.org/reference/index.html">Reference</a>
-                  <a href="https://docs.mech-lang.org/design/index.html">Design</a>
-                  <a href="https://docs.mech-lang.org/guides/index.html">Guides</a>
-                </div>
-              </div>
-
-              <div class="footer-release">
-                <div class="release-ack">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="footer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
-                  <a href="https://github.com/mech-lang/mech/releases/latest">Latest Release</a>
-                </div>
-                <div class="release-grid-row">
-                  <div class="release-grid-label">Version:</div>
-                  <div class="release-grid-value"><a href="https://github.com/mech-lang/mech/releases/latest">v{{VERSION}}-beta</a></div>
-                </div>
-                <div class="release-grid-row">
-                  <div class="release-grid-label">Channel:</div>
-                  <div class="release-grid-value">Beta</div>
-                </div>
-                <div class="release-grid-row">
-                  <div class="release-grid-label">License:</div>
-                  <div class="release-grid-value"><a href="https://github.com/mech-lang/mech?tab=Apache-2.0-1-ov-file#readme">Apache 2.0</a></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="footer-meta">
-              <div class="footer-pride">
-                Built with
-                <span aria-label="pride">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                    <path d="M2 17a10 10 0 0 1 20 0" style="stroke:var(--mech-accent-purple)"/>
-                    <path d="M5 17a7 7 0 0 1 14 0" style="stroke:var(--mech-accent-blue)"/>
-                    <path d="M8 17a4 4 0 0 1 8 0" style="stroke:var(--mech-accent-green)"/>
-                  </svg>
-                </span>
-                in Pennsylvania
-              </div>
-            </div>
-          </div>
-        </footer>
       </div>
     </section>
 

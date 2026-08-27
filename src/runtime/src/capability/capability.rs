@@ -257,8 +257,7 @@ pub trait Capability: std::fmt::Debug + Send + Sync {
     ///
     /// Implementations may choose to support delegation, attenuation, both, or
     /// neither. The default denies derivation.
-    fn derive_capability(&self, request: &CapabilityDerivation) -> MResult<Arc<dyn Capability>> {
-        let _ = request;
+    fn derive_capability(&self, _: &CapabilityDerivation) -> MResult<Arc<dyn Capability>> {
         Err(MechError::new(
             CapabilityDerivationUnsupportedError {
                 capability: self.id(),

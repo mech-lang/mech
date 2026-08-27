@@ -1,25 +1,20 @@
 error[E0599]: no method named `program` found for struct `MechRuntime` in the current scope
- --> tests/ui/sealed/runtime_component_access.rs:5:19
+ --> tests/ui/sealed/runtime_component_access.rs:5:16
   |
-5 |   let _ = runtime.program();
-  |                   ^^^^^^^
-  |
-help: there is a method `program_route` with a similar name
-  |
-5 |   let _ = runtime.program_route();
-  |                          ++++++
+5 |   drop(runtime.program());
+  |                ^^^^^^^ method not found in `MechRuntime`
 
 error[E0599]: no method named `take_program` found for struct `MechRuntime` in the current scope
- --> tests/ui/sealed/runtime_component_access.rs:6:19
+ --> tests/ui/sealed/runtime_component_access.rs:6:16
   |
-6 |   let _ = runtime.take_program();
-  |                   ^^^^^^^^^^^^ method not found in `MechRuntime`
+6 |   drop(runtime.take_program());
+  |                ^^^^^^^^^^^^ method not found in `MechRuntime`
 
 error[E0624]: method `capability_kernel_mut` is private
- --> tests/ui/sealed/runtime_component_access.rs:7:19
+ --> tests/ui/sealed/runtime_component_access.rs:7:16
   |
-7 |   let _ = runtime.capability_kernel_mut();
-  |                   ^^^^^^^^^^^^^^^^^^^^^ private method
+7 |   drop(runtime.capability_kernel_mut());
+  |                ^^^^^^^^^^^^^^^^^^^^^ private method
   |
  ::: src/runtime/components.rs
   |

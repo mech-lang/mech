@@ -1,6 +1,4 @@
-#[macro_use]
 use crate::intrinsics::*;
-use self::assign::*;
 
 // x.a = 1 --------------------------------------------------------------------
 
@@ -210,7 +208,7 @@ impl FunctionSpecializer for AssignRecordField {
                 (LegacyValue::MutableReference(sink), _, _) => {
                     impl_set_record_column_fxn(sink.borrow().clone(), source.clone(), key.clone())
                 }
-                x => Err(MechError::new(
+                _ => Err(MechError::new(
                     UnhandledFunctionArgumentKind3 {
                         arg: (
                             arguments[0].kind(),

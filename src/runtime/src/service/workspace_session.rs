@@ -1,6 +1,10 @@
-use std::{path::PathBuf, sync::Arc};
+use std::path::PathBuf;
+#[cfg(feature = "resident-routing")]
+use std::sync::Arc;
 
-use mech_core::{FunctionCatalog, MResult};
+#[cfg(feature = "resident-routing")]
+use mech_core::FunctionCatalog;
+use mech_core::MResult;
 
 use crate::{
     DefaultIdGenerator, EventSink, FileSourceResolver, IdGenerator, MechRuntime,
@@ -25,15 +29,16 @@ impl ServerWorkspaceSession {
         folders: Vec<RuntimeWorkspaceFolder>,
         options: ModuleBuildOptions,
     ) -> MResult<Self> {
-        Self::open_with_function_catalog(
-            root,
+        Self::open_with_builder(
+            root.into(),
             targets,
             folders,
             options,
-            mech_engine::empty_function_catalog(),
+            RuntimeBuilder::new(),
         )
     }
 
+    #[cfg(feature = "resident-routing")]
     pub fn open_with_function_catalog(
         root: impl Into<PathBuf>,
         targets: Vec<RuntimeWorkspaceTarget>,
@@ -41,9 +46,23 @@ impl ServerWorkspaceSession {
         options: ModuleBuildOptions,
         function_catalog: Arc<FunctionCatalog>,
     ) -> MResult<Self> {
-        let root = root.into();
-        let mut runtime = RuntimeBuilder::new()
-            .function_catalog(function_catalog)
+        Self::open_with_builder(
+            root.into(),
+            targets,
+            folders,
+            options,
+            RuntimeBuilder::new().function_catalog(function_catalog),
+        )
+    }
+
+    fn open_with_builder(
+        root: PathBuf,
+        targets: Vec<RuntimeWorkspaceTarget>,
+        folders: Vec<RuntimeWorkspaceFolder>,
+        options: ModuleBuildOptions,
+        builder: RuntimeBuilder,
+    ) -> MResult<Self> {
+        let mut runtime = builder
             .source_resolver(FileSourceResolver::new(&root))
             .build()?;
         let mut config = RuntimeWorkspaceConfig::new(&root);
@@ -97,18 +116,18 @@ impl ServerWorkspaceSession {
         capability_subject: impl Into<String>,
         runtime_config: RuntimeConfig,
     ) -> MResult<Self> {
-        Self::open_with_capabilities_config_and_function_catalog(
-            root,
+        Self::open_with_capabilities_builder(
+            root.into(),
             targets,
             folders,
             options,
             capability_kernel,
-            capability_subject,
-            runtime_config,
-            mech_engine::empty_function_catalog(),
+            capability_subject.into(),
+            RuntimeBuilder::new().config(runtime_config),
         )
     }
 
+    #[cfg(feature = "resident-routing")]
     pub fn open_with_capabilities_config_and_function_catalog(
         root: impl Into<PathBuf>,
         targets: Vec<RuntimeWorkspaceTarget>,
@@ -119,11 +138,29 @@ impl ServerWorkspaceSession {
         runtime_config: RuntimeConfig,
         function_catalog: Arc<FunctionCatalog>,
     ) -> MResult<Self> {
-        let root = root.into();
-        let capability_subject = capability_subject.into();
-        let mut runtime = RuntimeBuilder::new()
-            .config(runtime_config)
-            .function_catalog(function_catalog)
+        Self::open_with_capabilities_builder(
+            root.into(),
+            targets,
+            folders,
+            options,
+            capability_kernel,
+            capability_subject.into(),
+            RuntimeBuilder::new()
+                .config(runtime_config)
+                .function_catalog(function_catalog),
+        )
+    }
+
+    fn open_with_capabilities_builder(
+        root: PathBuf,
+        targets: Vec<RuntimeWorkspaceTarget>,
+        folders: Vec<RuntimeWorkspaceFolder>,
+        options: ModuleBuildOptions,
+        capability_kernel: SharedCapabilityKernel,
+        capability_subject: String,
+        builder: RuntimeBuilder,
+    ) -> MResult<Self> {
+        let mut runtime = builder
             .capability_kernel(capability_kernel.clone())
             .source_resolver(
                 FileSourceResolver::new(&root)
@@ -167,6 +204,10 @@ impl ServerWorkspaceSession {
 
     pub fn watcher(&self) -> &RuntimeWorkspaceWatcher {
         &self.watcher
+    }
+
+    pub fn set_watch_event_notifier(&mut self, notifier: impl Fn() + Send + Sync + 'static) {
+        self.watcher.set_event_notifier(notifier);
     }
 
     pub fn snapshot(&self) -> Option<&RuntimeWorkspaceSnapshot> {
@@ -454,6 +495,54 @@ mod tests {
 
         assert!(poll.events.is_empty());
         assert!(poll.refresh.is_none());
+    }
+
+    #[test]
+    fn server_workspace_session_notifies_when_a_watch_event_is_queued() {
+        let root = setup_session_root();
+        let main = root.join("main.mec");
+        std::fs::write(&main, "result := false\n").unwrap();
+        let main = main.canonicalize().unwrap();
+
+        let mut session = ServerWorkspaceSession::open(
+            &root,
+            vec![main_target()],
+            vec![recursive_root_folder()],
+            module_options(),
+        )
+        .unwrap();
+        session.poll(module_options()).unwrap();
+
+        let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+        session.set_watch_event_notifier(move || {
+            if sender.try_send(()).is_err() {
+                // The single-slot test signal is already queued or disconnected.
+            }
+        });
+        std::fs::write(&main, "result := true\n").unwrap();
+
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        let saw_main_event = loop {
+            let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+            if remaining.is_zero() || receiver.recv_timeout(remaining).is_err() {
+                break false;
+            }
+            let poll = session.poll(module_options()).unwrap();
+            if poll
+                .events
+                .iter()
+                .any(|event| event.path.canonicalize().ok().as_ref() == Some(&main))
+            {
+                break true;
+            }
+        };
+        assert!(
+            saw_main_event,
+            "filesystem event did not wake the workspace session"
+        );
+
+        drop(session);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

@@ -389,7 +389,7 @@ mod tests {
 
     #[test]
     fn robot_provider_rejects_command_subpaths() {
-        let mut provider = RobotArmResourceProvider::new("arm");
+        let provider = RobotArmResourceProvider::new("arm");
         for (operation, path) in [
             ("move", "move/typo"),
             ("grip", "grip/closed"),
@@ -406,7 +406,7 @@ mod tests {
 
     #[test]
     fn robot_provider_rejects_mismatched_operation_and_path() {
-        let mut provider = RobotArmResourceProvider::new("arm");
+        let provider = RobotArmResourceProvider::new("arm");
         for (operation, path) in [("move", "grip"), ("grip", "move")] {
             let error = provider
                 .prepare_write(send_request(operation, path))
@@ -423,7 +423,7 @@ mod tests {
 
     #[test]
     fn robot_provider_rejects_assignment_and_unsupported_operation() {
-        let mut provider = RobotArmResourceProvider::new("arm");
+        let provider = RobotArmResourceProvider::new("arm");
         assert!(
             provider
                 .prepare_write(RuntimeResourceWriteRequest {

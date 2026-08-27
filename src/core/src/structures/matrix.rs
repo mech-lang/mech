@@ -5,7 +5,12 @@ use core::{any::Any, cell};
 #[cfg(not(feature = "no_std"))]
 use std::{any::Any, cell};
 
-use nalgebra::{DMatrix, DVector, RowDVector};
+#[cfg(feature = "matrixd")]
+use nalgebra::DMatrix;
+#[cfg(feature = "vectord")]
+use nalgebra::DVector;
+#[cfg(feature = "row_vectord")]
+use nalgebra::RowDVector;
 
 // Matrix ---------------------------------------------------------------------
 
@@ -46,22 +51,30 @@ macro_rules! impl_to_matrix {
                     #[cfg(feature = "vector4")]
                     (4, 1) => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
                     #[cfg(feature = "row_vectord")]
-                    (1, n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
+                    (1, _) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
                     #[cfg(feature = "vectord")]
-                    (m, 1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+                    (_, 1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
                     #[cfg(feature = "matrixd")]
                     (m, n) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(m, n, elements))),
+                    #[cfg(not(feature = "matrixd"))]
                     _ => panic!("Cannot convert to matrix with rows: {rows} and cols: {cols}"),
                 }
             }
             fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
+                #[cfg(not(any(
+                    feature = "row_vectord",
+                    feature = "vectord",
+                    feature = "matrixd"
+                )))]
+                drop(elements);
                 match (rows, cols) {
                     #[cfg(feature = "row_vectord")]
-                    (1, n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
+                    (1, _) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
                     #[cfg(feature = "vectord")]
-                    (m, 1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+                    (_, 1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
                     #[cfg(feature = "matrixd")]
                     (m, n) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(m, n, elements))),
+                    #[cfg(not(feature = "matrixd"))]
                     _ => panic!("Cannot convert to matrixd with rows: {rows} and cols: {cols}"),
                 }
             }
@@ -207,7 +220,7 @@ macro_rules! copy_mat {
             #[cfg(feature = "matrixd")]
             fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {
                 let src_ptr = unsafe { (*(self.as_ptr())).clone() };
-                let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
+                let dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
                 for i in 0..src_ptr.len() {
                     dst_ptr[i + offset] = src_ptr[i].clone();
                 }
@@ -216,7 +229,7 @@ macro_rules! copy_mat {
             #[cfg(feature = "vectord")]
             fn copy_into_v(&self, dst: &Ref<DVector<T>>, offset: usize) -> usize {
                 let src_ptr = unsafe { (*(self.as_ptr())).clone() };
-                let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
+                let dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
                 for i in 0..src_ptr.len() {
                     dst_ptr[i + offset] = src_ptr[i].clone();
                 }
@@ -225,7 +238,7 @@ macro_rules! copy_mat {
             #[cfg(feature = "row_vectord")]
             fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize) -> usize {
                 let src_ptr = unsafe { (*(self.as_ptr())).clone() };
-                let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
+                let dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
                 for i in 0..src_ptr.len() {
                     dst_ptr[i + offset] = src_ptr[i].clone();
                 }
@@ -234,7 +247,7 @@ macro_rules! copy_mat {
             #[cfg(feature = "matrixd")]
             fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {
                 let src_ptr = unsafe { (*(self.as_ptr())).clone() };
-                let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
+                let dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
                 let src_rows = src_ptr.nrows();
                 let dest_rows = dst_ptr.nrows();
 
@@ -325,7 +338,6 @@ where
             Matrix::RowDVector(x) => x.borrow().hash(state),
             #[cfg(feature = "matrixd")]
             Matrix::DMatrix(x) => x.borrow().hash(state),
-            _ => panic!("Hashing not implemented for this matrix type"),
         }
     }
 }
@@ -553,7 +565,6 @@ where
                     )
                 });
             }
-            _ => todo!(),
         };
         let matrix_style = Style::empty()
             .top(' ')
@@ -646,7 +657,6 @@ where
             Matrix::Matrix2x3(x) => Box::new(x.clone()),
             #[cfg(feature = "matrixd")]
             Matrix::DMatrix(x) => Box::new(x.clone()),
-            _ => panic!("Unsupported matrix size"),
         }
     }
 }
@@ -654,6 +664,7 @@ where
 impl<T: 'static> Matrix<T> {
     /// Returns the exact shared backing handle without changing its storage
     /// class or element type.
+    #[cfg(feature = "functions")]
     pub(crate) fn exact_ref_any(&self) -> &dyn Any {
         match self {
             #[cfg(feature = "row_vector4")]
@@ -778,8 +789,10 @@ impl<T: 'static> Matrix<T> {
     pub(crate) fn rebuild_with_same_storage(
         &self,
         elements: Vec<T>,
-        rows: usize,
-        cols: usize,
+        #[cfg(feature = "matrixd")] rows: usize,
+        #[cfg(not(feature = "matrixd"))] _: usize,
+        #[cfg(feature = "matrixd")] cols: usize,
+        #[cfg(not(feature = "matrixd"))] _: usize,
     ) -> Matrix<T>
     where
         T: Debug + Clone + PartialEq + 'static,
@@ -952,8 +965,46 @@ where
 
     /// Returns whether `replace_payload_from` can update this matrix without
     /// replacing its reactive root.
-    pub fn can_replace_payload_from(&self, source: &Matrix<T>) -> bool {
+    pub fn can_replace_payload_from(
+        &self,
+        #[cfg(any(
+            feature = "row_vectord",
+            feature = "vectord",
+            feature = "matrix1",
+            feature = "matrix2",
+            feature = "matrix3",
+            feature = "matrix4",
+            feature = "matrix2x3",
+            feature = "matrix3x2",
+            feature = "row_vector2",
+            feature = "row_vector3",
+            feature = "row_vector4",
+            feature = "vector2",
+            feature = "vector3",
+            feature = "vector4",
+        ))]
+        source: &Matrix<T>,
+        #[cfg(not(any(
+            feature = "row_vectord",
+            feature = "vectord",
+            feature = "matrix1",
+            feature = "matrix2",
+            feature = "matrix3",
+            feature = "matrix4",
+            feature = "matrix2x3",
+            feature = "matrix3x2",
+            feature = "row_vector2",
+            feature = "row_vector3",
+            feature = "row_vector4",
+            feature = "vector2",
+            feature = "vector3",
+            feature = "vector4",
+        )))]
+        _: &Matrix<T>,
+    ) -> bool {
+        #[cfg(feature = "row_vectord")]
         let rows = source.rows();
+        #[cfg(feature = "vectord")]
         let cols = source.cols();
         match self {
             #[cfg(feature = "row_vectord")]
@@ -962,6 +1013,20 @@ where
             Matrix::DVector(_) => cols == 1,
             #[cfg(feature = "matrixd")]
             Matrix::DMatrix(_) => true,
+            #[cfg(any(
+                feature = "matrix1",
+                feature = "matrix2",
+                feature = "matrix3",
+                feature = "matrix4",
+                feature = "matrix2x3",
+                feature = "matrix3x2",
+                feature = "row_vector2",
+                feature = "row_vector3",
+                feature = "row_vector4",
+                feature = "vector2",
+                feature = "vector3",
+                feature = "vector4",
+            ))]
             _ => self.shape() == source.shape(),
         }
     }
@@ -973,7 +1038,9 @@ where
         if !self.can_replace_payload_from(source) {
             return false;
         }
+        #[cfg(any(feature = "row_vectord", feature = "matrixd"))]
         let rows = source.rows();
+        #[cfg(any(feature = "vectord", feature = "matrixd"))]
         let cols = source.cols();
         let elements = source.as_vec();
         match self {
@@ -998,6 +1065,22 @@ where
                     .clone_from(&DMatrix::from_vec(rows, cols, elements));
                 true
             }
+            #[cfg(any(
+                feature = "row_vectord",
+                feature = "vectord",
+                feature = "matrix1",
+                feature = "matrix2",
+                feature = "matrix3",
+                feature = "matrix4",
+                feature = "matrix2x3",
+                feature = "matrix3x2",
+                feature = "row_vector2",
+                feature = "row_vector3",
+                feature = "row_vector4",
+                feature = "vector2",
+                feature = "vector3",
+                feature = "vector4",
+            ))]
             _ => {
                 self.set(elements);
                 true
@@ -1029,6 +1112,22 @@ where
                 }
                 Ok(())
             }
+            #[cfg(any(
+                all(feature = "vectord", feature = "row_vectord"),
+                feature = "matrixd",
+                feature = "matrix1",
+                feature = "matrix2",
+                feature = "matrix3",
+                feature = "matrix4",
+                feature = "matrix2x3",
+                feature = "matrix3x2",
+                feature = "row_vector2",
+                feature = "row_vector3",
+                feature = "row_vector4",
+                feature = "vector2",
+                feature = "vector3",
+                feature = "vector4",
+            ))]
             _ => {
                 return Err(MechError::new(
                     IncompatibleMatrixAppendToTableError {
@@ -1044,7 +1143,11 @@ where
         }
     }
 
-    pub fn push(&mut self, value: T) -> MResult<()> {
+    pub fn push(
+        &mut self,
+        #[cfg(any(feature = "row_vectord", feature = "vectord"))] value: T,
+        #[cfg(not(any(feature = "row_vectord", feature = "vectord")))] _: T,
+    ) -> MResult<()> {
         match self {
             #[cfg(feature = "row_vectord")]
             Matrix::RowDVector(vec) => {
@@ -1060,6 +1163,21 @@ where
                 vec.resize_vertically_mut(new_len, value.clone()); // column vector: increase rows
                 Ok(())
             }
+            #[cfg(any(
+                feature = "matrixd",
+                feature = "matrix1",
+                feature = "matrix2",
+                feature = "matrix3",
+                feature = "matrix4",
+                feature = "matrix2x3",
+                feature = "matrix3x2",
+                feature = "row_vector2",
+                feature = "row_vector3",
+                feature = "row_vector4",
+                feature = "vector2",
+                feature = "vector3",
+                feature = "vector4",
+            ))]
             _ => {
                 return Err(MechError::new(PushIntoStaticMatrixError, None).with_compiler_loc());
             }
@@ -1081,7 +1199,13 @@ where
         vec.capacity() * size_of::<T>()
     }
 
-    pub fn resize_vertically(&mut self, new_size: usize, fill_value: T) -> MResult<()> {
+    pub fn resize_vertically(
+        &mut self,
+        #[cfg(any(feature = "row_vectord", feature = "vectord"))] new_size: usize,
+        #[cfg(not(any(feature = "row_vectord", feature = "vectord")))] _: usize,
+        #[cfg(any(feature = "row_vectord", feature = "vectord"))] fill_value: T,
+        #[cfg(not(any(feature = "row_vectord", feature = "vectord")))] _: T,
+    ) -> MResult<()> {
         match self {
             #[cfg(feature = "row_vectord")]
             Matrix::RowDVector(vec) => {
@@ -1095,6 +1219,21 @@ where
                 vec.resize_vertically_mut(new_size, fill_value);
                 Ok(())
             }
+            #[cfg(any(
+                feature = "matrixd",
+                feature = "matrix1",
+                feature = "matrix2",
+                feature = "matrix3",
+                feature = "matrix4",
+                feature = "matrix2x3",
+                feature = "matrix3x2",
+                feature = "row_vector2",
+                feature = "row_vector3",
+                feature = "row_vector4",
+                feature = "vector2",
+                feature = "vector3",
+                feature = "vector4",
+            ))]
             _ => {
                 return Err(MechError::new(ResizeStaticMatrixError, None).with_compiler_loc());
             }
@@ -1133,7 +1272,6 @@ where
             Matrix::Matrix2x3(x) => x.borrow().shape(),
             #[cfg(feature = "matrixd")]
             Matrix::DMatrix(x) => x.borrow().shape(),
-            _ => panic!("Unsupported matrix size"),
         };
         vec![shape.0, shape.1]
     }
@@ -1170,7 +1308,6 @@ where
             Matrix::Matrix2x3(x) => (*x.borrow().index(ix - 1)).clone(),
             #[cfg(feature = "matrixd")]
             Matrix::DMatrix(x) => (*x.borrow().index(ix - 1)).clone(),
-            _ => panic!("Unsupported matrix size"),
         }
     }
 
@@ -1206,7 +1343,6 @@ where
             Matrix::Matrix3x2(m) => m.borrow_mut()[index] = value,
             #[cfg(feature = "matrixd")]
             Matrix::DMatrix(m) => m.borrow_mut()[index] = value,
-            _ => panic!("Unsupported matrix size"),
         }
     }
 
@@ -1244,6 +1380,7 @@ where
             (m, 1) => Matrix::DVector(Ref::new(DVector::from_element(m, element.clone()))),
             #[cfg(feature = "matrixd")]
             (m, n) => Matrix::DMatrix(Ref::new(DMatrix::from_element(m, n, element.clone()))),
+            #[cfg(not(feature = "matrixd"))]
             _ => panic!("Cannot convert to matrix with rows: {rows} and cols: {cols}"),
         }
     }
@@ -1277,11 +1414,12 @@ where
             #[cfg(feature = "row_vector2")]
             (1, 2) => Matrix::RowVector2(Ref::new(RowVector2::from_vec(vec.clone()))),
             #[cfg(feature = "row_vectord")]
-            (1, n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(vec.clone()))),
+            (1, _) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(vec.clone()))),
             #[cfg(feature = "vectord")]
-            (m, 1) => Matrix::DVector(Ref::new(DVector::from_vec(vec.clone()))),
+            (_, 1) => Matrix::DVector(Ref::new(DVector::from_vec(vec.clone()))),
             #[cfg(feature = "matrixd")]
             (m, n) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(m, n, vec.clone()))),
+            #[cfg(not(feature = "matrixd"))]
             _ => panic!("Cannot convert to matrix with rows: {rows} and cols: {cols}"),
         }
     }
@@ -1417,7 +1555,6 @@ where
                     x[i] = elements[i].clone()
                 }
             }
-            _ => panic!("Unsupported matrix size"),
         }
     }
 
@@ -1453,7 +1590,6 @@ where
             Matrix::Matrix2x3(x) => (*x.borrow().index((row - 1, col - 1))).clone(),
             #[cfg(feature = "matrixd")]
             Matrix::DMatrix(x) => (*x.borrow().index((row - 1, col - 1))).clone(),
-            _ => panic!("Unsupported matrix type for as_vec"),
         }
     }
 
@@ -1489,7 +1625,6 @@ where
             Matrix::Matrix2x3(x) => x.borrow().as_slice().to_vec(),
             #[cfg(feature = "matrixd")]
             Matrix::DMatrix(x) => x.borrow().as_slice().to_vec(),
-            _ => panic!("Unsupported matrix type for as_vec"),
         }
     }
 }

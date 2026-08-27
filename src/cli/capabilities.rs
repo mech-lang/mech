@@ -2,6 +2,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use crate::{LoadedMechConfig, resolve_config_path};
+#[cfg(all(
+    feature = "serve",
+    any(feature = "build", feature = "bundle_web", feature = "formatter")
+))]
 use clap::parser::ValueSource;
 use clap::{Arg, ArgAction, Command};
 use mech_core::*;
@@ -59,6 +63,10 @@ pub fn add_filesystem_capability_args(command: Command) -> Command {
         )
 }
 
+#[cfg(all(
+    feature = "serve",
+    any(feature = "build", feature = "bundle_web", feature = "formatter")
+))]
 pub(crate) fn filesystem_capability_args_present(matches: &clap::ArgMatches) -> bool {
     [
         "cap_root",

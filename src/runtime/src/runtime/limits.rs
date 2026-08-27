@@ -1,11 +1,23 @@
 //! Runtime budget, source, duration, and event-retention limits.
 
 use super::MechRuntime;
-use crate::{ResourceBudget, ResourceBudgetExceededError, RuntimeContext};
-use mech_core::{MResult, MechError, MechSourceCode};
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+#[cfg(any(feature = "source", feature = "resident-routing"))]
+use crate::ResourceBudgetExceededError;
+use crate::{ResourceBudget, RuntimeContext};
+#[cfg(feature = "source")]
+use mech_core::MechSourceCode;
+#[cfg(any(feature = "source", feature = "resident-routing"))]
+use mech_core::{MResult, MechError};
+#[cfg(all(
+    feature = "resident-routing",
+    not(all(target_arch = "wasm32", target_os = "unknown"))
+))]
 use std::time::Instant;
-#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+#[cfg(all(
+    feature = "resident-routing",
+    target_arch = "wasm32",
+    target_os = "unknown"
+))]
 use web_time::Instant;
 
 impl MechRuntime {
@@ -23,6 +35,7 @@ impl MechRuntime {
         budget
     }
 
+    #[cfg(feature = "source")]
     fn known_source_bytes(source: &MechSourceCode) -> MResult<Option<u64>> {
         match source {
             MechSourceCode::String(source) | MechSourceCode::Html(source) => Ok(Some(
@@ -88,6 +101,7 @@ impl MechRuntime {
         }
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn enforce_source_limits(
         &self,
         context: &mut RuntimeContext,
@@ -100,6 +114,7 @@ impl MechRuntime {
         self.enforce_source_byte_count(context, source_bytes)
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn enforce_source_byte_count(
         &self,
         context: &mut RuntimeContext,
@@ -112,6 +127,7 @@ impl MechRuntime {
     /// Checks the configured per-source ceiling without charging a context.
     /// Resident planning runs before an execution context exists; the selected
     /// executor remains responsible for its own resource accounting.
+    #[cfg(any(feature = "source", feature = "resident-routing"))]
     pub(in crate::runtime) fn enforce_source_byte_limit(&self, source_bytes: u64) -> MResult<()> {
         if let Some(max) = self.config.limits.max_source_bytes {
             if source_bytes > max {
@@ -138,6 +154,7 @@ impl MechRuntime {
     }
 }
 
+#[cfg(feature = "resident-routing")]
 pub(in crate::runtime) fn enforce_turn_duration_limit(
     max: Option<u64>,
     started: Instant,

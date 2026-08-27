@@ -30,11 +30,21 @@ use super::UnableToConvertRecordError;
 use super::enums::value_matches_enum_variant;
 #[cfg(feature = "variable_define")]
 use super::{AddressedAssignmentUnsupported, VariableAlreadyDefinedError};
+#[cfg(any(
+    feature = "variable_define",
+    feature = "invariant_define",
+    feature = "state_machines"
+))]
 use crate::LegacyValue;
+#[cfg(all(
+    feature = "variable_define",
+    feature = "kind_annotation",
+    feature = "convert"
+))]
+use crate::execute_catalog_operation;
 #[cfg(feature = "variable_define")]
 use crate::{
-    InterpreterExecution, MResult, MechError, OperationId, Ref, VariableDefine,
-    execute_catalog_operation, expression,
+    InterpreterExecution, MResult, MechError, OperationId, Ref, VariableDefine, expression,
 };
 #[cfg(all(
     feature = "variable_define",
@@ -73,7 +83,10 @@ pub fn variable_define(
     let plan = p.plan();
     #[cfg(feature = "subscript_formula")]
     reset_current_string_access_expression_live(p);
+    #[cfg(all(feature = "kind_annotation", feature = "convert"))]
     let mut result = expression(&var_def.expression, None, p)?;
+    #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
+    let result = expression(&var_def.expression, None, p)?;
     #[cfg(feature = "subscript_formula")]
     let string_access_result_is_live = take_current_string_access_expression_live(p);
     #[cfg(all(feature = "kind_annotation", feature = "convert"))]
@@ -121,7 +134,7 @@ pub fn variable_define(
             }
             // Atoms can't convert into anything else.
             #[cfg(feature = "atom")]
-            (LegacyValue::Atom(given_variant_id), target_kind) => {
+            (LegacyValue::Atom(given_variant_id), _) => {
                 return Err(MechError::new(
                     UnableToConvertAtomError {
                         atom_id: given_variant_id.borrow().0.0,
@@ -132,7 +145,7 @@ pub fn variable_define(
                 .with_tokens(var_def.expression.tokens()));
             }
             #[cfg(feature = "record")]
-            (LegacyValue::Record(rec), ref target_kind @ ValueKind::Record(target_rec_knd)) => {
+            (LegacyValue::Record(rec), ref target_kind @ ValueKind::Record(_)) => {
                 let rec_brrw = rec.borrow();
                 let rec_knd = rec_brrw.kind();
                 if &rec_knd != *target_kind {
@@ -213,7 +226,7 @@ pub fn variable_define(
                 }
             }
             // Kind isn't checked
-            x => {
+            _ => {
                 result = execute_catalog_operation(
                     p,
                     &plan,
@@ -228,8 +241,8 @@ pub fn variable_define(
             mark_string_access_value_live(p, &detached_result);
         }
         // Save symbol to interpreter
-        let mut state = p.state.borrow_mut();
-        let val_ref = state.save_symbol(
+        let state = p.state.borrow_mut();
+        state.save_symbol(
             var_id,
             var_name.clone(),
             detached_result.clone(),
@@ -241,6 +254,7 @@ pub fn variable_define(
             detached_result.clone(),
             LegacyValue::String(Ref::new(var_name.clone())),
             LegacyValue::Bool(Ref::new(var_def.mutable)),
+            LegacyValue::Bool(Ref::new(!p.in_user_function_scope())),
         ];
         let var_def_fxn = p.specialize_visible_operation_named(
             OperationId::from_name("var/define"),
@@ -250,14 +264,14 @@ pub fn variable_define(
         plan.register_function(var_def_fxn, &[])?;
         return Ok(detached_result);
     }
-    let mut state_brrw = p.state.borrow_mut();
+    let state_brrw = p.state.borrow_mut();
     let detached_result = detach_variable_value(&result);
     #[cfg(feature = "subscript_formula")]
     if string_access_result_is_live {
         mark_string_access_value_live(p, &detached_result);
     }
     // Save symbol to interpreter
-    let val_ref = state_brrw.save_symbol(
+    state_brrw.save_symbol(
         var_id,
         var_name.clone(),
         detached_result.clone(),
@@ -269,6 +283,7 @@ pub fn variable_define(
         detached_result.clone(),
         LegacyValue::String(Ref::new(var_name.clone())),
         LegacyValue::Bool(Ref::new(var_def.mutable)),
+        LegacyValue::Bool(Ref::new(!p.in_user_function_scope())),
     ];
     let var_def_fxn = p.specialize_visible_operation_named(
         OperationId::from_name("var/define"),
@@ -279,6 +294,11 @@ pub fn variable_define(
     return Ok(detached_result);
 }
 
+#[cfg(any(
+    feature = "variable_define",
+    feature = "invariant_define",
+    feature = "state_machines"
+))]
 pub(super) fn detach_variable_value(value: &LegacyValue) -> LegacyValue {
     match value {
         LegacyValue::MutableReference(reference) => detach_variable_value(&reference.borrow()),

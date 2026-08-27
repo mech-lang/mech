@@ -12,9 +12,6 @@ pub mod __mech_native {
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
-#[cfg(feature = "matrix")]
-use mech_core::matrix::Matrix;
-
 #[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
 pub mod catalog;
 #[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]

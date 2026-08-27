@@ -1,22 +1,21 @@
+pub(super) use super::super::captures::{commit_capture_slot, detached};
+pub(super) use super::super::registers::Gate;
 pub(super) use super::super::{
-    ActivationPatternArmsNonExhaustive, ActivationPatternCapture,
-    ActivationPatternCaptureKindUnsupported, ActivationPatternDefinitionUnsupported,
-    ActivationPatternGuardMustBePure, ActivationPatternRegisterWriteUnsupported,
-    ActivationPatternWildcardMustBeLast, ActivationScopeTriggerWriteUnsupported, Finalize, Gate,
-    GuardFinalize, Matcher, ReactiveBindingSink, Select, UnmatchedFinalize, commit_capture_slot,
-    create_capture_slot_for_kind, detached,
+    ActivationPatternCapture, Finalize, GuardFinalize, Matcher, ReactiveBindingSink, Select,
+    UnmatchedFinalize, create_capture_slot_for_kind,
 };
 pub(super) use crate::patterns::PatternBindingSink;
 #[cfg(feature = "semantic-compiler")]
 pub(super) use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 pub(super) use crate::{
     C64, CompiledPattern, Dictionary, FunctionExtensionEntry, FunctionSpecializer, GenericError,
-    Interpreter, LegacyValue, MResult, Matrix, MechAtom, MechEnum, MechError, MechErrorKind,
-    MechFunction, MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple, Pattern,
+    Interpreter, LegacyValue, MResult, MechAtom, MechEnum, MechError, MechErrorKind, MechFunction,
+    MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple, Pattern,
     PatternActivationRegistration, PatternBinding, PatternMatch, R64, ReactiveCellId,
     ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveRegisterCommit,
     ReactiveTurnOutcome, Ref, SymbolTableSnapshot, ValRef, ValueKind, hash_str,
 };
+pub(super) use mech_core::matrix::Matrix;
 pub(super) use std::collections::HashMap;
 pub(super) use std::sync::{
     Arc,

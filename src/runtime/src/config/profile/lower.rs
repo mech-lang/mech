@@ -1,14 +1,19 @@
+#[cfg(feature = "source")]
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-use crate::{
-    HostContextManifest, HostInstanceConfig, HostManifestConfig, RunResourceGrantConfig,
-    validate_run_resource_grant,
-};
-use mech_core::{
-    MResult, MechError, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind,
-};
+#[cfg(feature = "source")]
+use crate::HostContextManifest;
+#[cfg(feature = "source")]
+use crate::validate_run_resource_grant;
+use crate::{HostInstanceConfig, HostManifestConfig, RunResourceGrantConfig};
+use mech_core::ModuleManifestConfig;
+#[cfg(feature = "source")]
+use mech_core::{MResult, MechError};
+#[cfg(feature = "source")]
+use mech_core::{ModuleManifestExportConfig, ModuleManifestExportKind};
 
+#[cfg(feature = "source")]
 use super::{ConfigValue, InvalidConfigField};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -114,8 +119,10 @@ pub enum ConfigCapabilityKind {
     Serve,
 }
 
+#[cfg(feature = "source")]
 pub(super) struct ConfigLowerer;
 
+#[cfg(feature = "source")]
 impl ConfigLowerer {
     pub(super) fn new() -> Self {
         Self
@@ -649,6 +656,7 @@ impl ConfigLowerer {
     }
 }
 
+#[cfg(feature = "source")]
 fn expect_map<'a>(
     where_: &str,
     value: &'a ConfigValue,
@@ -662,6 +670,7 @@ fn expect_map<'a>(
     }
 }
 
+#[cfg(feature = "source")]
 fn expect_list<'a>(where_: &str, value: &'a ConfigValue) -> MResult<&'a Vec<ConfigValue>> {
     match value {
         ConfigValue::List(list) => Ok(list),
@@ -669,6 +678,7 @@ fn expect_list<'a>(where_: &str, value: &'a ConfigValue) -> MResult<&'a Vec<Conf
     }
 }
 
+#[cfg(feature = "source")]
 fn expect_string(where_: &str, value: &ConfigValue) -> MResult<String> {
     match value {
         ConfigValue::String(s) => Ok(s.clone()),
@@ -679,6 +689,7 @@ fn expect_string(where_: &str, value: &ConfigValue) -> MResult<String> {
     }
 }
 
+#[cfg(feature = "source")]
 fn expect_bool(where_: &str, value: &ConfigValue) -> MResult<bool> {
     match value {
         ConfigValue::Bool(b) => Ok(*b),
@@ -686,6 +697,7 @@ fn expect_bool(where_: &str, value: &ConfigValue) -> MResult<bool> {
     }
 }
 
+#[cfg(feature = "source")]
 fn expect_u64(where_: &str, value: &ConfigValue) -> MResult<u64> {
     match value {
         ConfigValue::Integer(i) if *i >= 0 => Ok(*i as u64),
@@ -696,6 +708,7 @@ fn expect_u64(where_: &str, value: &ConfigValue) -> MResult<u64> {
     }
 }
 
+#[cfg(feature = "source")]
 fn expect_path_list(where_: &str, value: &ConfigValue) -> MResult<Vec<PathBuf>> {
     expect_list(where_, value)?
         .iter()
@@ -704,6 +717,7 @@ fn expect_path_list(where_: &str, value: &ConfigValue) -> MResult<Vec<PathBuf>> 
         .collect()
 }
 
+#[cfg(feature = "source")]
 fn expect_string_list(where_: &str, value: &ConfigValue) -> MResult<Vec<String>> {
     expect_list(where_, value)?
         .iter()
@@ -712,14 +726,17 @@ fn expect_string_list(where_: &str, value: &ConfigValue) -> MResult<Vec<String>>
         .collect()
 }
 
+#[cfg(feature = "source")]
 fn invalid_error(reason: impl Into<String>) -> MechError {
     MechError::new(InvalidConfigField::new(reason), None).with_compiler_loc()
 }
 
+#[cfg(feature = "source")]
 fn invalid<T>(reason: impl Into<String>) -> MResult<T> {
     Err(invalid_error(reason))
 }
 
+#[cfg(feature = "source")]
 fn type_name(value: &ConfigValue) -> &'static str {
     match value {
         ConfigValue::Null => "null",

@@ -319,6 +319,7 @@ exact_matrix_runtime_type!(Vector4, "vector4", Vector4);
 exact_matrix_runtime_type!(DVector, "vectord", VectorD);
 exact_matrix_runtime_type!(DMatrix, "matrixd", MatrixD);
 
+#[cfg(feature = "matrix")]
 const fn matrix_element_for_representation(
     representation: FunctionValueRepresentation,
 ) -> FunctionMatrixElement {
@@ -649,6 +650,7 @@ impl MechErrorKind for FunctionSignatureViolation {
 
 impl FunctionValueRepresentation {
     pub fn from_value(value: &LegacyValue) -> Self {
+        #[cfg(feature = "matrix")]
         let matrix = |element, representation| Self::Matrix {
             element,
             storage: FunctionMatrixStoragePattern::Exact(representation),

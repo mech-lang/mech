@@ -1981,15 +1981,6 @@ fn replace_f64(output: &mut [f64], mut next: impl FnMut(usize) -> f64) -> bool {
     changed
 }
 
-fn f64_array<const N: usize>(
-    inputs: &dyn ResidentKernelInputs,
-    index: usize,
-) -> Result<&[f64; N], ResidentKernelError> {
-    f64_input(inputs, index)?
-        .try_into()
-        .map_err(|_| ResidentKernelError::InvalidShape)
-}
-
 fn as_f64_array<const N: usize>(values: &[f64]) -> Result<&[f64; N], ResidentKernelError> {
     values
         .try_into()

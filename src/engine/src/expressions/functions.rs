@@ -7,8 +7,10 @@ use super::{
 use crate::{
     FunctionCall, FunctionDefinition, FunctionExtensionEntry, FunctionResolver,
     FunctionSpecializerEntry, InterpreterExecution, LegacyValue, MResult, ResolvedNamedFunction,
-    execute_specialized_function, format_trace, format_trace_args,
+    execute_specialized_function,
 };
+#[cfg(feature = "trace")]
+use crate::{format_trace, format_trace_args};
 
 enum OwnedResolvedNamedFunction {
     User(FunctionDefinition),

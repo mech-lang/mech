@@ -1,4 +1,11 @@
-#![allow(clippy::result_large_err, clippy::vec_box)]
+#![expect(
+    clippy::result_large_err,
+    reason = "benchmark compares the existing MResult execution contract without changing it"
+)]
+#![expect(
+    clippy::vec_box,
+    reason = "boxed nodes model the dynamic execution graph whose overhead this benchmark measures"
+)]
 
 use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use mech_core::{GenericError, MResult, MechError, Ref};

@@ -1,9 +1,10 @@
+#[cfg(feature = "serve")]
 use super::*;
 #[cfg(feature = "build")]
 use crate::cli::commands::build::{
     BuildEmit, BuildOptions, BuildProfile, run as run_build, validate_build_bytecode_inputs,
 };
-use colored::{ColoredString, Colorize};
+#[cfg(any(feature = "serve", feature = "build", feature = "run"))]
 use std::path::PathBuf;
 
 #[cfg(all(test, feature = "serve"))]
@@ -35,10 +36,6 @@ mod filesystem_capability_cli_tests {
         ));
         std::fs::create_dir_all(&root).unwrap();
         root.canonicalize().unwrap()
-    }
-
-    fn test_badge() -> ColoredString {
-        "[Mech Server]".normal()
     }
 
     #[test]
@@ -823,7 +820,10 @@ fn root_rounds_per_step_is_stored_as_usize() {
         .try_get_matches_from(["mech", "--rounds-per-step", "10"])
         .unwrap();
 
-    assert_eq!(super::root_flags(&matches).rounds_per_step, Some(10));
+    assert_eq!(
+        matches.get_one::<usize>("rounds-per-step").copied(),
+        Some(10)
+    );
 }
 
 #[cfg(feature = "run")]

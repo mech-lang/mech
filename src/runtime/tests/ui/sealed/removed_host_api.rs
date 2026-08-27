@@ -3,6 +3,6 @@ use mech_runtime::{
 };
 
 fn main() {
-  let _ = HostFunctionTransactionMode::ImmediateOnly;
-  let _ = std::mem::size_of::<ClosureHostFunction>();
+  drop(HostFunctionTransactionMode::ImmediateOnly);
+  assert_ne!(std::mem::size_of::<ClosureHostFunction>(), 0);
 }

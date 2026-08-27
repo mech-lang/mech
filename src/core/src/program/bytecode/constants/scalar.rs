@@ -2,6 +2,7 @@
 
 use crate::{LegacyValue, MResult, Ref};
 
+#[cfg(any(feature = "string", feature = "variable_define"))]
 use super::super::owned_utf8;
 use super::{RuntimeType, invalid};
 

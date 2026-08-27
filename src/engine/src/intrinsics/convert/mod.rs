@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::intrinsics::*;
 
 // ----------------------------------------------------------------------------
@@ -274,6 +273,21 @@ lossless_into!(i128, u64);
 lossless_into!(i128, u128);
 
 // It's actually not lossless...
+#[cfg(all(
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+    ),
+))]
 macro_rules! lossless_into_float_to_int {
     ($float_type:ty, $int_type:ty) => {
         impl LosslessInto<$int_type> for $float_type {
@@ -326,6 +340,18 @@ lossless_into_float_to_int!(f32, i64);
 #[cfg(all(feature = "f32", feature = "i128"))]
 lossless_into_float_to_int!(f32, i128);
 
+#[cfg(any(
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128",
+))]
 macro_rules! lossless_into_int_to_float {
     ($int_type:ty) => {
         paste! {
@@ -387,6 +413,21 @@ impl LosslessInto<f32> for bool {
     }
 }
 
+#[cfg(all(
+    feature = "bool",
+    any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+    ),
+))]
 macro_rules! lossless_into_bool {
     ($to_type:ty) => {
         paste! {

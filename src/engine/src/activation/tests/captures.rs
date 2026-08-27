@@ -1,12 +1,11 @@
 use super::support::{
-    ActivationPatternCapture, ActivationPatternCaptureKindUnsupported, FLAT_TUPLE_ACTIVATION, Gate,
-    HashMap, Interpreter, LegacyValue, Matrix, MechAtom, MechEnum, MechFunctionImpl, MechMap,
-    MechRecord, MechSet, MechTable, MechTuple, PatternBinding, PatternBindingSink, PatternMatch,
-    ReactiveBindingSink, ReactiveDependencyKind, Ref, ValueKind, arm_register_nodes,
-    assert_dispatch_turn, body_output, commit_capture_slot, committed_capture_value,
-    create_capture_slot_for_kind, detached, f64_symbol, hash_str, interpret, interpret_more,
+    ActivationPatternCapture, FLAT_TUPLE_ACTIVATION, Gate, HashMap, Interpreter, LegacyValue,
+    Matrix, MechAtom, MechEnum, MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable,
+    MechTuple, PatternBinding, PatternBindingSink, PatternMatch, ReactiveBindingSink, Ref,
+    ValueKind, assert_dispatch_turn, body_output, commit_capture_slot, committed_capture_value,
+    create_capture_slot_for_kind, detached, hash_str, interpret, interpret_more,
     load_enum_activation, plan_snapshot, proposed_capture_value, registration, root_cell,
-    scalar_capture_cases, selected_arm_index, set_enum_event, set_f64_matrix_event, set_f64_symbol,
+    scalar_capture_cases, selected_arm_index, set_enum_event, set_f64_matrix_event,
     set_tuple_event, symbol, symbol_ref, tuple_fixture, turn_executed_nodes,
 };
 

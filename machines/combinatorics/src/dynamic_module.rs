@@ -1,8 +1,12 @@
 #![cfg(feature = "dynamic-module")]
 
-use mech_abi::{MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStatusV1, MechStrV1};
+#[cfg(test)]
+use mech_abi::{MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStrV1};
+use mech_abi::MechStatusV1;
 
+#[cfg(test)]
 const MODULE_NAME: &[u8] = b"combinatorics";
+#[cfg(test)]
 const EXPORT_NAME: &[u8] = b"combinatorics/n-choose-k";
 
 mech_abi::mech_dynamic_module_v1! {
@@ -22,17 +26,17 @@ pub unsafe extern "C" fn combinatorics_n_choose_k_f64_v1(
     out: *mut f64,
 ) -> MechStatusV1 {
     if out.is_null() {
-        return MechStatusV1::NullPointer;
+        return MechStatusV1::NULL_POINTER;
     }
     if !crate::kernels::n_choose_k::supports_f64(n, k) {
-        return MechStatusV1::Unsupported;
+        return MechStatusV1::UNSUPPORTED;
     }
 
     unsafe {
         *out = crate::kernels::n_choose_k::scalar(n, k);
     }
 
-    MechStatusV1::Ok
+    MechStatusV1::OK
 }
 
 #[cfg(test)]
@@ -43,7 +47,7 @@ mod tests {
     fn module_name_null_pointer_returns_null_pointer() {
         let status = unsafe { mech_module_name_v1(core::ptr::null_mut()) };
 
-        assert_eq!(status, MechStatusV1::NullPointer);
+        assert_eq!(status, MechStatusV1::NULL_POINTER);
     }
 
     #[test]
@@ -54,7 +58,7 @@ mod tests {
         };
 
         let status = unsafe { mech_module_name_v1(&mut module_name) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
 
         let name = unsafe { core::slice::from_raw_parts(module_name.ptr, module_name.len) };
         assert_eq!(name, MODULE_NAME);
@@ -68,7 +72,7 @@ mod tests {
     #[test]
     fn module_get_export_rejects_null_output() {
         let status = unsafe { mech_module_get_export_v1(0, core::ptr::null_mut()) };
-        assert_eq!(status, MechStatusV1::NullPointer);
+        assert_eq!(status, MechStatusV1::NULL_POINTER);
     }
 
     #[test]
@@ -78,20 +82,20 @@ mod tests {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::BinaryF64F64ToF64,
+            kind: MechKernelKindV1::BINARY_F64_F64_TO_F64,
             function: MechKernelFnV1 {
                 binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
             },
         };
 
         let status = unsafe { mech_module_get_export_v1(1, &mut export) };
-        assert_eq!(status, MechStatusV1::InvalidIndex);
+        assert_eq!(status, MechStatusV1::INVALID_INDEX);
     }
 
     #[test]
     fn n_choose_k_rejects_null_output() {
         let status = unsafe { combinatorics_n_choose_k_f64_v1(10.0, 2.0, core::ptr::null_mut()) };
-        assert_eq!(status, MechStatusV1::NullPointer);
+        assert_eq!(status, MechStatusV1::NULL_POINTER);
     }
 
     #[test]
@@ -101,7 +105,7 @@ mod tests {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::BinaryF64F64ToF64,
+            kind: MechKernelKindV1::BINARY_F64_F64_TO_F64,
             function: MechKernelFnV1 {
                 binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
             },
@@ -109,9 +113,9 @@ mod tests {
         let status = unsafe { mech_module_get_export_v1(0, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
 
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(name, EXPORT_NAME);
-        assert_eq!(export.kind, MechKernelKindV1::BinaryF64F64ToF64);
+        assert_eq!(export.kind, MechKernelKindV1::BINARY_F64_F64_TO_F64);
     }
 
     #[test]
@@ -119,7 +123,7 @@ mod tests {
         let mut out = 0.0;
         let status = unsafe { combinatorics_n_choose_k_f64_v1(10.0, 2.0, &mut out) };
 
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, crate::kernels::n_choose_k::scalar(10.0_f64, 2.0_f64));
     }
 
@@ -128,7 +132,7 @@ mod tests {
         let mut out = 123.0;
         let status = unsafe { combinatorics_n_choose_k_f64_v1(2.0, 10.0, &mut out) };
 
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, crate::kernels::n_choose_k::scalar(2.0_f64, 10.0_f64));
     }
 
@@ -142,7 +146,7 @@ mod tests {
         ] {
             let mut out = 123.0;
             let status = unsafe { combinatorics_n_choose_k_f64_v1(n, k, &mut out) };
-            assert_eq!(status, MechStatusV1::Unsupported);
+            assert_eq!(status, MechStatusV1::UNSUPPORTED);
             assert_eq!(out, 123.0);
         }
     }

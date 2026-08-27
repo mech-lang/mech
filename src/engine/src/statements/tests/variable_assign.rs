@@ -1,7 +1,6 @@
 use super::support::{
-    cell, decoded_assignment_graph_shape, distinct_assignment_graph_shape,
-    expected_distinct_assignment_shape, register, register_node_id_for_output, set_value, symbol,
-    value,
+    cell, distinct_assignment_graph_shape, expected_distinct_assignment_shape, register,
+    register_node_id_for_output, set_value, symbol, value,
 };
 use crate::{
     Interpreter, LegacyValue, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState,
@@ -66,7 +65,7 @@ fn whole_matrix_assignment_uses_root_cells() {
     assert_eq!(resolved_output, y);
 }
 
-#[cfg(all(feature = "math", feature = "math_add_assign"))]
+#[cfg(all(feature = "math_add", feature = "math_add_assign"))]
 #[test]
 fn register_commit_plain_assignment_updates_register_only() {
     let t = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx = y\nz := x + 1.0").unwrap();
@@ -92,7 +91,7 @@ fn register_commit_plain_assignment_updates_register_only() {
     assert_eq!((value(&i, "x"), value(&i, "z")), (10., 3.));
 }
 
-#[cfg(all(feature = "math", feature = "math_add_assign"))]
+#[cfg(all(feature = "math_add", feature = "math_add_assign"))]
 #[test]
 fn reactive_turn_defers_second_register_layer() {
     let tree = mech_syntax::parser::parse("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0").unwrap();

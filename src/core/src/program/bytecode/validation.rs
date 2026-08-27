@@ -1,6 +1,6 @@
 use crate::MResult;
 
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 use alloc::{
     string::{String, ToString},
     vec::Vec,
@@ -65,10 +65,6 @@ pub(crate) struct ByteReader<'a> {
 impl<'a> ByteReader<'a> {
     pub(crate) fn new(bytes: &'a [u8]) -> Self {
         Self { bytes, position: 0 }
-    }
-
-    pub(crate) fn position(&self) -> usize {
-        self.position
     }
 
     pub(crate) fn remaining(&self) -> usize {

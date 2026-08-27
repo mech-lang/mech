@@ -10,54 +10,14 @@ use std::sync::Arc;
 #[cfg(all(feature = "source", feature = "sum"))]
 use crate::{StatsSumColumn, StatsSumRow};
 
-macro_rules! install_numeric_runtime_factories {
-    ($builder:expr, $module:ident, $factory:ident) => {{
-        #[cfg(feature = "u8")]
-        install_numeric_runtime_factory!($builder, $module, $factory, u8, "u8");
-        #[cfg(feature = "u16")]
-        install_numeric_runtime_factory!($builder, $module, $factory, u16, "u16");
-        #[cfg(feature = "u32")]
-        install_numeric_runtime_factory!($builder, $module, $factory, u32, "u32");
-        #[cfg(feature = "u64")]
-        install_numeric_runtime_factory!($builder, $module, $factory, u64, "u64");
-        #[cfg(feature = "u128")]
-        install_numeric_runtime_factory!($builder, $module, $factory, u128, "u128");
-        #[cfg(feature = "i8")]
-        install_numeric_runtime_factory!($builder, $module, $factory, i8, "i8");
-        #[cfg(feature = "i16")]
-        install_numeric_runtime_factory!($builder, $module, $factory, i16, "i16");
-        #[cfg(feature = "i32")]
-        install_numeric_runtime_factory!($builder, $module, $factory, i32, "i32");
-        #[cfg(feature = "i64")]
-        install_numeric_runtime_factory!($builder, $module, $factory, i64, "i64");
-        #[cfg(feature = "i128")]
-        install_numeric_runtime_factory!($builder, $module, $factory, i128, "i128");
-        #[cfg(feature = "f32")]
-        install_numeric_runtime_factory!($builder, $module, $factory, f32, "f32");
-        #[cfg(feature = "f64")]
-        install_numeric_runtime_factory!($builder, $module, $factory, f64, "f64");
-        #[cfg(feature = "complex")]
-        install_numeric_runtime_factory!($builder, $module, $factory, mech_core::C64, "c64");
-        #[cfg(feature = "rational")]
-        install_numeric_runtime_factory!($builder, $module, $factory, mech_core::R64, "r64");
-
-        Ok::<(), mech_core::MechError>(())
-    }};
-}
-
-macro_rules! install_numeric_runtime_factory {
-    ($builder:expr, $module:ident, $factory:ident, $scalar:ty, $name:literal) => {
-        $builder.insert_runtime_factory::<crate::$module::$factory<$scalar>>(
-            concat!(stringify!($factory), "<", $name, ">"),
-            RuntimeFunctionContract::custom(
-                "statistical_reduction",
-                RuntimeOutputAliasPolicy::DisallowInputAlias,
-                statistical_reduction_contract!($module),
-            ),
-        )?;
-    };
-}
-
+#[cfg(any(
+    feature = "matrix1",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "vectord",
+    all(feature = "matrixd", feature = "row_vectord")
+))]
 fn validate_sum_column(args: &FunctionArgs) -> MResult<()> {
     validate_statistical_reduction(args, true)
 }
@@ -134,81 +94,6 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     {
         install_module_operation(builder, "stats/sum/column", "sum/column", StatsSumColumn {})?;
         install_module_operation(builder, "stats/sum/row", "sum/row", StatsSumRow {})?;
-    }
-
-    Ok(())
-}
-
-/// Legacy direct-registration implementation retained while the native
-/// declaration traversal below takes ownership of the active runtime path.
-fn install_legacy_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    #[cfg(feature = "sum")]
-    {
-        #[cfg(feature = "matrix1")]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnM1)?;
-        #[cfg(all(feature = "matrix2", feature = "vector2"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnM2)?;
-        #[cfg(all(feature = "matrix3", feature = "vector3"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnM3)?;
-        #[cfg(all(feature = "matrix4", feature = "vector4"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnM4)?;
-        #[cfg(all(feature = "matrix2x3", feature = "vector2"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnM2x3)?;
-        #[cfg(all(feature = "matrix3x2", feature = "vector3"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnM3x2)?;
-        #[cfg(all(feature = "matrixd", feature = "vectord"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnMD)?;
-        #[cfg(feature = "vector2")]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnV2)?;
-        #[cfg(feature = "vector3")]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnV3)?;
-        #[cfg(feature = "vector4")]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnV4)?;
-        #[cfg(feature = "vectord")]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnVD)?;
-        #[cfg(all(feature = "row_vector2", feature = "matrix1"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnR2)?;
-        #[cfg(all(feature = "row_vector3", feature = "matrix1"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnR3)?;
-        #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnR4)?;
-        #[cfg(all(feature = "row_vectord", feature = "matrix1"))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnRD)?;
-        #[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
-        install_numeric_runtime_factories!(builder, sum_column, StatsSumColumnRD2)?;
-
-        #[cfg(feature = "matrix1")]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowM1)?;
-        #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowM2)?;
-        #[cfg(all(feature = "matrix3", feature = "row_vector3"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowM3)?;
-        #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowM4)?;
-        #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowM2x3)?;
-        #[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowM3x2)?;
-        #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowMD)?;
-        #[cfg(all(feature = "vector2", feature = "matrix1"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowV2)?;
-        #[cfg(all(feature = "vector3", feature = "matrix1"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowV3)?;
-        #[cfg(all(feature = "vector4", feature = "matrix1"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowV4)?;
-        #[cfg(all(feature = "vectord", feature = "matrix1"))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowVD)?;
-        #[cfg(all(feature = "vectord", feature = "matrixd", not(feature = "matrix1")))]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowVDMD)?;
-        #[cfg(feature = "row_vector2")]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowR2)?;
-        #[cfg(feature = "row_vector3")]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowR3)?;
-        #[cfg(feature = "row_vector4")]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowR4)?;
-        #[cfg(feature = "row_vectord")]
-        install_numeric_runtime_factories!(builder, sum_row, StatsSumRowRD)?;
     }
 
     Ok(())

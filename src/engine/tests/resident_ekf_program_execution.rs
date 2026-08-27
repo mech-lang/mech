@@ -191,6 +191,7 @@ fn with_resident_effect(artifact: &ProgramArtifact) -> ProgramArtifact {
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: constraints.into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .unwrap()

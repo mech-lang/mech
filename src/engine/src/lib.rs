@@ -1,12 +1,8 @@
-#![cfg_attr(feature = "no-std", no_std)]
-#![cfg_attr(feature = "no-std", alloc)]
-#![allow(dead_code)]
+#![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 #![feature(where_clause_attrs)]
 
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
-#[macro_use]
-extern crate mech_core;
 
 #[cfg(feature = "trace")]
 #[macro_export]
@@ -27,50 +23,6 @@ macro_rules! trace_println {
 macro_rules! trace_println {
     ($interpreter:expr, $($arg:tt)*) => {};
 }
-
-#[cfg(feature = "functions")]
-use crate::function::*;
-#[cfg(feature = "access")]
-use crate::intrinsics::access::*;
-#[cfg(feature = "assign")]
-use crate::intrinsics::assign::*;
-#[cfg(feature = "convert")]
-use crate::intrinsics::convert::*;
-#[cfg(feature = "matrix_horzcat")]
-use crate::intrinsics::horzcat::*;
-#[cfg(feature = "table")]
-use crate::intrinsics::table_ops::*;
-#[cfg(feature = "matrix_vertcat")]
-use crate::intrinsics::vertcat::*;
-#[cfg(any(feature = "map", feature = "table", feature = "record"))]
-use indexmap::map::IndexMap;
-#[cfg(feature = "set")]
-use indexmap::set::IndexSet;
-#[cfg(feature = "complex")]
-use mech_core::C64;
-#[cfg(feature = "enum")]
-use mech_core::MechEnum;
-#[cfg(feature = "map")]
-use mech_core::MechMap;
-#[cfg(feature = "record")]
-use mech_core::MechRecord;
-#[cfg(feature = "set")]
-use mech_core::MechSet;
-#[cfg(feature = "table")]
-use mech_core::MechTable;
-#[cfg(feature = "tuple")]
-use mech_core::MechTuple;
-#[cfg(feature = "rational")]
-use mech_core::R64;
-use mech_core::kind::Kind;
-#[cfg(feature = "matrix")]
-use mech_core::matrix::{Matrix, ToMatrix};
-use mech_core::*;
-use mech_core::{Dictionary, LegacyValue, Ref, ToValue, ValRef, ValueKind};
-use mech_core::{MResult, hash_str, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
-#[cfg(feature = "matrix")]
-use na::DMatrix;
-use std::time::Duration;
 
 #[cfg(feature = "semantic-compiler")]
 pub use mech_core::{
@@ -94,10 +46,10 @@ pub mod function;
 pub mod integrity;
 #[cfg(feature = "semantic-compiler")]
 mod interpreter;
+#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
+pub(crate) use interpreter::InterpreterRef;
 #[cfg(feature = "semantic-compiler")]
-pub(crate) use interpreter::{
-    Interpreter, InterpreterExecution, InterpreterRef, RuntimeContextBinding,
-};
+pub(crate) use interpreter::{Interpreter, InterpreterExecution, RuntimeContextBinding};
 pub mod intrinsics;
 #[cfg(feature = "semantic-compiler")]
 pub mod literals;
@@ -105,6 +57,10 @@ pub mod literals;
 pub mod mechdown;
 #[cfg(feature = "semantic-compiler")]
 pub mod patterns;
+#[cfg(any(
+    all(feature = "subscript_formula", feature = "semantic-compiler"),
+    feature = "resident-artifact"
+))]
 mod portable_index;
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
@@ -157,7 +113,7 @@ pub mod state_machines;
 pub mod statements;
 #[cfg(feature = "semantic-compiler")]
 pub mod structures;
-#[cfg(all(test, feature = "functions"))]
+#[cfg(all(test, feature = "semantic-compiler", feature = "functions"))]
 #[path = "../tests/support/mod.rs"]
 pub(crate) mod test_support;
 pub mod tracing;
@@ -169,7 +125,7 @@ pub mod __mech_native {
     pub use crate::intrinsics::access::matrix::__mech_native::*;
     #[cfg(all(feature = "access", feature = "tuple"))]
     pub use crate::intrinsics::access::tuple::install_tuple_access_element;
-    #[cfg(feature = "access")]
+    #[cfg(all(feature = "access", feature = "native-plan"))]
     pub use crate::intrinsics::access::{
         install_record_access_field, install_record_access_swizzle, install_table_access_swizzle,
     };
@@ -220,21 +176,92 @@ pub use crate::state_machines::*;
 pub use crate::statements::*;
 #[cfg(feature = "semantic-compiler")]
 pub use crate::structures::*;
+#[cfg(any(feature = "trace", feature = "state_machines"))]
 pub use crate::tracing::*;
 
+#[cfg(all(feature = "access", feature = "map"))]
+pub use crate::intrinsics::access::map::*;
+#[cfg(all(feature = "access", feature = "matrix"))]
+pub use crate::intrinsics::access::matrix::*;
+#[cfg(all(feature = "access", feature = "record"))]
+pub use crate::intrinsics::access::record::*;
+#[cfg(all(feature = "access", feature = "string", feature = "semantic-compiler"))]
+pub use crate::intrinsics::access::string::*;
+#[cfg(all(feature = "access", feature = "table"))]
+pub use crate::intrinsics::access::table::*;
+#[cfg(all(feature = "access", feature = "tuple"))]
+pub use crate::intrinsics::access::tuple::*;
 #[cfg(feature = "access")]
-pub use crate::intrinsics::access::*;
+pub use crate::intrinsics::access::{AccessColumn, AccessRange, AccessScalar, AccessSwizzle};
+#[cfg(all(feature = "assign", feature = "map"))]
+pub use crate::intrinsics::assign::map::*;
+#[cfg(all(feature = "assign", feature = "matrix"))]
+pub use crate::intrinsics::assign::matrix::*;
+#[cfg(all(feature = "assign", feature = "record"))]
+pub use crate::intrinsics::assign::record::*;
+#[cfg(all(feature = "assign", feature = "table"))]
+pub use crate::intrinsics::assign::table::*;
+#[cfg(all(feature = "assign", feature = "tuple"))]
+pub use crate::intrinsics::assign::tuple::*;
 #[cfg(feature = "assign")]
-pub use crate::intrinsics::assign::*;
+pub use crate::intrinsics::assign::{
+    AddAssignValue, AssignColumn, AssignValue, EmptyAssignmentNotBytecodeCompilable,
+    add_assign_value_fxn,
+};
 #[cfg(feature = "convert")]
-pub use crate::intrinsics::convert::*;
+pub use crate::intrinsics::convert::scalar::*;
+#[cfg(all(feature = "convert", feature = "matrix"))]
+pub use crate::intrinsics::convert::{mat_to_mat::*, scalar_to_mat::*};
 #[cfg(feature = "matrix_horzcat")]
-pub use crate::intrinsics::horzcat::*;
+pub use crate::intrinsics::horzcat::{HorizontalConcatenateDimensionMismatchError, MatrixHorzCat};
 #[cfg(feature = "table")]
-pub use crate::intrinsics::table_ops::*;
+pub use crate::intrinsics::table_ops::{
+    TableFullOuterJoin, TableInnerJoin, TableLeftAntiJoin, TableLeftOuterJoin, TableLeftSemiJoin,
+    TableRightOuterJoin,
+};
 #[cfg(feature = "matrix_vertcat")]
-pub use crate::intrinsics::vertcat::*;
-pub fn load_stdkinds(kinds: &mut KindTable) {
+pub use crate::intrinsics::vertcat::{MatrixVertCat, VerticalConcatenateDimensionMismatch};
+#[cfg(feature = "semantic-compiler")]
+pub fn load_stdkinds(
+    #[cfg(any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "f32",
+        feature = "f64",
+        feature = "c64",
+        feature = "r64",
+        feature = "string",
+        feature = "bool"
+    ))]
+    kinds: &mut KindTable,
+    #[cfg(not(any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "f32",
+        feature = "f64",
+        feature = "c64",
+        feature = "r64",
+        feature = "string",
+        feature = "bool"
+    )))]
+    _: &mut KindTable,
+) {
     #[cfg(feature = "u8")]
     kinds.insert(hash_str("u8"), ValueKind::U8);
     #[cfg(feature = "u16")]
@@ -267,42 +294,6 @@ pub fn load_stdkinds(kinds: &mut KindTable) {
     kinds.insert(hash_str("string"), ValueKind::String);
     #[cfg(feature = "bool")]
     kinds.insert(hash_str("bool"), ValueKind::Bool);
-}
-
-fn format_duration(d: Duration) -> String {
-    let ns = d.as_nanos();
-    if ns < 1_000 {
-        format!("{}ns", ns)
-    } else if ns < 1_000_000 {
-        format!("{:.2}µs", ns as f64 / 1_000.0)
-    } else if ns < 1_000_000_000 {
-        format!("{:.2}ms", ns as f64 / 1_000_000.0)
-    } else {
-        format!("{:.2}s", ns as f64 / 1_000_000_000.0)
-    }
-}
-
-fn print_histogram(total_durations: &[Duration]) {
-    let max_duration = total_durations
-        .iter()
-        .cloned()
-        .max()
-        .unwrap_or(Duration::ZERO);
-    let max_bar_len = 50; // max characters for the bar
-
-    println!("{:>5}  {:>10}  {}", "#", "Time", "Histogram");
-    println!("-----------------------------------------------");
-
-    for (idx, dur) in total_durations.iter().enumerate() {
-        let bar_len = if max_duration.as_nanos() == 0 {
-            0
-        } else {
-            ((dur.as_nanos() * max_bar_len as u128) / max_duration.as_nanos()) as usize
-        };
-        let bar = std::iter::repeat('░').take(bar_len).collect::<String>();
-
-        println!("{:>5}  {:>10}  {}", idx, format_duration(*dur), bar);
-    }
 }
 
 #[macro_export]

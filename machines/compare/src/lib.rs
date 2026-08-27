@@ -9,8 +9,6 @@ pub mod __mech_native {
     pub use crate::catalog::__mech_native::*;
 }
 
-#[macro_use]
-extern crate mech_core;
 extern crate paste;
 
 use mech_core::*;
@@ -31,8 +29,6 @@ use nalgebra::Matrix3;
 use nalgebra::Matrix3x2;
 #[cfg(feature = "matrix4")]
 use nalgebra::Matrix4;
-#[cfg(feature = "rowdvector")]
-use nalgebra::RowDVector;
 #[cfg(feature = "row_vectord")]
 use nalgebra::RowDVector;
 #[cfg(feature = "row_vector2")]
@@ -48,6 +44,7 @@ use nalgebra::Vector3;
 #[cfg(feature = "vector4")]
 use nalgebra::Vector4;
 
+#[cfg(any(feature = "eq", feature = "gt", feature = "gte", feature = "lt", feature = "lte", feature = "max", feature = "min", feature = "neq"))]
 use paste::paste;
 use std::sync::LazyLock;
 
@@ -120,26 +117,46 @@ pub mod seq;
 #[cfg(feature = "sneq")]
 pub mod sneq;
 
-#[cfg(feature = "eq")]
+#[cfg(all(feature = "eq", feature = "source"))]
 pub use self::eq::*;
-#[cfg(feature = "gt")]
+#[cfg(all(feature = "eq", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::eq::*;
+#[cfg(all(feature = "gt", feature = "source"))]
 pub use self::gt::*;
-#[cfg(feature = "gte")]
+#[cfg(all(feature = "gt", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::gt::*;
+#[cfg(all(feature = "gte", feature = "source"))]
 pub use self::gte::*;
-#[cfg(feature = "lt")]
+#[cfg(all(feature = "gte", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::gte::*;
+#[cfg(all(feature = "lt", feature = "source"))]
 pub use self::lt::*;
-#[cfg(feature = "lte")]
+#[cfg(all(feature = "lt", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::lt::*;
+#[cfg(all(feature = "lte", feature = "source"))]
 pub use self::lte::*;
-#[cfg(feature = "max")]
+#[cfg(all(feature = "lte", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::lte::*;
+#[cfg(all(feature = "max", feature = "source"))]
 pub use self::max::*;
-#[cfg(feature = "min")]
+#[cfg(all(feature = "max", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::max::*;
+#[cfg(all(feature = "min", feature = "source"))]
 pub use self::min::*;
-#[cfg(feature = "neq")]
+#[cfg(all(feature = "min", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::min::*;
+#[cfg(all(feature = "neq", feature = "source"))]
 pub use self::neq::*;
-#[cfg(feature = "seq")]
+#[cfg(all(feature = "neq", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::neq::*;
+#[cfg(all(feature = "seq", feature = "source"))]
 pub use self::seq::*;
-#[cfg(feature = "sneq")]
+#[cfg(all(feature = "seq", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::seq::*;
+#[cfg(all(feature = "sneq", feature = "source"))]
 pub use self::sneq::*;
+#[cfg(all(feature = "sneq", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::sneq::*;
 
 // ----------------------------------------------------------------------------
 // Compare Library

@@ -1,5 +1,4 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
-#![allow(dead_code)]
 #![feature(where_clause_attrs)]
 
 //extern crate core as rust_core;
@@ -29,10 +28,8 @@ use fxhash::FxHasher;
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 type HashMap<K, V> = HashBrownMap<K, V, core::hash::BuildHasherDefault<FxHasher>>;
 
-#[cfg(all(feature = "no_std", not(feature = "std")))]
-use embedded_io::{self, Read, Write};
-#[cfg(any(not(feature = "no_std"), feature = "std"))]
-use std::io::{self, Cursor, Error as ioError, Read, Write};
+#[cfg(all(feature = "serde", any(not(feature = "no_std"), feature = "std")))]
+use std::io::{Cursor, Read, Write};
 
 #[cfg(feature = "no_std")]
 use alloc::string::{String, ToString};
@@ -52,14 +49,6 @@ extern crate tabled;
 #[cfg(feature = "serde")]
 #[macro_use]
 extern crate serde_derive;
-#[cfg(any(
-    feature = "math_pow",
-    feature = "f64",
-    feature = "f32",
-    feature = "complex",
-    feature = "rational"
-))]
-extern crate num_traits;
 #[cfg(feature = "serde")]
 extern crate serde;
 
@@ -98,15 +87,16 @@ use nalgebra::Vector3;
 use nalgebra::Vector4;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;
-#[cfg(any(feature = "math_pow", feature = "f64"))]
-use num_traits::*;
-
-#[cfg(feature = "pretty_print")]
-use tabled::{
-    Tabled,
-    builder::Builder,
-    settings::{Alignment, Modify, Panel, Span, Style, object::Rows},
-};
+#[cfg(all(
+    feature = "pretty_print",
+    any(
+        feature = "symbol_table",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple"
+    )
+))]
+use tabled::{builder::Builder, settings::Style};
 
 pub mod element;
 pub mod error;
@@ -145,7 +135,6 @@ pub use self::error::*;
 pub use self::execution::*;
 #[cfg(feature = "functions")]
 pub use self::function::*;
-pub use self::kind::*;
 pub use self::legacy_value::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
@@ -154,9 +143,6 @@ pub use self::program::*;
 #[cfg(feature = "functions")]
 pub use self::reactive_transaction::*;
 pub use self::read_source::ReadSource;
-#[cfg(feature = "resident-execution")]
-#[doc(hidden)]
-pub use self::resident_execution::*;
 pub use self::schema::*;
 pub use self::semantic_error::*;
 pub use self::semantic_identity::*;
@@ -166,7 +152,37 @@ pub use self::snapshot::{
 };
 pub use self::state_journal::*;
 pub use self::stdlib::*;
-pub use self::structures::*;
+#[cfg(feature = "enum")]
+pub use self::structures::enums;
+#[cfg(feature = "enum")]
+pub use self::structures::enums::*;
+#[cfg(feature = "map")]
+pub use self::structures::map;
+#[cfg(feature = "map")]
+pub use self::structures::map::*;
+#[cfg(feature = "matrix")]
+pub use self::structures::matrix;
+#[cfg(feature = "matrix")]
+pub use self::structures::matrix::{
+    CopyMat, IncompatibleMatrixAppendToTableError, MechMatrix, PushIntoStaticMatrixError,
+    ResizeStaticMatrixError, ToMatrix,
+};
+#[cfg(feature = "record")]
+pub use self::structures::record;
+#[cfg(feature = "record")]
+pub use self::structures::record::*;
+#[cfg(feature = "set")]
+pub use self::structures::set;
+#[cfg(feature = "set")]
+pub use self::structures::set::*;
+#[cfg(feature = "table")]
+pub use self::structures::table;
+#[cfg(feature = "table")]
+pub use self::structures::table::*;
+#[cfg(feature = "tuple")]
+pub use self::structures::tuple;
+#[cfg(feature = "tuple")]
+pub use self::structures::tuple::*;
 pub use self::types::*;
 
 pub mod dimension;
@@ -218,7 +234,7 @@ impl MechSourceCode {
                 format!("Image (.{}) with {} bytes", extension, img.len())
             }
             MechSourceCode::String(s) => s.clone(),
-            MechSourceCode::Tree(p) => todo!("Print the tree!"),
+            MechSourceCode::Tree(program) => todo!("Print the tree: {program:?}"),
             MechSourceCode::Html(h) => h.clone(),
             MechSourceCode::Program(v) => v
                 .iter()
@@ -230,6 +246,7 @@ impl MechSourceCode {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg(feature = "pretty_print")]
 pub struct IndexedString {
     pub data: Vec<char>,
     pub index_map: Vec<Vec<usize>>,
@@ -237,22 +254,20 @@ pub struct IndexedString {
     pub cols: usize,
 }
 
+#[cfg(feature = "pretty_print")]
 impl IndexedString {
     fn new(input: &str) -> Self {
         let mut data = Vec::new();
         let mut index_map = Vec::new();
         let mut current_row = 0;
-        let mut current_col = 0;
         index_map.push(Vec::new());
         for c in input.chars() {
             data.push(c);
             if c == '\n' {
                 index_map.push(Vec::new());
                 current_row += 1;
-                current_col = 0;
             } else {
                 index_map[current_row].push(data.len() - 1);
-                current_col += 1;
             }
         }
         let rows = index_map.len();

@@ -193,10 +193,6 @@ pub struct PooledRecordBuffer {
 }
 
 impl PooledRecordBuffer {
-    pub fn len(&self) -> usize {
-        self.buffer().len()
-    }
-
     pub fn is_empty(&self) -> bool {
         self.buffer().is_empty()
     }
@@ -207,10 +203,6 @@ impl PooledRecordBuffer {
 
     pub fn as_slice(&self) -> &[u8] {
         self.buffer().as_slice()
-    }
-
-    pub fn clear(&mut self) {
-        self.buffer_mut().clear();
     }
 
     pub fn try_extend_from_slice(&mut self, bytes: &[u8]) -> MResult<()> {

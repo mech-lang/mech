@@ -6,6 +6,7 @@
 
 use crate::{MResult, program::bytecode::RuntimeType};
 
+#[cfg(all(feature = "semantic-compiler", feature = "enum"))]
 pub(crate) fn encode(ty: &RuntimeType) -> MResult<Vec<u8>> {
     super::super::types::canonical_runtime_type_key(ty)
 }

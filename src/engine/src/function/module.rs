@@ -1,5 +1,7 @@
 use crate::*;
 #[cfg(feature = "dynamic-modules")]
+use mech_core::matrix::Matrix as RuntimeMatrix;
+#[cfg(feature = "dynamic-modules")]
 use nalgebra::{DMatrix, DVector, RowDVector};
 #[cfg(feature = "dynamic-modules")]
 use std::borrow::Borrow;
@@ -8,6 +10,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::collections::{HashMap, HashSet};
 #[cfg(feature = "dynamic-modules")]
 use std::path::PathBuf;
+#[cfg(all(test, not(feature = "dynamic-modules")))]
+use std::sync::Arc;
+#[cfg(feature = "dynamic-modules")]
 use std::sync::{Arc, LazyLock};
 
 #[cfg(feature = "dynamic-modules")]
@@ -160,7 +165,7 @@ impl DynamicModuleLoader {
     }
 
     fn call_status(status: mech_abi::MechStatusV1, context: impl Into<String>) -> MResult<()> {
-        if status == mech_abi::MechStatusV1::Ok {
+        if status == mech_abi::MechStatusV1::OK {
             Ok(())
         } else {
             Err(Self::dynamic_error(format!(
@@ -280,7 +285,7 @@ impl ModuleLoader for DynamicModuleLoader {
                     ptr: std::ptr::null(),
                     len: 0,
                 },
-                kind: mech_abi::MechKernelKindV1::BinaryF64F64ToF64,
+                kind: mech_abi::MechKernelKindV1::BINARY_F64_F64_TO_F64,
                 function: mech_abi::MechKernelFnV1 {
                     binary_f64_f64_to_f64: dynamic_null_binary_f64_f64_to_f64,
                 },
@@ -419,23 +424,7 @@ unsafe extern "C" fn dynamic_null_binary_f64_f64_to_f64(
     _k: f64,
     _out: *mut f64,
 ) -> mech_abi::MechStatusV1 {
-    mech_abi::MechStatusV1::Unsupported
-}
-
-#[cfg(feature = "dynamic-modules")]
-unsafe extern "C" fn dynamic_null_unary_f64_to_f64(
-    _input: f64,
-    _out: *mut f64,
-) -> mech_abi::MechStatusV1 {
-    mech_abi::MechStatusV1::Unsupported
-}
-
-#[cfg(feature = "dynamic-modules")]
-unsafe extern "C" fn dynamic_null_unary_f64_view_to_f64_view(
-    _input: mech_abi::MechF64ViewV1,
-    _out: mech_abi::MechF64ViewMutV1,
-) -> mech_abi::MechStatusV1 {
-    mech_abi::MechStatusV1::Unsupported
+    mech_abi::MechStatusV1::UNSUPPORTED
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -477,7 +466,7 @@ fn dynamic_status_name(status: mech_abi::MechStatusV1) -> &'static str {
 
 #[cfg(feature = "dynamic-modules")]
 fn check_dynamic_kernel_status(function: &str, status: mech_abi::MechStatusV1) -> MResult<()> {
-    if status == mech_abi::MechStatusV1::Ok {
+    if status == mech_abi::MechStatusV1::OK {
         return Ok(());
     }
 
@@ -630,7 +619,7 @@ fn load_dynamic_resident_kernel(
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: mech_abi::MechKernelKindV1::BinaryF64F64ToF64,
+            kind: mech_abi::MechKernelKindV1::BINARY_F64_F64_TO_F64,
             function: mech_abi::MechKernelFnV1 {
                 binary_f64_f64_to_f64: dynamic_null_binary_f64_f64_to_f64,
             },
@@ -746,7 +735,7 @@ fn dynamic_resident_execute(
                 return Err(ResidentKernelError::InvalidShape);
             }
             let status = unsafe { kernel(input[0], next.as_mut_ptr()) };
-            if status != mech_abi::MechStatusV1::Ok {
+            if status != mech_abi::MechStatusV1::OK {
                 return Err(ResidentKernelError::Arithmetic);
             }
         }
@@ -766,7 +755,7 @@ fn dynamic_resident_execute(
                         target,
                     )
                 };
-                if status != mech_abi::MechStatusV1::Ok {
+                if status != mech_abi::MechStatusV1::OK {
                     return Err(ResidentKernelError::Arithmetic);
                 }
             }
@@ -801,7 +790,7 @@ fn dynamic_resident_execute(
                     },
                 )
             };
-            if status != mech_abi::MechStatusV1::Ok {
+            if status != mech_abi::MechStatusV1::OK {
                 return Err(ResidentKernelError::Arithmetic);
             }
         }
@@ -848,7 +837,7 @@ impl FunctionSpecializer for DynamicOverloadedSpecializer {
 #[derive(Clone)]
 enum DynamicF64Arg {
     Scalar(Ref<f64>),
-    Matrix(Matrix<f64>),
+    Matrix(RuntimeMatrix<f64>),
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -895,10 +884,6 @@ impl DynamicF64BinaryBroadcastPlan {
             cols,
             len,
         })
-    }
-
-    fn new_output_matrix(&self) -> Matrix<f64> {
-        Matrix::from_vec(vec![0.0; self.len], self.rows, self.cols)
     }
 }
 
@@ -1115,8 +1100,8 @@ fn dynamic_arg_as_f64_scalar_or_matrix(
 }
 
 #[cfg(feature = "dynamic-modules")]
-fn matrix_is_dmatrix(matrix: &Matrix<f64>) -> bool {
-    matches!(matrix, Matrix::DMatrix(_))
+fn matrix_is_dmatrix(matrix: &RuntimeMatrix<f64>) -> bool {
+    matches!(matrix, RuntimeMatrix::DMatrix(_))
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -1129,42 +1114,42 @@ fn initial_dynamic_binary_output(
     lhs: &DynamicF64Arg,
     rhs: &DynamicF64Arg,
     plan: &DynamicF64BinaryBroadcastPlan,
-) -> Matrix<f64> {
+) -> RuntimeMatrix<f64> {
     if dynamic_arg_has_dmatrix(lhs) || dynamic_arg_has_dmatrix(rhs) {
-        Matrix::DMatrix(Ref::new(DMatrix::from_vec(
+        RuntimeMatrix::DMatrix(Ref::new(DMatrix::from_vec(
             plan.rows,
             plan.cols,
             vec![0.0; plan.len],
         )))
     } else {
-        Matrix::from_vec(vec![0.0; plan.len], plan.rows, plan.cols)
+        RuntimeMatrix::from_vec(vec![0.0; plan.len], plan.rows, plan.cols)
     }
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn initial_dynamic_unary_output(
-    input: &Matrix<f64>,
+    input: &RuntimeMatrix<f64>,
     rows: usize,
     cols: usize,
     len: usize,
-) -> Matrix<f64> {
+) -> RuntimeMatrix<f64> {
     match input {
-        Matrix::DMatrix(_) => {
-            Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, vec![0.0; len])))
+        RuntimeMatrix::DMatrix(_) => {
+            RuntimeMatrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, vec![0.0; len])))
         }
-        Matrix::DVector(_) if cols == 1 => {
-            Matrix::DVector(Ref::new(DVector::from_vec(vec![0.0; len])))
+        RuntimeMatrix::DVector(_) if cols == 1 => {
+            RuntimeMatrix::DVector(Ref::new(DVector::from_vec(vec![0.0; len])))
         }
-        Matrix::RowDVector(_) if rows == 1 => {
-            Matrix::RowDVector(Ref::new(RowDVector::from_vec(vec![0.0; len])))
+        RuntimeMatrix::RowDVector(_) if rows == 1 => {
+            RuntimeMatrix::RowDVector(Ref::new(RowDVector::from_vec(vec![0.0; len])))
         }
-        _ => Matrix::from_vec(vec![0.0; len], rows, cols),
+        _ => RuntimeMatrix::from_vec(vec![0.0; len], rows, cols),
     }
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn replace_dynamic_matrix_output(
-    output: &Matrix<f64>,
+    output: &RuntimeMatrix<f64>,
     rows: usize,
     cols: usize,
     values: Vec<f64>,
@@ -1199,24 +1184,38 @@ fn replace_dynamic_matrix_output(
     }
 
     match output {
-        Matrix::DMatrix(matrix) => {
+        RuntimeMatrix::DMatrix(matrix) => {
             *matrix.borrow_mut() = DMatrix::from_vec(rows, cols, values);
             Ok(())
         }
-        Matrix::DVector(vector) => {
+        RuntimeMatrix::DVector(vector) => {
             if cols != 1 {
                 return Err(MechError::new(GenericError { msg: format!("dynamic function `{}` output cannot represent shape {}x{} as a column vector", function_name, rows, cols) }, None).with_compiler_loc());
             }
             *vector.borrow_mut() = DVector::from_vec(values);
             Ok(())
         }
-        Matrix::RowDVector(vector) => {
+        RuntimeMatrix::RowDVector(vector) => {
             if rows != 1 {
                 return Err(MechError::new(GenericError { msg: format!("dynamic function `{}` output cannot represent shape {}x{} as a row vector", function_name, rows, cols) }, None).with_compiler_loc());
             }
             *vector.borrow_mut() = RowDVector::from_vec(values);
             Ok(())
         }
+        #[cfg(any(
+            feature = "matrix1",
+            feature = "matrix2",
+            feature = "matrix3",
+            feature = "matrix4",
+            feature = "matrix2x3",
+            feature = "matrix3x2",
+            feature = "vector2",
+            feature = "vector3",
+            feature = "vector4",
+            feature = "row_vector2",
+            feature = "row_vector3",
+            feature = "row_vector4"
+        ))]
         _ => {
             if output.rows() != rows || output.cols() != cols {
                 return Err(MechError::new(
@@ -1290,7 +1289,7 @@ fn dynamic_binary_broadcast_plan(
 }
 
 #[cfg(feature = "dynamic-modules")]
-fn dynamic_arg_as_f64_matrix(value: &LegacyValue, fxn_name: &str) -> MResult<Matrix<f64>> {
+fn dynamic_arg_as_f64_matrix(value: &LegacyValue, fxn_name: &str) -> MResult<RuntimeMatrix<f64>> {
     match value {
         #[cfg(all(feature = "matrix", feature = "f64"))]
         LegacyValue::MatrixF64(matrix) => Ok(matrix.clone()),
@@ -1385,7 +1384,7 @@ struct DynamicBinaryF64F64BroadcastFunction {
     name: String,
     lhs: DynamicF64Arg,
     rhs: DynamicF64Arg,
-    out: Matrix<f64>,
+    out: RuntimeMatrix<f64>,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
@@ -1394,7 +1393,7 @@ struct DynamicBinaryF64F64BroadcastFunction {
 fn solve_dynamic_binary_broadcast(
     lhs: &DynamicF64Arg,
     rhs: &DynamicF64Arg,
-    out: &Matrix<f64>,
+    out: &RuntimeMatrix<f64>,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     name: &str,
 ) -> MResult<()> {
@@ -1521,16 +1520,16 @@ impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
 #[cfg(feature = "dynamic-modules")]
 struct DynamicUnaryF64ViewToF64ViewFunction {
     name: String,
-    input: Matrix<f64>,
-    out: Matrix<f64>,
+    input: RuntimeMatrix<f64>,
+    out: RuntimeMatrix<f64>,
     kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn solve_dynamic_unary_view(
-    input: &Matrix<f64>,
-    out: &Matrix<f64>,
+    input: &RuntimeMatrix<f64>,
+    out: &RuntimeMatrix<f64>,
     kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     name: &str,
 ) -> MResult<()> {
@@ -2276,7 +2275,7 @@ mod dynamic_binary_broadcast_tests {
     }
 
     fn matrix(values: Vec<f64>, rows: usize, cols: usize) -> DynamicF64Arg {
-        DynamicF64Arg::Matrix(Matrix::from_vec(values, rows, cols))
+        DynamicF64Arg::Matrix(RuntimeMatrix::from_vec(values, rows, cols))
     }
 
     #[test]
@@ -2370,43 +2369,45 @@ mod dynamic_live_shape_solve_tests {
         unsafe {
             *out = lhs + rhs;
         }
-        mech_abi::MechStatusV1::Ok
+        mech_abi::MechStatusV1::OK
     }
 
     extern "C" fn double_view_kernel(
         input: mech_abi::MechF64ViewV1,
-        mut out: mech_abi::MechF64ViewMutV1,
+        out: mech_abi::MechF64ViewMutV1,
     ) -> mech_abi::MechStatusV1 {
         for index in 0..input.len {
             unsafe {
                 *out.ptr.add(index) = *input.ptr.add(index) * 2.0;
             }
         }
-        mech_abi::MechStatusV1::Ok
+        mech_abi::MechStatusV1::OK
     }
 
-    fn dmatrix(values: Vec<f64>, rows: usize, cols: usize) -> Matrix<f64> {
-        Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, values)))
+    fn dmatrix(values: Vec<f64>, rows: usize, cols: usize) -> RuntimeMatrix<f64> {
+        RuntimeMatrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, values)))
     }
 
-    fn set_dmatrix(matrix: &Matrix<f64>, values: Vec<f64>, rows: usize, cols: usize) {
+    fn set_dmatrix(matrix: &RuntimeMatrix<f64>, values: Vec<f64>, rows: usize, cols: usize) {
         match matrix {
-            Matrix::DMatrix(inner) => *inner.borrow_mut() = DMatrix::from_vec(rows, cols, values),
+            RuntimeMatrix::DMatrix(inner) => {
+                *inner.borrow_mut() = DMatrix::from_vec(rows, cols, values)
+            }
             _ => panic!("expected DMatrix"),
         }
     }
 
-    fn values(matrix: &Matrix<f64>) -> Vec<f64> {
+    fn values(matrix: &RuntimeMatrix<f64>) -> Vec<f64> {
         (1..=matrix.rows() * matrix.cols())
             .map(|index| matrix.index1d(index))
             .collect()
     }
 
-    fn ref_id(matrix: &Matrix<f64>) -> u64 {
+    fn ref_id(matrix: &RuntimeMatrix<f64>) -> u64 {
         match matrix {
-            Matrix::DMatrix(inner) => inner.id(),
-            Matrix::DVector(inner) => inner.id(),
-            Matrix::RowDVector(inner) => inner.id(),
+            RuntimeMatrix::DMatrix(inner) => inner.id(),
+            RuntimeMatrix::DVector(inner) => inner.id(),
+            RuntimeMatrix::RowDVector(inner) => inner.id(),
             _ => 0,
         }
     }
@@ -2516,10 +2517,10 @@ mod dynamic_live_shape_solve_tests {
 
     #[test]
     fn dynamic_row_vector_output_preserves_row_vector_representation() {
-        let input = Matrix::RowDVector(Ref::new(RowDVector::from_vec(vec![1.0, 2.0])));
+        let input = RuntimeMatrix::RowDVector(Ref::new(RowDVector::from_vec(vec![1.0, 2.0])));
         let out = initial_dynamic_unary_output(&input, 1, 2, 2);
         solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
-        assert!(matches!(out, Matrix::RowDVector(_)));
+        assert!(matches!(out, RuntimeMatrix::RowDVector(_)));
         assert_eq!(
             (out.rows(), out.cols(), values(&out)),
             (1, 2, vec![2.0, 4.0])
@@ -2528,10 +2529,10 @@ mod dynamic_live_shape_solve_tests {
 
     #[test]
     fn dynamic_column_vector_output_preserves_column_vector_representation() {
-        let input = Matrix::DVector(Ref::new(DVector::from_vec(vec![1.0, 2.0])));
+        let input = RuntimeMatrix::DVector(Ref::new(DVector::from_vec(vec![1.0, 2.0])));
         let out = initial_dynamic_unary_output(&input, 2, 1, 2);
         solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
-        assert!(matches!(out, Matrix::DVector(_)));
+        assert!(matches!(out, RuntimeMatrix::DVector(_)));
         assert_eq!(
             (out.rows(), out.cols(), values(&out)),
             (2, 1, vec![2.0, 4.0])

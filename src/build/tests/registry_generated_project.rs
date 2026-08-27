@@ -221,8 +221,8 @@ fn wait_for_marker(child: &mut Child, marker: &Path, stdout: &Path, stderr: &Pat
             );
         }
         if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
+            drop(child.kill());
+            drop(child.wait());
             panic_with_process_output(stdout, stderr, "timed out waiting for live driver start");
         }
         thread::sleep(Duration::from_millis(25));
@@ -236,8 +236,8 @@ fn wait_for_exit(child: &mut Child, stdout: &Path, stderr: &Path) -> std::proces
             return status;
         }
         if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
+            drop(child.kill());
+            drop(child.wait());
             panic_with_process_output(stdout, stderr, "timed out waiting for live child exit");
         }
         thread::sleep(Duration::from_millis(25));
@@ -408,6 +408,22 @@ fn synthetic_live_runtime_config() -> NativeRuntimeConfig {
 }
 
 fn append_test_only_workspace_patch(manifest: &Path, workspace: &Path) {
+    let manifest_document = fs::read_to_string(manifest)
+        .unwrap()
+        .parse::<toml_edit::DocumentMut>()
+        .unwrap();
+    let dependencies = manifest_document
+        .get("dependencies")
+        .and_then(|item| item.as_table_like())
+        .unwrap();
+    let selected_packages = dependencies
+        .iter()
+        .filter_map(|(_, item)| {
+            item.as_inline_table()
+                .and_then(|specification| specification.get("package"))
+                .and_then(|package| package.as_str())
+        })
+        .collect::<std::collections::BTreeSet<_>>();
     let mut patch = String::from("\n[patch.crates-io]\n");
     for (package, relative_path) in [
         ("mech-core", "src/core"),
@@ -435,6 +451,9 @@ fn append_test_only_workspace_patch(manifest: &Path, workspace: &Path) {
             "tests/fixtures/native-live-host",
         ),
     ] {
+        if !selected_packages.contains(package) {
+            continue;
+        }
         let path = workspace.join(relative_path).display().to_string();
         patch.push_str(&format!(
             "{package} = {{ path = \"{}\" }}\n",

@@ -143,10 +143,12 @@ impl<R> OwnedTurnRecordQueue<R> {
     #[cfg(test)]
     pub(super) fn poison_mutex_for_test(&self) {
         let state = Arc::clone(&self.state);
-        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
-            let _guard = state.lock().unwrap();
-            panic!("poison queue mutex for recovery test");
-        }));
+        drop(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+            move || {
+                let _guard = state.lock().unwrap();
+                panic!("poison queue mutex for recovery test");
+            },
+        )));
     }
 
     fn lock(&self) -> MutexGuard<'_, QueueState<R>> {

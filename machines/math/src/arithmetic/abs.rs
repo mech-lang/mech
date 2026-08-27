@@ -1,13 +1,17 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
+#[cfg(feature = "source")]
 use num_traits::*;
 
 // Abs ------------------------------------------------------------------------
 
-use libm::{fabs, fabsf};
+#[cfg(feature = "f64")]
+use libm::fabs;
+#[cfg(feature = "f32")]
+use libm::fabsf;
 
+#[cfg(any(feature = "u8", feature = "u16", feature = "u32", feature = "u64", feature = "u128"))]
 macro_rules! uabs_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -16,6 +20,7 @@ macro_rules! uabs_op {
     };
 }
 
+#[cfg(any(feature = "u8", feature = "u16", feature = "u32", feature = "u64", feature = "u128"))]
 macro_rules! uabs_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -26,10 +31,24 @@ macro_rules! uabs_vec_op {
     };
 }
 
+#[cfg(any(
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 trait RuntimeCheckedAbs: Copy {
     fn runtime_checked_abs(self) -> Option<Self>;
 }
 
+#[cfg(any(
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 macro_rules! impl_runtime_checked_abs {
     ($($type:ty),+ $(,)?) => {
         $(
@@ -42,14 +61,35 @@ macro_rules! impl_runtime_checked_abs {
     };
 }
 
+#[cfg(any(
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 impl_runtime_checked_abs!(i8, i16, i32, i64, i128);
 
+#[cfg(any(
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 fn checked_abs_value<T: RuntimeCheckedAbs>(value: T) -> MResult<T> {
     value
         .runtime_checked_abs()
         .ok_or_else(|| arithmetic_overflow::<T>("absolute value"))
 }
 
+#[cfg(any(
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 macro_rules! checked_abs_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -59,6 +99,13 @@ macro_rules! checked_abs_op {
     };
 }
 
+#[cfg(any(
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 macro_rules! checked_abs_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -71,6 +118,7 @@ macro_rules! checked_abs_vec_op {
     };
 }
 
+#[cfg(any(feature = "c64", feature = "r64"))]
 macro_rules! abs_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -79,6 +127,7 @@ macro_rules! abs_op {
     };
 }
 
+#[cfg(any(feature = "c64", feature = "r64"))]
 macro_rules! abs_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -89,6 +138,7 @@ macro_rules! abs_vec_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! fabs_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -97,6 +147,7 @@ macro_rules! fabs_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! fabs_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -107,6 +158,7 @@ macro_rules! fabs_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! fabsf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -115,6 +167,7 @@ macro_rules! fabsf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! fabsf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -204,7 +257,7 @@ mod checked_abs_tests {
 fn impl_abs_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathAbs,
-      (lhs_value),
+      lhs_value,
       U8 => MatrixU8, u8, u8::zero(), "u8";
       U16 => MatrixU16, u16, u16::zero(), "u16";
       U32 => MatrixU32, u32, u32::zero(), "u32";
@@ -241,8 +294,8 @@ impl FunctionSpecializer for MathAbs {
         let input = arguments[0].clone();
         match impl_abs_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(_) => match (input) {
-                (LegacyValue::MutableReference(input)) => impl_abs_fxn(input.borrow().clone()),
+            Err(_) => match input {
+                LegacyValue::MutableReference(input) => impl_abs_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

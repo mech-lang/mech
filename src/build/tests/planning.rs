@@ -26,7 +26,7 @@ use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, Runt
 use sha2::{Digest, Sha256};
 
 #[path = "support/isolated.rs"]
-mod isolated;
+pub mod isolated;
 use isolated::{OwnerProfile, RunnerAction, fixture_path, run_owner, workspace_root};
 #[cfg(not(feature = "full-hosts"))]
 use mech_runtime::{

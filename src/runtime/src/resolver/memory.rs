@@ -219,7 +219,7 @@ impl InMemorySourceResolver {
         #[cfg(feature = "source")]
         let syntax_tree = mech_syntax::parser::parse(source.trim())?;
 
-        let mut resolved = ResolvedSource::new(
+        let resolved = ResolvedSource::new(
             specifier.clone(),
             Self::default_canonical_uri(&specifier),
             MechSourceCode::String(source),
@@ -227,9 +227,7 @@ impl InMemorySourceResolver {
         .with_kind(SourceKind::Mech);
 
         #[cfg(feature = "source")]
-        {
-            resolved = resolved.with_syntax_tree(syntax_tree);
-        }
+        let resolved = resolved.with_syntax_tree(syntax_tree);
 
         self.insert_source(specifier, resolved)
     }
@@ -237,7 +235,7 @@ impl InMemorySourceResolver {
     pub fn with_string(mut self, specifier: impl Into<String>, source: impl Into<String>) -> Self {
         let specifier = specifier.into();
         let source = source.into();
-        let mut resolved = ResolvedSource::new(
+        let resolved = ResolvedSource::new(
             specifier.clone(),
             Self::default_canonical_uri(&specifier),
             MechSourceCode::String(source.clone()),
@@ -249,16 +247,35 @@ impl InMemorySourceResolver {
         // canonical fallback parse reports the real syntax diagnostic instead
         // of turning it into a misleading missing-source error.
         #[cfg(feature = "source")]
-        if let Ok(syntax_tree) = mech_syntax::parser::parse(source.trim()) {
-            resolved = resolved.with_syntax_tree(syntax_tree);
-        }
+        let resolved = if let Ok(syntax_tree) = mech_syntax::parser::parse(source.trim()) {
+            resolved.with_syntax_tree(syntax_tree)
+        } else {
+            resolved
+        };
 
-        let _ = self.insert_source(specifier, resolved);
+        if self.insert_source(specifier, resolved).is_err() {
+            // Preserve the established infallible-builder contract: invalid
+            // entries are left absent and can be reported by later resolution.
+            return self;
+        }
         self
     }
 
+    pub fn try_with_source(
+        mut self,
+        specifier: impl Into<String>,
+        source: ResolvedSource,
+    ) -> MResult<Self> {
+        self.insert_source(specifier, source)?;
+        Ok(self)
+    }
+
     pub fn with_source(mut self, specifier: impl Into<String>, source: ResolvedSource) -> Self {
-        let _ = self.insert_source(specifier, source);
+        if self.insert_source(specifier, source).is_err() {
+            // Preserve source compatibility for the historical infallible
+            // builder. New callers that need validation use try_with_source.
+            return self;
+        }
         self
     }
 
@@ -767,6 +784,34 @@ mod tests {
         );
 
         assert!(resolver.insert_source("bad", bad).is_err());
+    }
+
+    #[test]
+    fn try_with_source_reports_invalid_resolved_source() {
+        let bad = ResolvedSource::new(
+            "",
+            "memory:bad",
+            MechSourceCode::String("x := 1".to_string()),
+        );
+
+        assert!(
+            InMemorySourceResolver::new()
+                .try_with_source("bad", bad)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn with_source_preserves_non_panicking_compatibility_behavior() {
+        let bad = ResolvedSource::new(
+            "",
+            "memory:bad",
+            MechSourceCode::String("x := 1".to_string()),
+        );
+
+        let resolver = InMemorySourceResolver::new().with_source("bad", bad);
+
+        assert!(!resolver.contains("bad"));
     }
 
     #[test]

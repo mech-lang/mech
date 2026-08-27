@@ -630,7 +630,7 @@ impl BrowserNetworkScope {
             ));
         }
 
-        let (host, port) = match rest.rsplit_once(':') {
+        let host = match rest.rsplit_once(':') {
             Some((host, port)) => {
                 if port.is_empty() || !port.bytes().all(|byte| byte.is_ascii_digit()) {
                     return Err(invalid("network origin ports must be numeric"));
@@ -641,11 +641,10 @@ impl BrowserNetworkScope {
                 if port == 0 {
                     return Err(invalid("network origin port 0 is not allowed"));
                 }
-                (host, Some(port))
+                host
             }
-            None => (rest, None),
+            None => rest,
         };
-        let _ = port;
 
         if !is_valid_browser_origin_host(host) {
             return Err(invalid("network origins must include a valid simple host"));

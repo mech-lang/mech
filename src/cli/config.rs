@@ -93,7 +93,9 @@ mod config_tests {
     use crate::cli::run_options::*;
     #[cfg(feature = "serve")]
     use crate::cli::serve_options::{EffectiveServeOptions, ServeCliArgs};
-    use mech_runtime::{ConfigProfileOptions, DEFAULT_CONFIG_FILENAME, MechConfigDocument};
+    #[cfg(feature = "serve")]
+    use mech_runtime::DEFAULT_CONFIG_FILENAME;
+    use mech_runtime::{ConfigProfileOptions, MechConfigDocument};
     #[cfg(feature = "serve")]
     use std::path::Path;
     use std::path::PathBuf;

@@ -1,31 +1,60 @@
 use self::LegacySnapshotError::*;
-use super::{
-    LegacyNominalResolution, LegacySemanticContext, kind_expr_from_legacy,
-    schema_from_legacy_value_kind,
-};
+#[cfg(any(feature = "atom", feature = "enum"))]
+use super::LegacyNominalResolution;
+use super::{LegacySemanticContext, kind_expr_from_legacy, schema_from_legacy_value_kind};
 use crate::legacy_value::{LegacyValue, ValueKind};
+#[cfg(feature = "complex")]
+use crate::snapshot::Complex64Bits;
+#[cfg(feature = "enum")]
+use crate::snapshot::EnumDraft;
+#[cfg(feature = "f32")]
+use crate::snapshot::F32Bits;
+#[cfg(feature = "f64")]
+use crate::snapshot::F64Bits;
+#[cfg(feature = "map")]
+use crate::snapshot::MapEntryDraft;
+#[cfg(feature = "record")]
+use crate::snapshot::NamedValueDraft;
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
+use crate::snapshot::SequenceView;
+use crate::snapshot::TableColumnDraft;
 use crate::snapshot::{
-    Complex32Bits, Complex64Bits, EnumDraft, F32Bits, F64Bits, MapEntryDraft, NamedValueDraft,
-    OptionDraft, ReifiedType, ReifiedTypeDraft, SequenceView, SnapshotPath, SnapshotPathSegment,
-    SnapshotValidationContext, SnapshotValueError, TableColumnDraft, Value, ValueData,
-    ValueDataDraft, ValueDraft,
+    OptionDraft, ReifiedType, ReifiedTypeDraft, SnapshotPathSegment, SnapshotValidationContext,
+    SnapshotValueError, Value, ValueData, ValueDataDraft, ValueDraft,
 };
 use crate::{
     DimensionExpr, DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin,
-    FloatWidth, IntegerWidth, KindExpr, NominalKey, NominalKind, Schema, SchemaBody, SchemaDraft,
-    SchemaId, SchemaKey, SchemaTable, SemanticModelError,
+    FloatWidth, IntegerWidth, NominalKey, NominalKind, Schema, SchemaBody, SchemaDraft, SchemaId,
+    SchemaKey, SchemaTable, SemanticModelError,
 };
 
+#[cfg(all(
+    feature = "no_std",
+    any(
+        feature = "enum",
+        feature = "map",
+        all(feature = "matrix", feature = "matrixd")
+    )
+))]
+use alloc::vec;
 #[cfg(feature = "no_std")]
 use alloc::{
     boxed::Box,
     collections::BTreeSet,
     string::{String, ToString},
-    vec,
     vec::Vec,
 };
+#[cfg(all(
+    not(feature = "no_std"),
+    any(
+        feature = "enum",
+        feature = "map",
+        all(feature = "matrix", feature = "matrixd")
+    )
+))]
+use std::vec;
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, collections::BTreeSet, string::String, vec, vec::Vec};
+use std::{boxed::Box, collections::BTreeSet, string::String, vec::Vec};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LegacyEmptyPolicy {
@@ -736,6 +765,7 @@ fn draft_from_legacy_body(
         });
     }
 
+    #[cfg(feature = "matrix")]
     if let SchemaBody::Matrix { element, .. } = target.body {
         if let Some(values) = typed_matrix_draft(value) {
             return values;
@@ -894,6 +924,7 @@ fn logical_matrix_values<T: Clone + core::fmt::Debug + PartialEq + 'static>(
     Ok(ValueDataDraft::Matrix(values.into_boxed_slice()))
 }
 
+#[cfg(feature = "matrix")]
 fn typed_matrix_draft(value: &LegacyValue) -> Option<Result<ValueDataDraft, LegacySnapshotError>> {
     macro_rules! matrix {
         ($variant:ident, $convert:expr) => {
@@ -1084,11 +1115,11 @@ fn legacy_from_data(
     macro_rules! scalar_ref {
         ($feature:literal, $schema:pat, $data:pat => $value:expr, $variant:ident, $repr:ident) => {
             if matches!(schema, $schema) {
-                let $data = data else {
-                    unreachable!("validated snapshot data changed representation")
-                };
                 #[cfg(feature = $feature)]
                 {
+                    let $data = data else {
+                        unreachable!("validated snapshot data changed representation")
+                    };
                     return Ok(LegacyValue::$variant(crate::Ref::new($value)));
                 }
                 #[cfg(not(feature = $feature))]
@@ -1117,39 +1148,59 @@ fn legacy_from_data(
         (SchemaBody::Complex(FloatWidth::W32), ValueData::Complex32(_)) => {
             return Err(UnsupportedLegacyMaterialization);
         }
-        (SchemaBody::Complex(FloatWidth::W64), ValueData::Complex64(value)) => {
+        (SchemaBody::Complex(FloatWidth::W64), ValueData::Complex64(..)) => {
             #[cfg(feature = "complex")]
-            return Ok(LegacyValue::C64(crate::Ref::new(crate::C64::new(
-                value.real().to_f64(),
-                value.imaginary().to_f64(),
-            ))));
+            {
+                let ValueData::Complex64(value) = data else {
+                    unreachable!("the outer pattern already validated complex data")
+                };
+                return Ok(LegacyValue::C64(crate::Ref::new(crate::C64::new(
+                    value.real().to_f64(),
+                    value.imaginary().to_f64(),
+                ))));
+            }
             #[cfg(not(feature = "complex"))]
             return Err(LegacyRepresentationUnavailable {
                 representation: LegacyRepresentation::Complex64,
             });
         }
-        (SchemaBody::Rational64, ValueData::Rational64(value)) => {
+        (SchemaBody::Rational64, ValueData::Rational64(..)) => {
             #[cfg(feature = "rational")]
-            return Ok(LegacyValue::R64(crate::Ref::new(crate::R64::new(
-                value.numerator(),
-                i64::try_from(value.denominator()).map_err(|_| LegacyRationalOutOfRange)?,
-            ))));
+            {
+                let ValueData::Rational64(value) = data else {
+                    unreachable!("the outer pattern already validated rational data")
+                };
+                return Ok(LegacyValue::R64(crate::Ref::new(crate::R64::new(
+                    value.numerator(),
+                    i64::try_from(value.denominator()).map_err(|_| LegacyRationalOutOfRange)?,
+                ))));
+            }
             #[cfg(not(feature = "rational"))]
             return Err(LegacyRepresentationUnavailable {
                 representation: LegacyRepresentation::Rational64,
             });
         }
-        (SchemaBody::String, ValueData::String(value)) => {
+        (SchemaBody::String, ValueData::String(..)) => {
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            return Ok(LegacyValue::String(crate::Ref::new(value.to_string())));
+            {
+                let ValueData::String(value) = data else {
+                    unreachable!("the outer pattern already validated string data")
+                };
+                return Ok(LegacyValue::String(crate::Ref::new(value.to_string())));
+            }
             #[cfg(not(any(feature = "string", feature = "variable_define")))]
             return Err(LegacyRepresentationUnavailable {
                 representation: LegacyRepresentation::String,
             });
         }
-        (SchemaBody::Bool, ValueData::Bool(value)) => {
+        (SchemaBody::Bool, ValueData::Bool(..)) => {
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            return Ok(LegacyValue::Bool(crate::Ref::new(*value)));
+            {
+                let ValueData::Bool(value) = data else {
+                    unreachable!("the outer pattern already validated bool data")
+                };
+                return Ok(LegacyValue::Bool(crate::Ref::new(*value)));
+            }
             #[cfg(not(any(feature = "bool", feature = "variable_define")))]
             return Err(LegacyRepresentationUnavailable {
                 representation: LegacyRepresentation::Bool,
@@ -1161,9 +1212,12 @@ fn legacy_from_data(
                 usize::try_from(*value).map_err(|_| LegacyIndexOutOfRange)?,
             )));
         }
-        (SchemaBody::Atom(key), ValueData::Atom) => {
+        (SchemaBody::Atom(..), ValueData::Atom) => {
             #[cfg(feature = "atom")]
             {
+                let SchemaBody::Atom(key) = schema else {
+                    unreachable!("the outer pattern already validated atom data")
+                };
                 let (id, name) = context.resolve_nominal(NominalKind::Atom, *key)?;
                 let names = crate::Ref::new(crate::Dictionary::new());
                 names.borrow_mut().insert(id, name);
@@ -1176,9 +1230,13 @@ fn legacy_from_data(
                 representation: LegacyRepresentation::Atom,
             });
         }
-        (SchemaBody::Enum { key, variants }, ValueData::Enum(value)) => {
+        (SchemaBody::Enum { .. }, ValueData::Enum(..)) => {
             #[cfg(feature = "enum")]
             {
+                let (SchemaBody::Enum { key, variants }, ValueData::Enum(value)) = (schema, data)
+                else {
+                    unreachable!("the outer pattern already validated enum data")
+                };
                 let (enum_id, enum_name) = context.resolve_nominal(NominalKind::Enum, *key)?;
                 let variant = &variants[value.ordinal() as usize];
                 let variant_id = crate::hash_str(&variant.name);
@@ -1228,9 +1286,12 @@ fn legacy_from_data(
                 )),
             };
         }
-        (SchemaBody::Tuple(elements), ValueData::Tuple(values)) => {
+        (SchemaBody::Tuple(..), ValueData::Tuple(..)) => {
             #[cfg(feature = "tuple")]
             {
+                let (SchemaBody::Tuple(elements), ValueData::Tuple(values)) = (schema, data) else {
+                    unreachable!("the outer pattern already validated tuple data")
+                };
                 let values = elements
                     .iter()
                     .zip(values.iter())
@@ -1247,9 +1308,12 @@ fn legacy_from_data(
                 representation: LegacyRepresentation::Tuple,
             });
         }
-        (SchemaBody::Record(fields), ValueData::Record(values)) => {
+        (SchemaBody::Record(..), ValueData::Record(..)) => {
             #[cfg(feature = "record")]
             {
+                let (SchemaBody::Record(fields), ValueData::Record(values)) = (schema, data) else {
+                    unreachable!("the outer pattern already validated record data")
+                };
                 let mut legacy_fields = Vec::with_capacity(fields.len());
                 let mut kinds = Vec::with_capacity(fields.len());
                 for (field, value) in fields.iter().zip(values.fields()) {
@@ -1272,13 +1336,19 @@ fn legacy_from_data(
                 representation: LegacyRepresentation::Record,
             });
         }
-        (
-            SchemaBody::Matrix {
-                element,
-                dimensions,
-            },
-            ValueData::Matrix(value),
-        ) => {
+        (SchemaBody::Matrix { .. }, ValueData::Matrix(..)) => {
+            #[cfg(all(feature = "matrix", feature = "matrixd"))]
+            let (
+                SchemaBody::Matrix {
+                    element,
+                    dimensions,
+                },
+                ValueData::Matrix(value),
+            ) = (schema, data)
+            else {
+                unreachable!("the outer pattern already validated matrix data")
+            };
+            #[cfg(all(feature = "matrix", feature = "matrixd"))]
             return legacy_matrix_from_snapshot(
                 element,
                 dimensions,
@@ -1287,8 +1357,18 @@ fn legacy_from_data(
                 schemas,
                 context,
             );
+            #[cfg(not(all(feature = "matrix", feature = "matrixd")))]
+            return Err(LegacyRepresentationUnavailable {
+                representation: LegacyRepresentation::Matrix,
+            });
         }
-        (SchemaBody::Table { columns, rows }, ValueData::Table(value)) => {
+        (SchemaBody::Table { .. }, ValueData::Table(..)) => {
+            #[cfg(all(feature = "table", feature = "matrix", feature = "matrixd"))]
+            let (SchemaBody::Table { columns, rows }, ValueData::Table(value)) = (schema, data)
+            else {
+                unreachable!("the outer pattern already validated table data")
+            };
+            #[cfg(all(feature = "table", feature = "matrix", feature = "matrixd"))]
             return legacy_table_from_snapshot(
                 columns,
                 rows,
@@ -1297,16 +1377,24 @@ fn legacy_from_data(
                 schemas,
                 context,
             );
+            #[cfg(not(all(feature = "table", feature = "matrix", feature = "matrixd")))]
+            return Err(LegacyRepresentationUnavailable {
+                representation: LegacyRepresentation::Table,
+            });
         }
-        (
-            SchemaBody::Set {
-                element,
-                cardinality,
-            },
-            ValueData::Set(value),
-        ) => {
+        (SchemaBody::Set { .. }, ValueData::Set(..)) => {
             #[cfg(feature = "set")]
             {
+                let (
+                    SchemaBody::Set {
+                        element,
+                        cardinality,
+                    },
+                    ValueData::Set(value),
+                ) = (schema, data)
+                else {
+                    unreachable!("the outer pattern already validated set data")
+                };
                 let kind = value_kind_from_schema(element, shape_values, context)?;
                 let max_elements = Some(checked_usize(evaluate_dimension(
                     cardinality,
@@ -1334,16 +1422,20 @@ fn legacy_from_data(
                 representation: LegacyRepresentation::Set,
             });
         }
-        (
-            SchemaBody::Map {
-                key,
-                value: value_schema,
-                ..
-            },
-            ValueData::Map(value),
-        ) => {
+        (SchemaBody::Map { .. }, ValueData::Map(..)) => {
             #[cfg(feature = "map")]
             {
+                let (
+                    SchemaBody::Map {
+                        key,
+                        value: value_schema,
+                        ..
+                    },
+                    ValueData::Map(value),
+                ) = (schema, data)
+                else {
+                    unreachable!("the outer pattern already validated map data")
+                };
                 let key_kind = value_kind_from_schema(key, shape_values, context)?;
                 let value_kind = value_kind_from_schema(value_schema, shape_values, context)?;
                 let entries = value
@@ -1423,6 +1515,7 @@ fn legacy_from_data(
     }
 }
 
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
 fn legacy_matrix_from_snapshot(
     element: &SchemaBody,
     dimensions: &[DimensionExpr],
@@ -1459,6 +1552,7 @@ fn legacy_matrix_from_snapshot(
     }
 }
 
+#[cfg(all(feature = "table", feature = "matrix", feature = "matrixd"))]
 fn legacy_table_from_snapshot(
     columns: &[crate::SchemaField],
     rows: &DimensionExpr,
@@ -1502,6 +1596,7 @@ fn legacy_table_from_snapshot(
     }
 }
 
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
 fn unpack_sequence(sequence: SequenceView<'_>) -> Result<Vec<ValueData>, LegacySnapshotError> {
     macro_rules! values {
         ($items:expr, $variant:ident) => {
@@ -1539,6 +1634,7 @@ fn unpack_sequence(sequence: SequenceView<'_>) -> Result<Vec<ValueData>, LegacyS
     })
 }
 
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
 fn column_major(values: Vec<LegacyValue>, rows: usize, columns: usize) -> Vec<LegacyValue> {
     let mut result = Vec::with_capacity(values.len());
     for column in 0..columns {

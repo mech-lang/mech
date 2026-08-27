@@ -1,31 +1,20 @@
-#[macro_use]
 use crate::*;
 
-#[cfg(feature = "no-std")]
-use alloc::fmt;
-#[cfg(feature = "no-std")]
-use alloc::string::String;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::vec::Vec;
-#[cfg(not(feature = "no-std"))]
-use core::fmt;
 use nom::{
-    Err,
-    Err::Failure,
-    IResult,
     branch::alt,
-    combinator::{eof, opt},
-    multi::{many_till, many0, many1, separated_list0, separated_list1},
-    sequence::tuple as nom_tuple,
+    combinator::opt,
+    multi::{many1, separated_list0, separated_list1},
 };
 
 // function_define := identifier, "(", list0(list_separator, function_arg), ")", "=", (function_out_args | function_out_arg), define_operator, list1((whitespace1 | statement_separator), statement), period ;
 pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
-    let ((input, name)) = identifier(input)?;
-    let ((input, _)) = left_parenthesis(input)?;
-    let ((input, input_args)) = separated_list0(list_separator, function_arg)(input)?;
-    let ((input, _)) = right_parenthesis(input)?;
-    let ((input, _)) = whitespace0(input)?;
+    let (input, name) = identifier(input)?;
+    let (input, _) = left_parenthesis(input)?;
+    let (input, input_args) = separated_list0(list_separator, function_arg)(input)?;
+    let (input, _) = right_parenthesis(input)?;
+    let (input, _) = whitespace0(input)?;
     match function_define_match_arms(input.clone(), name.clone(), input_args.clone()) {
         Ok((input, fxn_def)) => Ok((input, fxn_def)),
         Err(_) => function_define_statements(input, name, input_args),
@@ -37,13 +26,13 @@ fn function_define_statements(
     name: Identifier,
     input_args: Vec<FunctionArgument>,
 ) -> ParseResult<FunctionDefine> {
-    let ((input, _)) = equal(input)?;
-    let ((input, _)) = whitespace0(input)?;
-    let ((input, output)) = alt((function_out_args, function_out_arg))(input)?;
-    let ((input, _)) = define_operator(input)?;
-    let ((input, statements)) =
+    let (input, _) = equal(input)?;
+    let (input, _) = whitespace0(input)?;
+    let (input, output) = alt((function_out_args, function_out_arg))(input)?;
+    let (input, _) = define_operator(input)?;
+    let (input, statements) =
         separated_list1(alt((whitespace1, statement_separator)), statement)(input)?;
-    let ((input, _)) = period(input)?;
+    let (input, _) = period(input)?;
     Ok((
         input,
         FunctionDefine {
@@ -123,22 +112,22 @@ fn function_match_arm(input: ParseString) -> ParseResult<FunctionMatchArm> {
 
 // function_out_args := "(", list1(list_separator, function_arg), ")" ;
 pub fn function_out_args(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
-    let ((input, _)) = left_parenthesis(input)?;
-    let ((input, args)) = separated_list1(list_separator, function_arg)(input)?;
-    let ((input, _)) = right_parenthesis(input)?;
+    let (input, _) = left_parenthesis(input)?;
+    let (input, args) = separated_list1(list_separator, function_arg)(input)?;
+    let (input, _) = right_parenthesis(input)?;
     Ok((input, args))
 }
 
 // function_out_arg := function_arg ;
 pub fn function_out_arg(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
-    let ((input, arg)) = function_arg(input)?;
+    let (input, arg) = function_arg(input)?;
     Ok((input, vec![arg]))
 }
 
 // function_arg := identifier, kind_annotation ;
 pub fn function_arg(input: ParseString) -> ParseResult<FunctionArgument> {
-    let ((input, name)) = identifier(input)?;
-    let ((input, kind)) = kind_annotation(input)?;
+    let (input, name) = identifier(input)?;
+    let (input, kind) = kind_annotation(input)?;
     Ok((input, FunctionArgument { name, kind }))
 }
 

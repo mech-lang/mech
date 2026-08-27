@@ -1,11 +1,10 @@
-#[macro_use]
 pub use crate::*;
 #[cfg(feature = "erf")]
 pub mod erf;
 #[cfg(feature = "erfc")]
 pub mod erfc;
 
-#[cfg(feature = "erf")]
+#[cfg(all(feature = "erf", feature = "source"))]
 pub use self::erf::*;
-#[cfg(feature = "erfc")]
+#[cfg(all(feature = "erfc", feature = "source"))]
 pub use self::erfc::*;

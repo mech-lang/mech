@@ -6,13 +6,16 @@ use super::transaction::RuntimeHealth;
 use crate::{
     BasicCapabilityKernel, CapabilityKernel, DEFAULT_HOST_INPUT_CAPACITY, DefaultHostCallPolicy,
     DefaultIdGenerator, HostCallPolicy, HostInstanceConfig, HostInterfaceCatalog, HostRegistry,
-    IdGenerator, InMemoryDocsProvider, InMemoryHostRegistry, InMemoryScheduler,
-    InMemorySourceResolver, InMemoryStore, MechStore, ModuleBuilder, RegisteredHostFunction,
-    RunResourceGrantConfig, RuntimeConfig, RuntimeConfigSpec, RuntimeEventKind, RuntimeHostFactory,
-    RuntimeHostFactoryRegistry, RuntimeHostInputDriver, RuntimeHostInputQueueState,
-    RuntimeResourceProvider, RuntimeResourceRegistry, Scheduler, SchedulerPolicy, SourceResolver,
-    materialize_config_spec_grants, register_config_spec_resources,
+    IdGenerator, InMemoryDocsProvider, InMemoryHostRegistry, InMemoryScheduler, InMemoryStore,
+    MechStore, ModuleBuilder, RegisteredHostFunction, RunResourceGrantConfig, RuntimeConfig,
+    RuntimeConfigSpec, RuntimeEventKind, RuntimeHostFactory, RuntimeHostFactoryRegistry,
+    RuntimeHostInputDriver, RuntimeHostInputQueueState, RuntimeResourceProvider,
+    RuntimeResourceRegistry, Scheduler, SchedulerPolicy, materialize_config_spec_grants,
+    register_config_spec_resources,
 };
+#[cfg(feature = "source")]
+use crate::{InMemorySourceResolver, SourceResolver};
+#[cfg(feature = "resident-routing")]
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
 #[cfg(feature = "resident-routing-source")]
@@ -20,6 +23,7 @@ use mech_engine::{CompilerPlanningConfig, CompilerPlanningLimits};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
+#[cfg(feature = "resident-routing")]
 use std::sync::Arc;
 
 // -----------------------------------------------------------------------------
@@ -28,10 +32,12 @@ use std::sync::Arc;
 
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
+    #[cfg(feature = "resident-routing")]
     function_catalog: Arc<FunctionCatalog>,
     id_generator: Box<dyn IdGenerator>,
     store: Box<dyn MechStore>,
     capability_kernel: Box<dyn CapabilityKernel>,
+    #[cfg(feature = "source")]
     source_resolver: Box<dyn SourceResolver>,
     host_registry: Box<dyn HostRegistry>,
     host_policy: Box<dyn HostCallPolicy>,
@@ -50,15 +56,14 @@ pub struct RuntimeBuilder {
 
 impl std::fmt::Debug for RuntimeBuilder {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let function_catalog = "<FunctionCatalog>";
-
-        f.debug_struct("RuntimeBuilder")
-            .field("config", &self.config)
-            .field("function_catalog", &function_catalog)
+        let mut debug = f.debug_struct("RuntimeBuilder");
+        debug.field("config", &self.config);
+        #[cfg(feature = "resident-routing")]
+        debug.field("function_catalog", &"<FunctionCatalog>");
+        debug
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
             .field("capability_kernel", &"<dyn CapabilityKernel>")
-            .field("source_resolver", &"<dyn SourceResolver>")
             .field("host_registry", &"<dyn HostRegistry>")
             .field("host_policy", &"<dyn HostCallPolicy>")
             .field("scheduler", &"<dyn Scheduler>")
@@ -69,8 +74,10 @@ impl std::fmt::Debug for RuntimeBuilder {
             .field("host_factories", &self.host_factories)
             .field("host_instances", &self.host_instances)
             .field("run_grants", &self.run_grants)
-            .field("module_manifests", &self.module_manifests)
-            .finish()
+            .field("module_manifests", &self.module_manifests);
+        #[cfg(feature = "source")]
+        debug.field("source_resolver", &"<dyn SourceResolver>");
+        debug.finish()
     }
 }
 
@@ -78,6 +85,7 @@ impl Default for RuntimeBuilder {
     fn default() -> Self {
         Self {
             config: RuntimeConfig::default(),
+            #[cfg(feature = "resident-routing")]
             function_catalog: mech_engine::empty_function_catalog(),
             id_generator: Box::new(DefaultIdGenerator::new()),
             store: Box::new(extension::RuntimeStoreBoundary::new(Box::new(
@@ -86,6 +94,7 @@ impl Default for RuntimeBuilder {
             capability_kernel: Box::new(extension::RuntimeCapabilityKernelBoundary::new(Box::new(
                 BasicCapabilityKernel::new(),
             ))),
+            #[cfg(feature = "source")]
             source_resolver: Box::new(InMemorySourceResolver::new()),
             host_registry: Box::new(InMemoryHostRegistry::new()),
             host_policy: Box::new(DefaultHostCallPolicy),
@@ -114,7 +123,7 @@ impl RuntimeBuilder {
         self
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "resident-routing-source"))]
     pub(crate) fn test_input_driver(self, driver: impl RuntimeHostInputDriver + 'static) -> Self {
         self.input_driver(driver)
     }
@@ -124,6 +133,7 @@ impl RuntimeBuilder {
         self
     }
 
+    #[cfg(feature = "resident-routing")]
     pub fn function_catalog(mut self, catalog: Arc<FunctionCatalog>) -> Self {
         self.function_catalog = catalog;
         self
@@ -146,6 +156,7 @@ impl RuntimeBuilder {
         self
     }
 
+    #[cfg(feature = "source")]
     pub fn source_resolver(mut self, source_resolver: impl SourceResolver + 'static) -> Self {
         self.source_resolver = Box::new(source_resolver);
         self
@@ -294,13 +305,12 @@ impl RuntimeBuilder {
             .map(|value| usize::try_from(value).unwrap_or(usize::MAX));
         self.store.configure_event_retention(max_events)?;
 
-        let function_catalog = Arc::clone(&self.function_catalog);
-
         let mut runtime = MechRuntime {
             id: runtime_id,
             event_sequence: 0,
             config: self.config,
-            function_catalog,
+            #[cfg(feature = "resident-routing")]
+            function_catalog: Arc::clone(&self.function_catalog),
             #[cfg(feature = "resident-routing")]
             active_program: Default::default(),
             #[cfg(feature = "resident-routing")]
@@ -312,6 +322,7 @@ impl RuntimeBuilder {
             id_generator: self.id_generator,
             store: self.store,
             capability_kernel: self.capability_kernel,
+            #[cfg(feature = "source")]
             source_resolver: self.source_resolver,
             host_registry: self.host_registry,
             host_policy: self.host_policy,
@@ -353,8 +364,13 @@ impl RuntimeBuilder {
             if let Err(error) = extension::invoke_extension("host input driver", "attach", || {
                 runtime.input_drivers[index].attach(ingress.clone())
             }) {
-                let _ = runtime.close_ingress();
                 let mut cleanup_failures = Vec::new();
+                if let Err(cleanup_error) = runtime.close_ingress() {
+                    cleanup_failures.push(format!(
+                        "input ingress close failed during rollback: {:?}",
+                        cleanup_error,
+                    ));
+                }
                 for rollback_index in (0..=index).rev() {
                     if let Err(cleanup_error) =
                         extension::invoke_extension("host input driver", "stop", || {
@@ -396,7 +412,7 @@ impl RuntimeBuilder {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "resident-routing"))]
 mod tests {
     use super::RuntimeBuilder;
     use mech_core::FunctionCatalogBuilder;

@@ -4,12 +4,16 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, FunctionValueRepresentation, GuardFunctionSafety, LegacyValue, MResult,
-    MechError, MechErrorKind, MechFunction, MechFunctionFactory, NativeValueFeature,
-    OperationContractDeclaration, ResidentKernelFactory, ResidentKernelFactoryEntry,
-    ResidentOperationKey, RuntimeFunctionContract, RuntimeFunctionSignature,
-    RuntimeOutputAliasPolicy, hash_str,
+    FunctionArgs, GuardFunctionSafety, LegacyValue, MResult, MechError, MechErrorKind,
+    MechFunction, MechFunctionFactory, OperationContractDeclaration, ResidentKernelFactory,
+    ResidentKernelFactoryEntry, ResidentOperationKey, RuntimeFunctionContract,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, hash_str,
 };
+
+#[cfg(test)]
+use crate::FunctionValueRepresentation;
+#[cfg(feature = "native-plan")]
+use crate::NativeValueFeature;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -1641,6 +1645,13 @@ mod tests {
     fn declaration_macro_registers_exactly_one_factory_and_rejects_duplicates() {
         let mut builder = FunctionCatalogBuilder::new();
         register_macro_factory(&mut builder).unwrap();
+
+        #[cfg(feature = "native-link")]
+        {
+            let mut native_builder = FunctionCatalogBuilder::new();
+            install_macro_factory(&mut native_builder).unwrap();
+            assert_eq!(native_builder.build().unwrap().runtime_factory_count(), 1);
+        }
 
         let error = register_macro_factory(&mut builder).unwrap_err();
         assert_eq!(error.kind_name(), "FunctionCatalogDuplicateRuntimeFactory");

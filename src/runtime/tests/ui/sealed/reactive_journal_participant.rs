@@ -6,5 +6,5 @@ fn forge_participant<'journal>(
 }
 
 fn main() {
-  let _ = forge_participant();
+  drop(forge_participant());
 }

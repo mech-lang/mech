@@ -609,11 +609,13 @@ impl ComputeCompletionTarget for ComputeHostCompletionTarget {
         );
         let updates = telemetry_updates_from_values(
             &self.resource,
-            &state.backend,
-            candidate_turns,
-            candidate_dispatch_ms,
-            candidate_fault_count,
-            &candidate_last_fault,
+            ComputeTelemetryValues {
+                backend: &state.backend,
+                turns: candidate_turns,
+                dispatch_ms: candidate_dispatch_ms,
+                fault_count: candidate_fault_count,
+                last_fault: &candidate_last_fault,
+            },
             &state.sample_subscriptions,
             &candidate_outputs,
         )
@@ -1048,11 +1050,13 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
         );
         let updates = telemetry_updates_from_values(
             &self.resource,
-            &state.backend,
-            candidate_turns,
-            candidate_dispatch_ms,
-            candidate_fault_count,
-            &candidate_last_fault,
+            ComputeTelemetryValues {
+                backend: &state.backend,
+                turns: candidate_turns,
+                dispatch_ms: candidate_dispatch_ms,
+                fault_count: candidate_fault_count,
+                last_fault: &candidate_last_fault,
+            },
             &state.sample_subscriptions,
             &candidate_outputs,
         )
@@ -1132,17 +1136,28 @@ fn canonical_turn_token(value: &RuntimeHostInputValue) -> MResult<ComputeTurnTok
     Ok(ComputeTurnToken(token))
 }
 
-#[allow(clippy::too_many_arguments)]
-fn telemetry_updates_from_values(
-    resource: &str,
-    backend: &str,
+#[derive(Clone, Copy)]
+struct ComputeTelemetryValues<'a> {
+    backend: &'a str,
     turns: f64,
     dispatch_ms: f64,
     fault_count: f64,
-    last_fault: &str,
+    last_fault: &'a str,
+}
+
+fn telemetry_updates_from_values(
+    resource: &str,
+    values: ComputeTelemetryValues<'_>,
     sample_subscriptions: &BTreeSet<String>,
     sampled_outputs: &BTreeMap<String, LegacyValue>,
 ) -> MResult<Vec<RuntimeHostInputUpdate>> {
+    let ComputeTelemetryValues {
+        backend,
+        turns,
+        dispatch_ms,
+        fault_count,
+        last_fault,
+    } = values;
     let mut updates = vec![
         telemetry_update(
             resource,
@@ -1259,11 +1274,13 @@ impl RuntimeHostInputDriver for ComputeTelemetryDriver {
                 state.require_ready("ComputeTelemetryDriver")?;
                 RuntimeHostInput::new(telemetry_updates_from_values(
                     &self.base_uri,
-                    &state.backend,
-                    *state.turns.borrow(),
-                    *state.dispatch_ms.borrow(),
-                    *state.fault_count.borrow(),
-                    &state.last_fault.borrow(),
+                    ComputeTelemetryValues {
+                        backend: &state.backend,
+                        turns: *state.turns.borrow(),
+                        dispatch_ms: *state.dispatch_ms.borrow(),
+                        fault_count: *state.fault_count.borrow(),
+                        last_fault: &state.last_fault.borrow(),
+                    },
                     &state.sample_subscriptions,
                     &state.sampled_outputs,
                 )?)?
@@ -1724,7 +1741,6 @@ mod tests {
             _program: &ComputeProgram,
         ) -> Result<Box<dyn ComputeExecutable>, ComputeBackendError> {
             Ok(Box::new(FakeExecutable {
-                backend: self.descriptor.id.clone(),
                 calls: Arc::clone(&self.calls),
                 result: self.result.clone(),
             }))
@@ -1732,7 +1748,6 @@ mod tests {
     }
 
     struct FakeExecutable {
-        backend: mech_compute::BackendId,
         calls: Arc<Mutex<Vec<FakeCall>>>,
         result: Result<ComputeDispatchReport, ComputeExecutionError>,
     }
@@ -1743,7 +1758,6 @@ mod tests {
             _initializers: &ComputeInitializerSet,
         ) -> Result<Box<dyn ComputeSession>, ComputeBackendError> {
             Ok(Box::new(FakeSession {
-                backend: self.backend.clone(),
                 calls: Arc::clone(&self.calls),
                 result: self.result.clone(),
             }))
@@ -1751,7 +1765,6 @@ mod tests {
     }
 
     struct FakeSession {
-        backend: mech_compute::BackendId,
         calls: Arc<Mutex<Vec<FakeCall>>>,
         result: Result<ComputeDispatchReport, ComputeExecutionError>,
     }
@@ -1784,7 +1797,6 @@ mod tests {
             selection: &mech_compute::ComputeOutputSelection,
         ) -> Result<mech_compute::ComputeOutputSnapshot, mech_compute::ComputeExecutionError>
         {
-            let _ = &self.backend;
             self.calls
                 .lock()
                 .unwrap()
@@ -2005,7 +2017,6 @@ mod tests {
             sample_subscriptions: BTreeSet::new(),
             phase,
             session: Box::new(FakeSession {
-                backend: BackendId::new(CPU_SCALAR_BACKEND).unwrap(),
                 calls,
                 result: Ok(ComputeDispatchReport {
                     completed_turns: 1,
@@ -2318,7 +2329,6 @@ mod tests {
                 last_submitted_turn: None,
             },
             session: Box::new(FakeSession {
-                backend: BackendId::new(CPU_SCALAR_BACKEND).unwrap(),
                 calls: Arc::clone(&calls),
                 result: Ok(ComputeDispatchReport {
                     completed_turns: 1,

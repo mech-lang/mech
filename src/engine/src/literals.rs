@@ -1,4 +1,6 @@
 use crate::*;
+use mech_core::kind::Kind;
+use mech_core::nodes::Kind as NodeKind;
 
 // Literals
 // ----------------------------------------------------------------------------
@@ -17,6 +19,13 @@ pub fn literal(ltrl: &Literal, p: &InterpreterExecution<'_>) -> MResult<LegacyVa
         Literal::Kind(knd) => kind_value(knd, p),
         #[cfg(feature = "convert")]
         Literal::TypedLiteral((ltrl, kind)) => typed_literal(ltrl, kind, p),
+        #[cfg(not(all(
+            feature = "bool",
+            feature = "string",
+            feature = "atom",
+            feature = "kind_annotation",
+            feature = "convert"
+        )))]
         _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
     }
 }
@@ -153,6 +162,7 @@ pub fn number(num: &Number, p: &InterpreterExecution<'_>) -> MResult<LegacyValue
         Number::Real(num) => real(num, p),
         #[cfg(feature = "complex")]
         Number::Complex(num) => complex(num, p),
+        #[cfg(not(feature = "complex"))]
         _ => panic!("Number type not supported."),
     }
 }
@@ -176,7 +186,19 @@ fn complex(num: &C64Node, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> 
     Ok(result)
 }
 
-pub fn real(rl: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+#[cfg(any(
+    feature = "math_neg",
+    feature = "f64",
+    feature = "floats",
+    feature = "i64",
+    feature = "rational",
+    feature = "convert"
+))]
+pub fn real(
+    rl: &RealNumber,
+    #[cfg(any(feature = "math_neg", feature = "convert"))] p: &InterpreterExecution<'_>,
+    #[cfg(not(any(feature = "math_neg", feature = "convert")))] _: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let result = match rl {
         #[cfg(feature = "math_neg")]
         RealNumber::Negated(num) => negated(num, p)?,
@@ -201,9 +223,29 @@ pub fn real(rl: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<LegacyValu
             let num: Literal = Literal::Number(Number::Real(RealNumber::Integer(num_tkn.clone())));
             typed_literal(&num, kind, p)?
         }
+        #[cfg(not(all(
+            feature = "math_neg",
+            feature = "f64",
+            feature = "floats",
+            feature = "i64",
+            feature = "rational",
+            feature = "convert"
+        )))]
         _ => panic!("Number type not supported."),
     };
     Ok(result)
+}
+
+#[cfg(not(any(
+    feature = "math_neg",
+    feature = "f64",
+    feature = "floats",
+    feature = "i64",
+    feature = "rational",
+    feature = "convert"
+)))]
+pub fn real(_: &RealNumber, _: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+    panic!("Number type not supported.")
 }
 
 #[cfg(feature = "math_neg")]

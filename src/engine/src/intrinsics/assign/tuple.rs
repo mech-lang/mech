@@ -1,8 +1,4 @@
-#[macro_use]
 use crate::intrinsics::*;
-use self::assign::*;
-
-use crate::*;
 
 // Tuple Assign ----------------------------------------------------------------
 

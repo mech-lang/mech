@@ -1,7 +1,7 @@
 use crate::patterns::*;
-use crate::tracing::{
-    format_fsm_trace, summarize_guard_condition, summarize_pattern, summarize_value,
-};
+use crate::tracing::summarize_pattern;
+#[cfg(feature = "trace")]
+use crate::tracing::{format_fsm_trace, summarize_guard_condition, summarize_value};
 use crate::*;
 use std::collections::HashSet;
 
@@ -157,7 +157,10 @@ fn execute_fsm_pipe_impl(
         })
         .collect::<MResult<Vec<_>>>()?;
     // Step through the FSM, applying transitions until we hit a terminal state (no applicable transitions) or exceed the step limit.
-    for step in 0..p.max_steps {
+    let mut steps_remaining = p.max_steps;
+    while steps_remaining > 0 {
+        #[cfg(feature = "trace")]
+        let step = p.max_steps - steps_remaining;
         trace_println!(
             p,
             "{}",
@@ -170,7 +173,12 @@ fn execute_fsm_pipe_impl(
         for (arm_idx, arm) in fsm.arms.iter().enumerate() {
             match arm {
                 FsmArm::Comment(_) => continue,
-                FsmArm::Transition(pattern, transitions) => {
+                FsmArm::Transition(_, transitions) => {
+                    #[cfg(feature = "trace")]
+                    let pattern = match arm {
+                        FsmArm::Transition(pattern, _) => pattern,
+                        _ => unreachable!("matched transition arm changed variant"),
+                    };
                     let base_env = call_env.clone();
                     let compiled_pattern = compiled_arm_patterns[arm_idx]
                         .as_ref()
@@ -193,6 +201,7 @@ fn execute_fsm_pipe_impl(
                         )
                     );
                     if matched {
+                        #[cfg(feature = "trace")]
                         let previous_state = summarize_value(state);
                         let out = apply_transitions(transitions, state, &mut arm_env, p)?;
                         restore_arm_local_bindings(&pattern_match, &base_env, &mut arm_env);
@@ -224,7 +233,12 @@ fn execute_fsm_pipe_impl(
                         break;
                     }
                 }
-                FsmArm::Guard(pattern, guards) => {
+                FsmArm::Guard(_, guards) => {
+                    #[cfg(feature = "trace")]
+                    let pattern = match arm {
+                        FsmArm::Guard(pattern, _) => pattern,
+                        _ => unreachable!("matched guard arm changed variant"),
+                    };
                     let base_env = call_env.clone();
                     let compiled_pattern = compiled_arm_patterns[arm_idx]
                         .as_ref()
@@ -285,6 +299,7 @@ fn execute_fsm_pipe_impl(
                         if !guard_passes {
                             continue;
                         }
+                        #[cfg(feature = "trace")]
                         let previous_state = summarize_value(state);
                         let out = apply_transitions(&guard.transitions, state, &mut arm_env, p)?;
                         restore_arm_local_bindings(&pattern_match, &base_env, &mut arm_env);
@@ -329,6 +344,7 @@ fn execute_fsm_pipe_impl(
             );
             return Ok(state.clone());
         }
+        steps_remaining -= 1;
     }
     Err(MechError::new(
         FsmExceededTransitionLimitError {

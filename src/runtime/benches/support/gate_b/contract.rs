@@ -63,15 +63,6 @@ impl EkfState {
         values[3..].copy_from_slice(&self.covariance);
         values
     }
-
-    pub fn from_values(values: &[f64]) -> Self {
-        assert_eq!(values.len(), 12);
-        let mut state = [0.0; 3];
-        let mut covariance = [0.0; 9];
-        state.copy_from_slice(&values[..3]);
-        covariance.copy_from_slice(&values[3..]);
-        Self { state, covariance }
-    }
 }
 
 fn decode_f64(bytes: &[u8]) -> f64 {

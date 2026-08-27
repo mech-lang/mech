@@ -1,7 +1,6 @@
 use super::support::{
-    cell, decoded_assignment_graph_shape, distinct_assignment_graph_shape,
-    expected_distinct_assignment_shape, register, register_node_id_for_output, root_cell,
-    set_value, symbol, value,
+    cell, distinct_assignment_graph_shape, expected_distinct_assignment_shape, register,
+    register_node_id_for_output, root_cell, set_value, symbol, value,
 };
 use crate::{Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState};
 
@@ -49,7 +48,7 @@ fn whole_add_assignment_alias_is_sampled_once() {
     assert!(!plan.reactive_consumers_for(x_cell).contains(&node_id));
 }
 
-#[cfg(all(feature = "math", feature = "math_add_assign"))]
+#[cfg(all(feature = "math_add", feature = "math_add_assign"))]
 #[test]
 fn register_commit_add_assignment_updates_register_only() {
     let t = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();
@@ -71,7 +70,7 @@ fn register_commit_add_assignment_updates_register_only() {
     assert_eq!((value(&i, "x"), value(&i, "z")), (13., 4.));
 }
 
-#[cfg(all(feature = "math", feature = "math_add_assign"))]
+#[cfg(all(feature = "math_add", feature = "math_add_assign"))]
 #[test]
 fn register_commit_simultaneous_assignments_use_precommit_state() {
     let t = mech_syntax::parser::parse("~x := 1.0\n~y := 2.0\nx += y\ny += x").unwrap();
@@ -93,7 +92,7 @@ fn register_commit_simultaneous_assignments_use_precommit_state() {
     assert_eq!((value(&i, "x"), value(&i, "y")), (8., 8.));
 }
 
-#[cfg(all(feature = "math", feature = "math_add_assign"))]
+#[cfg(all(feature = "math_add", feature = "math_add_assign"))]
 #[test]
 fn reactive_turn_updates_downstream_after_register_commit() {
     let tree = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();

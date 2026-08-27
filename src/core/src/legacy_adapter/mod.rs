@@ -11,10 +11,10 @@ use crate::{
     KindId, NominalKey, NominalKind, SemanticModelError,
 };
 
-#[cfg(feature = "no_std")]
-use alloc::{boxed::Box, string::String};
-#[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, string::String};
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::boxed::Box;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::boxed::Box;
 
 pub trait LegacySemanticContext {
     fn resolve_named_kind(&mut self, legacy_id: u64) -> Result<KindId, SemanticModelError>;

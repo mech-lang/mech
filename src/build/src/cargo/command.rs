@@ -41,7 +41,6 @@ impl CargoInvocation {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn build(
         manifest_path: impl AsRef<Path>,
         binary_name: &str,
@@ -313,7 +312,6 @@ fn validate_frozen_registry_resolution(
 
 /// Build one materialized generated project and return the exact executable
 /// path reported by Cargo's `CompilerArtifact` message.
-#[allow(clippy::too_many_arguments)]
 pub fn build_native_project(
     project: &GeneratedNativeProject,
     binary_name: &str,

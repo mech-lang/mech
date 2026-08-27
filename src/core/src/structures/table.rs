@@ -2,9 +2,8 @@
 use crate::matrix::Matrix;
 use crate::*;
 use indexmap::map::*;
-use nalgebra::{DMatrix, DVector, RowDVector};
-use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use nalgebra::DVector;
+use std::collections::HashMap;
 
 // Table ------------------------------------------------------------------
 
@@ -156,7 +155,7 @@ impl MechTable {
     pub fn empty_table(&self, rows: usize) -> MechTable {
         let mut data = IndexMap::new();
         for col in self.data.iter() {
-            let (key, (kind, matrix)) = col;
+            let (key, (kind, _)) = col;
             // make a new vector the length of ix with values LegacyValue::Empty
             let elements = vec![LegacyValue::Empty; rows];
             let new_matrix = Matrix::DVector(Ref::new(DVector::from_vec(elements)));
@@ -276,7 +275,7 @@ impl MechTable {
                     .with_compiler_loc()
             })?;
 
-            self_matrix.append(other_matrix).map_err(|err| {
+            self_matrix.append(other_matrix).map_err(|_| {
                 MechError::new(MatrixAppendToTableError { column_id: col_id }, None)
                     .with_compiler_loc()
             })?;
@@ -292,8 +291,8 @@ impl MechTable {
 
         // Append each value to the corresponding column in the matrix
         for (&col_id, value) in &record.data {
-            if let Some((_kind, column_matrix)) = self.data.get_mut(&col_id) {
-                let result = column_matrix.push(value.clone());
+            if let Some((_, column_matrix)) = self.data.get_mut(&col_id) {
+                column_matrix.push(value.clone())?;
             } else {
                 continue;
             }
@@ -310,25 +309,23 @@ impl MechTable {
             return None;
         }
 
-        let mut data: IndexMap<u64, LegacyValue> = IndexMap::new();
-        data = self
+        let data: IndexMap<u64, LegacyValue> = self
             .data
             .iter()
-            .map(|(key, (kind, matrix))| {
+            .map(|(key, (_, matrix))| {
                 let value = matrix.index1d(ix);
                 let name = self.col_names.get(key).unwrap();
                 (hash_str(name), value.clone())
             })
             .collect();
 
-        let mut kinds = Vec::with_capacity(self.cols);
-        kinds = self
+        let kinds = self
             .data
             .iter()
             .map(|(_, (kind, _))| kind.clone())
             .collect();
 
-        let mut field_names = self.col_names.clone();
+        let field_names = self.col_names.clone();
 
         Some(MechRecord {
             cols: self.cols,
@@ -474,7 +471,7 @@ impl PrettyPrint for MechTable {
                 .map(|x| x.pretty_print())
                 .collect::<Vec<String>>()
                 .join("\n");
-            let mut col_string = vec![format!("{}<{}>", name.to_string(), knd), val_string];
+            let col_string = vec![format!("{}<{}>", name, knd), val_string];
             builder.push_column(col_string);
         }
         let mut table = builder.build();

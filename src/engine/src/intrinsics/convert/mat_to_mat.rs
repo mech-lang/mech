@@ -1,10 +1,9 @@
-#[macro_use]
+use super::UnsupportedConversionError;
 use crate::intrinsics::*;
 
-use nalgebra::{ArrayStorage, Const, DVector, Matrix3, Matrix4, Scalar};
+use nalgebra::{DVector, Scalar};
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::ops::{Index, IndexMut};
 use std::sync::LazyLock;
 
 #[derive(Debug)]
@@ -159,98 +158,106 @@ where
     TTo: CompileConst,
 {
     let zero = TTo::default();
+    let original = v.shape();
     match v {
         #[cfg(feature = "matrix1")]
-        Matrix::Matrix1(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::Matrix1(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(Matrix1::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "matrix2")]
-        Matrix::Matrix2(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::Matrix2(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(Matrix2::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "matrix3")]
-        Matrix::Matrix3(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::Matrix3(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(Matrix3::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "matrix4")]
-        Matrix::Matrix4(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::Matrix4(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(Matrix4::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "matrix3x2")]
-        Matrix::Matrix3x2(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::Matrix3x2(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(Matrix3x2::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "matrix2x3")]
-        Matrix::Matrix2x3(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::Matrix2x3(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(Matrix2x3::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "row_vector2")]
-        Matrix::RowVector2(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::RowVector2(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(RowVector2::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "row_vector3")]
-        Matrix::RowVector3(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::RowVector3(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(RowVector3::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "row_vector4")]
-        Matrix::RowVector4(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::RowVector4(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(RowVector4::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "vector2")]
-        Matrix::Vector2(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::Vector2(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(Vector2::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "vector3")]
-        Matrix::Vector3(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::Vector3(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(Vector3::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "vector4")]
-        Matrix::Vector4(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::Vector4(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(Vector4::from_element(zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "vectord")]
-        Matrix::DVector(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::DVector(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(DVector::from_element(shape[0], zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "row_vectord")]
-        Matrix::RowDVector(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::RowDVector(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(RowDVector::from_element(shape[1], zero)),
             _marker: PhantomData,
         })),
         #[cfg(feature = "matrixd")]
-        Matrix::DMatrix(v) => Ok(Box::new(ConvertMatToMat2 {
+        Matrix::DMatrix(v) if original.as_slice() == shape => Ok(Box::new(ConvertMatToMat2 {
             arg: v,
             out: Ref::new(DMatrix::from_element(shape[0], shape[1], zero)),
             _marker: PhantomData,
         })),
-        _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
+        _ => Err(MechError::new(
+            ReshapeError {
+                original: (original[0], original[1]),
+                requested: (shape[0], shape[1]),
+            },
+            None,
+        )
+        .with_compiler_loc()),
     }
 }
 
@@ -583,7 +590,7 @@ where
             }));
         }
         #[cfg(feature = "matrixd")]
-        (Matrix::DMatrix(v), n, m) => {
+        (Matrix::DMatrix(v), n, m) if n.checked_mul(m) == Some(v.borrow().len()) => {
             return Ok(Box::new(ConvertMatToMat2 {
                 arg: v,
                 out: Ref::new(DMatrix::from_element(n, m, zero)),

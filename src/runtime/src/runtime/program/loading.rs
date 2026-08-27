@@ -37,6 +37,7 @@ use super::{
 #[derive(Clone, Copy)]
 enum InitialValueProjection {
     FirstPublishedOutput,
+    #[cfg(feature = "resident-routing-source")]
     InteractiveRootResult,
 }
 
@@ -54,6 +55,7 @@ fn initial_output_index(
         // ordinary, non-constraint output even when a rich document precedes
         // the REPL entry. Integrity constraints have their own projection and
         // must not replace the program's implicit display value.
+        #[cfg(feature = "resident-routing-source")]
         InitialValueProjection::InteractiveRootResult => {
             artifact.outputs().iter().rposition(|output| {
                 output.interactive_binding.is_none()

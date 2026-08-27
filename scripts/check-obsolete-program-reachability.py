@@ -44,8 +44,12 @@ def is_allowed_compatibility_data(relative: Path, line: str) -> bool:
     return relative == ALLOWED_DOMAIN_OWNER and line.strip() == ALLOWED_DOMAIN_LITERAL
 
 
-def is_formatter_css_class(line: str) -> bool:
-    return 'class=\\"' in line and OBSOLETE_PACKAGE in line
+def is_css_class_literal(line: str) -> bool:
+    """Keep HTML/CSS class contracts distinct from obsolete crate reachability."""
+    return (
+        OBSOLETE_PACKAGE in line
+        and (f".{OBSOLETE_PACKAGE}" in line or 'class=\\"' in line)
+    )
 
 
 def findings(root: Path) -> list[Finding]:
@@ -56,7 +60,7 @@ def findings(root: Path) -> list[Finding]:
         ):
             if is_allowed_compatibility_data(relative, line):
                 continue
-            if OBSOLETE_PACKAGE in line and not is_formatter_css_class(line):
+            if OBSOLETE_PACKAGE in line and not is_css_class_literal(line):
                 result.append(Finding(relative, line_number, line))
                 continue
             if CRATE_REACHABILITY.search(line):

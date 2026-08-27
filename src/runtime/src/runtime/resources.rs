@@ -10,6 +10,30 @@ use mech_core::{LegacyValue, MResult, MechError};
 use std::sync::Arc;
 
 impl MechRuntime {
+    fn validate_resource_transaction_scope(
+        &self,
+        context: &RuntimeContext,
+        #[cfg(feature = "source")] operation: &'static str,
+        #[cfg(not(feature = "source"))] _: &'static str,
+    ) -> MResult<()> {
+        let transaction_id = Self::context_transaction_id(context)?;
+        match self.active_runtime_transaction(transaction_id)?.scope {
+            RuntimeTransactionScope::Explicit
+            | RuntimeTransactionScope::ImplicitResourceOperation => Ok(()),
+            #[cfg(feature = "source")]
+            RuntimeTransactionScope::ImplicitModuleOperation => Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation,
+                    reason: format!(
+                        "transaction {} belongs to an implicit module operation",
+                        transaction_id,
+                    ),
+                },
+                None,
+            )),
+        }
+    }
+
     pub fn install_run_resource_grant(&mut self, grant: &RunResourceGrantConfig) -> MResult<()> {
         #[cfg(feature = "resident-routing")]
         self.ensure_resident_environment_mutable("install_run_resource_grant")?;
@@ -103,7 +127,7 @@ impl MechRuntime {
             };
             return match self.commit_runtime_transaction_internal(context) {
                 Ok(RuntimeCommitResolution::Committed(_)) => Ok(effect_id),
-                Ok(RuntimeCommitResolution::CommittedWithError { error, .. }) => Err(error),
+                Ok(RuntimeCommitResolution::CommittedWithError(error)) => Err(error),
                 Err(error) => Err(self.cleanup_failed_implicit_resource_operation(
                     context,
                     transaction_id,
@@ -112,6 +136,8 @@ impl MechRuntime {
                 )),
             };
         }
+
+        self.validate_resource_transaction_scope(context, "write_resource_with_context")?;
 
         request.value = request.value.try_deep_snapshot()?;
         self.authorize_resource_with_context(context, &request.operation, &key)?;
@@ -222,7 +248,7 @@ impl MechRuntime {
             };
             return match self.commit_runtime_transaction_internal(context) {
                 Ok(RuntimeCommitResolution::Committed(_)) => Ok(value),
-                Ok(RuntimeCommitResolution::CommittedWithError { error, .. }) => Err(error),
+                Ok(RuntimeCommitResolution::CommittedWithError(error)) => Err(error),
                 Err(error) => Err(self.cleanup_failed_implicit_resource_operation(
                     context,
                     transaction_id,
@@ -231,6 +257,7 @@ impl MechRuntime {
                 )),
             };
         }
+        self.validate_resource_transaction_scope(context, "read_resource_with_context")?;
         self.authorize_resource_with_context(context, &RuntimeCapabilityOperation::Read, &key)?;
         if context.transaction.is_some() {
             let transaction_id = context.transaction.unwrap();

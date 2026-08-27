@@ -17,8 +17,8 @@ browser = ["dep:wasm-bindgen", "dep:js-sys", "dep:web-sys", "rich-output"]
 rich-output = ["dep:serde", "dep:serde_json", "mech-runtime/serde"]
 
 [dependencies]
-mech-core = { version = "0.3.5", default-features = false, features = ["f64", "string", "record", "table", "tuple", "matrix", "matrixd"] }
-mech-runtime = { version = "0.3.5", default-features = false, features = ["runtime", "f64", "string", "record", "table", "matrixd"] }
+mech-core = { version = "0.3.5", path = "../../src/core", default-features = false, features = ["f64", "string", "record", "table", "tuple", "matrix", "matrixd"] }
+mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["runtime", "f64", "string", "record", "table", "matrixd"] }
 wasm-bindgen = { version = "0.2.105", optional = true }
 js-sys = { version = "0.3.82", optional = true }
 web-sys = { version = "0.3.82", optional = true, features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "CanvasRenderingContext2d", "SvgElement", "SvgsvgElement", "Node", "NodeList", "DomTokenList", "CssStyleDeclaration"] }
@@ -26,5 +26,5 @@ serde = { version = "1.0.228", features = ["derive"], optional = true }
 serde_json = { version = "1.0.150", optional = true }
 
 [dev-dependencies]
-mech-runtime = { version = "0.3.5", default-features = false, features = ["resident-routing-source", "source_default"] }
-mech-stdlib = { version = "0.3.5", default-features = false, features = ["full_compiler", "native-plan"] }
+mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["resident-routing-source", "source_default"] }
+mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }

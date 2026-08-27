@@ -6,9 +6,11 @@
 
 #[cfg(feature = "no_std")]
 use alloc::string::String;
-use core::fmt::Debug;
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
+
+#[cfg(feature = "matrix")]
+use core::fmt::Debug;
 
 use crate::{LegacyValue, ValueKind};
 

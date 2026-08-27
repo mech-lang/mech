@@ -1,6 +1,6 @@
 use crate::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, Interpreter, LegacyValue,
-    MResult, MechError, MechExecutionServices, Ref, ResourceDelivery, ResourceIntent, ValRef,
+    MResult, MechError, MechExecutionServices, ResourceDelivery, ResourceIntent, ValRef,
 };
 
 #[derive(Default)]

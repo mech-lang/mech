@@ -28,7 +28,21 @@ use indexmap::IndexMap;
 use indexmap::IndexSet;
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, string::String, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, string::String, sync::Arc};
+
+#[cfg(all(
+    feature = "no_std",
+    any(
+        feature = "enum",
+        feature = "map",
+        feature = "matrix",
+        feature = "record",
+        feature = "set",
+        feature = "table",
+        feature = "tuple"
+    )
+))]
+use alloc::vec::Vec;
 
 #[cfg(not(feature = "no_std"))]
 use std::sync::Arc;
@@ -135,6 +149,7 @@ impl MechErrorKind for ValueSnapshotCollectionCollision {
     }
 }
 
+#[cfg(any(feature = "map", feature = "set"))]
 fn snapshot_collection_collision(
     collection: &'static str,
     first_index: usize,
@@ -344,6 +359,14 @@ impl ValueSnapshotCloneContext {
         Ok(snapshot)
     }
 
+    #[cfg(any(
+        feature = "enum",
+        feature = "map",
+        feature = "record",
+        feature = "set",
+        feature = "table",
+        feature = "tuple"
+    ))]
     fn snapshot_recursive_ref<T, B>(
         &mut self,
         source: &Ref<T>,
@@ -665,12 +688,12 @@ pub(crate) fn try_deep_snapshot(source: &LegacyValue) -> MResult<LegacyValue> {
     ValueSnapshotCloneContext::default().snapshot_value(source)
 }
 
-/// A thread-safe recipe for recreating detached copies of a [`Value`].
+/// A thread-safe recipe for recreating detached copies of a [`LegacyValue`].
 ///
-/// `Value` itself is deliberately single-threaded, so runtime planning cannot
+/// `LegacyValue` itself is deliberately single-threaded, so runtime planning cannot
 /// retain one inside a `Send + Sync` function specializer. Constructing the
 /// recipe here keeps the exhaustive match in the same feature domain as the
-/// `Value` enum and prevents downstream Cargo feature unification from making
+/// `LegacyValue` enum and prevents downstream Cargo feature unification from making
 /// another crate's match incomplete.
 #[derive(Clone)]
 pub struct ValueSnapshotRecreator {

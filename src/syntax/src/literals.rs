@@ -1,6 +1,5 @@
-#[macro_use]
-use crate::*;
 use crate::nodes::Kind;
+use crate::*;
 use nom::{
     branch::alt,
     combinator::{map, opt},
@@ -56,7 +55,6 @@ pub fn string(input: ParseString) -> ParseResult<MechString> {
 
 // utf8-string := quote, *(¬quote, (text | new-line)), quote ;
 pub fn utf8_string(input: ParseString) -> ParseResult<MechString> {
-    let msg = "Character not allowed in string";
     let (input, _) = quote(input)?;
     let (input, matched) = many0(nom_tuple((is_not(quote), alt((text, new_line)))))(input)?;
     let (input, _) = quote(input)?;
@@ -71,7 +69,6 @@ pub fn utf8_string(input: ParseString) -> ParseResult<MechString> {
 
 // raw-string := `"""`, *(¬`"""`, (raw-text | new-line)), `"""` ;
 pub fn raw_string(input: ParseString) -> ParseResult<MechString> {
-    let msg = "Character not allowed in string";
     let (input, _) = nom_tuple((quote, quote, quote))(input)?;
     let (input, matched) = many0(nom_tuple((
         is_not(nom_tuple((quote, quote, quote))),
@@ -415,7 +412,7 @@ pub fn kind_table(input: ParseString) -> ParseResult<Kind> {
         nom_tuple((identifier, opt(kind_annotation))),
     )(input)?;
     let (input, _) = bar(input)?;
-    let (input, size) = opt(tuple((colon, literal)))(input)?;
+    let (input, size) = opt(nom_tuple((colon, literal)))(input)?;
     let size = size
         .map(|(_, ltrl)| ltrl)
         .unwrap_or_else(|| Literal::Empty(Token::default()));
@@ -534,7 +531,7 @@ pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
 // kind-scalar := identifier, [":", range_expression] ;
 pub fn kind_scalar(input: ParseString) -> ParseResult<Kind> {
     let (input, kind) = identifier(input)?;
-    let (input, range) = opt(tuple((colon, range_expression)))(input)?;
+    let (input, _) = opt(nom_tuple((colon, range_expression)))(input)?;
     Ok((input, Kind::Scalar(kind)))
 }
 

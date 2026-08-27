@@ -25,7 +25,7 @@ pub use requirements::*;
 pub use runtime_contracts::*;
 pub use section::*;
 pub use types::*;
-pub use validation::*;
+pub(crate) use validation::*;
 pub use writer::*;
 
 #[cfg(test)]

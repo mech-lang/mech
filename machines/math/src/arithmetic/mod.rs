@@ -1,27 +1,26 @@
-#[macro_use]
 pub use crate::*;
 #[cfg(feature = "abs")]
 pub mod abs;
-#[cfg(feature = "copysign")]
+#[cfg(all(feature = "copysign", feature = "source"))]
 pub mod copysign;
-#[cfg(feature = "fdim")]
+#[cfg(all(feature = "fdim", feature = "source"))]
 pub mod fdim;
-#[cfg(feature = "fmod")]
+#[cfg(all(feature = "fmod", feature = "source"))]
 pub mod fmod;
-#[cfg(feature = "nextafter")]
+#[cfg(all(feature = "nextafter", feature = "source"))]
 pub mod nextafter;
-#[cfg(feature = "remainder")]
+#[cfg(all(feature = "remainder", feature = "source"))]
 pub mod remainder;
 
-#[cfg(feature = "abs")]
+#[cfg(all(feature = "abs", feature = "source"))]
 pub use self::abs::*;
-#[cfg(feature = "copysign")]
+#[cfg(all(feature = "copysign", feature = "source"))]
 pub use self::copysign::*;
-#[cfg(feature = "fdim")]
+#[cfg(all(feature = "fdim", feature = "source"))]
 pub use self::fdim::*;
-#[cfg(feature = "fmod")]
+#[cfg(all(feature = "fmod", feature = "source"))]
 pub use self::fmod::*;
-#[cfg(feature = "nextafter")]
+#[cfg(all(feature = "nextafter", feature = "source"))]
 pub use self::nextafter::*;
-#[cfg(feature = "remainder")]
+#[cfg(all(feature = "remainder", feature = "source"))]
 pub use self::remainder::*;

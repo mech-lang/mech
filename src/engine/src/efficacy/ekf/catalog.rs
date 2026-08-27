@@ -2,6 +2,7 @@
 
 use std::sync::{Arc, LazyLock};
 
+use mech_core::matrix::Matrix as RuntimeMatrix;
 use mech_core::{
     AccessMode, AliasPolicy, BytecodeCompilerContext, ChangeDetectionPolicy, CompileConst,
     DeliveryMode, ExternalInteraction, FunctionArgs, FunctionCatalog, FunctionCatalogBuilder,
@@ -15,12 +16,10 @@ use mech_core::{
 };
 use nalgebra::{DMatrix, DVector};
 
-use crate::Matrix;
-
 use super::math::{self, EkfMathError};
 use super::operation::{
-    EkfKernel, EkfPredicate, FROZEN_EKF_OPERATIONS, FrozenEkfOperation, FrozenEkfOperationSpec,
-    FrozenEkfValueShape, operation_spec,
+    EkfKernel, EkfPredicate, FROZEN_EKF_OPERATIONS, FrozenEkfOperation, FrozenEkfValueShape,
+    operation_spec,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -186,11 +185,11 @@ impl MechFunctionCompiler for FrozenEkfFunction {
             FrozenEkfValueShape::F64 => LegacyValue::F64(Ref::new(0.0)),
             FrozenEkfValueShape::Bool => LegacyValue::Bool(Ref::new(false)),
             FrozenEkfValueShape::Vector(rows) => {
-                LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(rows))))
+                LegacyValue::MatrixF64(RuntimeMatrix::DVector(Ref::new(DVector::zeros(rows))))
             }
-            FrozenEkfValueShape::Matrix { rows, columns } => {
-                LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::zeros(rows, columns))))
-            }
+            FrozenEkfValueShape::Matrix { rows, columns } => LegacyValue::MatrixF64(
+                RuntimeMatrix::DMatrix(Ref::new(DMatrix::zeros(rows, columns))),
+            ),
         };
         let output_seed = output_seed.compile_const(context)?;
         context.record_register_constant_metadata(destination, output_seed)?;
@@ -423,7 +422,10 @@ macro_rules! register {
         let spec = &FROZEN_EKF_OPERATIONS[$index];
         let (signature, _, validator) = runtime_registration(spec.operation);
         debug_assert_eq!(signature, <$factory>::SIGNATURE);
-        debug_assert_eq!(validator as usize, $validator as usize);
+        debug_assert!(std::ptr::fn_addr_eq(
+            validator,
+            $validator as fn(&FunctionArgs) -> MResult<()>,
+        ));
         $builder.insert_runtime_factory_with_semantic_contract::<$factory>(
             spec.canonical_name,
             RuntimeFunctionContract::custom(
@@ -669,50 +671,52 @@ fn allocate_output(shape: FrozenEkfValueShape) -> LegacyValue {
         FrozenEkfValueShape::Vector(length) => {
             #[cfg(feature = "vector2")]
             if length == 2 {
-                return LegacyValue::MatrixF64(Matrix::Vector2(Ref::new(
+                return LegacyValue::MatrixF64(RuntimeMatrix::Vector2(Ref::new(
                     nalgebra::Vector2::zeros(),
                 )));
             }
             #[cfg(feature = "vector3")]
             if length == 3 {
-                return LegacyValue::MatrixF64(Matrix::Vector3(Ref::new(
+                return LegacyValue::MatrixF64(RuntimeMatrix::Vector3(Ref::new(
                     nalgebra::Vector3::zeros(),
                 )));
             }
             #[cfg(feature = "vector4")]
             if length == 4 {
-                return LegacyValue::MatrixF64(Matrix::Vector4(Ref::new(
+                return LegacyValue::MatrixF64(RuntimeMatrix::Vector4(Ref::new(
                     nalgebra::Vector4::zeros(),
                 )));
             }
-            LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(length))))
+            LegacyValue::MatrixF64(RuntimeMatrix::DVector(Ref::new(DVector::zeros(length))))
         }
         FrozenEkfValueShape::Matrix { rows, columns } => {
             #[cfg(feature = "matrix2")]
             if (rows, columns) == (2, 2) {
-                return LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(
+                return LegacyValue::MatrixF64(RuntimeMatrix::Matrix2(Ref::new(
                     nalgebra::Matrix2::zeros(),
                 )));
             }
             #[cfg(feature = "matrix3")]
             if (rows, columns) == (3, 3) {
-                return LegacyValue::MatrixF64(Matrix::Matrix3(Ref::new(
+                return LegacyValue::MatrixF64(RuntimeMatrix::Matrix3(Ref::new(
                     nalgebra::Matrix3::zeros(),
                 )));
             }
             #[cfg(feature = "matrix2x3")]
             if (rows, columns) == (2, 3) {
-                return LegacyValue::MatrixF64(Matrix::Matrix2x3(Ref::new(
+                return LegacyValue::MatrixF64(RuntimeMatrix::Matrix2x3(Ref::new(
                     nalgebra::Matrix2x3::zeros(),
                 )));
             }
             #[cfg(feature = "matrix3x2")]
             if (rows, columns) == (3, 2) {
-                return LegacyValue::MatrixF64(Matrix::Matrix3x2(Ref::new(
+                return LegacyValue::MatrixF64(RuntimeMatrix::Matrix3x2(Ref::new(
                     nalgebra::Matrix3x2::zeros(),
                 )));
             }
-            LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::zeros(rows, columns))))
+            LegacyValue::MatrixF64(RuntimeMatrix::DMatrix(Ref::new(DMatrix::zeros(
+                rows, columns,
+            ))))
         }
         FrozenEkfValueShape::F64 => LegacyValue::F64(Ref::new(0.0)),
     }
@@ -779,6 +783,15 @@ fn write_array<const N: usize>(
     output: &LegacyValue,
     value: [f64; N],
 ) -> MResult<()> {
+    #[cfg(any(
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix2x3",
+        feature = "matrix3x2"
+    ))]
     macro_rules! write_fixed {
         ($output:expr) => {{
             let mut output = $output.borrow_mut();
@@ -794,24 +807,24 @@ fn write_array<const N: usize>(
     }
     match output {
         #[cfg(feature = "vector2")]
-        LegacyValue::MatrixF64(Matrix::Vector2(output)) => write_fixed!(output),
+        LegacyValue::MatrixF64(RuntimeMatrix::Vector2(output)) => write_fixed!(output),
         #[cfg(feature = "vector3")]
-        LegacyValue::MatrixF64(Matrix::Vector3(output)) => write_fixed!(output),
+        LegacyValue::MatrixF64(RuntimeMatrix::Vector3(output)) => write_fixed!(output),
         #[cfg(feature = "vector4")]
-        LegacyValue::MatrixF64(Matrix::Vector4(output)) => write_fixed!(output),
+        LegacyValue::MatrixF64(RuntimeMatrix::Vector4(output)) => write_fixed!(output),
         #[cfg(feature = "matrix2")]
-        LegacyValue::MatrixF64(Matrix::Matrix2(output)) => write_fixed!(output),
+        LegacyValue::MatrixF64(RuntimeMatrix::Matrix2(output)) => write_fixed!(output),
         #[cfg(feature = "matrix3")]
-        LegacyValue::MatrixF64(Matrix::Matrix3(output)) => write_fixed!(output),
+        LegacyValue::MatrixF64(RuntimeMatrix::Matrix3(output)) => write_fixed!(output),
         #[cfg(feature = "matrix2x3")]
-        LegacyValue::MatrixF64(Matrix::Matrix2x3(output)) => write_fixed!(output),
+        LegacyValue::MatrixF64(RuntimeMatrix::Matrix2x3(output)) => write_fixed!(output),
         #[cfg(feature = "matrix3x2")]
-        LegacyValue::MatrixF64(Matrix::Matrix3x2(output)) => write_fixed!(output),
-        LegacyValue::MatrixF64(Matrix::DVector(output)) if output.borrow().len() == N => {
+        LegacyValue::MatrixF64(RuntimeMatrix::Matrix3x2(output)) => write_fixed!(output),
+        LegacyValue::MatrixF64(RuntimeMatrix::DVector(output)) if output.borrow().len() == N => {
             output.borrow_mut().as_mut_slice().copy_from_slice(&value);
             Ok(())
         }
-        LegacyValue::MatrixF64(Matrix::DMatrix(output)) if output.borrow().len() == N => {
+        LegacyValue::MatrixF64(RuntimeMatrix::DMatrix(output)) if output.borrow().len() == N => {
             output.borrow_mut().as_mut_slice().copy_from_slice(&value);
             Ok(())
         }

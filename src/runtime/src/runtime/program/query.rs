@@ -2,9 +2,9 @@ use crate::RuntimeValueSnapshot;
 use crate::runtime::{MechRuntime, RuntimeInvalidOperationError};
 use mech_core::{MResult, MechError, OutputId};
 
-#[cfg(feature = "resident-routing")]
+#[cfg(feature = "resident-routing-source")]
 use mech_engine::resident::StateMigrationMapping;
-#[cfg(feature = "resident-routing")]
+#[cfg(feature = "resident-routing-source")]
 use mech_engine::{
     ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, SlotRole,
 };
@@ -12,7 +12,7 @@ use mech_engine::{
 impl MechRuntime {
     /// Carry compatible live resident storage into an independently activated
     /// replacement. The candidate remains discardable until this succeeds.
-    #[cfg(feature = "resident-routing")]
+    #[cfg(feature = "resident-routing-source")]
     pub(crate) fn preserve_compatible_resident_state_from(
         &mut self,
         previous: &MechRuntime,
@@ -81,7 +81,11 @@ impl MechRuntime {
         0
     }
 
-    pub fn output_value(&self, output_id: OutputId) -> MResult<Option<RuntimeValueSnapshot>> {
+    pub fn output_value(
+        &self,
+        #[cfg(feature = "resident-routing")] output_id: OutputId,
+        #[cfg(not(feature = "resident-routing"))] _: OutputId,
+    ) -> MResult<Option<RuntimeValueSnapshot>> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, instance)) = self.resident_artifact_and_instance() {
             let Some(index) = artifact
@@ -93,11 +97,14 @@ impl MechRuntime {
             };
             return super::output_value(instance, index);
         }
-        let _ = output_id;
         Ok(None)
     }
 
-    pub fn output_name(&self, output_id: OutputId) -> Option<String> {
+    pub fn output_name(
+        &self,
+        #[cfg(feature = "resident-routing")] output_id: OutputId,
+        #[cfg(not(feature = "resident-routing"))] _: OutputId,
+    ) -> Option<String> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, _)) = self.resident_artifact_and_instance() {
             return artifact
@@ -112,7 +119,6 @@ impl MechRuntime {
                         .unwrap_or_else(|| output.name.clone())
                 });
         }
-        let _ = output_id;
         None
     }
 
@@ -152,7 +158,8 @@ impl MechRuntime {
 
     pub fn program_output_values(
         &self,
-        names: &[String],
+        #[cfg(feature = "resident-routing")] names: &[String],
+        #[cfg(not(feature = "resident-routing"))] _: &[String],
     ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         #[cfg(feature = "resident-routing")]
         if self.resident_artifact_and_instance().is_some() {
@@ -191,7 +198,11 @@ impl MechRuntime {
     /// Return the resident output identity that owns an interactive root
     /// symbol. Names are lookup labels; the output ID is the binding identity
     /// that reflective hosts use to correlate repeated representations.
-    pub fn root_symbol_output_id(&self, name: &str) -> Option<OutputId> {
+    pub fn root_symbol_output_id(
+        &self,
+        #[cfg(feature = "resident-routing")] name: &str,
+        #[cfg(not(feature = "resident-routing"))] _: &str,
+    ) -> Option<OutputId> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, _)) = self.resident_artifact_and_instance() {
             if artifact
@@ -213,7 +224,6 @@ impl MechRuntime {
                 .or_else(|| artifact.outputs().iter().find(|output| output.name == name))
                 .map(|output| output.output);
         }
-        let _ = name;
         None
     }
 
@@ -279,7 +289,8 @@ impl MechRuntime {
     /// symbols, even though the compiler publishes both through output cells.
     pub fn root_integrity_constraint_values(
         &self,
-        names: &[&str],
+        #[cfg(feature = "resident-routing")] names: &[&str],
+        #[cfg(not(feature = "resident-routing"))] _: &[&str],
     ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, _)) = self.resident_artifact_and_instance() {
@@ -291,7 +302,6 @@ impl MechRuntime {
                 .collect::<Vec<_>>();
             return self.resident_symbol_values(constraint_names);
         }
-        let _ = names;
         Ok(Vec::new())
     }
 
@@ -314,7 +324,7 @@ impl MechRuntime {
         }
     }
 
-    #[cfg(feature = "resident-routing")]
+    #[cfg(feature = "resident-routing-source")]
     fn resident_artifact_and_instance_mut(
         &mut self,
     ) -> Option<(
@@ -382,7 +392,7 @@ impl MechRuntime {
     }
 }
 
-#[cfg(feature = "resident-routing")]
+#[cfg(feature = "resident-routing-source")]
 fn compatible_state_mappings(
     source: &mech_engine::ProgramArtifact,
     target: &mech_engine::ProgramArtifact,
@@ -577,7 +587,7 @@ fn compatible_state_mappings(
     mappings
 }
 
-#[cfg(feature = "resident-routing")]
+#[cfg(feature = "resident-routing-source")]
 fn artifact_slots_depending_on(
     artifact: &ProgramArtifact,
     roots: &std::collections::BTreeSet<mech_core::CellSlotId>,
@@ -625,7 +635,7 @@ fn artifact_slots_depending_on(
     affected
 }
 
-#[cfg(feature = "resident-routing")]
+#[cfg(feature = "resident-routing-source")]
 fn artifact_sources_semantically_equal(
     source_artifact: &ProgramArtifact,
     source: ArtifactSource,

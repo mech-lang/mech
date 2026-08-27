@@ -419,12 +419,7 @@ fn build_elementwise_plan(
             initial_values: initializer.to_vec(),
         })
         .collect();
-    let outputs = logical_outputs(
-        GpuPlanKernelKind::Elementwise,
-        kernel.compute_program(),
-        1,
-        &bindings,
-    )?;
+    let outputs = logical_outputs(GpuPlanKernelKind::Elementwise, kernel.compute_program(), 1)?;
     let physical_outputs = physical_outputs(&outputs, &bindings)?;
     Ok(GpuExecutionPlan {
         version: GPU_EXECUTION_PLAN_VERSION,
@@ -516,7 +511,6 @@ fn build_fixed_shape_plan(
         GpuPlanKernelKind::FixedShape,
         kernel.compute_program(),
         kernel.instances(),
-        &bindings,
     )?;
     let physical_outputs = physical_outputs(&outputs, &bindings)?;
     let constraints = kernel
@@ -552,7 +546,6 @@ fn logical_outputs(
     kind: GpuPlanKernelKind,
     compute: &mech_compute::ComputeProgram,
     instances: u32,
-    bindings: &[GpuPlanBinding],
 ) -> Result<Vec<GpuPlanOutput>, GpuExecutionPlanError> {
     let mut physical_ids = BTreeMap::<u32, u32>::new();
     compute
@@ -583,7 +576,6 @@ fn logical_outputs(
                 dimensions.push(u64::from(instances));
             }
             dimensions.extend(output.dimensions.iter().copied());
-            let _ = bindings;
             Ok(GpuPlanOutput {
                 name: output.name.to_string(),
                 slot: output.slot.get(),

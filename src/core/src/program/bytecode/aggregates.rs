@@ -1,4 +1,13 @@
-use crate::{BytecodeValidationError, LegacyValue, MResult, MechError, Ref, ValueKind};
+#[cfg(any(
+    feature = "tuple",
+    feature = "record",
+    feature = "map",
+    feature = "set",
+    feature = "table",
+    feature = "enum"
+))]
+use crate::Ref;
+use crate::{BytecodeValidationError, LegacyValue, MResult, MechError, ValueKind};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, format, vec, vec::Vec};
@@ -64,6 +73,7 @@ fn wrong_arity(kind: &str, expected: usize, actual: usize) -> MechError {
     .with_compiler_loc()
 }
 
+#[cfg(any(feature = "map", feature = "set"))]
 fn duplicate_hashed_child(kind: &str) -> MechError {
     MechError::new(
         BytecodeValidationError {

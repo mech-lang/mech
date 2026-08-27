@@ -14,6 +14,7 @@ SPEC = importlib.util.spec_from_file_location(
 GENERATOR = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(GENERATOR)
+import d2_historical_evidence as HISTORICAL
 
 
 class D2ContractGeneratorTests(unittest.TestCase):
@@ -27,6 +28,21 @@ class D2ContractGeneratorTests(unittest.TestCase):
         for path in GENERATOR.OUTPUTS.values():
             self.assertTrue(path.exists())
             self.assertEqual(path.read_bytes(), GENERATOR.render(json.loads(path.read_text())))
+
+    def test_historical_executor_materializes_then_uses_locked_offline_dependencies(self):
+        manifest = Path("/tmp/historical-d2/Cargo.toml")
+        fetch, run = HISTORICAL.historical_cargo_commands(
+            manifest, "--probe", release=True
+        )
+        self.assertEqual(
+            fetch[:4],
+            ["cargo", "+nightly-2026-03-03", "fetch", "--manifest-path"],
+        )
+        self.assertEqual(fetch[-1], str(manifest))
+        self.assertIn("--locked", run)
+        self.assertIn("--offline", run)
+        self.assertIn("--release", run)
+        self.assertEqual(run[-2:], ["--", "--probe"])
 
     def test_projection_freezes_the_general_executor_boundaries(self):
         projections = self.projections()

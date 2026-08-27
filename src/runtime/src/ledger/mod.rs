@@ -1,7 +1,9 @@
 //! Bounded owned turn-record storage primitives.
 
 mod capacity;
+#[cfg(any(test, feature = "runtime_bench_probes"))]
 mod pool;
+#[cfg(any(test, feature = "runtime_bench_probes"))]
 mod queue;
 mod retained;
 #[cfg(test)]
@@ -12,15 +14,12 @@ use mech_core::MResult;
 use crate::turn_record::{AccountedRecord, LedgerSequence};
 
 pub(crate) use capacity::{CapacityController, CapacityReservation, invalid_permit};
-pub use capacity::{
-    LedgerAllocationFailed, LedgerCapacityExceeded, LedgerPermitInvalid, RecordEstimate,
-};
-pub use pool::{
-    PooledRecordBuffer, RecordBufferCapacityExceeded, RecordBufferPool, RecordBufferPoolExhausted,
-    RecordBufferPoolStats,
-};
+pub use capacity::{LedgerAllocationFailed, RecordEstimate};
+#[cfg(any(test, feature = "runtime_bench_probes"))]
+pub use pool::{PooledRecordBuffer, RecordBufferPool};
+#[cfg(any(test, feature = "runtime_bench_probes"))]
 pub use queue::OwnedTurnRecordQueue;
-pub use retained::{RetainedLedgerDrain, RetainedTurnLedger};
+pub use retained::RetainedTurnLedger;
 
 /// An unused reservation for one future ledger append.
 #[derive(Debug)]
@@ -33,27 +32,12 @@ pub struct LedgerPermit {
 }
 
 impl LedgerPermit {
+    #[cfg(test)]
     pub fn sequence(&self) -> LedgerSequence {
         self.reservation
             .as_ref()
             .expect("live ledger permit reservation")
             .sequence
-    }
-
-    pub fn reserved_records(&self) -> usize {
-        self.reservation
-            .as_ref()
-            .map_or(0, |reservation| reservation.records)
-    }
-
-    pub fn reserved_bytes(&self) -> usize {
-        self.reservation
-            .as_ref()
-            .map_or(0, |reservation| reservation.bytes)
-    }
-
-    pub fn is_consumed(&self) -> bool {
-        self.consumed
     }
 
     fn new(controller: CapacityController, reservation: CapacityReservation) -> Self {
@@ -91,13 +75,7 @@ impl<R> PreparedLedgerAppend<R> {
             .expect("live prepared ledger append reservation")
     }
 
-    pub fn sequence(&self) -> LedgerSequence {
-        self.reservation
-            .as_ref()
-            .expect("live prepared ledger append reservation")
-            .sequence
-    }
-
+    #[cfg(test)]
     pub fn retained_bytes(&self) -> usize {
         self.reservation
             .as_ref()

@@ -1,32 +1,16 @@
-#[macro_use]
 use crate::*;
 
-#[cfg(feature = "no-std")]
-use alloc::fmt;
-#[cfg(feature = "no-std")]
-use alloc::string::String;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::vec::Vec;
-#[cfg(not(feature = "no-std"))]
-use core::fmt;
 use nom::{
-    IResult,
     branch::alt,
-    bytes::complete::tag,
-    character::complete::{anychar, char as nom_char, digit1, satisfy},
-    combinator::{map, map_res, opt},
-    multi::{many0, many1, separated_list1},
-    sequence::{delimited, preceded, tuple as nom_tuple},
+    multi::{many0, many1},
+    sequence::{delimited, tuple as nom_tuple},
 };
-
-use colored::*;
-use std::collections::HashMap;
-
-use crate::*;
 
 // grammar := +rule ;
 pub fn grammar(input: ParseString) -> ParseResult<Grammar> {
-    let ((input, rules)) = many1(rule)(input)?;
+    let (input, rules) = many1(rule)(input)?;
     let (input, _) = new_line(input)?;
     Ok((input, Grammar { rules }))
 }
@@ -34,7 +18,7 @@ pub fn grammar(input: ParseString) -> ParseResult<Grammar> {
 // grammar-identifier := alpha_token, *(alpha_token | digit_token | dash) ;
 fn grammar_identifier(input: ParseString) -> ParseResult<GrammarIdentifier> {
     let (input, first) = alpha_token(input)?;
-    let (input, mut rest) = many0(alt((alpha_token, digit_token, dash)))(input)?;
+    let (input, rest) = many0(alt((alpha_token, digit_token, dash)))(input)?;
     let mut id = vec![first];
     id.extend(rest);
     let name = Token::merge_tokens(&mut id).unwrap();
@@ -43,10 +27,10 @@ fn grammar_identifier(input: ParseString) -> ParseResult<GrammarIdentifier> {
 
 // rule := grammar-identifier, define_operator, grammar_expression, semicolon ;
 fn rule(input: ParseString) -> ParseResult<Rule> {
-    let ((input, name)) = grammar_identifier(input)?;
-    let ((input, _)) = define_operator(input)?;
-    let ((input, expr)) = grammar_expression(input)?;
-    let ((input, _)) = semicolon(input)?;
+    let (input, name) = grammar_identifier(input)?;
+    let (input, _) = define_operator(input)?;
+    let (input, expr) = grammar_expression(input)?;
+    let (input, _) = semicolon(input)?;
     Ok((input, Rule { name, expr }))
 }
 
@@ -132,7 +116,7 @@ fn list(input: ParseString) -> ParseResult<GrammarExpression> {
 // g-range := terminal, "..", terminal ;
 fn g_range(input: ParseString) -> ParseResult<GrammarExpression> {
     let (input, start) = terminal_token(input)?;
-    let (input, _) = tuple((period, period))(input)?;
+    let (input, _) = nom_tuple((period, period))(input)?;
     let (input, end) = terminal_token(input)?;
     Ok((input, GrammarExpression::Range(start, end)))
 }
@@ -159,7 +143,7 @@ fn terminal(input: ParseString) -> ParseResult<GrammarExpression> {
 // terminal := quote, +any_token, quote ;
 fn terminal_token(input: ParseString) -> ParseResult<Token> {
     let (input, _) = quote(input)?;
-    let (input, mut t) = many0(tuple((is_not(quote), any_token)))(input)?;
+    let (input, t) = many0(nom_tuple((is_not(quote), any_token)))(input)?;
     let (input, _) = quote(input)?;
     let mut t = t.into_iter().map(|(_, b)| b).collect::<Vec<Token>>();
     let token = Token::merge_tokens(&mut t).unwrap();

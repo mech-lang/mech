@@ -17,6 +17,7 @@ pub enum ResourceIntent {
 }
 
 impl ResourceIntent {
+    #[cfg(feature = "program")]
     pub(crate) fn from_u8(value: u8) -> Option<Self> {
         match value {
             1 => Some(Self::Read),
@@ -36,6 +37,7 @@ pub enum ResourceDelivery {
 }
 
 impl ResourceDelivery {
+    #[cfg(feature = "program")]
     pub(crate) fn from_u8(value: u8) -> Option<Self> {
         match value {
             0 => Some(Self::Snapshot),

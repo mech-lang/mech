@@ -1,12 +1,16 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
+#[cfg(feature = "source")]
 use num_traits::*;
 
 // Acot ------------------------------------------------------------------------
 
-use libm::{atan, atanf};
+#[cfg(feature = "f64")]
+use libm::atan;
+#[cfg(feature = "f32")]
+use libm::atanf;
+#[cfg(feature = "f64")]
 macro_rules! acot_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -15,6 +19,7 @@ macro_rules! acot_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! acot_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -25,6 +30,7 @@ macro_rules! acot_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! acotf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -33,6 +39,7 @@ macro_rules! acotf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! acotf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -52,7 +59,7 @@ impl_math_unop!(MathAcot, f64, acot);
 fn impl_acot_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathAcot,
-      (lhs_value),
+      lhs_value,
       F32 => MatrixF32, F32, f32::zero(), "f32";
       F64 => MatrixF64, F64, f64::zero(), "f64";
     )
@@ -77,8 +84,8 @@ impl FunctionSpecializer for MathAcot {
         let input = arguments[0].clone();
         match impl_acot_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(_) => match (input) {
-                (LegacyValue::MutableReference(input)) => impl_acot_fxn(input.borrow().clone()),
+            Err(_) => match input {
+                LegacyValue::MutableReference(input) => impl_acot_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::intrinsics::*;
 
 pub mod catalog;
@@ -54,7 +53,7 @@ static PURE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclar
         interaction: ExternalInteraction::Pure,
     });
 
-#[cfg(feature = "resident-artifact")]
+#[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
 pub(crate) fn install_frozen_ekf_state_runtime(
     builder: &mut FunctionCatalogBuilder,
 ) -> MResult<()> {
@@ -84,6 +83,7 @@ pub(crate) fn install_frozen_ekf_state_runtime(
 }
 
 trait AssignRuntimeName {
+    #[cfg(feature = "semantic-compiler")]
     fn assign_runtime_name() -> String;
 }
 
@@ -91,6 +91,7 @@ macro_rules! impl_scalar_assign_runtime_name {
     ($type:ty, $name:literal, $feature:literal) => {
         #[cfg(feature = $feature)]
         impl AssignRuntimeName for $type {
+            #[cfg(feature = "semantic-compiler")]
             fn assign_runtime_name() -> String {
                 concat!("Assign<", $name, ">").to_string()
             }
@@ -116,6 +117,7 @@ impl_scalar_assign_runtime_name!(R64, "r64", "r64");
 impl_scalar_assign_runtime_name!(C64, "c64", "c64");
 
 impl AssignRuntimeName for usize {
+    #[cfg(feature = "semantic-compiler")]
     fn assign_runtime_name() -> String {
         "Assign<index>".to_string()
     }
@@ -128,6 +130,7 @@ macro_rules! impl_matrix_assign_runtime_name {
         where
             T: AsValueKind,
         {
+            #[cfg(feature = "semantic-compiler")]
             fn assign_runtime_name() -> String {
                 format!("Assign<{}{}>", T::as_value_kind(), stringify!($shape))
             }
@@ -161,11 +164,23 @@ struct Assign<T> {
 /// remains unchanged so reactive dependencies keep pointing at the same cell,
 /// while the validated composite snapshot replaces its contents atomically.
 #[derive(Debug)]
+#[cfg(any(
+    feature = "matrix",
+    feature = "set",
+    feature = "atom",
+    feature = "enum"
+))]
 struct AssignComposite<T> {
     sink: Ref<T>,
     source: Ref<T>,
 }
 
+#[cfg(any(
+    feature = "matrix",
+    feature = "set",
+    feature = "atom",
+    feature = "enum"
+))]
 impl<T> MechFunctionImpl for AssignComposite<T>
 where
     T: Clone + Debug + 'static,
@@ -203,7 +218,15 @@ where
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "matrix",
+        feature = "set",
+        feature = "atom",
+        feature = "enum"
+    )
+))]
 impl<T> MechFunctionCompiler for AssignComposite<T>
 where
     T: Clone + Debug + 'static,
@@ -226,11 +249,23 @@ where
 /// map, table, and tuple children directly, so preserving only the outer cell
 /// would leave those downstream aliases attached to stale values.
 #[derive(Debug)]
+#[cfg(any(
+    feature = "record",
+    feature = "map",
+    feature = "table",
+    feature = "tuple"
+))]
 struct AssignStructuredComposite {
     sink: LegacyValue,
     source: LegacyValue,
 }
 
+#[cfg(any(
+    feature = "record",
+    feature = "map",
+    feature = "table",
+    feature = "tuple"
+))]
 fn collect_structured_assignments(
     sink: LegacyValue,
     source: LegacyValue,
@@ -365,6 +400,12 @@ fn collect_structured_assignments(
     Ok(())
 }
 
+#[cfg(any(
+    feature = "record",
+    feature = "map",
+    feature = "table",
+    feature = "tuple"
+))]
 impl AssignStructuredComposite {
     fn assignments(&self) -> MResult<Vec<Box<dyn MechFunction>>> {
         let mut assignments = Vec::new();
@@ -391,6 +432,12 @@ impl AssignStructuredComposite {
     }
 }
 
+#[cfg(any(
+    feature = "record",
+    feature = "map",
+    feature = "table",
+    feature = "tuple"
+))]
 impl MechFunctionImpl for AssignStructuredComposite {
     fn solve_result(&self) -> MResult<()> {
         let assignments = self.assignments()?;
@@ -429,7 +476,15 @@ impl MechFunctionImpl for AssignStructuredComposite {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "record",
+        feature = "map",
+        feature = "table",
+        feature = "tuple"
+    )
+))]
 impl MechFunctionCompiler for AssignStructuredComposite {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
@@ -893,6 +948,7 @@ impl FunctionSpecializer for AssignValue {
         }
 
         if arguments.len() > 2 {
+            #[cfg(any(feature = "matrix", feature = "map", feature = "tuple"))]
             let sink_kind = arguments[0].kind().deref_kind();
             #[cfg(feature = "matrix")]
             if matches!(sink_kind, ValueKind::Matrix(_, _)) {
@@ -912,7 +968,7 @@ impl FunctionSpecializer for AssignValue {
         let source = arguments[1].clone();
         match assign_value_fxn(sink.clone(), source.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (sink, source) {
+            Err(_) => match (sink, source) {
                 (LegacyValue::MutableReference(sink), LegacyValue::MutableReference(source)) => {
                     assign_value_fxn(sink.borrow().clone(), source.borrow().clone())
                 }
@@ -1003,7 +1059,7 @@ impl FunctionSpecializer for AddAssignValue {
         let source = arguments[1].clone();
         match add_assign_value_fxn(sink.clone(), source.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (sink, source) {
+            Err(_) => match (sink, source) {
                 (LegacyValue::MutableReference(sink), LegacyValue::MutableReference(source)) => {
                     add_assign_value_fxn(sink.borrow().clone(), source.borrow().clone())
                 }
@@ -1026,11 +1082,10 @@ impl FunctionSpecializer for AddAssignValue {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "compiler"))]
 mod tests {
     use super::*;
 
-    #[cfg(feature = "semantic-compiler")]
     #[test]
     fn empty_stable_assignment_bytecode_compile_returns_error() {
         use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;

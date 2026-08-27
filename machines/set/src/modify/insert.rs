@@ -1,6 +1,5 @@
 use crate::*;
 
-use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 use std::sync::LazyLock;
 
@@ -83,7 +82,7 @@ impl MechFunctionImpl for SetInsertFxn {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
-            let mut out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
+            let out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
 
             // Get references to arg1 and arg2 sets
             let set_ptr: &MechSet = &*(self.arg1.as_ptr());
@@ -95,10 +94,10 @@ impl MechFunctionImpl for SetInsertFxn {
             let (types_match, sizes_match) =
                 match_types(set_ptr.kind.clone(), elem_ptr.kind().clone());
             // Insert arg2 into arg1
-            if (types_match) {
+            if types_match {
                 out_ptr.set = set_ptr.set.clone();
                 out_ptr.set.insert(elem_ptr.clone());
-                if (!sizes_match) {
+                if !sizes_match {
                     out_ptr.kind = match out_ptr.kind.clone() {
                         ValueKind::Set(k1, _) => ValueKind::Set(k1, None),
                         _ => ValueKind::Empty,
@@ -107,7 +106,7 @@ impl MechFunctionImpl for SetInsertFxn {
             }
             // Update metadata
             out_ptr.sync_cardinality_from_contents();
-            if (types_match && sizes_match) {
+            if types_match && sizes_match {
                 out_ptr.kind = set_ptr.kind.clone();
             }
         };
@@ -180,7 +179,7 @@ impl FunctionSpecializer for SetInsert {
         let arg2 = arguments[1].clone();
         match set_insert_fxn(arg1.clone(), arg2.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (arg1, arg2) {
+            Err(_) => match (arg1, arg2) {
                 (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
                     set_insert_fxn(arg1.borrow().clone(), arg2.borrow().clone())
                 }

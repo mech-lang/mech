@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::intrinsics::*;
 use std::sync::LazyLock;
 
@@ -47,6 +46,11 @@ static PURE_HORIZONTAL_UNARY_BUILD_CONTRACT: LazyLock<OperationContractDeclarati
 
 // Horizontal Concatenate -----------------------------------------------------
 
+#[cfg(any(
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4"
+))]
 macro_rules! horizontal_concatenate {
   ($name:ident, $vec_size:expr) => {
     paste!{
@@ -111,6 +115,14 @@ macro_rules! horizontal_concatenate {
   };
 }
 
+#[cfg(any(
+    all(feature = "matrix1", feature = "row_vector2"),
+    all(feature = "row_vector2", feature = "row_vector4"),
+    all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"),
+    all(feature = "vector2", feature = "matrix2"),
+    all(feature = "vector3", feature = "matrix3x2"),
+    all(feature = "matrixd", feature = "matrix4")
+))]
 macro_rules! horzcat_two_args {
     ($fxn:ident, $e0:ident, $e1:ident, $out:ident, $opt:ident) => {
         #[derive(Debug)]
@@ -174,7 +186,7 @@ macro_rules! horzcat_two_args {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr);
                 };
                 Ok(())
@@ -210,6 +222,13 @@ macro_rules! horzcat_two_args {
     };
 }
 
+#[cfg(any(
+    all(feature = "row_vector3", feature = "matrix1"),
+    all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"),
+    all(feature = "vector2", feature = "matrix2x3"),
+    all(feature = "vector3", feature = "matrix3"),
+    all(feature = "matrixd", feature = "vector4", feature = "matrix4")
+))]
 macro_rules! horzcat_three_args {
     ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
         #[derive(Debug)]
@@ -279,7 +298,7 @@ macro_rules! horzcat_three_args {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
                 };
                 Ok(())
@@ -316,6 +335,7 @@ macro_rules! horzcat_three_args {
     };
 }
 
+#[cfg(all(feature = "matrix4", feature = "vector4"))]
 macro_rules! horzcat_four_args {
     ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $e3:ident, $out:ident, $opt:ident) => {
         #[derive(Debug)]
@@ -397,7 +417,7 @@ macro_rules! horzcat_four_args {
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let e2_ptr = (*(self.e2.as_ptr())).clone();
                     let e3_ptr = (*(self.e3.as_ptr())).clone();
-                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
                 };
                 Ok(())
@@ -1009,7 +1029,6 @@ where
                 let mut scalar: Vec<(Ref<T>, usize)> = Vec::new();
                 let mut matrix: Vec<(Box<dyn CopyMat<T>>, usize)> = Vec::new();
                 for (i, arg) in vargs.into_iter().enumerate() {
-                    let kind = arg.kind();
                     if arg.is_scalar() {
                         let scalar_ref = arg.try_function_ref(FunctionArgumentRole::Input(i))?;
                         scalar.push((scalar_ref, i));
@@ -1045,9 +1064,9 @@ where
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             for (e, i) in &self.matrix {
-                let _ = e.copy_into_r(&self.out, *i);
+                e.copy_into_r(&self.out, *i);
             }
             for (e, i) in &self.scalar {
                 out_ptr[*i] = e.borrow().clone();
@@ -1127,7 +1146,7 @@ mech_core::declare_native_runtime_factory! {
 
 #[cfg(all(
     test,
-    feature = "semantic-compiler",
+    feature = "compiler",
     feature = "matrixd",
     feature = "row_vectord",
     feature = "f64",
@@ -1410,7 +1429,7 @@ where
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = self.arg.borrow().clone();
         };
         Ok(())
@@ -1496,7 +1515,7 @@ where
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = self.arg.borrow().clone();
         };
         Ok(())
@@ -1586,7 +1605,7 @@ where
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = self.e0.borrow().clone();
             out_ptr[1] = self.e1.borrow().clone();
         };
@@ -1701,7 +1720,7 @@ where
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = self.e0.borrow().clone();
             out_ptr[1] = self.e1.borrow().clone();
             out_ptr[2] = self.e2.borrow().clone();
@@ -1805,7 +1824,7 @@ where
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = self.e0.borrow().clone();
             out_ptr[1] = self.e1.borrow().clone();
             out_ptr[2] = self.e2.borrow().clone();
@@ -2092,7 +2111,7 @@ where
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr.clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
@@ -2182,7 +2201,7 @@ where
     fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = self.e1.borrow().clone();
@@ -2271,7 +2290,7 @@ where
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
         };
@@ -2360,7 +2379,7 @@ where
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
         };
@@ -2463,7 +2482,7 @@ where
             let e1_val = self.e1.borrow().clone();
             let e2_val = self.e2.borrow().clone();
             let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_val;
@@ -2568,7 +2587,7 @@ where
             let e1_val = self.e1.borrow().clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
             let e3_val = self.e3.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
@@ -2673,7 +2692,7 @@ where
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_val = self.e2.borrow().clone();
             let e3_val = self.e3.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
@@ -2778,7 +2797,7 @@ where
             let e1_val = self.e1.borrow().clone();
             let e2_val = self.e2.borrow().clone();
             let e3_val = self.e3.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_val;
@@ -2870,7 +2889,7 @@ where
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr.clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
@@ -2962,7 +2981,7 @@ where
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = self.e1.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = e0_ptr[2].clone();
@@ -3057,7 +3076,7 @@ where
             let e0_val = self.e0.borrow().clone();
             let e1_val = self.e1.borrow().clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
@@ -3151,7 +3170,7 @@ where
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_val = self.e2.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
@@ -3245,7 +3264,7 @@ where
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
             let e2_val = self.e2.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_val;
@@ -3340,7 +3359,7 @@ where
             let e0_val = self.e0.borrow().clone();
             let e1_val = self.e1.borrow().clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
@@ -3436,7 +3455,7 @@ where
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_val = self.e2.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
@@ -3532,7 +3551,7 @@ where
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
             let e2_val = self.e2.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = e1_val;
@@ -3627,7 +3646,7 @@ where
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_val = self.e2.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
@@ -3659,6 +3678,7 @@ where
 
 // HorizontalConcatenateM1M1 -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 macro_rules! horzcat_m1m1 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -3738,7 +3758,7 @@ where
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
@@ -3832,7 +3852,7 @@ where
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
@@ -3864,6 +3884,7 @@ where
 
 // HorizontalConcatenateR2R2 -------------------------------------------------
 
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 macro_rules! horzcat_r2r2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -3883,6 +3904,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateM1R3 -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
 macro_rules! horzcat_m1r3 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -3902,6 +3924,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateR3M1 -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
 macro_rules! horzcat_r3m1 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -3984,7 +4007,7 @@ where
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
@@ -4080,7 +4103,7 @@ where
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
@@ -4185,7 +4208,7 @@ where
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_val = self.e2.borrow().clone();
             let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
@@ -4281,7 +4304,7 @@ where
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_val = self.e2.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
@@ -4377,7 +4400,7 @@ where
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_val = self.e2.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = e1_ptr[0].clone();
@@ -4473,7 +4496,7 @@ where
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = e1_val;
@@ -4569,7 +4592,7 @@ where
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
@@ -4674,7 +4697,7 @@ where
             let e1_val = self.e1.borrow().clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
             let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
@@ -4779,7 +4802,7 @@ where
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_val = self.e2.borrow().clone();
             let e3_val = self.e3.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
@@ -4884,7 +4907,7 @@ where
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
             let e3_val = self.e3.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
@@ -4989,7 +5012,7 @@ where
             let e1_val = self.e1.borrow().clone();
             let e2_val = self.e2.borrow().clone();
             let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_val;
@@ -5094,7 +5117,7 @@ where
             let e1_val = self.e1.borrow().clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
             let e3_val = self.e3.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
@@ -5127,6 +5150,7 @@ where
 
 // HorizontalConcatenateM1R2 --------------------------------------------------
 
+#[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
 macro_rules! horzcat_m1r2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -5145,6 +5169,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateR2M1 --------------------------------------------------
 
+#[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
 macro_rules! horzcat_r2m1 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -5163,6 +5188,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateM1M1M1 ------------------------------------------------
 
+#[cfg(all(feature = "row_vector3", feature = "matrix1"))]
 macro_rules! horzcat_m1m1m1 {
     ($out:expr, $e0:expr,$e1:expr,$e2:expr) => {
         $out[0] = $e0[0].clone();
@@ -5182,6 +5208,7 @@ horzcat_three_args!(
 
 // HorizontalConcatenateM1M1R2 ------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
 macro_rules! horzcat_m1m1r2 {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
         $out[0] = $e0[0].clone();
@@ -5202,6 +5229,7 @@ horzcat_three_args!(
 
 // HorizontalConcatenateM1R2M1 ------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
 macro_rules! horzcat_m1r2m1 {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
         $out[0] = $e0[0].clone();
@@ -5220,6 +5248,7 @@ horzcat_three_args!(
     horzcat_m1r2m1
 );
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
 macro_rules! horzcat_r2m1m1 {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
         $out[0] = $e0[0].clone();
@@ -5312,7 +5341,7 @@ where
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
             let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
@@ -5417,7 +5446,7 @@ where
             let e1_val = self.e1.borrow().clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
             let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
@@ -5522,7 +5551,7 @@ where
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_val = self.e2.borrow().clone();
             let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
@@ -5630,7 +5659,7 @@ where
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
             let e3_val = self.e3.borrow().clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
@@ -5738,7 +5767,7 @@ where
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
             let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
@@ -5774,6 +5803,7 @@ where
 
 // HorizontalConcatenateV2V2 -------------------------------------------------
 
+#[cfg(all(feature = "vector2", feature = "matrix2"))]
 macro_rules! horzcat_v2v2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -5791,6 +5821,7 @@ horzcat_two_args!(
     horzcat_v2v2
 );
 
+#[cfg(all(feature = "vector3", feature = "matrix3x2"))]
 macro_rules! horzcat_v3v3 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -5812,6 +5843,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateV2M2 --------------------------------------------------
 
+#[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
 macro_rules! horzcat_v2m2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -5833,6 +5865,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateM2V2 --------------------------------------------------
 
+#[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
 macro_rules! horzcat_m2v2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -5854,6 +5887,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateM3x2V3 ------------------------------------------------
 
+#[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
 macro_rules! horzcat_m3x2v3 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -5878,6 +5912,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateV3M3x2 ------------------------------------------------
 
+#[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
 macro_rules! horzcat_v3m3x2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -5902,6 +5937,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateV4V4 --------------------------------------------------
 
+#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
 macro_rules! horzcat_v4md {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -5925,6 +5961,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateMDV4 --------------------------------------------------
 
+#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
 macro_rules! horzcat_mdv4 {
     ($out:expr, $e0:expr, $e1:expr) => {
         let e0_len = $e0.len();
@@ -5949,6 +5986,7 @@ horzcat_two_args!(
 
 // HorizontalConcatenateMDV4 --------------------------------------------------
 
+#[cfg(all(feature = "matrixd", feature = "matrix4"))]
 macro_rules! horzcat_mdmd {
     ($out:expr, $e0:expr, $e1:expr) => {
         let e0_len = $e0.len();
@@ -5972,6 +6010,11 @@ horzcat_two_args!(
 
 // HorizontalConcatenateMDMDMD ------------------------------------------------
 
+#[cfg(any(
+    all(feature = "vector2", feature = "matrix2x3"),
+    all(feature = "vector3", feature = "matrix3"),
+    all(feature = "matrixd", feature = "vector4", feature = "matrix4")
+))]
 macro_rules! horzcat_mdmdmd {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
         let e0_len = $e0.len();
@@ -6051,6 +6094,7 @@ horzcat_three_args!(
 
 // HorizontalConcatenateV4V4V4V4 ------------------------------------------------
 
+#[cfg(all(feature = "matrix4", feature = "vector4"))]
 macro_rules! horzcat_mdmdmdmd {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr, $e3:expr) => {
         let e0_len = $e0.len();
@@ -6101,79 +6145,61 @@ macro_rules! impl_horzcat_arms {
       }
       #[cfg(feature = "row_vector2")] // get_r2
       fn get_r2(value: &LegacyValue) -> Option<Ref<RowVector2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "row_vector2"))]
+      #[cfg(all(not(feature = "row_vector2"), any(feature = "row_vector3", feature = "row_vector4")))]
       fn get_r2(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "row_vector3")] // get_r3
       fn get_r3(value: &LegacyValue) -> Option<Ref<RowVector3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "row_vector3"))]
+      #[cfg(all(not(feature = "row_vector3"), feature = "row_vector4"))]
       fn get_r3(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "row_vector4")] // get_r4
       fn get_r4(value: &LegacyValue) -> Option<Ref<RowVector4<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "row_vector4"))]
-      fn get_r4(_value: &LegacyValue) -> Option<()> { None }
-
       #[cfg(feature = "vector2")] // get_v2
       fn get_v2(value: &LegacyValue) -> Option<Ref<Vector2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "vector2"))]
+      #[cfg(all(not(feature = "vector2"), feature = "matrix2x3"))]
       fn get_v2(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "vector3")] // get_v3
       fn get_v3(value: &LegacyValue) -> Option<Ref<Vector3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "vector3"))]
+      #[cfg(all(not(feature = "vector3"), any(feature = "matrix3x2", feature = "matrix3")))]
       fn get_v3(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "vector4")] // get_v4
       fn get_v4(value: &LegacyValue) -> Option<Ref<Vector4<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "vector4"))]
+      #[cfg(all(not(feature = "vector4"), feature = "matrix4"))]
       fn get_v4(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrixd")] // get_md
       fn get_md(value: &LegacyValue) -> Option<Ref<DMatrix<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "matrixd"))]
+      #[cfg(all(not(feature = "matrixd"), any(feature = "row_vectord", feature = "matrix4")))]
       fn get_md(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "vectord")] // get_vd
       fn get_vd(value: &LegacyValue) -> Option<Ref<DVector<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "vectord"))]
-      fn get_vd(_value: &LegacyValue) -> Option<()> { None }
-
       #[cfg(feature = "row_vectord")] // get_rd
       fn get_rd(value: &LegacyValue) -> Option<Ref<RowDVector<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "row_vectord"))]
-      fn get_rd(_value: &LegacyValue) -> Option<()> { None }
-
       #[cfg(feature = "matrix3x2")] // get_m3x2
       fn get_m3x2(value: &LegacyValue) -> Option<Ref<Matrix3x2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "matrix3x2"))]
+      #[cfg(all(not(feature = "matrix3x2"), feature = "matrix3"))]
       fn get_m3x2(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrix2x3")] // get_m2x3
       fn get_m2x3(value: &LegacyValue) -> Option<Ref<Matrix2x3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "matrix2x3"))]
-      fn get_m2x3(_value: &LegacyValue) -> Option<()> { None }
-
       #[cfg(feature = "matrix1")] // get_m1
       fn get_m1(value: &LegacyValue) -> Option<Ref<Matrix1<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "matrix1"))]
+      #[cfg(all(not(feature = "matrix1"), any(feature = "row_vector2", feature = "row_vector3", feature = "row_vector4")))]
       fn get_m1(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrix2")] // get_m2
       fn get_m2(value: &LegacyValue) -> Option<Ref<Matrix2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "matrix2"))]
+      #[cfg(all(not(feature = "matrix2"), feature = "matrix2x3"))]
       fn get_m2(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrix3")] // get_m3
       fn get_m3(value: &LegacyValue) -> Option<Ref<Matrix3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "matrix3"))]
-      fn get_m3(_value: &LegacyValue) -> Option<()> { None }
-
       #[cfg(feature = "matrix4")] // get_m4
       fn get_m4(value: &LegacyValue) -> Option<Ref<Matrix4<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(not(feature = "matrix4"))]
-      fn get_m4(_value: &LegacyValue) -> Option<()> { None }
-
       fn get_s(value: &LegacyValue) -> Option<Ref<$kind>> {
         match value {
           LegacyValue::[<$kind:camel>](v) => Some(v.clone()),
@@ -6192,16 +6218,9 @@ macro_rules! impl_horzcat_arms {
       }
 
       let arguments = $args;
-      let rows = arguments[0].shape()[0];
       let columns:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[1]);
       let rows:usize = arguments[0].shape()[0];
       let nargs = arguments.len();
-      let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
-      let no_refs = !kinds.iter().any(|x| {
-        match x {
-          ValueKind::Reference(_) => true,
-          _ => false,
-      }});
         match (nargs,rows,columns) {
           #[cfg(feature = "matrix1")]
           (1,1,1) => {
@@ -6248,7 +6267,7 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "row_vectord")]
-          (1, 1, n) => {
+          (1, 1, _) => {
             let erd = get_rd(&arguments[0]);
             let emd = get_md(&arguments[0]);
             let es = get_s(&arguments[0]);
@@ -6263,7 +6282,7 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "row_vector2")]
           (2,1,2) => {
-            let mut out = RowVector2::from_element($default);
+            let out = RowVector2::from_element($default);
             let am1 = get_m1(&arguments[0]);
             let bm1 = get_m1(&arguments[1]);
             let asc = get_s(&arguments[0]);
@@ -6281,7 +6300,7 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "row_vector3")]
           (2,1,3) => {
-            let mut out = RowVector3::from_element($default);
+            let out = RowVector3::from_element($default);
             let a_r2 = get_r2(&arguments[0]);
             let b_r2 = get_r2(&arguments[1]);
             let a_sc = get_s(&arguments[0]);
@@ -6302,7 +6321,7 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "row_vector4")]
           (2,1,4) => {
-            let mut out = RowVector4::from_element($default);
+            let out = RowVector4::from_element($default);
             let a_r3 = get_r3(&arguments[0]);
             let b_r3 = get_r3(&arguments[1]);
             let a_sc = get_s(&arguments[0]);
@@ -6327,7 +6346,7 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "row_vector3")]
           (3,1,3) => {
-            let mut out = RowVector3::from_element($default);
+            let out = RowVector3::from_element($default);
             let a_m1 = get_m1(&arguments[0]);
             let b_m1 = get_m1(&arguments[1]);
             let c_m1 = get_m1(&arguments[2]);
@@ -6356,7 +6375,7 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "row_vector4")]
           (3,1,4) => {
-            let mut out = RowVector4::from_element($default);
+            let out = RowVector4::from_element($default);
             let a_sc = get_s(&arguments[0]);
             let b_sc = get_s(&arguments[1]);
             let c_sc = get_s(&arguments[2]);
@@ -6396,7 +6415,7 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "row_vector4")]
           (4,1,4) => {
-            let mut out = RowVector4::from_element($default);
+            let out = RowVector4::from_element($default);
             let a_s = get_s(&arguments[0]);
             let b_s = get_s(&arguments[1]);
             let c_s = get_s(&arguments[2]);
@@ -6441,8 +6460,8 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "row_vectord")]
-          (m,1,n) => {
-            let mut out = RowDVector::from_element(n,$default);
+          (_,1,n) => {
+            let out = RowDVector::from_element(n,$default);
             let mut matrix_args: Vec<(Box<dyn CopyMat<$kind>>,usize)> = vec![];
             let mut scalar_args: Vec<(Ref<$kind>,usize)> = vec![];
             let mut i = 0;
@@ -6464,7 +6483,7 @@ macro_rules! impl_horzcat_arms {
                       scalar_args.push((Ref::new($kind::default()), i));
                       i += 1;
                     }
-                    x => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
+                    _ => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
                   }
                 }
                 LegacyValue::[<Matrix $kind:camel>](e0) => {
@@ -6494,7 +6513,7 @@ macro_rules! impl_horzcat_arms {
             let ev2 = get_v2(&arguments[0]);
             match &ev2 {
               Some(e0) => return Ok(Box::new(HorizontalConcatenateV2 { out: e0.clone() })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix2")]
@@ -6502,7 +6521,7 @@ macro_rules! impl_horzcat_arms {
             let em2 = get_m2(&arguments[0]);
             match &em2 {
               Some(e0) => return Ok(Box::new(HorizontalConcatenateM2 { out: e0.clone() })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix2x3")]
@@ -6510,7 +6529,7 @@ macro_rules! impl_horzcat_arms {
             let em2x3 = get_m2x3(&arguments[0]);
             match &em2x3 {
               Some(e0) => return Ok(Box::new(HorizontalConcatenateM2x3 { out: e0.clone() })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2x3".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2x3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "vector3")]
@@ -6518,7 +6537,7 @@ macro_rules! impl_horzcat_arms {
             let ev3 = get_v3(&arguments[0]);
             match &ev3 {
               Some(e0) => return Ok(Box::new(HorizontalConcatenateV3 { out: e0.clone() })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3x2")]
@@ -6526,7 +6545,7 @@ macro_rules! impl_horzcat_arms {
             let am3x2 = get_m3x2(&arguments[0]);
             match &am3x2 {
               Some(e0) => return Ok(Box::new(HorizontalConcatenateM3x2{out: e0.clone()})),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3x2".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3x2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3")]
@@ -6534,7 +6553,7 @@ macro_rules! impl_horzcat_arms {
             let em3 = get_m3(&arguments[0]);
             match &em3 {
               Some(e0) => return Ok(Box::new(HorizontalConcatenateM3 { out: e0.clone() })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "vector4")]
@@ -6542,7 +6561,7 @@ macro_rules! impl_horzcat_arms {
             let ev4 = get_v4(&arguments[0]);
             match &ev4 {
               Some(e0) => return Ok(Box::new(HorizontalConcatenateV4 { out: e0.clone() })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix4")]
@@ -6550,45 +6569,45 @@ macro_rules! impl_horzcat_arms {
             let em4 = get_m4(&arguments[0]);
             match &em4 {
               Some(e0) => return Ok(Box::new(HorizontalConcatenateM4 { out: e0.clone() })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix4".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix4".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrixd")]
-          (1, m, n) => {
+          (1, _, _) => {
             let emd = get_md(&arguments[0]);
             let evd = get_vd(&arguments[0]);
             match (emd, evd) {
               (Some(e0), None) => return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()})),
               #[cfg(feature = "vectord")]
-              (NOne, Some(e0)) => return Ok(Box::new(HorizontalConcatenateVD{out: e0.clone()})),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd or vectord".to_string())).with_compiler_loc()),
+              (None, Some(e0)) => return Ok(Box::new(HorizontalConcatenateVD{out: e0.clone()})),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd or vectord".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(all(feature = "matrix2", feature ="vector2"))]
           (2, 2, 2) => {
-            let mut out = Matrix2::from_element($default);
+            let out = Matrix2::from_element($default);
             let av2 = get_v2(&arguments[0]);
             let bv2 = get_v2(&arguments[1]);
             match (av2, bv2) {
               #[cfg(feature = "vector2")]
               (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3x2")]
           (2, 3, 2) => {
-            let mut out = Matrix3x2::from_element($default);
+            let out = Matrix3x2::from_element($default);
             let av3 = get_v3(&arguments[0]);
             let bv3 = get_v3(&arguments[1]);
             match (av3, bv3) {
               #[cfg(feature = "vector3")]
               (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV3V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix2x3")]
           (2,2,3) => {
-            let mut out = Matrix2x3::from_element($default);
+            let out = Matrix2x3::from_element($default);
             let av2 = get_v2(&arguments[0]);
             let am2 = get_m2(&arguments[0]);
             let bv2 = get_v2(&arguments[1]);
@@ -6598,12 +6617,12 @@ macro_rules! impl_horzcat_arms {
               (Some(e0), _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateV2M2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               #[cfg(all(feature = "vector2", feature = "matrix2"))]
               (_, Some(e1), Some(e0), _) => return Ok(Box::new(HorizontalConcatenateM2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2 or matrix2".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2 or matrix2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3")]
           (2, 3, 3) => {
-            let mut out = Matrix3::from_element($default);
+            let out = Matrix3::from_element($default);
             let av3 = get_v3(&arguments[0]);
             let am3x2 = get_m3x2(&arguments[0]);
             let bv3 = get_v3(&arguments[1]);
@@ -6613,12 +6632,12 @@ macro_rules! impl_horzcat_arms {
               (Some(e0), _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateV3M3x2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
               (_, Some(e1), Some(e0), _) => return Ok(Box::new(HorizontalConcatenateM3x2V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3 or matrix3x2".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3 or matrix3x2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix4")]
           (2, 4, 4) => {
-            let mut out = Matrix4::from_element($default);
+            let out = Matrix4::from_element($default);
             let av4 = get_v4(&arguments[0]);
             let bv4 = get_v4(&arguments[1]);
             let amd = get_md(&arguments[0]);
@@ -6630,43 +6649,43 @@ macro_rules! impl_horzcat_arms {
               (_, Some(e1), Some(e0), _) => return Ok(Box::new(HorizontalConcatenateMDV4 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               #[cfg(feature = "matrixd")]
               (_, _, Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateMDMD { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrixd")]
           (2,m,n) => {
-            let mut out = DMatrix::from_element(m,n,$default);
+            let out = DMatrix::from_element(m,n,$default);
             let e0 = extract_matrix(&arguments[0])?;
             let e1 = extract_matrix(&arguments[1])?;
             Ok(Box::new(HorizontalConcatenateTwoArgs{e0,e1,out:Ref::new(out)}))
           }
           #[cfg(feature = "matrix2x3")]
           (3, 2, 3) => {
-            let mut out = Matrix2x3::from_element($default);
+            let out = Matrix2x3::from_element($default);
             let av2 = get_v2(&arguments[0]);
             let bv2 = get_v2(&arguments[1]);
             let cv2 = get_v2(&arguments[2]);
             match (av2, bv2, cv2) {
               #[cfg(feature = "vector2")]
               (Some(e0), Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateV2V2V2 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3")]
           (3, 3, 3) => {
-            let mut out = Matrix3::from_element($default);
+            let out = Matrix3::from_element($default);
             let av3 = get_v3(&arguments[0]);
             let bv3 = get_v3(&arguments[1]);
             let cv3 = get_v3(&arguments[2]);
             match (&av3, &bv3, &cv3) {
               #[cfg(feature = "vector3")]
               (Some(e0), Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateV3V3V3 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix4")]
           (3, 4, 4) => {
-            let mut out = Matrix4::from_element($default);
+            let out = Matrix4::from_element($default);
             let av4 = get_v4(&arguments[0]);
             let bv4 = get_v4(&arguments[1]);
             let cv4 = get_v4(&arguments[2]);
@@ -6680,12 +6699,12 @@ macro_rules! impl_horzcat_arms {
               (Some(e0), _, Some(e2), _, Some(e1), _) => return Ok(Box::new(HorizontalConcatenateV4MDV4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
               #[cfg(all(feature = "matrixd", feature = "vector4"))]
               (_, Some(e1), Some(e2), Some(e0), _, _) => return Ok(Box::new(HorizontalConcatenateMDV4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrixd")]
           (3,m,n) => {
-            let mut out = DMatrix::from_element(m, n, $default);
+            let out = DMatrix::from_element(m, n, $default);
             let e0 = extract_matrix(&arguments[0])?;
             let e1 = extract_matrix(&arguments[1])?;
             let e2 = extract_matrix(&arguments[2])?;
@@ -6693,7 +6712,7 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "matrix4")]
           (4, 4, 4) => {
-            let mut out = Matrix4::from_element($default);
+            let out = Matrix4::from_element($default);
             let av4 = get_v4(&arguments[0]);
             let bv4 = get_v4(&arguments[1]);
             let cv4 = get_v4(&arguments[2]);
@@ -6701,12 +6720,12 @@ macro_rules! impl_horzcat_arms {
             match (&av4, &bv4, &cv4, &dv4) {
               #[cfg(feature = "vector4")]
               (Some(e0), Some(e1), Some(e2), Some(e3)) => return Ok(Box::new(HorizontalConcatenateV4V4V4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrixd")]
           (4,m,n) => {
-            let mut out = DMatrix::from_element(m,n,$default);
+            let out = DMatrix::from_element(m,n,$default);
             let e0 = extract_matrix(&arguments[0])?;
             let e1 = extract_matrix(&arguments[1])?;
             let e2 = extract_matrix(&arguments[2])?;
@@ -6714,8 +6733,8 @@ macro_rules! impl_horzcat_arms {
             return Ok(Box::new(HorizontalConcatenateFourArgs {e0,e1,e2,e3,out: Ref::new(out)}));
           }
           #[cfg(feature = "matrixd")]
-          (l,m,n) => {
-            let mut out = DMatrix::from_element(m,n,$default);
+          (_,m,n) => {
+            let out = DMatrix::from_element(m,n,$default);
             let mut args = vec![];
             for arg in arguments {
               let e0 = extract_matrix(&arg)?;
@@ -6723,7 +6742,8 @@ macro_rules! impl_horzcat_arms {
             }
             Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:Ref::new(out.clone())}))
           }
-          x => return Err(MechError::new(
+          #[cfg(not(feature = "matrixd"))]
+          _ => return Err(MechError::new(
               UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/horzcat".to_string() },
               None
           ).with_compiler_loc()),
@@ -6868,6 +6888,20 @@ pub(crate) fn impl_horzcat_fxn(arguments: &[LegacyValue]) -> MResult<Box<dyn Mec
     .with_compiler_loc())
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4"
+))]
 macro_rules! install_horzcat_factories {
     ($builder:ident, $factory:ident) => {
         install_horzcat_linked_factories!($builder, $factory)?;
@@ -6895,6 +6929,7 @@ macro_rules! for_each_horzcat_scalar {
     };
 }
 
+#[cfg(feature = "row_vectord")]
 fn validate_nullary_horizontal_concatenation(args: &FunctionArgs) -> MResult<()> {
     let contract = "horizontal_concatenation_nullary";
     if args.input_count() != 0 {
@@ -6967,6 +7002,7 @@ macro_rules! install_horzcat_linked_factories {
     }};
 }
 
+#[cfg(any(feature = "row_vectord", feature = "row_vector2"))]
 macro_rules! register_horzcat_scalar_except_f64 {
     ($builder:ident, $factory:ident; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($builder:ident, $factory:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
@@ -6974,6 +7010,7 @@ macro_rules! register_horzcat_scalar_except_f64 {
     };
 }
 
+#[cfg(any(feature = "row_vectord", feature = "row_vector2"))]
 macro_rules! install_horzcat_linked_factories_except_f64 {
     ($builder:ident, $factory:ident) => {{
         for_each_horzcat_scalar!(register_horzcat_scalar_except_f64, ($builder, $factory));
@@ -7078,6 +7115,7 @@ macro_rules! for_each_horzcat_legacy_family {
     };
 }
 
+#[cfg(feature = "row_vector2")]
 macro_rules! declare_horzcat_scalar_except_f64 {
     ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($factory:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
@@ -7085,6 +7123,20 @@ macro_rules! declare_horzcat_scalar_except_f64 {
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4"
+))]
 macro_rules! declare_horzcat_legacy_family {
     (normal; $factory:ident; [$($feature:literal),+]) => {
         declare_horzcat_family!($factory, [$($feature),+]);
@@ -7096,6 +7148,7 @@ macro_rules! declare_horzcat_legacy_family {
 
 for_each_horzcat_legacy_family!(declare_horzcat_legacy_family);
 
+#[cfg(feature = "row_vector2")]
 macro_rules! install_horzcat_factories_except_f64 {
     ($builder:ident, $factory:ident) => {
         install_horzcat_linked_factories_except_f64!($builder, $factory)?;
@@ -7272,7 +7325,10 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 /// Installs the variadic f64 factory needed to execute and compile ordinary
 /// dynamic-matrix source without expanding the frozen runtime-only catalog.
 #[cfg(feature = "semantic-compiler")]
-pub(super) fn install_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub(super) fn install_source_runtime(
+    #[cfg(all(feature = "f64", feature = "matrixd"))] builder: &mut FunctionCatalogBuilder,
+    #[cfg(not(all(feature = "f64", feature = "matrixd")))] _: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
     #[cfg(all(feature = "f64", feature = "matrixd"))]
     if !builder.contains_runtime_factory(mech_core::RuntimeFunctionId::from_name(
         "HorizontalConcatenateNArgs<f64>",
@@ -7289,7 +7345,10 @@ pub(super) fn install_source_runtime(builder: &mut FunctionCatalogBuilder) -> MR
 /// Native application planning must still resolve bytecode that the source
 /// compiler emits for four-or-more dynamic matrix inputs.
 #[cfg(feature = "native-plan")]
-pub(super) fn install_native_plan_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub(super) fn install_native_plan_runtime(
+    #[cfg(all(feature = "f64", feature = "matrixd"))] builder: &mut FunctionCatalogBuilder,
+    #[cfg(not(all(feature = "f64", feature = "matrixd")))] _: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
     #[cfg(all(feature = "f64", feature = "matrixd"))]
     {
         register_horizontal_concatenate_four_args_f64(builder)?;
@@ -7299,6 +7358,7 @@ pub(super) fn install_native_plan_runtime(builder: &mut FunctionCatalogBuilder) 
     Ok(())
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_horzcat_scalar {
     ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
         #[cfg(all(feature = "matrix_horzcat", feature = $cargo, $(feature = $feature),+))]
@@ -7306,12 +7366,14 @@ macro_rules! export_horzcat_scalar {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_horzcat_family {
     ($factory:ident, [$($feature:literal),+]) => {
         for_each_horzcat_scalar!(export_horzcat_scalar, ($factory, [$($feature),+]));
     };
 }
 
+#[cfg(all(feature = "native-link", feature = "row_vector2"))]
 macro_rules! export_horzcat_scalar_except_f64 {
     ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
@@ -7320,6 +7382,23 @@ macro_rules! export_horzcat_scalar_except_f64 {
     };
 }
 
+#[cfg(all(
+    feature = "native-link",
+    any(
+        feature = "matrix1",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix4",
+        feature = "matrix2x3",
+        feature = "matrix3x2",
+        feature = "row_vector2",
+        feature = "row_vector3",
+        feature = "row_vector4",
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4"
+    )
+))]
 macro_rules! export_horzcat_legacy_family {
     (normal; $factory:ident; [$($feature:literal),+]) => {
         export_horzcat_family!($factory, [$($feature),+]);

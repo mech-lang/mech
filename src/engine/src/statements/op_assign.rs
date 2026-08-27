@@ -12,13 +12,26 @@ use super::variable_assign::assignment_registration_operand;
     feature = "math_mul_assign"
 ))]
 use super::{AddressedAssignmentUnsupported, NotMutableError, UndefinedVariableError};
-#[cfg(any(
-    feature = "math_add_assign",
-    feature = "math_sub_assign",
-    feature = "math_div_assign",
-    feature = "math_mul_assign"
+#[cfg(all(
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    any(feature = "subscript_formula", feature = "subscript_range")
 ))]
 use crate::Subscript;
+#[cfg(all(
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    feature = "subscript_formula"
+))]
+use crate::subscript_formula_ix;
 #[cfg(all(
     any(
         feature = "math_add_assign",
@@ -30,16 +43,6 @@ use crate::Subscript;
 ))]
 use crate::subscript_range;
 use crate::{Environment, InterpreterExecution, LegacyValue, MResult};
-#[cfg(all(
-    any(
-        feature = "math_add_assign",
-        feature = "math_sub_assign",
-        feature = "math_div_assign",
-        feature = "math_mul_assign"
-    ),
-    feature = "subscript_formula"
-))]
-use crate::{MatrixAssignScalar, MatrixAssignScalarAll, subscript_formula_ix};
 #[cfg(any(
     feature = "math_add_assign",
     feature = "math_sub_assign",
@@ -60,11 +63,14 @@ use crate::{
     any(feature = "subscript_formula", feature = "subscript_range")
 ))]
 use crate::{MechFunction, OperationId};
-#[cfg(any(
-    feature = "math_add_assign",
-    feature = "math_sub_assign",
-    feature = "math_div_assign",
-    feature = "math_mul_assign"
+#[cfg(all(
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    any(feature = "subscript_formula", feature = "subscript_range")
 ))]
 use paste::paste;
 
@@ -79,7 +85,7 @@ pub fn op_assign(
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
 ) -> MResult<LegacyValue> {
-    let mut source = expression(&op_assgn.expression, env, p)?;
+    let source = expression(&op_assgn.expression, env, p)?;
     let slc = &op_assgn.target;
     if slc.context.is_some() {
         return Err(MechError::new(AddressedAssignmentUnsupported, None)
@@ -88,7 +94,7 @@ pub fn op_assign(
     }
     let id = slc.name.hash();
     let sink = {
-        let mut state_brrw = p.state.borrow_mut();
+        let state_brrw = p.state.borrow_mut();
         match state_brrw.get_mutable_symbol(id) {
       Some(val) => val.borrow().clone(),
       None => {
@@ -106,6 +112,7 @@ pub fn op_assign(
     }
     };
     match &slc.subscript {
+        #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
         Some(sbscrpt) => {
             // todo: this only works for the first subscript, it needs to work for multiple subscripts
             for s in sbscrpt {
@@ -123,6 +130,8 @@ pub fn op_assign(
                 return Ok(fxn);
             }
         }
+        #[cfg(not(any(feature = "subscript_formula", feature = "subscript_range")))]
+        Some(_) => todo!("compound assignment subscripts require subscript support"),
         None => {
             let plan = p.plan();
             let registration_source = assignment_registration_operand(&source);
@@ -165,6 +174,7 @@ pub fn op_assign(
             };
         }
     }
+    #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
     unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 
@@ -208,39 +218,48 @@ fn catalog_op_assignment_function(
     )
 }
 
+#[cfg(all(
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 macro_rules! op_assign {
   ($fxn_name:ident, $op:tt, $range_operation:literal, $range_all_operation:literal) => {
     paste!{
       pub fn $fxn_name(sbscrpt: &Subscript, sink: &LegacyValue, source: &LegacyValue, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
         let plan = p.plan();
         match sbscrpt {
-          Subscript::Dot(x) => {
+          Subscript::Dot(_) => {
             todo!()
           },
-          Subscript::DotInt(x) => {
+          Subscript::DotInt(_) => {
             todo!()
           },
-          Subscript::Swizzle(x) => {
+          Subscript::Swizzle(_) => {
             todo!()
           },
           Subscript::Bracket(subs) => {
             let mut fxn_input = vec![sink.clone()];
             match &subs[..] {
               #[cfg(feature = "subscript_formula")]
-              [Subscript::Formula(ix)] => {
+              [Subscript::Formula(_)] => {
                 fxn_input.push(source.clone());
                 let ixes = subscript_formula_ix(&subs[0], env, p)?;
                 let shape = ixes.shape();
                 fxn_input.push(ixes);
                 match shape[..] {
                   [1,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, "assign", &fxn_input)?); }
-                  [1,n] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?); }
-                  [n,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?); }
+                  [1,_] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?); }
+                  [_,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?); }
                   _ => todo!(),
                 }
               },
               #[cfg(feature = "subscript_formula")]
-              [Subscript::Formula(ix1),Subscript::All] => {
+              [Subscript::Formula(_),Subscript::All] => {
                 fxn_input.push(source.clone());
                 let ix = subscript_formula_ix(&subs[0], env, p)?;
                 let shape = ix.shape();
@@ -248,20 +267,20 @@ macro_rules! op_assign {
                 fxn_input.push(LegacyValue::IndexAll);
                 match shape[..] {
                   [1,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, "assign", &fxn_input)?); }
-                  [1,n] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?); }
-                  [n,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?); }
+                  [1,_] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?); }
+                  [_,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?); }
                   _ => todo!(),
                 }
               },
               #[cfg(feature = "subscript_range")]
-              [Subscript::Range(ix)] => {
+              [Subscript::Range(_)] => {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
                 fxn_input.push(ixes);
                 plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?);
               },
               #[cfg(feature = "subscript_range")]
-              [Subscript::Range(ix), Subscript::All] => {
+              [Subscript::Range(_), Subscript::All] => {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
                 fxn_input.push(ixes);
@@ -271,12 +290,12 @@ macro_rules! op_assign {
               x => todo!("{:?}", x),
             };
             let plan_brrw = plan.borrow();
-            let mut new_fxn = &plan_brrw.last().unwrap();
+            let new_fxn = &plan_brrw.last().unwrap();
             new_fxn.solve_result()?;
             let res = new_fxn.out();
             return Ok(res);
           },
-          Subscript::Brace(x) => todo!(),
+          Subscript::Brace(_) => todo!(),
           x => todo!("{:?}", x),
         }
       }
@@ -284,28 +303,40 @@ macro_rules! op_assign {
   };
 }
 
-#[cfg(feature = "math_add_assign")]
+#[cfg(all(
+    feature = "math_add_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 op_assign!(
     add_assign,
     Add,
     "math/add-assign/range",
     "math/add-assign/range-all"
 );
-#[cfg(feature = "math_sub_assign")]
+#[cfg(all(
+    feature = "math_sub_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 op_assign!(
     sub_assign,
     Sub,
     "math/sub-assign/range",
     "math/sub-assign/range-all"
 );
-#[cfg(feature = "math_mul_assign")]
+#[cfg(all(
+    feature = "math_mul_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 op_assign!(
     mul_assign,
     Mul,
     "math/mul-assign/range",
     "math/mul-assign/range-all"
 );
-#[cfg(feature = "math_div_assign")]
+#[cfg(all(
+    feature = "math_div_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 op_assign!(
     div_assign,
     Div,

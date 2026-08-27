@@ -1,6 +1,9 @@
+#[cfg(feature = "source")]
 pub(crate) mod capabilities;
 pub(crate) mod effects;
 pub(crate) mod events;
 pub(crate) mod ids;
+#[cfg(feature = "source")]
 pub(crate) mod providers;
+#[cfg(feature = "source")]
 pub(crate) mod stores;

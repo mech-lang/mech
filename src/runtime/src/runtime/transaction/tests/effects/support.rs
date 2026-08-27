@@ -1,14 +1,16 @@
 use std::collections::HashSet;
+#[cfg(feature = "source")]
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use mech_core::{MResult, MechError, MechErrorKind};
 
+#[cfg(feature = "source")]
+use crate::PreparedRuntimeEffect;
 use crate::{
     ActorId, CapabilityId, EventId, IdGenerator, MessageId, NodeId, ObjectId,
-    PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeCompensatableEffect,
-    RuntimeEffectMetadata, RuntimeEffectSource, RuntimeId, RuntimeTransactionalEffect, TaskId,
-    TransactionId,
+    RuntimeAfterCommitEffect, RuntimeCompensatableEffect, RuntimeEffectMetadata,
+    RuntimeEffectSource, RuntimeId, RuntimeTransactionalEffect, TaskId, TransactionId,
 };
 
 #[derive(Debug)]
@@ -200,10 +202,12 @@ pub(super) struct SyntheticAfterCommitEffect {
 }
 
 #[derive(Debug)]
+#[cfg(feature = "source")]
 pub(super) struct FailOnceAbortEffect {
     pub(super) attempts: Arc<AtomicUsize>,
 }
 
+#[cfg(feature = "source")]
 impl RuntimeTransactionalEffect for FailOnceAbortEffect {
     fn metadata(&self) -> RuntimeEffectMetadata {
         synthetic_metadata("fail-once-abort")
@@ -277,15 +281,18 @@ pub(super) fn after_commit(
 }
 
 #[derive(Debug)]
+#[cfg(feature = "source")]
 pub(super) struct NoopAfterCommit {
     name: &'static str,
 }
 
 #[derive(Debug)]
+#[cfg(feature = "resident-routing-source")]
 pub(super) struct SensitiveAfterCommit {
     pub(super) secret_payload: String,
 }
 
+#[cfg(feature = "resident-routing-source")]
 impl RuntimeAfterCommitEffect for SensitiveAfterCommit {
     fn metadata(&self) -> RuntimeEffectMetadata {
         RuntimeEffectMetadata::new(
@@ -304,10 +311,12 @@ impl RuntimeAfterCommitEffect for SensitiveAfterCommit {
 }
 
 #[derive(Debug)]
+#[cfg(feature = "source")]
 pub(super) struct CostedAfterCommit {
     pub(super) cost: crate::RuntimeEffectCost,
 }
 
+#[cfg(feature = "source")]
 impl RuntimeAfterCommitEffect for CostedAfterCommit {
     fn metadata(&self) -> RuntimeEffectMetadata {
         synthetic_metadata("costed").with_cost(self.cost)
@@ -318,6 +327,7 @@ impl RuntimeAfterCommitEffect for CostedAfterCommit {
     }
 }
 
+#[cfg(feature = "source")]
 impl RuntimeAfterCommitEffect for NoopAfterCommit {
     fn metadata(&self) -> RuntimeEffectMetadata {
         RuntimeEffectMetadata::new(
@@ -333,6 +343,7 @@ impl RuntimeAfterCommitEffect for NoopAfterCommit {
     }
 }
 
+#[cfg(feature = "source")]
 pub(super) fn effect(name: &'static str) -> PreparedRuntimeEffect {
     PreparedRuntimeEffect::AfterCommit(Box::new(NoopAfterCommit { name }))
 }

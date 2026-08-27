@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::*;
 use nom::combinator::map as nom_map;
 use nom::sequence::tuple as nom_tuple;

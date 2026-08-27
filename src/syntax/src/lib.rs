@@ -1,15 +1,13 @@
 // Syntax
 // =============================================================================
 
-#![cfg_attr(feature = "no-std", no_std)]
-#![cfg_attr(feature = "no-std", alloc)]
-#![allow(dead_code)]
+#![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 
 extern crate mech_core;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 #[macro_use]
 extern crate alloc;
-#[cfg(not(feature = "no-std"))]
+#[cfg(not(feature = "no_std"))]
 extern crate core;
 extern crate nom;
 extern crate nom_unicode;
@@ -17,33 +15,30 @@ extern crate tabled;
 
 use mech_core::nodes::*;
 use mech_core::*;
-use num_traits::*;
-use std::cell::RefCell;
-use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "no-std")]
-use alloc::fmt;
-#[cfg(feature = "no-std")]
-use alloc::string::String;
-#[cfg(feature = "no-std")]
-use alloc::vec::Vec;
-#[cfg(not(feature = "no-std"))]
-use core::fmt;
-use nom::Parser;
+#[cfg(feature = "no_std")]
+use alloc::{
+    boxed::Box,
+    string::{String, ToString},
+    vec::Vec,
+};
 use nom::{
-    Err, IResult,
+    IResult,
     branch::alt,
-    combinator::{eof, opt},
-    multi::{many_till, many0, many1, separated_list1},
-    sequence::tuple,
+    combinator::opt,
+    multi::{many0, many1, separated_list1},
 };
 
+#[cfg(feature = "no_std")]
+use alloc::collections::BTreeMap as RangeMap;
+#[cfg(not(feature = "no_std"))]
 use colored::*;
-use std::collections::HashMap;
+#[cfg(not(feature = "no_std"))]
+use std::collections::HashMap as RangeMap;
 
 //#[cfg(feature = "mechdown")]
 pub mod activation;
@@ -89,6 +84,8 @@ pub use crate::submission::*;
 /// Current implementation does not guarantee correct behavior for
 /// all possible unicode characters.
 pub mod graphemes {
+    #[cfg(feature = "no_std")]
+    use alloc::vec::Vec;
     use unicode_segmentation::UnicodeSegmentation;
 
     /// Obtain unicode grapheme groups from input source, then make sure
@@ -312,16 +309,6 @@ impl<'a> ParseString<'a> {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
-
-    /// For debug purpose
-    fn output(&self) {
-        println!("───────────────────{}", self.len());
-        for i in self.cursor..self.graphemes.len() {
-            print!("{}", self.graphemes[i]);
-        }
-        println!();
-        println!("───────────────────");
-    }
 }
 
 /// Required by nom
@@ -484,14 +471,23 @@ impl<'a> TextFormatter<'a> {
     // FormattedString printer
 
     fn heading_color(s: &str) -> String {
+        #[cfg(feature = "no_std")]
+        return s.to_string();
+        #[cfg(not(feature = "no_std"))]
         s.truecolor(246, 192, 78).bold().to_string()
     }
 
     fn location_color(s: &str) -> String {
+        #[cfg(feature = "no_std")]
+        return s.to_string();
+        #[cfg(not(feature = "no_std"))]
         s.truecolor(0, 187, 204).bold().to_string()
     }
 
     fn linenum_color(s: &str) -> String {
+        #[cfg(feature = "no_std")]
+        return s.to_string();
+        #[cfg(not(feature = "no_std"))]
         s.truecolor(0, 187, 204).bold().to_string()
     }
 
@@ -500,15 +496,17 @@ impl<'a> TextFormatter<'a> {
     }
 
     fn annotation_color(s: &str) -> String {
+        #[cfg(feature = "no_std")]
+        return s.to_string();
+        #[cfg(not(feature = "no_std"))]
         s.truecolor(102, 51, 153).bold().to_string()
     }
 
     fn error_color(s: &str) -> String {
+        #[cfg(feature = "no_std")]
+        return s.to_string();
+        #[cfg(not(feature = "no_std"))]
         s.truecolor(170, 51, 85).bold().to_string()
-    }
-
-    fn ending_color(s: &str) -> String {
-        s.truecolor(246, 192, 78).bold().to_string()
     }
 
     fn err_heading(index: usize) -> String {
@@ -551,7 +549,7 @@ impl<'a> TextFormatter<'a> {
 
         // the annotations on each line
         // <linenum, Vec<(start_col, rng_len, is_major, is_cause)>>
-        let mut range_table: HashMap<usize, Vec<(usize, usize, bool, bool)>> = HashMap::new();
+        let mut range_table: RangeMap<usize, Vec<(usize, usize, bool, bool)>> = RangeMap::new();
         for linenum in &lines_to_print {
             range_table.insert(*linenum, vec![]);
         }
@@ -828,8 +826,6 @@ pub fn alt_best<'a, O>(
     input: ParseString<'a>,
     parsers: &[(&'static str, Box<dyn Fn(ParseString) -> ParseResult<O>>)],
 ) -> ParseResult<'a, O> {
-    let start_cursor = input.cursor;
-
     let mut best_success: Option<(ParseString, O, usize, &'static str)> = None;
     let mut best_failure: Option<(nom::Err<ParseError>, usize, &'static str)> = None;
     let mut best_error: Option<(nom::Err<ParseError>, usize, &'static str)> = None;

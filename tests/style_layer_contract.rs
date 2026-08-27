@@ -41,44 +41,33 @@ fn shipped_shims_expose_the_five_independent_style_layers_in_order() {
 #[test]
 fn shipped_shims_keep_distinct_presentation_contracts() {
     let blog = include("blog.html");
-    let header = blog.find("class=\"site-header\"").unwrap();
-    let breadcrumbs = blog.find("class=\"breadcrumbs\"").unwrap();
     let hero = blog.find("class=\"hero\"").unwrap();
     let intro = blog.find("class=\"article-intro\"").unwrap();
     let layout = blog.find("data-mech-toc-mode=\"after-intro\"").unwrap();
     let toc = blog.find("{{TOC}}").unwrap();
-    let separator = blog.find("class=\"mika-separator\"").unwrap();
     let backmatter = blog.find("class=\"article-backmatter\"").unwrap();
-    let pagination = blog.find("class=\"post-pagination\"").unwrap();
-    let footer = blog.find("class=\"footer\"").unwrap();
-    assert!(
-        header < breadcrumbs
-            && breadcrumbs < hero
-            && hero < intro
-            && intro < layout
-            && layout < toc
-            && toc < separator
-            && separator < backmatter
-            && backmatter < pagination
-            && pagination < footer
-    );
+    assert!(hero < intro && intro < layout && layout < toc && toc < backmatter);
     for contract in [
         "{{KICKER}}",
         "{{AUTHOR}}",
         "{{DATE}}",
         "{{SUMMARY}}",
         "{{HERO}}",
-        "{{PREVIOUS}}",
-        "{{NEXT}}",
-        "v{{VERSION}}-beta",
-        "class=\"top-nav\"",
-        "href=\"https://mech-lang.org/blog/announcements\">{{KICKER}}</a>",
         "class=\"hero-heading\"",
-        "class=\"footer-robot\"",
-        "class=\"footer-release\"",
-        "class=\"footer-pride\"",
     ] {
         assert!(blog.contains(contract), "blog shim lost {contract}");
+    }
+    for app_chrome in [
+        "class=\"site-header\"",
+        "class=\"breadcrumbs\"",
+        "class=\"mika-separator\"",
+        "class=\"post-pagination\"",
+        "class=\"footer\"",
+    ] {
+        assert!(
+            !blog.contains(app_chrome),
+            "portable blog shim regained app chrome {app_chrome}"
+        );
     }
     assert!(
         !blog.to_ascii_lowercase().contains("gradient"),

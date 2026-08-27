@@ -30,6 +30,7 @@ macro_rules! config_error_kind {
     };
 }
 
+#[cfg(feature = "source")]
 config_error_kind!(
     ConfigProfileViolation,
     "ConfigProfileViolation",
@@ -40,26 +41,31 @@ config_error_kind!(
     "InvalidConfigField",
     "Invalid Mech config field"
 );
+#[cfg(feature = "source")]
 config_error_kind!(
     MissingConfigBinding,
     "MissingConfigBinding",
     "Missing Mech config binding"
 );
+#[cfg(feature = "source")]
 config_error_kind!(
     ConfigEvaluationBudgetExceeded,
     "ConfigEvaluationBudgetExceeded",
     "Mech config evaluation budget exceeded"
 );
+#[cfg(feature = "source")]
 config_error_kind!(
     ConfigRecursionNotAllowed,
     "ConfigRecursionNotAllowed",
     "Mech config recursion is not allowed"
 );
+#[cfg(feature = "source")]
 config_error_kind!(
     ConfigUnknownFunction,
     "ConfigUnknownFunction",
     "Unknown Mech config function"
 );
+#[cfg(feature = "source")]
 config_error_kind!(
     ConfigEffectfulFunctionNotAllowed,
     "ConfigEffectfulFunctionNotAllowed",

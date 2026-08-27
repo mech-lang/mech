@@ -82,6 +82,7 @@ fn request_at(
     }
 }
 
+#[cfg(feature = "full-hosts")]
 fn parsed_external_program(
     constants: Vec<EncodedConstant>,
     instruction: BytecodeInstruction,
@@ -134,6 +135,7 @@ fn push_constant_load(
     register
 }
 
+#[cfg(feature = "full-hosts")]
 fn validate_external_program(
     program: &ParsedProgram,
     runtime_config: Option<&NativeRuntimeConfig>,
@@ -260,6 +262,7 @@ fn string_constant(value: &str) -> EncodedConstant {
     }
 }
 
+#[cfg(feature = "full-hosts")]
 fn f64_constant(value: f64) -> EncodedConstant {
     EncodedConstant {
         runtime_type: RuntimeType::F64,
@@ -626,6 +629,7 @@ fn catalog_with_actor(mut catalog: NativeHostCatalog) -> NativeHostCatalog {
     catalog
 }
 
+#[cfg(feature = "full-hosts")]
 fn actor_host_catalog() -> NativeHostCatalog {
     catalog_with_actor(NativeHostCatalog::new())
 }

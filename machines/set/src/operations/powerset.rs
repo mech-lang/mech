@@ -1,8 +1,5 @@
-use std::cell::RefCell;
-
 use crate::*;
 
-use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
 // Powerset ------------------------------------------------------------------------
@@ -180,8 +177,8 @@ impl MechFunctionCompiler for SetPowersetFxn {
 
 #[cfg(feature = "source")]
 fn set_powerset_fxn(input: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    match (input) {
-        (LegacyValue::Set(input)) => {
+    match input {
+        LegacyValue::Set(input) => {
             let output_len = powerset_output_len(input.borrow().set.len())?;
             Ok(Box::new(SetPowersetFxn {
                 input: input.clone(),
@@ -254,17 +251,9 @@ impl FunctionSpecializer for SetPowerset {
         let input = arguments[0].clone();
         match set_powerset_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match input {
+            Err(_) => match input {
                 LegacyValue::MutableReference(input) => set_powerset_fxn(input.borrow().clone()),
                 input => set_powerset_fxn(input.clone()),
-                x => Err(MechError::new(
-                    UnhandledFunctionArgumentKind1 {
-                        arg: x.kind(),
-                        fxn_name: "set/powerset".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
             },
         }
     }

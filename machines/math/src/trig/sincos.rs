@@ -1,7 +1,6 @@
 use crate::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use num_traits::*;
 
 // Sincos ------------------------------------------------------------------------
@@ -52,7 +51,7 @@ impl_math_unop!(MathSincos, f64, sincos);
 fn impl_sincos_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathSincos,
-      (lhs_value),
+      lhs_value,
       F32 => MatrixF32, F32, f32::zero(), "f32";
       F64 => MatrixF64, F64, f64::zero(), "f64";
     )
@@ -77,8 +76,8 @@ impl FunctionSpecializer for MathSincos {
         let input = arguments[0].clone();
         match impl_sincos_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(_) => match (input) {
-                (LegacyValue::MutableReference(input)) => impl_sincos_fxn(input.borrow().clone()),
+            Err(_) => match input {
+                LegacyValue::MutableReference(input) => impl_sincos_fxn(input.borrow().clone()),
                 (arg1, arg2) => Err(MechError::new(
                     UnhandledFunctionArgumentKind2 {
                         arg: (arg1.kind(), arg2.kind()),

@@ -9,8 +9,10 @@ mod context;
 pub(super) mod effects;
 mod envelope;
 mod health;
+#[cfg(feature = "source")]
 mod modules;
 mod operation;
+#[cfg(feature = "source")]
 mod savepoint;
 
 pub(super) use capabilities::{RuntimeCapabilityOverlay, check_transactional_capability};
@@ -21,7 +23,9 @@ pub(super) use envelope::{
     ActiveRuntimeTransaction, ActiveRuntimeTransactionState, RuntimeTransactionScope,
 };
 pub use health::{RuntimeHealth, RuntimePoisonRecord};
+#[cfg(feature = "source")]
 pub(super) use modules::RuntimeModuleJournal;
+#[cfg(feature = "source")]
 pub(super) use savepoint::RuntimeOperationSavepoint;
 
 #[cfg(test)]

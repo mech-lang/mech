@@ -8,7 +8,7 @@ use alloc::{boxed::Box, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, vec::Vec};
 
-trait SnapshotByteSink {
+pub(super) trait SnapshotByteSink {
     fn write(&mut self, bytes: &[u8]);
 }
 
