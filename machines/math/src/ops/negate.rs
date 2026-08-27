@@ -26,7 +26,7 @@ where
     #[cfg(feature = "semantic-compiler")]
     O: CompileConst + ConstElem,
     Ref<O>: ToValue,
-    O: FunctionRuntimeType + FunctionPortBacking,
+    O: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(O::REPRESENTATION, O::REPRESENTATION);
@@ -58,7 +58,7 @@ where
         + PartialEq
         + 'static,
     Ref<O>: ToValue,
-    O: FunctionRuntimeType,
+    O: FunctionStateBacking,
 {
     fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
@@ -70,6 +70,9 @@ where
             *out_ptr = next;
         };
         Ok(())
+    }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
@@ -83,6 +86,10 @@ where
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "semantic-compiler")]
@@ -118,7 +125,7 @@ where
     #[cfg(feature = "semantic-compiler")]
     O: CompileConst + ConstElem,
     Ref<O>: ToValue,
-    O: FunctionRuntimeType + FunctionPortBacking,
+    O: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(O::REPRESENTATION, O::REPRESENTATION);
@@ -151,7 +158,7 @@ where
         + PartialEq
         + 'static,
     Ref<O>: ToValue,
-    O: FunctionRuntimeType,
+    O: FunctionStateBacking,
 {
     fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
@@ -163,6 +170,9 @@ where
             *out_ptr = next;
         };
         Ok(())
+    }
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
@@ -176,6 +186,10 @@ where
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "semantic-compiler")]
@@ -203,6 +217,16 @@ mod checked_arithmetic_tests {
         .unwrap();
 
         function.solve_result().unwrap();
+        assert_eq!(*output.borrow(), -7);
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*function)?;
+            *output.borrow_mut() = 99;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
         assert_eq!(*output.borrow(), -7);
     }
 

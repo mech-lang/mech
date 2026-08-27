@@ -286,10 +286,62 @@ mod checked_arithmetic_tests {
 
         function.solve_result().unwrap();
         assert_eq!(*out.borrow(), 41);
-        *rhs.borrow_mut() = u8::MAX;
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+        assert_eq!(
+            function.reactive_output_cell_ids(),
+            function.out().reactive_root_cell_ids(),
+        );
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&function)?;
+            *rhs.borrow_mut() = u8::MAX;
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+            assert_eq!(*out.borrow(), 41);
+            *out.borrow_mut() = 99;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
         assert_eq!(*out.borrow(), 41);
+    }
+}
+
+#[cfg(all(test, feature = "f64", feature = "matrix2", feature = "matrixd"))]
+mod state_port_tests {
+    use super::*;
+
+    #[test]
+    fn fixed_and_dynamic_add_outputs_restore_through_typed_state_ports() {
+        let fixed_out = Ref::new(Matrix2::from_element(0.0_f64));
+        let fixed = AddM2M2 {
+            lhs: Ref::new(Matrix2::from_element(1.0)),
+            rhs: Ref::new(Matrix2::from_element(2.0)),
+            out: fixed_out.clone(),
+        };
+        fixed.solve_result().unwrap();
+
+        let dynamic_out = Ref::new(DMatrix::from_element(1, 2, 0.0_f64));
+        let dynamic = AddMDMD {
+            lhs: Ref::new(DMatrix::from_element(1, 2, 3.0)),
+            rhs: Ref::new(DMatrix::from_element(1, 2, 4.0)),
+            out: dynamic_out.clone(),
+        };
+        dynamic.solve_result().unwrap();
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&fixed)?;
+            participant.capture_function_state(&dynamic)?;
+            *fixed_out.borrow_mut() = Matrix2::from_element(9.0);
+            *dynamic_out.borrow_mut() = DMatrix::from_element(2, 1, 9.0);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+
+        assert_eq!(*fixed_out.borrow(), Matrix2::from_element(3.0));
+        assert_eq!(*dynamic_out.borrow(), DMatrix::from_element(1, 2, 7.0));
     }
 }
 

@@ -66,7 +66,7 @@ macro_rules! impl_two_arg_fxn {
         where
             $kind1: FunctionPortBacking,
             $kind2: FunctionPortBacking,
-            $out_kind: FunctionPortBacking,
+            $out_kind: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_kind as FunctionRuntimeType>::REPRESENTATION,
@@ -96,6 +96,9 @@ macro_rules! impl_two_arg_fxn {
                 $op!(arg1_ptr, arg2_ptr, out_ptr);
                 Ok(())
             }
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
@@ -110,6 +113,10 @@ macro_rules! impl_two_arg_fxn {
 
             fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
+            }
+
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -204,6 +211,15 @@ mod invocation_port_tests {
         .unwrap();
 
         function.solve_result().unwrap();
+        assert!((*out.borrow() - core::f64::consts::FRAC_PI_4).abs() < f64::EPSILON);
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*function)?;
+            *out.borrow_mut() = 99.0;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
         assert!((*out.borrow() - core::f64::consts::FRAC_PI_4).abs() < f64::EPSILON);
     }
 }

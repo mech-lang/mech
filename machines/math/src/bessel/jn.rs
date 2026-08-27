@@ -64,6 +64,9 @@ macro_rules! impl_two_arg_fxn {
                 $op!(arg1_ptr, arg2_ptr, out_ptr);
                 Ok(())
             }
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
@@ -73,6 +76,10 @@ macro_rules! impl_two_arg_fxn {
 
             fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
+            }
+
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
         }
         #[cfg(feature = "semantic-compiler")]

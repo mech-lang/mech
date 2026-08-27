@@ -138,7 +138,7 @@ macro_rules! impl_checked_div_binop {
             Ref<$out_type>: ToValue,
             $arg1_type: FunctionRuntimeType + FunctionPortBacking,
             $arg2_type: FunctionRuntimeType + FunctionPortBacking,
-            $out_type: FunctionRuntimeType + FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -183,7 +183,7 @@ macro_rules! impl_checked_div_binop {
                 + One
                 + RuntimeCheckedDiv,
             Ref<$out_type>: ToValue,
-            $out_type: FunctionRuntimeType,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -191,6 +191,9 @@ macro_rules! impl_checked_div_binop {
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
+            }
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
             }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
@@ -206,6 +209,10 @@ macro_rules! impl_checked_div_binop {
 
             fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
+            }
+
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
