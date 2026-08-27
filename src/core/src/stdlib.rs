@@ -238,9 +238,9 @@ macro_rules! impl_binop {
                 + Zero
                 + One,
             Ref<$out_type>: ToValue,
-            $arg1_type: FunctionRuntimeType,
-            $arg2_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            $arg1_type: FunctionRuntimeType + FunctionPortBacking,
+            $arg2_type: FunctionRuntimeType + FunctionPortBacking,
+            $out_type: FunctionRuntimeType + FunctionPortBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -248,26 +248,16 @@ macro_rules! impl_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
+                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { lhs, rhs, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let rhs: Ref<$arg2_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { lhs, rhs, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
@@ -332,30 +322,27 @@ macro_rules! impl_unop {
             arg: Ref<$arg_type>,
             out: Ref<$out_type>,
         }
-        impl MechFunctionFactory for $struct_name {
+        impl MechFunctionFactory for $struct_name
+        where
+            $arg_type: FunctionPortBacking,
+            $out_type: FunctionPortBacking,
+        {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg) = invocation.expect_unary()?;
+                let arg: Ref<$arg_type> = arg.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { arg, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Unary(out, arg) => {
-                        let arg: Ref<$arg_type> =
-                            arg.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { arg, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 1,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl MechFunctionImpl for $struct_name {

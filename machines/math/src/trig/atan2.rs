@@ -62,33 +62,30 @@ macro_rules! impl_two_arg_fxn {
             arg2: Ref<$kind2>,
             out: Ref<$out_kind>,
         }
-        impl MechFunctionFactory for $struct_name {
+        impl MechFunctionFactory for $struct_name
+        where
+            $kind1: FunctionPortBacking,
+            $kind2: FunctionPortBacking,
+            $out_kind: FunctionPortBacking,
+        {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_kind as FunctionRuntimeType>::REPRESENTATION,
                 <$kind1 as FunctionRuntimeType>::REPRESENTATION,
                 <$kind2 as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2) = invocation.expect_binary()?;
+                let arg1: Ref<$kind1> = arg1.try_ref()?;
+                let arg2: Ref<$kind2> = arg2.try_ref()?;
+                let out: Ref<$out_kind> = out.try_ref()?;
+                Ok(Box::new($struct_name { arg1, arg2, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let arg1: Ref<$kind1> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let arg2: Ref<$kind2> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_kind> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new($struct_name { arg1, arg2, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl MechFunctionImpl for $struct_name {
@@ -191,6 +188,25 @@ impl_two_arg_fxn!(Atan2F32, f32, f32, f32, atan2f_op);
 
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(Atan2F64, f64, f64, f64, atan2_op);
+
+#[cfg(all(test, feature = "runtime", feature = "f64"))]
+mod invocation_port_tests {
+    use super::*;
+
+    #[test]
+    fn scalar_atan2_factory_uses_exact_invocation_ports() {
+        let lhs = Ref::new(1.0_f64);
+        let rhs = Ref::new(1.0_f64);
+        let out = Ref::new(0.0_f64);
+        let function = Atan2F64::new_invocation(
+            FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value()).into(),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        assert!((*out.borrow() - core::f64::consts::FRAC_PI_4).abs() < f64::EPSILON);
+    }
+}
 
 #[macro_export]
 macro_rules! impl_binop_atan2 {

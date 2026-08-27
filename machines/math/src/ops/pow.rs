@@ -154,9 +154,9 @@ macro_rules! impl_powop {
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
-            $arg1_type: FunctionRuntimeType,
-            $arg2_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            $arg1_type: FunctionRuntimeType + FunctionPortBacking,
+            $arg2_type: FunctionRuntimeType + FunctionPortBacking,
+            $out_type: FunctionRuntimeType + FunctionPortBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -164,26 +164,18 @@ macro_rules! impl_powop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
+                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { lhs, rhs, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let rhs: Ref<$arg2_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { lhs, rhs, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: 0,
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
@@ -260,6 +252,21 @@ impl_math_fxns_pow!(Pow);
 mod checked_arithmetic_tests {
     use super::*;
 
+    #[cfg(all(feature = "rational", feature = "i32"))]
+    #[test]
+    fn rational_factory_extracts_each_exact_port() {
+        let lhs = Ref::new(R64::new(3, 2));
+        let rhs = Ref::new(2_i32);
+        let out = Ref::new(R64::default());
+        let function = PowRational::new_invocation(
+            FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value()).into(),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), R64::new(9, 4));
+    }
+
     #[test]
     fn integer_exponentiation_rejects_reactive_overflow_and_retains_output() {
         let rhs = Ref::new(1_u8);
@@ -294,23 +301,16 @@ impl MechFunctionFactory for PowRational {
         FunctionValueRepresentation::I32,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs: Ref<R64> = lhs.try_ref()?;
+        let rhs: Ref<i32> = rhs.try_ref()?;
+        let out: Ref<R64> = out.try_ref()?;
+        Ok(Box::new(Self { lhs, rhs, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<R64> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<i32> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<R64> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { lhs, rhs, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: 0,
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "rational", feature = "i32"))]

@@ -26,31 +26,24 @@ where
     #[cfg(feature = "semantic-compiler")]
     O: CompileConst + ConstElem,
     Ref<O>: ToValue,
-    O: FunctionRuntimeType,
+    O: FunctionRuntimeType + FunctionPortBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(O::REPRESENTATION, O::REPRESENTATION);
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg) = invocation.expect_unary()?;
+        let arg: Ref<O> = arg.try_ref()?;
+        let out: Ref<O> = out.try_ref()?;
+        Ok(Box::new(Self {
+            arg,
+            out,
+            _marker: PhantomData,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Unary(out, arg) => {
-                let arg: Ref<O> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let out: Ref<O> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    arg,
-                    out,
-                    _marker: PhantomData,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 impl<O> MechFunctionImpl for NegateV<O>
@@ -125,31 +118,24 @@ where
     #[cfg(feature = "semantic-compiler")]
     O: CompileConst + ConstElem,
     Ref<O>: ToValue,
-    O: FunctionRuntimeType,
+    O: FunctionRuntimeType + FunctionPortBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(O::REPRESENTATION, O::REPRESENTATION);
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg) = invocation.expect_unary()?;
+        let arg: Ref<O> = arg.try_ref()?;
+        let out: Ref<O> = out.try_ref()?;
+        Ok(Box::new(Self {
+            arg,
+            out,
+            _marker: PhantomData,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Unary(out, arg) => {
-                let arg: Ref<O> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let out: Ref<O> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    arg,
-                    out,
-                    _marker: PhantomData,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 impl<O> MechFunctionImpl for NegateS<O>
@@ -206,6 +192,19 @@ where
 #[cfg(all(test, feature = "i8"))]
 mod checked_arithmetic_tests {
     use super::*;
+
+    #[test]
+    fn unary_scalar_factory_uses_exact_invocation_ports() {
+        let input = Ref::new(7_i8);
+        let output = Ref::new(0_i8);
+        let function = NegateS::<i8>::new_invocation(
+            FunctionArgs::Unary(output.to_value(), input.to_value()).into(),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        assert_eq!(*output.borrow(), -7);
+    }
 
     #[test]
     fn integer_negation_rejects_reactive_overflow_and_retains_output() {
