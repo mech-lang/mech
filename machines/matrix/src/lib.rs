@@ -370,7 +370,7 @@ macro_rules! impl_checked_matrix_binop {
         where
             T: RuntimeMatrixArithmetic,
             Ref<$out_type>: ToValue,
-            $out_type: FunctionRuntimeType,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -378,6 +378,14 @@ macro_rules! impl_checked_matrix_binop {
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
+            }
+
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
 
             fn out(&self) -> LegacyValue {

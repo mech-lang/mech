@@ -417,10 +417,20 @@ mod checked_matmul_tests {
 
         function.solve_result().unwrap();
         assert_eq!(out.borrow()[(0, 0)], 200);
-        *rhs.borrow_mut() = DMatrix::from_column_slice(2, 1, &[2, 2]);
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&function)?;
+            *rhs.borrow_mut() = DMatrix::from_column_slice(2, 1, &[2, 2]);
 
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
+            assert_eq!(out.borrow()[(0, 0)], 200);
+            *out.borrow_mut() = DMatrix::from_element(2, 2, 19);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(out.borrow().shape(), (1, 1));
         assert_eq!(out.borrow()[(0, 0)], 200);
     }
 }
@@ -466,10 +476,20 @@ mod invocation_port_tests {
         let fixed_lhs = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
         let fixed_rhs = Ref::new(Matrix2::new(5.0_f64, 6.0, 7.0, 8.0));
         let fixed_out = Ref::new(Matrix2::zeros());
-        MatMulM2M2::<f64>::new_invocation(binary_args(&fixed_out, &fixed_lhs, &fixed_rhs).into())
-            .unwrap()
-            .solve_result()
-            .unwrap();
+        let fixed = MatMulM2M2::<f64>::new_invocation(
+            binary_args(&fixed_out, &fixed_lhs, &fixed_rhs).into(),
+        )
+        .unwrap();
+        fixed.solve_result().unwrap();
+        assert_eq!(*fixed_out.borrow(), Matrix2::new(19.0, 22.0, 43.0, 50.0));
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*fixed)?;
+            *fixed_out.borrow_mut() = Matrix2::from_element(-1.0);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
         assert_eq!(*fixed_out.borrow(), Matrix2::new(19.0, 22.0, 43.0, 50.0));
 
         let vector = Ref::new(Vector2::new(2.0_f64, 3.0));
@@ -491,16 +511,31 @@ mod invocation_port_tests {
             &[7.0_f64, 8.0, 9.0, 10.0, 11.0, 12.0],
         ));
         let dynamic_out = Ref::new(DMatrix::zeros(2, 2));
-        MatMulMDMD::<f64>::new_invocation(
+        let dynamic = MatMulMDMD::<f64>::new_invocation(
             binary_args(&dynamic_out, &dynamic_lhs, &dynamic_rhs).into(),
         )
-        .unwrap()
-        .solve_result()
         .unwrap();
+        dynamic.solve_result().unwrap();
         assert_eq!(
             *dynamic_out.borrow(),
             DMatrix::from_row_slice(2, 2, &[58.0, 64.0, 139.0, 154.0])
         );
+        assert_eq!(
+            dynamic.reactive_output_cell_ids(),
+            dynamic.out().reactive_root_cell_ids(),
+        );
+        let expected_dynamic = dynamic_out.borrow().clone();
+        let dynamic_out_alias = dynamic_out.clone();
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*dynamic)?;
+            *dynamic_out.borrow_mut() = DMatrix::from_element(1, 3, -1.0);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert!(dynamic_out.same_handle(&dynamic_out_alias));
+        assert_eq!(*dynamic_out.borrow(), expected_dynamic);
 
         let dynamic_vector = Ref::new(DVector::from_vec(vec![1.0_f64, 2.0, 3.0]));
         let dynamic_vector_out = Ref::new(DVector::zeros(2));
@@ -528,6 +563,28 @@ mod invocation_port_tests {
         let error = function.solve_result().unwrap_err();
         assert_eq!(error.kind_name(), "DimensionMismatch");
         assert_eq!(*out.borrow(), original);
+    }
+
+    #[test]
+    fn equal_matrix_outputs_keep_distinct_reactive_identity() {
+        let lhs = Ref::new(DMatrix::<f64>::identity(2, 2));
+        let rhs = Ref::new(DMatrix::<f64>::identity(2, 2));
+        let first_out = Ref::new(DMatrix::<f64>::zeros(2, 2));
+        let second_out = Ref::new(DMatrix::<f64>::zeros(2, 2));
+        let first = MatMulMDMD::<f64>::new_invocation(
+            binary_args(&first_out, &lhs, &rhs).into(),
+        )
+        .unwrap();
+        let second = MatMulMDMD::<f64>::new_invocation(
+            binary_args(&second_out, &lhs, &rhs).into(),
+        )
+        .unwrap();
+
+        assert_eq!(*first_out.borrow(), *second_out.borrow());
+        assert_ne!(
+            first.reactive_output_cell_ids(),
+            second.reactive_output_cell_ids(),
+        );
     }
 }
 

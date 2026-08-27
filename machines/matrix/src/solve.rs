@@ -125,6 +125,7 @@ macro_rules! impl_binop_solve {
                 + Zero
                 + One,
             Ref<$out_type>: ToValue,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -132,6 +133,12 @@ macro_rules! impl_binop_solve {
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
+            }
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
@@ -265,10 +272,19 @@ mod tests {
 
         function.solve_result().unwrap();
         let previous = out.borrow().clone();
-        *lhs.borrow_mut() = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 2.0, 4.0]);
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&function)?;
+            *lhs.borrow_mut() = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 2.0, 4.0]);
 
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MatrixSolveSingular");
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "MatrixSolveSingular");
+            assert_eq!(*out.borrow(), previous);
+            *out.borrow_mut() = DVector::from_vec(vec![99.0]);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
         assert_eq!(*out.borrow(), previous);
     }
 

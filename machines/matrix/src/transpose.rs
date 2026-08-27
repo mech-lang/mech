@@ -75,12 +75,19 @@ macro_rules! impl_transpose {
         where
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
             Ref<$out_type>: ToValue,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 let arg_ptr = self.arg.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(arg_ptr, out_ptr);
                 Ok(())
+            }
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
@@ -206,10 +213,26 @@ mod invocation_port_tests {
             &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
         ));
         let dynamic_out = Ref::new(DMatrix::zeros(3, 2));
-        TransposeMD::<f64>::new_invocation(unary_args(&dynamic_out, &dynamic).into())
-            .unwrap()
-            .solve_result()
-            .unwrap();
+        let dynamic_function =
+            TransposeMD::<f64>::new_invocation(unary_args(&dynamic_out, &dynamic).into()).unwrap();
+        dynamic_function.solve_result().unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            DMatrix::from_row_slice(3, 2, &[1.0, 4.0, 2.0, 5.0, 3.0, 6.0])
+        );
+        assert_eq!(
+            dynamic_function.reactive_output_cell_ids(),
+            dynamic_function.out().reactive_root_cell_ids(),
+        );
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*dynamic_function)?;
+            *dynamic_out.borrow_mut() = DMatrix::from_element(1, 4, -1.0);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(dynamic_out.borrow().shape(), (3, 2));
         assert_eq!(
             *dynamic_out.borrow(),
             DMatrix::from_row_slice(3, 2, &[1.0, 4.0, 2.0, 5.0, 3.0, 6.0])

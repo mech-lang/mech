@@ -199,10 +199,19 @@ mod checked_dot_tests {
 
         function.solve_result().unwrap();
         assert_eq!(*out.borrow(), 200);
-        *rhs.borrow_mut() = Vector2::new(2, 2);
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&function)?;
+            *rhs.borrow_mut() = Vector2::new(2, 2);
 
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
+            assert_eq!(*out.borrow(), 200);
+            *out.borrow_mut() = 19;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
         assert_eq!(*out.borrow(), 200);
     }
 }
@@ -243,6 +252,21 @@ mod invocation_port_tests {
         invocation.solve_result().unwrap();
         assert_eq!(*legacy_out.borrow(), 10.0);
         assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+        assert_eq!(
+            invocation.reactive_output_cell_ids(),
+            invocation.out().reactive_root_cell_ids(),
+        );
+        let invocation_out_alias = invocation_out.clone();
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*invocation)?;
+            *invocation_out.borrow_mut() = -1.0;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert!(invocation_out.same_handle(&invocation_out_alias));
+        assert_eq!(*invocation_out.borrow(), 10.0);
 
         let fixed_lhs = Ref::new(Vector2::new(1.0_f64, 2.0));
         let fixed_rhs = Ref::new(Vector2::new(3.0_f64, 4.0));
