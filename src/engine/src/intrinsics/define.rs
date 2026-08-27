@@ -712,6 +712,7 @@ impl MechFunctionImpl for VariableDefineEmpty {
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
     fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
+        #[cfg(feature = "matrix")]
         if self
             .initial
             .exact_matrix_any()
@@ -719,7 +720,9 @@ impl MechFunctionCompiler for VariableDefineEmpty {
             .is_some()
         {
             compile_value_register_for_ptr(&self.initial, self.var.addr(), ctx)?;
-        } else if *self.mutable.borrow() {
+            return Ok(());
+        }
+        if *self.mutable.borrow() {
             compile_register_initial!(self.var, self.initial, ctx);
         }
         Ok(())

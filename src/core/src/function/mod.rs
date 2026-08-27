@@ -27,6 +27,8 @@ use tabled::{
     settings::{Alignment, Panel, Style},
 };
 
+pub(crate) type FunctionReactiveCell = ReactiveCellId;
+
 // Functions ------------------------------------------------------------------
 
 /// Program-local user-function definitions keyed by their stable name hash.
@@ -408,12 +410,26 @@ pub trait MechFunctionImpl {
         )
         .with_compiler_loc())
     }
+    /// Returns the primary output as an exact typed state port.
+    ///
+    /// `None` means this function has not migrated and the legacy output API is
+    /// authoritative. `Some(port)` makes the typed port authoritative.
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         None
     }
+    /// Returns the authoritative typed list of reactive output cells.
+    ///
+    /// `None` means unmigrated and directs callers to the legacy fallback.
+    /// `Some(ports)` is authoritative, including `Some(Vec::new())`, which
+    /// declares that the function has no reactive output state.
     fn reactive_output_state_ports(&self) -> Option<Vec<FunctionStatePort<'_>>> {
         self.primary_output_state_port().map(|output| vec![output])
     }
+    /// Returns the authoritative typed list of transaction checkpoint cells.
+    ///
+    /// `None` means unmigrated and directs callers to the legacy fallback.
+    /// `Some(ports)` is authoritative, including `Some(Vec::new())`, which
+    /// declares that the function has no retained transaction state.
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(None)
     }
@@ -457,10 +473,20 @@ pub trait MechFunctionImpl {
     fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
         let mut cells = Vec::new();
 
-        for output in self.reactive_output_values() {
-            for cell in output.reactive_root_cell_ids() {
-                if !cells.contains(&cell) {
-                    cells.push(cell);
+        if let Some(outputs) = self.reactive_output_state_ports() {
+            for output in outputs {
+                for cell in output.reactive_cell_ids() {
+                    if !cells.contains(&cell) {
+                        cells.push(cell);
+                    }
+                }
+            }
+        } else {
+            for output in self.reactive_output_values() {
+                for cell in output.reactive_root_cell_ids() {
+                    if !cells.contains(&cell) {
+                        cells.push(cell);
+                    }
                 }
             }
         }

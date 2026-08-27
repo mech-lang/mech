@@ -1,17 +1,28 @@
 //! Opaque capabilities over exact typed cells owned by runtime functions.
 
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", feature = "string"))]
 use alloc::string::String;
+#[cfg(feature = "no_std")]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "no_std"), feature = "string"))]
+use std::string::String;
 #[cfg(not(feature = "no_std"))]
-use std::{fmt, string::String};
+use std::{fmt, vec::Vec};
 
 #[cfg(feature = "no_std")]
 use core::fmt;
 
-use crate::{FunctionPortBacking, FunctionRuntimeType, FunctionValueRepresentation, Ref, ToValue};
+use crate::{
+    FunctionPortBacking, FunctionReactiveCell, FunctionRuntimeType, FunctionValueRepresentation,
+    MResult, Ref, ToValue, ValueStateJournal,
+};
 
 mod function_state_sealed {
-    pub trait Sealed {}
+    pub struct FlatElement;
+
+    pub trait Sealed {
+        type ElementShape;
+    }
 }
 
 /// An exact runtime backing whose clone is a complete independent checkpoint.
@@ -30,6 +41,12 @@ mod function_state_sealed {
 /// fn require_state_backing<T: FunctionStateBacking>() {}
 /// require_state_backing::<ValueCell>();
 /// ```
+///
+/// ```compile_fail
+/// use mech_core::{FunctionStateBacking, Matrix2};
+/// fn require_state_backing<T: FunctionStateBacking>() {}
+/// require_state_backing::<Matrix2<Matrix2<f64>>>();
+/// ```
 pub trait FunctionStateBacking:
     function_state_sealed::Sealed + FunctionPortBacking + FunctionRuntimeType + Clone + 'static
 {
@@ -43,7 +60,9 @@ impl<T> FunctionStateBacking for T where
 macro_rules! scalar_function_state_backing {
     ($type:ty, $feature:literal) => {
         #[cfg(feature = $feature)]
-        impl function_state_sealed::Sealed for $type {}
+        impl function_state_sealed::Sealed for $type {
+            type ElementShape = function_state_sealed::FlatElement;
+        }
     };
 }
 
@@ -62,18 +81,33 @@ scalar_function_state_backing!(f64, "f64");
 scalar_function_state_backing!(bool, "bool");
 scalar_function_state_backing!(String, "string");
 
-impl function_state_sealed::Sealed for usize {}
+impl function_state_sealed::Sealed for usize {
+    type ElementShape = function_state_sealed::FlatElement;
+}
 
 #[cfg(feature = "complex")]
-impl function_state_sealed::Sealed for crate::C64 {}
+impl function_state_sealed::Sealed for crate::C64 {
+    type ElementShape = function_state_sealed::FlatElement;
+}
 
 #[cfg(feature = "rational")]
-impl function_state_sealed::Sealed for crate::R64 {}
+impl function_state_sealed::Sealed for crate::R64 {
+    type ElementShape = function_state_sealed::FlatElement;
+}
 
 macro_rules! exact_matrix_function_state_backing {
     ($type:ident, $feature:literal) => {
         #[cfg(feature = $feature)]
-        impl<T: FunctionStateBacking> function_state_sealed::Sealed for crate::$type<T> {}
+        impl<T> function_state_sealed::Sealed for crate::$type<T>
+        where
+            T: function_state_sealed::Sealed<ElementShape = function_state_sealed::FlatElement>
+                + FunctionPortBacking
+                + FunctionRuntimeType
+                + Clone
+                + 'static,
+        {
+            type ElementShape = ();
+        }
     };
 }
 
@@ -95,6 +129,8 @@ exact_matrix_function_state_backing!(DMatrix, "matrixd");
 
 trait ErasedFunctionState {
     fn representation(&self) -> FunctionValueRepresentation;
+    fn reactive_cell_ids(&self) -> Vec<FunctionReactiveCell>;
+    fn capture(&self, journal: &mut ValueStateJournal) -> MResult<()>;
 }
 
 impl<T> ErasedFunctionState for Ref<T>
@@ -104,6 +140,14 @@ where
 {
     fn representation(&self) -> FunctionValueRepresentation {
         T::REPRESENTATION
+    }
+
+    fn reactive_cell_ids(&self) -> Vec<FunctionReactiveCell> {
+        self.to_value().reactive_root_cell_ids()
+    }
+
+    fn capture(&self, journal: &mut ValueStateJournal) -> MResult<()> {
+        journal.capture_exact_ref(self)
     }
 }
 
@@ -128,6 +172,14 @@ impl<'a> FunctionStatePort<'a> {
 
     pub fn representation(self) -> FunctionValueRepresentation {
         self.inner.representation()
+    }
+
+    pub(crate) fn reactive_cell_ids(self) -> Vec<FunctionReactiveCell> {
+        self.inner.reactive_cell_ids()
+    }
+
+    pub(crate) fn capture_into(self, journal: &mut ValueStateJournal) -> MResult<()> {
+        self.inner.capture(journal)
     }
 }
 

@@ -53,11 +53,41 @@ pub(crate) use interpreter::{Interpreter, InterpreterExecution, RuntimeContextBi
 pub mod intrinsics;
 #[cfg(feature = "semantic-compiler")]
 pub mod literals;
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        all(feature = "subscript", feature = "assign"),
+        all(feature = "subscript", feature = "access", feature = "subscript_slice"),
+        all(
+            any(
+                feature = "math_add_assign",
+                feature = "math_sub_assign",
+                feature = "math_div_assign",
+                feature = "math_mul_assign"
+            ),
+            any(feature = "subscript_formula", feature = "subscript_range")
+        )
+    )
+))]
 mod matrix_selector;
 #[cfg(feature = "semantic-compiler")]
 pub mod mechdown;
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        all(feature = "subscript", feature = "assign"),
+        all(feature = "subscript", feature = "access", feature = "subscript_slice"),
+        all(
+            any(
+                feature = "math_add_assign",
+                feature = "math_sub_assign",
+                feature = "math_div_assign",
+                feature = "math_mul_assign"
+            ),
+            any(feature = "subscript_formula", feature = "subscript_range")
+        )
+    )
+))]
 pub(crate) use matrix_selector::MatrixSelector;
 #[cfg(feature = "semantic-compiler")]
 pub mod patterns;

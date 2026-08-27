@@ -322,6 +322,54 @@
     },
     {
       "count": 1,
+      "fingerprint": "2faec2f1b0188be6b3cdbd8df1de19293bcee0e5cdf60579d319bb4fff7c7c27",
+      "gate": "E4",
+      "identifier": "value-state-journal",
+      "path": "src/core/src/function/state.rs",
+      "reason": "typed function-state capture uses the existing journal as its concrete internal sink; no new universal value owner"
+    },
+    {
+      "count": 1,
+      "fingerprint": "1f844d21c6cb367975e2cc9cacd546f6ab5bd7a0eb312d775b63ed82ed0383d7",
+      "gate": "E4",
+      "identifier": "value-state-journal",
+      "path": "src/core/src/function/state.rs",
+      "reason": "typed function-state capture uses the existing journal as its concrete internal sink; no new universal value owner"
+    },
+    {
+      "count": 1,
+      "fingerprint": "196b45e3d32dc661a6f1af4150156eea1630274abd2cde3849aff6f4a9c741a8",
+      "gate": "E4",
+      "identifier": "value-state-journal",
+      "path": "src/core/src/function/state.rs",
+      "reason": "typed function-state capture uses the existing journal as its concrete internal sink; no new universal value owner"
+    },
+    {
+      "count": 1,
+      "fingerprint": "6ce2bc66cd704e34586186087824fdb02459f88bf52c336864befdd6d628a72c",
+      "gate": "E4",
+      "identifier": "value-state-journal",
+      "path": "src/core/src/function/state.rs",
+      "reason": "typed function-state capture uses the existing journal as its concrete internal sink; no new universal value owner"
+    },
+    {
+      "count": 2,
+      "fingerprint": "3d0088b9cc04a7d6ebb9acc2a70b58bd26873dba83e18a6c8fb15c91f03ea67c",
+      "gate": "E4",
+      "identifier": "value-state-journal",
+      "path": "src/core/src/state_journal/mod.rs",
+      "reason": "private exact-root dispatch reuses the journal's generic preflight and capture machinery; no new universal value owner"
+    },
+    {
+      "count": 2,
+      "fingerprint": "4591727cbe8987c782fb7c2b2869d1bbca91facdd25ba42c14b001d39e65a29a",
+      "gate": "E4",
+      "identifier": "value-state-journal",
+      "path": "src/core/src/state_journal/mod.rs",
+      "reason": "private exact-root dispatch reuses the journal's generic preflight and capture machinery; no new universal value owner"
+    },
+    {
+      "count": 1,
       "fingerprint": "99b3c91345bc5fd6cb9eee6e4def9b5e66b05824837ac5536ddd791dc7eb5e89",
       "gate": "E4",
       "identifier": "value-typed-wrapper",

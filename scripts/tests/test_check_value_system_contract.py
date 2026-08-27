@@ -1068,6 +1068,22 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
         self.assertIn("C0-INVENTORY-DRIFT", self.ids(self.audit()))
         self.assertEqual(self.audit(mode="retirement"), [])
 
+    def test_retirement_mode_allows_reviewed_occurrence_locations_to_move(self):
+        source = (self.root / "src/core/src/live.rs").read_text(encoding="utf-8")
+        self.write("src/core/src/live.rs", "\n" + source)
+        for row in self.migration["use_classifications"]:
+            if row["path"] == "src/core/src/live.rs":
+                for site in row["sites"]:
+                    site["line"] += 1
+        self.save_path(self.migration_path, self.migration)
+        self.frozen_targets["occurrence_targets"] = (
+            CHECKER.occurrence_target_projection(self.migration)
+        )
+        self.save_path(self.frozen_targets_path, self.frozen_targets)
+
+        self.assertIn("C0-INVENTORY-DRIFT", self.ids(self.audit()))
+        self.assertEqual(self.audit(mode="retirement"), [])
+
     def test_retirement_mode_uses_relaxed_type_contract_generation(self):
         path = self.root / "src/core/src/function/signature.rs"
         source = path.read_text(encoding="utf-8").replace(

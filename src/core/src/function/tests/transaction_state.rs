@@ -1,9 +1,55 @@
 #[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
-use super::super::{MechFunctionImpl, Plan, TransactionStateUnsupportedError};
+use super::super::{FunctionStatePort, MechFunctionImpl, Plan, TransactionStateUnsupportedError};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{LegacyValue, MResult, MechError, Ref, ValueCell};
+use std::{cell::Cell, rc::Rc};
+
+struct TypedOutputFunction {
+    output: Ref<usize>,
+    legacy_reactive_calls: Rc<Cell<usize>>,
+}
+
+impl MechFunctionImpl for TypedOutputFunction {
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.output))
+    }
+
+    fn reactive_output_state_ports(&self) -> Option<Vec<FunctionStatePort<'_>>> {
+        let output = FunctionStatePort::from_ref(&self.output);
+        Some(vec![output, output])
+    }
+
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Index(self.output.clone())
+    }
+
+    fn reactive_output_values(&self) -> Vec<LegacyValue> {
+        self.legacy_reactive_calls
+            .set(self.legacy_reactive_calls.get() + 1);
+        vec![self.out()]
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(vec![self.out()])
+    }
+
+    fn to_string(&self) -> String {
+        "typed-output".to_string()
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for TypedOutputFunction {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
 
 struct UnsupportedStateFunction;
 impl MechFunctionImpl for UnsupportedStateFunction {
@@ -91,6 +137,20 @@ fn transaction_state_unsupported_error_is_structured() {
     let function = UnsupportedStateFunction;
     let error = function.transaction_state_values().unwrap_err();
     assert_eq!(error.kind_name(), "TransactionStateUnsupported");
+}
+
+#[test]
+fn reactive_output_identity_prefers_typed_ports_and_deduplicates_them() {
+    let output = Ref::new(42usize);
+    let legacy_reactive_calls = Rc::new(Cell::new(0));
+    let function = TypedOutputFunction {
+        output: output.clone(),
+        legacy_reactive_calls: legacy_reactive_calls.clone(),
+    };
+
+    let expected = LegacyValue::Index(output).reactive_root_cell_ids();
+    assert_eq!(function.reactive_output_cell_ids(), expected);
+    assert_eq!(legacy_reactive_calls.get(), 0);
 }
 
 #[test]

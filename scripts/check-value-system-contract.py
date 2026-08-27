@@ -762,7 +762,11 @@ def frozen_occurrence_target_failures(
 
 
 def occurrence_classification_failures(
-    live: dict[str, Any], migration: dict[str, Any], migration_path: Path
+    live: dict[str, Any],
+    migration: dict[str, Any],
+    migration_path: Path,
+    *,
+    exact_locations: bool = True,
 ) -> list[Failure]:
     failures: list[Failure] = []
     expected = {
@@ -808,36 +812,37 @@ def occurrence_classification_failures(
         for site in classification["sites"]:
             key = (enum_name, variant, path, site["line"], site["column"])
             actual.setdefault(key, []).append(classification)
-    for enum_name, variant, path, line, column in sorted(expected - set(actual)):
-        failures.append(
-            failure(
-                "C0-OCCURRENCE-CLASSIFICATION",
-                "qualified variant use",
-                path,
-                "exactly one reviewed occurrence classification",
-                "unclassified production occurrence",
-                f"{migration_path}:use_classifications",
-                line,
-                column,
-                enum_name,
-                variant,
+    if exact_locations:
+        for enum_name, variant, path, line, column in sorted(expected - set(actual)):
+            failures.append(
+                failure(
+                    "C0-OCCURRENCE-CLASSIFICATION",
+                    "qualified variant use",
+                    path,
+                    "exactly one reviewed occurrence classification",
+                    "unclassified production occurrence",
+                    f"{migration_path}:use_classifications",
+                    line,
+                    column,
+                    enum_name,
+                    variant,
+                )
             )
-        )
-    for enum_name, variant, path, line, column in sorted(set(actual) - expected):
-        failures.append(
-            failure(
-                "C0-OCCURRENCE-CLASSIFICATION",
-                "qualified variant use",
-                path,
-                "live production occurrence",
-                "stale or nonexistent classification",
-                f"{migration_path}:use_classifications",
-                line,
-                column,
-                enum_name,
-                variant,
+        for enum_name, variant, path, line, column in sorted(set(actual) - expected):
+            failures.append(
+                failure(
+                    "C0-OCCURRENCE-CLASSIFICATION",
+                    "qualified variant use",
+                    path,
+                    "live production occurrence",
+                    "stale or nonexistent classification",
+                    f"{migration_path}:use_classifications",
+                    line,
+                    column,
+                    enum_name,
+                    variant,
+                )
             )
-        )
     for (enum_name, variant, path, line, column), classifications in sorted(actual.items()):
         if len(classifications) > 1:
             failures.append(
@@ -969,18 +974,43 @@ def frozen_semantics_failures(migration: dict[str, Any], migration_path: Path) -
 def matrix_value_classification_failures(
     migration: dict[str, Any], migration_path: Path, root: Path = ROOT
 ) -> list[Failure]:
+    reviewed_sites: dict[str, list[tuple[int, int]]] = {}
+    for row in migration["use_classifications"]:
+        if row["enum"] != "LegacyValue" or row["variant"] != "MatrixValue":
+            continue
+        reviewed_sites.setdefault(row["path"], []).extend(
+            (int(site["line"]), int(site["column"])) for site in row["sites"]
+        )
+    for sites in reviewed_sites.values():
+        sites.sort()
+
     def is_explicit_rejection(path: str, site: dict[str, Any]) -> bool:
         source_path = root / path
         try:
             lines = source_path.read_text(encoding="utf-8").splitlines()
         except (OSError, UnicodeError):
             return False
-        start = int(site["line"]) - 1
+        reviewed = reviewed_sites.get(path, [])
+        reviewed_site = (int(site["line"]), int(site["column"]))
+        try:
+            occurrence_index = reviewed.index(reviewed_site)
+        except ValueError:
+            return False
+        live_sites = [
+            (line_number, match.start() + 1)
+            for line_number, line in enumerate(lines, start=1)
+            for match in re.finditer(
+                r"\b(?:LegacyValue|Value)::MatrixValue\b", line
+            )
+        ]
+        if occurrence_index >= len(live_sites):
+            return False
+        start = live_sites[occurrence_index][0] - 1
         if start < 0 or start >= len(lines):
             return False
         end = len(lines)
         for index in range(start + 1, len(lines)):
-            if re.match(r"\s*LegacyValue::", lines[index]):
+            if re.match(r"\s*(?:LegacyValue|Value)::", lines[index]):
                 end = index
                 break
         arm = "\n".join(lines[start:end])
@@ -3984,7 +4014,10 @@ def audit(
     failures.extend(target_applicability_failures(migration, migration_path))
     failures.extend(
         occurrence_classification_failures(
-            reviewed_surface, migration, migration_path
+            reviewed_surface,
+            migration,
+            migration_path,
+            exact_locations=mode == "exact",
         )
     )
     failures.extend(frozen_semantics_failures(migration, migration_path))

@@ -51,7 +51,12 @@ use crate::{
     FunctionCatalogBuilder, FunctionSpecializer, IncorrectNumberOfArguments, LegacyValue, MResult,
     MechError, MechFunction, UnhandledFunctionArgumentKind2,
 };
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    feature = "subscript",
+    feature = "access",
+    feature = "subscript_slice"
+))]
 use crate::{InterpreterExecution, MatrixSelector, OperationId};
 #[cfg(any(feature = "record", feature = "table"))]
 use crate::{MechTuple, Ref, UndefinedRecordFieldError};
@@ -183,7 +188,15 @@ fn matrix_access_index_is_scalar(index: &LegacyValue) -> bool {
     index.shape().as_slice() == [1, 1]
 }
 
-#[cfg(any(feature = "matrix", feature = "semantic-compiler"))]
+#[cfg(any(
+    feature = "matrix",
+    all(
+        feature = "semantic-compiler",
+        feature = "subscript",
+        feature = "access",
+        feature = "subscript_slice"
+    )
+))]
 fn legacy_all_selector() -> LegacyValue {
     LegacyValue::IndexAll
 }
@@ -255,7 +268,12 @@ fn compile_matrix_access(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunct
 }
 
 /// Lowers source-level selectors at the legacy access specialization boundary.
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    feature = "subscript",
+    feature = "access",
+    feature = "subscript_slice"
+))]
 pub(crate) fn specialize_matrix_access(
     execution: &InterpreterExecution<'_>,
     canonical_name: &str,

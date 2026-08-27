@@ -1,5 +1,19 @@
 use crate::intrinsics::*;
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        all(feature = "subscript", feature = "assign"),
+        all(
+            any(
+                feature = "math_add_assign",
+                feature = "math_sub_assign",
+                feature = "math_div_assign",
+                feature = "math_mul_assign"
+            ),
+            any(feature = "subscript_formula", feature = "subscript_range")
+        )
+    )
+))]
 use crate::{InterpreterExecution, MatrixSelector, OperationId};
 
 pub mod catalog;
@@ -873,7 +887,24 @@ enum AssignmentIndexKind {
     All,
 }
 
-#[cfg(any(feature = "matrix", feature = "semantic-compiler"))]
+#[cfg(any(
+    feature = "matrix",
+    all(
+        feature = "semantic-compiler",
+        any(
+            all(feature = "subscript", feature = "assign"),
+            all(
+                any(
+                    feature = "math_add_assign",
+                    feature = "math_sub_assign",
+                    feature = "math_div_assign",
+                    feature = "math_mul_assign"
+                ),
+                any(feature = "subscript_formula", feature = "subscript_range")
+            )
+        )
+    )
+))]
 fn legacy_all_selector() -> LegacyValue {
     LegacyValue::IndexAll
 }
@@ -892,7 +923,21 @@ fn assignment_index_kind(value: &LegacyValue) -> AssignmentIndexKind {
 }
 
 /// Lowers source-level selectors at the legacy assignment specialization boundary.
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        all(feature = "subscript", feature = "assign"),
+        all(
+            any(
+                feature = "math_add_assign",
+                feature = "math_sub_assign",
+                feature = "math_div_assign",
+                feature = "math_mul_assign"
+            ),
+            any(feature = "subscript_formula", feature = "subscript_range")
+        )
+    )
+))]
 pub(crate) fn specialize_matrix_assignment(
     execution: &InterpreterExecution<'_>,
     canonical_name: &str,

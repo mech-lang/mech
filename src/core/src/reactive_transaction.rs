@@ -27,6 +27,13 @@ impl ReactiveTurnJournal {
     }
 
     pub(crate) fn capture_function_state(&mut self, function: &dyn MechFunction) -> MResult<()> {
+        if let Some(ports) = function.transaction_state_ports()? {
+            for port in ports {
+                port.capture_into(&mut self.values)?;
+            }
+            return Ok(());
+        }
+
         let mut values = function.transaction_state_values()?;
         if values.is_empty() {
             values.push(function.out());
@@ -201,7 +208,10 @@ pub fn with_reactive_journal_participant<T>(
 mod tests {
     use super::*;
     use crate::*;
-    use std::{cell::RefCell, rc::Rc};
+    use std::{
+        cell::{Cell, RefCell},
+        rc::Rc,
+    };
 
     fn deliberate_journal_error(message: &'static str) -> MechError {
         MechError::new(
@@ -418,6 +428,110 @@ mod tests {
             solve_error: false,
             sampled: false,
         }
+    }
+
+    #[derive(Clone, Copy)]
+    enum TypedStateMode {
+        State,
+        Empty,
+        Error,
+    }
+
+    struct TypedJournalFunction {
+        output: Ref<usize>,
+        retained: Ref<usize>,
+        mode: TypedStateMode,
+        out_calls: Rc<Cell<usize>>,
+        legacy_state_calls: Rc<Cell<usize>>,
+        solve_calls: Rc<Cell<usize>>,
+    }
+
+    impl MechFunctionImpl for TypedJournalFunction {
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
+
+        fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+            self.solve_calls.set(self.solve_calls.get() + 1);
+            *self.output.borrow_mut() += 1;
+            *self.retained.borrow_mut() += 10;
+            Ok(ReactiveSolveStatus::Changed)
+        }
+
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.output))
+        }
+
+        fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+            match self.mode {
+                TypedStateMode::State => {
+                    let output = FunctionStatePort::from_ref(&self.output);
+                    let retained = FunctionStatePort::from_ref(&self.retained);
+                    Ok(Some(vec![output, retained, retained]))
+                }
+                TypedStateMode::Empty => Ok(Some(Vec::new())),
+                TypedStateMode::Error => Err(MechError::new(
+                    TransactionStateUnsupportedError {
+                        function: "typed-journal".into(),
+                        reason: "deliberate typed state error".into(),
+                    },
+                    None,
+                )),
+            }
+        }
+
+        fn out(&self) -> LegacyValue {
+            self.out_calls.set(self.out_calls.get() + 1);
+            LegacyValue::Index(self.output.clone())
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+            self.legacy_state_calls
+                .set(self.legacy_state_calls.get() + 1);
+            Err(MechError::new(
+                GenericError {
+                    msg: "legacy typed-state fallback was invoked".into(),
+                },
+                None,
+            ))
+        }
+
+        fn to_string(&self) -> String {
+            "typed-journal".into()
+        }
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    impl MechFunctionCompiler for TypedJournalFunction {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    fn typed_journal_function(
+        mode: TypedStateMode,
+    ) -> (
+        TypedJournalFunction,
+        Rc<Cell<usize>>,
+        Rc<Cell<usize>>,
+        Rc<Cell<usize>>,
+    ) {
+        let out_calls = Rc::new(Cell::new(0));
+        let legacy_state_calls = Rc::new(Cell::new(0));
+        let solve_calls = Rc::new(Cell::new(0));
+        (
+            TypedJournalFunction {
+                output: Ref::new(1),
+                retained: Ref::new(2),
+                mode,
+                out_calls: out_calls.clone(),
+                legacy_state_calls: legacy_state_calls.clone(),
+                solve_calls: solve_calls.clone(),
+            },
+            out_calls,
+            legacy_state_calls,
+            solve_calls,
+        )
     }
 
     struct JournalRegisterCommit {
@@ -666,6 +780,84 @@ mod tests {
         journal.restore_before().unwrap();
 
         assert_eq!(*retained.borrow(), 2);
+    }
+
+    #[test]
+    fn reactive_transaction_prefers_typed_ports_restores_hidden_state_and_deduplicates() {
+        let (function, out_calls, legacy_state_calls, _) =
+            typed_journal_function(TypedStateMode::State);
+        let output = function.output.clone();
+        let retained = function.retained.clone();
+        let mut journal = ReactiveTurnJournal::new();
+
+        journal.capture_function_state(&function).unwrap();
+        assert_eq!(journal.cell_count(), 2);
+        *output.borrow_mut() = 11;
+        *retained.borrow_mut() = 22;
+        journal.restore_before().unwrap();
+
+        assert_eq!((*output.borrow(), *retained.borrow()), (1, 2));
+        assert_eq!(out_calls.get(), 0);
+        assert_eq!(legacy_state_calls.get(), 0);
+    }
+
+    #[test]
+    fn empty_typed_state_is_authoritative_without_out_fallback() {
+        let (function, out_calls, legacy_state_calls, _) =
+            typed_journal_function(TypedStateMode::Empty);
+        let mut journal = ReactiveTurnJournal::new();
+
+        journal.capture_function_state(&function).unwrap();
+
+        assert!(journal.is_empty());
+        assert_eq!(out_calls.get(), 0);
+        assert_eq!(legacy_state_calls.get(), 0);
+    }
+
+    #[test]
+    fn typed_state_error_prevents_solve_without_compatibility_fallback() {
+        let input = Ref::new(1usize);
+        let (function, _out_calls, legacy_state_calls, solve_calls) =
+            typed_journal_function(TypedStateMode::Error);
+        let mut plan = ReactivePlan::new();
+        plan.register(Box::new(function), &[LegacyValue::Index(input.clone())])
+            .unwrap();
+
+        let error = plan
+            .solve_dirty_cells_with_journal(
+                &LegacyValue::Index(input).reactive_root_cell_ids(),
+                &mut ReactiveTurnJournal::new(),
+            )
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "TransactionStateUnsupported");
+        assert_eq!(legacy_state_calls.get(), 0);
+        assert_eq!(solve_calls.get(), 0);
+    }
+
+    #[test]
+    fn typed_and_legacy_function_state_coexist_in_one_journal() {
+        let (typed, _, _, _) = typed_journal_function(TypedStateMode::State);
+        let typed_output = typed.output.clone();
+        let legacy_output = Ref::new(3usize);
+        let legacy_retained = Ref::new(4usize);
+        let legacy = journal_function(
+            "legacy",
+            legacy_output.clone(),
+            legacy_retained.clone(),
+            Rc::new(RefCell::new(Vec::new())),
+        );
+        let mut journal = ReactiveTurnJournal::new();
+
+        journal.capture_function_state(&typed).unwrap();
+        journal.capture_function_state(&legacy).unwrap();
+        *typed_output.borrow_mut() = 10;
+        *legacy_output.borrow_mut() = 30;
+        *legacy_retained.borrow_mut() = 40;
+        journal.restore_before().unwrap();
+
+        assert_eq!(*typed_output.borrow(), 1);
+        assert_eq!((*legacy_output.borrow(), *legacy_retained.borrow()), (3, 4));
     }
 
     #[test]

@@ -3,7 +3,7 @@
 //!
 //! This module deliberately has no integration with execution or reactive
 //! scheduling. Callers pay for graph traversal only when they explicitly
-//! construct and populate a [`ValueStateJournal`].
+//! construct and populate a value-state journal.
 
 #[cfg(feature = "matrix")]
 use crate::structures::matrix::Matrix;
@@ -441,10 +441,77 @@ impl CaptureSide {
     }
 }
 
-#[derive(Clone)]
 enum ValueStateRoot {
     Value(LegacyValue),
     Cell(ValueCell),
+    #[cfg(any(feature = "functions", test))]
+    ExactRef(Box<dyn ErasedValueStateRoot>),
+}
+
+impl Clone for ValueStateRoot {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Value(value) => Self::Value(value.clone()),
+            Self::Cell(cell) => Self::Cell(cell.clone()),
+            #[cfg(any(feature = "functions", test))]
+            Self::ExactRef(root) => Self::ExactRef(root.clone_box()),
+        }
+    }
+}
+
+#[cfg(any(feature = "functions", test))]
+trait ErasedValueStateRoot {
+    fn clone_box(&self) -> Box<dyn ErasedValueStateRoot>;
+    fn preflight(
+        &self,
+        journal: &ValueStateJournal,
+        side: CaptureSide,
+        seen: &mut HashSet<ValueStateKey>,
+    ) -> MResult<()>;
+    fn visit(
+        &self,
+        journal: &mut ValueStateJournal,
+        side: CaptureSide,
+        seen: &mut HashSet<ValueStateKey>,
+    ) -> MResult<()>;
+}
+
+#[cfg(any(feature = "functions", test))]
+struct RefValueStateRoot<T>
+where
+    T: Clone + 'static,
+{
+    target: Ref<T>,
+}
+
+#[cfg(any(feature = "functions", test))]
+impl<T> ErasedValueStateRoot for RefValueStateRoot<T>
+where
+    T: Clone + 'static,
+{
+    fn clone_box(&self) -> Box<dyn ErasedValueStateRoot> {
+        Box::new(Self {
+            target: self.target.clone(),
+        })
+    }
+
+    fn preflight(
+        &self,
+        journal: &ValueStateJournal,
+        side: CaptureSide,
+        seen: &mut HashSet<ValueStateKey>,
+    ) -> MResult<()> {
+        journal.preflight_ref(&self.target, side, seen, |_, _, _| Ok(()))
+    }
+
+    fn visit(
+        &self,
+        journal: &mut ValueStateJournal,
+        side: CaptureSide,
+        seen: &mut HashSet<ValueStateKey>,
+    ) -> MResult<()> {
+        journal.visit_ref(&self.target, side, seen, |_, _, _| Ok(()))
+    }
 }
 
 trait ErasedValueStateEntry {
@@ -595,6 +662,34 @@ impl ValueStateJournal {
         Ok(())
     }
 
+    /// Captures one exact typed cell without projecting it through a universal
+    /// value. The saved root owns only a cloned handle for after-state capture.
+    #[cfg(any(feature = "functions", test))]
+    pub(crate) fn capture_exact_ref<T>(&mut self, target: &Ref<T>) -> MResult<()>
+    where
+        T: Clone + 'static,
+    {
+        self.ensure_open()?;
+
+        let mut preflight_seen = HashSet::default();
+        self.preflight_ref(
+            target,
+            CaptureSide::Before,
+            &mut preflight_seen,
+            |_, _, _| Ok(()),
+        )?;
+
+        let mut capture_seen = HashSet::default();
+        self.visit_ref(target, CaptureSide::Before, &mut capture_seen, |_, _, _| {
+            Ok(())
+        })?;
+        self.roots
+            .push(ValueStateRoot::ExactRef(Box::new(RefValueStateRoot {
+                target: target.clone(),
+            })));
+        Ok(())
+    }
+
     /// Restores all captured before-state into the original cells.
     ///
     /// Every target is preflighted before the first payload is changed.
@@ -695,6 +790,8 @@ impl ValueStateJournal {
                     journal.preflight_value(value, side, seen)
                 })
             }
+            #[cfg(any(feature = "functions", test))]
+            ValueStateRoot::ExactRef(root) => root.preflight(self, side, seen),
         }
     }
 
@@ -712,6 +809,8 @@ impl ValueStateJournal {
                     journal.visit_value(value, side, seen)
                 })
             }
+            #[cfg(any(feature = "functions", test))]
+            ValueStateRoot::ExactRef(root) => root.visit(self, side, seen),
         }
     }
 
@@ -1554,6 +1653,10 @@ impl MechErrorKind for ValueStateAfterNotRecorded {
         "The value-state journal has no recorded after-state.".to_string()
     }
 }
+
+#[cfg(test)]
+#[path = "tests/exact_minimal.rs"]
+mod exact_ref_feature_smoke_tests;
 
 #[cfg(test)]
 mod tests;

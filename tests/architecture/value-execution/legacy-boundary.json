@@ -96,8 +96,9 @@
       "description": "Legacy mutable Value rollback journal declaration and production use sites",
       "pattern": "ValueStateJournal",
       "allowed": [
+        { "path": "src/core/src/function/state.rs", "scope_contains": "<file>", "max_occurrences": 4 },
         { "path": "src/core/src/reactive_transaction.rs", "scope_contains": "<file>", "max_occurrences": 3 },
-        { "path": "src/core/src/state_journal/mod.rs", "scope_contains": "<file>", "max_occurrences": 9 },
+        { "path": "src/core/src/state_journal/mod.rs", "scope_contains": "<file>", "max_occurrences": 12 },
         { "path": "src/engine/src/interpreter/bytecode/registers.rs", "scope_contains": "<file>", "max_occurrences": 2 },
         { "path": "src/engine/src/interpreter/mod.rs", "scope_contains": "<file>", "max_occurrences": 6 }
       ]
