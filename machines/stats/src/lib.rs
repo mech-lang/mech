@@ -182,30 +182,25 @@ macro_rules! impl_stats_unop {
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
-            $arg_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            $arg_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg) = invocation.expect_unary()?;
+                let arg: Ref<$arg_type> = arg.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new($struct_name { arg, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Unary(out, arg) => {
-                        let arg = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let out = out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new($struct_name { arg, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
@@ -224,6 +219,7 @@ macro_rules! impl_stats_unop {
                 + PartialOrd,
             T: StatsCheckedAdd,
             Ref<$out_type>: ToValue,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 let mut next = self.out.borrow().clone();
@@ -233,6 +229,12 @@ macro_rules! impl_stats_unop {
                 }
                 *self.out.borrow_mut() = next;
                 Ok(())
+            }
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()

@@ -142,10 +142,11 @@ fn impl_stats_sum_row_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunctio
 #[cfg(feature = "source")]
 impl_mech_urnop_fxn!(StatsSumRow, impl_stats_sum_row_fxn, "stats/sum/row");
 
-#[cfg(test)]
+#[cfg(all(test, feature = "u8"))]
 mod checked_sum_tests {
     use super::*;
 
+    #[cfg(feature = "u8")]
     #[test]
     fn integer_row_sum_rejects_reactive_overflow_and_retains_output() {
         let arg = Ref::new(DMatrix::from_row_slice(2, 1, &[1u8, 2]));
@@ -156,10 +157,112 @@ mod checked_sum_tests {
         };
         function.solve_result().unwrap();
         assert_eq!(out.borrow().as_slice(), &[3]);
-
-        *arg.borrow_mut() = DMatrix::from_row_slice(2, 1, &[u8::MAX, 1]);
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "StatsArithmeticOverflow");
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&function)?;
+            *arg.borrow_mut() = DMatrix::from_row_slice(2, 1, &[u8::MAX, 1]);
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "StatsArithmeticOverflow");
+            assert_eq!(out.borrow().as_slice(), &[3]);
+            *out.borrow_mut() = RowDVector::from_vec(vec![17, 18]);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
         assert_eq!(out.borrow().as_slice(), &[3]);
+    }
+}
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "f64",
+    feature = "matrix2",
+    feature = "row_vector2",
+    feature = "matrixd",
+    feature = "row_vectord"
+))]
+mod invocation_port_tests {
+    use super::*;
+
+    fn unary_args<I, O>(out: &Ref<O>, arg: &Ref<I>) -> FunctionArgs
+    where
+        Ref<I>: ToValue,
+        Ref<O>: ToValue,
+    {
+        FunctionArgs::Unary(out.to_value(), arg.to_value())
+    }
+
+    #[test]
+    fn fixed_and_dynamic_row_sums_preserve_factory_behavior_and_state() {
+        let fixed_arg = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
+        let legacy_out = Ref::new(RowVector2::zeros());
+        let invocation_out = Ref::new(RowVector2::zeros());
+        let legacy = StatsSumRowM2::<f64>::new(unary_args(&legacy_out, &fixed_arg)).unwrap();
+        let invocation = StatsSumRowM2::<f64>::new_invocation(
+            unary_args(&invocation_out, &fixed_arg).into(),
+        )
+        .unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), RowVector2::new(4.0, 6.0));
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+
+        let dynamic_arg = Ref::new(DMatrix::from_row_slice(
+            2,
+            3,
+            &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
+        ));
+        let dynamic_out = Ref::new(RowDVector::zeros(3));
+        let dynamic = StatsSumRowMD::<f64>::new_invocation(
+            unary_args(&dynamic_out, &dynamic_arg).into(),
+        )
+        .unwrap();
+        dynamic.solve_result().unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            RowDVector::from_vec(vec![5.0, 7.0, 9.0])
+        );
+        assert_eq!(
+            dynamic.reactive_output_cell_ids(),
+            dynamic.out().reactive_root_cell_ids(),
+        );
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*dynamic)?;
+            *dynamic_out.borrow_mut() = RowDVector::from_vec(vec![-1.0]);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            RowDVector::from_vec(vec![5.0, 7.0, 9.0])
+        );
+    }
+}
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "f64",
+    feature = "vectord",
+    feature = "matrixd",
+    not(feature = "matrix1")
+))]
+mod dynamic_fallback_invocation_tests {
+    use super::*;
+
+    #[test]
+    fn dynamic_vector_row_sum_uses_matrix_fallback_without_matrix1() {
+        let arg = Ref::new(DVector::from_vec(vec![1.0_f64, 2.0, 3.0]));
+        let out = Ref::new(DMatrix::zeros(1, 1));
+        let function = StatsSumRowVDMD::<f64>::new_invocation(
+            FunctionArgs::Unary(out.to_value(), arg.to_value()).into(),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), DMatrix::from_element(1, 1, 6.0));
     }
 }
