@@ -78,9 +78,9 @@ macro_rules! impl_binop_solve {
                 + Zero
                 + One,
             Ref<$out_type>: ToValue,
-            $arg1_type: FunctionRuntimeType,
-            $arg2_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            $arg1_type: FunctionPortBacking,
+            $arg2_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -88,26 +88,18 @@ macro_rules! impl_binop_solve {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
+                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { lhs, rhs, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let rhs: Ref<$arg2_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { lhs, rhs, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
@@ -199,6 +191,67 @@ impl_solve!(MatrixSolveM2M2x3, Matrix2<T>, Matrix2x3<T>, Matrix2x3<T>);
 mod tests {
     use super::*;
 
+    fn binary_args<L, R, O>(out: &Ref<O>, lhs: &Ref<L>, rhs: &Ref<R>) -> FunctionArgs
+    where
+        Ref<L>: ToValue,
+        Ref<R>: ToValue,
+        Ref<O>: ToValue,
+    {
+        FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value())
+    }
+
+    #[test]
+    fn vector_and_matrix_rhs_factories_use_invocation_ports() {
+        let lhs = Ref::new(DMatrix::from_row_slice(2, 2, &[4.0, 1.0, 2.0, 3.0]));
+        let vector_rhs = Ref::new(DVector::from_vec(vec![9.0, 8.0]));
+        let legacy_out = Ref::new(DVector::<f64>::zeros(2));
+        let invocation_out = Ref::new(DVector::<f64>::zeros(2));
+        let legacy = MatrixSolveMDVD::<f64>::new(binary_args(
+            &legacy_out,
+            &lhs,
+            &vector_rhs,
+        ))
+        .unwrap();
+        let invocation = MatrixSolveMDVD::<f64>::new_invocation(
+            binary_args(&invocation_out, &lhs, &vector_rhs).into(),
+        )
+        .unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+
+        let matrix_rhs = Ref::new(DMatrix::<f64>::identity(2, 2));
+        let matrix_out = Ref::new(DMatrix::<f64>::zeros(2, 2));
+        MatrixSolveMDMD::<f64>::new_invocation(
+            binary_args(&matrix_out, &lhs, &matrix_rhs).into(),
+        )
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        let residual = lhs.borrow().clone() * matrix_out.borrow().clone();
+        assert!((residual - matrix_rhs.borrow().clone()).norm() < 1.0e-12);
+    }
+
+    #[test]
+    fn solve_invocation_rejects_wrong_rhs_representation_and_layout() {
+        let lhs = Ref::new(DMatrix::<f64>::identity(2, 2));
+        let wrong_rhs = Ref::new(DMatrix::<f64>::identity(2, 2));
+        let out = Ref::new(DVector::<f64>::zeros(2));
+        let type_error = MatrixSolveMDVD::<f64>::new_invocation(
+            binary_args(&out, &lhs, &wrong_rhs).into(),
+        )
+        .err()
+        .expect("wrong exact right-hand-side type must be rejected");
+        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
+
+        let arity_error = MatrixSolveMDVD::<f64>::new_invocation(
+            FunctionArgs::Unary(out.to_value(), lhs.to_value()).into(),
+        )
+        .err()
+        .expect("wrong solve invocation layout must be rejected");
+        assert_eq!(arity_error.kind_name(), "IncorrectNumberOfArguments");
+    }
+
     #[test]
     fn singular_matrix_is_a_structured_error_on_reactive_resolve() {
         let lhs = Ref::new(DMatrix::identity(2, 2));
@@ -238,6 +291,25 @@ mod tests {
 
         let residual = lhs.borrow().clone() * out.borrow().clone() - rhs.borrow().clone();
         assert!(residual.norm() < 1.0e-12);
+    }
+}
+
+#[cfg(all(test, feature = "f64", feature = "matrix2", feature = "matrix2x3"))]
+mod fixed_invocation_port_tests {
+    use super::*;
+
+    #[test]
+    fn fixed_matrix_rhs_uses_exact_invocation_ports() {
+        let lhs = Ref::new(Matrix2::<f64>::identity());
+        let rhs = Ref::new(Matrix2x3::new(1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0));
+        let out = Ref::new(Matrix2x3::<f64>::zeros());
+        let function = MatrixSolveM2M2x3::<f64>::new_invocation(
+            FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value()).into(),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), *rhs.borrow());
     }
 }
 

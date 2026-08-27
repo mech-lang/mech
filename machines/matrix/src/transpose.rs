@@ -50,32 +50,25 @@ macro_rules! impl_transpose {
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
-            $arg_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            $arg_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg) = invocation.expect_unary()?;
+                let arg: Ref<$arg_type> = arg.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new($struct_name { arg, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Unary(out, arg) => {
-                        let arg: Ref<$arg_type> =
-                            arg.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new($struct_name { arg, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 1,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
@@ -146,6 +139,135 @@ impl_transpose!(TransposeR3, RowVector3<T>, Vector3<T>, transpose_op);
 impl_transpose!(TransposeR4, RowVector4<T>, Vector4<T>, transpose_op);
 #[cfg(all(feature = "row_vectord", feature = "vectord"))]
 impl_transpose!(TransposeRD, RowDVector<T>, DVector<T>, transpose_op);
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "f64",
+    feature = "bool",
+    feature = "string",
+    feature = "matrix2",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "vector3",
+    feature = "row_vector3",
+    feature = "matrixd"
+))]
+mod invocation_port_tests {
+    use super::*;
+
+    fn unary_args<I, O>(out: &Ref<O>, arg: &Ref<I>) -> FunctionArgs
+    where
+        Ref<I>: ToValue,
+        Ref<O>: ToValue,
+    {
+        FunctionArgs::Unary(out.to_value(), arg.to_value())
+    }
+
+    #[test]
+    fn numeric_fixed_vector_and_dynamic_transposes_use_exact_ports() {
+        let matrix = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
+        let legacy_out = Ref::new(Matrix2::zeros());
+        let invocation_out = Ref::new(Matrix2::zeros());
+        let legacy = TransposeM2::<f64>::new(unary_args(&legacy_out, &matrix)).unwrap();
+        let invocation = TransposeM2::<f64>::new_invocation(
+            unary_args(&invocation_out, &matrix).into(),
+        )
+        .unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), Matrix2::new(1.0, 3.0, 2.0, 4.0));
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+
+        let rectangular = Ref::new(Matrix2x3::new(1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0));
+        let rectangular_out = Ref::new(Matrix3x2::zeros());
+        TransposeM2x3::<f64>::new_invocation(
+            unary_args(&rectangular_out, &rectangular).into(),
+        )
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(
+            *rectangular_out.borrow(),
+            Matrix3x2::new(1.0, 4.0, 2.0, 5.0, 3.0, 6.0)
+        );
+
+        let vector = Ref::new(Vector3::new(1.0_f64, 2.0, 3.0));
+        let vector_out = Ref::new(RowVector3::zeros());
+        TransposeV3::<f64>::new_invocation(unary_args(&vector_out, &vector).into())
+            .unwrap()
+            .solve_result()
+            .unwrap();
+        assert_eq!(*vector_out.borrow(), RowVector3::new(1.0, 2.0, 3.0));
+
+        let dynamic = Ref::new(DMatrix::from_row_slice(
+            2,
+            3,
+            &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
+        ));
+        let dynamic_out = Ref::new(DMatrix::zeros(3, 2));
+        TransposeMD::<f64>::new_invocation(unary_args(&dynamic_out, &dynamic).into())
+            .unwrap()
+            .solve_result()
+            .unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            DMatrix::from_row_slice(3, 2, &[1.0, 4.0, 2.0, 5.0, 3.0, 6.0])
+        );
+    }
+
+    #[test]
+    fn bool_and_string_transposes_preserve_element_backings() {
+        let bool_arg = Ref::new(Matrix2::new(true, false, false, true));
+        let bool_out = Ref::new(Matrix2::from_element(false));
+        TransposeM2::<bool>::new_invocation(unary_args(&bool_out, &bool_arg).into())
+            .unwrap()
+            .solve_result()
+            .unwrap();
+        assert_eq!(*bool_out.borrow(), *bool_arg.borrow());
+
+        let string_arg = Ref::new(Matrix2::new(
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ));
+        let string_out = Ref::new(Matrix2::from_element(String::new()));
+        TransposeM2::<String>::new_invocation(unary_args(&string_out, &string_arg).into())
+            .unwrap()
+            .solve_result()
+            .unwrap();
+        assert_eq!(
+            *string_out.borrow(),
+            Matrix2::new(
+                "a".to_string(),
+                "c".to_string(),
+                "b".to_string(),
+                "d".to_string(),
+            )
+        );
+    }
+
+    #[test]
+    fn transpose_invocation_rejects_wrong_storage_and_layout() {
+        let out = Ref::new(Matrix2::<f64>::zeros());
+        let wrong_storage = Ref::new(DMatrix::<f64>::zeros(2, 2));
+        let type_error = TransposeM2::<f64>::new_invocation(
+            unary_args(&out, &wrong_storage).into(),
+        )
+        .err()
+        .expect("wrong exact matrix storage must be rejected");
+        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
+
+        let arg = Ref::new(Matrix2::<f64>::identity());
+        let arity_error = TransposeM2::<f64>::new_invocation(
+            FunctionArgs::Binary(out.to_value(), arg.to_value(), arg.to_value()).into(),
+        )
+        .err()
+        .expect("wrong transpose invocation layout must be rejected");
+        assert_eq!(arity_error.kind_name(), "IncorrectNumberOfArguments");
+    }
+}
 
 #[cfg(feature = "source")]
 macro_rules! impl_transpose_match_arms {
