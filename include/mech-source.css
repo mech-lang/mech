@@ -465,6 +465,28 @@
     display: flex;
 }
 
+/* Table definitions keep the binding on one line, then give the table the
+ * full code-block width from the source margin. */
+:where([data-mech-source]).mech-code:has(> .mech-statement-table-define),
+:where([data-mech-source]) .mech-code:has(> .mech-statement-table-define),
+:where([data-mech-source]).mech-statement-table-define,
+:where([data-mech-source]) .mech-statement-table-define,
+:where([data-mech-source]).mech-variable-define-table,
+:where([data-mech-source]) .mech-variable-define-table,
+:where([data-mech-source]).mech-variable-define-table > .mech-expression,
+:where([data-mech-source]) .mech-variable-define-table > .mech-expression,
+:where([data-mech-source]).mech-variable-define-table > .mech-expression > .mech-structure,
+:where([data-mech-source]) .mech-variable-define-table > .mech-expression > .mech-structure {
+    display: block;
+}
+
+:where([data-mech-source]).mech-variable-define-table .mech-table,
+:where([data-mech-source]) .mech-variable-define-table .mech-table {
+    margin-left: 0;
+    margin-right: auto;
+    margin-top: 5px;
+}
+
 :where([data-mech-source]).mech-fsm-specification-header,
 :where([data-mech-source]) .mech-fsm-specification-header {
     display: inline-flex;

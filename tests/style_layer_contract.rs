@@ -122,6 +122,9 @@ fn source_layer_keeps_the_structured_syntax_highlighting_contract() {
         ".mech-function-name",
         ".mech-matrix",
         ".mech-table",
+        ".mech-statement-table-define",
+        ".mech-variable-define-table",
+        "margin-left: 0",
     ] {
         assert!(css.contains(token), "source layer lost {token}");
     }
@@ -171,6 +174,8 @@ fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
     let css = include("mechdown.css");
     for contract in [
         "--mechdown-text: var(--mech-text-body, var(--body-primary, hsl(206 24% 90%)))",
+        "--text-color-light: var(--mechdown-text)",
+        "--contrast-color-low: var(--mech-brand-deep, hsl(42 89% 60%))",
         "counter-reset: mechdown-section",
         ".mechdown-section.mechdown-titled-section {\n  counter-increment: mechdown-section",
         ".mechdown-section > h2::before",
@@ -183,6 +188,11 @@ fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
         "color: var(--mechdown-inline-code)",
         ".mech-program-subtitle:is(:hover, :focus-within) > a",
         "color: var(--mech-brand-deep, hsl(42 89% 60%))",
+        ":is(.mech-paragraph, .mechdown-paragraph):not(",
+        "color: var(--mech-text-body, var(--body-primary, hsl(206 24% 90%)))",
+        "font-size: 1.06rem",
+        "font-weight: 400",
+        "line-height: 1.85",
     ] {
         assert!(
             css.contains(contract),
@@ -192,6 +202,10 @@ fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
     assert!(
         !css.contains(".mech-program-subtitle:hover > a {\n  color: var(--mech-syntax"),
         "section heading hover must not use a syntax color"
+    );
+    assert!(
+        !include("blog.css").contains("Preserve the blog's cool, open long-form reading treatment"),
+        "long-form prose styling belongs to the shared Mechdown layer"
     );
 }
 
@@ -503,9 +517,6 @@ fn established_blog_color_and_component_details_are_preserved() {
         ".hero-summary .mech-summary",
         "border-top: 1px dotted var(--hero-accent)",
         "color: var(--hero-text-secondary)",
-        "color: var(--mech-text-body)",
-        "font-size: 1.06rem",
-        "line-height: 1.85",
         "scrollbar-color: var(--mech-scrollbar) transparent",
         "background: var(--mech-scrollbar-hover)",
         ".mech-image,",
@@ -513,9 +524,6 @@ fn established_blog_color_and_component_details_are_preserved() {
         "width: min(48%, 520px)",
         "body.narrow-content .mech-float",
         "@container (max-width: 980px)",
-        ".mech-summary,",
-        ".mechdown-table,",
-        ".mech-prompt",
         "grid-template-columns: var(--toc-width) minmax(0, 1fr)",
         ".article-layout:is(.hide-toc, .no-sections, .has-empty-toc)",
         "@media (max-width: 900px)",
@@ -526,6 +534,10 @@ fn established_blog_color_and_component_details_are_preserved() {
     let mechdown = include("mechdown.css");
     for contract in [
         ".mech-hyperlink,",
+        "color: var(--mech-text-body, var(--body-primary, hsl(206 24% 90%)))",
+        "font-size: 1.06rem",
+        "font-weight: 400",
+        "line-height: 1.85",
         ".mech-section-reference-link",
         "text-decoration-style: dotted",
         "text-underline-offset: 3px",

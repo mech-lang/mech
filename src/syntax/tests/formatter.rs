@@ -342,6 +342,24 @@ fn formatter_exposes_every_context_declaration_color_role() {
 }
 
 #[test]
+fn formatter_marks_table_definitions_for_full_width_block_layout() {
+    let statement = first_statement("scene := |id<string> x<f64>|\n         | \"robot\" 1 |");
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.statement(&statement);
+
+    assert!(
+        html.contains("class=\"mech-statement mech-statement-table-define\""),
+        "{html}",
+    );
+    assert!(
+        html.contains("class=\"mech-variable-define mech-variable-define-table\""),
+        "{html}",
+    );
+    assert!(html.contains("<table class=\"mech-table\">"), "{html}");
+}
+
+#[test]
 fn formatter_marks_inline_grammar_sequence_punctuation() {
     let grammar = Grammar {
         rules: vec![Rule {

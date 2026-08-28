@@ -2726,12 +2726,18 @@ impl Formatter {
         } else {
             "".to_string()
         };
+        let is_table = matches!(&node.expression, Expression::Structure(Structure::Table(_)));
         let var = self.var(&node.var);
         let expression = self.expression(&node.expression);
         if self.html {
+            let class = if is_table {
+                "mech-variable-define mech-variable-define-table"
+            } else {
+                "mech-variable-define"
+            };
             format!(
-                "<span class=\"mech-variable-define\"><span class=\"mech-variable-mutable\">{}</span>{}<span class=\"mech-variable-define-op\">:=</span>{}</span>",
-                mutable, var, expression
+                "<span class=\"{}\"><span class=\"mech-variable-mutable\">{}</span>{}<span class=\"mech-variable-define-op\">:=</span>{}</span>",
+                class, mutable, var, expression
             )
         } else {
             format!("{}{} {} {}", mutable, var, ":=", expression)
@@ -2819,6 +2825,13 @@ impl Formatter {
     }
 
     pub fn statement(&mut self, node: &Statement) -> String {
+        let is_table_define = matches!(
+            node,
+            Statement::VariableDefine(VariableDefine {
+                expression: Expression::Structure(Structure::Table(_)),
+                ..
+            })
+        );
         let s = match node {
             Statement::ImportDeclaration(import) => format!("+> {}", import.specifier.to_string()),
             Statement::ExportDeclaration(export) => format!("<+ {}", export.name.to_string()),
@@ -2925,7 +2938,12 @@ impl Formatter {
             }
         };
         if self.html {
-            format!("<span class=\"mech-statement\">{}</span>", s)
+            let class = if is_table_define {
+                "mech-statement mech-statement-table-define"
+            } else {
+                "mech-statement"
+            };
+            format!("<span class=\"{}\">{}</span>", class, s)
         } else {
             format!("{}", s)
         }
