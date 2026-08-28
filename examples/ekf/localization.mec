@@ -413,18 +413,18 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
     {id: "covariance", positions: covariance-ellipse, stroke: "#f087b8", stroke-width: 1.5, line-cap: "round", line-join: "round", opacity: 0.72, closed: true}
   )
 
-  scene-text := |id<string> x<f64> y<f64> fill<string> font-size<f64> font-family<string> font-weight<string> text-anchor<string> opacity<f64> value<string>|
-    | "eyebrow" 24 26 "#8fa3b8" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "650" "start" 1 "MECH RESIDENT SENSOR FUSION" |
-    | "title" 24 62 "#edf2f7" 36 "Inter, ui-sans-serif, system-ui, sans-serif" "620" "start" 1 "Camera EKF Localization" |
-    | "state-label" 602 58 "#f4c95d" 13 "ui-monospace, SFMono-Regular, Menlo, monospace" "650" "start" 1 "V/Ω VECTORIZED SQUARE DRIVE" |
-    | "camera-label-1" 195 636 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "start" camera-label-opacity[1] "CAM 1" |
-    | "camera-label-2" 665 636 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "end" camera-label-opacity[2] "CAM 2" |
-    | "camera-label-3" 665 140 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "end" camera-label-opacity[3] "CAM 3" |
-    | "camera-label-4" 195 140 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "start" camera-label-opacity[4] "CAM 4" |
-    | "legend-truth-label" 40 722 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "actual robot + path" |
-    | "legend-prediction-label" 215 722 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "motion prediction" |
-    | "legend-estimate-label" 415 722 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "EKF estimate + 2σ covariance" |
-    | "note" 430 750 "#788a9c" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "middle" 1 "3.6-unit camera range · prediction-only dead zones · Joseph covariance · bounded v/ω cornering" |
+  sans-serif-font := "Inter, ui-sans-serif, system-ui, sans-serif"
+  mono-font := "ui-monospace, SFMono-Regular, Menlo, monospace"
+
+  scene-text := |id<string>                  x<f64> y<f64> fill<string> font-size<f64> font-family<string> font-weight<string> text-anchor<string> opacity<f64>            value<string>                  |
+                | "title"                     24     62    "#edf2f7"  36             sans-serif-font    "620"                "start"             1                       "Camera EKF Localization"      |
+                | "camera-label-1"           195    636    "#d7c27f"  11             sans-serif-font    "500"                "start"             camera-label-opacity[1] "CAM 1"                        |
+                | "camera-label-2"           665    636    "#d7c27f"  11             sans-serif-font    "500"                "end"               camera-label-opacity[2] "CAM 2"                        |
+                | "camera-label-3"           665    140    "#d7c27f"  11             sans-serif-font    "500"                "end"               camera-label-opacity[3] "CAM 3"                        |
+                | "camera-label-4"           195    140    "#d7c27f"  11             sans-serif-font    "500"                "start"             camera-label-opacity[4] "CAM 4"                        |
+                | "legend-truth-label"        40    722    "#bdc8d2"  12             sans-serif-font    "400"                "start"             1                       "actual robot + path"          |
+                | "legend-prediction-label"  215    722    "#bdc8d2"  12             sans-serif-font    "400"                "start"             1                       "motion prediction"            |
+                | "legend-estimate-label"    415    722    "#bdc8d2"  12             sans-serif-font    "400"                "start"             1                       "EKF estimate + 2σ covariance" |
 
   field-presentation := {
     width: 860
