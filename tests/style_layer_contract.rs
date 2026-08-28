@@ -284,6 +284,8 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(page.contains("border-left: 1px dotted var(--toc-accent-soft)"));
     assert!(page.contains(".article-layout.is-toc-open > .main-content"));
     assert!(page.contains("scrollbar-color: var(--mech-scrollbar) transparent"));
+    assert!(page.contains("background: var(--mech-scrollbar-hover)"));
+    assert!(page.contains("background-clip: content-box"));
 
     let repl = include("mech-repl.css");
     assert!(repl.contains(".mech-console-error-count"));
@@ -492,8 +494,8 @@ fn established_blog_color_and_component_details_are_preserved() {
         "color: var(--mech-text-body)",
         "font-size: 1.06rem",
         "line-height: 1.85",
-        "scrollbar-color: var(--mech-surface-accent) transparent",
-        "background: var(--mech-brand)",
+        "scrollbar-color: var(--mech-scrollbar) transparent",
+        "background: var(--mech-scrollbar-hover)",
         ".mech-image,",
         "max-width: 110%",
         "width: min(48%, 520px)",
