@@ -348,7 +348,7 @@ fn finalized_value(
     }
 }
 
-/// Rebuilds one tuple or record layer from already validated canonical child
+/// Rebuilds one tuple, record, or table layer from already validated canonical child
 /// payloads. The template retains the authoritative schema, shape, and record
 /// field ordering; callers may only replace children with the same canonical
 /// representation kinds.
@@ -372,6 +372,33 @@ pub fn rebuild_composite_snapshot(template: &Value, children: Box<[ValueData]>) 
                     .all(|(expected, child)| expected.kind() == child.kind()) =>
         {
             ValueData::Record(RecordValue { fields: children })
+        }
+        ValueData::Table(expected) => {
+            let column_lengths = expected
+                .columns
+                .iter()
+                .map(SequenceStorage::len)
+                .collect::<Option<Vec<_>>>()?;
+            let expected_children = column_lengths
+                .iter()
+                .try_fold(0usize, |total, length| total.checked_add(*length))?;
+            if expected_children != children.len() {
+                return None;
+            }
+            let mut children = children.into_vec().into_iter();
+            let columns = expected
+                .columns
+                .iter()
+                .zip(column_lengths)
+                .map(|(column, length)| {
+                    column.rebuild_with_values(children.by_ref().take(length).collect())
+                })
+                .collect::<Option<Vec<_>>>()?
+                .into_boxed_slice();
+            if children.next().is_some() {
+                return None;
+            }
+            ValueData::Table(TableValue { columns })
         }
         _ => return None,
     };
@@ -973,5 +1000,99 @@ pub(super) const fn schema_kind(schema: &SchemaBody) -> SchemaDataKind {
         SchemaBody::Set { .. } => SchemaDataKind::Set,
         SchemaBody::Map { .. } => SchemaDataKind::Map,
         SchemaBody::ReifiedType => SchemaDataKind::ReifiedType,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::snapshot::{F64Bits, TableColumnDraft};
+    use crate::{SchemaDraft, SchemaField, SchemaTableBuilder};
+
+    #[test]
+    fn composite_rebuild_preserves_table_columns_and_storage() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Table {
+                columns: vec![
+                    SchemaField {
+                        name: "id".to_owned(),
+                        schema: SchemaBody::String,
+                    },
+                    SchemaField {
+                        name: "x".to_owned(),
+                        schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    },
+                ]
+                .into_boxed_slice(),
+                rows: crate::DimensionExpr::Constant(2),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let template = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Table(
+                vec![
+                    TableColumnDraft {
+                        name: "id".to_owned(),
+                        values: vec![
+                            ValueDataDraft::String("a".to_owned()),
+                            ValueDataDraft::String("b".to_owned()),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    TableColumnDraft {
+                        name: "x".to_owned(),
+                        values: vec![
+                            ValueDataDraft::F64(F64Bits::from_f64(1.0)),
+                            ValueDataDraft::F64(F64Bits::from_f64(2.0)),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+
+        let rebuilt = rebuild_composite_snapshot(
+            &template,
+            vec![
+                ValueData::String("c".into()),
+                ValueData::String("d".into()),
+                ValueData::F64(F64Bits::from_f64(3.0)),
+                ValueData::F64(F64Bits::from_f64(4.0)),
+            ]
+            .into_boxed_slice(),
+        )
+        .unwrap();
+        let ValueData::Table(table) = rebuilt.data() else {
+            panic!("rebuilt composite must remain a table");
+        };
+        let super::super::SequenceView::String(ids) = table.column(0).unwrap() else {
+            panic!("string table column changed representation");
+        };
+        assert_eq!(
+            ids.iter().map(|id| id.as_ref()).collect::<Vec<_>>(),
+            ["c", "d"]
+        );
+        let super::super::SequenceView::F64(values) = table.column(1).unwrap() else {
+            panic!("f64 table column changed representation");
+        };
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_f64())
+                .collect::<Vec<_>>(),
+            [3.0, 4.0]
+        );
     }
 }

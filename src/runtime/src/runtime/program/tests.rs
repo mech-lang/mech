@@ -392,7 +392,13 @@ fn product_scene_point_set_positions(value: &LegacyValue) -> Vec<f64> {
             };
             record.clone()
         }
-        other => panic!("scene point-sets must contain a record, got {other:?}"),
+        LegacyValue::Table(table) if table.borrow().rows == 1 => Ref::new(
+            table
+                .borrow()
+                .get_record(1)
+                .expect("scene point-set table row"),
+        ),
+        other => panic!("scene point-sets must contain one record, got {other:?}"),
     };
     let point_set = point_set.borrow();
     product_scene_matrix_values(

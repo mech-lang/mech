@@ -3570,7 +3570,7 @@ mod compiler_tests {
         assert_eq!(
             table_constant.runtime_type,
             RuntimeType::Table {
-                columns: vec![(name.to_owned(), matrix_type)],
+                columns: vec![(name.to_owned(), matrix_type.clone())],
                 primary_key: 0,
             }
         );
@@ -3580,6 +3580,33 @@ mod compiler_tests {
         let table = decoded_table.borrow();
         let (_, Matrix::DVector(cells)) = table.data.values().next().unwrap() else {
             panic!("decoded table column did not preserve dynamic cell storage");
+        };
+        assert_fixed(&cells.borrow()[0]);
+
+        let referenced = LegacyValue::MutableReference(Ref::new(fixed.clone()));
+        let mut data = IndexMap::new();
+        data.insert(
+            id,
+            (
+                fixed.kind(),
+                Matrix::DVector(Ref::new(DVector::from_vec(vec![referenced]))),
+            ),
+        );
+        let table = crate::MechTable::new(1, 1, data, HashMap::from([(id, name.to_owned())]));
+        let template = encode(&LegacyValue::Table(Ref::new(table)));
+        assert_eq!(
+            template.runtime_type,
+            RuntimeType::Table {
+                columns: vec![(name.to_owned(), matrix_type)],
+                primary_key: 0,
+            }
+        );
+        let LegacyValue::Table(decoded_table) = decode_one(&template) else {
+            panic!("referenced matrix table template did not decode as a table");
+        };
+        let decoded_table = decoded_table.borrow();
+        let (_, Matrix::DVector(cells)) = decoded_table.data.values().next().unwrap() else {
+            panic!("referenced matrix table template changed column storage");
         };
         assert_fixed(&cells.borrow()[0]);
     }
@@ -4071,6 +4098,37 @@ mod compiler_tests {
             one_column_types
                 .windows(2)
                 .all(|types| types[0] == types[1])
+        );
+    }
+
+    #[cfg(all(
+        feature = "matrix1",
+        feature = "table",
+        feature = "vectord",
+        feature = "u8"
+    ))]
+    #[test]
+    fn table_constant_accepts_fixed_single_cell_column_storage() {
+        let name = "value";
+        let id = hash_str(name);
+        let cell = LegacyValue::U8(Ref::new(7));
+        let mut data = IndexMap::new();
+        data.insert(
+            id,
+            (
+                ValueKind::U8,
+                Matrix::Matrix1(Ref::new(nalgebra::Matrix1::new(cell))),
+            ),
+        );
+        let table = crate::MechTable::new(1, 1, data, HashMap::from([(id, name.to_owned())]));
+
+        let encoded = encode(&LegacyValue::Table(Ref::new(table)));
+        let LegacyValue::Table(decoded) = decode_one(&encoded) else {
+            panic!("single-row table did not decode as a table");
+        };
+        assert_eq!(
+            decoded.borrow().get_record(1).unwrap().get(&id),
+            Some(&LegacyValue::U8(Ref::new(7)))
         );
     }
 }

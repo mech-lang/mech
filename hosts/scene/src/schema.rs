@@ -443,34 +443,52 @@ fn point_set_circles(value: &LegacyValue) -> MResult<Vec<CircleElement>> {
         }
         return Ok(circles);
     }
+    if let Ok(table) = host_arg_table(SCENE_SCHEMA, one_arg(value), 0) {
+        let records = table_records(&table, "point-set", POINT_SET_FIELDS)?;
+        let mut circles = Vec::new();
+        for (row, record) in records.iter().enumerate() {
+            circles.extend(point_set_from_record(record).map_err(|err| {
+                scene_error(
+                    "SceneSchema",
+                    format!("point-set table row {}: {err:?}", row + 1),
+                )
+            })?);
+        }
+        return Ok(circles);
+    }
     if host_arg_record(SCENE_SCHEMA, one_arg(value), 0).is_ok() {
         return point_set_from_record_value(value);
     }
     Err(scene_error(
         "SceneSchema",
         format!(
-            "scene point-sets must be a record or tuple, got {:?}",
+            "scene point-sets must be a record, tuple, or table, got {:?}",
             resolved_for_diagnostic(value)
         ),
     ))
 }
 
+const POINT_SET_FIELDS: &[&str] = &[
+    "id",
+    "positions",
+    "radius",
+    "first-radius",
+    "fills",
+    "stroke",
+    "stroke-width",
+    "opacity",
+];
+
 fn point_set_from_record_value(value: &LegacyValue) -> MResult<Vec<CircleElement>> {
     let record = host_record(value, "scene point-set must be a record")?;
-    const FIELDS: &[&str] = &[
-        "id",
-        "positions",
-        "radius",
-        "first-radius",
-        "fills",
-        "stroke",
-        "stroke-width",
-        "opacity",
-    ];
-    reject_unknown_fields(&record, FIELDS, "point-set")?;
-    let id = required_string(&record, "id", "point-set.id")?;
+    point_set_from_record(&record)
+}
+
+fn point_set_from_record(record: &MechRecord) -> MResult<Vec<CircleElement>> {
+    reject_unknown_fields(record, POINT_SET_FIELDS, "point-set")?;
+    let id = required_string(record, "id", "point-set.id")?;
     validate_id("point-set", &id)?;
-    let positions = required_value(&record, "positions", &format!("point-set `{id}` positions"))?;
+    let positions = required_value(record, "positions", &format!("point-set `{id}` positions"))?;
     let positions = matrix_f64_values(positions, &format!("point-set `{id}` positions"))?;
     if positions.rows == 0 || positions.columns != 2 {
         return Err(scene_error(
@@ -478,15 +496,15 @@ fn point_set_from_record_value(value: &LegacyValue) -> MResult<Vec<CircleElement
             format!("point-set `{id}` positions must be a non-empty f64 matrix with two columns"),
         ));
     }
-    let radius = required_number(&record, "radius", &format!("point-set `{id}` radius"))?;
+    let radius = required_number(record, "radius", &format!("point-set `{id}` radius"))?;
     let first_radius = required_number(
-        &record,
+        record,
         "first-radius",
         &format!("point-set `{id}` first-radius"),
     )?;
     validate_radius(radius, &format!("point-set `{id}` radius"))?;
     validate_radius(first_radius, &format!("point-set `{id}` first-radius"))?;
-    let fills = required_strings(&record, "fills", &format!("point-set `{id}` fills"))?;
+    let fills = required_strings(record, "fills", &format!("point-set `{id}` fills"))?;
     if fills.len() != positions.rows {
         return Err(scene_error(
             "SceneSchema",
@@ -497,14 +515,14 @@ fn point_set_from_record_value(value: &LegacyValue) -> MResult<Vec<CircleElement
             ),
         ));
     }
-    let stroke = required_string(&record, "stroke", &format!("point-set `{id}` stroke"))?;
+    let stroke = required_string(record, "stroke", &format!("point-set `{id}` stroke"))?;
     let stroke_width = required_number(
-        &record,
+        record,
         "stroke-width",
         &format!("point-set `{id}` stroke-width"),
     )?;
     validate_stroke_width(&id, stroke_width)?;
-    let opacity = required_number(&record, "opacity", &format!("point-set `{id}` opacity"))?;
+    let opacity = required_number(record, "opacity", &format!("point-set `{id}` opacity"))?;
     validate_opacity(&id, opacity)?;
 
     let mut circles = Vec::with_capacity(positions.rows);
@@ -545,38 +563,53 @@ fn line_strips_from_value(value: &LegacyValue) -> MResult<Vec<LineStripElement>>
             .map(|value| line_strip_from_record_value(value.as_ref()))
             .collect();
     }
+    if let Ok(table) = host_arg_table(SCENE_SCHEMA, one_arg(value), 0) {
+        return table_records(&table, "line-strip", LINE_STRIP_FIELDS)?
+            .iter()
+            .enumerate()
+            .map(|(row, record)| {
+                line_strip_from_record(record).map_err(|err| {
+                    scene_error(
+                        "SceneSchema",
+                        format!("line-strip table row {}: {err:?}", row + 1),
+                    )
+                })
+            })
+            .collect();
+    }
     if host_arg_record(SCENE_SCHEMA, one_arg(value), 0).is_ok() {
         return Ok(vec![line_strip_from_record_value(value)?]);
     }
     Err(scene_error(
         "SceneSchema",
         format!(
-            "scene line-strips must be a record or tuple, got {:?}",
+            "scene line-strips must be a record, tuple, or table, got {:?}",
             resolved_for_diagnostic(value)
         ),
     ))
 }
 
+const LINE_STRIP_FIELDS: &[&str] = &[
+    "id",
+    "positions",
+    "stroke",
+    "stroke-width",
+    "line-cap",
+    "line-join",
+    "opacity",
+    "closed",
+];
+
 fn line_strip_from_record_value(value: &LegacyValue) -> MResult<LineStripElement> {
     let record = host_record(value, "scene line-strip must be a record")?;
-    const FIELDS: &[&str] = &[
-        "id",
-        "positions",
-        "stroke",
-        "stroke-width",
-        "line-cap",
-        "line-join",
-        "opacity",
-        "closed",
-    ];
-    reject_unknown_fields(&record, FIELDS, "line-strip")?;
-    let id = required_string(&record, "id", "line-strip.id")?;
+    line_strip_from_record(&record)
+}
+
+fn line_strip_from_record(record: &MechRecord) -> MResult<LineStripElement> {
+    reject_unknown_fields(record, LINE_STRIP_FIELDS, "line-strip")?;
+    let id = required_string(record, "id", "line-strip.id")?;
     validate_id("line-strip", &id)?;
-    let positions = required_value(
-        &record,
-        "positions",
-        &format!("line-strip `{id}` positions"),
-    )?;
+    let positions = required_value(record, "positions", &format!("line-strip `{id}` positions"))?;
     let positions = matrix_f64_values(positions, &format!("line-strip `{id}` positions"))?;
     if positions.rows < 2 || positions.columns != 2 {
         return Err(scene_error(
@@ -600,30 +633,26 @@ fn line_strip_from_record_value(value: &LegacyValue) -> MResult<LineStripElement
         })
         .collect::<MResult<Vec<_>>>()?;
     let stroke_width = required_number(
-        &record,
+        record,
         "stroke-width",
         &format!("line-strip `{id}` stroke-width"),
     )?;
     validate_stroke_width(&id, stroke_width)?;
-    let opacity = required_number(&record, "opacity", &format!("line-strip `{id}` opacity"))?;
+    let opacity = required_number(record, "opacity", &format!("line-strip `{id}` opacity"))?;
     validate_opacity(&id, opacity)?;
-    let line_cap = required_string(&record, "line-cap", &format!("line-strip `{id}` line-cap"))?;
+    let line_cap = required_string(record, "line-cap", &format!("line-strip `{id}` line-cap"))?;
     validate_line_cap(&id, &line_cap)?;
-    let line_join = required_string(
-        &record,
-        "line-join",
-        &format!("line-strip `{id}` line-join"),
-    )?;
+    let line_join = required_string(record, "line-join", &format!("line-strip `{id}` line-join"))?;
     validate_line_join(&id, &line_join)?;
     Ok(LineStripElement {
         id,
         positions,
-        stroke: required_string(&record, "stroke", "line-strip.stroke")?,
+        stroke: required_string(record, "stroke", "line-strip.stroke")?,
         stroke_width,
         line_cap,
         line_join,
         opacity,
-        closed: required_bool(&record, "closed", "line-strip.closed")?,
+        closed: required_bool(record, "closed", "line-strip.closed")?,
     })
 }
 
@@ -674,55 +703,68 @@ fn record_element<T: FromRecord>(value: &LegacyValue) -> MResult<T> {
 }
 
 fn table_rows<T: FromRecord>(table: &MechTable) -> MResult<Vec<T>> {
-    for required in T::REQUIRED {
+    table_records(table, T::KIND, T::REQUIRED)?
+        .iter()
+        .enumerate()
+        .map(|(row, record)| {
+            T::from_record(record).map_err(|err| {
+                scene_error(
+                    "SceneSchema",
+                    format!("{} table row {}: {err:?}", T::KIND, row + 1),
+                )
+            })
+        })
+        .collect()
+}
+
+fn table_records(
+    table: &MechTable,
+    kind: &str,
+    required_fields: &[&str],
+) -> MResult<Vec<MechRecord>> {
+    for required in required_fields {
         if !table.col_names.values().any(|name| name == required) {
             return Err(scene_error(
                 "SceneSchema",
-                format!("{} table missing required column `{required}`", T::KIND),
+                format!("{kind} table missing required column `{required}`"),
             ));
         }
     }
     for (col_id, name) in &table.col_names {
-        if !T::REQUIRED.contains(&name.as_str()) {
+        if !required_fields.contains(&name.as_str()) {
             return Err(scene_error(
                 "SceneSchema",
-                format!("{} table unknown column `{name}`", T::KIND),
+                format!("{kind} table unknown column `{name}`"),
             ));
         }
         let Some((_, matrix)) = table.data.get(col_id) else {
             return Err(scene_error(
                 "SceneSchema",
-                format!("{} table column `{name}` has no data", T::KIND),
+                format!("{kind} table column `{name}` has no data"),
             ));
         };
         if matrix.rows() != table.rows {
             return Err(scene_error(
                 "SceneSchema",
                 format!(
-                    "{} table column `{name}` length mismatch: expected {}, got {}",
-                    T::KIND,
+                    "{kind} table column `{name}` length mismatch: expected {}, got {}",
                     table.rows,
                     matrix.rows()
                 ),
             ));
         }
     }
-    let mut out = Vec::with_capacity(table.rows);
+    let mut records = Vec::with_capacity(table.rows);
     for row in 1..=table.rows {
         let record = table.get_record(row).ok_or_else(|| {
             scene_error(
                 "SceneSchema",
-                format!("{} table row {row} could not be materialized", T::KIND),
+                format!("{kind} table row {row} could not be materialized"),
             )
         })?;
-        out.push(T::from_record(&record).map_err(|err| {
-            scene_error(
-                "SceneSchema",
-                format!("{} table row {row}: {err:?}", T::KIND),
-            )
-        })?);
+        records.push(record);
     }
-    Ok(out)
+    Ok(records)
 }
 
 fn record_value<'a>(record: &'a MechRecord, field: &str) -> Option<&'a LegacyValue> {

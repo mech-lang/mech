@@ -556,9 +556,29 @@ fn handle_column_kind(
             );
         }
 
-        x => {
-            println!("Unsupported kind in table column: {:?}", x);
-            todo!()
+        declared_kind => {
+            let values = val.as_vec();
+            for value in &values {
+                let actual_kind = value.deref_kind();
+                if actual_kind != declared_kind {
+                    return Err(MechError::new(
+                        TableColumnKindMismatchError {
+                            column_id: id,
+                            expected_kind: declared_kind.clone(),
+                            actual_kind,
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+            }
+            data_map.insert(
+                id,
+                (
+                    declared_kind,
+                    LegacyValue::to_matrix(values.clone(), values.len(), 1),
+                ),
+            );
         }
     }
 

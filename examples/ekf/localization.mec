@@ -61,10 +61,18 @@ the same camera and measurement path.
   camera-max-range := 3.6
   camera-range-fade := 0.18
 
+  -- Each row is one camera. Two-element position vectors broadcast across all
+  -- four rows, so geometry never has to split into separate x and y equations.
   cameras := [1.0 1.0
               9.0 1.0
               9.0 9.0
               1.0 9.0]
+  screen-scale := 62.0
+  screen-origin := [120.0
+                    700.0]
+  screen-axis := [1.0
+                 -1.0]
+  camera-screen := screen-origin' + screen-scale * cameras * screen-axis'
 
   -- Scene pointer presses toggle the camera under the cursor. The enable mask
   -- is resident Mech state: it gates the measurement before the EKF input and
@@ -76,11 +84,9 @@ the same camera and measurement path.
   scene-pointer-pressed := @scene/pointer-pressed
   scene-pointer-delta := scene-pointer-pulse - last-scene-pointer-pulse
   scene-pointer-toggle-parity := scene-pointer-delta % 2.0
-  scene-pointer-screen-x := (scene-pointer-position[1] + 1.0) * 430.0
-  scene-pointer-screen-y := (1.0 - scene-pointer-position[2]) * 385.0
-  camera-screen-x := [182.0; 678.0; 678.0; 182.0]
-  camera-screen-y := [638.0; 638.0; 142.0; 142.0]
-  scene-pointer-camera-distance-square := (camera-screen-x - scene-pointer-screen-x) ^ 2 + (camera-screen-y - scene-pointer-screen-y) ^ 2
+  scene-pointer-screen := [430.0; -385.0] * scene-pointer-position + [430.0; 385.0]
+  scene-pointer-camera-offset := camera-screen - scene-pointer-screen'
+  scene-pointer-camera-distance-square := (scene-pointer-camera-offset ^ 2) ** [1.0; 1.0]
   scene-pointer-hit-raw := 484.0 - scene-pointer-camera-distance-square
   scene-pointer-hit-relu := (scene-pointer-hit-raw + (scene-pointer-hit-raw ^ 2) ^ 0.5) / 2.0
   scene-pointer-hit := scene-pointer-hit-relu - (scene-pointer-hit-relu - 1.0 + ((scene-pointer-hit-relu - 1.0) ^ 2) ^ 0.5) / 2.0
@@ -144,37 +150,33 @@ reduction make the corners smooth without position clamps.
   phase-progress := ((drive-phase-index - 1.0) % side-ticks) / side-ticks
   path-parameter := drive-phase + phase-progress
   lookahead-parameter := (path-parameter + 0.15) % 4.0
-  lookahead-relu-0 := (lookahead-parameter + (lookahead-parameter ^ 2) ^ 0.5) / 2.0
-  lookahead-relu-1 := (lookahead-parameter - 1.0 + ((lookahead-parameter - 1.0) ^ 2) ^ 0.5) / 2.0
-  lookahead-relu-2 := (lookahead-parameter - 2.0 + ((lookahead-parameter - 2.0) ^ 2) ^ 0.5) / 2.0
-  lookahead-relu-3 := (lookahead-parameter - 3.0 + ((lookahead-parameter - 3.0) ^ 2) ^ 0.5) / 2.0
-  lookahead-relu-4 := (lookahead-parameter - 4.0 + ((lookahead-parameter - 4.0) ^ 2) ^ 0.5) / 2.0
-  lookahead-clamp-0 := lookahead-relu-0 - lookahead-relu-1
-  lookahead-clamp-1 := lookahead-relu-1 - lookahead-relu-2
-  lookahead-clamp-2 := lookahead-relu-2 - lookahead-relu-3
-  lookahead-clamp-3 := lookahead-relu-3 - lookahead-relu-4
-  target-x := low-bound + field-span * (lookahead-clamp-0 - lookahead-clamp-2)
-  target-y := low-bound + field-span * (lookahead-clamp-1 - lookahead-clamp-3)
+  lookahead-breakpoints := 0.0..=4.0
+  lookahead-offset := lookahead-parameter - lookahead-breakpoints'
+  lookahead-relu := (lookahead-offset + (lookahead-offset ^ 2) ^ 0.5) / 2.0
+  lookahead-clamp := lookahead-relu[1..=4] - lookahead-relu[2..=5]
+  target-position := low-bound + field-span * ([1.0 0.0 -1.0 0.0
+                                                0.0 1.0 0.0 -1.0] ** lookahead-clamp)
   ~truth := [2.5
              2.5
              0.0]
-  simulation-time := next-simulation-step * 0.05
-  target-heading := math/atan2(target-y - truth[2], target-x - truth[1])
+  simulation-time := next-simulation-step * Δt
+  target-offset := target-position - truth[1..=2]
+  target-heading := math/atan2(target-offset[2], target-offset[1])
   heading-error-raw := target-heading - truth[3]
   heading-error := math/atan2(math/sin(heading-error-raw), math/cos(heading-error-raw))
   requested-omega := heading-gain * heading-error
   commanded-omega := (((requested-omega + turn-rate-limit) ^ 2) ^ 0.5 - ((requested-omega - turn-rate-limit) ^ 2) ^ 0.5) / 2.0
   turn-fraction := ((commanded-omega ^ 2) ^ 0.5) / turn-rate-limit
   commanded-speed := cruise-speed * (1.0 - 0.42 * turn-fraction)
-  actual-speed-scale := 0.965 + 0.025 * math/sin(simulation-time * 0.73)
-  actual-omega-scale := 0.99 + 0.01 * math/sin(simulation-time * 0.51 + 0.8)
-  actual-speed := commanded-speed * actual-speed-scale
-  actual-omega := commanded-omega * actual-omega-scale
-  truth-mid-heading := truth[3] + actual-omega * Δt / 2.0
-
-  attempted-truth := truth + [actual-speed * math/cos(truth-mid-heading) * Δt
-                              actual-speed * math/sin(truth-mid-heading) * Δt
-                              actual-omega * Δt]
+  commanded-control := [commanded-speed
+                        commanded-omega]
+  actual-control-scale := [0.965; 0.99] + [0.025; 0.01] * math/sin(simulation-time * [0.73; 0.51] + [0.0; 0.8])
+  actual-control := commanded-control * actual-control-scale
+  truth-mid-heading := truth[3] + actual-control[2] * Δt / 2.0
+  truth-velocity := [math/cos(truth-mid-heading) 0.0
+                     math/sin(truth-mid-heading) 0.0
+                     0.0                           1.0] ** actual-control
+  attempted-truth := truth + truth-velocity * Δt
   next-truth := truth + clock-pulse * (attempted-truth - truth)
 
   truth = next-truth
@@ -233,10 +235,9 @@ than pretending that every camera sees through the entire field.
   camera-dwell-ticks := side-ticks / 2.0
   camera-schedule<[f64]:1,376> := #CameraSchedule(camera-dwell-ticks)
   camera-index := camera-schedule[1,drive-phase-index]
-  active-camera := cameras[camera-index,:]
-  camera-dx-all := cameras[:,1] - attempted-truth[1]
-  camera-dy-all := cameras[:,2] - attempted-truth[2]
-  camera-range-all := (camera-dx-all ^ 2 + camera-dy-all ^ 2) ^ 0.5
+  active-camera := cameras[camera-index,:]'
+  camera-offsets := cameras - attempted-truth[1..=2]'
+  camera-range-all := ((camera-offsets ^ 2) ** [1.0; 1.0]) ^ 0.5
   camera-inside-fade-raw := (camera-max-range - camera-range-all) / camera-range-fade
   camera-inside-fade-relu := (camera-inside-fade-raw + (camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
   camera-inside-fade-one-relu := (camera-inside-fade-raw - 1.0 + ((camera-inside-fade-raw - 1.0) ^ 2) ^ 0.5) / 2.0
@@ -248,26 +249,22 @@ than pretending that every camera sees through the entire field.
   -- host-side copy of the formula, so every runtime can qualify the hard
   -- sensing contract even when the driven trajectory does not land on an
   -- exact floating-point boundary.
-  camera-boundary-probe-distances := [camera-max-range - camera-range-fade
-                                      camera-max-range
-                                      camera-max-range + 0.000001
-                                      camera-max-range + camera-range-fade]
+  camera-boundary-probe-distances := camera-max-range + [-camera-range-fade; 0.0; 0.000001; camera-range-fade]
   camera-boundary-probe-raw := (camera-max-range - camera-boundary-probe-distances) / camera-range-fade
   camera-boundary-probe-relu := (camera-boundary-probe-raw + (camera-boundary-probe-raw ^ 2) ^ 0.5) / 2.0
   camera-boundary-probe-one-relu := (camera-boundary-probe-raw - 1.0 + ((camera-boundary-probe-raw - 1.0) ^ 2) ^ 0.5) / 2.0
   camera-boundary-probe-visibility := camera-boundary-probe-relu - camera-boundary-probe-one-relu
-  camera-boundary-probe-correction := [11.0 + camera-boundary-probe-visibility[1] * (21.0 - 11.0)
-                                       12.0 + camera-boundary-probe-visibility[2] * (22.0 - 12.0)
-                                       13.0 + camera-boundary-probe-visibility[3] * (23.0 - 13.0)
-                                       14.0 + camera-boundary-probe-visibility[4] * (24.0 - 14.0)]
+  camera-boundary-probe-baseline := [11.0; 12.0; 13.0; 14.0]
+  camera-boundary-probe-target := [21.0; 22.0; 23.0; 24.0]
+  camera-boundary-probe-correction := camera-boundary-probe-baseline + camera-boundary-probe-visibility * (camera-boundary-probe-target - camera-boundary-probe-baseline)
   active-camera-visibility := camera-visibility[camera-index]
-  camera-dx := active-camera[1] - attempted-truth[1]
-  camera-dy := active-camera[2] - attempted-truth[2]
-  camera-range := (camera-dx ^ 2 + camera-dy ^ 2) ^ 0.5
-  measured-range := camera-range + 0.11 * math/sin(simulation-time * 1.57 + camera-index * 0.7)
-  measured-bearing := math/atan2(camera-dy, camera-dx) - attempted-truth[3] + 0.011 * math/sin(simulation-time * 1.91 + camera-index)
-  observation := [measured-range
-                  measured-bearing]
+  camera-offset := active-camera - attempted-truth[1..=2]
+  camera-range-square := [1.0 1.0] ** (camera-offset ^ 2)
+  camera-range := camera-range-square[1] ^ 0.5
+  observation-model := [camera-range
+                        math/atan2(camera-offset[2], camera-offset[1]) - attempted-truth[3]]
+  observation-noise-phase := simulation-time * [1.57; 1.91] + camera-index * [0.7; 1.0]
+  observation := observation-model + [0.11; 0.011] * math/sin(observation-noise-phase)
 
 
 4. Extended Kalman Filter
@@ -280,31 +277,23 @@ stable Joseph form and is symmetrized before becoming the next resident state.
 The ordinary arrays here define 1,000 independent lanes. Lane zero receives the
 exact displayed measurement; the remaining lanes receive deterministic sensor
 perturbations so the work is a real filter ensemble rather than 1,000 copies of
-one arithmetic result. Only lane zero is sampled back for the scene.
+one arithmetic result. Base control, camera, and measurement rows broadcast
+directly across the lane matrices. Only lane zero is sampled back for the scene.
 
   filter-count := 1000.0
   filter-index := 1.0..=filter-count
   filter-phase := 2.0 * 3.141592654 * (filter-index - 1.0) / filter-count
   lane-dt-base := Δt * filter-step-span
-  lane-speed-base := commanded-speed
-  lane-omega-base := commanded-omega
-  lane-camera-x-base := active-camera[1]
-  lane-camera-y-base := active-camera[2]
-  lane-range-base := observation[1]
-  lane-bearing-base := observation[2]
-  lane-visibility-base := active-camera-visibility
-  lane-zero := filter-index * 0.0
-  lane-dt := lane-zero + lane-dt-base
-  lane-speed := lane-zero + lane-speed-base * (1.0 + 0.002 * math/sin(filter-phase * 3.0))
-  lane-omega := lane-zero + lane-omega-base * (1.0 + 0.002 * math/sin(filter-phase * 5.0))
-  lane-camera-x := lane-zero + lane-camera-x-base
-  lane-camera-y := lane-zero + lane-camera-y-base
-  lane-range := lane-zero + lane-range-base + 0.012 * math/sin(filter-phase * 7.0)
-  lane-bearing := lane-zero + lane-bearing-base + 0.0015 * math/sin(filter-phase * 11.0)
-  lane-visibility := lane-zero + lane-visibility-base
-  lane-control := [lane-dt' lane-speed' lane-omega']
-  lane-camera := [lane-camera-x' lane-camera-y']
-  lane-measurement := [lane-range' lane-bearing' lane-visibility']
+  lane-control-base := [lane-dt-base commanded-speed commanded-omega]
+  lane-control-phase := filter-phase' ** [0.0 3.0 5.0]
+  lane-control-scale := 1.0 + math/sin(lane-control-phase) * [0.0 0.002 0.002]
+  lane-control := lane-control-base * lane-control-scale
+  lane-zero := filter-index' * 0.0
+  lane-camera-zero := lane-zero ** [1.0 1.0]
+  lane-camera := lane-camera-zero + active-camera'
+  lane-measurement-base := [observation' active-camera-visibility]
+  lane-measurement-phase := filter-phase' ** [7.0 11.0 0.0]
+  lane-measurement := lane-measurement-base + math/sin(lane-measurement-phase) * [0.012 0.0015 0.0]
 
   @filters/input/control <- lane-control
   @filters/input/camera <- lane-camera
@@ -422,105 +411,99 @@ covariance. Steady footprint guides show each camera's real maximum range.
 Camera rays terminate at simulated truth and fade to exactly zero outside that
 range. Only the scheduled in-range camera's noisy values enter the filter.
 
-  screen-scale := 62.0
-  screen-origin-x := 120.0
-  screen-origin-y := 700.0
-  truth-screen-x := screen-origin-x + next-truth[1] * screen-scale
-  truth-screen-y := screen-origin-y - next-truth[2] * screen-scale
-  display-camera-dx-all := cameras[:,1] - next-truth[1]
-  display-camera-dy-all := cameras[:,2] - next-truth[2]
-  display-camera-range-all := (display-camera-dx-all ^ 2 + display-camera-dy-all ^ 2) ^ 0.5
+  world-positions := [next-truth[1..=2] predicted-estimate[1..=2] corrected-estimate[1..=2]]
+  screen-positions := screen-origin + screen-scale * screen-axis * world-positions
+  truth-screen := screen-positions[:,1]
+  predicted-screen := screen-positions[:,2]
+  estimate-screen := screen-positions[:,3]
+  display-camera-offsets := cameras - next-truth[1..=2]'
+  display-camera-range-all := ((display-camera-offsets ^ 2) ** [1.0; 1.0]) ^ 0.5
   display-camera-inside-fade-raw := (camera-max-range - display-camera-range-all) / camera-range-fade
   display-camera-inside-fade-relu := (display-camera-inside-fade-raw + (display-camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
   display-camera-inside-fade-one-relu := (display-camera-inside-fade-raw - 1.0 + ((display-camera-inside-fade-raw - 1.0) ^ 2) ^ 0.5) / 2.0
   display-camera-visibility := (display-camera-inside-fade-relu - display-camera-inside-fade-one-relu) * camera-enabled
-  predicted-screen-x := screen-origin-x + predicted-estimate[1] * screen-scale
-  predicted-screen-y := screen-origin-y - predicted-estimate[2] * screen-scale
-  estimate-screen-x := screen-origin-x + corrected-estimate[1] * screen-scale
-  estimate-screen-y := screen-origin-y - corrected-estimate[2] * screen-scale
-
-  position-error-x := corrected-estimate[1] - next-truth[1]
-  position-error-y := corrected-estimate[2] - next-truth[2]
-  position-error := (position-error-x ^ 2 + position-error-y ^ 2) ^ 0.5
+  position-error-vector := corrected-estimate[1..=2] - next-truth[1..=2]
+  position-error-square := [1.0 1.0] ** (position-error-vector ^ 2)
+  position-error := position-error-square[1] ^ 0.5
 
   ellipse-a := corrected-covariance[1,1]
   ellipse-b := corrected-covariance[1,2]
   ellipse-c := corrected-covariance[2,2]
   ellipse-root := (((ellipse-a - ellipse-c) / 2.0) ^ 2 + ellipse-b ^ 2) ^ 0.5
-  ellipse-major := ((ellipse-a + ellipse-c) / 2.0 + ellipse-root) ^ 0.5 * 2.0
-  ellipse-minor := ((ellipse-a + ellipse-c) / 2.0 - ellipse-root) ^ 0.5 * 2.0
+  ellipse-eigenvalues := (ellipse-a + ellipse-c) / 2.0 + [1.0; -1.0] * ellipse-root
+  ellipse-axes := (ellipse-eigenvalues ^ 0.5) * 2.0
   ellipse-rotation := 0.5 * math/atan2(2.0 * ellipse-b, ellipse-a - ellipse-c)
   ellipse-samples := 0..=64
   ellipse-angle := ellipse-samples' * (2.0 * π / 64.0)
-  ellipse-cos := math/cos(ellipse-angle)
-  ellipse-sin := math/sin(ellipse-angle)
   ellipse-display-floor := 0.04
-  display-ellipse-major := (ellipse-major ^ 2 + ellipse-display-floor ^ 2) ^ 0.5
-  display-ellipse-minor := (ellipse-minor ^ 2 + ellipse-display-floor ^ 2) ^ 0.5
-  ellipse-x := estimate-screen-x + screen-scale * (display-ellipse-major * ellipse-cos * math/cos(ellipse-rotation) - display-ellipse-minor * ellipse-sin * math/sin(ellipse-rotation))
-  ellipse-y := estimate-screen-y - screen-scale * (display-ellipse-major * ellipse-cos * math/sin(ellipse-rotation) + display-ellipse-minor * ellipse-sin * math/cos(ellipse-rotation))
-  covariance-ellipse := [ellipse-x ellipse-y]
+  display-ellipse-axes := (ellipse-axes ^ 2 + ellipse-display-floor ^ 2) ^ 0.5
+  ellipse-axis-points := [math/cos(ellipse-angle) math/sin(ellipse-angle)] * display-ellipse-axes'
+  ellipse-rotation-matrix := [ math/cos(ellipse-rotation) math/sin(ellipse-rotation)
+                              -math/sin(ellipse-rotation) math/cos(ellipse-rotation)]
+  covariance-ellipse := estimate-screen' + screen-scale * (ellipse-axis-points ** ellipse-rotation-matrix) * screen-axis'
 
   trail-samples := 1..=376
-  initial-truth-path-x-row := [275.0 | sample <- trail-samples]
-  initial-truth-path-y-row := [545.0 | sample <- trail-samples]
-  initial-estimate-path-x-row := [299.8 | sample <- trail-samples]
-  initial-estimate-path-y-row := [566.7 | sample <- trail-samples]
-  initial-truth-path-x := initial-truth-path-x-row'
-  initial-truth-path-y := initial-truth-path-y-row'
-  initial-estimate-path-x := initial-estimate-path-x-row'
-  initial-estimate-path-y := initial-estimate-path-y-row'
-  ~truth-path := [initial-truth-path-x initial-truth-path-y]
-  ~estimate-path := [initial-estimate-path-x initial-estimate-path-y]
-  truth-screen-point := ([truth-screen-x truth-screen-y])
-  estimate-screen-point := ([estimate-screen-x estimate-screen-y])
-  advanced-truth-path := matrix/vertcat(truth-path[2..=376,:], truth-screen-point)
-  advanced-estimate-path := matrix/vertcat(estimate-path[2..=376,:], estimate-screen-point)
+  trail-zero := trail-samples' * 0.0
+  trail-zero-points := trail-zero ** [1.0 1.0]
+  ~truth-path := trail-zero-points + [275.0 545.0]
+  ~estimate-path := trail-zero-points + [299.8 566.7]
+  advanced-truth-path := matrix/vertcat(truth-path[2..=376,:], truth-screen')
+  advanced-estimate-path := matrix/vertcat(estimate-path[2..=376,:], estimate-screen')
   next-truth-path := truth-path + sample-pulse * (advanced-truth-path - truth-path)
   next-estimate-path := estimate-path + sample-pulse * (advanced-estimate-path - estimate-path)
   truth-path = next-truth-path
   estimate-path = next-estimate-path
 
-  square-guide := [275.0 545.0
-                   585.0 545.0
-                   585.0 235.0
-                   275.0 235.0
-                   275.0 545.0]
+  square-guide-world := [low-bound low-bound
+                         high-bound low-bound
+                         high-bound high-bound
+                         low-bound high-bound
+                         low-bound low-bound]
+  square-guide := screen-origin' + screen-scale * square-guide-world * screen-axis'
 
-  scene-circles := (
-    {id: "camera-range-1", x: 182, y: 638, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16 * camera-enabled[1]},
-    {id: "camera-range-2", x: 678, y: 638, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16 * camera-enabled[2]},
-    {id: "camera-range-3", x: 678, y: 142, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16 * camera-enabled[3]},
-    {id: "camera-range-4", x: 182, y: 142, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16 * camera-enabled[4]},
-    {id: "camera-disabled-1", x: 182, y: 638, radius: 9, fill: "#59616b", stroke: "none", stroke-width: 0, opacity: 1.0 - camera-enabled[1]},
-    {id: "camera-disabled-2", x: 678, y: 638, radius: 9, fill: "#59616b", stroke: "none", stroke-width: 0, opacity: 1.0 - camera-enabled[2]},
-    {id: "camera-disabled-3", x: 678, y: 142, radius: 9, fill: "#59616b", stroke: "none", stroke-width: 0, opacity: 1.0 - camera-enabled[3]},
-    {id: "camera-disabled-4", x: 182, y: 142, radius: 9, fill: "#59616b", stroke: "none", stroke-width: 0, opacity: 1.0 - camera-enabled[4]},
-    {id: "camera-1", x: 182, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: camera-enabled[1]},
-    {id: "camera-2", x: 678, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: camera-enabled[2]},
-    {id: "camera-3", x: 678, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: camera-enabled[3]},
-    {id: "camera-4", x: 182, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: camera-enabled[4]},
-    {id: "truth", x: truth-screen-x, y: truth-screen-y, radius: 8, fill: "#63d6c5", stroke: "#d7fff8", stroke-width: 1.5, opacity: 1},
-    {id: "prediction", x: predicted-screen-x, y: predicted-screen-y, radius: 6, fill: "none", stroke: "#f2b84b", stroke-width: 2, opacity: 1},
-    {id: "estimate", x: estimate-screen-x, y: estimate-screen-y, radius: 7, fill: "#f087b8", stroke: "#ffe1ef", stroke-width: 1.5, opacity: 1},
-    {id: "legend-truth", x: 30, y: 718, radius: 4, fill: "#63d6c5", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-prediction", x: 205, y: 718, radius: 4, fill: "#f2b84b", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-estimate", x: 405, y: 718, radius: 4, fill: "#f087b8", stroke: "none", stroke-width: 0, opacity: 1}
-  )
+  camera-range-opacity := 0.16 * camera-enabled
+  camera-disabled-opacity := 1.0 - camera-enabled
+  camera-ray-opacity := 0.4 * display-camera-visibility
+  camera-label-opacity := 0.32 + 0.68 * camera-enabled
+  heading-angles := [next-truth[3] corrected-estimate[3]]
+  heading-unit-vectors := matrix/vertcat(math/cos(heading-angles), math/sin(heading-angles))
+  heading-screen-vectors := screen-axis * heading-unit-vectors * [18.0 16.0]
+  heading-screen-points := [truth-screen estimate-screen] + heading-screen-vectors
 
-  scene-lines := (
-    {id: "frame-top", x1: 120, y1: 80, x2: 740, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "frame-right", x1: 740, y1: 80, x2: 740, y2: 700, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "frame-bottom", x1: 740, y1: 700, x2: 120, y2: 700, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "frame-left", x1: 120, y1: 700, x2: 120, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-1", x1: 182, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * display-camera-visibility[1], rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-2", x1: 678, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * display-camera-visibility[2], rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-3", x1: 678, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * display-camera-visibility[3], rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-4", x1: 182, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * display-camera-visibility[4], rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "truth-heading", x1: truth-screen-x, y1: truth-screen-y, x2: truth-screen-x + 18.0 * math/cos(next-truth[3]), y2: truth-screen-y - 18.0 * math/sin(next-truth[3]), stroke: "#d7fff8", stroke-width: 2, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "estimate-heading", x1: estimate-screen-x, y1: estimate-screen-y, x2: estimate-screen-x + 16.0 * math/cos(corrected-estimate[3]), y2: estimate-screen-y - 16.0 * math/sin(corrected-estimate[3]), stroke: "#ffe1ef", stroke-width: 1.5, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0}
-  )
+  scene-circles := |id<string> x<f64> y<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
+    | "camera-range-1" camera-screen[1,1] camera-screen[1,2] camera-max-range * screen-scale "none" "#f4c95d" 0.8 camera-range-opacity[1] |
+    | "camera-range-2" camera-screen[2,1] camera-screen[2,2] camera-max-range * screen-scale "none" "#f4c95d" 0.8 camera-range-opacity[2] |
+    | "camera-range-3" camera-screen[3,1] camera-screen[3,2] camera-max-range * screen-scale "none" "#f4c95d" 0.8 camera-range-opacity[3] |
+    | "camera-range-4" camera-screen[4,1] camera-screen[4,2] camera-max-range * screen-scale "none" "#f4c95d" 0.8 camera-range-opacity[4] |
+    | "camera-disabled-1" camera-screen[1,1] camera-screen[1,2] 9 "#59616b" "none" 0 camera-disabled-opacity[1] |
+    | "camera-disabled-2" camera-screen[2,1] camera-screen[2,2] 9 "#59616b" "none" 0 camera-disabled-opacity[2] |
+    | "camera-disabled-3" camera-screen[3,1] camera-screen[3,2] 9 "#59616b" "none" 0 camera-disabled-opacity[3] |
+    | "camera-disabled-4" camera-screen[4,1] camera-screen[4,2] 9 "#59616b" "none" 0 camera-disabled-opacity[4] |
+    | "camera-1" camera-screen[1,1] camera-screen[1,2] 9 "#f4c95d" "#fff1b8" 2 camera-enabled[1] |
+    | "camera-2" camera-screen[2,1] camera-screen[2,2] 9 "#f4c95d" "#fff1b8" 2 camera-enabled[2] |
+    | "camera-3" camera-screen[3,1] camera-screen[3,2] 9 "#f4c95d" "#fff1b8" 2 camera-enabled[3] |
+    | "camera-4" camera-screen[4,1] camera-screen[4,2] 9 "#f4c95d" "#fff1b8" 2 camera-enabled[4] |
+    | "truth" truth-screen[1] truth-screen[2] 8 "#63d6c5" "#d7fff8" 1.5 1 |
+    | "prediction" predicted-screen[1] predicted-screen[2] 6 "none" "#f2b84b" 2 1 |
+    | "estimate" estimate-screen[1] estimate-screen[2] 7 "#f087b8" "#ffe1ef" 1.5 1 |
+    | "legend-truth" 30 718 4 "#63d6c5" "none" 0 1 |
+    | "legend-prediction" 205 718 4 "#f2b84b" "none" 0 1 |
+    | "legend-estimate" 405 718 4 "#f087b8" "none" 0 1 |
 
+  scene-lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<string> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
+    | "frame-top" 120 80 740 80 "#27313d" 1 "butt" 1 0 0 0 |
+    | "frame-right" 740 80 740 700 "#27313d" 1 "butt" 1 0 0 0 |
+    | "frame-bottom" 740 700 120 700 "#27313d" 1 "butt" 1 0 0 0 |
+    | "frame-left" 120 700 120 80 "#27313d" 1 "butt" 1 0 0 0 |
+    | "ray-1" camera-screen[1,1] camera-screen[1,2] truth-screen[1] truth-screen[2] "#d9b652" 0.7 "round" camera-ray-opacity[1] 0 0 0 |
+    | "ray-2" camera-screen[2,1] camera-screen[2,2] truth-screen[1] truth-screen[2] "#d9b652" 0.7 "round" camera-ray-opacity[2] 0 0 0 |
+    | "ray-3" camera-screen[3,1] camera-screen[3,2] truth-screen[1] truth-screen[2] "#d9b652" 0.7 "round" camera-ray-opacity[3] 0 0 0 |
+    | "ray-4" camera-screen[4,1] camera-screen[4,2] truth-screen[1] truth-screen[2] "#d9b652" 0.7 "round" camera-ray-opacity[4] 0 0 0 |
+    | "truth-heading" truth-screen[1] truth-screen[2] heading-screen-points[1,1] heading-screen-points[2,1] "#d7fff8" 2 "round" 1 0 0 0 |
+    | "estimate-heading" estimate-screen[1] estimate-screen[2] heading-screen-points[1,2] heading-screen-points[2,2] "#ffe1ef" 1.5 "round" 1 0 0 0 |
+
+  -- These path records remain a tuple because their positions matrices have
+  -- different shapes; the scalar scene collections below are typed tables.
   scene-line-strips := (
     {id: "square-guide", positions: square-guide, stroke: "#536273", stroke-width: 1, line-cap: "round", line-join: "round", opacity: 0.38, closed: true},
     {id: "truth-path", positions: next-truth-path, stroke: "#63d6c5", stroke-width: 2, line-cap: "round", line-join: "round", opacity: 0.8, closed: false},
@@ -528,19 +511,18 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
     {id: "covariance", positions: covariance-ellipse, stroke: "#f087b8", stroke-width: 1.5, line-cap: "round", line-join: "round", opacity: 0.72, closed: true}
   )
 
-  scene-text := (
-    {id: "eyebrow", x: 24, y: 26, fill: "#8fa3b8", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "650", text-anchor: "start", opacity: 1, value: "MECH RESIDENT SENSOR FUSION"},
-    {id: "title", x: 24, y: 62, fill: "#edf2f7", font-size: 36, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "620", text-anchor: "start", opacity: 1, value: "Camera EKF Localization"},
-    {id: "state-label", x: 602, y: 58, fill: "#f4c95d", font-size: 13, font-family: "ui-monospace, SFMono-Regular, Menlo, monospace", font-weight: "650", text-anchor: "start", opacity: 1, value: "V/Ω SQUARE-DRIVE FSM"},
-    {id: "camera-label-1", x: 195, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "start", opacity: 0.32 + 0.68 * camera-enabled[1], value: "CAM 1"},
-    {id: "camera-label-2", x: 665, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 0.32 + 0.68 * camera-enabled[2], value: "CAM 2"},
-    {id: "camera-label-3", x: 665, y: 140, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 0.32 + 0.68 * camera-enabled[3], value: "CAM 3"},
-    {id: "camera-label-4", x: 195, y: 140, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "start", opacity: 0.32 + 0.68 * camera-enabled[4], value: "CAM 4"},
-    {id: "legend-truth-label", x: 40, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "actual robot + path"},
-    {id: "legend-prediction-label", x: 215, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "motion prediction"},
-    {id: "legend-estimate-label", x: 415, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "EKF estimate + 2σ covariance"},
-    {id: "note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "3.6-unit camera range · prediction-only dead zones · Joseph covariance · bounded v/ω cornering"}
-  )
+  scene-text := |id<string> x<f64> y<f64> fill<string> font-size<f64> font-family<string> font-weight<string> text-anchor<string> opacity<f64> value<string>|
+    | "eyebrow" 24 26 "#8fa3b8" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "650" "start" 1 "MECH RESIDENT SENSOR FUSION" |
+    | "title" 24 62 "#edf2f7" 36 "Inter, ui-sans-serif, system-ui, sans-serif" "620" "start" 1 "Camera EKF Localization" |
+    | "state-label" 602 58 "#f4c95d" 13 "ui-monospace, SFMono-Regular, Menlo, monospace" "650" "start" 1 "V/Ω SQUARE-DRIVE FSM" |
+    | "camera-label-1" 195 636 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "start" camera-label-opacity[1] "CAM 1" |
+    | "camera-label-2" 665 636 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "end" camera-label-opacity[2] "CAM 2" |
+    | "camera-label-3" 665 140 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "end" camera-label-opacity[3] "CAM 3" |
+    | "camera-label-4" 195 140 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "start" camera-label-opacity[4] "CAM 4" |
+    | "legend-truth-label" 40 722 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "actual robot + path" |
+    | "legend-prediction-label" 215 722 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "motion prediction" |
+    | "legend-estimate-label" 415 722 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "EKF estimate + 2σ covariance" |
+    | "note" 430 750 "#788a9c" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "middle" 1 "3.6-unit camera range · prediction-only dead zones · Joseph covariance · bounded v/ω cornering" |
 
   field-presentation := {
     width: 860
