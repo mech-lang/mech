@@ -86,6 +86,9 @@ pub use self::relations::*;
 #[cfg(all(feature = "setdata", feature = "size", feature = "u64"))]
 pub use self::setdata::*;
 
+#[cfg(test)]
+mod port_tests;
+
 // ----------------------------------------------------------------------------
 // Set Library
 // ----------------------------------------------------------------------------

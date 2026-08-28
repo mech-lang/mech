@@ -17,23 +17,16 @@ impl MechFunctionFactory for SetUnionFxn {
         FunctionValueRepresentation::Set,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs: Ref<MechSet> = lhs.try_ref()?;
+        let rhs: Ref<MechSet> = rhs.try_ref()?;
+        let out: Ref<MechSet> = out.try_ref()?;
+        Ok(Box::new(Self { lhs, rhs, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechSet> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<MechSet> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(SetUnionFxn { lhs, rhs, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 impl MechFunctionImpl for SetUnionFxn {

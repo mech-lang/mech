@@ -63,22 +63,15 @@ impl MechFunctionFactory for SetPowersetFxn {
         FunctionValueRepresentation::Set,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, input) = invocation.expect_unary()?;
+        let input: Ref<MechSet> = input.try_ref()?;
+        let out: Ref<MechSet> = out.try_ref()?;
+        Ok(Box::new(Self { input, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Unary(out, input) => {
-                let input: Ref<MechSet> = input.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(SetPowersetFxn { input, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 
