@@ -218,7 +218,7 @@ harness = r'''<script>
       return values.length === 15 && values.every(Number.isFinite) ? values : undefined;
     };
     const renderedFilterVisibility = () => {
-      const values = renderedDocumentNumbers("filter-camera-visibility");
+      const values = renderedDocumentNumbers("active-camera-visibility");
       return values.length === 1 && Number.isFinite(values[0]) ? values[0] : undefined;
     };
     const renderedFilterTurn = () => {
@@ -670,13 +670,11 @@ harness = r'''<script>
             rangeOpacity === 0 && rayOpacity === 0 && labelOpacity === 0.32;
           cameraToggleDisabled = cameraToggleVisualStateValid;
         }
-        const pointerPressed = renderedDocumentNumbers("scene-pointer-pressed");
         const pointerPulse = renderedDocumentNumbers("scene-pointer-pulse");
         if (
           cameraToggleDisableReleased && !cameraToggleDisableRetained &&
           cameraToggleStateReadable && enabledMask[0] === 0 &&
           enabledMask.slice(1).every(value => value === 1) &&
-          pointerPressed.length === 1 && pointerPressed[0] === 0 &&
           pointerPulse.length === 1 && pointerPulse[0] === 1 &&
           logicalComputeTurn > cameraToggleDispatchAfterDisableRelease
         ) {
@@ -704,7 +702,6 @@ harness = r'''<script>
         if (
           cameraToggleEnableReleased && cameraToggleStateReadable &&
           enabledMask.every(value => value === 1) &&
-          pointerPressed.length === 1 && pointerPressed[0] === 0 &&
           pointerPulse.length === 1 && pointerPulse[0] === 2 &&
           logicalComputeTurn > cameraToggleDispatchAfterEnableRelease &&
           Number.isFinite(filterVisibility) && filterVisibility > 0

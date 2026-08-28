@@ -34,6 +34,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["math"], "mod", bind_remainder)?;
     register(builder, &["math"], "neg", bind_negate)?;
     register(builder, &["math"], "pow", bind_pow)?;
+    register(builder, &["math"], "abs", bind_abs)?;
+    register(builder, &["math"], "floor", bind_floor)?;
+    register(builder, &["math"], "sqrt", bind_sqrt)?;
     register(builder, &["math"], "atan2", bind_atan2)?;
     register(builder, &["math"], "cos", bind_cos)?;
     register(builder, &["math"], "sin", bind_sin)?;
@@ -226,6 +229,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "ModRDS<f64>", bind_remainder)?;
     register(builder, &runtime, "MathCosF64S", bind_cos)?;
     register(builder, &runtime, "MathCosF64VD", bind_cos)?;
+    register(builder, &runtime, "MathAbsF64S", bind_abs)?;
+    register(builder, &runtime, "MathAbsF64VD", bind_abs)?;
+    register(builder, &runtime, "MathFloorF64S", bind_floor)?;
+    register(builder, &runtime, "MathFloorF64VD", bind_floor)?;
+    register(builder, &runtime, "MathSqrtF64S", bind_sqrt)?;
+    register(builder, &runtime, "MathSqrtF64VD", bind_sqrt)?;
     register(builder, &runtime, "MathSinF64S", bind_sin)?;
     register(builder, &runtime, "MathSinF64VD", bind_sin)?;
     register(builder, &runtime, "Atan2F64", bind_atan2)?;
@@ -897,6 +906,24 @@ fn bind_cos(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_unary_f64(request, cosine)
+}
+
+fn bind_abs(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_unary_f64(request, absolute)
+}
+
+fn bind_floor(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_unary_f64(request, floor)
+}
+
+fn bind_sqrt(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_unary_f64(request, square_root)
 }
 
 fn bind_sin(
@@ -2443,6 +2470,30 @@ fn cosine(
     unary_f64(inputs, output, f64::cos)
 }
 
+fn absolute(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_f64(inputs, output, f64::abs)
+}
+
+fn floor(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_f64(inputs, output, f64::floor)
+}
+
+fn square_root(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_f64(inputs, output, f64::sqrt)
+}
+
 fn sine(
     _kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -3567,6 +3618,25 @@ mod tests {
 
         fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
             self.0.get(index).copied()
+        }
+    }
+
+    #[test]
+    fn resident_unary_math_supports_abs_floor_and_sqrt_vectors() {
+        let cases: &[(mech_core::ResidentKernelExecutor, &[f64], &[f64])] = &[
+            (absolute, &[-2.5, 0.0, 3.25], &[2.5, 0.0, 3.25]),
+            (floor, &[-1.2, 0.0, 3.9], &[-2.0, 0.0, 3.0]),
+            (square_root, &[0.0, 4.0, 9.0], &[0.0, 2.0, 3.0]),
+        ];
+        for (executor, input, expected) in cases {
+            let values = [ResidentValueRef::F64(input)];
+            let kernel = BoundResidentKernel::new(*executor, Box::new([]));
+            let mut output = [f64::NAN; 3];
+            assert_eq!(
+                kernel.execute(&Inputs(&values), ResidentValueMut::F64(&mut output)),
+                Ok(true),
+            );
+            assert_eq!(&output, expected);
         }
     }
 

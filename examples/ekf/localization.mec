@@ -31,26 +31,23 @@ its measurements are removed before the EKF update. Click it again to restore
 the same camera and measurement path.
 
 @clock := timer://clock/tick{:read(tick)}
-@scene := scene://localization/frame{:read(pointer-pulse), :read(pointer-position), :read(pointer-pressed), :read(pointer-delta-seconds), :write(replace)}
-@filters := compute://filters/kernel{:read(sample/result.0), :read(sample/result.2), :read(turns), :write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}
+@scene := scene://localization/frame{:read(pointer-pulse), :read(pointer-position), :write(replace)}
+@filters := compute://filters/kernel{:read(sample/result.0), :read(turns), :write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}
 
   π := 3.141592654
   ~last-clock-tick := 0.0
   clock-delta := @clock/tick - last-clock-tick
-  clock-delta-positive := (clock-delta + (clock-delta ^ 2) ^ 0.5) / 2.0
-  clock-pulse := clock-delta-positive - (clock-delta-positive - 1.0 + ((clock-delta-positive - 1.0) ^ 2) ^ 0.5) / 2.0
+  clock-pulse := (math/abs(clock-delta) - math/abs(clock-delta - 1.0) + 1.0) / 2.0
   ~requested-compute-turn := 0.0
   ~last-requested-simulation-step := 0.0
   compute-inflight-gap := requested-compute-turn - @filters/turns
-  compute-inflight-gap-absolute := (compute-inflight-gap ^ 2) ^ 0.5
-  compute-idle-raw := 1.0 - compute-inflight-gap-absolute
-  compute-idle := (compute-idle-raw + (compute-idle-raw ^ 2) ^ 0.5) / 2.0
+  compute-idle-raw := 1.0 - math/abs(compute-inflight-gap)
+  compute-idle := (compute-idle-raw + math/abs(compute-idle-raw)) / 2.0
   request-pulse := clock-pulse * compute-idle
   next-requested-compute-turn := requested-compute-turn + request-pulse
   ~last-filter-turn := 0.0
   filter-turn-delta := @filters/turns - last-filter-turn
-  filter-turn-delta-positive := (filter-turn-delta + (filter-turn-delta ^ 2) ^ 0.5) / 2.0
-  sample-pulse := filter-turn-delta-positive - (filter-turn-delta-positive - 1.0 + ((filter-turn-delta-positive - 1.0) ^ 2) ^ 0.5) / 2.0
+  sample-pulse := (math/abs(filter-turn-delta) - math/abs(filter-turn-delta - 1.0) + 1.0) / 2.0
   Δt := 0.05
   cruise-speed := 1.15
   turn-rate-limit := 1.75
@@ -81,15 +78,15 @@ the same camera and measurement path.
   ~last-scene-pointer-pulse := 0.0
   scene-pointer-pulse := @scene/pointer-pulse
   scene-pointer-position := @scene/pointer-position
-  scene-pointer-pressed := @scene/pointer-pressed
   scene-pointer-delta := scene-pointer-pulse - last-scene-pointer-pulse
   scene-pointer-toggle-parity := scene-pointer-delta % 2.0
   scene-pointer-screen := [430.0; -385.0] * scene-pointer-position + [430.0; 385.0]
   scene-pointer-camera-offset := camera-screen - scene-pointer-screen'
   scene-pointer-camera-distance-square := (scene-pointer-camera-offset ^ 2) ** [1.0; 1.0]
   scene-pointer-hit-raw := 484.0 - scene-pointer-camera-distance-square
-  scene-pointer-hit-relu := (scene-pointer-hit-raw + (scene-pointer-hit-raw ^ 2) ^ 0.5) / 2.0
-  scene-pointer-hit := scene-pointer-hit-relu - (scene-pointer-hit-relu - 1.0 + ((scene-pointer-hit-relu - 1.0) ^ 2) ^ 0.5) / 2.0
+  scene-pointer-hit-relu := (scene-pointer-hit-raw + math/abs(scene-pointer-hit-raw)) / 2.0
+  scene-pointer-hit-one-relu := (scene-pointer-hit-raw - 1.0 + math/abs(scene-pointer-hit-raw - 1.0)) / 2.0
+  scene-pointer-hit := scene-pointer-hit-relu - scene-pointer-hit-one-relu
   -- A gesture group coalesces down/up but never crosses into the next press.
   -- Parity still preserves an even count jump if an activation history is
   -- restored or replayed without exposing every intermediate turn.
@@ -102,60 +99,36 @@ the same camera and measurement path.
   last-filter-turn = @filters/turns
 
 
-2. Square-Drive State Machine
+2. Vectorized Square Drive
 -------------------------------------------------------------------------------
 
-The controller is an explicit finite state machine with East, North, West, and
-South states. It emits the repeating phase program consumed once per delivered
-resident turn, independently of the timer's absolute tick values. The phase and
-its within-side progress define a moving point on the requested square. A short
-look-ahead aims the unicycle toward that point, so accumulated motion error is
-corrected instead of being carried into every later side. Its only controls are
-forward velocity `v` and angular velocity `ω`; bounded steering and turn-speed
-reduction make the corners smooth without position clamps.
-
-#SquareDrive(side-ticks<f64>) => <[f64]:1,376>
-  ├ :East(remaining<f64>, side-ticks<f64>, phases<[f64]>)
-  ├ :North(remaining<f64>, side-ticks<f64>, phases<[f64]>)
-  ├ :West(remaining<f64>, side-ticks<f64>, phases<[f64]>)
-  ├ :South(remaining<f64>, side-ticks<f64>, phases<[f64]>)
-  └ :Done(phases<[f64]>).
-
-#SquareDrive(side-ticks<u64>) -> :East(side-ticks, side-ticks, [])
-  :East(remaining, side-ticks, phases)
-    ├ remaining > 0 -> :East(remaining - 1, side-ticks, [phases 0.0])
-    └ * -> :North(side-ticks, side-ticks, phases)
-  :North(remaining, side-ticks, phases)
-    ├ remaining > 0 -> :North(remaining - 1, side-ticks, [phases 1.0])
-    └ * -> :West(side-ticks, side-ticks, phases)
-  :West(remaining, side-ticks, phases)
-    ├ remaining > 0 -> :West(remaining - 1, side-ticks, [phases 2.0])
-    └ * -> :South(side-ticks, side-ticks, phases)
-  :South(remaining, side-ticks, phases)
-    ├ remaining > 0 -> :South(remaining - 1, side-ticks, [phases 3.0])
-    └ * -> :Done(phases)
-  :Done(phases) => phases.
+The delivered simulation step directly indexes the four square sides. The phase
+and its within-side progress define a moving point on the requested square. A
+short look-ahead aims the unicycle toward that point, so accumulated motion
+error is corrected instead of being carried into every later side. Its only
+controls are forward velocity `v` and angular velocity `ω`; bounded steering
+and turn-speed reduction make the corners smooth without position clamps.
 
   side-ticks := 94.0
-  drive-phases<[f64]:1,376> := #SquareDrive(side-ticks)
   lap-ticks := 4.0 * side-ticks
   ~simulation-step := 0.0
   next-simulation-step := simulation-step + clock-pulse
   filter-step-span := next-simulation-step - last-requested-simulation-step
   next-last-requested-simulation-step := last-requested-simulation-step + request-pulse * filter-step-span
-  ~drive-phase-index := 1.0
-  drive-phase := drive-phases[1,drive-phase-index]
-  advanced-drive-phase-index := (drive-phase-index % lap-ticks) + 1.0
-  next-drive-phase-index := drive-phase-index + clock-pulse * (advanced-drive-phase-index - drive-phase-index)
-  phase-progress := ((drive-phase-index - 1.0) % side-ticks) / side-ticks
+  drive-phase := math/floor((simulation-step % lap-ticks) / side-ticks)
+  phase-progress := (simulation-step % side-ticks) / side-ticks
   path-parameter := drive-phase + phase-progress
   lookahead-parameter := (path-parameter + 0.15) % 4.0
-  lookahead-breakpoints := 0.0..=4.0
-  lookahead-offset := lookahead-parameter - lookahead-breakpoints'
-  lookahead-relu := (lookahead-offset + (lookahead-offset ^ 2) ^ 0.5) / 2.0
-  lookahead-clamp := lookahead-relu[1..=4] - lookahead-relu[2..=5]
-  target-position := low-bound + field-span * ([1.0 0.0 -1.0 0.0
-                                                0.0 1.0 0.0 -1.0] ** lookahead-clamp)
+  lookahead-side := math/floor(lookahead-parameter) + 1.0
+  lookahead-progress := lookahead-parameter % 1.0
+  square-waypoints := [0.0 0.0
+                       1.0 0.0
+                       1.0 1.0
+                       0.0 1.0
+                       0.0 0.0]
+  lookahead-origin := square-waypoints[lookahead-side,:]'
+  lookahead-direction := square-waypoints[lookahead-side + 1.0,:]' - lookahead-origin
+  target-position := low-bound + field-span * (lookahead-origin + lookahead-progress * lookahead-direction)
   ~truth := [2.5
              2.5
              0.0]
@@ -165,8 +138,8 @@ reduction make the corners smooth without position clamps.
   heading-error-raw := target-heading - truth[3]
   heading-error := math/atan2(math/sin(heading-error-raw), math/cos(heading-error-raw))
   requested-omega := heading-gain * heading-error
-  commanded-omega := (((requested-omega + turn-rate-limit) ^ 2) ^ 0.5 - ((requested-omega - turn-rate-limit) ^ 2) ^ 0.5) / 2.0
-  turn-fraction := ((commanded-omega ^ 2) ^ 0.5) / turn-rate-limit
+  commanded-omega := (math/abs(requested-omega + turn-rate-limit) - math/abs(requested-omega - turn-rate-limit)) / 2.0
+  turn-fraction := math/abs(commanded-omega) / turn-rate-limit
   commanded-speed := cruise-speed * (1.0 - 0.42 * turn-fraction)
   commanded-control := [commanded-speed
                         commanded-omega]
@@ -181,7 +154,6 @@ reduction make the corners smooth without position clamps.
 
   truth = next-truth
   simulation-step = next-simulation-step
-  drive-phase-index = next-drive-phase-index
   requested-compute-turn = next-requested-compute-turn
   last-requested-simulation-step = next-last-requested-simulation-step
 
@@ -189,78 +161,25 @@ reduction make the corners smooth without position clamps.
 3. Noisy Camera Observations
 -------------------------------------------------------------------------------
 
-The finite-state drive program also determines which nearby corner camera may
-report during each half-side. A camera outside its 3.6-unit range contributes
-exactly zero correction. This produces genuine prediction-only intervals rather
-than pretending that every camera sees through the entire field.
-
-#CameraSchedule(dwell-ticks<f64>) => <[f64]:1,376>
-  ├ :LowerLeft(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
-  ├ :LowerRight(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
-  ├ :RightLower(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
-  ├ :RightUpper(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
-  ├ :UpperRight(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
-  ├ :UpperLeft(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
-  ├ :LeftUpper(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
-  ├ :LeftLower(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
-  └ :CameraScheduleDone(schedule<[f64]>).
-
-#CameraSchedule(dwell-ticks<u64>) -> :LowerLeft(dwell-ticks, dwell-ticks, [])
-  :LowerLeft(remaining, dwell-ticks, schedule)
-    ├ remaining > 0 -> :LowerLeft(remaining - 1, dwell-ticks, [schedule 1.0])
-    └ * -> :LowerRight(dwell-ticks, dwell-ticks, schedule)
-  :LowerRight(remaining, dwell-ticks, schedule)
-    ├ remaining > 0 -> :LowerRight(remaining - 1, dwell-ticks, [schedule 2.0])
-    └ * -> :RightLower(dwell-ticks, dwell-ticks, schedule)
-  :RightLower(remaining, dwell-ticks, schedule)
-    ├ remaining > 0 -> :RightLower(remaining - 1, dwell-ticks, [schedule 2.0])
-    └ * -> :RightUpper(dwell-ticks, dwell-ticks, schedule)
-  :RightUpper(remaining, dwell-ticks, schedule)
-    ├ remaining > 0 -> :RightUpper(remaining - 1, dwell-ticks, [schedule 3.0])
-    └ * -> :UpperRight(dwell-ticks, dwell-ticks, schedule)
-  :UpperRight(remaining, dwell-ticks, schedule)
-    ├ remaining > 0 -> :UpperRight(remaining - 1, dwell-ticks, [schedule 3.0])
-    └ * -> :UpperLeft(dwell-ticks, dwell-ticks, schedule)
-  :UpperLeft(remaining, dwell-ticks, schedule)
-    ├ remaining > 0 -> :UpperLeft(remaining - 1, dwell-ticks, [schedule 4.0])
-    └ * -> :LeftUpper(dwell-ticks, dwell-ticks, schedule)
-  :LeftUpper(remaining, dwell-ticks, schedule)
-    ├ remaining > 0 -> :LeftUpper(remaining - 1, dwell-ticks, [schedule 4.0])
-    └ * -> :LeftLower(dwell-ticks, dwell-ticks, schedule)
-  :LeftLower(remaining, dwell-ticks, schedule)
-    ├ remaining > 0 -> :LeftLower(remaining - 1, dwell-ticks, [schedule 1.0])
-    └ * -> :CameraScheduleDone(schedule)
-  :CameraScheduleDone(schedule) => schedule.
+The same square phase selects the nearest corner camera during each half-side.
+A camera outside its 3.6-unit range contributes exactly zero correction. This
+produces genuine prediction-only intervals rather than pretending that every
+camera sees through the entire field.
 
   camera-dwell-ticks := side-ticks / 2.0
-  camera-schedule<[f64]:1,376> := #CameraSchedule(camera-dwell-ticks)
-  camera-index := camera-schedule[1,drive-phase-index]
+  camera-index := (math/floor((simulation-step + camera-dwell-ticks) / side-ticks) % 4.0) + 1.0
   active-camera := cameras[camera-index,:]'
   camera-offsets := cameras - attempted-truth[1..=2]'
-  camera-range-all := ((camera-offsets ^ 2) ** [1.0; 1.0]) ^ 0.5
+  camera-range-all := math/sqrt((camera-offsets ^ 2) ** [1.0; 1.0])
   camera-inside-fade-raw := (camera-max-range - camera-range-all) / camera-range-fade
-  camera-inside-fade-relu := (camera-inside-fade-raw + (camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
-  camera-inside-fade-one-relu := (camera-inside-fade-raw - 1.0 + ((camera-inside-fade-raw - 1.0) ^ 2) ^ 0.5) / 2.0
+  camera-inside-fade-relu := (camera-inside-fade-raw + math/abs(camera-inside-fade-raw)) / 2.0
+  camera-inside-fade-one-relu := (camera-inside-fade-raw - 1.0 + math/abs(camera-inside-fade-raw - 1.0)) / 2.0
   camera-visibility := (camera-inside-fade-relu - camera-inside-fade-one-relu) * camera-enabled
 
-  -- These boundary witnesses exercise the exact same resident visibility
-  -- graph at the inner fade edge, the physical boundary, and two points
-  -- beyond it. They are intentionally ordinary Mech values rather than a
-  -- host-side copy of the formula, so every runtime can qualify the hard
-  -- sensing contract even when the driven trajectory does not land on an
-  -- exact floating-point boundary.
-  camera-boundary-probe-distances := camera-max-range + [-camera-range-fade; 0.0; 0.000001; camera-range-fade]
-  camera-boundary-probe-raw := (camera-max-range - camera-boundary-probe-distances) / camera-range-fade
-  camera-boundary-probe-relu := (camera-boundary-probe-raw + (camera-boundary-probe-raw ^ 2) ^ 0.5) / 2.0
-  camera-boundary-probe-one-relu := (camera-boundary-probe-raw - 1.0 + ((camera-boundary-probe-raw - 1.0) ^ 2) ^ 0.5) / 2.0
-  camera-boundary-probe-visibility := camera-boundary-probe-relu - camera-boundary-probe-one-relu
-  camera-boundary-probe-baseline := [11.0; 12.0; 13.0; 14.0]
-  camera-boundary-probe-target := [21.0; 22.0; 23.0; 24.0]
-  camera-boundary-probe-correction := camera-boundary-probe-baseline + camera-boundary-probe-visibility * (camera-boundary-probe-target - camera-boundary-probe-baseline)
   active-camera-visibility := camera-visibility[camera-index]
   camera-offset := active-camera - attempted-truth[1..=2]
   camera-range-square := [1.0 1.0] ** (camera-offset ^ 2)
-  camera-range := camera-range-square[1] ^ 0.5
+  camera-range := math/sqrt(camera-range-square[1])
   observation-model := [camera-range
                         math/atan2(camera-offset[2], camera-offset[1]) - attempted-truth[3]]
   observation-noise-phase := simulation-time * [1.57; 1.91] + camera-index * [0.7; 1.0]
@@ -282,15 +201,13 @@ directly across the lane matrices. Only lane zero is sampled back for the scene.
 
   filter-count := 1000.0
   filter-index := 1.0..=filter-count
-  filter-phase := 2.0 * 3.141592654 * (filter-index - 1.0) / filter-count
+  filter-phase := 2.0 * π * (filter-index - 1.0) / filter-count
   lane-dt-base := Δt * filter-step-span
   lane-control-base := [lane-dt-base commanded-speed commanded-omega]
   lane-control-phase := filter-phase' ** [0.0 3.0 5.0]
   lane-control-scale := 1.0 + math/sin(lane-control-phase) * [0.0 0.002 0.002]
   lane-control := lane-control-base * lane-control-scale
-  lane-zero := filter-index' * 0.0
-  lane-camera-zero := lane-zero ** [1.0 1.0]
-  lane-camera := lane-camera-zero + active-camera'
+  lane-camera := (1.0 + filter-index' * 0.0) ** active-camera'
   lane-measurement-base := [observation' active-camera-visibility]
   lane-measurement-phase := filter-phase' ** [7.0 11.0 0.0]
   lane-measurement := lane-measurement-base + math/sin(lane-measurement-phase) * [0.012 0.0015 0.0]
@@ -301,7 +218,6 @@ directly across the lane matrices. Only lane zero is sampled back for the scene.
   @filters/turn <- next-requested-compute-turn
 
   filter-sample := @filters/sample/result.0
-  filter-camera-visibility := @filters/sample/result.2
   corrected-estimate := filter-sample[:,1]
   corrected-covariance := filter-sample[:,2..=4]
   predicted-estimate := filter-sample[:,5]
@@ -364,16 +280,6 @@ ekf-batch @compute
   R := [0.0225<f32> 0f32
         0f32 0.0004<f32>]
 
-  -- Qualify the inactive-measurement boundary directly: the camera and prior
-  -- position coincide while visibility is exactly zero. This used to evaluate
-  -- 0 / 0 before the later visibility interpolation could discard the result.
-  inactive-witness-state := [1f32; 1f32; 0f32]
-  inactive-witness-covariance := [0.45<f32> 0f32 0f32
-                                  0f32 0.45<f32> 0f32
-                                  0f32 0f32 0.08<f32>]
-  (inactive-witness-μ, inactive-witness-Σ) := ekf-correct(inactive-witness-state, inactive-witness-covariance, [1f32; 1f32], [0f32; 0f32; 0f32], R)
-  inactive-correction-finite! := math/abs(inactive-witness-μ[1]) <= 3.402823466e38<f32> && math/abs(inactive-witness-μ[2]) <= 3.402823466e38<f32> && math/abs(inactive-witness-μ[3]) <= 3.402823466e38<f32> && inactive-witness-Σ[1,1] > 0f32 && inactive-witness-Σ[2,2] > 0f32 && inactive-witness-Σ[3,3] > 0f32
-
   -- These two fixed-shape calls are the whole filter. The compute host maps
   -- them over the outer lane arrays supplied by the document; increasing the
   -- lane count does not duplicate this source graph.
@@ -382,7 +288,6 @@ ekf-batch @compute
   ~filter-sample := [2.9<f32>  0.45<f32> 0f32       0f32       2.9<f32>
                      2.15<f32> 0f32       0.45<f32> 0f32       2.15<f32>
                      0.16<f32> 0f32       0f32       0.08<f32> 0.16<f32>]
-  ~applied-visibility := 0f32
   μ := filter-sample[:,1]
   Σ := filter-sample[:,2..=4]
   (μ-, Σ-) := ekf-predict(μ, Σ, control, Q)
@@ -396,8 +301,7 @@ ekf-batch @compute
   symmetric-covariance! := math/abs(Σ-next[1,2] - Σ-next[2,1]) <= 0.0001<f32> && math/abs(Σ-next[1,3] - Σ-next[3,1]) <= 0.0001<f32> && math/abs(Σ-next[2,3] - Σ-next[3,2]) <= 0.0001<f32>
 
   filter-sample = [μ-next Σ-next μ-]
-  applied-visibility = γ
-  (filter-sample, filter-sample, applied-visibility)
+  (filter-sample, filter-sample)
 
 
 5. Live Tracking Field
@@ -417,34 +321,33 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   predicted-screen := screen-positions[:,2]
   estimate-screen := screen-positions[:,3]
   display-camera-offsets := cameras - next-truth[1..=2]'
-  display-camera-range-all := ((display-camera-offsets ^ 2) ** [1.0; 1.0]) ^ 0.5
+  display-camera-range-all := math/sqrt((display-camera-offsets ^ 2) ** [1.0; 1.0])
   display-camera-inside-fade-raw := (camera-max-range - display-camera-range-all) / camera-range-fade
-  display-camera-inside-fade-relu := (display-camera-inside-fade-raw + (display-camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
-  display-camera-inside-fade-one-relu := (display-camera-inside-fade-raw - 1.0 + ((display-camera-inside-fade-raw - 1.0) ^ 2) ^ 0.5) / 2.0
+  display-camera-inside-fade-relu := (display-camera-inside-fade-raw + math/abs(display-camera-inside-fade-raw)) / 2.0
+  display-camera-inside-fade-one-relu := (display-camera-inside-fade-raw - 1.0 + math/abs(display-camera-inside-fade-raw - 1.0)) / 2.0
   display-camera-visibility := (display-camera-inside-fade-relu - display-camera-inside-fade-one-relu) * camera-enabled
   position-error-vector := corrected-estimate[1..=2] - next-truth[1..=2]
   position-error-square := [1.0 1.0] ** (position-error-vector ^ 2)
-  position-error := position-error-square[1] ^ 0.5
+  position-error := math/sqrt(position-error-square[1])
 
   ellipse-a := corrected-covariance[1,1]
   ellipse-b := corrected-covariance[1,2]
   ellipse-c := corrected-covariance[2,2]
-  ellipse-root := (((ellipse-a - ellipse-c) / 2.0) ^ 2 + ellipse-b ^ 2) ^ 0.5
+  ellipse-root := math/sqrt(((ellipse-a - ellipse-c) / 2.0) ^ 2 + ellipse-b ^ 2)
   ellipse-eigenvalues := (ellipse-a + ellipse-c) / 2.0 + [1.0; -1.0] * ellipse-root
-  ellipse-axes := (ellipse-eigenvalues ^ 0.5) * 2.0
+  ellipse-axes := math/sqrt(ellipse-eigenvalues) * 2.0
   ellipse-rotation := 0.5 * math/atan2(2.0 * ellipse-b, ellipse-a - ellipse-c)
   ellipse-samples := 0..=64
   ellipse-angle := ellipse-samples' * (2.0 * π / 64.0)
   ellipse-display-floor := 0.04
-  display-ellipse-axes := (ellipse-axes ^ 2 + ellipse-display-floor ^ 2) ^ 0.5
+  display-ellipse-axes := math/sqrt(ellipse-axes ^ 2 + ellipse-display-floor ^ 2)
   ellipse-axis-points := [math/cos(ellipse-angle) math/sin(ellipse-angle)] * display-ellipse-axes'
   ellipse-rotation-matrix := [ math/cos(ellipse-rotation) math/sin(ellipse-rotation)
                               -math/sin(ellipse-rotation) math/cos(ellipse-rotation)]
   covariance-ellipse := estimate-screen' + screen-scale * (ellipse-axis-points ** ellipse-rotation-matrix) * screen-axis'
 
   trail-samples := 1..=376
-  trail-zero := trail-samples' * 0.0
-  trail-zero-points := trail-zero ** [1.0 1.0]
+  trail-zero-points := (trail-samples' * 0.0) ** [1.0 1.0]
   ~truth-path := trail-zero-points + [275.0 545.0]
   ~estimate-path := trail-zero-points + [299.8 566.7]
   advanced-truth-path := matrix/vertcat(truth-path[2..=376,:], truth-screen')
@@ -454,11 +357,7 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   truth-path = next-truth-path
   estimate-path = next-estimate-path
 
-  square-guide-world := [low-bound low-bound
-                         high-bound low-bound
-                         high-bound high-bound
-                         low-bound high-bound
-                         low-bound low-bound]
+  square-guide-world := low-bound + field-span * square-waypoints
   square-guide := screen-origin' + screen-scale * square-guide-world * screen-axis'
 
   camera-range-opacity := 0.16 * camera-enabled
@@ -514,7 +413,7 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   scene-text := |id<string> x<f64> y<f64> fill<string> font-size<f64> font-family<string> font-weight<string> text-anchor<string> opacity<f64> value<string>|
     | "eyebrow" 24 26 "#8fa3b8" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "650" "start" 1 "MECH RESIDENT SENSOR FUSION" |
     | "title" 24 62 "#edf2f7" 36 "Inter, ui-sans-serif, system-ui, sans-serif" "620" "start" 1 "Camera EKF Localization" |
-    | "state-label" 602 58 "#f4c95d" 13 "ui-monospace, SFMono-Regular, Menlo, monospace" "650" "start" 1 "V/Ω SQUARE-DRIVE FSM" |
+    | "state-label" 602 58 "#f4c95d" 13 "ui-monospace, SFMono-Regular, Menlo, monospace" "650" "start" 1 "V/Ω VECTORIZED SQUARE DRIVE" |
     | "camera-label-1" 195 636 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "start" camera-label-opacity[1] "CAM 1" |
     | "camera-label-2" 665 636 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "end" camera-label-opacity[2] "CAM 2" |
     | "camera-label-3" 665 140 "#d7c27f" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "500" "end" camera-label-opacity[3] "CAM 3" |
