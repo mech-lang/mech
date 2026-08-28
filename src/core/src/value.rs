@@ -4305,7 +4305,13 @@ impl LegacyValue {
             usize::try_from(value as u128).ok()
         }
 
-        #[allow(unused_macros)]
+        #[cfg(any(
+            feature = "u8",
+            feature = "u16",
+            feature = "u32",
+            feature = "u64",
+            feature = "u128"
+        ))]
         macro_rules! unsigned_matrix {
             ($variant:ident) => {
                 if let LegacyValue::$variant(value) = self {
@@ -4317,7 +4323,13 @@ impl LegacyValue {
                 }
             };
         }
-        #[allow(unused_macros)]
+        #[cfg(any(
+            feature = "i8",
+            feature = "i16",
+            feature = "i32",
+            feature = "i64",
+            feature = "i128"
+        ))]
         macro_rules! signed_matrix {
             ($variant:ident) => {
                 if let LegacyValue::$variant(value) = self {
@@ -4329,7 +4341,7 @@ impl LegacyValue {
                 }
             };
         }
-        #[allow(unused_macros)]
+        #[cfg(any(feature = "f32", feature = "f64"))]
         macro_rules! float_matrix {
             ($variant:ident) => {
                 if let LegacyValue::$variant(value) = self {

@@ -795,14 +795,11 @@ fn required_paint(record: &MechRecord, field: &str, label: &str) -> MResult<Stri
     .map_err(|_| {
         scene_error(
             "SceneSchema",
-            format!("field `{label}` must be a paint string or u32 RGB color"),
+            format!("field `{label}` must be a paint string or f64 RGB color"),
         )
     })?;
     match resolved {
         LegacyValue::String(value) => Ok(value.borrow().clone()),
-        LegacyValue::U32(value) if *value.borrow() <= 0x00ff_ffff => {
-            Ok(format!("#{:06x}", *value.borrow()))
-        }
         LegacyValue::F64(value)
             if value.borrow().is_finite()
                 && value.borrow().fract() == 0.0
@@ -812,7 +809,7 @@ fn required_paint(record: &MechRecord, field: &str, label: &str) -> MResult<Stri
         }
         _ => Err(scene_error(
             "SceneSchema",
-            format!("field `{label}` must be a paint string or 24-bit unsigned RGB color"),
+            format!("field `{label}` must be a paint string or 24-bit numeric RGB color"),
         )),
     }
 }
@@ -825,14 +822,11 @@ fn required_font_weight(record: &MechRecord, field: &str, label: &str) -> MResul
     .map_err(|_| {
         scene_error(
             "SceneSchema",
-            format!("field `{label}` must be a string, f64, or u32"),
+            format!("field `{label}` must be a string or f64"),
         )
     })?;
     match resolved {
         LegacyValue::String(value) => Ok(value.borrow().clone()),
-        LegacyValue::U32(value) if (1..=1000).contains(&*value.borrow()) => {
-            Ok(value.borrow().to_string())
-        }
         LegacyValue::F64(value)
             if value.borrow().is_finite()
                 && value.borrow().fract() == 0.0
