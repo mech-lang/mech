@@ -4492,8 +4492,8 @@ rows := |id<string> x<f64>|
         };
         assert_eq!(
             runtime.program_execution_info().observation_count,
-            5,
-            "the resident artifact must observe the timer, two pointer fields, compute completion, and packed sample"
+            6,
+            "the resident artifact must observe the timer, two pointer fields, compute completion, packed sample, and sampled visibility"
         );
         assert!(scene_backend.latest().is_none());
         let pi = 3.141592654_f64;

@@ -73,6 +73,7 @@ config := {
           "input/camera"
           "input/measurement"
           "sample/result.0"
+          "sample/result.2"
           "turns"
           "turn"
         ]

@@ -218,7 +218,7 @@ harness = r'''<script>
       return values.length === 15 && values.every(Number.isFinite) ? values : undefined;
     };
     const renderedFilterVisibility = () => {
-      const values = renderedDocumentNumbers("active-camera-visibility");
+      const values = renderedDocumentNumbers("filter-camera-visibility");
       return values.length === 1 && Number.isFinite(values[0]) ? values[0] : undefined;
     };
     const renderedFilterTurn = () => {
