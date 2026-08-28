@@ -118,6 +118,12 @@ where
 }
 
 impl MechFunctionImpl for SetPowersetFxn {
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+    }
     fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set

@@ -42,6 +42,12 @@ impl MechFunctionFactory for SetElementOfFxn {
 }
 
 impl MechFunctionImpl for SetElementOfFxn {
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+    }
     fn solve_result(&self) -> MResult<()> {
         unsafe {
             let out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
