@@ -46,8 +46,8 @@ Click a camera to disable it. Its color mutes, its range ring disappears, and it
   camera-max-range := 3.6
   camera-range-fade := 0.18
 
-  -- Each row is one camera. Two-element position vectors broadcast across all
-  -- four rows, so geometry never has to split into separate x and y equations.
+Each row is one camera. Two-element position vectors broadcast across all four rows, so geometry never has to split into separate x and y equations.
+
   cameras := [1.0 1.0
               9.0 1.0
               9.0 9.0
@@ -59,9 +59,8 @@ Click a camera to disable it. Its color mutes, its range ring disappears, and it
                  -1.0]
   camera-screen := screen-origin' + screen-scale * cameras * screen-axis'
 
-  -- Scene pointer presses toggle the camera under the cursor. The enable mask
-  -- is resident Mech state: it gates the measurement before the EKF input and
-  -- drives the active, muted, range-ring, label, and ray presentation below.
+Scene pointer presses toggle the camera under the cursor. The enable mask is resident Mech state: it gates the measurement before the EKF input and drives the active, muted, range-ring, label, and ray presentation below.
+  
   ~camera-enabled := [1.0; 1.0; 1.0; 1.0]
   ~last-scene-pointer-pulse := 0.0
   scene-pointer-pulse := @scene/pointer-pulse
@@ -75,9 +74,9 @@ Click a camera to disable it. Its color mutes, its range ring disappears, and it
   scene-pointer-hit-clamp-input := [scene-pointer-hit-raw scene-pointer-hit-raw - 1.0]
   scene-pointer-hit-clamp := (scene-pointer-hit-clamp-input + math/abs(scene-pointer-hit-clamp-input)) / 2.0
   scene-pointer-hit := scene-pointer-hit-clamp[:,1] - scene-pointer-hit-clamp[:,2]
-  -- A gesture group coalesces down/up but never crosses into the next press.
-  -- Parity still preserves an even count jump if an activation history is
-  -- restored or replayed without exposing every intermediate turn.
+
+A gesture group coalesces down/up but never crosses into the next press. Parity still preserves an even count jump if an activation history is restored or replayed without exposing every intermediate turn.
+  
   camera-toggle := scene-pointer-toggle-parity * scene-pointer-hit
   next-camera-enabled := camera-enabled + camera-toggle * (1.0 - 2.0 * camera-enabled)
   camera-enabled = next-camera-enabled
