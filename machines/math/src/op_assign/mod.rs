@@ -249,9 +249,9 @@ macro_rules! impl_op_assign_range_fxn_s {
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: Debug + AsNaKind,
-            naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
-            IxVec: FunctionRuntimeType,
-            T: FunctionRuntimeType,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
+            IxVec: FunctionPortBacking,
+            T: FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
         {
@@ -261,31 +261,21 @@ macro_rules! impl_op_assign_range_fxn_s {
                 IxVec::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (sink, source, ixes) = invocation.expect_binary()?;
+                let source: Ref<T> = source.try_ref()?;
+                let ixes: Ref<IxVec> = ixes.try_ref()?;
+                let sink: Ref<naMatrix<T, R1, C1, S1>> = sink.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes,
+                    _marker: PhantomData::default(),
+                }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let source: Ref<T> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ixes: Ref<IxVec> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes,
-                            _marker: PhantomData::default(),
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T, R1, C1, S1, IxVec> MechFunctionImpl
@@ -315,7 +305,14 @@ macro_rules! impl_op_assign_range_fxn_s {
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
         {
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+            }
             fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
@@ -423,9 +420,9 @@ macro_rules! impl_op_assign_range_fxn_v {
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
             naMatrix<T, R2, C2, S2>: Debug + AsNaKind,
-            naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
-            naMatrix<T, R2, C2, S2>: FunctionRuntimeType,
-            IxVec: FunctionRuntimeType,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
+            naMatrix<T, R2, C2, S2>: FunctionPortBacking,
+            IxVec: FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
         {
@@ -435,31 +432,21 @@ macro_rules! impl_op_assign_range_fxn_v {
                 IxVec::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (sink, source, ixes) = invocation.expect_binary()?;
+                let source: Ref<naMatrix<T, R2, C2, S2>> = source.try_ref()?;
+                let ixes: Ref<IxVec> = ixes.try_ref()?;
+                let sink: Ref<naMatrix<T, R1, C1, S1>> = sink.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes,
+                    _marker: PhantomData::default(),
+                }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ixes: Ref<IxVec> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes,
-                            _marker: PhantomData::default(),
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
@@ -492,7 +479,14 @@ macro_rules! impl_op_assign_range_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
         {
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+            }
             fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
