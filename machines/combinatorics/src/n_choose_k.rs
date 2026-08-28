@@ -560,28 +560,21 @@ where
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
-    T: FunctionRuntimeType,
+    T: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::binary(T::REPRESENTATION, T::REPRESENTATION, T::REPRESENTATION);
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, n, k) = invocation.expect_binary()?;
+        let n: Ref<T> = n.try_ref()?;
+        let k: Ref<T> = k.try_ref()?;
+        let out: Ref<T> = out.try_ref()?;
+        Ok(Box::new(Self { n, k, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let n: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let k: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { n, k, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 impl<T> MechFunctionImpl for NChooseK<T>
@@ -603,7 +596,14 @@ where
         + PartialEq
         + PartialOrd,
     Ref<T>: ToValue,
+    T: FunctionStateBacking,
 {
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+    }
     fn solve_result(&self) -> MResult<()> {
         // Validate every reactive solve, not only bytecode installation: host
         // or live-resource producers may replace a previously safe operand.
@@ -640,6 +640,41 @@ where
 #[cfg(all(test, feature = "f64"))]
 mod scalar_contract_tests {
     use super::*;
+
+    fn framed(payload: &[u8]) -> Vec<u8> {
+        let mut framed = (payload.len() as u32).to_le_bytes().to_vec();
+        framed.extend_from_slice(payload);
+        framed
+    }
+
+    fn decoded_scalar_wrapper(reference: bool) -> LegacyValue {
+        let payload = 1.0_f64.to_le_bytes();
+        let (runtime_type, bytes) = if reference {
+            (
+                RuntimeType::Reference(Box::new(RuntimeType::F64)),
+                framed(&payload),
+            )
+        } else {
+            let mut bytes = vec![1];
+            bytes.extend(framed(&payload));
+            (RuntimeType::Option(Box::new(RuntimeType::F64)), bytes)
+        };
+        decode_encoded_constants(&[EncodedConstant {
+            runtime_type,
+            alignment: 8,
+            bytes,
+        }])
+        .unwrap()
+        .pop()
+        .unwrap()
+    }
+
+    fn factory_error(result: MResult<Box<dyn MechFunction>>) -> MechError {
+        match result {
+            Ok(_) => panic!("factory unexpectedly accepted invalid arguments"),
+            Err(error) => error,
+        }
+    }
 
     fn args(n: f64, k: f64) -> FunctionArgs {
         FunctionArgs::Binary(
@@ -679,6 +714,113 @@ mod scalar_contract_tests {
         let error = function.solve_result().unwrap_err();
         assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
     }
+
+    #[test]
+    fn scalar_factory_ports_are_exact_and_restore_output_state() {
+        let n = Ref::new(5.0_f64);
+        let k = Ref::new(2.0_f64);
+        let legacy_out = Ref::new(0.0_f64);
+        let invocation_out = Ref::new(0.0_f64);
+        let invocation_alias = invocation_out.clone();
+        let legacy = NChooseK::<f64>::new(FunctionArgs::Binary(
+            legacy_out.to_value(),
+            n.to_value(),
+            k.to_value(),
+        ))
+        .unwrap();
+        let invocation = NChooseK::<f64>::new_invocation(
+            FunctionArgs::Binary(
+                invocation_out.to_value(),
+                n.to_value(),
+                k.to_value(),
+            )
+            .into(),
+        )
+        .unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+        assert_eq!(*invocation_out.borrow(), 10.0);
+        assert_eq!(
+            invocation.reactive_output_cell_ids(),
+            invocation.out().reactive_root_cell_ids(),
+        );
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*invocation)?;
+            *invocation_out.borrow_mut() = 99.0;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert!(invocation_out.same_handle(&invocation_alias));
+        assert_eq!(*invocation_out.borrow(), 10.0);
+    }
+
+    #[test]
+    fn scalar_factory_ports_reject_wrong_layout_type_and_wrappers() {
+        let out = Ref::new(0.0_f64);
+        let n = Ref::new(5.0_f64);
+        let k = Ref::new(2.0_f64);
+
+        let layout = factory_error(NChooseK::<f64>::new_invocation(
+            FunctionArgs::Unary(out.to_value(), n.to_value()).into(),
+        ));
+        let arity = layout.kind_as::<IncorrectNumberOfArguments>().unwrap();
+        assert_eq!((arity.expected, arity.found), (2, 1));
+
+        assert!(
+            NChooseK::<f64>::new_invocation(
+                FunctionArgs::Binary(
+                    out.to_value(),
+                    Ref::new(5_usize).to_value(),
+                    k.to_value(),
+                )
+                .into(),
+            )
+            .is_err()
+        );
+        for wrapped in [decoded_scalar_wrapper(false), decoded_scalar_wrapper(true)] {
+            assert!(
+                NChooseK::<f64>::new_invocation(
+                    FunctionArgs::Binary(out.to_value(), wrapped, k.to_value()).into(),
+                )
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn scalar_error_is_atomic_and_prior_state_remains_restorable() {
+        let n = Ref::new(10.0_f64);
+        let out = Ref::new(0.0_f64);
+        let function = NChooseK::<f64>::new_invocation(
+            FunctionArgs::Binary(
+                out.to_value(),
+                n.to_value(),
+                Ref::new(2.0_f64).to_value(),
+            )
+            .into(),
+        )
+        .unwrap();
+        function.solve_result().unwrap();
+        let successful = *out.borrow();
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*function)?;
+            *n.borrow_mut() = f64::NAN;
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+            assert_eq!(*out.borrow(), successful);
+            *out.borrow_mut() = -1.0;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(*out.borrow(), successful);
+    }
 }
 
 #[cfg(all(test, feature = "u8"))]
@@ -690,19 +832,105 @@ mod integer_scalar_tests {
         let n = Ref::new(20_u8);
         let k = Ref::new(2_u8);
         let out = Ref::new(17_u8);
-        let function = NChooseK {
-            n: n.clone(),
-            k,
-            out: out.clone(),
-        };
+        let legacy_out = Ref::new(0_u8);
+        let legacy = NChooseK::<u8>::new(FunctionArgs::Binary(
+            legacy_out.to_value(),
+            n.to_value(),
+            k.to_value(),
+        ))
+        .unwrap();
+        let function = NChooseK::<u8>::new_invocation(
+            FunctionArgs::Binary(out.to_value(), n.to_value(), k.to_value()).into(),
+        )
+        .unwrap();
 
+        legacy.solve_result().unwrap();
         function.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), *out.borrow());
         assert_eq!(*out.borrow(), 190);
 
-        *n.borrow_mut() = 30;
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&*function)?;
+            *n.borrow_mut() = 30;
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+            assert_eq!(*out.borrow(), 190);
+            *out.borrow_mut() = 0;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
         assert_eq!(*out.borrow(), 190);
+    }
+}
+
+#[cfg(all(test, feature = "i8"))]
+mod signed_scalar_port_tests {
+    use super::*;
+
+    #[test]
+    fn signed_integer_factories_are_equivalent() {
+        let legacy_out = Ref::new(0_i8);
+        let invocation_out = Ref::new(0_i8);
+        let args = |out: &Ref<i8>| {
+            FunctionArgs::Binary(
+                out.to_value(),
+                Ref::new(5_i8).to_value(),
+                Ref::new(2_i8).to_value(),
+            )
+        };
+        let legacy = NChooseK::<i8>::new(args(&legacy_out)).unwrap();
+        let invocation = NChooseK::<i8>::new_invocation(args(&invocation_out).into()).unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+    }
+}
+
+#[cfg(all(test, feature = "rational"))]
+mod rational_scalar_port_tests {
+    use super::*;
+
+    #[test]
+    fn rational_factories_are_equivalent() {
+        let legacy_out = Ref::new(R64::default());
+        let invocation_out = Ref::new(R64::default());
+        let args = |out: &Ref<R64>| {
+            FunctionArgs::Binary(
+                out.to_value(),
+                Ref::new(R64::new(5, 1)).to_value(),
+                Ref::new(R64::new(2, 1)).to_value(),
+            )
+        };
+        let legacy = NChooseK::<R64>::new(args(&legacy_out)).unwrap();
+        let invocation = NChooseK::<R64>::new_invocation(args(&invocation_out).into()).unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+    }
+}
+
+#[cfg(all(test, feature = "complex"))]
+mod complex_scalar_port_tests {
+    use super::*;
+
+    #[test]
+    fn complex_factories_are_equivalent() {
+        let legacy_out = Ref::new(C64::default());
+        let invocation_out = Ref::new(C64::default());
+        let args = |out: &Ref<C64>| {
+            FunctionArgs::Binary(
+                out.to_value(),
+                Ref::new(C64::new(5.0, 0.0)).to_value(),
+                Ref::new(C64::new(2.0, 0.0)).to_value(),
+            )
+        };
+        let legacy = NChooseK::<C64>::new(args(&legacy_out)).unwrap();
+        let invocation = NChooseK::<C64>::new_invocation(args(&invocation_out).into()).unwrap();
+        legacy.solve_result().unwrap();
+        invocation.solve_result().unwrap();
+        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
     }
 }
 
