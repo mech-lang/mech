@@ -170,6 +170,7 @@ fn page_variants_do_not_own_source_or_repl_components() {
 fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
     let css = include("mechdown.css");
     for contract in [
+        "--mechdown-text: var(--mech-text-body, var(--body-primary, hsl(206 24% 90%)))",
         "counter-reset: mechdown-section",
         ".mechdown-section.mechdown-titled-section {\n  counter-increment: mechdown-section",
         ".mechdown-section > h2::before",
@@ -180,12 +181,18 @@ fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
         "border: 1px solid var(--mechdown-accent)",
         "--mechdown-inline-code: var(--mech-syntax-variable, var(--var-name-color, #eddaf1))",
         "color: var(--mechdown-inline-code)",
+        ".mech-program-subtitle:is(:hover, :focus-within) > a",
+        "color: var(--mech-brand-deep, hsl(42 89% 60%))",
     ] {
         assert!(
             css.contains(contract),
             "Mechdown lost editorial style {contract}"
         );
     }
+    assert!(
+        !css.contains(".mech-program-subtitle:hover > a {\n  color: var(--mech-syntax"),
+        "section heading hover must not use a syntax color"
+    );
 }
 
 #[test]

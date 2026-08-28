@@ -7,7 +7,7 @@
  */
 
 [data-mechdown] {
-  --mechdown-text: var(--mech-text-reading, var(--body-primary, hsl(40 100% 95%)));
+  --mechdown-text: var(--mech-text-body, var(--body-primary, hsl(206 24% 90%)));
   --mechdown-heading: var(--mech-text-primary, var(--text-primary, #f3f3e6));
   --mechdown-subheading: var(--mech-text-subheading, var(--text-subheading, rgb(242, 234, 217)));
   --mechdown-text-secondary: var(--mech-text-secondary, var(--text-secondary, #bebcaa));
@@ -247,8 +247,8 @@
   text-decoration: none;
 }
 
-[data-mechdown] .mech-program-subtitle:hover > a {
-  color: var(--mech-syntax-tuple-structure, #ab7ab8);
+[data-mechdown] .mech-program-subtitle:is(:hover, :focus-within) > a {
+  color: var(--mech-brand-deep, hsl(42 89% 60%));
 }
 
 [data-mechdown] .mechdown-paragraph:not([data-mech-source] *),
