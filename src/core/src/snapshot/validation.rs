@@ -1,7 +1,7 @@
 use super::sequence::SequenceStorage;
 use super::{
-    CanonicalKeyValue, EnumValue, MapValue, MatrixValue, RecordValue, ReifiedKind, ReifiedType,
-    ReifiedTypeDraft, SchemaDataKind, SetValue, SnapshotPath, SnapshotPathSegment,
+    CanonicalKeyValue, DynamicValue, EnumValue, MapValue, MatrixValue, RecordValue, ReifiedKind,
+    ReifiedType, ReifiedTypeDraft, SchemaDataKind, SetValue, SnapshotPath, SnapshotPathSegment,
     SnapshotValueError, TableValue, ValueData, ValueDataDraft, ValueDraft,
 };
 use crate::{
@@ -221,6 +221,10 @@ fn token_data(mut hash: u64, data: &ValueData) -> u64 {
         }};
     }
     match data {
+        ValueData::Dynamic(value) => {
+            hash = token_word(hash, 31);
+            hash = token_bytes(hash, &value.canonical);
+        }
         ValueData::U8(value) => scalar!(1, u64::from(*value)),
         ValueData::U16(value) => scalar!(2, u64::from(*value)),
         ValueData::U32(value) => scalar!(3, u64::from(*value)),
@@ -346,6 +350,44 @@ fn finalized_value(
         data,
         resident_token,
     }
+}
+
+fn dynamic_canonical(value: Option<&Value>, schema: Option<&SchemaBody>) -> Box<[u8]> {
+    let Some(value) = value else {
+        return Vec::from([0]).into_boxed_slice();
+    };
+    let schema = schema.expect("materialized dynamic values carry their concrete schema");
+    let shape = value.shape().canonical_bytes();
+    let payload = super::encoding::canonical_material(schema, value.data());
+    let mut bytes = Vec::with_capacity(
+        1 + value.schema_key().as_bytes().len() + 8 + shape.len() + 8 + payload.len(),
+    );
+    bytes.push(1);
+    bytes.extend_from_slice(value.schema_key().as_bytes());
+    bytes.extend_from_slice(&(shape.len() as u64).to_le_bytes());
+    bytes.extend_from_slice(&shape);
+    bytes.extend_from_slice(&(payload.len() as u64).to_le_bytes());
+    bytes.extend_from_slice(&payload);
+    bytes.into_boxed_slice()
+}
+
+/// Wraps canonical resident data in a self-describing dynamic snapshot cell.
+/// The binder has already validated the schema identity, shape, and physical
+/// representation before this constructor is used.
+#[doc(hidden)]
+pub fn wrap_resident_dynamic_data(
+    schema: SchemaId,
+    schema_key: SchemaKey,
+    shape: ShapeInstance,
+    body: &SchemaBody,
+    data: ValueData,
+) -> ValueData {
+    let value = finalized_value(schema, schema_key, shape, data);
+    let canonical = dynamic_canonical(Some(&value), Some(body));
+    ValueData::Dynamic(DynamicValue {
+        value: Some(Box::new(value)),
+        canonical,
+    })
 }
 
 /// Rebuilds one tuple, record, or table layer from already validated canonical child
@@ -615,10 +657,32 @@ pub(super) fn finalize_data(
     exact!(SchemaBody::Complex(FloatWidth::W64), ValueDataDraft::Complex64(value) => ValueData::Complex64(value));
     exact!(SchemaBody::String, ValueDataDraft::String(value) => ValueData::String(value.into_boxed_str()));
     exact!(SchemaBody::Id, ValueDataDraft::Id(value) => ValueData::Id(value));
-    exact!(SchemaBody::Index, ValueDataDraft::Index(value) => ValueData::Index(value));
+    if matches!(schema, SchemaBody::Index) {
+        if let ValueDataDraft::Index(value) = draft {
+            if value == 0 {
+                return Err(SnapshotValueError::InvalidIndexV1 {
+                    path: path.clone(),
+                    value,
+                });
+            }
+            return Ok(ValueData::Index(value));
+        }
+        return Err(data_mismatch_kind(schema, actual_kind, path));
+    }
     exact!(SchemaBody::Atom(_), ValueDataDraft::Atom => ValueData::Atom);
 
     match (schema, draft) {
+        (SchemaBody::Dynamic, ValueDataDraft::Dynamic(draft)) => {
+            let value = draft
+                .map(|draft| finalize_value(*draft, context).map(Box::new))
+                .transpose()?;
+            let concrete = value
+                .as_deref()
+                .map(|value| value.validate_against(context.schemas))
+                .transpose()?;
+            let canonical = dynamic_canonical(value.as_deref(), concrete.map(Schema::body));
+            Ok(ValueData::Dynamic(DynamicValue { value, canonical }))
+        }
         (
             SchemaBody::Rational64,
             ValueDataDraft::Rational64 {
@@ -981,6 +1045,7 @@ fn data_mismatch_kind(
 
 pub(super) const fn schema_kind(schema: &SchemaBody) -> SchemaDataKind {
     match schema {
+        SchemaBody::Dynamic => SchemaDataKind::Dynamic,
         SchemaBody::Bool => SchemaDataKind::Bool,
         SchemaBody::UnsignedInteger(_) => SchemaDataKind::UnsignedInteger,
         SchemaBody::SignedInteger(_) => SchemaDataKind::SignedInteger,
@@ -1008,6 +1073,34 @@ mod tests {
     use super::*;
     use crate::snapshot::{F64Bits, TableColumnDraft};
     use crate::{SchemaDraft, SchemaField, SchemaTableBuilder};
+
+    #[test]
+    fn index_snapshots_are_one_based() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Index,
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let context = SnapshotValidationContext::new(&schemas);
+
+        let draft = |value| ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Index(value),
+        };
+        assert!(matches!(
+            draft(0).finalize(&context),
+            Err(SnapshotValueError::InvalidIndexV1 { value: 0, .. })
+        ));
+        assert!(draft(1).finalize(&context).is_ok());
+        assert!(draft(u64::MAX).finalize(&context).is_ok());
+    }
 
     #[test]
     fn composite_rebuild_preserves_table_columns_and_storage() {

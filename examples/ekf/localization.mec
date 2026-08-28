@@ -37,7 +37,8 @@ the same camera and measurement path.
   π := 3.141592654
   ~last-clock-tick := 0.0
   clock-delta := @clock/tick - last-clock-tick
-  clock-pulse := (math/abs(clock-delta) - math/abs(clock-delta - 1.0) + 1.0) / 2.0
+  clock-pulse-distances := math/abs([clock-delta clock-delta - 1.0])
+  clock-pulse := (clock-pulse-distances[1] - clock-pulse-distances[2] + 1.0) / 2.0
   ~requested-compute-turn := 0.0
   ~last-requested-simulation-step := 0.0
   compute-inflight-gap := requested-compute-turn - @filters/turns
@@ -47,7 +48,8 @@ the same camera and measurement path.
   next-requested-compute-turn := requested-compute-turn + request-pulse
   ~last-filter-turn := 0.0
   filter-turn-delta := @filters/turns - last-filter-turn
-  sample-pulse := (math/abs(filter-turn-delta) - math/abs(filter-turn-delta - 1.0) + 1.0) / 2.0
+  sample-pulse-distances := math/abs([filter-turn-delta filter-turn-delta - 1.0])
+  sample-pulse := (sample-pulse-distances[1] - sample-pulse-distances[2] + 1.0) / 2.0
   Δt := 0.05
   cruise-speed := 1.15
   turn-rate-limit := 1.75
@@ -84,9 +86,9 @@ the same camera and measurement path.
   scene-pointer-camera-offset := camera-screen - scene-pointer-screen'
   scene-pointer-camera-distance-square := (scene-pointer-camera-offset ^ 2) ** [1.0; 1.0]
   scene-pointer-hit-raw := 484.0 - scene-pointer-camera-distance-square
-  scene-pointer-hit-relu := (scene-pointer-hit-raw + math/abs(scene-pointer-hit-raw)) / 2.0
-  scene-pointer-hit-one-relu := (scene-pointer-hit-raw - 1.0 + math/abs(scene-pointer-hit-raw - 1.0)) / 2.0
-  scene-pointer-hit := scene-pointer-hit-relu - scene-pointer-hit-one-relu
+  scene-pointer-hit-clamp-input := [scene-pointer-hit-raw scene-pointer-hit-raw - 1.0]
+  scene-pointer-hit-clamp := (scene-pointer-hit-clamp-input + math/abs(scene-pointer-hit-clamp-input)) / 2.0
+  scene-pointer-hit := scene-pointer-hit-clamp[:,1] - scene-pointer-hit-clamp[:,2]
   -- A gesture group coalesces down/up but never crosses into the next press.
   -- Parity still preserves an even count jump if an activation history is
   -- restored or replayed without exposing every intermediate turn.
@@ -134,11 +136,13 @@ and turn-speed reduction make the corners smooth without position clamps.
              0.0]
   simulation-time := next-simulation-step * Δt
   target-offset := target-position - truth[1..=2]
-  target-heading := math/atan2(target-offset[2], target-offset[1])
-  heading-error-raw := target-heading - truth[3]
-  heading-error := math/atan2(math/sin(heading-error-raw), math/cos(heading-error-raw))
+  truth-heading-direction := math/cos(truth[3] - [0.0; π / 2.0])
+  truth-heading-frame := [truth-heading-direction'; -truth-heading-direction[2] truth-heading-direction[1]]
+  target-relative := truth-heading-frame ** target-offset
+  heading-error := math/atan2(target-relative[2], target-relative[1])
   requested-omega := heading-gain * heading-error
-  commanded-omega := (math/abs(requested-omega + turn-rate-limit) - math/abs(requested-omega - turn-rate-limit)) / 2.0
+  omega-bound-distances := math/abs([requested-omega + turn-rate-limit requested-omega - turn-rate-limit])
+  commanded-omega := (omega-bound-distances[1] - omega-bound-distances[2]) / 2.0
   turn-fraction := math/abs(commanded-omega) / turn-rate-limit
   commanded-speed := cruise-speed * (1.0 - 0.42 * turn-fraction)
   commanded-control := [commanded-speed
@@ -146,9 +150,8 @@ and turn-speed reduction make the corners smooth without position clamps.
   actual-control-scale := [0.965; 0.99] + [0.025; 0.01] * math/sin(simulation-time * [0.73; 0.51] + [0.0; 0.8])
   actual-control := commanded-control * actual-control-scale
   truth-mid-heading := truth[3] + actual-control[2] * Δt / 2.0
-  truth-velocity := [math/cos(truth-mid-heading) 0.0
-                     math/sin(truth-mid-heading) 0.0
-                     0.0                           1.0] ** actual-control
+  truth-direction := math/cos(truth-mid-heading - [0.0; π / 2.0])
+  truth-velocity := [truth-direction * actual-control[1]; actual-control[2]]
   attempted-truth := truth + truth-velocity * Δt
   next-truth := truth + clock-pulse * (attempted-truth - truth)
 
@@ -172,9 +175,9 @@ camera sees through the entire field.
   camera-offsets := cameras - attempted-truth[1..=2]'
   camera-range-all := math/sqrt((camera-offsets ^ 2) ** [1.0; 1.0])
   camera-inside-fade-raw := (camera-max-range - camera-range-all) / camera-range-fade
-  camera-inside-fade-relu := (camera-inside-fade-raw + math/abs(camera-inside-fade-raw)) / 2.0
-  camera-inside-fade-one-relu := (camera-inside-fade-raw - 1.0 + math/abs(camera-inside-fade-raw - 1.0)) / 2.0
-  camera-visibility := (camera-inside-fade-relu - camera-inside-fade-one-relu) * camera-enabled
+  camera-visibility-clamp-input := [camera-inside-fade-raw camera-inside-fade-raw - 1.0]
+  camera-visibility-clamp := (camera-visibility-clamp-input + math/abs(camera-visibility-clamp-input)) / 2.0
+  camera-visibility := (camera-visibility-clamp[:,1] - camera-visibility-clamp[:,2]) * camera-enabled
 
   active-camera-visibility := camera-visibility[camera-index]
   camera-offset := active-camera - attempted-truth[1..=2]
@@ -326,9 +329,9 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   display-camera-offsets := cameras - next-truth[1..=2]'
   display-camera-range-all := math/sqrt((display-camera-offsets ^ 2) ** [1.0; 1.0])
   display-camera-inside-fade-raw := (camera-max-range - display-camera-range-all) / camera-range-fade
-  display-camera-inside-fade-relu := (display-camera-inside-fade-raw + math/abs(display-camera-inside-fade-raw)) / 2.0
-  display-camera-inside-fade-one-relu := (display-camera-inside-fade-raw - 1.0 + math/abs(display-camera-inside-fade-raw - 1.0)) / 2.0
-  display-camera-visibility := (display-camera-inside-fade-relu - display-camera-inside-fade-one-relu) * camera-enabled
+  display-camera-visibility-clamp-input := [display-camera-inside-fade-raw display-camera-inside-fade-raw - 1.0]
+  display-camera-visibility-clamp := (display-camera-visibility-clamp-input + math/abs(display-camera-visibility-clamp-input)) / 2.0
+  display-camera-visibility := (display-camera-visibility-clamp[:,1] - display-camera-visibility-clamp[:,2]) * camera-enabled
   position-error-vector := corrected-estimate[1..=2] - next-truth[1..=2]
   position-error-square := [1.0 1.0] ** (position-error-vector ^ 2)
   position-error := math/sqrt(position-error-square[1])
@@ -344,17 +347,18 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   ellipse-angle := ellipse-samples' * (2.0 * π / 64.0)
   ellipse-display-floor := 0.04
   display-ellipse-axes := math/sqrt(ellipse-axes ^ 2 + ellipse-display-floor ^ 2)
-  ellipse-axis-points := [math/cos(ellipse-angle) math/sin(ellipse-angle)] * display-ellipse-axes'
-  ellipse-rotation-matrix := [ math/cos(ellipse-rotation) math/sin(ellipse-rotation)
-                              -math/sin(ellipse-rotation) math/cos(ellipse-rotation)]
+  ellipse-phase-grid := ellipse-angle ** [1.0 1.0] - [0.0 π / 2.0]
+  ellipse-axis-points := math/cos(ellipse-phase-grid) * display-ellipse-axes'
+  ellipse-rotation-direction := math/cos(ellipse-rotation - [0.0 π / 2.0])
+  ellipse-rotation-matrix := [ellipse-rotation-direction; -ellipse-rotation-direction[2] ellipse-rotation-direction[1]]
   covariance-ellipse := estimate-screen' + screen-scale * (ellipse-axis-points ** ellipse-rotation-matrix) * screen-axis'
 
   trail-samples := 1..=376
   trail-zero-points := (trail-samples' * 0.0) ** [1.0 1.0]
   ~truth-path := trail-zero-points + [275.0 545.0]
   ~estimate-path := trail-zero-points + [299.8 566.7]
-  advanced-truth-path := matrix/vertcat(truth-path[2..=376,:], truth-screen')
-  advanced-estimate-path := matrix/vertcat(estimate-path[2..=376,:], estimate-screen')
+  advanced-truth-path := [truth-path[2..=376,:]; truth-screen']
+  advanced-estimate-path := [estimate-path[2..=376,:]; estimate-screen']
   next-truth-path := truth-path + sample-pulse * (advanced-truth-path - truth-path)
   next-estimate-path := estimate-path + sample-pulse * (advanced-estimate-path - estimate-path)
   truth-path = next-truth-path
@@ -368,68 +372,65 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   camera-ray-opacity := 0.4 * display-camera-visibility
   camera-label-opacity := 0.32 + 0.68 * camera-enabled
   heading-angles := [next-truth[3] corrected-estimate[3]]
-  heading-unit-vectors := matrix/vertcat(math/cos(heading-angles), math/sin(heading-angles))
+  heading-phase-grid := [1.0; 1.0] ** heading-angles - [0.0; π / 2.0]
+  heading-unit-vectors := math/cos(heading-phase-grid)
   heading-screen-vectors := screen-axis * heading-unit-vectors * [18.0 16.0]
   heading-screen-points := [truth-screen estimate-screen] + heading-screen-vectors
 
-  scene-circles := |id<string> x<f64> y<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
-    | "camera-range-1" camera-screen[1,1] camera-screen[1,2] camera-max-range * screen-scale "none" "#f4c95d" 0.8 camera-range-opacity[1] |
-    | "camera-range-2" camera-screen[2,1] camera-screen[2,2] camera-max-range * screen-scale "none" "#f4c95d" 0.8 camera-range-opacity[2] |
-    | "camera-range-3" camera-screen[3,1] camera-screen[3,2] camera-max-range * screen-scale "none" "#f4c95d" 0.8 camera-range-opacity[3] |
-    | "camera-range-4" camera-screen[4,1] camera-screen[4,2] camera-max-range * screen-scale "none" "#f4c95d" 0.8 camera-range-opacity[4] |
-    | "camera-disabled-1" camera-screen[1,1] camera-screen[1,2] 9 "#59616b" "none" 0 camera-disabled-opacity[1] |
-    | "camera-disabled-2" camera-screen[2,1] camera-screen[2,2] 9 "#59616b" "none" 0 camera-disabled-opacity[2] |
-    | "camera-disabled-3" camera-screen[3,1] camera-screen[3,2] 9 "#59616b" "none" 0 camera-disabled-opacity[3] |
-    | "camera-disabled-4" camera-screen[4,1] camera-screen[4,2] 9 "#59616b" "none" 0 camera-disabled-opacity[4] |
-    | "camera-1" camera-screen[1,1] camera-screen[1,2] 9 "#f4c95d" "#fff1b8" 2 camera-enabled[1] |
-    | "camera-2" camera-screen[2,1] camera-screen[2,2] 9 "#f4c95d" "#fff1b8" 2 camera-enabled[2] |
-    | "camera-3" camera-screen[3,1] camera-screen[3,2] 9 "#f4c95d" "#fff1b8" 2 camera-enabled[3] |
-    | "camera-4" camera-screen[4,1] camera-screen[4,2] 9 "#f4c95d" "#fff1b8" 2 camera-enabled[4] |
-    | "truth" truth-screen[1] truth-screen[2] 8 "#63d6c5" "#d7fff8" 1.5 1 |
-    | "prediction" predicted-screen[1] predicted-screen[2] 6 "none" "#f2b84b" 2 1 |
-    | "estimate" estimate-screen[1] estimate-screen[2] 7 "#f087b8" "#ffe1ef" 1.5 1 |
-    | "legend-truth" 30 718 4 "#63d6c5" "none" 0 1 |
-    | "legend-prediction" 205 718 4 "#f2b84b" "none" 0 1 |
-    | "legend-estimate" 405 718 4 "#f087b8" "none" 0 1 |
+  scene-circles := |id<string> x<f64> y<f64> radius<f64> fill<*> stroke<*> stroke-width<f64> opacity<f64>|
+    | "camera-range-1" camera-screen[1,1] camera-screen[1,2] camera-max-range * screen-scale "none" 0xf4c95d<f64> 0.8 camera-range-opacity[1] |
+    | "camera-range-2" camera-screen[2,1] camera-screen[2,2] camera-max-range * screen-scale "none" 0xf4c95d<f64> 0.8 camera-range-opacity[2] |
+    | "camera-range-3" camera-screen[3,1] camera-screen[3,2] camera-max-range * screen-scale "none" 0xf4c95d<f64> 0.8 camera-range-opacity[3] |
+    | "camera-range-4" camera-screen[4,1] camera-screen[4,2] camera-max-range * screen-scale "none" 0xf4c95d<f64> 0.8 camera-range-opacity[4] |
+    | "camera-disabled-1" camera-screen[1,1] camera-screen[1,2] 9 0x59616b<f64> "none" 0 camera-disabled-opacity[1] |
+    | "camera-disabled-2" camera-screen[2,1] camera-screen[2,2] 9 0x59616b<f64> "none" 0 camera-disabled-opacity[2] |
+    | "camera-disabled-3" camera-screen[3,1] camera-screen[3,2] 9 0x59616b<f64> "none" 0 camera-disabled-opacity[3] |
+    | "camera-disabled-4" camera-screen[4,1] camera-screen[4,2] 9 0x59616b<f64> "none" 0 camera-disabled-opacity[4] |
+    | "camera-1" camera-screen[1,1] camera-screen[1,2] 9 0xf4c95d<f64> 0xfff1b8<f64> 2 camera-enabled[1] |
+    | "camera-2" camera-screen[2,1] camera-screen[2,2] 9 0xf4c95d<f64> 0xfff1b8<f64> 2 camera-enabled[2] |
+    | "camera-3" camera-screen[3,1] camera-screen[3,2] 9 0xf4c95d<f64> 0xfff1b8<f64> 2 camera-enabled[3] |
+    | "camera-4" camera-screen[4,1] camera-screen[4,2] 9 0xf4c95d<f64> 0xfff1b8<f64> 2 camera-enabled[4] |
+    | "truth" truth-screen[1] truth-screen[2] 8 0x63d6c5<f64> 0xd7fff8<f64> 1.5 1 |
+    | "prediction" predicted-screen[1] predicted-screen[2] 6 "none" 0xf2b84b<f64> 2 1 |
+    | "estimate" estimate-screen[1] estimate-screen[2] 7 0xf087b8<f64> 0xffe1ef<f64> 1.5 1 |
+    | "legend-truth" 30 718 4 0x63d6c5<f64> "none" 0 1 |
+    | "legend-prediction" 205 718 4 0xf2b84b<f64> "none" 0 1 |
+    | "legend-estimate" 405 718 4 0xf087b8<f64> "none" 0 1 |
 
-  scene-lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<string> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
-    | "frame-top" 120 80 740 80 "#27313d" 1 "butt" 1 0 0 0 |
-    | "frame-right" 740 80 740 700 "#27313d" 1 "butt" 1 0 0 0 |
-    | "frame-bottom" 740 700 120 700 "#27313d" 1 "butt" 1 0 0 0 |
-    | "frame-left" 120 700 120 80 "#27313d" 1 "butt" 1 0 0 0 |
-    | "ray-1" camera-screen[1,1] camera-screen[1,2] truth-screen[1] truth-screen[2] "#d9b652" 0.7 "round" camera-ray-opacity[1] 0 0 0 |
-    | "ray-2" camera-screen[2,1] camera-screen[2,2] truth-screen[1] truth-screen[2] "#d9b652" 0.7 "round" camera-ray-opacity[2] 0 0 0 |
-    | "ray-3" camera-screen[3,1] camera-screen[3,2] truth-screen[1] truth-screen[2] "#d9b652" 0.7 "round" camera-ray-opacity[3] 0 0 0 |
-    | "ray-4" camera-screen[4,1] camera-screen[4,2] truth-screen[1] truth-screen[2] "#d9b652" 0.7 "round" camera-ray-opacity[4] 0 0 0 |
-    | "truth-heading" truth-screen[1] truth-screen[2] heading-screen-points[1,1] heading-screen-points[2,1] "#d7fff8" 2 "round" 1 0 0 0 |
-    | "estimate-heading" estimate-screen[1] estimate-screen[2] heading-screen-points[1,2] heading-screen-points[2,2] "#ffe1ef" 1.5 "round" 1 0 0 0 |
+  scene-lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<f64> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
+    | "frame-top" 120 80 740 80 0x27313d<f64> 1 "butt" 1 0 0 0 |
+    | "frame-right" 740 80 740 700 0x27313d<f64> 1 "butt" 1 0 0 0 |
+    | "frame-bottom" 740 700 120 700 0x27313d<f64> 1 "butt" 1 0 0 0 |
+    | "frame-left" 120 700 120 80 0x27313d<f64> 1 "butt" 1 0 0 0 |
+    | "ray-1" camera-screen[1,1] camera-screen[1,2] truth-screen[1] truth-screen[2] 0xd9b652<f64> 0.7 "round" camera-ray-opacity[1] 0 0 0 |
+    | "ray-2" camera-screen[2,1] camera-screen[2,2] truth-screen[1] truth-screen[2] 0xd9b652<f64> 0.7 "round" camera-ray-opacity[2] 0 0 0 |
+    | "ray-3" camera-screen[3,1] camera-screen[3,2] truth-screen[1] truth-screen[2] 0xd9b652<f64> 0.7 "round" camera-ray-opacity[3] 0 0 0 |
+    | "ray-4" camera-screen[4,1] camera-screen[4,2] truth-screen[1] truth-screen[2] 0xd9b652<f64> 0.7 "round" camera-ray-opacity[4] 0 0 0 |
+    | "truth-heading" truth-screen[1] truth-screen[2] heading-screen-points[1,1] heading-screen-points[2,1] 0xd7fff8<f64> 2 "round" 1 0 0 0 |
+    | "estimate-heading" estimate-screen[1] estimate-screen[2] heading-screen-points[1,2] heading-screen-points[2,2] 0xffe1ef<f64> 1.5 "round" 1 0 0 0 |
 
-  -- These path records remain a tuple because their positions matrices have
-  -- different shapes; the scalar scene collections below are typed tables.
-  scene-line-strips := (
-    {id: "square-guide", positions: square-guide, stroke: "#536273", stroke-width: 1, line-cap: "round", line-join: "round", opacity: 0.38, closed: true},
-    {id: "truth-path", positions: next-truth-path, stroke: "#63d6c5", stroke-width: 2, line-cap: "round", line-join: "round", opacity: 0.8, closed: false},
-    {id: "estimate-path", positions: next-estimate-path, stroke: "#f087b8", stroke-width: 2, line-cap: "round", line-join: "round", opacity: 0.84, closed: false},
-    {id: "covariance", positions: covariance-ellipse, stroke: "#f087b8", stroke-width: 1.5, line-cap: "round", line-join: "round", opacity: 0.72, closed: true}
-  )
+  scene-line-strips := |id<string> positions<*> stroke<f64> stroke-width<f64> line-cap<string> line-join<string> opacity<f64> closed<bool>|
+    | "square-guide" square-guide 0x536273<f64> 1 "round" "round" 0.38 true |
+    | "truth-path" next-truth-path 0x63d6c5<f64> 2 "round" "round" 0.8 false |
+    | "estimate-path" next-estimate-path 0xf087b8<f64> 2 "round" "round" 0.84 false |
+    | "covariance" covariance-ellipse 0xf087b8<f64> 1.5 "round" "round" 0.72 true |
 
   sans-serif-font := "Inter, ui-sans-serif, system-ui, sans-serif"
-  mono-font := "ui-monospace, SFMono-Regular, Menlo, monospace"
 
-  scene-text := |id<string>                  x<f64> y<f64> fill<string> font-size<f64> font-family<string> font-weight<string> text-anchor<string> opacity<f64>            value<string>                  |
-                | "title"                     24     62    "#edf2f7"  36             sans-serif-font    "620"                "start"             1                       "Camera EKF Localization"      |
-                | "camera-label-1"           195    636    "#d7c27f"  11             sans-serif-font    "500"                "start"             camera-label-opacity[1] "CAM 1"                        |
-                | "camera-label-2"           665    636    "#d7c27f"  11             sans-serif-font    "500"                "end"               camera-label-opacity[2] "CAM 2"                        |
-                | "camera-label-3"           665    140    "#d7c27f"  11             sans-serif-font    "500"                "end"               camera-label-opacity[3] "CAM 3"                        |
-                | "camera-label-4"           195    140    "#d7c27f"  11             sans-serif-font    "500"                "start"             camera-label-opacity[4] "CAM 4"                        |
-                | "legend-truth-label"        40    722    "#bdc8d2"  12             sans-serif-font    "400"                "start"             1                       "actual robot + path"          |
-                | "legend-prediction-label"  215    722    "#bdc8d2"  12             sans-serif-font    "400"                "start"             1                       "motion prediction"            |
-                | "legend-estimate-label"    415    722    "#bdc8d2"  12             sans-serif-font    "400"                "start"             1                       "EKF estimate + 2σ covariance" |
+  scene-text := |id<string>                  x<f64> y<f64> fill<f64> font-size<f64> font-family<string> font-weight<f64> text-anchor<string> opacity<f64>            value<string>                  |
+                | "title"                     24     62    0xedf2f7<f64>  36             sans-serif-font    620              "start"             1                       "Camera EKF Localization"      |
+                | "camera-label-1"           195    636    0xd7c27f<f64>  11             sans-serif-font    500              "start"             camera-label-opacity[1] "CAM 1"                        |
+                | "camera-label-2"           665    636    0xd7c27f<f64>  11             sans-serif-font    500              "end"               camera-label-opacity[2] "CAM 2"                        |
+                | "camera-label-3"           665    140    0xd7c27f<f64>  11             sans-serif-font    500              "end"               camera-label-opacity[3] "CAM 3"                        |
+                | "camera-label-4"           195    140    0xd7c27f<f64>  11             sans-serif-font    500              "start"             camera-label-opacity[4] "CAM 4"                        |
+                | "legend-truth-label"        40    722    0xbdc8d2<f64>  12             sans-serif-font    400              "start"             1                       "actual robot + path"          |
+                | "legend-prediction-label"  215    722    0xbdc8d2<f64>  12             sans-serif-font    400              "start"             1                       "motion prediction"            |
+                | "legend-estimate-label"    415    722    0xbdc8d2<f64>  12             sans-serif-font    400              "start"             1                       "EKF estimate + 2σ covariance" |
 
   field-presentation := {
     width: 860
     height: 770
-    background: "#080b12"
+    background: 0x080b12<f64>
     circles: scene-circles
     lines: scene-lines
     line-strips: scene-line-strips

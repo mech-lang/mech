@@ -108,7 +108,7 @@ impl SceneSnapshot {
         if !height.is_finite() || height <= 0.0 {
             return Err(scene_error("SceneSchema", "scene.height must be positive"));
         }
-        let background = required_string(&record, "background", "scene.background")?;
+        let background = required_paint(&record, "background", "scene.background")?;
         let mut circles = record_value(&record, "circles")
             .map(elements_from_value::<CircleElement>)
             .transpose()?
@@ -198,8 +198,8 @@ impl FromRecord for CircleElement {
                 &format!("circle `{id}` y"),
             )?,
             radius,
-            fill: required_string(record, "fill", &format!("circle `{id}` fill"))?,
-            stroke: required_string(record, "stroke", &format!("circle `{id}` stroke"))?,
+            fill: required_paint(record, "fill", &format!("circle `{id}` fill"))?,
+            stroke: required_paint(record, "stroke", &format!("circle `{id}` stroke"))?,
             stroke_width,
             opacity,
         })
@@ -251,7 +251,7 @@ impl FromRecord for LineElement {
                 required_number(record, "y2", &format!("line `{id}` y2"))?,
                 &format!("line `{id}` y2"),
             )?,
-            stroke: required_string(record, "stroke", &format!("line `{id}` stroke"))?,
+            stroke: required_paint(record, "stroke", &format!("line `{id}` stroke"))?,
             stroke_width,
             line_cap,
             opacity,
@@ -311,14 +311,14 @@ impl FromRecord for TextElement {
                 required_number(record, "y", &format!("text `{id}` y"))?,
                 &format!("text `{id}` y"),
             )?,
-            fill: required_string(record, "fill", &format!("text `{id}` fill"))?,
+            fill: required_paint(record, "fill", &format!("text `{id}` fill"))?,
             font_size,
             font_family: required_string(
                 record,
                 "font-family",
                 &format!("text `{id}` font-family"),
             )?,
-            font_weight: required_string(
+            font_weight: required_font_weight(
                 record,
                 "font-weight",
                 &format!("text `{id}` font-weight"),
@@ -515,7 +515,7 @@ fn point_set_from_record(record: &MechRecord) -> MResult<Vec<CircleElement>> {
             ),
         ));
     }
-    let stroke = required_string(record, "stroke", &format!("point-set `{id}` stroke"))?;
+    let stroke = required_paint(record, "stroke", &format!("point-set `{id}` stroke"))?;
     let stroke_width = required_number(
         record,
         "stroke-width",
@@ -647,7 +647,7 @@ fn line_strip_from_record(record: &MechRecord) -> MResult<LineStripElement> {
     Ok(LineStripElement {
         id,
         positions,
-        stroke: required_string(record, "stroke", "line-strip.stroke")?,
+        stroke: required_paint(record, "stroke", "line-strip.stroke")?,
         stroke_width,
         line_cap,
         line_join,
@@ -785,6 +785,66 @@ fn required_string(record: &MechRecord, field: &str, label: &str) -> MResult<Str
         0,
     )
     .map_err(|_| scene_error("SceneSchema", format!("field `{label}` must be a string")))
+}
+fn required_paint(record: &MechRecord, field: &str, label: &str) -> MResult<String> {
+    let resolved = host_arg_resolved(
+        SCENE_SCHEMA,
+        one_arg(required_value(record, field, label)?),
+        0,
+    )
+    .map_err(|_| {
+        scene_error(
+            "SceneSchema",
+            format!("field `{label}` must be a paint string or u32 RGB color"),
+        )
+    })?;
+    match resolved {
+        LegacyValue::String(value) => Ok(value.borrow().clone()),
+        LegacyValue::U32(value) if *value.borrow() <= 0x00ff_ffff => {
+            Ok(format!("#{:06x}", *value.borrow()))
+        }
+        LegacyValue::F64(value)
+            if value.borrow().is_finite()
+                && value.borrow().fract() == 0.0
+                && (0.0..=16_777_215.0).contains(&*value.borrow()) =>
+        {
+            Ok(format!("#{:06x}", *value.borrow() as u32))
+        }
+        _ => Err(scene_error(
+            "SceneSchema",
+            format!("field `{label}` must be a paint string or 24-bit unsigned RGB color"),
+        )),
+    }
+}
+fn required_font_weight(record: &MechRecord, field: &str, label: &str) -> MResult<String> {
+    let resolved = host_arg_resolved(
+        SCENE_SCHEMA,
+        one_arg(required_value(record, field, label)?),
+        0,
+    )
+    .map_err(|_| {
+        scene_error(
+            "SceneSchema",
+            format!("field `{label}` must be a string, f64, or u32"),
+        )
+    })?;
+    match resolved {
+        LegacyValue::String(value) => Ok(value.borrow().clone()),
+        LegacyValue::U32(value) if (1..=1000).contains(&*value.borrow()) => {
+            Ok(value.borrow().to_string())
+        }
+        LegacyValue::F64(value)
+            if value.borrow().is_finite()
+                && value.borrow().fract() == 0.0
+                && (1.0..=1000.0).contains(&*value.borrow()) =>
+        {
+            Ok(format!("{:.0}", *value.borrow()))
+        }
+        _ => Err(scene_error(
+            "SceneSchema",
+            format!("field `{label}` must be a string or a numeric value from 1 through 1000"),
+        )),
+    }
 }
 fn required_strings(record: &MechRecord, field: &str, label: &str) -> MResult<Vec<String>> {
     strings_from_value(required_value(record, field, label)?, label)

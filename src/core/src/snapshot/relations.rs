@@ -583,7 +583,8 @@ pub(super) fn schema_is_keyable(schema: &SchemaBody) -> bool {
             }
             true
         }
-        SchemaBody::Complex(_)
+        SchemaBody::Dynamic
+        | SchemaBody::Complex(_)
         | SchemaBody::Matrix { .. }
         | SchemaBody::Table { .. }
         | SchemaBody::Set { .. }

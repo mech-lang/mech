@@ -545,6 +545,23 @@ fn handle_column_kind(
                 ),
             );
         }
+        ValueKind::Index => {
+            let source_values = val.as_vec();
+            let mut values = Vec::with_capacity(source_values.len());
+            for value in source_values {
+                let LegacyValue::Index(index) = value.as_index()? else {
+                    unreachable!("numeric index conversion returned a non-index scalar")
+                };
+                values.push(LegacyValue::Index(index));
+            }
+            data_map.insert(
+                id,
+                (
+                    ValueKind::Index,
+                    LegacyValue::to_matrix(values.clone(), values.len(), 1),
+                ),
+            );
+        }
         ValueKind::Any => {
             let vals: Vec<LegacyValue> = val.as_vec().iter().map(|x| x.clone()).collect();
             data_map.insert(

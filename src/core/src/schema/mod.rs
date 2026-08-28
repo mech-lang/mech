@@ -41,6 +41,10 @@ impl SchemaDraft {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SchemaBody {
+    /// A self-describing value whose concrete schema and shape are carried by
+    /// the value itself. This is the instantiable semantic form of a legacy
+    /// wildcard (`*`) inside heterogeneous aggregates such as table columns.
+    Dynamic,
     Bool,
     UnsignedInteger(IntegerWidth),
     SignedInteger(IntegerWidth),

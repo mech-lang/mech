@@ -2220,7 +2220,7 @@ fn resident_observation_profile_covers_scalars_and_dense_matrices() {
         crate::RuntimeHostInputValue::Bool(true),
     );
     assert_typed_observation_round_trip(
-        LegacyValue::Index(Ref::new(0)),
+        LegacyValue::Index(Ref::new(1)),
         crate::RuntimeHostInputValue::Index(7),
     );
     assert_typed_observation_round_trip(
@@ -2236,7 +2236,7 @@ fn resident_observation_profile_covers_scalars_and_dense_matrices() {
         },
     );
     assert_typed_observation_round_trip(
-        LegacyValue::MatrixIndex(ValueMatrix::from_vec(vec![0; 4], 2, 2)),
+        LegacyValue::MatrixIndex(ValueMatrix::from_vec(vec![1; 4], 2, 2)),
         crate::RuntimeHostInputValue::IndexMatrix {
             rows: 2,
             columns: 2,

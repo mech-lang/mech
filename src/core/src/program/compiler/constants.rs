@@ -1111,6 +1111,20 @@ fn encode_table_constant(
             ));
         }
         let declared_type = runtime_type_from_value_kind(kind)?;
+        if matches!(declared_type, RuntimeType::Any) {
+            // Wildcard columns are reconstructed exclusively from their live
+            // CompositePack children. Keep only zero-sized dynamic
+            // placeholders in the constant template; encoding one concrete
+            // cell type here would incorrectly force every row to share that
+            // schema and matrix shape.
+            columns.push((name.clone(), RuntimeType::Any));
+            column_values.push(
+                (0..value.rows)
+                    .map(|_| encoded_constant(RuntimeType::Any, 1, Vec::new()))
+                    .collect(),
+            );
+            continue;
+        }
         let mut annotated_cells = Vec::new();
         annotated_cells
             .try_reserve_exact(value.rows)

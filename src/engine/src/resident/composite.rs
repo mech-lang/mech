@@ -1,4 +1,6 @@
-use mech_core::snapshot::{F64Bits, MatrixValue, rebuild_composite_snapshot};
+use mech_core::snapshot::{
+    F64Bits, MatrixValue, rebuild_composite_snapshot, wrap_resident_dynamic_data,
+};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     DimensionExpr, ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
@@ -11,7 +13,17 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 struct CompositeChildPlan {
     matrix_dimensions: Option<Box<[DimensionExpr]>>,
+    input_is_matrix: bool,
     shape: ResidentShape,
+    dynamic: Option<DynamicChildPlan>,
+}
+
+#[derive(Clone, Debug)]
+struct DynamicChildPlan {
+    schema_id: mech_core::SchemaId,
+    schema_key: mech_core::SchemaKey,
+    shape: ShapeInstance,
+    body: SchemaBody,
 }
 
 #[derive(Clone, Debug)]
@@ -36,6 +48,9 @@ fn port_matches_schema_body(
     input: &mech_core::ResidentPortLayout,
     expected: &SchemaBody,
 ) -> bool {
+    if matches!(expected, SchemaBody::Dynamic) {
+        return true;
+    }
     request
         .schemas
         .get(input.schema_id)
@@ -114,6 +129,7 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
             .iter()
             .zip(expected)
             .map(|(input, expected)| {
+                let input_schema = request.schemas.get(input.schema_id)?;
                 let matrix_dimensions = match expected {
                     SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => {
                         Some(dimensions.clone())
@@ -123,7 +139,14 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
                 };
                 Some(CompositeChildPlan {
                     matrix_dimensions,
+                    input_is_matrix: matches!(input_schema.body(), SchemaBody::Matrix { .. }),
                     shape: input.shape,
+                    dynamic: matches!(expected, SchemaBody::Dynamic).then(|| DynamicChildPlan {
+                        schema_id: input.schema_id,
+                        schema_key: input.schema_key,
+                        shape: input.shape_instance.clone(),
+                        body: input_schema.body().clone(),
+                    }),
                 })
             })
             .collect::<Option<Vec<_>>>()
@@ -326,7 +349,7 @@ fn composite_child_data(
     input: ResidentValueRef<'_>,
     plan: &CompositeChildPlan,
 ) -> Option<ValueData> {
-    if plan.matrix_dimensions.is_some() {
+    let data = if plan.input_is_matrix {
         let matrix = match input {
             ResidentValueRef::Bool(values) => MatrixValue::from_bool_elements(
                 canonical_matrix_elements(values, plan.shape, |value| match value {
@@ -354,18 +377,29 @@ fn composite_child_data(
                 })?,
             ),
         };
-        return Some(ValueData::Matrix(matrix));
-    }
-    match input {
-        ResidentValueRef::Bool([value]) if *value <= 1 => Some(ValueData::Bool(*value != 0)),
-        ResidentValueRef::Index([value]) => Some(ValueData::Index(*value)),
-        ResidentValueRef::F64([value]) => Some(ValueData::F64(F64Bits::from_f64(*value))),
-        ResidentValueRef::String([value]) => {
-            Some(ValueData::String(value.clone().into_boxed_str()))
-        }
-        ResidentValueRef::Snapshot([Some(value)]) => Some(value.data().clone()),
-        _ => None,
-    }
+        ValueData::Matrix(matrix)
+    } else {
+        match input {
+            ResidentValueRef::Bool([value]) if *value <= 1 => Some(ValueData::Bool(*value != 0)),
+            ResidentValueRef::Index([value]) => Some(ValueData::Index(*value)),
+            ResidentValueRef::F64([value]) => Some(ValueData::F64(F64Bits::from_f64(*value))),
+            ResidentValueRef::String([value]) => {
+                Some(ValueData::String(value.clone().into_boxed_str()))
+            }
+            ResidentValueRef::Snapshot([Some(value)]) => Some(value.data().clone()),
+            _ => None,
+        }?
+    };
+    Some(match &plan.dynamic {
+        Some(dynamic) => wrap_resident_dynamic_data(
+            dynamic.schema_id,
+            dynamic.schema_key,
+            dynamic.shape.clone(),
+            &dynamic.body,
+            data,
+        ),
+        None => data,
+    })
 }
 
 fn composite_pack(
@@ -430,6 +464,11 @@ mod tests {
             schema_key: schemas.entry(schema_id).unwrap().key(),
             kind,
             shape,
+            shape_instance: schemas
+                .get(schema_id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
         }
     }
 
@@ -477,7 +516,7 @@ mod tests {
                 contract: &contract,
                 schemas: &schemas,
                 inputs: &good,
-                output,
+                output: output.clone(),
             }
         ));
 
@@ -585,10 +624,12 @@ mod tests {
             matrix_dimensions: Some(
                 vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into_boxed_slice(),
             ),
+            input_is_matrix: true,
             shape: ResidentShape {
                 rows: 2,
                 columns: 3,
             },
+            dynamic: None,
         };
         let Some(ValueData::Matrix(matrix)) =
             composite_child_data(ResidentValueRef::F64(&values), &plan)
@@ -645,10 +686,12 @@ mod tests {
         let mismatched = CompositePackPlan {
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions.clone()),
+                input_is_matrix: true,
                 shape: ResidentShape {
                     rows: 1,
                     columns: 2,
                 },
+                dynamic: None,
             }]
             .into_boxed_slice(),
             table: None,
@@ -661,10 +704,12 @@ mod tests {
         let matching = CompositePackPlan {
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions),
+                input_is_matrix: true,
                 shape: ResidentShape {
                     rows: 1,
                     columns: 3,
                 },
+                dynamic: None,
             }]
             .into_boxed_slice(),
             table: None,

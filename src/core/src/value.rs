@@ -4254,53 +4254,167 @@ impl LegacyValue {
         }
     }
 
-    pub fn as_index(&self) -> MResult<LegacyValue> {
-        match self.as_usize() {
-            Ok(ix) => Ok(LegacyValue::Index(Ref::new(ix))),
-            #[cfg(not(feature = "matrix"))]
-            Err(_) => Err(
-                MechError::new(CannotConvertToTypeError { target_type: "ix" }, None)
-                    .with_compiler_loc(),
-            ),
-            #[cfg(feature = "matrix")]
-            Err(_) => match self.as_vecusize() {
-                #[cfg(feature = "matrix")]
-                Ok(x) => {
-                    let shape = self.shape();
-                    let out = LegacyValue::MatrixIndex(usize::to_matrix(x, shape[0] * shape[1], 1));
-                    Ok(out)
-                }
-                #[cfg(all(feature = "matrix", feature = "bool"))]
-                Err(_) => match self.as_vecbool() {
-                    Ok(x) => {
-                        let shape = self.shape();
-                        let out = match (shape[0], shape[1]) {
-                            (1, 1) => LegacyValue::Bool(Ref::new(x[0])),
-                            #[cfg(all(feature = "vectord", feature = "bool"))]
-                            _ => LegacyValue::MatrixBool(Matrix::DVector(Ref::new(
-                                DVector::from_vec(x),
-                            ))),
-                            #[cfg(not(all(feature = "vectord", feature = "bool")))]
-                            _ => todo!(),
-                        };
-                        Ok(out)
-                    }
-                    Err(_) => match self.as_bool() {
-                        Ok(x) => Ok(LegacyValue::Bool(x)),
-                        Err(_) => Err(MechError::new(
-                            CannotConvertToTypeError { target_type: "ix" },
-                            None,
-                        )
-                        .with_compiler_loc()),
-                    },
-                },
-                #[cfg(all(feature = "matrix", not(feature = "bool")))]
-                Err(_) => Err(
-                    MechError::new(CannotConvertToTypeError { target_type: "ix" }, None)
-                        .with_compiler_loc(),
-                ),
-            },
+    fn as_one_based_usize(&self) -> Option<usize> {
+        #[cfg(any(feature = "f32", feature = "f64"))]
+        fn positive_float(value: f64) -> Option<usize> {
+            if !value.is_finite() || value < 1.0 || value.fract() != 0.0 {
+                return None;
+            }
+            usize::try_from(value as u128).ok()
         }
+
+        let index = match self {
+            LegacyValue::Index(value) => *value.borrow(),
+            #[cfg(feature = "u8")]
+            LegacyValue::U8(value) => usize::from(*value.borrow()),
+            #[cfg(feature = "u16")]
+            LegacyValue::U16(value) => usize::from(*value.borrow()),
+            #[cfg(feature = "u32")]
+            LegacyValue::U32(value) => usize::try_from(*value.borrow()).ok()?,
+            #[cfg(feature = "u64")]
+            LegacyValue::U64(value) => usize::try_from(*value.borrow()).ok()?,
+            #[cfg(feature = "u128")]
+            LegacyValue::U128(value) => usize::try_from(*value.borrow()).ok()?,
+            #[cfg(feature = "i8")]
+            LegacyValue::I8(value) => usize::try_from(*value.borrow()).ok()?,
+            #[cfg(feature = "i16")]
+            LegacyValue::I16(value) => usize::try_from(*value.borrow()).ok()?,
+            #[cfg(feature = "i32")]
+            LegacyValue::I32(value) => usize::try_from(*value.borrow()).ok()?,
+            #[cfg(feature = "i64")]
+            LegacyValue::I64(value) => usize::try_from(*value.borrow()).ok()?,
+            #[cfg(feature = "i128")]
+            LegacyValue::I128(value) => usize::try_from(*value.borrow()).ok()?,
+            #[cfg(feature = "f32")]
+            LegacyValue::F32(value) => positive_float(f64::from(*value.borrow()))?,
+            #[cfg(feature = "f64")]
+            LegacyValue::F64(value) => positive_float(*value.borrow())?,
+            LegacyValue::MutableReference(value) => value.borrow().as_one_based_usize()?,
+            _ => return None,
+        };
+        (index > 0).then_some(index)
+    }
+
+    #[cfg(feature = "matrix")]
+    fn as_one_based_index_matrix(&self) -> Option<Vec<usize>> {
+        #[cfg(any(feature = "f32", feature = "f64"))]
+        fn positive_float(value: f64) -> Option<usize> {
+            if !value.is_finite() || value < 1.0 || value.fract() != 0.0 {
+                return None;
+            }
+            usize::try_from(value as u128).ok()
+        }
+
+        #[allow(unused_macros)]
+        macro_rules! unsigned_matrix {
+            ($variant:ident) => {
+                if let LegacyValue::$variant(value) = self {
+                    return value
+                        .as_vec()
+                        .into_iter()
+                        .map(|value| usize::try_from(value).ok().filter(|value| *value > 0))
+                        .collect();
+                }
+            };
+        }
+        #[allow(unused_macros)]
+        macro_rules! signed_matrix {
+            ($variant:ident) => {
+                if let LegacyValue::$variant(value) = self {
+                    return value
+                        .as_vec()
+                        .into_iter()
+                        .map(|value| usize::try_from(value).ok().filter(|value| *value > 0))
+                        .collect();
+                }
+            };
+        }
+        #[allow(unused_macros)]
+        macro_rules! float_matrix {
+            ($variant:ident) => {
+                if let LegacyValue::$variant(value) = self {
+                    return value
+                        .as_vec()
+                        .into_iter()
+                        .map(|value| positive_float(f64::from(value)))
+                        .collect();
+                }
+            };
+        }
+
+        if let LegacyValue::MatrixIndex(value) = self {
+            return value
+                .as_vec()
+                .into_iter()
+                .map(|value| (value > 0).then_some(value))
+                .collect();
+        }
+        #[cfg(feature = "u8")]
+        unsigned_matrix!(MatrixU8);
+        #[cfg(feature = "u16")]
+        unsigned_matrix!(MatrixU16);
+        #[cfg(feature = "u32")]
+        unsigned_matrix!(MatrixU32);
+        #[cfg(feature = "u64")]
+        unsigned_matrix!(MatrixU64);
+        #[cfg(feature = "u128")]
+        unsigned_matrix!(MatrixU128);
+        #[cfg(feature = "i8")]
+        signed_matrix!(MatrixI8);
+        #[cfg(feature = "i16")]
+        signed_matrix!(MatrixI16);
+        #[cfg(feature = "i32")]
+        signed_matrix!(MatrixI32);
+        #[cfg(feature = "i64")]
+        signed_matrix!(MatrixI64);
+        #[cfg(feature = "i128")]
+        signed_matrix!(MatrixI128);
+        #[cfg(feature = "f32")]
+        float_matrix!(MatrixF32);
+        #[cfg(feature = "f64")]
+        float_matrix!(MatrixF64);
+        if let LegacyValue::MutableReference(value) = self {
+            return value.borrow().as_one_based_index_matrix();
+        }
+        None
+    }
+
+    pub fn as_index(&self) -> MResult<LegacyValue> {
+        if let Some(index) = self.as_one_based_usize() {
+            return Ok(LegacyValue::Index(Ref::new(index)));
+        }
+        #[cfg(feature = "matrix")]
+        if let Some(indexes) = self.as_one_based_index_matrix() {
+            let shape = self.shape();
+            return Ok(LegacyValue::MatrixIndex(usize::to_matrix(
+                indexes,
+                shape[0] * shape[1],
+                1,
+            )));
+        }
+        #[cfg(all(feature = "matrix", feature = "bool"))]
+        if let Ok(values) = self.as_vecbool() {
+            let shape = self.shape();
+            let out = match (shape[0], shape[1]) {
+                (1, 1) => LegacyValue::Bool(Ref::new(values[0])),
+                #[cfg(feature = "vectord")]
+                _ => LegacyValue::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(values)))),
+                #[cfg(not(feature = "vectord"))]
+                _ => todo!(),
+            };
+            return Ok(out);
+        }
+        #[cfg(feature = "bool")]
+        if let Ok(value) = self.as_bool() {
+            return Ok(LegacyValue::Bool(value));
+        }
+        Err(MechError::new(
+            CannotConvertToTypeError {
+                target_type: "ix (1..=max)",
+            },
+            None,
+        )
+        .with_compiler_loc())
     }
 
     pub fn as_usize(&self) -> MResult<usize> {
@@ -4843,6 +4957,19 @@ mod reactive_cell_tests {
 
     fn cell_ids(ids: &[u64]) -> Vec<ReactiveCellId> {
         ids.iter().copied().map(ReactiveCellId::new).collect()
+    }
+
+    #[cfg(feature = "f64")]
+    #[test]
+    fn index_conversion_is_exact_and_one_based() {
+        assert!(matches!(
+            LegacyValue::F64(Ref::new(1.0)).as_index().unwrap(),
+            LegacyValue::Index(value) if *value.borrow() == 1
+        ));
+        for invalid in [0.0, -1.0, 1.5] {
+            assert!(LegacyValue::F64(Ref::new(invalid)).as_index().is_err());
+        }
+        assert!(LegacyValue::Index(Ref::new(0)).as_index().is_err());
     }
 
     #[cfg(feature = "f64")]

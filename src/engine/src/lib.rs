@@ -222,46 +222,11 @@ pub use crate::intrinsics::table_ops::{
 #[cfg(feature = "matrix_vertcat")]
 pub use crate::intrinsics::vertcat::{MatrixVertCat, VerticalConcatenateDimensionMismatch};
 #[cfg(feature = "semantic-compiler")]
-pub fn load_stdkinds(
-    #[cfg(any(
-        feature = "u8",
-        feature = "u16",
-        feature = "u32",
-        feature = "u64",
-        feature = "u128",
-        feature = "i8",
-        feature = "i16",
-        feature = "i32",
-        feature = "i64",
-        feature = "i128",
-        feature = "f32",
-        feature = "f64",
-        feature = "c64",
-        feature = "r64",
-        feature = "string",
-        feature = "bool"
-    ))]
-    kinds: &mut KindTable,
-    #[cfg(not(any(
-        feature = "u8",
-        feature = "u16",
-        feature = "u32",
-        feature = "u64",
-        feature = "u128",
-        feature = "i8",
-        feature = "i16",
-        feature = "i32",
-        feature = "i64",
-        feature = "i128",
-        feature = "f32",
-        feature = "f64",
-        feature = "c64",
-        feature = "r64",
-        feature = "string",
-        feature = "bool"
-    )))]
-    _: &mut KindTable,
-) {
+pub fn load_stdkinds(kinds: &mut KindTable) {
+    // `ix` is the canonical spelling used by value formatting; `index` is the
+    // long-form alias. Both names denote the same one-based scalar kind.
+    kinds.insert(hash_str("ix"), ValueKind::Index);
+    kinds.insert(hash_str("index"), ValueKind::Index);
     #[cfg(feature = "u8")]
     kinds.insert(hash_str("u8"), ValueKind::U8);
     #[cfg(feature = "u16")]
@@ -294,6 +259,19 @@ pub fn load_stdkinds(
     kinds.insert(hash_str("string"), ValueKind::String);
     #[cfg(feature = "bool")]
     kinds.insert(hash_str("bool"), ValueKind::Bool);
+}
+
+#[cfg(all(test, feature = "semantic-compiler"))]
+mod standard_kind_tests {
+    use super::*;
+
+    #[test]
+    fn ix_and_index_are_aliases() {
+        let mut kinds = KindTable::new();
+        load_stdkinds(&mut kinds);
+        assert_eq!(kinds.get(&hash_str("ix")), Some(&ValueKind::Index));
+        assert_eq!(kinds.get(&hash_str("index")), Some(&ValueKind::Index));
+    }
 }
 
 #[macro_export]

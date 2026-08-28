@@ -162,7 +162,7 @@ pub fn validate_bytecode_composite_children(
     for (index, (expected, actual)) in expected.iter().zip(children).enumerate() {
         let expected_kind = compiled_child_kind(expected);
         let actual_kind = actual.kind();
-        if actual_kind != expected_kind {
+        if !matches!(expected_kind, ValueKind::Any) && actual_kind != expected_kind {
             return Err(wrong_child_kind(index, &expected_kind, &actual_kind));
         }
     }

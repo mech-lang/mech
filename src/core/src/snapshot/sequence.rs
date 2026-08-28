@@ -92,6 +92,7 @@ impl SequenceStorage {
             SchemaBody::Id => pack!(Id, Id),
             SchemaBody::Index => pack!(Index, Index),
             SchemaBody::Atom(_) => Self::Unit(values.len() as u64),
+            SchemaBody::Dynamic => Self::Values(values.into_boxed_slice()),
             _ => Self::Values(values.into_boxed_slice()),
         }
     }
@@ -190,10 +191,13 @@ impl SequenceStorage {
             }
             Self::Values(expected) => {
                 if expected.len() != values.len()
-                    || expected
-                        .iter()
-                        .zip(values.iter())
-                        .any(|(expected, value)| expected.kind() != value.kind())
+                    || expected.iter().zip(values.iter()).any(|(expected, value)| {
+                        expected.kind() != value.kind()
+                            && !matches!(
+                                (expected, value),
+                                (ValueData::Dynamic(_), ValueData::Dynamic(_))
+                            )
+                    })
                 {
                     return None;
                 }

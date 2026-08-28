@@ -4354,6 +4354,16 @@ rows := |id<string> x<f64>|
             !source.contains("innovation-inverse") && !source.contains("innovation-determinant"),
             "the example must not expand a matrix inverse by hand",
         );
+        assert!(
+            !source.contains("matrix/vertcat")
+                && source.contains("advanced-truth-path := [truth-path[2..=376,:]; truth-screen']"),
+            "vertical concatenation must use matrix literal syntax",
+        );
+        assert!(
+            source.contains("scene-line-strips := |id<string> positions<*>")
+                && source.contains("scene-text := |id<string>"),
+            "scene collections must remain table values",
+        );
         let sources = HashMap::from([("localization.mec".to_string(), source.clone())]);
         let timer_factory = TestManualTimerHostFactory::new();
         let timer_driver = timer_factory.driver.clone();

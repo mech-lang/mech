@@ -3899,6 +3899,11 @@ mod tests {
             schema_key: schemas.entry(schema_id).unwrap().key(),
             kind: ResidentValueKind::F64,
             shape,
+            shape_instance: schemas
+                .get(schema_id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
         };
         let row_shape = ResidentShape {
             rows: 1,
@@ -4145,17 +4150,29 @@ mod tests {
 
     #[test]
     fn strict_identity_distinguishes_scalar_from_one_by_one_matrix() {
+        let shape_instance = || {
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            }
+            .finalize()
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap()
+        };
         let scalar = mech_core::ResidentPortLayout {
             schema_id: mech_core::SchemaId::new(1),
             schema_key: mech_core::SchemaKey::from_bytes([1; 32]),
             kind: ResidentValueKind::F64,
             shape: ResidentShape::SCALAR,
+            shape_instance: shape_instance(),
         };
         let matrix = mech_core::ResidentPortLayout {
             schema_id: mech_core::SchemaId::new(2),
             schema_key: mech_core::SchemaKey::from_bytes([2; 32]),
             kind: ResidentValueKind::F64,
             shape: ResidentShape::SCALAR,
+            shape_instance: shape_instance(),
         };
         assert!(!strict_inputs_share_identity(&scalar, &matrix));
     }
@@ -4196,12 +4213,22 @@ mod tests {
             schema_key: schemas.entry(scalar).unwrap().key(),
             kind: ResidentValueKind::F64,
             shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(scalar)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
         };
         let output = mech_core::ResidentPortLayout {
             schema_id: matrix,
             schema_key: schemas.entry(matrix).unwrap().key(),
             kind: ResidentValueKind::F64,
             shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(matrix)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
         };
         let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
             inputs: vec![mech_core::ResolvedInputPort {
@@ -4292,6 +4319,11 @@ mod tests {
                 schema_key: schemas.entry(schema_id).unwrap().key(),
                 kind: ResidentValueKind::F64,
                 shape: ResidentShape::SCALAR,
+                shape_instance: schemas
+                    .get(schema_id)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
             };
             let request = ResidentKernelBindRequest {
                 contract: &contract,

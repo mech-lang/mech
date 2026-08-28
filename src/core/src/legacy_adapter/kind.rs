@@ -251,7 +251,8 @@ fn schema_body_from_legacy(
         ValueKind::Bool => SchemaBody::Bool,
         ValueKind::Id => SchemaBody::Id,
         ValueKind::Index => SchemaBody::Index,
-        ValueKind::Empty | ValueKind::Any | ValueKind::None | ValueKind::Reference(_) => {
+        ValueKind::Any => SchemaBody::Dynamic,
+        ValueKind::Empty | ValueKind::None | ValueKind::Reference(_) => {
             return Err(SemanticModelError::NonInstantiableLegacyValueKind {
                 kind: legacy_value_kind_tag(kind),
             });

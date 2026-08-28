@@ -76,7 +76,8 @@ fn validate_names_and_keyability(body: &SchemaBody) -> Result<(), SemanticModelE
             }
             validate_names_and_keyability(value)?;
         }
-        SchemaBody::Bool
+        SchemaBody::Dynamic
+        | SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
         | SchemaBody::FloatingPoint(_)
@@ -124,7 +125,8 @@ pub(super) fn is_body_keyable(body: &SchemaBody) -> bool {
         SchemaBody::Option(element) => is_body_keyable(element),
         SchemaBody::Tuple(elements) => elements.iter().all(is_body_keyable),
         SchemaBody::Record(fields) => fields.iter().all(|field| is_body_keyable(&field.schema)),
-        SchemaBody::Complex(_)
+        SchemaBody::Dynamic
+        | SchemaBody::Complex(_)
         | SchemaBody::Matrix { .. }
         | SchemaBody::Table { .. }
         | SchemaBody::Set { .. }
@@ -181,7 +183,8 @@ pub(super) fn collect_body_dimension_references(
             collect_body_dimension_references(value, references);
             collect_dimension_references(cardinality, references);
         }
-        SchemaBody::Bool
+        SchemaBody::Dynamic
+        | SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
         | SchemaBody::FloatingPoint(_)
@@ -209,6 +212,7 @@ fn rewrite_body_dimensions(
     old_to_new: &[Option<DimensionParameterId>],
 ) -> Result<SchemaBody, SemanticModelError> {
     Ok(match body {
+        SchemaBody::Dynamic => SchemaBody::Dynamic,
         SchemaBody::Bool => SchemaBody::Bool,
         SchemaBody::UnsignedInteger(width) => SchemaBody::UnsignedInteger(*width),
         SchemaBody::SignedInteger(width) => SchemaBody::SignedInteger(*width),

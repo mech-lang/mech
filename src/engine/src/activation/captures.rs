@@ -130,7 +130,7 @@ pub(super) fn create_capture_slot_for_kind(
         ValueKind::Bool => Ok(LegacyValue::Bool(Ref::new(false))),
         #[cfg(any(feature = "string", feature = "variable_define"))]
         ValueKind::String => Ok(LegacyValue::String(Ref::new(String::new()))),
-        ValueKind::Index => Ok(LegacyValue::Index(Ref::new(0))),
+        ValueKind::Index => Ok(LegacyValue::Index(Ref::new(1))),
         #[cfg(feature = "atom")]
         ValueKind::Atom(id, _) => Ok(LegacyValue::Atom(Ref::new(MechAtom::new(id)))),
         #[cfg(feature = "tuple")]

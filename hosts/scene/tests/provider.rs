@@ -30,6 +30,12 @@ fn deliver_write(
 fn f(value: f64) -> LegacyValue {
     LegacyValue::F64(Ref::new(value))
 }
+fn u32_value(value: u32) -> LegacyValue {
+    LegacyValue::U32(Ref::new(value))
+}
+fn ix(value: usize) -> LegacyValue {
+    LegacyValue::Index(Ref::new(value))
+}
 fn s(value: &str) -> LegacyValue {
     LegacyValue::String(Ref::new(value.to_string()))
 }
@@ -196,6 +202,71 @@ fn valid_text_scene() {
     ]);
     let scene = SceneSnapshot::from_value(&scene).unwrap();
     assert_eq!(scene.texts[0].value, "Scene label");
+}
+
+#[test]
+fn numeric_text_paint_and_weight_are_normalized_without_index_coercion() {
+    let numeric_text = record(vec![
+        ("id", s("title")),
+        ("x", f(10.0)),
+        ("y", f(20.0)),
+        ("fill", f(0xedf2f7 as f64)),
+        ("font-size", f(12.0)),
+        ("font-family", s("sans-serif")),
+        ("font-weight", f(620.0)),
+        ("text-anchor", s("start")),
+        ("opacity", f(1.0)),
+        ("value", s("Scene label")),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", u32_value(0x080b12)),
+        ("texts", tuple(vec![numeric_text])),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.background, "#080b12");
+    assert_eq!(scene.texts[0].fill, "#edf2f7");
+    assert_eq!(scene.texts[0].font_weight, "620");
+
+    for (field, value) in [("fill", ix(1)), ("font-weight", ix(500))] {
+        let invalid_text = record(vec![
+            ("id", s("title")),
+            ("x", f(10.0)),
+            ("y", f(20.0)),
+            (
+                "fill",
+                if field == "fill" {
+                    value.clone()
+                } else {
+                    f(0.0)
+                },
+            ),
+            ("font-size", f(12.0)),
+            ("font-family", s("sans-serif")),
+            (
+                "font-weight",
+                if field == "font-weight" {
+                    value
+                } else {
+                    f(500.0)
+                },
+            ),
+            ("text-anchor", s("start")),
+            ("opacity", f(1.0)),
+            ("value", s("Scene label")),
+        ]);
+        let invalid_scene = record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("#000")),
+            ("texts", tuple(vec![invalid_text])),
+        ]);
+        assert!(
+            SceneSnapshot::from_value(&invalid_scene).is_err(),
+            "{field}"
+        );
+    }
 }
 
 #[test]

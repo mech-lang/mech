@@ -95,6 +95,7 @@ pub(super) fn canonical_material(schema: &SchemaBody, data: &ValueData) -> Box<[
 
 pub(super) fn encode_data(schema: &SchemaBody, data: &ValueData, sink: &mut dyn SnapshotByteSink) {
     match (schema, data) {
+        (SchemaBody::Dynamic, ValueData::Dynamic(value)) => sink.write(&value.canonical),
         (SchemaBody::Bool, ValueData::Bool(value)) => write_u8(sink, u8::from(*value)),
         (SchemaBody::UnsignedInteger(IntegerWidth::W8), ValueData::U8(value)) => {
             write_u8(sink, *value)
