@@ -4,31 +4,17 @@ section: Examples
 +> math
 ===============================================================================
 
-This resident application localizes a robot from noisy range-and-bearing
-measurements made by four fixed cameras. The cyan robot is simulated truth, the
-amber marker is the motion-model prediction, and the rose robot is the corrected
-EKF estimate. Their rolling paths make tracking error visible instead of hiding
-it in a final scalar.
+This resident application localizes a robot from noisy range-and-bearing measurements made by four fixed cameras. The cyan robot is simulated truth, the amber marker is the motion-model prediction, and the rose robot is the corrected EKF estimate. Their rolling paths make tracking error visible instead of hiding it in a final scalar.
 
-The filter follows the recursive predict/correct formulation and extended
-linearization described by [Welch and Bishop's EKF tutorial](https://www.cs.unc.edu/~welch/media/pdf/kalman_intro.pdf),
-building on [Kalman's original state-space filtering paper](https://doi.org/10.1115/1.3662552).
-The camera observations are generated
-from truth with deterministic noise; the filter receives only commanded motion,
-camera locations, measurements, and covariance models.
+The filter follows the recursive predict/correct formulation and extended linearization described by [Welch and Bishop's EKF tutorial](https://www.cs.unc.edu/~welch/media/pdf/kalman_intro.pdf), building on [Kalman's original state-space filtering paper](https://doi.org/10.1115/1.3662552). The camera observations are generated from truth with deterministic noise; the filter receives only commanded motion, camera locations, measurements, and covariance models.
 
 
 1. Field and Cameras
 -------------------------------------------------------------------------------
 
-The robot drives between 2.5 and 7.5 field units. Cameras surround that square,
-but each has a finite 3.6-unit sensing radius. The uncovered middle of every
-side is an intentional dead zone: covariance grows while no camera can see the
-robot and contracts after the next camera reacquires it.
+The robot drives between 2.5 and 7.5 field units. Cameras surround that square, but each has a finite 3.6-unit sensing radius. The uncovered middle of every side is an intentional dead zone: covariance grows while no camera can see the robot and contracts after the next camera reacquires it.
 
-Click a camera to disable it. Its color mutes, its range ring disappears, and
-its measurements are removed before the EKF update. Click it again to restore
-the same camera and measurement path.
+Click a camera to disable it. Its color mutes, its range ring disappears, and its measurements are removed before the EKF update. Click it again to restore the same camera and measurement path.
 
 @clock := timer://clock/tick{:read(tick)}
 @scene := scene://localization/frame{:read(pointer-pulse), :read(pointer-position), :write(replace)}
@@ -104,12 +90,7 @@ the same camera and measurement path.
 2. Vectorized Square Drive
 -------------------------------------------------------------------------------
 
-The delivered simulation step directly indexes the four square sides. The phase
-and its within-side progress define a moving point on the requested square. A
-short look-ahead aims the unicycle toward that point, so accumulated motion
-error is corrected instead of being carried into every later side. Its only
-controls are forward velocity `v` and angular velocity `ω`; bounded steering
-and turn-speed reduction make the corners smooth without position clamps.
+The delivered simulation step directly indexes the four square sides. The phase and its within-side progress define a moving point on the requested square. A short look-ahead aims the unicycle toward that point, so accumulated motion error is corrected instead of being carried into every later side. Its only controls are forward velocity `v` and angular velocity `ω`; bounded steering and turn-speed reduction make the corners smooth without position clamps.
 
   side-ticks := 94.0
   lap-ticks := 4.0 * side-ticks
@@ -164,10 +145,7 @@ and turn-speed reduction make the corners smooth without position clamps.
 3. Noisy Camera Observations
 -------------------------------------------------------------------------------
 
-The same square phase selects the nearest corner camera during each half-side.
-A camera outside its 3.6-unit range contributes exactly zero correction. This
-produces genuine prediction-only intervals rather than pretending that every
-camera sees through the entire field.
+The same square phase selects the nearest corner camera during each half-side. A camera outside its 3.6-unit range contributes exactly zero correction. This produces genuine prediction-only intervals rather than pretending that every camera sees through the entire field.
 
   camera-dwell-ticks := side-ticks / 2.0
   camera-index := (math/floor((simulation-step + camera-dwell-ticks) / side-ticks) % 4.0) + 1.0
@@ -192,15 +170,7 @@ camera sees through the entire field.
 4. Extended Kalman Filter
 -------------------------------------------------------------------------------
 
-The matrix equations below are the complete filter. The motion model predicts
-once per control interval, then the scheduled range-and-bearing observation may
-correct the state if that camera is in range. Covariance uses the numerically
-stable Joseph form and is symmetrized before becoming the next resident state.
-The ordinary arrays here define 1,000 independent lanes. Lane zero receives the
-exact displayed measurement; the remaining lanes receive deterministic sensor
-perturbations so the work is a real filter ensemble rather than 1,000 copies of
-one arithmetic result. Base control, camera, and measurement rows broadcast
-directly across the lane matrices. Only lane zero is sampled back for the scene.
+The matrix equations below are the complete filter. The motion model predictsv once per control interval, then the scheduled range-and-bearing observation mayv correct the state if that camera is in range. Covariance uses the numericallyv stable Joseph form and is symmetrized before becoming the next resident state.v The ordinary arrays here define 1,000 independent lanes. Lane zero receives thev exact displayed measurement; the remaining lanes receive deterministic sensorv perturbations so the work is a real filter ensemble rather than 1,000 copies ofv one arithmetic result. Base control, camera, and measurement rows broadcastv directly across the lane matrices. Only lane zero is sampled back for the scene.
 
   filter-count := 1000.0
   filter-index := 1.0..=filter-count
@@ -313,13 +283,7 @@ ekf-batch @compute
 5. Live Tracking Field
 -------------------------------------------------------------------------------
 
-The covariance outline is the two-standard-deviation position ellipse calculated
-from the live 2x2 covariance block. Because finite-range camera updates can make
-the physical ellipse smaller than a useful screen mark, display axes have a
-0.04-unit quadrature floor; this changes only the drawing, never the filter
-covariance. Steady footprint guides show each camera's real maximum range.
-Camera rays terminate at simulated truth and fade to exactly zero outside that
-range. Only the scheduled in-range camera's noisy values enter the filter.
+The covariance outline is the two-standard-deviation position ellipse calculated from the live 2x2 covariance block. Because finite-range camera updates can make the physical ellipse smaller than a useful screen mark, display axes have a 0.04-unit quadrature floor; this changes only the drawing, never the filter covariance. Steady footprint guides show each camera's real maximum range. Camera rays terminate at simulated truth and fade to exactly zero outside that range. Only the scheduled in-range camera's noisy values enter the filter.
 
   world-positions := [next-truth[1..=2] predicted-estimate[1..=2] corrected-estimate[1..=2]]
   screen-positions := screen-origin + screen-scale * screen-axis * world-positions
@@ -417,15 +381,15 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
 
   sans-serif-font := "Inter, ui-sans-serif, system-ui, sans-serif"
 
-  scene-text := |id<string>                  x<f64> y<f64> fill<f64> font-size<f64> font-family<string> font-weight<f64> text-anchor<string> opacity<f64>            value<string>                  |
-                | "title"                     24     62    0xedf2f7<f64>  36             sans-serif-font    620              "start"             1                       "Camera EKF Localization"      |
-                | "camera-label-1"           195    636    0xd7c27f<f64>  11             sans-serif-font    500              "start"             camera-label-opacity[1] "CAM 1"                        |
-                | "camera-label-2"           665    636    0xd7c27f<f64>  11             sans-serif-font    500              "end"               camera-label-opacity[2] "CAM 2"                        |
-                | "camera-label-3"           665    140    0xd7c27f<f64>  11             sans-serif-font    500              "end"               camera-label-opacity[3] "CAM 3"                        |
-                | "camera-label-4"           195    140    0xd7c27f<f64>  11             sans-serif-font    500              "start"             camera-label-opacity[4] "CAM 4"                        |
-                | "legend-truth-label"        40    722    0xbdc8d2<f64>  12             sans-serif-font    400              "start"             1                       "actual robot + path"          |
-                | "legend-prediction-label"  215    722    0xbdc8d2<f64>  12             sans-serif-font    400              "start"             1                       "motion prediction"            |
-                | "legend-estimate-label"    415    722    0xbdc8d2<f64>  12             sans-serif-font    400              "start"             1                       "EKF estimate + 2σ covariance" |
+  scene-text := |id<string>                  x<f64> y<f64> fill<f64>      font-size<f64> font-family<string> font-weight<f64> text-anchor<string> opacity<f64>            value<string>                  |
+                | "title"                     24     62    0xedf2f7  36             sans-serif-font     620              "start"             1                       "Camera EKF Localization"      |
+                | "camera-label-1"           195    636    0xd7c27f  11             sans-serif-font     500              "start"             camera-label-opacity[1] "CAM 1"                        |
+                | "camera-label-2"           665    636    0xd7c27f  11             sans-serif-font     500              "end"               camera-label-opacity[2] "CAM 2"                        |
+                | "camera-label-3"           665    140    0xd7c27f  11             sans-serif-font     500              "end"               camera-label-opacity[3] "CAM 3"                        |
+                | "camera-label-4"           195    140    0xd7c27f  11             sans-serif-font     500              "start"             camera-label-opacity[4] "CAM 4"                        |
+                | "legend-truth-label"        40    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "actual robot + path"          |
+                | "legend-prediction-label"  215    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "motion prediction"            |
+                | "legend-estimate-label"    415    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "EKF estimate + 2σ covariance" |
 
   field-presentation := {
     width: 860
