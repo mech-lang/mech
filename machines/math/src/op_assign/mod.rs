@@ -1,5 +1,9 @@
 use crate::*;
 
+paste! {
+    const _: Option<&dyn Display> = None;
+}
+
 use std::sync::LazyLock;
 
 #[cfg(feature = "matrix")]
@@ -8,13 +12,25 @@ use nalgebra::{
     base::{Matrix as naMatrix, Storage, StorageMut},
 };
 
-#[cfg(feature = "add_assign")]
+#[cfg(all(
+    feature = "add_assign",
+    any(feature = "matrix", feature = "source")
+))]
 pub mod add_assign;
-#[cfg(feature = "div_assign")]
+#[cfg(all(
+    feature = "div_assign",
+    any(feature = "matrix", feature = "source")
+))]
 pub mod div_assign;
-#[cfg(feature = "mul_assign")]
+#[cfg(all(
+    feature = "mul_assign",
+    any(feature = "matrix", feature = "source")
+))]
 pub mod mul_assign;
-#[cfg(feature = "sub_assign")]
+#[cfg(all(
+    feature = "sub_assign",
+    any(feature = "matrix", feature = "source")
+))]
 pub mod sub_assign;
 
 #[cfg(feature = "add_assign")]
@@ -25,6 +41,9 @@ pub use self::div_assign::*;
 pub use self::mul_assign::*;
 #[cfg(feature = "sub_assign")]
 pub use self::sub_assign::*;
+
+#[cfg(test)]
+mod port_tests;
 
 pub trait RuntimeCheckedOpAssign: Copy {
     fn runtime_checked_add(self, rhs: Self) -> Option<Self>;
@@ -82,7 +101,9 @@ macro_rules! checked_op_assign {
     };
 }
 
+#[cfg(feature = "add_assign")]
 checked_op_assign!(checked_add_assign, runtime_checked_add, "addition assignment");
+#[cfg(feature = "sub_assign")]
 checked_op_assign!(checked_sub_assign, runtime_checked_sub, "subtraction assignment");
 #[cfg(feature = "mul_assign")]
 checked_op_assign!(checked_mul_assign, runtime_checked_mul, "multiplication assignment");
@@ -118,6 +139,7 @@ static PURE_WHOLE_VALUE_RMW_CONTRACT: LazyLock<OperationContractDeclaration> =
         interaction: ExternalInteraction::Pure,
     });
 
+#[cfg(feature = "matrix")]
 static PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
@@ -151,6 +173,7 @@ static PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT: LazyLock<OperationContractDeclaratio
         interaction: ExternalInteraction::Pure,
     });
 
+#[cfg(feature = "matrix")]
 fn checked_one_based_index(index: usize, len: usize) -> MResult<usize> {
     if index == 0 || index > len {
         return Err(function_shape_contract_violation(
@@ -161,6 +184,7 @@ fn checked_one_based_index(index: usize, len: usize) -> MResult<usize> {
     Ok(index - 1)
 }
 
+#[cfg(feature = "matrix")]
 fn validate_mask_len(mask_len: usize, sink_len: usize) -> MResult<()> {
     if mask_len > sink_len {
         return Err(function_shape_contract_violation(
@@ -171,6 +195,7 @@ fn validate_mask_len(mask_len: usize, sink_len: usize) -> MResult<()> {
     Ok(())
 }
 
+#[cfg(feature = "matrix")]
 fn validate_source_len(source_len: usize, selected_len: usize) -> MResult<()> {
     if source_len < selected_len {
         return Err(function_shape_contract_violation(
@@ -595,23 +620,23 @@ macro_rules! impl_assign_scalar_scalar {
         T: RuntimeCheckedOpAssign,
         #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
-        Ref<T>: ToValue
-        , T: FunctionRuntimeType
+        Ref<T>: ToValue,
+        T: FunctionStateBacking,
       {
         const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
           T::REPRESENTATION,
           T::REPRESENTATION,
         );
 
+        fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+          let (sink, source) = invocation.expect_unary()?;
+          let source: Ref<T> = source.try_ref()?;
+          let sink: Ref<T> = sink.try_ref()?;
+          Ok(Box::new(Self { sink, source }))
+        }
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-          match args {
-            FunctionArgs::Unary(out, arg1) => {
-              let source: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-              let sink: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
-              Ok(Box::new(Self { sink, source }))
-            },
-            _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
-          }
+          Self::new_invocation(args.into())
         }
       }
       impl<T> MechFunctionImpl for [<$op_name AssignSS>]<T>
@@ -620,8 +645,15 @@ macro_rules! impl_assign_scalar_scalar {
            $op_name<Output = T> + [<$op_name Assign>] +
            PartialEq + PartialOrd,
         T: RuntimeCheckedOpAssign,
-        Ref<T>: ToValue
+        Ref<T>: ToValue,
+        T: FunctionStateBacking,
       {
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+          Some(FunctionStatePort::from_ref(&self.sink))
+        }
+        fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+          Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+        }
         fn solve_result(&self) -> MResult<()> {
           let next = $checked_op(*self.sink.borrow(), *self.source.borrow())?;
           *self.sink.borrow_mut() = next;
@@ -681,8 +713,8 @@ macro_rules! impl_assign_vector_vector {
         #[cfg(feature = "semantic-compiler")]
         MatA: CompileConst + ConstElem,
         MatB: Debug + AsValueKind + 'static,
-        MatA: FunctionRuntimeType,
-        MatB: FunctionRuntimeType,
+        MatA: FunctionStateBacking,
+        MatB: FunctionPortBacking,
         #[cfg(feature = "semantic-compiler")]
         MatB: CompileConst + ConstElem,
       {
@@ -691,15 +723,15 @@ macro_rules! impl_assign_vector_vector {
           MatB::REPRESENTATION,
         );
 
+        fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+          let (sink, source) = invocation.expect_unary()?;
+          let source: Ref<MatB> = source.try_ref()?;
+          let sink: Ref<MatA> = sink.try_ref()?;
+          Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
+        }
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-          match args {
-            FunctionArgs::Unary(out, arg1) => {
-              let source: Ref<MatB> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-              let sink: Ref<MatA> = out.try_function_ref(FunctionArgumentRole::Output)?;
-              Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
-            },
-            _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
-          }
+          Self::new_invocation(args.into())
         }
       }
       impl<T, MatA, MatB> MechFunctionImpl for [<$op_name AssignVV>]<T, MatA, MatB>
@@ -710,9 +742,15 @@ macro_rules! impl_assign_vector_vector {
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         for<'a> &'a MatB: IntoIterator<Item = &'a T>,
-        MatA: Debug + Clone + 'static,
+        MatA: Debug + Clone + FunctionStateBacking + 'static,
         MatB: Debug,
       {
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+          Some(FunctionStatePort::from_ref(&self.sink))
+        }
+        fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+          Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+        }
         fn solve_result(&self) -> MResult<()> {
           let mut next = self.sink.borrow().clone();
           {
@@ -782,8 +820,8 @@ macro_rules! impl_assign_vector_scalar {
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         MatA: Debug + Clone + AsValueKind + 'static,
-        MatA: FunctionRuntimeType,
-        T: FunctionRuntimeType,
+        MatA: FunctionStateBacking,
+        T: FunctionPortBacking,
         #[cfg(feature = "semantic-compiler")]
         MatA: CompileConst + ConstElem,
       {
@@ -793,19 +831,15 @@ macro_rules! impl_assign_vector_scalar {
           T::REPRESENTATION,
         );
 
+        fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+          let (sink, _base, source) = invocation.expect_binary()?;
+          let source: Ref<T> = source.try_ref()?;
+          let sink: Ref<MatA> = sink.try_ref()?;
+          Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
+        }
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-          match args {
-            FunctionArgs::Binary(out, _, arg2) => {
-              let source: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-              let sink: Ref<MatA> = out.try_function_ref(FunctionArgumentRole::Output)?;
-              Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
-            },
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments { expected: 2, found: args.len() },
-                None
-              ).with_compiler_loc()
-            )
-          }
+          Self::new_invocation(args.into())
         }
       }
       impl<T, MatA> MechFunctionImpl for [<$op_name AssignVS>]<T, MatA>
@@ -815,8 +849,14 @@ macro_rules! impl_assign_vector_scalar {
         T: RuntimeCheckedOpAssign,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-        MatA: Debug + Clone + 'static,
+        MatA: Debug + Clone + FunctionStateBacking + 'static,
       {
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+          Some(FunctionStatePort::from_ref(&self.sink))
+        }
+        fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+          Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+        }
         fn solve_result(&self) -> MResult<()> {
           let mut next = self.sink.borrow().clone();
           let source = *self.source.borrow();
@@ -859,6 +899,40 @@ macro_rules! impl_assign_vector_scalar {
     }
   }
 }
+
+#[cfg(not(any(feature = "matrix", feature = "source")))]
+macro_rules! impl_scalar_op_assign_module {
+    ($module:ident, $op_name:tt, $checked_op:ident) => {
+        pub mod $module {
+            use super::*;
+
+            impl_assign_scalar_scalar!($op_name, $checked_op);
+            impl_assign_vector_vector!($op_name, $checked_op);
+            impl_assign_vector_scalar!($op_name, $checked_op);
+        }
+    };
+}
+
+#[cfg(all(
+    feature = "add_assign",
+    not(any(feature = "matrix", feature = "source"))
+))]
+impl_scalar_op_assign_module!(add_assign, Add, checked_add_assign);
+#[cfg(all(
+    feature = "div_assign",
+    not(any(feature = "matrix", feature = "source"))
+))]
+impl_scalar_op_assign_module!(div_assign, Div, checked_div_assign);
+#[cfg(all(
+    feature = "mul_assign",
+    not(any(feature = "matrix", feature = "source"))
+))]
+impl_scalar_op_assign_module!(mul_assign, Mul, checked_mul_assign);
+#[cfg(all(
+    feature = "sub_assign",
+    not(any(feature = "matrix", feature = "source"))
+))]
+impl_scalar_op_assign_module!(sub_assign, Sub, checked_sub_assign);
 
 #[cfg(feature = "source")]
 #[macro_export]
@@ -938,93 +1012,4 @@ macro_rules! impl_op_assign_value_match_arms {
       }
     }
   };
-}
-
-#[cfg(test)]
-mod checked_assignment_tests {
-    use super::*;
-
-    #[test]
-    fn integer_scalar_assignments_reject_overflow_and_invalid_division() {
-        let cases: Vec<(Box<dyn MechFunction>, Box<dyn Fn() -> i128>)> = vec![
-            {
-                let sink = Ref::new(u8::MAX);
-                let function = AddAssignSS::<u8>::new(FunctionArgs::Unary(
-                    LegacyValue::U8(sink.clone()),
-                    LegacyValue::U8(Ref::new(1)),
-                ))
-                .unwrap();
-                (function, Box::new(move || i128::from(*sink.borrow())))
-            },
-            {
-                let sink = Ref::new(i8::MIN);
-                let function = SubAssignSS::<i8>::new(FunctionArgs::Unary(
-                    LegacyValue::I8(sink.clone()),
-                    LegacyValue::I8(Ref::new(1)),
-                ))
-                .unwrap();
-                (function, Box::new(move || i128::from(*sink.borrow())))
-            },
-            {
-                let sink = Ref::new(u8::MAX);
-                let function = MulAssignSS::<u8>::new(FunctionArgs::Unary(
-                    LegacyValue::U8(sink.clone()),
-                    LegacyValue::U8(Ref::new(2)),
-                ))
-                .unwrap();
-                (function, Box::new(move || i128::from(*sink.borrow())))
-            },
-            {
-                let sink = Ref::new(7u8);
-                let function = DivAssignSS::<u8>::new(FunctionArgs::Unary(
-                    LegacyValue::U8(sink.clone()),
-                    LegacyValue::U8(Ref::new(0)),
-                ))
-                .unwrap();
-                (function, Box::new(move || i128::from(*sink.borrow())))
-            },
-        ];
-
-        for (function, value) in cases {
-            let before = value();
-            let error = function.solve_result().unwrap_err();
-            assert_eq!(error.kind_name(), "MathArithmeticOverflow");
-            assert_eq!(value(), before);
-            let error = match function.stage_register() {
-                Ok(_) => panic!("overflowing reactive assignment should fail while staging"),
-                Err(error) => error,
-            };
-            assert_eq!(error.kind_name(), "MathArithmeticOverflow");
-            assert_eq!(value(), before);
-        }
-    }
-
-    #[test]
-    fn range_assignment_revalidates_indices_and_is_transactional() {
-        let sink = Ref::new(DVector::from_vec(vec![1u8, u8::MAX]));
-        let source = Ref::new(DVector::from_vec(vec![1u8, 1]));
-        let indices = Ref::new(DVector::from_vec(vec![1usize, 2]));
-        let function = AddAssign1DRV::<u8, DVector<u8>, DVector<u8>, DVector<usize>>::new(
-            FunctionArgs::Binary(
-                LegacyValue::MatrixU8(mech_core::matrix::Matrix::DVector(sink.clone())),
-                LegacyValue::MatrixU8(mech_core::matrix::Matrix::DVector(source)),
-                LegacyValue::MatrixIndex(mech_core::matrix::Matrix::DVector(indices.clone())),
-            ),
-        )
-        .unwrap();
-
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
-        assert_eq!(sink.borrow().as_slice(), &[1, u8::MAX]);
-
-        *indices.borrow_mut() = DVector::from_vec(vec![0, 1]);
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-        assert_eq!(sink.borrow().as_slice(), &[1, u8::MAX]);
-
-        *indices.borrow_mut() = DVector::from_vec(vec![3, 1]);
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-        assert_eq!(sink.borrow().as_slice(), &[1, u8::MAX]);
-    }
 }
