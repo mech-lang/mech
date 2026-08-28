@@ -1,7 +1,7 @@
 Extended Kalman Filter Localization
 ===============================================================================
 section: Examples
-+> math
++> math/*
 ===============================================================================
 
 This resident application localizes a robot from noisy range-and-bearing measurements made by four fixed cameras. The cyan robot is simulated truth, the amber marker is the motion-model prediction, and the rose robot is the corrected EKF estimate. Their rolling paths make tracking error visible instead of hiding it in a final scalar.
@@ -23,18 +23,18 @@ Click a camera to disable it. Its color mutes, its range ring disappears, and it
   π := 3.141592654
   ~last-clock-tick := 0.0
   clock-delta := @clock/tick - last-clock-tick
-  clock-pulse-distances := math/abs([clock-delta clock-delta - 1.0])
+  clock-pulse-distances := abs([clock-delta clock-delta - 1.0])
   clock-pulse := (clock-pulse-distances[1] - clock-pulse-distances[2] + 1.0) / 2.0
   ~requested-compute-turn := 0.0
   ~last-requested-simulation-step := 0.0
   compute-inflight-gap := requested-compute-turn - @filters/turns
-  compute-idle-raw := 1.0 - math/abs(compute-inflight-gap)
-  compute-idle := (compute-idle-raw + math/abs(compute-idle-raw)) / 2.0
+  compute-idle-raw := 1.0 - abs(compute-inflight-gap)
+  compute-idle := (compute-idle-raw + abs(compute-idle-raw)) / 2.0
   request-pulse := clock-pulse * compute-idle
   next-requested-compute-turn := requested-compute-turn + request-pulse
   ~last-filter-turn := 0.0
   filter-turn-delta := @filters/turns - last-filter-turn
-  sample-pulse-distances := math/abs([filter-turn-delta filter-turn-delta - 1.0])
+  sample-pulse-distances := abs([filter-turn-delta filter-turn-delta - 1.0])
   sample-pulse := (sample-pulse-distances[1] - sample-pulse-distances[2] + 1.0) / 2.0
   Δt := 0.05
   cruise-speed := 1.15
@@ -72,7 +72,7 @@ Scene pointer presses toggle the camera under the cursor. The enable mask is res
   scene-pointer-camera-distance-square := (scene-pointer-camera-offset ^ 2) ** [1.0; 1.0]
   scene-pointer-hit-raw := 484.0 - scene-pointer-camera-distance-square
   scene-pointer-hit-clamp-input := [scene-pointer-hit-raw scene-pointer-hit-raw - 1.0]
-  scene-pointer-hit-clamp := (scene-pointer-hit-clamp-input + math/abs(scene-pointer-hit-clamp-input)) / 2.0
+  scene-pointer-hit-clamp := (scene-pointer-hit-clamp-input + abs(scene-pointer-hit-clamp-input)) / 2.0
   scene-pointer-hit := scene-pointer-hit-clamp[:,1] - scene-pointer-hit-clamp[:,2]
 
 A gesture group coalesces down/up but never crosses into the next press. Parity still preserves an even count jump if an activation history is restored or replayed without exposing every intermediate turn.
@@ -101,11 +101,11 @@ The resident simulation step is converted into a lap phase and progress along th
   next-simulation-step := simulation-step + clock-pulse
   filter-step-span := next-simulation-step - last-requested-simulation-step
   next-last-requested-simulation-step := last-requested-simulation-step + request-pulse * filter-step-span
-  drive-phase := math/floor((simulation-step % lap-ticks) / side-ticks)
+  drive-phase := floor((simulation-step % lap-ticks) / side-ticks)
   phase-progress := (simulation-step % side-ticks) / side-ticks
   path-parameter := drive-phase + phase-progress
   lookahead-parameter := (path-parameter + 0.15) % 4.0
-  lookahead-side := math/floor(lookahead-parameter) + 1.0
+  lookahead-side := floor(lookahead-parameter) + 1.0
   lookahead-progress := lookahead-parameter % 1.0
   square-waypoints := [0.0 0.0
                        1.0 0.0
@@ -125,14 +125,14 @@ The simulated robot pose is resident state. Expressing the look-ahead target in 
              0.0]
   simulation-time := next-simulation-step * Δt
   target-offset := target-position - truth[1..=2]
-  truth-heading-direction := math/cos(truth[3] - [0.0; π / 2.0])
+  truth-heading-direction := cos(truth[3] - [0.0; π / 2.0])
   truth-heading-frame := [truth-heading-direction'; -truth-heading-direction[2] truth-heading-direction[1]]
   target-relative := truth-heading-frame ** target-offset
-  heading-error := math/atan2(target-relative[2], target-relative[1])
+  heading-error := atan2(target-relative[2], target-relative[1])
   requested-omega := heading-gain * heading-error
-  omega-bound-distances := math/abs([requested-omega + turn-rate-limit requested-omega - turn-rate-limit])
+  omega-bound-distances := abs([requested-omega + turn-rate-limit requested-omega - turn-rate-limit])
   commanded-omega := (omega-bound-distances[1] - omega-bound-distances[2]) / 2.0
-  turn-fraction := math/abs(commanded-omega) / turn-rate-limit
+  turn-fraction := abs(commanded-omega) / turn-rate-limit
   commanded-speed := cruise-speed * (1.0 - 0.42 * turn-fraction)
   commanded-control := [commanded-speed
                         commanded-omega]
@@ -141,10 +141,10 @@ The simulated robot pose is resident state. Expressing the look-ahead target in 
 
 The plant deliberately does not execute the command perfectly. Smooth scale errors perturb forward and angular velocity, and midpoint integration advances the physical truth only when the clock supplies a pulse.
 
-  actual-control-scale := [0.965; 0.99] + [0.025; 0.01] * math/sin(simulation-time * [0.73; 0.51] + [0.0; 0.8])
+  actual-control-scale := [0.965; 0.99] + [0.025; 0.01] * sin(simulation-time * [0.73; 0.51] + [0.0; 0.8])
   actual-control := commanded-control * actual-control-scale
   truth-mid-heading := truth[3] + actual-control[2] * Δt / 2.0
-  truth-direction := math/cos(truth-mid-heading - [0.0; π / 2.0])
+  truth-direction := cos(truth-mid-heading - [0.0; π / 2.0])
   truth-velocity := [truth-direction * actual-control[1]; actual-control[2]]
   attempted-truth := truth + truth-velocity * Δt
   next-truth := truth + clock-pulse * (attempted-truth - truth)
@@ -165,23 +165,23 @@ The accepted truth and simulation step become the next resident values. The comp
 The same square phase selects the nearest corner camera during each half-side. A camera outside its 3.6-unit range contributes exactly zero correction. This produces genuine prediction-only intervals rather than pretending that every camera sees through the entire field.
 
   camera-dwell-ticks := side-ticks / 2.0
-  camera-index := (math/floor((simulation-step + camera-dwell-ticks) / side-ticks) % 4.0) + 1.0
+  camera-index := (floor((simulation-step + camera-dwell-ticks) / side-ticks) % 4.0) + 1.0
   active-camera := cameras[camera-index,:]'
   camera-offsets := cameras - attempted-truth[1..=2]'
-  camera-range-all := math/sqrt((camera-offsets ^ 2) ** [1.0; 1.0])
+  camera-range-all := sqrt((camera-offsets ^ 2) ** [1.0; 1.0])
   camera-inside-fade-raw := (camera-max-range - camera-range-all) / camera-range-fade
   camera-visibility-clamp-input := [camera-inside-fade-raw camera-inside-fade-raw - 1.0]
-  camera-visibility-clamp := (camera-visibility-clamp-input + math/abs(camera-visibility-clamp-input)) / 2.0
+  camera-visibility-clamp := (camera-visibility-clamp-input + abs(camera-visibility-clamp-input)) / 2.0
   camera-visibility := (camera-visibility-clamp[:,1] - camera-visibility-clamp[:,2]) * camera-enabled
 
   active-camera-visibility := camera-visibility[camera-index]
   camera-offset := active-camera - attempted-truth[1..=2]
   camera-range-square := [1.0 1.0] ** (camera-offset ^ 2)
-  camera-range := math/sqrt(camera-range-square[1])
+  camera-range := sqrt(camera-range-square[1])
   observation-model := [camera-range
-                        math/atan2(camera-offset[2], camera-offset[1]) - attempted-truth[3]]
+                        atan2(camera-offset[2], camera-offset[1]) - attempted-truth[3]]
   observation-noise-phase := simulation-time * [1.57; 1.91] + camera-index * [0.7; 1.0]
-  observation := observation-model + [0.11; 0.011] * math/sin(observation-noise-phase)
+  observation := observation-model + [0.11; 0.011] * sin(observation-noise-phase)
 
 
 4. GPU Compute
@@ -199,12 +199,12 @@ The base control, camera, and measurement rows broadcast across the lane matrice
   lane-dt-base := Δt * filter-step-span
   lane-control-base := [lane-dt-base commanded-speed commanded-omega]
   lane-control-phase := filter-phase' ** [0.0 3.0 5.0]
-  lane-control-scale := 1.0 + math/sin(lane-control-phase) * [0.0 0.002 0.002]
+  lane-control-scale := 1.0 + sin(lane-control-phase) * [0.0 0.002 0.002]
   lane-control := lane-control-base * lane-control-scale
   lane-camera := (1.0 + filter-index' * 0.0) ** active-camera'
   lane-measurement-base := [observation' active-camera-visibility]
   lane-measurement-phase := filter-phase' ** [7.0 11.0 0.0]
-  lane-measurement := lane-measurement-base + math/sin(lane-measurement-phase) * [0.012 0.0015 0.0]
+  lane-measurement := lane-measurement-base + sin(lane-measurement-phase) * [0.012 0.0015 0.0]
 
 These assignments cross the explicit compute resource boundary. A new turn is requested only after the previous one has completed, which keeps the resident filter state ordered with the simulation.
 
@@ -236,8 +236,8 @@ The predictor advances the state with a midpoint unicycle motion model. Its Jaco
     v := u[2]
     ω := u[3]
     θ := μ[3] + ω * δt / 2f32
-    c := math/cos(θ)
-    s := math/sin(θ)
+    c := cos(θ)
+    s := sin(θ)
     G := [1f32 0f32 -v * s * δt
           0f32 1f32  v * c * δt
           0f32 0f32 1f32]
@@ -257,11 +257,11 @@ The corrector linearizes the range-and-bearing observation around the predicted 
 
   ekf-correct(μ-<[f32]:3,1>, Σ-<[f32]:3,3>, camera<[f32]:2,1>, z<[f32]:3,1>, R<[f32]:2,2>) = (μ+<[f32]:3,1>, Σ+<[f32]:3,3>) :=
     Δ := camera - μ-[1..=2]
-    observation-guard := 1f32 - math/ceil(z[3])
+    observation-guard := 1f32 - ceil(z[3])
     q := Δ · Δ + observation-guard
-    r := math/sqrt(q)
+    r := sqrt(q)
     ẑ := [r
-          math/atan2(Δ[2], Δ[1] + observation-guard) - μ-[3]]
+          atan2(Δ[2], Δ[1] + observation-guard) - μ-[3]]
     H := [-Δ[1] / r -Δ[2] / r 0f32
            Δ[2] / q -Δ[1] / q -1f32]
     S := H ** Σ- ** H' + R
@@ -269,7 +269,7 @@ The corrector linearizes the range-and-bearing observation around the predicted 
     K := (S \ B)'
     νθ := z[2] - ẑ[2]
     ν := [z[1] - ẑ[1]
-          math/atan2(math/sin(νθ), math/cos(νθ))]
+          atan2(sin(νθ), cos(νθ))]
     μ+ := μ- + K ** ν
     I := [1f32 0f32 0f32
           0f32 1f32 0f32
@@ -314,9 +314,9 @@ Each turn is one predictor/corrector recurrence. Multiplying the correction by `
 Before publishing the next checkpoint, the region verifies finite state, positive covariance diagonals, and covariance symmetry. These invariants fail the compute turn instead of allowing a corrupt estimate to become resident.
 
   finite-limit := 3.402823466e38<f32>
-  finite-state! := math/abs(μ-next[1,1]) <= finite-limit && math/abs(μ-next[2,1]) <= finite-limit && math/abs(μ-next[3,1]) <= finite-limit
+  finite-state! := abs(μ-next[1,1]) <= finite-limit && abs(μ-next[2,1]) <= finite-limit && abs(μ-next[3,1]) <= finite-limit
   positive-covariance! := Σ-next[1,1] > 0f32 && Σ-next[2,2] > 0f32 && Σ-next[3,3] > 0f32
-  symmetric-covariance! := math/abs(Σ-next[1,2] - Σ-next[2,1]) <= 0.0001<f32> && math/abs(Σ-next[1,3] - Σ-next[3,1]) <= 0.0001<f32> && math/abs(Σ-next[2,3] - Σ-next[3,2]) <= 0.0001<f32>
+  symmetric-covariance! := abs(Σ-next[1,2] - Σ-next[2,1]) <= 0.0001<f32> && abs(Σ-next[1,3] - Σ-next[3,1]) <= 0.0001<f32> && abs(Σ-next[2,3] - Σ-next[3,2]) <= 0.0001<f32>
 
 The validated checkpoint becomes the starting point for the next GPU turn and is returned with the applied visibility value for document-side sampling.
 
@@ -340,14 +340,14 @@ Truth, prediction, and correction are projected into the scene's screen coordina
   predicted-screen := screen-positions[:,2]
   estimate-screen := screen-positions[:,3]
   display-camera-offsets := cameras - next-truth[1..=2]'
-  display-camera-range-all := math/sqrt((display-camera-offsets ^ 2) ** [1.0; 1.0])
+  display-camera-range-all := sqrt((display-camera-offsets ^ 2) ** [1.0; 1.0])
   display-camera-inside-fade-raw := (camera-max-range - display-camera-range-all) / camera-range-fade
   display-camera-visibility-clamp-input := [display-camera-inside-fade-raw display-camera-inside-fade-raw - 1.0]
-  display-camera-visibility-clamp := (display-camera-visibility-clamp-input + math/abs(display-camera-visibility-clamp-input)) / 2.0
+  display-camera-visibility-clamp := (display-camera-visibility-clamp-input + abs(display-camera-visibility-clamp-input)) / 2.0
   display-camera-visibility := (display-camera-visibility-clamp[:,1] - display-camera-visibility-clamp[:,2]) * camera-enabled
   position-error-vector := corrected-estimate[1..=2] - next-truth[1..=2]
   position-error-square := [1.0 1.0] ** (position-error-vector ^ 2)
-  position-error := math/sqrt(position-error-square[1])
+  position-error := sqrt(position-error-square[1])
 
 (5.2) Covariance Ellipse
 
@@ -356,17 +356,17 @@ The eigenvalues and orientation of the corrected 2×2 position covariance become
   ellipse-a := corrected-covariance[1,1]
   ellipse-b := corrected-covariance[1,2]
   ellipse-c := corrected-covariance[2,2]
-  ellipse-root := math/sqrt(((ellipse-a - ellipse-c) / 2.0) ^ 2 + ellipse-b ^ 2)
+  ellipse-root := sqrt(((ellipse-a - ellipse-c) / 2.0) ^ 2 + ellipse-b ^ 2)
   ellipse-eigenvalues := (ellipse-a + ellipse-c) / 2.0 + [1.0; -1.0] * ellipse-root
-  ellipse-axes := math/sqrt(ellipse-eigenvalues) * 2.0
-  ellipse-rotation := 0.5 * math/atan2(2.0 * ellipse-b, ellipse-a - ellipse-c)
+  ellipse-axes := sqrt(ellipse-eigenvalues) * 2.0
+  ellipse-rotation := 0.5 * atan2(2.0 * ellipse-b, ellipse-a - ellipse-c)
   ellipse-samples := 0..=64
   ellipse-angle := ellipse-samples' * (2.0 * π / 64.0)
   ellipse-display-floor := 0.04
-  display-ellipse-axes := math/sqrt(ellipse-axes ^ 2 + ellipse-display-floor ^ 2)
+  display-ellipse-axes := sqrt(ellipse-axes ^ 2 + ellipse-display-floor ^ 2)
   ellipse-phase-grid := ellipse-angle ** [1.0 1.0] - [0.0 π / 2.0]
-  ellipse-axis-points := math/cos(ellipse-phase-grid) * display-ellipse-axes'
-  ellipse-rotation-direction := math/cos(ellipse-rotation - [0.0 π / 2.0])
+  ellipse-axis-points := cos(ellipse-phase-grid) * display-ellipse-axes'
+  ellipse-rotation-direction := cos(ellipse-rotation - [0.0 π / 2.0])
   ellipse-rotation-matrix := [ellipse-rotation-direction; -ellipse-rotation-direction[2] ellipse-rotation-direction[1]]
   covariance-ellipse := estimate-screen' + screen-scale * (ellipse-axis-points ** ellipse-rotation-matrix) * screen-axis'
 
@@ -398,7 +398,7 @@ The square path, camera opacity channels, and heading vectors are calculated onc
   camera-label-opacity := 0.32 + 0.68 * camera-enabled
   heading-angles := [next-truth[3] corrected-estimate[3]]
   heading-phase-grid := [1.0; 1.0] ** heading-angles - [0.0; π / 2.0]
-  heading-unit-vectors := math/cos(heading-phase-grid)
+  heading-unit-vectors := cos(heading-phase-grid)
   heading-screen-vectors := screen-axis * heading-unit-vectors * [18.0 16.0]
   heading-screen-points := [truth-screen estimate-screen] + heading-screen-vectors
 

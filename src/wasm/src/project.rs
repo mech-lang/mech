@@ -3247,9 +3247,9 @@ phase"#;
     }
 
     #[test]
-    fn encoded_document_controller_accepts_resident_atan2() {
+    fn encoded_document_controller_accepts_wildcard_imported_resident_atan2() {
         let tree = mech_syntax::parser::parse(
-            "Resident Atan2\n================\n+> math\n================\n\nangle := math/atan2(1.0, 0.0)\nangle",
+            "Resident Atan2\n================\n+> math/*\n================\n\nangle := atan2(1.0, 0.0)\nangle",
         )
         .unwrap();
         let module = ["math".to_string()];
@@ -4347,9 +4347,27 @@ rows := |id<string> x<f64>|
             "the Kalman gain must use the language's matrix solve operation",
         );
         assert!(
-            source.contains("observation-guard := 1f32 - math/ceil(z[3])"),
+            source.contains("observation-guard := 1f32 - ceil(z[3])"),
             "only a fully invisible camera may perturb singular observation geometry",
         );
+        assert!(
+            source.contains("+> math/*"),
+            "the EKF document must import the math module's public functions",
+        );
+        for qualified in [
+            "math/abs(",
+            "math/atan2(",
+            "math/ceil(",
+            "math/cos(",
+            "math/floor(",
+            "math/sin(",
+            "math/sqrt(",
+        ] {
+            assert!(
+                !source.contains(qualified),
+                "wildcard-imported math calls must be unqualified: {qualified}",
+            );
+        }
         assert!(
             !source.contains("innovation-inverse") && !source.contains("innovation-determinant"),
             "the example must not expand a matrix inverse by hand",

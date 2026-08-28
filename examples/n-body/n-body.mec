@@ -2,7 +2,7 @@ N-Body Simulation
 ===============================================================================
 section: Examples
 +> combinatorics
-+> math
++> math/*
 +> stats
 ===============================================================================
 
@@ -147,8 +147,8 @@ the center-of-momentum frame without changing any body's heliocentric orbit.
 
   guide-samples := 0..=96
   guide-angle := guide-samples' * (2 * π / 96)
-  guide-cos := math/cos(guide-angle)
-  guide-sin := math/sin(guide-angle)
+  guide-cos := cos(guide-angle)
+  guide-sin := sin(guide-angle)
 
   mercury-guide-x := orbit-a[1] * (guide-cos - orbit-e[1]) * orbit-px[1] + orbit-a[1] * (1 - orbit-e[1] ^ 2) ^ 0.5 * guide-sin * orbit-qx[1]
   mercury-guide-y := orbit-a[1] * (guide-cos - orbit-e[1]) * orbit-py[1] + orbit-a[1] * (1 - orbit-e[1] ^ 2) ^ 0.5 * guide-sin * orbit-qy[1]
