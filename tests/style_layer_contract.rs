@@ -287,6 +287,11 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(controller.contains("mech-console-error-count"));
 
     let page = include("style.css");
+    assert!(page.contains(".mech-toc-toggle {"));
+    assert!(page.contains("border: 1px solid var(--toc-accent)"));
+    assert!(page.contains(
+        ".mech-toc-toggle:hover,\n.mech-toc-toggle:focus-visible {\n  border-color: var(--toc-border)"
+    ));
     assert!(page.contains(".toc li.expanded > .toc-sub"));
     assert!(page.contains("border-left: 1px dotted var(--toc-accent-soft)"));
     assert!(page.contains(".article-layout.is-toc-open > .main-content"));

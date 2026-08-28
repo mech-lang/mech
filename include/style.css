@@ -474,7 +474,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   align-self: flex-start;
   background: var(--bg-secondary);
-  border: 1px solid var(--toc-border);
+  border: 1px solid var(--toc-accent);
   border-radius: 999px;
   color: var(--toc-accent);
   cursor: pointer;
@@ -499,7 +499,7 @@ a { color: inherit; text-decoration: none; }
 
 .mech-toc-toggle:hover,
 .mech-toc-toggle:focus-visible {
-  border-color: var(--toc-accent);
+  border-color: var(--toc-border);
   color: var(--toc-accent);
   outline: none;
 }
