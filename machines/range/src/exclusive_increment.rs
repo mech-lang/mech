@@ -70,8 +70,8 @@ where
     Ref<T>: ToValue,
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: AsNaKind,
-    naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
-    T: FunctionRuntimeType,
+    naMatrix<T, R1, C1, S1>: FunctionStateBacking,
+    T: FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     R1: Dim + 'static,
@@ -85,36 +85,29 @@ where
         T::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, from, step, to) = invocation.expect_ternary()?;
+        let from: Ref<T> = from.try_ref()?;
+        let step: Ref<T> = step.try_ref()?;
+        let to: Ref<T> = to.try_ref()?;
+        let out: Ref<naMatrix<T, R1, C1, S1>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            from,
+            step,
+            to,
+            out,
+            phantom: PhantomData::default(),
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, from, step, to) => {
-                let from: Ref<T> = from.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let step: Ref<T> = step.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let to: Ref<T> = to.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<naMatrix<T, R1, C1, S1>> =
-                    out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    from,
-                    step,
-                    to,
-                    out,
-                    phantom: PhantomData::default(),
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 impl<T, R1, C1, S1> MechFunctionImpl for RangeIncrementExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+    naMatrix<T, R1, C1, S1>: FunctionStateBacking,
     Ref<T>: ToValue,
     T: Copy
         + Scalar
@@ -131,6 +124,12 @@ where
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+    }
     fn solve_result(&self) -> MResult<()> {
         crate::catalog::validate_range_increment_exclusive(&FunctionArgs::Ternary(
             self.out.to_value(),

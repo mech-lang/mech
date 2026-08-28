@@ -59,6 +59,9 @@ pub use self::inclusive::*;
 #[cfg(feature = "inclusive")]
 pub use self::inclusive_increment::*;
 
+#[cfg(test)]
+mod port_tests;
+
 use mech_core::MechErrorKind;
 
 // ----------------------------------------------------------------------------
