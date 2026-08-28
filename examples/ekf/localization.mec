@@ -222,14 +222,14 @@ Only the first lane is sampled for visualization. Its checkpoint contains the co
   predicted-estimate := filter-sample[:,5]
 
 
-ekf-batch @compute
+5. ekf-batch @compute
 -------------------------------------------------------------------------------
 
-(4.2) Predictor
+(5.2) Predictor
 
 The predictor advances the state with a midpoint unicycle motion model. Its Jacobians `G` and `V` propagate the previous covariance and control noise into the prior covariance for the next observation.
 
-(4.2.1) Motion and Covariance Propagation
+(5.2.1) Motion and Covariance Propagation
 
   ekf-predict(μ<[f32]:3,1>, Σ<[f32]:3,3>, u<[f32]:3,1>, Q<[f32]:2,2>) = (μ-<[f32]:3,1>, Σ-<[f32]:3,3>) :=
     δt := u[1]
@@ -249,11 +249,11 @@ The predictor advances the state with a midpoint unicycle motion model. Its Jaco
                ω * δt]
     Σ- := G ** Σ ** G' + V ** Q ** V'.
 
-(4.3) Corrector
+(5.3) Corrector
 
 The corrector linearizes the range-and-bearing observation around the predicted state, computes the Kalman gain, and applies the wrapped innovation. Visibility is part of the numerical observation contract rather than merely an output mask: the inactive guard keeps zero-visibility geometry nonsingular before any division or `atan2` is evaluated while preserving the active equations.
 
-(4.3.1) Innovation and Joseph Covariance Update
+(5.3.1) Innovation and Joseph Covariance Update
 
   ekf-correct(μ-<[f32]:3,1>, Σ-<[f32]:3,3>, camera<[f32]:2,1>, z<[f32]:3,1>, R<[f32]:2,2>) = (μ+<[f32]:3,1>, Σ+<[f32]:3,3>) :=
     Δ := camera - μ-[1..=2]
@@ -278,7 +278,7 @@ The corrector linearizes the range-and-bearing observation around the predicted 
     Σ-raw := A ** Σ- ** A' + K ** R ** K'
     Σ+ := 0.5<f32> * (Σ-raw + Σ-raw').
 
-(4.4) Resident Filter Recurrence
+(5.4) Resident Filter Recurrence
 
 The compute inputs below establish the fixed shapes and default values used to compile the resident region. The document replaces them with the lane matrices before each turn.
 
@@ -293,7 +293,7 @@ The compute inputs below establish the fixed shapes and default values used to c
 
 The resident checkpoint stores the posterior state, its 3×3 covariance, and the prior state. Increasing the lane count changes the outer data shape without duplicating the predictor or corrector source graph.
 
-(4.4.1) Checkpoint and Filter Step
+(5.4.1) Checkpoint and Filter Step
 
   ~filter-sample := [2.9<f32>  0.45<f32> 0f32       0f32       2.9<f32>
                      2.15<f32> 0f32       0.45<f32> 0f32       2.15<f32>
@@ -309,7 +309,7 @@ Each turn is one predictor/corrector recurrence. Multiplying the correction by `
   μ-next := μ- + γ * (μ+ - μ-)
   Σ-next := Σ- + γ * (Σ+ - Σ-)
 
-(4.4.2) Validation and Publication
+(5.4.2) Validation and Publication
 
 Before publishing the next checkpoint, the region verifies finite state, positive covariance diagonals, and covariance symmetry. These invariants fail the compute turn instead of allowing a corrupt estimate to become resident.
 
@@ -325,12 +325,12 @@ The validated checkpoint becomes the starting point for the next GPU turn and is
   (filter-sample, filter-sample, applied-visibility)
 
 
-5. Live Tracking Field
+6. Live Tracking Field
 -------------------------------------------------------------------------------
 
 The covariance outline is the two-standard-deviation position ellipse calculated from the live 2x2 covariance block. Because finite-range camera updates can make the physical ellipse smaller than a useful screen mark, display axes have a 0.04-unit quadrature floor; this changes only the drawing, never the filter covariance. Steady footprint guides show each camera's real maximum range. Camera rays terminate at simulated truth and fade to exactly zero outside that range. Only the scheduled in-range camera's noisy values enter the filter.
 
-(5.1) Screen-space Sampling
+(6.1) Screen-space Sampling
 
 Truth, prediction, and correction are projected into the scene's screen coordinates together. The same sampled state determines camera visibility and the scalar position error reported by the document.
 
@@ -349,7 +349,7 @@ Truth, prediction, and correction are projected into the scene's screen coordina
   position-error-square := [1.0 1.0] ** (position-error-vector ^ 2)
   position-error := sqrt(position-error-square[1])
 
-(5.2) Covariance Ellipse
+(6.2) Covariance Ellipse
 
 The eigenvalues and orientation of the corrected 2×2 position covariance become the axes and rotation of a two-standard-deviation ellipse. A small display-only floor keeps a highly confident estimate visible without modifying the filter covariance.
 
@@ -370,7 +370,7 @@ The eigenvalues and orientation of the corrected 2×2 position covariance become
   ellipse-rotation-matrix := [ellipse-rotation-direction; -ellipse-rotation-direction[2] ellipse-rotation-direction[1]]
   covariance-ellipse := estimate-screen' + screen-scale * (ellipse-axis-points ** ellipse-rotation-matrix) * screen-axis'
 
-(5.3) Resident Tracking Trails
+(6.3) Resident Tracking Trails
 
 Two resident point buffers retain the recent truth and estimate trajectories. A delivered filter sample shifts each trail by one row and appends its newest screen position.
 
@@ -385,7 +385,7 @@ Two resident point buffers retain the recent truth and estimate trajectories. A 
   truth-path = next-truth-path
   estimate-path = next-estimate-path
 
-(5.4) Field and Heading Guides
+(6.4) Field and Heading Guides
 
 The square path, camera opacity channels, and heading vectors are calculated once before the scene tables reference them. Disabled cameras keep muted labels while their sensing rings and measurement rays disappear.
 
@@ -402,11 +402,11 @@ The square path, camera opacity channels, and heading vectors are calculated onc
   heading-screen-vectors := screen-axis * heading-unit-vectors * [18.0 16.0]
   heading-screen-points := [truth-screen estimate-screen] + heading-screen-vectors
 
-(5.5) Scene Primitives
+(6.5) Scene Primitives
 
 The scene resource consumes typed tables of drawing primitives. Each table below owns one visual responsibility instead of hiding the whole presentation inside a single uninterrupted code block.
 
-(5.5.1) Circles
+(6.5.1) Circles
 
 Circles draw camera ranges and bodies, the three robot-state markers, and the compact legend keys. Opacity columns connect camera state directly to the rendered result.
 
@@ -430,7 +430,7 @@ Circles draw camera ranges and bodies, the three robot-state markers, and the co
     | "legend-prediction" 205 718 4 0xf2b84b<f64> "none" 0 1 |
     | "legend-estimate" 405 718 4 0xf087b8<f64> "none" 0 1 |
 
-(5.5.2) Fixed Lines
+(6.5.2) Fixed Lines
 
 Fixed line segments draw the field frame, camera-to-robot measurement rays, and the truth and estimate heading indicators.
 
@@ -446,7 +446,7 @@ Fixed line segments draw the field frame, camera-to-robot measurement rays, and 
     | "truth-heading" truth-screen[1] truth-screen[2] heading-screen-points[1,1] heading-screen-points[2,1] 0xd7fff8<f64> 2 "round" 1 0 0 0 |
     | "estimate-heading" estimate-screen[1] estimate-screen[2] heading-screen-points[1,2] heading-screen-points[2,2] 0xffe1ef<f64> 1.5 "round" 1 0 0 0 |
 
-(5.5.3) Paths and Covariance
+(6.5.3) Paths and Covariance
 
 Line strips draw the requested square, both resident trails, and the sampled covariance ellipse from their prepared point matrices.
 
@@ -456,7 +456,7 @@ Line strips draw the requested square, both resident trails, and the sampled cov
     | "estimate-path" next-estimate-path 0xf087b8<f64> 2 "round" "round" 0.84 false |
     | "covariance" covariance-ellipse 0xf087b8<f64> 1.5 "round" "round" 0.72 true |
 
-(5.5.4) Labels
+(6.5.4) Labels
 
 Text primitives supply the field title, camera labels, and legend descriptions with one shared interface-safe font stack.
 
@@ -472,7 +472,7 @@ Text primitives supply the field title, camera labels, and legend descriptions w
                 | "legend-prediction-label"  215    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "motion prediction"            |
                 | "legend-estimate-label"    415    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "EKF estimate + 2σ covariance" |
 
-(5.6) Scene Publication
+(6.6) Scene Publication
 
 The presentation record gathers the four primitive tables into one scene frame. Replacing the resource frame and returning position error publish the visual and numerical outputs of the same sampled filter state.
 
