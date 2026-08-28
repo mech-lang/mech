@@ -318,6 +318,31 @@ impl FunctionInputPort<'_> {
             FunctionArgumentRole::Input(self.index),
         )
     }
+
+    /// Extracts the exact typed matrix input wrapper without exposing legacy values.
+    ///
+    /// ```compile_fail
+    /// use mech_core::matrix::Matrix;
+    /// use mech_core::{FunctionArgs, FunctionInvocation, LegacyValue};
+    ///
+    /// let invocation = FunctionInvocation::from(FunctionArgs::Unary(
+    ///     LegacyValue::Empty,
+    ///     LegacyValue::Empty,
+    /// ));
+    /// let (_, input) = invocation.expect_unary().unwrap();
+    /// let _: Matrix<LegacyValue> = input.try_matrix::<LegacyValue>().unwrap();
+    /// ```
+    #[cfg(feature = "matrix")]
+    pub fn try_matrix<T>(self) -> MResult<Matrix<T>>
+    where
+        T: FunctionPortBacking + Clone,
+    {
+        self.invocation
+            .args
+            .input_value(self.index)
+            .expect("function input port index remains valid")
+            .try_function_matrix(FunctionArgumentRole::Input(self.index))
+    }
 }
 
 impl fmt::Debug for FunctionInputPort<'_> {
@@ -834,6 +859,74 @@ mod tests {
                 .unwrap()
                 .same_handle(&matrix)
         );
+
+        let wrapped = input.try_matrix::<f64>().unwrap();
+        let Matrix::Matrix2(wrapped) = wrapped else {
+            panic!("matrix input port changed the fixed representation")
+        };
+        assert!(wrapped.same_handle(&matrix));
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "matrix",
+        feature = "matrixd",
+        feature = "string"
+    ))]
+    #[test]
+    fn matrix_input_ports_preserve_dynamic_handles_and_reject_wrong_values() {
+        use crate::matrix::Matrix;
+        use nalgebra::DMatrix;
+
+        let matrix = Ref::new(DMatrix::from_row_slice(2, 2, &[1.0_f64, 2.0, 3.0, 4.0]));
+        let value = LegacyValue::MatrixF64(Matrix::DMatrix(matrix.clone()));
+        let invocation = FunctionInvocation::from(FunctionArgs::Binary(
+            LegacyValue::Empty,
+            value.clone(),
+            Ref::new(9.0_f64).to_value(),
+        ));
+        let (_, matrix_input, scalar_input) = invocation.expect_binary().unwrap();
+
+        let extracted = matrix_input.try_matrix::<f64>().unwrap();
+        let Matrix::DMatrix(extracted) = extracted else {
+            panic!("matrix input port changed the dynamic representation")
+        };
+        assert!(extracted.same_handle(&matrix));
+
+        let scalar_error = scalar_input.try_matrix::<f64>().unwrap_err();
+        assert_eq!(
+            scalar_error
+                .kind_as::<FunctionArgumentTypeMismatch>()
+                .unwrap()
+                .role,
+            FunctionArgumentRole::Input(1),
+        );
+
+        let string_matrix = LegacyValue::MatrixString(Matrix::DMatrix(Ref::new(
+            DMatrix::from_element(1, 1, "wrong".to_string()),
+        )));
+        let invocation =
+            FunctionInvocation::from(FunctionArgs::Unary(LegacyValue::Empty, string_matrix));
+        let (_, input) = invocation.expect_unary().unwrap();
+        assert!(input.try_matrix::<f64>().is_err());
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "matrix2"))]
+    #[test]
+    fn matrix_input_ports_do_not_traverse_value_wrappers() {
+        use crate::matrix::Matrix;
+        use nalgebra::Matrix2;
+
+        let matrix = LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
+        let typed = LegacyValue::Typed(Box::new(matrix.clone()), matrix.kind());
+        let mutable = LegacyValue::MutableReference(Ref::new(matrix));
+
+        for wrapped in [typed, mutable] {
+            let invocation =
+                FunctionInvocation::from(FunctionArgs::Unary(LegacyValue::Empty, wrapped));
+            let (_, input) = invocation.expect_unary().unwrap();
+            assert!(input.try_matrix::<f64>().is_err());
+        }
     }
 
     #[cfg(feature = "f64")]
