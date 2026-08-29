@@ -5,13 +5,31 @@ use crate::*;
 
 pub type SymbolTableRef = Ref<SymbolTable>;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct SymbolTableSnapshot {
     symbols: HashMap<u64, ValueCell>,
     mutable_variables: HashMap<u64, ValueCell>,
     dictionary: Ref<Dictionary>,
     dictionary_contents: Dictionary,
 }
+
+impl PartialEq for SymbolTableSnapshot {
+    fn eq(&self, other: &Self) -> bool {
+        fn same_cells(left: &HashMap<u64, ValueCell>, right: &HashMap<u64, ValueCell>) -> bool {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .all(|(key, cell)| right.get(key).is_some_and(|other| cell.same_cell(other)))
+        }
+
+        same_cells(&self.symbols, &other.symbols)
+            && same_cells(&self.mutable_variables, &other.mutable_variables)
+            && self.dictionary.same_handle(&other.dictionary)
+            && self.dictionary_contents == other.dictionary_contents
+    }
+}
+
+impl Eq for SymbolTableSnapshot {}
 
 #[derive(Clone, Debug)]
 pub struct SymbolTable {
@@ -124,7 +142,7 @@ mod snapshot_tests {
         let second = ValueCell::new(LegacyValue::Index(Ref::new(1)));
 
         let stored = table.insert_cell(key, second.clone(), false);
-        assert_eq!(first, second);
+        assert_eq!(*first.borrow(), *second.borrow());
         assert!(!first.same_cell(&second));
         assert!(stored.same_cell(&second));
         assert!(table.get(key).unwrap().same_cell(&second));

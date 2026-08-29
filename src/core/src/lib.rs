@@ -98,6 +98,7 @@ use num_rational::Rational64;
 ))]
 use tabled::{builder::Builder, settings::Style};
 
+pub mod cell_binding;
 pub mod element;
 pub mod error;
 pub mod execution;
@@ -130,6 +131,7 @@ pub mod read_source;
 pub mod stdlib;
 pub mod types;
 
+pub use self::cell_binding::*;
 pub use self::element::*;
 pub use self::error::*;
 pub use self::execution::*;

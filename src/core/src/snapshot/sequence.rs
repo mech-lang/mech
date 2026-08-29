@@ -6,7 +6,7 @@ use alloc::{boxed::Box, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, vec::Vec};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum SequenceStorage {
     U8(Box<[u8]>),
     U16(Box<[u16]>),

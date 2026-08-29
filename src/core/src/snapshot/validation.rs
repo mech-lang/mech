@@ -55,6 +55,17 @@ pub struct Value {
     resident_token: u64,
 }
 
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        self.schema == other.schema
+            && self.schema_key == other.schema_key
+            && self.shape == other.shape
+            && self.data == other.data
+    }
+}
+
+impl Eq for Value {}
+
 impl core::fmt::Debug for Value {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         formatter

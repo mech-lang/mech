@@ -245,6 +245,10 @@ impl FunctionRuntimeType for LegacyValue {
     const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::AnyValue;
 }
 
+impl FunctionRuntimeType for crate::Value {
+    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::AnyValue;
+}
+
 #[cfg(feature = "atom")]
 impl FunctionRuntimeType for crate::MechAtom {
     const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Atom;
