@@ -44,7 +44,7 @@ cp examples/n-body/mech.mcfg "$project_dir/mech.mcfg"
 cp examples/n-body/n-body.mec "$project_dir/n-body.mec"
 
 "$MECH_BIN" run --max-live-turns 2 "$project_dir" >"$native_log"
-if ! grep -q '\[f64\]:1,1' "$native_log" || ! grep -Eq -- '-0\.[0-9]+' "$native_log"; then
+if ! grep -qx 'matrix' "$native_log" || ! grep -Eq '^\[-0\.[0-9]+\]$' "$native_log"; then
   echo "Native n-body run did not publish its live total energy" >&2
   sed -n '1,160p' "$native_log" >&2 || true
   exit 1

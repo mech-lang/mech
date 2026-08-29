@@ -71,7 +71,7 @@ mod scalar_f64 {
         );
         assert!(
             AddAssignSS::<f64>::new_invocation(
-                FunctionArgs::Unary(Ref::new(0_usize).to_value(), source.to_value()).into(),
+                FunctionArgs::Unary(Ref::new(1_usize).to_value(), source.to_value()).into(),
             )
             .is_err()
         );

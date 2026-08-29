@@ -267,10 +267,10 @@ class ReviewedContractsTests(unittest.TestCase):
                     item["status"], CHECKER.expected_target_status(item)
                 )
 
-    def test_type_contract_source_inventory_is_exact(self):
+    def test_frozen_type_contract_source_inventory_is_preserved_in_retirement(self):
         self.assertEqual(
             self.inventory["type_contract_sources"],
-            CHECKER.GENERATOR.type_contract_sources(ROOT),
+            CHECKER.GENERATOR.expected_type_contract_sources(),
         )
 
     def test_kind_and_runtime_signature_sources_are_separated(self):
@@ -444,7 +444,7 @@ class RetirementSurfaceTests(unittest.TestCase):
                 failures[0].expected,
                 failures[0].actual,
             ),
-            ("src/a.rs", 10, 3, "reviewed maximum count 2", "live count 3"),
+            ("src/a.rs", 10, 3, "reviewed maximum count 3", "live count 4"),
         )
 
     def test_new_path_fails(self):
@@ -453,12 +453,12 @@ class RetirementSurfaceTests(unittest.TestCase):
         )
         self.assertEqual(self.ids(), {"C0-RETIREMENT-OCCURRENCE-GROWTH"})
 
-    def test_moving_occurrence_between_files_fails(self):
+    def test_moving_occurrence_between_files_passes(self):
         moved = next(
             row for row in self.live["variant_uses"] if row["path"] == "src/b.rs"
         )
         moved["path"] = "src/a.rs"
-        self.assertEqual(self.ids(), {"C0-RETIREMENT-OCCURRENCE-GROWTH"})
+        self.assertEqual(self.failures(), [])
 
     def test_replacing_variant_use_fails_at_growing_destination(self):
         row = next(
@@ -1211,6 +1211,32 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
             ),
         )
 
+    def test_retirement_ref_alias_may_move_without_changing_shape(self):
+        baseline = {
+            "legacy_aliases": [
+                {
+                    "name": "MutableReference",
+                    "raw_name": "MutableReference",
+                    "target": "Ref<LegacyValue>",
+                    "path": "src/core/src/types/mod.rs",
+                    "line": 121,
+                    "visibility": "pub",
+                }
+            ]
+        }
+        live = copy.deepcopy(baseline)
+        live["legacy_aliases"][0]["path"] = "src/core/src/legacy_adapter/mod.rs"
+        live["legacy_aliases"][0]["line"] = 42
+        self.assertEqual(
+            CHECKER.legacy_alias_baseline_failures(
+                baseline,
+                live,
+                Path("baseline.json"),
+                mode="retirement",
+            ),
+            [],
+        )
+
     def test_legacy_scanner_contract_cannot_drift_with_baseline(self):
         baseline = copy.deepcopy(self.baseline)
         baseline["scanner_contract"]["implementation_sha256"] = "0" * 64
@@ -1496,17 +1522,14 @@ class LegacyGrowthTests(unittest.TestCase):
             },
         )
 
-    def test_retirement_alias_ceiling_rejects_new_path(self):
-        self.assertIn(
-            "C0-LEGACY-GROWTH",
-            {
-                item.contract_id
-                for item in self.failures(
-                    [self.row("a.rs", 1)],
-                    [self.row("b.rs", 1)],
-                    mode="retirement",
-                )
-            },
+    def test_retirement_alias_ceiling_allows_path_movement(self):
+        self.assertEqual(
+            self.failures(
+                [self.row("a.rs", 1)],
+                [self.row("b.rs", 1)],
+                mode="retirement",
+            ),
+            [],
         )
 
     def test_retirement_pointer_identity_substitution_remains_fingerprint_exact(self):
@@ -1885,7 +1908,8 @@ class BoundaryAndReportingTests(unittest.TestCase):
 
         root = self.root_with(
             "src/engine/src/resident/composite.rs",
-            "use mech_core::snapshot::{F64Bits, MatrixValue, rebuild_composite_snapshot};\n",
+            "use mech_core::snapshot::{F64Bits, MatrixValue, rebuild_composite_snapshot, "
+            "wrap_resident_dynamic_data};\n",
         )
         self.assertNotIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
 
@@ -1997,6 +2021,13 @@ class BoundaryAndReportingTests(unittest.TestCase):
                     f"fn adapt(kind: Kind) {{ match kind {{ {fallback} }} }}\n",
                 )
                 self.assertNotIn("C1-LEGACY-ADAPTER-EXHAUSTIVE", self.ids(root))
+
+    def test_non_kind_adapter_may_use_unrelated_catch_all(self):
+        root = self.root_with(
+            "src/core/src/legacy_adapter/function.rs",
+            "fn adapt(value: RuntimeValue) { match value { _ => () } }\n",
+        )
+        self.assertNotIn("C1-LEGACY-ADAPTER-EXHAUSTIVE", self.ids(root))
 
     def test_exact_c2_value_adapter_may_mention_both_representations(self):
         root = self.root_with("src/core/src/legacy_adapter/value.rs", "fn convert(_: LegacyValue) -> snapshot::Value { todo!() }\n")
@@ -2346,10 +2377,28 @@ class BoundaryAndReportingTests(unittest.TestCase):
         )
 
     def test_explicit_matrix_value_rejection_passes(self):
-        migration = CHECKER.load_json(CONTRACTS / "migration.json")
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        source = root / "adapter.rs"
+        source.write_text(
+            "LegacyValue::MatrixValue(value) => Err(unsupported(value)),\n",
+            encoding="utf-8",
+        )
+        migration = {
+            "use_classifications": [
+                {
+                    "enum": "LegacyValue",
+                    "variant": "MatrixValue",
+                    "path": "adapter.rs",
+                    "sites": [{"line": 1, "column": 1}],
+                    "target": "heterogeneous-matrix-rejected",
+                }
+            ]
+        }
         self.assertEqual(
             CHECKER.matrix_value_classification_failures(
-                migration, Path("migration.json")
+                migration, Path("migration.json"), root
             ),
             [],
         )

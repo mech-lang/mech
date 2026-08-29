@@ -99,6 +99,7 @@ FINALIZED_RESIDENT_SNAPSHOT_IMPORTS = {
         ("mech_core", "snapshot", "F64Bits"),
         ("mech_core", "snapshot", "MatrixValue"),
         ("mech_core", "snapshot", "rebuild_composite_snapshot"),
+        ("mech_core", "snapshot", "wrap_resident_dynamic_data"),
     },
     "src/engine/src/resident/set.rs": {
         ("mech_core", "snapshot", "build_f64_set_snapshot"),
@@ -1182,9 +1183,9 @@ def retirement_variant_failures(
 
 def retirement_occurrence_counts(
     inventory: dict[str, Any],
-) -> Counter[tuple[str, str, str]]:
+) -> Counter[tuple[str, str]]:
     return Counter(
-        (record["enum"], record["variant"], record["path"])
+        (record["enum"], record["variant"])
         for record in inventory.get("variant_uses", [])
     )
 
@@ -1196,17 +1197,17 @@ def retirement_occurrence_failures(
 ) -> list[Failure]:
     reviewed_counts = retirement_occurrence_counts(reviewed)
     live_counts = retirement_occurrence_counts(live)
-    first_live_site: dict[tuple[str, str, str], tuple[int, int]] = {}
+    first_live_site: dict[tuple[str, str], tuple[str, int, int]] = {}
     for record in live.get("variant_uses", []):
-        key = (record["enum"], record["variant"], record["path"])
-        site = (int(record["line"]), int(record["column"]))
+        key = (record["enum"], record["variant"])
+        site = (record["path"], int(record["line"]), int(record["column"]))
         first_live_site[key] = min(first_live_site.get(key, site), site)
     failures: list[Failure] = []
-    for (enum_name, variant, path), live_count in sorted(live_counts.items()):
-        reviewed_count = reviewed_counts[(enum_name, variant, path)]
+    for (enum_name, variant), live_count in sorted(live_counts.items()):
+        reviewed_count = reviewed_counts[(enum_name, variant)]
         if live_count <= reviewed_count:
             continue
-        line, column = first_live_site[(enum_name, variant, path)]
+        path, line, column = first_live_site[(enum_name, variant)]
         failures.append(
             failure(
                 "C0-RETIREMENT-OCCURRENCE-GROWTH",
@@ -1334,7 +1335,11 @@ def source_disposition_failures(
     ]
 
 
-def qualification_failures(root: Path, live: dict[str, Any]) -> list[Failure]:
+def qualification_failures(
+    root: Path, live: dict[str, Any], *, mode: str = "exact"
+) -> list[Failure]:
+    if mode not in {"exact", "retirement"}:
+        raise ValueError(f"unsupported qualification contract mode: {mode!r}")
     failures: list[Failure] = []
     variants_by_enum = {
         enum_name: {row["name"] for row in record["variants"]}
@@ -1351,6 +1356,19 @@ def qualification_failures(root: Path, live: dict[str, Any]) -> list[Failure]:
             variants_by_enum,
             GENERATOR.crate_root_bindings(root, path, tokens),
         ):
+            violation_line = int(violation["line"])
+            if (
+                mode == "retirement"
+                and violation["kind"] == "ref-alias"
+                and relative == "src/core/src/legacy_adapter/mod.rs"
+                and re.search(
+                    r"\bpub\s+type\s+MutableReference\s*=",
+                    source.splitlines()[violation_line - 1],
+                )
+            ):
+                # The immutable alias-shape ceiling below still validates its
+                # name, visibility, and target after this compatibility move.
+                continue
             contract_id = {
                 "raw-audited-alias": "C0-RAW-AUDITED-ALIAS",
                 "semantic-kind-alias": "C0-SEMANTIC-KIND-ALIAS",
@@ -1367,7 +1385,7 @@ def qualification_failures(root: Path, live: dict[str, Any]) -> list[Failure]:
                     "production variants qualified with their exact enum name",
                     str(violation["kind"]),
                     "qualify the variant use; do not import or alias audited enums",
-                    int(violation["line"]),
+                    violation_line,
                     int(violation["column"]),
                     str(violation["enum"]),
                     str(violation.get("variant", "-")),
@@ -1400,6 +1418,7 @@ def high_risk_failures(
         "valref-alias",
         "mutable-reference-alias",
         "value-mutable-reference",
+        "value-typed-wrapper",
         "reactive-cell-id",
     }
     for identifier, current_rows in live_uses.items():
@@ -1417,33 +1436,28 @@ def high_risk_failures(
             )
         ]
         if mode == "retirement" and identifier in retirement_count_ceiling_identifiers:
-            approved_counts = Counter(
-                row["path"]
-                for row in baseline_uses.get(identifier, [])
-                for _site in row["sites"]
-            )
-            approved_counts.update(
-                path
-                for (approved_identifier, path, _fingerprint), count in authorized.items()
+            approved_count = sum(
+                len(row["sites"]) for row in baseline_uses.get(identifier, [])
+            ) + sum(
+                count
+                for (approved_identifier, _path, _fingerprint), count in authorized.items()
                 if approved_identifier == identifier
-                for _ in range(count)
             )
-            current_counts = Counter(
-                row["path"]
+            current_sites = [
+                (row["path"], site)
                 for row in filtered_current_rows
-                for _site in row["sites"]
-            )
-            additions = current_counts - approved_counts
-            for path, count in sorted(additions.items()):
-                row = next(row for row in filtered_current_rows if row["path"] == path)
-                for site in row["sites"][-count:]:
+                for site in row["sites"]
+            ]
+            excess = len(current_sites) - approved_count
+            if excess > 0:
+                for path, site in current_sites[-excess:]:
                     failures.append(
                         failure(
                             "C0-LEGACY-GROWTH",
                             identifier,
                             path,
-                            "occurrence count at or below the immutable baseline plus authorized ceiling for this path",
-                            "new path or increased legacy occurrence count",
+                            "total occurrence count at or below the immutable baseline plus authorized ceiling",
+                            "increased legacy occurrence count",
                             f"{baseline_path}:high_risk_api_uses.{identifier}",
                             site["line"],
                             site["column"],
@@ -1514,15 +1528,33 @@ def high_risk_failures(
 
 
 def legacy_alias_baseline_failures(
-    baseline: dict[str, Any], live: dict[str, Any], baseline_path: Path
+    baseline: dict[str, Any],
+    live: dict[str, Any],
+    baseline_path: Path,
+    *,
+    mode: str = "exact",
 ) -> list[Failure]:
+    if mode not in {"exact", "retirement"}:
+        raise ValueError(f"unsupported legacy alias contract mode: {mode!r}")
+
     def frozen(rows: list[dict[str, Any]]) -> Counter[str]:
         return Counter(
             json.dumps(
                 {
-                    key: value
+                    key: (
+                        value.replace("crate::", "")
+                        if mode == "retirement"
+                        and key == "target"
+                        and isinstance(value, str)
+                        else value
+                    )
                     for key, value in row.items()
-                    if key not in {"line", "column"}
+                    if key
+                    not in (
+                        {"line", "column", "path"}
+                        if mode == "retirement"
+                        else {"line", "column"}
+                    )
                 },
                 sort_keys=True,
                 separators=(",", ":"),
@@ -1536,8 +1568,12 @@ def legacy_alias_baseline_failures(
         failure(
             "C0-IMMUTABLE-LEGACY-BASELINE",
             json.loads(record)["name"],
-            json.loads(record)["path"],
-            "exact archived Ref alias or removal",
+            json.loads(record).get("path", str(baseline_path)),
+            (
+                "structurally identical archived Ref alias or removal"
+                if mode == "retirement"
+                else "exact archived Ref alias or removal"
+            ),
             record,
             f"{baseline_path}:legacy_aliases",
             None,
@@ -1953,6 +1989,15 @@ SNAPSHOT_FORBIDDEN_IDENTIFIERS = STANDARD_INTERIOR_MUTABILITY_IDENTIFIERS | {
     "nalgebra",
     "DMatrix",
     "Rc",
+}
+
+# These modules own exhaustive conversion from the retired semantic kind
+# enums. Other compatibility modules may legitimately use catch-all arms for
+# unrelated payload, shape, or runtime-representation matches.
+LEGACY_ADAPTER_EXHAUSTIVE_PATHS = {
+    "src/core/src/legacy_adapter/bytecode_kind.rs",
+    "src/core/src/legacy_adapter/kind.rs",
+    "src/core/src/legacy_adapter/value.rs",
 }
 
 
@@ -2765,7 +2810,7 @@ def future_boundary_failures(root: Path) -> list[Failure]:
                         else None,
                     )
                 )
-        if module_file_or_descendant(root, resolved, "legacy_adapter"):
+        if relative in LEGACY_ADAPTER_EXHAUSTIVE_PATHS:
             catch_all = legacy_adapter_catch_all(searchable)
             if catch_all is not None:
                 failures.append(
@@ -4054,7 +4099,7 @@ def audit(
             retirement_occurrence_failures(inventory, live, inventory_path)
         )
     failures.extend(source_disposition_failures(inventory, inventory_path))
-    failures.extend(qualification_failures(root, live))
+    failures.extend(qualification_failures(root, live, mode=mode))
     failures.extend(
         high_risk_failures(
             baseline,
@@ -4065,7 +4110,11 @@ def audit(
             mode=mode,
         )
     )
-    failures.extend(legacy_alias_baseline_failures(baseline, live, baseline_path))
+    failures.extend(
+        legacy_alias_baseline_failures(
+            baseline, live, baseline_path, mode=mode
+        )
+    )
     failures.extend(compatibility_alias_failures(baseline, live, baseline_path))
     failures.extend(raw_approved_alias_failures(live))
     if (

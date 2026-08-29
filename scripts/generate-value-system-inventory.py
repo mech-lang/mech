@@ -2096,6 +2096,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--legacy-baseline-output", type=Path)
     parser.add_argument("--check-legacy-baseline", action="store_true")
     parser.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--mode",
+        choices=("exact", "retirement"),
+        default="exact",
+        help=(
+            "exact validates and compares the frozen inventory; retirement "
+            "only proves the shrinking live inventory remains generatable"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -2128,8 +2137,19 @@ def main() -> int:
             baseline_output.write_text(rendered, encoding="utf-8")
             print(f"wrote {display_path(baseline_output, root)}")
             return 0
-        rendered = render(generate(root, args.reference_commit))
+        if args.mode == "retirement" and not args.check:
+            raise ValueError("retirement mode is check-only")
+        rendered = render(
+            generate(
+                root,
+                args.reference_commit,
+                validate_type_contract_sources=args.mode == "exact",
+            )
+        )
         if args.check:
+            if args.mode == "retirement":
+                print("value-system retirement inventory generation succeeded")
+                return 0
             actual = output.read_text(encoding="utf-8")
             if actual != rendered:
                 print(

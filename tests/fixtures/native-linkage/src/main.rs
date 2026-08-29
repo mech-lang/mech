@@ -5,6 +5,7 @@
     feature = "extended-engine-shard",
     feature = "extended-engine-shard-convert",
     feature = "extended-math",
+    feature = "extended-math-shard",
     feature = "extended-compare",
     feature = "extended-logic",
     feature = "extended-range",
@@ -31,6 +32,7 @@ use mech_core::FunctionCatalog;
     feature = "extended-engine-shard",
     feature = "extended-engine-shard-convert",
     feature = "extended-math",
+    feature = "extended-math-shard",
     feature = "extended-compare",
     feature = "extended-logic",
     feature = "extended-range",
@@ -58,6 +60,7 @@ use mech_core::FunctionCatalogBuilder;
     feature = "extended-engine-shard",
     feature = "extended-engine-shard-convert",
     feature = "extended-math",
+    feature = "extended-math-shard",
     feature = "extended-compare",
     feature = "extended-logic",
     feature = "extended-range",
@@ -86,6 +89,7 @@ use serde::Serialize;
     feature = "extended-engine-shard",
     feature = "extended-engine-shard-convert",
     feature = "extended-math",
+    feature = "extended-math-shard",
     feature = "extended-compare",
     feature = "extended-logic",
     feature = "extended-range",
@@ -116,6 +120,7 @@ struct LinkageEntry<'a> {
     feature = "extended-engine-shard",
     feature = "extended-engine-shard-convert",
     feature = "extended-math",
+    feature = "extended-math-shard",
     feature = "extended-compare",
     feature = "extended-logic",
     feature = "extended-range",
@@ -239,6 +244,7 @@ fn main() {
     feature = "extended-engine-shard",
     feature = "extended-engine-shard-convert",
     feature = "extended-math",
+    feature = "extended-math-shard",
     feature = "extended-compare",
     feature = "extended-logic",
     feature = "extended-range",
@@ -291,6 +297,7 @@ extended_owner_native_plan_main!(
     mech_engine::install_intrinsic_native_plan
 );
 extended_owner_native_plan_main!("extended-math", mech_math::install_runtime);
+extended_owner_native_plan_main!("extended-math-shard", mech_math::install_runtime);
 extended_owner_native_plan_main!("extended-compare", mech_compare::install_runtime);
 extended_owner_native_plan_main!("extended-logic", mech_logic::install_runtime);
 extended_owner_native_plan_main!("extended-range", mech_range::install_runtime);
@@ -359,6 +366,7 @@ fn main() {
     not(feature = "extended-engine-shard"),
     not(feature = "extended-engine-shard-convert"),
     not(feature = "extended-math"),
+    not(feature = "extended-math-shard"),
     not(feature = "extended-compare"),
     not(feature = "extended-logic"),
     not(feature = "extended-range"),

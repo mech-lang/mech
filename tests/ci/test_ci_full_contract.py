@@ -82,6 +82,10 @@ class FullWorkflowContractTests(unittest.TestCase):
         retirement = (
             "python3 scripts/check-value-system-contract.py --mode retirement"
         )
+        retirement_inventory = (
+            "python3 scripts/generate-value-system-inventory.py "
+            "--check --mode retirement"
+        )
         plain_inventory_check = re.compile(
             r"(?m)^\s*python3 scripts/generate-value-system-inventory\.py "
             r"--check\s*$"
@@ -89,6 +93,7 @@ class FullWorkflowContractTests(unittest.TestCase):
 
         self.assertIn(retirement, static)
         self.assertIn(retirement, architecture)
+        self.assertIn(retirement_inventory, architecture)
         self.assertRegex(
             architecture,
             r"(?m)^\s*python3 scripts/generate-value-system-inventory\.py \\\n"
@@ -152,6 +157,19 @@ class FullWorkflowContractTests(unittest.TestCase):
         profiles = tuple(re.findall(r"- ([a-z0-9-]+)", matrix.group("rows")))
         self.assertEqual(profiles[0], "full")
         self.assertNotIn("standard", profiles)
+        self.assertNotIn("extended-math", profiles)
+        self.assertEqual(
+            tuple(profile for profile in profiles if profile.startswith("extended-math-")),
+            (
+                "extended-math-shard-unsigned-small",
+                "extended-math-shard-unsigned-wide",
+                "extended-math-shard-signed-small",
+                "extended-math-shard-signed-wide",
+                "extended-math-shard-float",
+                "extended-math-shard-complex",
+                "extended-math-shard-rational",
+            ),
+        )
 
     def test_distribution_size_profiles_are_authoritative_and_deterministic(self):
         completed = subprocess.run(

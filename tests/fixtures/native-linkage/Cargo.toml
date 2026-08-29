@@ -90,6 +90,39 @@ extended-math = [
   "dep:mech-core", "dep:mech-math", "dep:serde", "dep:serde_json",
   "mech-core/native-plan", "mech-math/native-plan", "mech-math/full_runtime",
 ]
+# CI partitions the exhaustive math surface by scalar kind so hosted runners
+# never have to monomorphize every numeric kind, matrix shape, and operation in
+# one process. Their deterministic union is checked against the same committed
+# linkage coverage report as `extended-math`.
+extended-math-shard = [
+  "dep:mech-core", "dep:mech-math", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-math/native-plan", "mech-math/full_operations",
+  "mech-math/bool", "mech-math/f32", "mech-math/f64",
+  "mech-math/matrix1", "mech-math/matrix2", "mech-math/matrix3", "mech-math/matrix4",
+  "mech-math/matrix2x3", "mech-math/matrix3x2",
+  "mech-math/row_vector2", "mech-math/row_vector3", "mech-math/row_vector4",
+  "mech-math/vector2", "mech-math/vector3", "mech-math/vector4",
+  "mech-math/row_vectord", "mech-math/vectord", "mech-math/matrixd",
+]
+extended-math-shard-unsigned-small = [
+  "extended-math-shard",
+  "mech-math/u8", "mech-math/u16", "mech-math/u32",
+]
+extended-math-shard-unsigned-wide = [
+  "extended-math-shard",
+  "mech-math/u64", "mech-math/u128",
+]
+extended-math-shard-signed-small = [
+  "extended-math-shard",
+  "mech-math/i8", "mech-math/i16", "mech-math/i32",
+]
+extended-math-shard-signed-wide = [
+  "extended-math-shard",
+  "mech-math/i64", "mech-math/i128",
+]
+extended-math-shard-float = ["extended-math-shard"]
+extended-math-shard-complex = ["extended-math-shard", "mech-math/c64"]
+extended-math-shard-rational = ["extended-math-shard", "mech-math/r64"]
 extended-compare = [
   "dep:mech-core", "dep:mech-compare", "dep:serde", "dep:serde_json",
   "mech-core/native-plan", "mech-compare/native-plan", "mech-compare/full_runtime",

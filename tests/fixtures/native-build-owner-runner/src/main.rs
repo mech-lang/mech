@@ -387,6 +387,15 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
             continue;
         }
         match &output.runtime_type {
+            RuntimeType::Bool if output.bytes.len() == 1 => {
+                if output.bytes[0] == 0 {
+                    return Err(format!(
+                        "compiler boolean output seed {constant_id} was already false"
+                    )
+                    .into());
+                }
+                output.bytes[0] = 0;
+            }
             RuntimeType::F64 if output.bytes.len() == 8 => {
                 if output.bytes.iter().all(|byte| *byte == 0) {
                     return Err(format!("compiler output seed {constant_id} was already zero").into());
@@ -507,8 +516,14 @@ fn canonicalize_mutated_constants(
         let canonical = match remap[old] {
             Some(canonical) => canonical,
             None => {
-                let canonical = match constants.iter().position(|existing| existing == value) {
-                    Some(index) => u32::try_from(index)?,
+                let canonical = match constants.iter().position(|existing: &EncodedConstant| {
+                    existing.runtime_type == value.runtime_type && existing.bytes == value.bytes
+                }) {
+                    Some(index) => {
+                        constants[index].alignment =
+                            constants[index].alignment.max(value.alignment);
+                        u32::try_from(index)?
+                    }
                     None => {
                         let index = u32::try_from(constants.len())?;
                         constants.push(value.clone());

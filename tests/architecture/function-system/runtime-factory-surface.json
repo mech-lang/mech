@@ -45149,6 +45149,16 @@
       "owner": "mech-engine::stdlib"
     },
     {
+      "name": "matrix/horzcat",
+      "id_hex": "003299d97fd48d44",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "matrix/vertcat",
+      "id_hex": "0028eceed65f65d6",
+      "owner": "mech-engine::stdlib"
+    },
+    {
       "name": "set/comprehension",
       "id_hex": "0064c0b449898be0",
       "owner": "mech-engine::stdlib"
