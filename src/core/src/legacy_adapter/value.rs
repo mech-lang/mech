@@ -112,6 +112,10 @@ pub enum LegacySnapshotError {
     LegacyTypedSchemaMismatch,
     LegacyIndexOutOfRange,
     LegacyDimensionOutOfRange,
+    DynamicSchemaUnavailable {
+        key: SchemaKey,
+        kind: ValueKind,
+    },
     LegacyRationalOutOfRange,
     LegacyRepresentationUnavailable {
         representation: LegacyRepresentation,
@@ -325,6 +329,8 @@ fn is_matrix_element_schema_mismatch(error: &SnapshotValueError) -> bool {
         path
     } else if let SnapshotValueError::MapEntryArityMismatchV1 { path, .. } = error {
         path
+    } else if let SnapshotValueError::InvalidIndexV1 { path, .. } = error {
+        path
     } else {
         return false;
     };
@@ -398,6 +404,9 @@ fn empty_draft(
     target: &SchemaBody,
     shape_values: &[u64],
 ) -> Result<ValueDataDraft, LegacySnapshotError> {
+    if matches!(target, SchemaBody::Dynamic) {
+        return Ok(ValueDataDraft::Dynamic(None));
+    }
     if matches!(target, SchemaBody::Option(_)) {
         return Ok(ValueDataDraft::Option(OptionDraft {
             present: false,
@@ -453,6 +462,38 @@ fn draft_from_legacy_body(
     validation: &SnapshotValidationContext<'_>,
     context: &mut LegacySnapshotContext<'_>,
 ) -> Result<ValueDataDraft, LegacySnapshotError> {
+    if matches!(target.body, SchemaBody::Dynamic) {
+        if matches!(value, LegacyValue::EmptyKind(ValueKind::Any)) {
+            return Ok(ValueDataDraft::Dynamic(None));
+        }
+        let concrete_kind = value.kind();
+        let concrete_schema = schema_from_legacy_value_kind(&concrete_kind, context.semantic)?;
+        let concrete_key = concrete_schema.key();
+        let concrete_id =
+            validation
+                .schemas()
+                .find_by_key(concrete_key)
+                .ok_or(DynamicSchemaUnavailable {
+                    key: concrete_key,
+                    kind: concrete_kind,
+                })?;
+        let concrete = validation
+            .schemas()
+            .get(concrete_id)
+            .expect("resolved dynamic schema remains present");
+        let data = draft_from_legacy_body(
+            value,
+            LegacyTarget::root(concrete),
+            &[],
+            validation,
+            context,
+        )?;
+        return Ok(ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+            schema: concrete_id,
+            shape_values: Box::new([]),
+            data,
+        }))));
+    }
     if let LegacyValue::Typed(inner, legacy_kind) = value {
         let typed_schema = schema_from_legacy_value_kind(legacy_kind, context.semantic)?;
         if typed_schema.key() != target.semantic_key()? {
@@ -1112,6 +1153,13 @@ fn legacy_from_data(
     schemas: &SchemaTable,
     context: &mut dyn LegacyMaterializationContext,
 ) -> Result<LegacyValue, LegacySnapshotError> {
+    if matches!(schema, SchemaBody::Dynamic) {
+        let ValueData::Dynamic(value) = data else {
+            unreachable!("validated dynamic snapshot changed representation")
+        };
+        let value = value.value().ok_or(UnsupportedLegacyMaterialization)?;
+        return legacy_from_snapshot(value, schemas, context);
+    }
     macro_rules! scalar_ref {
         ($feature:literal, $schema:pat, $data:pat => $value:expr, $variant:ident, $repr:ident) => {
             if matches!(schema, $schema) {
@@ -1491,7 +1539,8 @@ fn legacy_from_data(
             // them or retain a second legacy-shaped representation.
             return Err(UnsupportedLegacyMaterialization);
         }
-        (SchemaBody::Bool, _)
+        (SchemaBody::Dynamic, _)
+        | (SchemaBody::Bool, _)
         | (SchemaBody::UnsignedInteger(_), _)
         | (SchemaBody::SignedInteger(_), _)
         | (SchemaBody::FloatingPoint(_), _)
@@ -1651,6 +1700,7 @@ fn value_kind_from_schema(
     context: &mut dyn LegacyMaterializationContext,
 ) -> Result<ValueKind, LegacySnapshotError> {
     Ok(match schema {
+        SchemaBody::Dynamic => ValueKind::Any,
         SchemaBody::Bool => ValueKind::Bool,
         SchemaBody::UnsignedInteger(IntegerWidth::W8) => ValueKind::U8,
         SchemaBody::UnsignedInteger(IntegerWidth::W16) => ValueKind::U16,

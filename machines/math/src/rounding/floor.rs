@@ -6,7 +6,11 @@ use num_traits::*;
 
 // Floor ------------------------------------------------------------------------
 
-use libm::{floor, floorf};
+#[cfg(feature = "f64")]
+use libm::floor;
+#[cfg(feature = "f32")]
+use libm::floorf;
+#[cfg(feature = "f64")]
 macro_rules! floor_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -15,6 +19,7 @@ macro_rules! floor_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! floor_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -25,6 +30,7 @@ macro_rules! floor_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! floorf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -33,6 +39,7 @@ macro_rules! floorf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! floorf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

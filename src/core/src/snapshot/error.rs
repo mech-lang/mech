@@ -7,6 +7,7 @@ use std::{boxed::Box, vec::Vec};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SchemaDataKind {
+    Dynamic,
     Bool,
     UnsignedInteger,
     SignedInteger,
@@ -30,6 +31,7 @@ pub enum SchemaDataKind {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ValueDataKind {
+    Dynamic,
     U8,
     U16,
     U32,
@@ -125,6 +127,10 @@ pub enum SnapshotValueError {
         path: SnapshotPath,
         expected: SchemaDataKind,
         actual: ValueDataKind,
+    },
+    InvalidIndexV1 {
+        path: SnapshotPath,
+        value: u64,
     },
     AggregateArityMismatchV1 {
         path: SnapshotPath,

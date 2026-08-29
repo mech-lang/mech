@@ -13,7 +13,7 @@ use crate::RuntimeValueSnapshot;
 fn runtime_value_snapshot_is_empty_matches_value_empty() {
     assert!(RuntimeValueSnapshot::empty().is_empty());
 
-    let non_empty = RuntimeValueSnapshot::try_capture(&LegacyValue::Index(Ref::new(0))).unwrap();
+    let non_empty = RuntimeValueSnapshot::try_capture(&LegacyValue::Index(Ref::new(1))).unwrap();
     assert!(!non_empty.is_empty());
 }
 

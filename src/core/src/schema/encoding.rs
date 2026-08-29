@@ -90,6 +90,7 @@ impl Schema {
 fn encode_schema_body(body: &SchemaBody) -> Box<[u8]> {
     let mut writer = CanonicalWriter::new();
     match body {
+        SchemaBody::Dynamic => writer.write_u8(0x14),
         SchemaBody::Bool => writer.write_u8(0x01),
         SchemaBody::UnsignedInteger(width) => {
             writer.write_u8(0x02);

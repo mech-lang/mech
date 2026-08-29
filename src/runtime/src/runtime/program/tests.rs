@@ -392,7 +392,13 @@ fn product_scene_point_set_positions(value: &LegacyValue) -> Vec<f64> {
             };
             record.clone()
         }
-        other => panic!("scene point-sets must contain a record, got {other:?}"),
+        LegacyValue::Table(table) if table.borrow().rows == 1 => Ref::new(
+            table
+                .borrow()
+                .get_record(1)
+                .expect("scene point-set table row"),
+        ),
+        other => panic!("scene point-sets must contain one record, got {other:?}"),
     };
     let point_set = point_set.borrow();
     product_scene_matrix_values(
@@ -2214,7 +2220,7 @@ fn resident_observation_profile_covers_scalars_and_dense_matrices() {
         crate::RuntimeHostInputValue::Bool(true),
     );
     assert_typed_observation_round_trip(
-        LegacyValue::Index(Ref::new(0)),
+        LegacyValue::Index(Ref::new(1)),
         crate::RuntimeHostInputValue::Index(7),
     );
     assert_typed_observation_round_trip(
@@ -2230,7 +2236,7 @@ fn resident_observation_profile_covers_scalars_and_dense_matrices() {
         },
     );
     assert_typed_observation_round_trip(
-        LegacyValue::MatrixIndex(ValueMatrix::from_vec(vec![0; 4], 2, 2)),
+        LegacyValue::MatrixIndex(ValueMatrix::from_vec(vec![1; 4], 2, 2)),
         crate::RuntimeHostInputValue::IndexMatrix {
             rows: 2,
             columns: 2,

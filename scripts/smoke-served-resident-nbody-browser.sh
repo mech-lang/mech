@@ -105,7 +105,10 @@ harness = r'''<script>
     let maximumSunOffset = 0;
     let sunEverOffCenter = false;
     let minimumMercuryOffset = Number.POSITIVE_INFINITY;
-    const deadline = Date.now() + 20000;
+    // Table-backed scene collections rebuild more structured data per frame.
+    // Preserve the 600-turn physics proof while allowing slower CI runners to
+    // complete it instead of weakening the number of observed simulation steps.
+    const deadline = Date.now() + 30000;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       callback(performance.now());

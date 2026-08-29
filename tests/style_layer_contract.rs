@@ -122,6 +122,11 @@ fn source_layer_keeps_the_structured_syntax_highlighting_contract() {
         ".mech-function-name",
         ".mech-matrix",
         ".mech-table",
+        ".mech-statement-table-define",
+        ".mech-variable-define-table",
+        ".mech-statement-context-block",
+        ".mech-context-capabilities-block",
+        "margin-left: 0",
     ] {
         assert!(css.contains(token), "source layer lost {token}");
     }
@@ -170,6 +175,9 @@ fn page_variants_do_not_own_source_or_repl_components() {
 fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
     let css = include("mechdown.css");
     for contract in [
+        "--mechdown-text: var(--mech-text-body, var(--body-primary, hsl(206 24% 90%)))",
+        "--text-color-light: var(--mechdown-text)",
+        "--contrast-color-low: var(--mech-brand-deep, hsl(42 89% 60%))",
         "counter-reset: mechdown-section",
         ".mechdown-section.mechdown-titled-section {\n  counter-increment: mechdown-section",
         ".mechdown-section > h2::before",
@@ -180,12 +188,27 @@ fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
         "border: 1px solid var(--mechdown-accent)",
         "--mechdown-inline-code: var(--mech-syntax-variable, var(--var-name-color, #eddaf1))",
         "color: var(--mechdown-inline-code)",
+        ".mech-program-subtitle:is(:hover, :focus-within) > a",
+        "color: var(--mech-brand-deep, hsl(42 89% 60%))",
+        ":is(.mech-paragraph, .mechdown-paragraph):not(",
+        "color: var(--mech-text-body, var(--body-primary, hsl(206 24% 90%)))",
+        "font-size: 1.06rem",
+        "font-weight: 400",
+        "line-height: 1.85",
     ] {
         assert!(
             css.contains(contract),
             "Mechdown lost editorial style {contract}"
         );
     }
+    assert!(
+        !css.contains(".mech-program-subtitle:hover > a {\n  color: var(--mech-syntax"),
+        "section heading hover must not use a syntax color"
+    );
+    assert!(
+        !include("blog.css").contains("Preserve the blog's cool, open long-form reading treatment"),
+        "long-form prose styling belongs to the shared Mechdown layer"
+    );
 }
 
 #[test]
@@ -280,6 +303,11 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(controller.contains("mech-console-error-count"));
 
     let page = include("style.css");
+    assert!(page.contains(".mech-toc-toggle {"));
+    assert!(page.contains("border: 1px solid var(--toc-accent)"));
+    assert!(page.contains(
+        ".mech-toc-toggle:hover,\n.mech-toc-toggle:focus-visible {\n  border-color: var(--toc-border)"
+    ));
     assert!(page.contains(".toc li.expanded > .toc-sub"));
     assert!(page.contains("border-left: 1px dotted var(--toc-accent-soft)"));
     assert!(page.contains(".article-layout.is-toc-open > .main-content"));
@@ -491,9 +519,6 @@ fn established_blog_color_and_component_details_are_preserved() {
         ".hero-summary .mech-summary",
         "border-top: 1px dotted var(--hero-accent)",
         "color: var(--hero-text-secondary)",
-        "color: var(--mech-text-body)",
-        "font-size: 1.06rem",
-        "line-height: 1.85",
         "scrollbar-color: var(--mech-scrollbar) transparent",
         "background: var(--mech-scrollbar-hover)",
         ".mech-image,",
@@ -501,9 +526,6 @@ fn established_blog_color_and_component_details_are_preserved() {
         "width: min(48%, 520px)",
         "body.narrow-content .mech-float",
         "@container (max-width: 980px)",
-        ".mech-summary,",
-        ".mechdown-table,",
-        ".mech-prompt",
         "grid-template-columns: var(--toc-width) minmax(0, 1fr)",
         ".article-layout:is(.hide-toc, .no-sections, .has-empty-toc)",
         "@media (max-width: 900px)",
@@ -514,6 +536,10 @@ fn established_blog_color_and_component_details_are_preserved() {
     let mechdown = include("mechdown.css");
     for contract in [
         ".mech-hyperlink,",
+        "color: var(--mech-text-body, var(--body-primary, hsl(206 24% 90%)))",
+        "font-size: 1.06rem",
+        "font-weight: 400",
+        "line-height: 1.85",
         ".mech-section-reference-link",
         "text-decoration-style: dotted",
         "text-underline-offset: 3px",

@@ -3247,9 +3247,9 @@ phase"#;
     }
 
     #[test]
-    fn encoded_document_controller_accepts_resident_atan2() {
+    fn encoded_document_controller_accepts_wildcard_imported_resident_atan2() {
         let tree = mech_syntax::parser::parse(
-            "Resident Atan2\n================\n+> math\n================\n\nangle := math/atan2(1.0, 0.0)\nangle",
+            "Resident Atan2\n================\n+> math/*\n================\n\nangle := atan2(1.0, 0.0)\nangle",
         )
         .unwrap();
         let module = ["math".to_string()];
@@ -4178,7 +4178,7 @@ scene := {
 
     #[cfg(not(feature = "browser_compute"))]
     #[test]
-    fn unsupported_generic_table_project_fails_closed_without_legacy_execution() {
+    fn generic_table_project_runs_without_legacy_execution() {
         let document = parse_config_document(
             "generic-table.mcfg",
             r#"config := { hosts: [] run: { paths: ["generic-table.mec"] grants: [] } }"#,
@@ -4198,12 +4198,9 @@ rows := |id<string> x<f64>|
             .source_resolver(project_source_resolver(&sources).unwrap())
             .build()
             .unwrap();
-        let error = run_project_sources(&mut runtime, &document).unwrap_err();
-        assert_production_route_failed_closed(
-            &runtime,
-            &error,
-            ResidentRouteFailureClass::SemanticUnsupported,
-        );
+        run_project_sources(&mut runtime, &document).unwrap();
+        assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
+        runtime.root_symbol_value("rows").unwrap();
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
@@ -4235,7 +4232,6 @@ rows := |id<string> x<f64>|
             self.0.lock().unwrap().snapshot()
         }
 
-        #[cfg(feature = "browser_compute")]
         fn publish_steps(&self, count: usize) -> mech_core::MResult<usize> {
             self.0.lock().unwrap().publish_steps(count)
         }
@@ -4273,11 +4269,16 @@ rows := |id<string> x<f64>|
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     impl TestManualTimerHostFactory {
+        #[cfg(feature = "browser_compute")]
         fn new() -> Self {
+            Self::with_instance("clock")
+        }
+
+        fn with_instance(instance: &str) -> Self {
             Self {
                 manifest: mech_timer::timer_host_manifest().unwrap(),
                 driver: SharedManualTimerInputDriver::new(
-                    "clock",
+                    instance,
                     60,
                     1,
                     mech_timer::TimerQueuePolicy::Latest,
@@ -4346,12 +4347,45 @@ rows := |id<string> x<f64>|
             "the Kalman gain must use the language's matrix solve operation",
         );
         assert!(
-            source.contains("observation-guard := 1f32 - math/ceil(z[3])"),
+            source.contains("observation-guard := 1f32 - ceil(z[3])"),
             "only a fully invisible camera may perturb singular observation geometry",
         );
         assert!(
+            source.contains("+> math/*"),
+            "the EKF document must import the math module's public functions",
+        );
+        for qualified in [
+            "math/abs(",
+            "math/atan2(",
+            "math/ceil(",
+            "math/cos(",
+            "math/floor(",
+            "math/sin(",
+            "math/sqrt(",
+        ] {
+            assert!(
+                !source.contains(qualified),
+                "wildcard-imported math calls must be unqualified: {qualified}",
+            );
+        }
+        assert!(
             !source.contains("innovation-inverse") && !source.contains("innovation-determinant"),
             "the example must not expand a matrix inverse by hand",
+        );
+        assert!(
+            !source.contains("matrix/vertcat")
+                && source.contains("advanced-truth-path := [truth-path[2..=376,:]; truth-screen']"),
+            "vertical concatenation must use matrix literal syntax",
+        );
+        let compact_source = source
+            .chars()
+            .filter(|character| !character.is_whitespace())
+            .collect::<String>();
+        assert!(
+            compact_source.contains("scene-line-strips:=|id<string>positions<*>")
+                && compact_source.contains("scene-text:=|id<string>x<f64>y<f64>fill<f64>")
+                && compact_source.contains("font-weight<f64>"),
+            "scene collections must remain table values",
         );
         let sources = HashMap::from([("localization.mec".to_string(), source.clone())]);
         let timer_factory = TestManualTimerHostFactory::new();
@@ -4491,8 +4525,8 @@ rows := |id<string> x<f64>|
         };
         assert_eq!(
             runtime.program_execution_info().observation_count,
-            7,
-            "the resident artifact must observe the timer, four pointer fields, compute completion, and packed sample"
+            6,
+            "the resident artifact must observe the timer, two pointer fields, compute completion, packed sample, and sampled visibility"
         );
         assert!(scene_backend.latest().is_none());
         let pi = 3.141592654_f64;
@@ -4505,7 +4539,6 @@ rows := |id<string> x<f64>|
         let field_span = high_bound - low_bound;
         let side_ticks = 94_usize;
         let lap_ticks = side_ticks * 4;
-        let camera_dwell_ticks = side_ticks / 2;
         let camera_max_range = 3.6_f64;
         let camera_range_fade = 0.18_f64;
         let mut expected_truth = [2.5_f64, 2.5_f64, 0.0_f64];
@@ -4533,7 +4566,6 @@ rows := |id<string> x<f64>|
 
         let positive_part = |value: f64| (value + value.abs()) / 2.0;
         let clamp_unit = |value: f64| positive_part(value) - positive_part(value - 1.0);
-        let camera_schedule = [0_usize, 1, 1, 2, 2, 3, 3, 0];
         let mut saw_prediction_only_turn = false;
         let mut saw_camera_update = false;
         let mut saw_faded_camera_update = false;
@@ -4544,7 +4576,7 @@ rows := |id<string> x<f64>|
 
         // Publish five scheduler steps at a time. The configured latest-value
         // policy delivers only one packet, whose absolute tick jumps by five.
-        // The finite-state phase, camera schedule, and filter must nevertheless
+        // The vectorized phase, camera selection, and filter must nevertheless
         // advance exactly once per accepted resident packet. A full lap plus
         // part of the next side exercises every camera and every dead zone.
         for turn in 1..=420 {
@@ -4657,7 +4689,7 @@ rows := |id<string> x<f64>|
                 motion_jacobian * expected_covariance * motion_jacobian.transpose()
                     + control_jacobian * process_covariance * control_jacobian.transpose();
 
-            let camera_index = camera_schedule[(delivered_turn % lap_ticks) / camera_dwell_ticks];
+            let camera_index = ((delivered_turn + side_ticks / 2) / side_ticks) % 4;
             let active_camera = camera_positions[camera_index];
             let truth_dx = active_camera[0] - expected_truth[0];
             let truth_dy = active_camera[1] - expected_truth[1];
@@ -4952,7 +4984,7 @@ rows := |id<string> x<f64>|
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     #[test]
-    fn unsupported_timer_table_scene_fails_before_effects_or_legacy_execution() {
+    fn timer_table_scene_runs_residently_and_publishes_its_tables() {
         let document = generic_fixture_document();
         let source_paths = required_path_strings(include_str!(
             "../tests/fixtures/generic-timer-table-scene/mech.mcfg"
@@ -4961,10 +4993,12 @@ rows := |id<string> x<f64>|
         assert_eq!(source_paths, vec!["table-scene.mec".to_string()]);
 
         let scene_backend = mech_scene::RecordingSceneBackend::new();
+        let timer_factory = TestManualTimerHostFactory::with_instance("tick");
+        let timer_driver = timer_factory.driver.clone();
         let mut builder = browser_runtime_builder()
             .source_resolver(project_source_resolver(&generic_fixture_sources()).unwrap())
             .host_input_capacity(16)
-            .host_factory(Box::new(TestManualTimerHostFactory::new()))
+            .host_factory(Box::new(timer_factory))
             .unwrap()
             .host_factory(Box::new(
                 mech_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap(),
@@ -4977,13 +5011,18 @@ rows := |id<string> x<f64>|
             builder = builder.run_resource_grant(grant.clone());
         }
         let mut runtime = builder.build().unwrap();
-        let error = run_project_sources(&mut runtime, &document).unwrap_err();
-        assert_production_route_failed_closed(
-            &runtime,
-            &error,
-            ResidentRouteFailureClass::SemanticUnsupported,
+        run_project_sources(&mut runtime, &document).unwrap();
+        assert_eq!(
+            runtime.program_route(),
+            RuntimeProgramRoute::ResidentExternal
         );
-        assert_eq!(scene_backend.generation(), 0);
+        runtime.start_input_drivers().unwrap();
+        assert_eq!(timer_driver.publish_steps(1).unwrap(), 1);
+        runtime.drain_host_inputs(1).unwrap();
+        let scene = scene_backend.latest().unwrap();
+        assert_eq!(scene.circles.len(), 2);
+        assert_eq!(scene.lines.len(), 3);
+        assert_eq!(scene_backend.generation(), 1);
     }
 
     #[test]

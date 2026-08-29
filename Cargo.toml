@@ -118,7 +118,7 @@ compute_backends_native = [
       "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
       "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
       "math_add", "math_sub", "math_mul", "math_div", "math_mod", "math_sin", "math_cos",
-      "math_ceil",
+      "math_ceil", "math_floor",
       "mech-stdlib/native-plan",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
@@ -243,6 +243,7 @@ math_mul_assign = ["mech-stdlib/math_mul_assign"]
 math_div_assign = ["mech-stdlib/math_div_assign"]
 math_sqrt = ["mech-stdlib/math_sqrt"]
 math_ceil = ["mech-stdlib/math_ceil"]
+math_floor = ["mech-stdlib/math_floor"]
 math_acos = ["mech-stdlib/math_acos"]
 math_acosh = ["mech-stdlib/math_acosh"]
 math_acot = ["mech-stdlib/math_acot"]

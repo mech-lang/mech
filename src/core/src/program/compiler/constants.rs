@@ -1102,14 +1102,8 @@ fn encode_table_constant(
                 "table column name does not match its stable ID",
             ));
         }
-        let Matrix::DVector(values) = column else {
-            return Err(unsupported_constant(
-                RuntimeType::Any,
-                value.kind(),
-                "table columns must use dynamic value vectors",
-            ));
-        };
-        if values.borrow().len() != value.rows {
+        let values = column.as_vec();
+        if values.len() != value.rows {
             return Err(unsupported_constant(
                 RuntimeType::Any,
                 value.kind(),
@@ -1117,12 +1111,36 @@ fn encode_table_constant(
             ));
         }
         let declared_type = runtime_type_from_value_kind(kind)?;
+        if matches!(declared_type, RuntimeType::Any) {
+            // Wildcard columns are reconstructed exclusively from their live
+            // CompositePack children. Keep only zero-sized dynamic
+            // placeholders in the constant template; encoding one concrete
+            // cell type here would incorrectly force every row to share that
+            // schema and matrix shape.
+            columns.push((name.clone(), RuntimeType::Any));
+            column_values.push(
+                (0..value.rows)
+                    .map(|_| encoded_constant(RuntimeType::Any, 1, Vec::new()))
+                    .collect(),
+            );
+            continue;
+        }
         let mut annotated_cells = Vec::new();
         annotated_cells
             .try_reserve_exact(value.rows)
             .map_err(|_| invalid::<()>("unable to allocate table constant cells").unwrap_err())?;
-        for cell in values.borrow().iter() {
-            annotated_cells.push(encode_annotated_child(cell, &declared_type, context)?);
+        for cell in &values {
+            // CompositePack compiles a table's live cells separately. Its
+            // constant table is only the reconstruction template, so a direct
+            // producer reference must contribute its current payload here
+            // without changing the declared column schema to Reference<T>.
+            let encoded = match cell {
+                LegacyValue::MutableReference(reference) => {
+                    encode_annotated_child(&reference.borrow(), &declared_type, context)?
+                }
+                _ => encode_annotated_child(cell, &declared_type, context)?,
+            };
+            annotated_cells.push(encoded);
         }
         let column_kind = ValueKind::Table(vec![(name.clone(), kind.clone())], value.rows);
         let (column_type, encoded_cells) = finalize_annotated_children(

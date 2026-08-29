@@ -184,6 +184,10 @@ impl RuntimeHostInputValue {
                 "RuntimeHostInputValueUnsupported",
                 "f64 host input values require the `f64` feature",
             )),
+            RuntimeHostInputValue::Index(0) => Err(input_error(
+                "RuntimeHostInputValueInvalid",
+                "index host input values must be in 1..=max",
+            )),
             RuntimeHostInputValue::Index(value) => Ok(LegacyValue::Index(Ref::new(value))),
             #[cfg(feature = "matrix")]
             RuntimeHostInputValue::BoolMatrix {
@@ -208,6 +212,12 @@ impl RuntimeHostInputValue {
                 values,
             } => {
                 validate_matrix_input(rows, columns, values.len())?;
+                if values.contains(&0) {
+                    return Err(input_error(
+                        "RuntimeHostInputValueInvalid",
+                        "index matrix host input values must be in 1..=max",
+                    ));
+                }
                 Ok(LegacyValue::MatrixIndex(ValueMatrix::from_vec(
                     values, rows, columns,
                 )))
@@ -580,6 +590,21 @@ mod tests {
         assert_send_sync::<RuntimeHostInputValue>();
         assert_send_sync::<RuntimeHostInput>();
         assert_send_sync::<RuntimeIngress>();
+    }
+
+    #[test]
+    fn detached_indexes_are_one_based() {
+        assert!(RuntimeHostInputValue::Index(0).into_mech_value().is_err());
+        assert!(
+            RuntimeHostInputValue::IndexMatrix {
+                rows: 1,
+                columns: 2,
+                values: vec![1, 0],
+            }
+            .into_mech_value()
+            .is_err()
+        );
+        assert!(RuntimeHostInputValue::Index(1).into_mech_value().is_ok());
     }
 
     #[test]

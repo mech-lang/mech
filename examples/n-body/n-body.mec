@@ -2,7 +2,7 @@ N-Body Simulation
 ===============================================================================
 section: Examples
 +> combinatorics
-+> math
++> math/*
 +> stats
 ===============================================================================
 
@@ -147,8 +147,8 @@ the center-of-momentum frame without changing any body's heliocentric orbit.
 
   guide-samples := 0..=96
   guide-angle := guide-samples' * (2 * π / 96)
-  guide-cos := math/cos(guide-angle)
-  guide-sin := math/sin(guide-angle)
+  guide-cos := cos(guide-angle)
+  guide-sin := sin(guide-angle)
 
   mercury-guide-x := orbit-a[1] * (guide-cos - orbit-e[1]) * orbit-px[1] + orbit-a[1] * (1 - orbit-e[1] ^ 2) ^ 0.5 * guide-sin * orbit-qx[1]
   mercury-guide-y := orbit-a[1] * (guide-cos - orbit-e[1]) * orbit-py[1] + orbit-a[1] * (1 - orbit-e[1] ^ 2) ^ 0.5 * guide-sin * orbit-qy[1]
@@ -250,68 +250,56 @@ body's simulated direction from the Sun.
   pluto-guide-scale := 44 / (pluto-guide-x ^ 2 + pluto-guide-y ^ 2 + 0.000001) ^ 0.25
   pluto-guide := [430 + pluto-guide-x * pluto-guide-scale 380 - pluto-guide-y * pluto-guide-scale]
 
-  scene-circles := (
-    {id: "status-light", x: 593, y: 57, radius: 4, fill: "#61d095", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-sun", x: 28, y: 714, radius: 4, fill: "#ffd166", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-mercury", x: 92, y: 714, radius: 4, fill: "#b9a99a", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-venus", x: 179, y: 714, radius: 4, fill: "#e8b86d", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-earth", x: 247, y: 714, radius: 4, fill: "#55a9ff", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-mars", x: 314, y: 714, radius: 4, fill: "#e76f51", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-jupiter", x: 376, y: 714, radius: 4, fill: "#d7b28c", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-saturn", x: 455, y: 714, radius: 4, fill: "#e7cf8d", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-uranus", x: 529, y: 714, radius: 4, fill: "#72d6d1", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-neptune", x: 607, y: 714, radius: 4, fill: "#5677e8", stroke: "none", stroke-width: 0, opacity: 1},
-    {id: "legend-pluto", x: 695, y: 714, radius: 4, fill: "#c9c2b8", stroke: "none", stroke-width: 0, opacity: 1}
-  )
+  scene-circles := |id<string> x<f64> y<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
+    | "status-light" 593 57 4 "#61d095" "none" 0 1 |
+    | "legend-sun" 28 714 4 "#ffd166" "none" 0 1 |
+    | "legend-mercury" 92 714 4 "#b9a99a" "none" 0 1 |
+    | "legend-venus" 179 714 4 "#e8b86d" "none" 0 1 |
+    | "legend-earth" 247 714 4 "#55a9ff" "none" 0 1 |
+    | "legend-mars" 314 714 4 "#e76f51" "none" 0 1 |
+    | "legend-jupiter" 376 714 4 "#d7b28c" "none" 0 1 |
+    | "legend-saturn" 455 714 4 "#e7cf8d" "none" 0 1 |
+    | "legend-uranus" 529 714 4 "#72d6d1" "none" 0 1 |
+    | "legend-neptune" 607 714 4 "#5677e8" "none" 0 1 |
+    | "legend-pluto" 695 714 4 "#c9c2b8" "none" 0 1 |
 
-  scene-line-strips := (
-    {id: "orbit-mercury", positions: mercury-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
-    {id: "orbit-venus", positions: venus-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
-    {id: "orbit-earth", positions: earth-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
-    {id: "orbit-mars", positions: mars-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
-    {id: "orbit-jupiter", positions: jupiter-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
-    {id: "orbit-saturn", positions: saturn-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
-    {id: "orbit-uranus", positions: uranus-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
-    {id: "orbit-neptune", positions: neptune-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
-    {id: "orbit-pluto", positions: pluto-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true}
-  )
+  scene-line-strips := |id<string> positions<[f64]:97,2> stroke<string> stroke-width<f64> line-cap<string> line-join<string> opacity<f64> closed<bool>|
+    | "orbit-mercury" mercury-guide "#536273" 0.75 "round" "round" 0.48 true |
+    | "orbit-venus" venus-guide "#536273" 0.75 "round" "round" 0.48 true |
+    | "orbit-earth" earth-guide "#536273" 0.75 "round" "round" 0.48 true |
+    | "orbit-mars" mars-guide "#536273" 0.75 "round" "round" 0.48 true |
+    | "orbit-jupiter" jupiter-guide "#536273" 0.75 "round" "round" 0.48 true |
+    | "orbit-saturn" saturn-guide "#536273" 0.75 "round" "round" 0.48 true |
+    | "orbit-uranus" uranus-guide "#536273" 0.75 "round" "round" 0.48 true |
+    | "orbit-neptune" neptune-guide "#536273" 0.75 "round" "round" 0.48 true |
+    | "orbit-pluto" pluto-guide "#536273" 0.75 "round" "round" 0.48 true |
 
-  scene-point-sets := ({
-    id: "body"
-    positions: screen-points
-    radius: 4
-    first-radius: 8
-    fills: ("#ffd166", "#b9a99a", "#e8b86d", "#55a9ff", "#e76f51", "#d7b28c", "#e7cf8d", "#72d6d1", "#5677e8", "#c9c2b8")
-    stroke: "none"
-    stroke-width: 0
-    opacity: 1
-  })
+  scene-point-sets := |id<string> positions<[f64]:10,2> radius<f64> first-radius<f64> fills<(string,string,string,string,string,string,string,string,string,string)> stroke<string> stroke-width<f64> opacity<f64>|
+    | "body" screen-points 4 8 ("#ffd166", "#b9a99a", "#e8b86d", "#55a9ff", "#e76f51", "#d7b28c", "#e7cf8d", "#72d6d1", "#5677e8", "#c9c2b8") "none" 0 1 |
 
-  scene-lines := (
-    {id: "axis-x", x1: 158, y1: 380, x2: 702, y2: 380, stroke: "#344151", stroke-width: 0.5, line-cap: "butt", opacity: 0.5, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "axis-y", x1: 430, y1: 108, x2: 430, y2: 652, stroke: "#344151", stroke-width: 0.5, line-cap: "butt", opacity: 0.5, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "frame-top", x1: 130, y1: 80, x2: 730, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "frame-right", x1: 730, y1: 80, x2: 730, y2: 680, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "frame-bottom", x1: 730, y1: 680, x2: 130, y2: 680, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "frame-left", x1: 130, y1: 680, x2: 130, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0}
-  )
+  scene-lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<string> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
+    | "axis-x" 158 380 702 380 "#344151" 0.5 "butt" 0.5 0 0 0 |
+    | "axis-y" 430 108 430 652 "#344151" 0.5 "butt" 0.5 0 0 0 |
+    | "frame-top" 130 80 730 80 "#27313d" 1 "butt" 1 0 0 0 |
+    | "frame-right" 730 80 730 680 "#27313d" 1 "butt" 1 0 0 0 |
+    | "frame-bottom" 730 680 130 680 "#27313d" 1 "butt" 1 0 0 0 |
+    | "frame-left" 130 680 130 80 "#27313d" 1 "butt" 1 0 0 0 |
 
-  scene-text := (
-    {id: "eyebrow", x: 24, y: 26, fill: "#8fa3b8", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "650", text-anchor: "start", opacity: 1, value: "MECH RESIDENT N-BODY MODEL"},
-    {id: "title", x: 24, y: 62, fill: "#edf2f7", font-size: 38, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "620", text-anchor: "start", opacity: 1, value: "Solar-System Orbit Viewer"},
-    {id: "status", x: 604, y: 61, fill: "#aebdca", font-size: 13, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "60 resident simulation steps per second"},
-    {id: "label-sun", x: 37, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Sun"},
-    {id: "label-mercury", x: 101, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Mercury"},
-    {id: "label-venus", x: 188, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Venus"},
-    {id: "label-earth", x: 256, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Earth"},
-    {id: "label-mars", x: 323, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Mars"},
-    {id: "label-jupiter", x: 385, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Jupiter"},
-    {id: "label-saturn", x: 464, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Saturn"},
-    {id: "label-uranus", x: 538, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Uranus"},
-    {id: "label-neptune", x: 616, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Neptune"},
-    {id: "label-pluto", x: 704, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Pluto"},
-    {id: "scale-note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "Live mutual gravity · guides are calculated osculating orbits · square-root radial scale"}
-  )
+  scene-text := |id<string> x<f64> y<f64> fill<string> font-size<f64> font-family<string> font-weight<string> text-anchor<string> opacity<f64> value<string>|
+    | "eyebrow" 24 26 "#8fa3b8" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "650" "start" 1 "MECH RESIDENT N-BODY MODEL" |
+    | "title" 24 62 "#edf2f7" 38 "Inter, ui-sans-serif, system-ui, sans-serif" "620" "start" 1 "Solar-System Orbit Viewer" |
+    | "status" 604 61 "#aebdca" 13 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "60 resident simulation steps per second" |
+    | "label-sun" 37 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Sun" |
+    | "label-mercury" 101 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Mercury" |
+    | "label-venus" 188 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Venus" |
+    | "label-earth" 256 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Earth" |
+    | "label-mars" 323 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Mars" |
+    | "label-jupiter" 385 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Jupiter" |
+    | "label-saturn" 464 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Saturn" |
+    | "label-uranus" 538 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Uranus" |
+    | "label-neptune" 616 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Neptune" |
+    | "label-pluto" 704 718 "#bdc8d2" 12 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "start" 1 "Pluto" |
+    | "scale-note" 430 750 "#788a9c" 11 "Inter, ui-sans-serif, system-ui, sans-serif" "400" "middle" 1 "Live mutual gravity · guides are calculated osculating orbits · square-root radial scale" |
 
   n-body-scene := {
     width: 860

@@ -61,8 +61,6 @@ config := {
         paths: [
           "pointer-pulse"
           "pointer-position"
-          "pointer-pressed"
-          "pointer-delta-seconds"
           "replace"
         ]
       }

@@ -149,6 +149,7 @@ const fn gcd(mut left: u64, mut right: u64) -> u64 {
 
 #[derive(Clone, Debug)]
 pub enum ValueData {
+    Dynamic(DynamicValue),
     U8(u8),
     U16(u16),
     U32(u32),
@@ -184,6 +185,7 @@ impl ValueData {
     pub const fn kind(&self) -> super::ValueDataKind {
         use super::ValueDataKind;
         match self {
+            Self::Dynamic(_) => ValueDataKind::Dynamic,
             Self::U8(_) => ValueDataKind::U8,
             Self::U16(_) => ValueDataKind::U16,
             Self::U32(_) => ValueDataKind::U32,
@@ -214,6 +216,22 @@ impl ValueData {
             Self::Map(_) => ValueDataKind::Map,
             Self::Type(_) => ValueDataKind::ReifiedType,
         }
+    }
+}
+
+/// Canonical payload for a self-describing dynamic value.
+///
+/// Composite constants use an empty placeholder and resident reconstruction
+/// replaces it with a nested finalized value before the aggregate is exposed.
+#[derive(Clone, Debug)]
+pub struct DynamicValue {
+    pub(super) value: Option<Box<super::Value>>,
+    pub(super) canonical: Box<[u8]>,
+}
+
+impl DynamicValue {
+    pub fn value(&self) -> Option<&super::Value> {
+        self.value.as_deref()
     }
 }
 

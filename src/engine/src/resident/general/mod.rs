@@ -390,7 +390,7 @@ impl TypedResidentArena {
     fn allocate(sizes: ResidentArenaSizes) -> Self {
         Self {
             bools: vec![0; sizes.bools].into_boxed_slice(),
-            indexes: vec![0; sizes.indexes].into_boxed_slice(),
+            indexes: vec![1; sizes.indexes].into_boxed_slice(),
             f64s: vec![0.0; sizes.f64s].into_boxed_slice(),
             strings: vec![String::new(); sizes.strings].into_boxed_slice(),
             snapshots: vec![None; sizes.snapshots].into_boxed_slice(),
@@ -2477,6 +2477,7 @@ fn source_port_layout(
                 schema_key: value.schema_key(),
                 kind: region.kind,
                 shape: region.shape,
+                shape_instance: value.shape().clone(),
             })
         }
         ArtifactSource::Slot(slot) => Ok(slot_port_layout(&layout.slots[slot.get() as usize])),
@@ -2489,6 +2490,7 @@ fn slot_port_layout(slot: &ResolvedSlot) -> ResidentPortLayout {
         schema_key: slot.schema_key,
         kind: slot.region.kind,
         shape: slot.region.shape,
+        shape_instance: slot.shape.clone(),
     }
 }
 

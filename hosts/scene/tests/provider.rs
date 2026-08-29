@@ -30,6 +30,9 @@ fn deliver_write(
 fn f(value: f64) -> LegacyValue {
     LegacyValue::F64(Ref::new(value))
 }
+fn ix(value: usize) -> LegacyValue {
+    LegacyValue::Index(Ref::new(value))
+}
 fn s(value: &str) -> LegacyValue {
     LegacyValue::String(Ref::new(value.to_string()))
 }
@@ -199,6 +202,84 @@ fn valid_text_scene() {
 }
 
 #[test]
+fn numeric_text_paint_and_weight_are_normalized_without_index_coercion() {
+    let numeric_text = record(vec![
+        ("id", s("title")),
+        ("x", f(10.0)),
+        ("y", f(20.0)),
+        ("fill", f(0xedf2f7 as f64)),
+        ("font-size", f(12.0)),
+        ("font-family", s("sans-serif")),
+        ("font-weight", f(620.0)),
+        ("text-anchor", s("start")),
+        ("opacity", f(1.0)),
+        ("value", s("Scene label")),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", f(0x080b12 as f64)),
+        ("texts", tuple(vec![numeric_text])),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.background, "#080b12");
+    assert_eq!(scene.texts[0].fill, "#edf2f7");
+    assert_eq!(scene.texts[0].font_weight, "620");
+
+    for (field, value) in [("fill", ix(1)), ("font-weight", ix(500))] {
+        let invalid_text = record(vec![
+            ("id", s("title")),
+            ("x", f(10.0)),
+            ("y", f(20.0)),
+            (
+                "fill",
+                if field == "fill" {
+                    value.clone()
+                } else {
+                    f(0.0)
+                },
+            ),
+            ("font-size", f(12.0)),
+            ("font-family", s("sans-serif")),
+            (
+                "font-weight",
+                if field == "font-weight" {
+                    value
+                } else {
+                    f(500.0)
+                },
+            ),
+            ("text-anchor", s("start")),
+            ("opacity", f(1.0)),
+            ("value", s("Scene label")),
+        ]);
+        let invalid_scene = record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("#000")),
+            ("texts", tuple(vec![invalid_text])),
+        ]);
+        assert!(
+            SceneSnapshot::from_value(&invalid_scene).is_err(),
+            "{field}"
+        );
+    }
+}
+
+#[test]
+fn valid_text_table() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("texts", table(vec![text("title"), text("caption")])),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.texts.len(), 2);
+    assert_eq!(scene.texts[1].id, "caption");
+}
+
+#[test]
 fn point_set_expands_matrix_rows_into_stable_circles() {
     let scene = record(vec![
         ("width", f(100.0)),
@@ -212,6 +293,22 @@ fn point_set_expands_matrix_rows_into_stable_circles() {
     assert_eq!(scene.circles[0].radius, 6.0);
     assert_eq!(scene.circles[0].fill, "gold");
     assert_eq!((scene.circles[1].x, scene.circles[1].y), (20.0, 40.0));
+}
+
+#[test]
+fn point_set_table_expands_every_record() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        (
+            "point-sets",
+            table(vec![point_set("body"), point_set("marker")]),
+        ),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.circles.len(), 4);
+    assert_eq!(scene.circles[2].id, "marker-0");
 }
 
 #[test]
@@ -230,6 +327,23 @@ fn line_strip_keeps_matrix_rows_as_one_closed_path() {
         vec![[10.0, 40.0], [20.0, 50.0], [30.0, 60.0]]
     );
     assert!(scene.line_strips[0].closed);
+}
+
+#[test]
+fn line_strip_table_keeps_each_matrix_as_one_path() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        (
+            "line-strips",
+            table(vec![line_strip("orbit-a"), line_strip("orbit-b")]),
+        ),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.line_strips.len(), 2);
+    assert_eq!(scene.line_strips[1].id, "orbit-b");
+    assert_eq!(scene.line_strips[1].positions.len(), 3);
 }
 
 #[test]

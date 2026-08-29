@@ -183,7 +183,7 @@ math_default = [
   "mech-math", "mech-math/math_default",
   "math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_mod",
   "math_neg", "math_add_assign", "math_sub_assign", "math_mul_assign",
-  "math_div_assign", "math_sqrt", "math_ceil", "math_acos", "math_acosh", "math_acot",
+  "math_div_assign", "math_sqrt", "math_ceil", "math_floor", "math_acos", "math_acosh", "math_acot",
   "math_acsc", "math_asec", "math_asin", "math_asinh", "math_atan",
   "math_atan2", "math_atanh", "math_cos", "math_cosh", "math_cot",
   "math_csc", "math_sec", "math_sin", "math_sinh", "math_tan", "math_tanh",
@@ -227,6 +227,7 @@ math_mul_assign = ["mech-math", "mech-math/mul_assign", "mech-engine/math_mul_as
 math_div_assign = ["mech-math", "mech-math/div_assign", "mech-engine/math_div_assign"]
 math_sqrt = ["mech-math", "mech-math/sqrt", "mech-engine/math_sqrt"]
 math_ceil = ["mech-math", "mech-math/ceil"]
+math_floor = ["mech-math", "mech-math/floor"]
 math_acos = ["mech-math", "mech-math/acos", "mech-engine/math_acos"]
 math_acosh = ["mech-math", "mech-math/acosh", "mech-engine/math_acosh"]
 math_acot = ["mech-math", "mech-math/acot", "mech-engine/math_acot"]

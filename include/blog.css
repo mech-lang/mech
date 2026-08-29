@@ -54,33 +54,6 @@ html[data-mech-shim="blog"] .hero-summary .mech-summary p {
   margin: 0;
 }
 
-/* Preserve the blog's cool, open long-form reading treatment. */
-html[data-mech-shim="blog"]
-  [data-mechdown]
-  :is(.mech-paragraph, .mechdown-paragraph):not(
-    [data-mech-source] *,
-    :where(
-      .mech-summary,
-      .mech-abstract,
-      .mech-block-quote,
-      .mech-info-block,
-      .mech-question-block,
-      .mech-success-block,
-      .mech-warning-block,
-      .mech-error-block,
-      .mech-idea-block,
-      .mech-figure-caption,
-      .mech-footnote,
-      .mech-citation,
-      .mechdown-table,
-      .mech-prompt
-    ) *
-  ) {
-  color: var(--mech-text-body);
-  font-size: 1.06rem;
-  line-height: 1.85;
-}
-
 html[data-mech-shim="blog"] .article-intro li p {
   margin: 0 0 5px;
 }

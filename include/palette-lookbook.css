@@ -15,7 +15,7 @@ html {
 body {
   min-width: 320px;
   margin: 0;
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
   background: var(--mech-canvas);
   font-family: Lato, "Helvetica Neue", Arial, sans-serif;
   font-size: 16px;
@@ -223,7 +223,7 @@ pre,
 .hero-deck {
   max-width: 720px;
   margin: 27px auto 0;
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
   font-size: 16px;
   line-height: 25px;
 }
@@ -394,7 +394,7 @@ pre,
 .section-heading p {
   max-width: 720px;
   margin: 0;
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
   font-size: 16px;
   line-height: 25px;
 }
@@ -539,7 +539,7 @@ pre,
 }
 
 .decision span {
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
   font-size: 14px;
 }
 
@@ -697,7 +697,7 @@ pre,
 .type-specimen p {
   max-width: 720px;
   margin: 0;
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
   line-height: 25px;
 }
 
@@ -757,7 +757,7 @@ pre,
 
 .prose-link-demo {
   margin: 0;
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
 }
 
 .text-link,
@@ -925,7 +925,7 @@ pre,
 
 .inline-code-demo {
   margin: 22px 0 0;
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
 }
 
 .inline-code-demo code {
@@ -949,7 +949,7 @@ pre,
 .specimen-list {
   margin: 0;
   padding: 0;
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
   list-style: none;
 }
 
@@ -1149,7 +1149,7 @@ pre,
 
 .runtime-error p {
   margin: 14px 0;
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
   font-size: 13px;
 }
 
@@ -1217,7 +1217,7 @@ pre,
 }
 
 .data-table td {
-  color: var(--mech-text-reading);
+  color: var(--mech-text-body);
   font-size: 13px;
 }
 

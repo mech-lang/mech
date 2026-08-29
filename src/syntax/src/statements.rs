@@ -453,10 +453,13 @@ pub fn context_declaration(input: ParseString) -> ParseResult<ContextDeclaration
     let (input, _) = define_operator(input)?;
     let (input, base) = alt((context_base_resource_uri, context_base_context))(input)?;
     let (input, capabilities) = opt(|input| {
+        let (input, _) = whitespace0(input)?;
         let (input, _) = left_brace(input)?;
+        let (input, _) = whitespace0(input)?;
         let (input, capabilities) =
             separated_list1(list_separator, context_capability_declaration)(input)?;
         let (input, _) = opt(list_separator)(input)?;
+        let (input, _) = whitespace0(input)?;
         let (input, _) = right_brace(input)?;
         Ok((input, capabilities))
     })(input)?;

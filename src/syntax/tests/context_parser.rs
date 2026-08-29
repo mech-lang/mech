@@ -46,6 +46,23 @@ fn parses_context_declaration_with_resource_base() {
 }
 
 #[test]
+fn parses_multiline_context_capabilities_after_a_spaced_resource_base() {
+    let stmts = statements(
+        "@filters := compute://filters/kernel {\n  :read(sample/result.0),\n  :read(sample/result.2),\n  :read(turns),\n  :write(input/control),\n  :write(input/camera),\n  :write(input/measurement),\n  :write(turn)\n}",
+    );
+
+    assert_eq!(stmts.len(), 1);
+    match &stmts[0] {
+        Statement::ContextDeclaration(context) => {
+            assert_eq!(context.capabilities.len(), 7);
+            assert_eq!(context.capabilities[0].operation.to_string(), "read");
+            assert_eq!(context.capabilities[6].operation.to_string(), "write");
+        }
+        other => panic!("expected context declaration, got {other:?}"),
+    }
+}
+
+#[test]
 fn parses_context_declaration_with_context_base() {
     let stmts = statements("@users := @main{:read(users/*)}");
     match &stmts[0] {

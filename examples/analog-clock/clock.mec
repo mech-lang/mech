@@ -14,61 +14,13 @@ clock-hour-angle := clock-hour * 30
 
 clock-output := (clock-hour, clock-minute, clock-second)
 
-clock-circles := ({
-    id: "clock-center-pin"
-    x: 100
-    y: 100
-    radius: 4
-    fill: "#e25555"
-    stroke: "#e25555"
-    stroke-width: 0
-    opacity: 1
-  }
-)
+clock-circles := |id<string> x<f64> y<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
+  | "clock-center-pin" 100 100 4 "#e25555" "#e25555" 0 1 |
 
-clock-lines := ({
-    id: "clock-hour-hand"
-    x1: 100
-    y1: 100
-    x2: 100
-    y2: 58
-    stroke: "#1d2430"
-    stroke-width: 7
-    line-cap: "round"
-    opacity: 1
-    rotation: clock-hour-angle
-    origin-x: 100
-    origin-y: 100
-  },
-  {
-    id: "clock-minute-hand"
-    x1: 100
-    y1: 100
-    x2: 100
-    y2: 36
-    stroke: "#1d2430"
-    stroke-width: 5
-    line-cap: "round"
-    opacity: 1
-    rotation: clock-minute-angle
-    origin-x: 100
-    origin-y: 100
-  },
-  {
-    id: "clock-second-hand"
-    x1: 100
-    y1: 106
-    x2: 100
-    y2: 28
-    stroke: "#e25555"
-    stroke-width: 2
-    line-cap: "round"
-    opacity: 1
-    rotation: clock-second-angle
-    origin-x: 100
-    origin-y: 100
-  }
-)
+clock-lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<string> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
+  | "clock-hour-hand" 100 100 100 58 "#1d2430" 7 "round" 1 clock-hour-angle 100 100 |
+  | "clock-minute-hand" 100 100 100 36 "#1d2430" 5 "round" 1 clock-minute-angle 100 100 |
+  | "clock-second-hand" 100 106 100 28 "#e25555" 2 "round" 1 clock-second-angle 100 100 |
 
 clock-scene := {
   width: 200

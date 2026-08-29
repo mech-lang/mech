@@ -181,6 +181,7 @@ fn evaluate_body_extents(body: &SchemaBody, values: &[u64]) -> Result<(), Semant
             evaluate_dimension(cardinality, values)?;
         }
         SchemaBody::Bool
+        | SchemaBody::Dynamic
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
         | SchemaBody::FloatingPoint(_)

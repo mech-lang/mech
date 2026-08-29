@@ -31,11 +31,11 @@
   --mech-control-surface: #171d21;
   --mech-control-border: #777;
 
-  /* Text: prose, shell chrome, code, and captions are separate blog roles. */
-  --mech-text-reading: hsl(40 100% 95%);
+  /* Text: body prose, shell chrome, code, and captions are separate blog roles. */
+  --mech-text-reading: hsl(40 100% 95%); /* warm emphasis and selection text */
   --mech-text-primary: #f3f3e6;
   --mech-text-subheading: rgb(242, 234, 217);
-  --mech-text-body: hsl(206 24% 90%);
+  --mech-text-body: hsl(206 24% 90%); /* paragraphs and long-form copy */
   --mech-text-code: hsl(41 49% 90%);
   --mech-text-code-dark: hsl(41 49% 25%);
   --mech-text-secondary: #bebcaa;

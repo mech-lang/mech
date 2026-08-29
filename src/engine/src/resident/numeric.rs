@@ -34,6 +34,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["math"], "mod", bind_remainder)?;
     register(builder, &["math"], "neg", bind_negate)?;
     register(builder, &["math"], "pow", bind_pow)?;
+    register(builder, &["math"], "abs", bind_abs)?;
+    register(builder, &["math"], "floor", bind_floor)?;
+    register(builder, &["math"], "sqrt", bind_sqrt)?;
     register(builder, &["math"], "atan2", bind_atan2)?;
     register(builder, &["math"], "cos", bind_cos)?;
     register(builder, &["math"], "sin", bind_sin)?;
@@ -226,6 +229,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "ModRDS<f64>", bind_remainder)?;
     register(builder, &runtime, "MathCosF64S", bind_cos)?;
     register(builder, &runtime, "MathCosF64VD", bind_cos)?;
+    register(builder, &runtime, "MathAbsF64S", bind_abs)?;
+    register(builder, &runtime, "MathAbsF64VD", bind_abs)?;
+    register(builder, &runtime, "MathFloorF64S", bind_floor)?;
+    register(builder, &runtime, "MathFloorF64VD", bind_floor)?;
+    register(builder, &runtime, "MathSqrtF64S", bind_sqrt)?;
+    register(builder, &runtime, "MathSqrtF64VD", bind_sqrt)?;
     register(builder, &runtime, "MathSinF64S", bind_sin)?;
     register(builder, &runtime, "MathSinF64VD", bind_sin)?;
     register(builder, &runtime, "Atan2F64", bind_atan2)?;
@@ -899,6 +908,24 @@ fn bind_cos(
     bind_unary_f64(request, cosine)
 }
 
+fn bind_abs(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_unary_f64(request, absolute)
+}
+
+fn bind_floor(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_unary_f64(request, floor)
+}
+
+fn bind_sqrt(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_unary_f64(request, square_root)
+}
+
 fn bind_sin(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -1206,20 +1233,40 @@ fn bind_binary(
         &[ResidentValueKind::F64, ResidentValueKind::F64],
         ResidentValueKind::F64,
     )?;
-    let output_len = request
-        .output
-        .shape
-        .len()
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    if request.inputs.iter().any(|input| {
-        input
-            .shape
-            .len()
-            .is_none_or(|len| len != 1 && len != output_len)
-    }) {
+    let rows = request.output.shape.rows;
+    let columns = request.output.shape.columns;
+    if request.output.shape.len().is_none() {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(executor, Vec::<u64>::new().into_boxed_slice())
+    let modes = request
+        .inputs
+        .iter()
+        .map(|input| binary_broadcast_mode(input.shape, request.output.shape))
+        .collect::<Option<Vec<_>>>()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    bound(
+        executor,
+        vec![rows as u64, columns as u64, modes[0], modes[1]].into_boxed_slice(),
+    )
+}
+
+const BINARY_BROADCAST_SCALAR: u64 = 0;
+const BINARY_BROADCAST_EXACT: u64 = 1;
+const BINARY_BROADCAST_COLUMN: u64 = 2;
+const BINARY_BROADCAST_ROW: u64 = 3;
+
+fn binary_broadcast_mode(input: ResidentShape, output: ResidentShape) -> Option<u64> {
+    if input == output {
+        Some(BINARY_BROADCAST_EXACT)
+    } else if input.len() == Some(1) {
+        Some(BINARY_BROADCAST_SCALAR)
+    } else if input.rows == output.rows && input.columns == 1 {
+        Some(BINARY_BROADCAST_COLUMN)
+    } else if input.rows == 1 && input.columns == output.columns {
+        Some(BINARY_BROADCAST_ROW)
+    } else {
+        None
+    }
 }
 
 fn f64_output_change_detection(
@@ -2423,6 +2470,30 @@ fn cosine(
     unary_f64(inputs, output, f64::cos)
 }
 
+fn absolute(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_f64(inputs, output, f64::abs)
+}
+
+fn floor(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_f64(inputs, output, f64::floor)
+}
+
+fn square_root(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_f64(inputs, output, f64::sqrt)
+}
+
 fn sine(
     _kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -2432,14 +2503,15 @@ fn sine(
 }
 
 fn atan2(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, f64::atan2)
+    binary_f64(kernel, inputs, output, f64::atan2)
 }
 
 fn binary_f64(
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
     operation: impl Fn(f64, f64) -> f64,
@@ -2450,58 +2522,112 @@ fn binary_f64(
     let left = f64_input(inputs, 0)?;
     let right = f64_input(inputs, 1)?;
     let output = f64_output(output)?;
-    let output_len = output.len();
-    let pick = |values: &[f64], index: usize| match values.len() {
-        1 => Some(values[0]),
-        len if len == output_len => Some(values[index]),
-        _ => None,
+    let parameters = kernel.parameters();
+    if parameters.is_empty() {
+        let output_len = output.len();
+        let pick = |values: &[f64], index: usize| match values.len() {
+            1 => Some(values[0]),
+            len if len == output_len => Some(values[index]),
+            _ => None,
+        };
+        if pick(left, 0).is_none() || pick(right, 0).is_none() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        return Ok(replace_f64(output, |index| {
+            operation(pick(left, index).unwrap(), pick(right, index).unwrap())
+        }));
+    }
+    let [rows, columns, left_mode, right_mode] = parameters else {
+        return Err(ResidentKernelError::InvalidInput);
     };
-    if pick(left, 0).is_none() || pick(right, 0).is_none() {
+    let rows = *rows as usize;
+    let columns = *columns as usize;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if output.len() != output_len {
         return Err(ResidentKernelError::InvalidShape);
     }
+    validate_binary_broadcast_input(left, *left_mode, rows, columns)?;
+    validate_binary_broadcast_input(right, *right_mode, rows, columns)?;
     Ok(replace_f64(output, |index| {
-        operation(pick(left, index).unwrap(), pick(right, index).unwrap())
+        operation(
+            binary_broadcast_value(left, *left_mode, index, rows),
+            binary_broadcast_value(right, *right_mode, index, rows),
+        )
     }))
 }
 
+fn validate_binary_broadcast_input(
+    values: &[f64],
+    mode: u64,
+    rows: usize,
+    columns: usize,
+) -> Result<(), ResidentKernelError> {
+    let expected = match mode {
+        BINARY_BROADCAST_SCALAR => 1,
+        BINARY_BROADCAST_EXACT => rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        BINARY_BROADCAST_COLUMN => rows,
+        BINARY_BROADCAST_ROW => columns,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    if values.len() == expected {
+        Ok(())
+    } else {
+        Err(ResidentKernelError::InvalidShape)
+    }
+}
+
+fn binary_broadcast_value(values: &[f64], mode: u64, index: usize, rows: usize) -> f64 {
+    match mode {
+        BINARY_BROADCAST_SCALAR => values[0],
+        BINARY_BROADCAST_EXACT => values[index],
+        BINARY_BROADCAST_COLUMN => values[index % rows],
+        BINARY_BROADCAST_ROW => values[index / rows],
+        _ => unreachable!("validated binary broadcast mode"),
+    }
+}
+
 fn subtract(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, |left, right| left - right)
+    binary_f64(kernel, inputs, output, |left, right| left - right)
 }
 
 fn add(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, |left, right| left + right)
+    binary_f64(kernel, inputs, output, |left, right| left + right)
 }
 
 fn multiply(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, |left, right| left * right)
+    binary_f64(kernel, inputs, output, |left, right| left * right)
 }
 
 fn divide(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, |left, right| left / right)
+    binary_f64(kernel, inputs, output, |left, right| left / right)
 }
 
 fn remainder(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, |left, right| left % right)
+    binary_f64(kernel, inputs, output, |left, right| left % right)
 }
 
 fn binary_f64_comparison(
@@ -2759,11 +2885,11 @@ fn strict_not_equal(
 }
 
 fn power(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, f64::powf)
+    binary_f64(kernel, inputs, output, f64::powf)
 }
 
 fn multiply_rows(
@@ -3496,6 +3622,25 @@ mod tests {
     }
 
     #[test]
+    fn resident_unary_math_supports_abs_floor_and_sqrt_vectors() {
+        let cases: &[(mech_core::ResidentKernelExecutor, &[f64], &[f64])] = &[
+            (absolute, &[-2.5, 0.0, 3.25], &[2.5, 0.0, 3.25]),
+            (floor, &[-1.2, 0.0, 3.9], &[-2.0, 0.0, 3.0]),
+            (square_root, &[0.0, 4.0, 9.0], &[0.0, 2.0, 3.0]),
+        ];
+        for (executor, input, expected) in cases {
+            let values = [ResidentValueRef::F64(input)];
+            let kernel = BoundResidentKernel::new(*executor, Box::new([]));
+            let mut output = [f64::NAN; 3];
+            assert_eq!(
+                kernel.execute(&Inputs(&values), ResidentValueMut::F64(&mut output)),
+                Ok(true),
+            );
+            assert_eq!(&output, expected);
+        }
+    }
+
+    #[test]
     fn frozen_range_catalog_resolves_every_compiler_output_identity() {
         let mut builder = FunctionCatalogBuilder::new();
         install(&mut builder).unwrap();
@@ -3572,6 +3717,120 @@ mod tests {
     }
 
     #[test]
+    fn binary_arithmetic_broadcasts_rows_columns_and_outer_vectors() {
+        let matrix = [1.0, 4.0, 2.0, 5.0, 3.0, 6.0];
+        let row = [10.0, 20.0, 30.0];
+        let column = [10.0, 100.0];
+
+        let row_inputs = [ResidentValueRef::F64(&matrix), ResidentValueRef::F64(&row)];
+        let row_kernel = BoundResidentKernel::new(
+            add,
+            Box::new([2, 3, BINARY_BROADCAST_EXACT, BINARY_BROADCAST_ROW]),
+        );
+        let mut row_output = [0.0; 6];
+        assert_eq!(
+            row_kernel.execute(&Inputs(&row_inputs), ResidentValueMut::F64(&mut row_output),),
+            Ok(true),
+        );
+        assert_eq!(row_output, [11.0, 14.0, 22.0, 25.0, 33.0, 36.0]);
+
+        let column_inputs = [
+            ResidentValueRef::F64(&column),
+            ResidentValueRef::F64(&matrix),
+        ];
+        let column_kernel = BoundResidentKernel::new(
+            subtract,
+            Box::new([2, 3, BINARY_BROADCAST_COLUMN, BINARY_BROADCAST_EXACT]),
+        );
+        let mut column_output = [0.0; 6];
+        assert_eq!(
+            column_kernel.execute(
+                &Inputs(&column_inputs),
+                ResidentValueMut::F64(&mut column_output),
+            ),
+            Ok(true),
+        );
+        assert_eq!(column_output, [9.0, 96.0, 8.0, 95.0, 7.0, 94.0]);
+
+        let outer_inputs = [ResidentValueRef::F64(&column), ResidentValueRef::F64(&row)];
+        let outer_kernel = BoundResidentKernel::new(
+            add,
+            Box::new([2, 3, BINARY_BROADCAST_COLUMN, BINARY_BROADCAST_ROW]),
+        );
+        let mut outer_output = [0.0; 6];
+        assert_eq!(
+            outer_kernel.execute(
+                &Inputs(&outer_inputs),
+                ResidentValueMut::F64(&mut outer_output),
+            ),
+            Ok(true),
+        );
+        assert_eq!(outer_output, [20.0, 110.0, 30.0, 120.0, 40.0, 130.0]);
+
+        let empty_inputs = [ResidentValueRef::F64(&[]), ResidentValueRef::F64(&row)];
+        let empty_kernel = BoundResidentKernel::new(
+            add,
+            Box::new([0, 3, BINARY_BROADCAST_EXACT, BINARY_BROADCAST_ROW]),
+        );
+        let mut empty_output = [];
+        assert_eq!(
+            empty_kernel.execute(
+                &Inputs(&empty_inputs),
+                ResidentValueMut::F64(&mut empty_output),
+            ),
+            Ok(false),
+        );
+    }
+
+    #[test]
+    fn binary_broadcast_layout_selection_preserves_vector_orientation() {
+        let output = ResidentShape {
+            rows: 2,
+            columns: 3,
+        };
+        assert_eq!(
+            binary_broadcast_mode(
+                ResidentShape {
+                    rows: 2,
+                    columns: 3,
+                },
+                output,
+            ),
+            Some(BINARY_BROADCAST_EXACT),
+        );
+        assert_eq!(
+            binary_broadcast_mode(
+                ResidentShape {
+                    rows: 2,
+                    columns: 1,
+                },
+                output,
+            ),
+            Some(BINARY_BROADCAST_COLUMN),
+        );
+        assert_eq!(
+            binary_broadcast_mode(
+                ResidentShape {
+                    rows: 1,
+                    columns: 3,
+                },
+                output,
+            ),
+            Some(BINARY_BROADCAST_ROW),
+        );
+        assert_eq!(
+            binary_broadcast_mode(
+                ResidentShape {
+                    rows: 1,
+                    columns: 2,
+                },
+                output,
+            ),
+            None,
+        );
+    }
+
+    #[test]
     fn range_binders_require_scalar_f64_inputs_and_row_matrix_f64_outputs() {
         fn schema(body: SchemaBody) -> mech_core::Schema {
             mech_core::SchemaDraft {
@@ -3640,6 +3899,11 @@ mod tests {
             schema_key: schemas.entry(schema_id).unwrap().key(),
             kind: ResidentValueKind::F64,
             shape,
+            shape_instance: schemas
+                .get(schema_id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
         };
         let row_shape = ResidentShape {
             rows: 1,
@@ -3886,17 +4150,29 @@ mod tests {
 
     #[test]
     fn strict_identity_distinguishes_scalar_from_one_by_one_matrix() {
+        let shape_instance = || {
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            }
+            .finalize()
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap()
+        };
         let scalar = mech_core::ResidentPortLayout {
             schema_id: mech_core::SchemaId::new(1),
             schema_key: mech_core::SchemaKey::from_bytes([1; 32]),
             kind: ResidentValueKind::F64,
             shape: ResidentShape::SCALAR,
+            shape_instance: shape_instance(),
         };
         let matrix = mech_core::ResidentPortLayout {
             schema_id: mech_core::SchemaId::new(2),
             schema_key: mech_core::SchemaKey::from_bytes([2; 32]),
             kind: ResidentValueKind::F64,
             shape: ResidentShape::SCALAR,
+            shape_instance: shape_instance(),
         };
         assert!(!strict_inputs_share_identity(&scalar, &matrix));
     }
@@ -3937,12 +4213,22 @@ mod tests {
             schema_key: schemas.entry(scalar).unwrap().key(),
             kind: ResidentValueKind::F64,
             shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(scalar)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
         };
         let output = mech_core::ResidentPortLayout {
             schema_id: matrix,
             schema_key: schemas.entry(matrix).unwrap().key(),
             kind: ResidentValueKind::F64,
             shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(matrix)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
         };
         let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
             inputs: vec![mech_core::ResolvedInputPort {
@@ -4033,6 +4319,11 @@ mod tests {
                 schema_key: schemas.entry(schema_id).unwrap().key(),
                 kind: ResidentValueKind::F64,
                 shape: ResidentShape::SCALAR,
+                shape_instance: schemas
+                    .get(schema_id)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
             };
             let request = ResidentKernelBindRequest {
                 contract: &contract,

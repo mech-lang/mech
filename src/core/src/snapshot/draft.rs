@@ -29,6 +29,10 @@ impl ValueDraft {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub enum ValueDataDraft {
+    /// `None` is the wildcard placeholder used by a composite reconstruction
+    /// template. A materialized dynamic value carries its finalized nested
+    /// schema, shape, and payload in `Some`.
+    Dynamic(Option<Box<ValueDraft>>),
     U8(u8),
     U16(u16),
     U32(u32),
@@ -43,7 +47,10 @@ pub enum ValueDataDraft {
     F64(F64Bits),
     Complex32(Complex32Bits),
     Complex64(Complex64Bits),
-    Rational64 { numerator: i64, denominator: u64 },
+    Rational64 {
+        numerator: i64,
+        denominator: u64,
+    },
     Bool(bool),
     String(String),
     Id(u64),
@@ -64,6 +71,7 @@ impl ValueDataDraft {
     pub(crate) const fn kind(&self) -> super::ValueDataKind {
         use super::ValueDataKind;
         match self {
+            Self::Dynamic(_) => ValueDataKind::Dynamic,
             Self::U8(_) => ValueDataKind::U8,
             Self::U16(_) => ValueDataKind::U16,
             Self::U32(_) => ValueDataKind::U32,

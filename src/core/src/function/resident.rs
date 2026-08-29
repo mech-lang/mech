@@ -37,12 +37,14 @@ impl ResidentShape {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResidentPortLayout {
     pub schema_id: SchemaId,
     pub schema_key: SchemaKey,
     pub kind: ResidentValueKind,
     pub shape: ResidentShape,
+    /// Fully resolved semantic shape for self-describing dynamic values.
+    pub shape_instance: ShapeInstance,
 }
 
 pub struct ResidentKernelBindRequest<'a> {

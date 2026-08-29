@@ -1,7 +1,7 @@
 use super::sequence::SequenceStorage;
 use super::{
-    CanonicalKeyValue, EnumValue, MapValue, MatrixValue, RecordValue, ReifiedKind, ReifiedType,
-    ReifiedTypeDraft, SchemaDataKind, SetValue, SnapshotPath, SnapshotPathSegment,
+    CanonicalKeyValue, DynamicValue, EnumValue, MapValue, MatrixValue, RecordValue, ReifiedKind,
+    ReifiedType, ReifiedTypeDraft, SchemaDataKind, SetValue, SnapshotPath, SnapshotPathSegment,
     SnapshotValueError, TableValue, ValueData, ValueDataDraft, ValueDraft,
 };
 use crate::{
@@ -221,6 +221,10 @@ fn token_data(mut hash: u64, data: &ValueData) -> u64 {
         }};
     }
     match data {
+        ValueData::Dynamic(value) => {
+            hash = token_word(hash, 31);
+            hash = token_bytes(hash, &value.canonical);
+        }
         ValueData::U8(value) => scalar!(1, u64::from(*value)),
         ValueData::U16(value) => scalar!(2, u64::from(*value)),
         ValueData::U32(value) => scalar!(3, u64::from(*value)),
@@ -348,7 +352,45 @@ fn finalized_value(
     }
 }
 
-/// Rebuilds one tuple or record layer from already validated canonical child
+fn dynamic_canonical(value: Option<&Value>, schema: Option<&SchemaBody>) -> Box<[u8]> {
+    let Some(value) = value else {
+        return Vec::from([0]).into_boxed_slice();
+    };
+    let schema = schema.expect("materialized dynamic values carry their concrete schema");
+    let shape = value.shape().canonical_bytes();
+    let payload = super::encoding::canonical_material(schema, value.data());
+    let mut bytes = Vec::with_capacity(
+        1 + value.schema_key().as_bytes().len() + 8 + shape.len() + 8 + payload.len(),
+    );
+    bytes.push(1);
+    bytes.extend_from_slice(value.schema_key().as_bytes());
+    bytes.extend_from_slice(&(shape.len() as u64).to_le_bytes());
+    bytes.extend_from_slice(&shape);
+    bytes.extend_from_slice(&(payload.len() as u64).to_le_bytes());
+    bytes.extend_from_slice(&payload);
+    bytes.into_boxed_slice()
+}
+
+/// Wraps canonical resident data in a self-describing dynamic snapshot cell.
+/// The binder has already validated the schema identity, shape, and physical
+/// representation before this constructor is used.
+#[doc(hidden)]
+pub fn wrap_resident_dynamic_data(
+    schema: SchemaId,
+    schema_key: SchemaKey,
+    shape: ShapeInstance,
+    body: &SchemaBody,
+    data: ValueData,
+) -> ValueData {
+    let value = finalized_value(schema, schema_key, shape, data);
+    let canonical = dynamic_canonical(Some(&value), Some(body));
+    ValueData::Dynamic(DynamicValue {
+        value: Some(Box::new(value)),
+        canonical,
+    })
+}
+
+/// Rebuilds one tuple, record, or table layer from already validated canonical child
 /// payloads. The template retains the authoritative schema, shape, and record
 /// field ordering; callers may only replace children with the same canonical
 /// representation kinds.
@@ -372,6 +414,33 @@ pub fn rebuild_composite_snapshot(template: &Value, children: Box<[ValueData]>) 
                     .all(|(expected, child)| expected.kind() == child.kind()) =>
         {
             ValueData::Record(RecordValue { fields: children })
+        }
+        ValueData::Table(expected) => {
+            let column_lengths = expected
+                .columns
+                .iter()
+                .map(SequenceStorage::len)
+                .collect::<Option<Vec<_>>>()?;
+            let expected_children = column_lengths
+                .iter()
+                .try_fold(0usize, |total, length| total.checked_add(*length))?;
+            if expected_children != children.len() {
+                return None;
+            }
+            let mut children = children.into_vec().into_iter();
+            let columns = expected
+                .columns
+                .iter()
+                .zip(column_lengths)
+                .map(|(column, length)| {
+                    column.rebuild_with_values(children.by_ref().take(length).collect())
+                })
+                .collect::<Option<Vec<_>>>()?
+                .into_boxed_slice();
+            if children.next().is_some() {
+                return None;
+            }
+            ValueData::Table(TableValue { columns })
         }
         _ => return None,
     };
@@ -588,10 +657,32 @@ pub(super) fn finalize_data(
     exact!(SchemaBody::Complex(FloatWidth::W64), ValueDataDraft::Complex64(value) => ValueData::Complex64(value));
     exact!(SchemaBody::String, ValueDataDraft::String(value) => ValueData::String(value.into_boxed_str()));
     exact!(SchemaBody::Id, ValueDataDraft::Id(value) => ValueData::Id(value));
-    exact!(SchemaBody::Index, ValueDataDraft::Index(value) => ValueData::Index(value));
+    if matches!(schema, SchemaBody::Index) {
+        if let ValueDataDraft::Index(value) = draft {
+            if value == 0 {
+                return Err(SnapshotValueError::InvalidIndexV1 {
+                    path: path.clone(),
+                    value,
+                });
+            }
+            return Ok(ValueData::Index(value));
+        }
+        return Err(data_mismatch_kind(schema, actual_kind, path));
+    }
     exact!(SchemaBody::Atom(_), ValueDataDraft::Atom => ValueData::Atom);
 
     match (schema, draft) {
+        (SchemaBody::Dynamic, ValueDataDraft::Dynamic(draft)) => {
+            let value = draft
+                .map(|draft| finalize_value(*draft, context).map(Box::new))
+                .transpose()?;
+            let concrete = value
+                .as_deref()
+                .map(|value| value.validate_against(context.schemas))
+                .transpose()?;
+            let canonical = dynamic_canonical(value.as_deref(), concrete.map(Schema::body));
+            Ok(ValueData::Dynamic(DynamicValue { value, canonical }))
+        }
         (
             SchemaBody::Rational64,
             ValueDataDraft::Rational64 {
@@ -954,6 +1045,7 @@ fn data_mismatch_kind(
 
 pub(super) const fn schema_kind(schema: &SchemaBody) -> SchemaDataKind {
     match schema {
+        SchemaBody::Dynamic => SchemaDataKind::Dynamic,
         SchemaBody::Bool => SchemaDataKind::Bool,
         SchemaBody::UnsignedInteger(_) => SchemaDataKind::UnsignedInteger,
         SchemaBody::SignedInteger(_) => SchemaDataKind::SignedInteger,
@@ -973,5 +1065,127 @@ pub(super) const fn schema_kind(schema: &SchemaBody) -> SchemaDataKind {
         SchemaBody::Set { .. } => SchemaDataKind::Set,
         SchemaBody::Map { .. } => SchemaDataKind::Map,
         SchemaBody::ReifiedType => SchemaDataKind::ReifiedType,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::snapshot::{F64Bits, TableColumnDraft};
+    use crate::{SchemaDraft, SchemaField, SchemaTableBuilder};
+
+    #[test]
+    fn index_snapshots_are_one_based() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Index,
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let context = SnapshotValidationContext::new(&schemas);
+
+        let draft = |value| ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Index(value),
+        };
+        assert!(matches!(
+            draft(0).finalize(&context),
+            Err(SnapshotValueError::InvalidIndexV1 { value: 0, .. })
+        ));
+        assert!(draft(1).finalize(&context).is_ok());
+        assert!(draft(u64::MAX).finalize(&context).is_ok());
+    }
+
+    #[test]
+    fn composite_rebuild_preserves_table_columns_and_storage() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Table {
+                columns: vec![
+                    SchemaField {
+                        name: "id".to_owned(),
+                        schema: SchemaBody::String,
+                    },
+                    SchemaField {
+                        name: "x".to_owned(),
+                        schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    },
+                ]
+                .into_boxed_slice(),
+                rows: crate::DimensionExpr::Constant(2),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let template = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Table(
+                vec![
+                    TableColumnDraft {
+                        name: "id".to_owned(),
+                        values: vec![
+                            ValueDataDraft::String("a".to_owned()),
+                            ValueDataDraft::String("b".to_owned()),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    TableColumnDraft {
+                        name: "x".to_owned(),
+                        values: vec![
+                            ValueDataDraft::F64(F64Bits::from_f64(1.0)),
+                            ValueDataDraft::F64(F64Bits::from_f64(2.0)),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+
+        let rebuilt = rebuild_composite_snapshot(
+            &template,
+            vec![
+                ValueData::String("c".into()),
+                ValueData::String("d".into()),
+                ValueData::F64(F64Bits::from_f64(3.0)),
+                ValueData::F64(F64Bits::from_f64(4.0)),
+            ]
+            .into_boxed_slice(),
+        )
+        .unwrap();
+        let ValueData::Table(table) = rebuilt.data() else {
+            panic!("rebuilt composite must remain a table");
+        };
+        let super::super::SequenceView::String(ids) = table.column(0).unwrap() else {
+            panic!("string table column changed representation");
+        };
+        assert_eq!(
+            ids.iter().map(|id| id.as_ref()).collect::<Vec<_>>(),
+            ["c", "d"]
+        );
+        let super::super::SequenceView::F64(values) = table.column(1).unwrap() else {
+            panic!("f64 table column changed representation");
+        };
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_f64())
+                .collect::<Vec<_>>(),
+            [3.0, 4.0]
+        );
     }
 }

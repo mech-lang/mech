@@ -1314,6 +1314,20 @@ fn compile_executable_program_artifact_with_identity(
                             })
                     })
                 });
+                // A one-element matrix row/column is represented by the
+                // legacy intrinsic as a nullary concatenate whose output is
+                // the very same reference as its already-compiled operand.
+                // It is an identity wrapper, not a new producer node. Keep
+                // the prior semantic source so `[a; b]` lowers to the actual
+                // vertical concatenation inputs instead of two source-less
+                // horizontal nodes.
+                if kind == CompiledNodeKind::Combinational
+                    && is_literal_constructor_operation(&semantics.operation)
+                    && matches!(instruction, BytecodeInstruction::RuntimeNullary { .. })
+                    && prior.is_some()
+                {
+                    continue;
+                }
                 if kind == CompiledNodeKind::Combinational
                     && is_literal_constructor_operation(&semantics.operation)
                     && (register_state_indexes[dst as usize].is_some()
