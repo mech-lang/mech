@@ -795,11 +795,17 @@ fn required_paint(record: &MechRecord, field: &str, label: &str) -> MResult<Stri
     .map_err(|_| {
         scene_error(
             "SceneSchema",
-            format!("field `{label}` must be a paint string or f64 RGB color"),
+            format!("field `{label}` must be a paint string or numeric RGB color"),
         )
     })?;
     match resolved {
         LegacyValue::String(value) => Ok(value.borrow().clone()),
+        LegacyValue::U64(value) if *value.borrow() <= 0x00ff_ffff => {
+            Ok(format!("#{:06x}", *value.borrow()))
+        }
+        LegacyValue::I64(value) if (0..=0x00ff_ffff).contains(&*value.borrow()) => {
+            Ok(format!("#{:06x}", *value.borrow()))
+        }
         LegacyValue::F64(value)
             if value.borrow().is_finite()
                 && value.borrow().fract() == 0.0
@@ -807,9 +813,12 @@ fn required_paint(record: &MechRecord, field: &str, label: &str) -> MResult<Stri
         {
             Ok(format!("#{:06x}", *value.borrow() as u32))
         }
-        _ => Err(scene_error(
+        other => Err(scene_error(
             "SceneSchema",
-            format!("field `{label}` must be a paint string or 24-bit numeric RGB color"),
+            format!(
+                "field `{label}` must be a paint string or 24-bit numeric RGB color, got {:?}",
+                resolved_for_diagnostic(&other)
+            ),
         )),
     }
 }

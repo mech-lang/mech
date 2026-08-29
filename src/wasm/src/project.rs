@@ -4377,9 +4377,14 @@ rows := |id<string> x<f64>|
                 && source.contains("advanced-truth-path := [truth-path[2..=376,:]; truth-screen']"),
             "vertical concatenation must use matrix literal syntax",
         );
+        let compact_source = source
+            .chars()
+            .filter(|character| !character.is_whitespace())
+            .collect::<String>();
         assert!(
-            source.contains("scene-line-strips := |id<string> positions<*>")
-                && source.contains("scene-text := |id<string>"),
+            compact_source.contains("scene-line-strips:=|id<string>positions<*>")
+                && compact_source.contains("scene-text:=|id<string>x<f64>y<f64>fill<f64>")
+                && compact_source.contains("font-weight<f64>"),
             "scene collections must remain table values",
         );
         let sources = HashMap::from([("localization.mec".to_string(), source.clone())]);
