@@ -1,8 +1,5 @@
 #[cfg(feature = "trace")]
-use crate::tracing::{
-    format_trace, format_trace_args, summarize_function_pattern, summarize_function_value,
-    summarize_values_with_kinds,
-};
+use crate::tracing::{format_trace, summarize_function_pattern};
 #[cfg(feature = "semantic-compiler")]
 use crate::*;
 #[cfg(all(
@@ -11,7 +8,7 @@ use crate::*;
     feature = "enum"
 ))]
 use std::collections::HashSet;
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(feature = "semantic-compiler", test))]
 use std::sync::Arc;
 
 #[cfg(feature = "semantic-compiler")]
@@ -63,26 +60,14 @@ mod source_only {
     // Calls
     // ----------------------------------------------------------------------------
 
-    // Asks a function specializer to select the right concrete implementation
-    // for the given argument types, runs it once to produce an initial value, then
-    // pushes it onto the reactive plan so it re-runs when its inputs change.
-    pub fn execute_function_specializer(
-        specializer: Arc<dyn FunctionSpecializer>,
-        input_arg_values: &Vec<LegacyValue>,
+    pub fn execute_bound_specialized_function(
+        specialized: SpecializedFunction,
+        _input_arg_values: &[SpecializationInput],
         p: &InterpreterExecution<'_>,
-    ) -> MResult<LegacyValue> {
-        let new_fxn = specializer.specialize(input_arg_values)?;
-        execute_specialized_function(new_fxn, input_arg_values, p)
-    }
-
-    /// Runs and registers a function selected by either the explicit catalog or a
-    /// program-local function extension.
-    pub fn execute_specialized_function(
-        new_fxn: Box<dyn MechFunction>,
-        input_arg_values: &Vec<LegacyValue>,
-        p: &InterpreterExecution<'_>,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<ValueCell> {
         let plan = p.plan();
+        let instance = specialized.into_instance();
+        let implementation = instance.implementation();
         trace_println!(
             p,
             "{}",
@@ -90,30 +75,42 @@ mod source_only {
                 "arm",
                 format!(
                     "selected {} args=[{}]",
-                    new_fxn
+                    implementation
                         .to_string()
                         .lines()
                         .next()
                         .unwrap_or("<unknown-arm>"),
-                    format_trace_args(input_arg_values)
+                    _input_arg_values
+                        .iter()
+                        .map(|cell| format!("{cell:?}"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 ),
             )
         );
-        solve_specialized_initial_output(new_fxn.as_ref(), &plan, p)?;
-        let result = new_fxn.out();
-        trace_println!(
-            p,
-            "{}",
-            format_trace(
-                "arm",
-                format!("result {}", summarize_function_value(&result))
-            )
-        );
-        plan.register_function(new_fxn, input_arg_values)?;
+        solve_specialized_initial_output(implementation, &plan, p)?;
+        let result = instance.output().clone();
+        trace_println!(p, "{}", format_trace("arm", format!("result {result:?}")));
+        plan.register_instance(instance)?;
         Ok(result)
     }
 
-    pub fn execute_initialized_indexed_compiler_with_registration_arguments(
+    #[cfg(test)]
+    fn execute_function_specializer(
+        specializer: Arc<dyn FunctionSpecializer>,
+        input_arg_values: &[LegacyValue],
+        p: &InterpreterExecution<'_>,
+    ) -> MResult<LegacyValue> {
+        let function = specializer.specialize(input_arg_values)?;
+        let plan = p.plan();
+        solve_specialized_initial_output(function.as_ref(), &plan, p)?;
+        let result = mech_core::legacy_function_output(function.as_ref())?;
+        plan.register_function(function, input_arg_values)?;
+        Ok(result)
+    }
+
+    #[cfg(test)]
+    fn execute_initialized_indexed_compiler_with_registration_arguments(
         p: &InterpreterExecution<'_>,
         plan: &Plan,
         compiler: &dyn FunctionSpecializer,
@@ -122,7 +119,7 @@ mod source_only {
     ) -> MResult<LegacyValue> {
         let function = compiler.specialize(&compile_arguments)?;
         solve_specialized_initial_output(function.as_ref(), plan, p)?;
-        let output = function.out();
+        let output = mech_core::legacy_function_output(function.as_ref())?;
         plan.register_function(function, &registration_arguments)?;
         Ok(output)
     }
@@ -148,36 +145,34 @@ mod source_only {
         p: &InterpreterExecution<'_>,
         plan: &Plan,
         canonical_name: &str,
-        compile_arguments: Vec<LegacyValue>,
-        registration_arguments: Vec<LegacyValue>,
-    ) -> MResult<LegacyValue> {
+        compile_arguments: Vec<ValueCell>,
+        _registration_arguments: Vec<ValueCell>,
+    ) -> MResult<ValueCell> {
         let operation = OperationId::from_name(canonical_name);
-        let function = p.specialize_visible_operation_named(
-            operation,
-            Some(canonical_name),
-            &compile_arguments,
-        )?;
-        solve_specialized_initial_output(function.as_ref(), plan, p)?;
-        let output = function.out();
-        plan.register_function(function, &registration_arguments)?;
+        let invocation = SpecializationInvocation::from_cells(compile_arguments.into_boxed_slice());
+        let specialized =
+            p.specialize_visible_invocation_named(operation, Some(canonical_name), &invocation)?;
+        execute_function_instance(p, plan, specialized.into_instance())
+    }
+
+    pub(crate) fn execute_function_instance(
+        p: &InterpreterExecution<'_>,
+        plan: &Plan,
+        instance: FunctionInstance,
+    ) -> MResult<ValueCell> {
+        solve_specialized_initial_output(instance.implementation(), plan, p)?;
+        let output = instance.output().clone();
+        plan.register_instance(instance)?;
         Ok(output)
     }
 
-    #[cfg(any(
-        feature = "set_comprehensions",
-        feature = "matrix_comprehensions",
-        all(feature = "kind_annotation", feature = "convert"),
-        all(feature = "record", feature = "convert"),
-        feature = "set",
-        feature = "matrix_vertcat",
-        feature = "matrix_horzcat"
-    ))]
+    #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
     pub(crate) fn execute_catalog_operation(
         p: &InterpreterExecution<'_>,
         plan: &Plan,
         canonical_name: &str,
-        arguments: Vec<LegacyValue>,
-    ) -> MResult<LegacyValue> {
+        arguments: Vec<ValueCell>,
+    ) -> MResult<ValueCell> {
         let registration_arguments = arguments.clone();
         execute_catalog_operation_with_registration_arguments(
             p,
@@ -213,9 +208,9 @@ mod source_only {
     // Logs entry/exit (or failure) via the trace machinery.
     pub(crate) fn execute_user_function(
         fxn_def: &FunctionDefinition,
-        input_arg_values: &Vec<LegacyValue>,
+        input_arg_values: &[ValueCell],
         p: &InterpreterExecution<'_>,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<ValueCell> {
         // Reject calls with the wrong number of arguments before doing anything else.
         if input_arg_values.len() != fxn_def.input.len() {
             return Err(MechError::new(
@@ -244,7 +239,11 @@ mod source_only {
                 format!(
                     "enter {}({})",
                     fxn_def.name,
-                    format_trace_args(input_arg_values)
+                    input_arg_values
+                        .iter()
+                        .map(|value| format!("{value:?}"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 ),
             )
         );
@@ -254,7 +253,7 @@ mod source_only {
             // Match-arm body: loop to support tail-call optimisation. Each iteration
             // opens a fresh scope, binds the current arguments, runs the arms, then
             // either returns the result or loops with a new argument set.
-            let mut current_args: Vec<LegacyValue> = input_arg_values.clone();
+            let mut current_args: Vec<ValueCell> = input_arg_values.to_vec();
             loop {
                 let scope = FunctionScope::enter(p);
                 bind_function_inputs(fxn_def, &current_args, p)?;
@@ -289,11 +288,7 @@ mod source_only {
                     "{}",
                     format_trace(
                         "fn",
-                        format!(
-                            "exit  {} => {}",
-                            fxn_def.name,
-                            summarize_function_value(&value)
-                        )
+                        format!("exit  {} => {}", fxn_def.name, format!("{value:?}"))
                     )
                 );
                 Ok(value)
@@ -312,8 +307,8 @@ mod source_only {
     // The outcome of executing one match arm. Either we have a final value, or
     // we identified a tail call and carry its new arguments for the next iteration.
     enum FunctionCallStep {
-        Return(LegacyValue),
-        TailCall(Vec<LegacyValue>),
+        Return(ValueCell),
+        TailCall(Vec<ValueCell>),
     }
 
     // If the function is single-input / single-output with matching scalar kinds,
@@ -324,9 +319,9 @@ mod source_only {
     #[cfg(all(feature = "matrix", feature = "kind_annotation"))]
     fn try_broadcast_user_function(
         fxn_def: &FunctionDefinition,
-        input_arg_values: &Vec<LegacyValue>,
+        input_arg_values: &[ValueCell],
         p: &InterpreterExecution<'_>,
-    ) -> MResult<Option<LegacyValue>> {
+    ) -> MResult<Option<ValueCell>> {
         if input_arg_values.len() != 1
             || fxn_def.code.output.len() != 1
             || fxn_def.code.input.len() != 1
@@ -334,71 +329,43 @@ mod source_only {
             return Ok(None);
         }
 
-        let source = detach_value(&input_arg_values[0]);
-        if !source.is_matrix() {
+        let source = &input_arg_values[0];
+        let SchemaBody::Matrix { dimensions, .. } = source.closed_schema_body()? else {
             return Ok(None);
-        }
-
-        let (input_kind, output_kind) = {
-            let input_kind = kind_annotation(&fxn_def.code.input[0].kind.kind, p)?
-                .to_value_kind(&p.state.borrow().kinds)?;
-            let output_kind = kind_annotation(&fxn_def.code.output[0].kind.kind, p)?
-                .to_value_kind(&p.state.borrow().kinds)?;
-            (input_kind, output_kind)
         };
+
+        let input_kind =
+            crate::structures::schema_body_from_kind(&fxn_def.code.input[0].kind.kind, p)?;
+        let output_kind =
+            crate::structures::schema_body_from_kind(&fxn_def.code.output[0].kind.kind, p)?;
 
         // Only broadcast when input and output kinds are the same scalar kind.
         // If the input is already a matrix kind, don't recurse.
-        if input_kind != output_kind || matches!(input_kind, ValueKind::Matrix(_, _)) {
+        if input_kind != output_kind || matches!(input_kind, SchemaBody::Matrix { .. }) {
             return Ok(None);
         }
 
-        let Some(elements) = crate::patterns::matrix_like_values(&source) else {
+        let Some(elements) = crate::patterns::matrix_like_values(source)? else {
             return Ok(None);
         };
 
         // Apply the function element-wise, then reassemble into the original shape.
         let mut outputs = Vec::with_capacity(elements.len());
         for element in elements {
-            outputs.push(execute_user_function(fxn_def, &vec![element], p)?);
+            outputs.push(execute_user_function(fxn_def, &[element], p)?);
         }
-
-        let shape = source.shape();
-        Ok(Some(build_typed_matrix_from_values(
-            &output_kind,
-            outputs,
-            shape[0],
-            shape[1],
-        )))
-    }
-
-    // Assembles a list of scalar Values into a typed matrix.
-    // TODO add more types
-    #[cfg(all(feature = "matrix", feature = "kind_annotation"))]
-    fn build_typed_matrix_from_values(
-        output_kind: &ValueKind,
-        outputs: Vec<LegacyValue>,
-        rows: usize,
-        cols: usize,
-    ) -> LegacyValue {
-        match output_kind {
-            #[cfg(feature = "f64")]
-            ValueKind::F64 => LegacyValue::MatrixF64(f64::to_matrix(
-                outputs
-                    .into_iter()
-                    .map(|value| {
-                        value
-                            .as_f64()
-                            .expect("Expected f64 output")
-                            .borrow()
-                            .clone()
-                    })
-                    .collect::<Vec<f64>>(),
-                rows,
-                cols,
-            )),
-            _ => LegacyValue::MatrixValue(LegacyValue::to_matrix(outputs, rows, cols)),
-        }
+        let [
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ] = dimensions.as_ref()
+        else {
+            unreachable!("closed matrix schema has concrete dimensions")
+        };
+        Ok(Some(ValueCell::dynamic_matrix_from_cells(
+            *rows as usize,
+            *columns as usize,
+            &outputs,
+        )?))
     }
 
     // Tries each match arm in order against the current arguments. Handles:
@@ -408,7 +375,7 @@ mod source_only {
     // Returns an error if no arm matched.
     fn execute_function_match_arms(
         fxn_def: &FunctionDefinition,
-        input_arg_values: &Vec<LegacyValue>,
+        input_arg_values: &[ValueCell],
         p: &InterpreterExecution<'_>,
     ) -> MResult<FunctionCallStep> {
         // Exhaustiveness check: when the single input is an enum type and there is
@@ -423,63 +390,52 @@ mod source_only {
                 .any(|arm| matches!(arm.pattern, Pattern::Wildcard));
             if !has_wildcard && fxn_def.input.len() == 1 {
                 if let Some((_, kind_annotation_node)) = fxn_def.input.iter().next() {
-                    let input_kind = kind_annotation(&kind_annotation_node.kind, p)?
-                        .to_value_kind(&p.state.borrow().kinds)?;
-                    if let ValueKind::Enum(enum_id, _) = input_kind {
-                        let state_brrw = p.state.borrow();
-                        if let Some(enum_def) = state_brrw.enums.get(&enum_id) {
-                            // Collect every variant name that appears in the written arms.
-                            let mut covered_variants: HashSet<u64> = HashSet::new();
-                            for arm in &fxn_def.code.match_arms {
-                                match &arm.pattern {
-                                    #[cfg(feature = "atom")]
-                                    Pattern::TupleStruct(tuple_struct) => {
-                                        covered_variants.insert(tuple_struct.name.hash());
-                                    }
-                                    Pattern::Expression(expr) => {
-                                        if let Expression::Literal(Literal::Atom(atom)) = expr {
-                                            covered_variants.insert(atom.name.hash());
-                                        }
-                                    }
-                                    _ => {}
+                    let input_schema =
+                        crate::structures::schema_body_from_kind(&kind_annotation_node.kind, p)?;
+                    if let SchemaBody::Enum { variants, .. } = input_schema {
+                        // Collect every variant name that appears in the written arms.
+                        let mut covered_variants: HashSet<u64> = HashSet::new();
+                        for arm in &fxn_def.code.match_arms {
+                            match &arm.pattern {
+                                #[cfg(feature = "atom")]
+                                Pattern::TupleStruct(tuple_struct) => {
+                                    covered_variants.insert(tuple_struct.name.hash());
                                 }
+                                Pattern::Expression(expr) => {
+                                    if let Expression::Literal(Literal::Atom(atom)) = expr {
+                                        covered_variants.insert(atom.name.hash());
+                                    }
+                                }
+                                _ => {}
                             }
-                            let all_covered = enum_def
-                                .variants
+                        }
+                        let all_covered = variants
+                            .iter()
+                            .all(|variant| covered_variants.contains(&hash_str(&variant.name)));
+                        if !all_covered {
+                            // Build a readable list of the missing variant patterns.
+                            let missing_patterns = variants
                                 .iter()
-                                .all(|(variant_id, _)| covered_variants.contains(variant_id));
-                            if !all_covered {
-                                // Build a readable list of the missing variant patterns.
-                                let missing_patterns = enum_def
-                                    .variants
-                                    .iter()
-                                    .filter(|(variant_id, _)| {
-                                        !covered_variants.contains(variant_id)
-                                    })
-                                    .map(|(variant_id, payload_kind)| {
-                                        let variant_name = enum_def
-                                            .names
-                                            .borrow()
-                                            .get(variant_id)
-                                            .cloned()
-                                            .unwrap_or_else(|| variant_id.to_string());
-                                        if payload_kind.is_some() {
-                                            format!(":{}(…)", variant_name)
-                                        } else {
-                                            format!(":{}", variant_name)
-                                        }
-                                    })
-                                    .collect::<Vec<String>>();
-                                return Err(MechError::new(
-                                    FunctionMatchNonExhaustiveError {
-                                        function_name: fxn_def.name.clone(),
-                                        missing_patterns,
-                                    },
-                                    None,
-                                )
-                                .with_compiler_loc()
-                                .with_tokens(fxn_def.code.name.tokens()));
-                            }
+                                .filter(|variant| {
+                                    !covered_variants.contains(&hash_str(&variant.name))
+                                })
+                                .map(|variant| {
+                                    if variant.payload.is_some() {
+                                        format!(":{}(…)", variant.name)
+                                    } else {
+                                        format!(":{}", variant.name)
+                                    }
+                                })
+                                .collect::<Vec<String>>();
+                            return Err(MechError::new(
+                                FunctionMatchNonExhaustiveError {
+                                    function_name: fxn_def.name.clone(),
+                                    missing_patterns,
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()
+                            .with_tokens(fxn_def.code.name.tokens()));
                         }
                     }
                 }
@@ -500,7 +456,11 @@ mod source_only {
                 p,
             )?;
             trace_println!(p, "{}", {
-                let args_summary = summarize_values_with_kinds(input_arg_values);
+                let args_summary = input_arg_values
+                    .iter()
+                    .map(|value| format!("{value:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 let pattern_summary = summarize_function_pattern(&arm.pattern);
                 let marker = if matched { "✓" } else { "X" };
                 format_trace(
@@ -517,7 +477,7 @@ mod source_only {
                     if fxn_call.name.hash() == fxn_def.code.name.hash() {
                         let mut tail_args = Vec::with_capacity(fxn_call.args.len());
                         for (_, arg_expr) in fxn_call.args.iter() {
-                            tail_args.push(expression(arg_expr, Some(&env), p)?);
+                            tail_args.push(expression_cell(arg_expr, Some(&env), p)?);
                         }
                         if tail_args.len() == fxn_def.input.len() {
                             trace_println!(
@@ -533,7 +493,7 @@ mod source_only {
                     }
                 }
                 // Normal arm: evaluate the expression and coerce to the declared output kind.
-                let coerced = detach_value(&expression(&arm.expression, Some(&env), p)?);
+                let coerced = expression_cell(&arm.expression, Some(&env), p)?;
                 #[cfg(feature = "kind_annotation")]
                 let coerced = coerce_function_output_kind(coerced, fxn_def, p)?;
                 trace_println!(
@@ -543,8 +503,8 @@ mod source_only {
                         "match",
                         format!(
                             "arm[{arm_idx}] out  value={} kind={}",
-                            summarize_function_value(&coerced),
-                            coerced.kind().to_string()
+                            format!("{coerced:?}"),
+                            format!("{:?}", coerced.representation())
                         )
                     )
                 );
@@ -566,19 +526,22 @@ mod source_only {
     // If no output annotation exists, or conversion fails, the value is returned as-is.
     #[cfg(feature = "kind_annotation")]
     fn coerce_function_output_kind(
-        value: LegacyValue,
+        value: ValueCell,
         fxn_def: &FunctionDefinition,
         p: &InterpreterExecution<'_>,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<ValueCell> {
         if fxn_def.output.is_empty() {
             return Ok(value);
         }
         let Some((_, output_kind_annotation)) = fxn_def.output.get_index(0) else {
             return Ok(value);
         };
-        let target_kind = kind_annotation(&output_kind_annotation.kind, p)?
-            .to_value_kind(&p.state.borrow().kinds)?;
-        return Ok(value.convert_to(&target_kind).unwrap_or(value));
+        let target_schema =
+            crate::structures::schema_body_from_kind(&output_kind_annotation.kind, p)?;
+        if value.closed_schema_body()? == target_schema {
+            return Ok(value);
+        }
+        crate::literals::convert_cell_reactively(value, target_schema, p)
     }
 
     // RAII guard that swaps in a fresh symbol table and plan for the duration of a
@@ -661,10 +624,9 @@ mod source_only {
     // special handling for enum types where coercion rules differ.
     fn bind_function_inputs(
         fxn_def: &FunctionDefinition,
-        input_arg_values: &Vec<LegacyValue>,
+        input_arg_values: &[ValueCell],
         p: &InterpreterExecution<'_>,
     ) -> MResult<()> {
-        let scoped_state = p.state.borrow();
         for (input_argument, input_value) in fxn_def.input.iter().zip(input_arg_values.iter()) {
             let arg_id = input_argument.0;
             #[cfg(feature = "kind_annotation")]
@@ -678,196 +640,30 @@ mod source_only {
                 .map(|arg| arg.name.to_string())
                 .unwrap_or_else(|| arg_id.to_string());
 
+            #[cfg(feature = "kind_annotation")]
             let bound_value = {
-                #[cfg(feature = "kind_annotation")]
-                {
-                    let target_kind = kind_annotation(&input_kind_annotation.kind, p)?
-                        .to_value_kind(&p.state.borrow().kinds)?;
-                    let detached_input = detach_value(input_value);
-
-                    // Enum arguments are checked for membership rather than converted,
-                    // because coercion semantics don't apply across enum variants.
-                    #[cfg(all(feature = "enum", feature = "atom"))]
-                    if let ValueKind::Enum(enum_id, _) = &target_kind {
-                        let state_brrw = p.state.borrow();
-                        if enum_value_matches(detached_input.clone(), *enum_id, &state_brrw) {
-                            detached_input.clone()
-                        } else {
-                            return Err(MechError::new(
-                                FunctionInputTypeMismatchError {
-                                    function_name: fxn_def.name.clone(),
-                                    argument_name: arg_name.clone(),
-                                    expected: target_kind.clone(),
-                                    found: detached_input.kind(),
-                                },
-                                None,
-                            )
-                            .with_compiler_loc()
-                            .with_tokens(input_kind_annotation.tokens()));
-                        }
-                    } else {
-                        // Non-enum: attempt type conversion; error if it can't be done.
-                        detached_input
-                            .clone()
-                            .convert_to(&target_kind)
-                            .ok_or_else(|| {
-                                MechError::new(
-                                    FunctionInputTypeMismatchError {
-                                        function_name: fxn_def.name.clone(),
-                                        argument_name: arg_name.clone(),
-                                        expected: target_kind.clone(),
-                                        found: detached_input.kind(),
-                                    },
-                                    None,
-                                )
-                                .with_compiler_loc()
-                                .with_tokens(input_kind_annotation.tokens())
-                            })?
-                    }
-                    #[cfg(not(all(feature = "enum", feature = "atom")))]
-                    detached_input
-                        .clone()
-                        .convert_to(&target_kind)
-                        .ok_or_else(|| {
-                            MechError::new(
-                                FunctionInputTypeMismatchError {
-                                    function_name: fxn_def.name.clone(),
-                                    argument_name: arg_name.clone(),
-                                    expected: target_kind.clone(),
-                                    found: detached_input.kind(),
-                                },
-                                None,
-                            )
-                            .with_compiler_loc()
-                            .with_tokens(input_kind_annotation.tokens())
-                        })?
-                }
-                // Without kind_annotation: accept the value as-is, just detach any reference.
-                #[cfg(not(feature = "kind_annotation"))]
-                {
-                    detach_value(input_value)
+                let target_schema =
+                    crate::structures::schema_body_from_kind(&input_kind_annotation.kind, p)?;
+                if input_value.closed_schema_body()? == target_schema {
+                    input_value.clone()
+                } else {
+                    crate::literals::convert_cell_reactively(input_value.clone(), target_schema, p)
+                        .map_err(|error| error.with_tokens(input_kind_annotation.tokens()))?
                 }
             };
+            #[cfg(not(feature = "kind_annotation"))]
+            let bound_value = input_value.clone();
             #[cfg(feature = "subscript_formula")]
             if current_string_access_expression_live(p)
                 || string_access_input_is_live(input_value, p)
             {
                 mark_string_access_value_live(p, &bound_value);
             }
-            scoped_state.save_symbol(*arg_id, arg_name, bound_value, false);
+            p.state
+                .borrow()
+                .save_symbol(*arg_id, arg_name, bound_value, false);
         }
         Ok(())
-    }
-
-    // Returns true if `value` is a valid member of the enum identified by `enum_id`.
-    // Handles bare atom variants and tuple-struct variants (atom tag + payload).
-    #[cfg(all(feature = "enum", feature = "atom"))]
-    fn enum_value_matches(value: LegacyValue, enum_id: u64, state: &ProgramState) -> bool {
-        let enum_def = match state.enums.get(&enum_id) {
-            Some(enm) => enm,
-            None => return false,
-        };
-        let names_brrw = enum_def.names.borrow();
-        let atom_matches_variant = |variant_id: u64, atom_id: u64, atom_name: &str| {
-            if variant_id == atom_id {
-                return true;
-            }
-            let variant_name = match names_brrw.get(&variant_id) {
-                Some(name) => name.as_str(),
-                None => return false,
-            };
-            let short_variant = variant_name.rsplit('/').next().unwrap_or(variant_name);
-            let short_atom = atom_name.rsplit('/').next().unwrap_or(atom_name);
-            short_variant == short_atom
-        };
-        match value {
-            LegacyValue::Enum(enum_value) => {
-                let enum_value_brrw = enum_value.borrow();
-                if enum_value_brrw.id != enum_id {
-                    return false;
-                }
-                if enum_value_brrw.variants.len() != 1 {
-                    return false;
-                }
-                let (variant_id, payload) = &enum_value_brrw.variants[0];
-                let (_, declared_payload_kind) = match enum_def
-                    .variants
-                    .iter()
-                    .find(|(known_variant, _)| *known_variant == *variant_id)
-                {
-                    Some(entry) => entry,
-                    None => return false,
-                };
-                match (payload, declared_payload_kind) {
-                    (None, None) => true,
-                    (Some(payload_value), Some(LegacyValue::Kind(expected_kind))) => {
-                        match expected_kind {
-                            ValueKind::Enum(inner_enum_id, _) => {
-                                enum_value_matches(payload_value.clone(), *inner_enum_id, state)
-                            }
-                            _ => {
-                                payload_value.kind() == expected_kind.clone()
-                                    || payload_value.convert_to(expected_kind).is_some()
-                            }
-                        }
-                    }
-                    _ => false,
-                }
-            }
-            // Bare atom: check that the atom's id is a known payload-less variant.
-            LegacyValue::Atom(atom) => {
-                let atom_brrw = atom.borrow();
-                let variant_id = atom_brrw.id();
-                let atom_name = atom_brrw.name();
-                enum_def
-                    .variants
-                    .iter()
-                    .any(|(known_variant, payload_kind)| {
-                        atom_matches_variant(*known_variant, variant_id, &atom_name)
-                            && payload_kind.is_none()
-                    })
-            }
-            // Tuple-struct variant: a 2-element tuple of (atom-tag, payload).
-            // The tag must match a known variant and the payload must satisfy the
-            // declared payload kind, recursing for nested enums.
-            #[cfg(feature = "tuple")]
-            LegacyValue::Tuple(tuple_val) => {
-                let tuple_brrw = tuple_val.borrow();
-                if tuple_brrw.elements.len() != 2 {
-                    return false;
-                }
-                let (tag, tag_name) = match tuple_brrw.elements[0].as_ref() {
-                    LegacyValue::Atom(atom) => {
-                        let atom_brrw = atom.borrow();
-                        (atom_brrw.id(), atom_brrw.name())
-                    }
-                    _ => return false,
-                };
-                let payload = tuple_brrw.elements[1].as_ref().clone();
-                let (_, declared_payload_kind) =
-                    match enum_def.variants.iter().find(|(known_variant, _)| {
-                        atom_matches_variant(*known_variant, tag, &tag_name)
-                    }) {
-                        Some(entry) => entry,
-                        None => return false,
-                    };
-                match declared_payload_kind {
-                    Some(LegacyValue::Kind(expected_kind)) => match expected_kind {
-                        // Nested enum payload: recurse.
-                        ValueKind::Enum(inner_enum_id, _) => {
-                            enum_value_matches(payload, *inner_enum_id, state)
-                        }
-                        // Scalar payload: accept exact match or a convertible value.
-                        _ => {
-                            payload.kind() == expected_kind.clone()
-                                || payload.convert_to(expected_kind).is_some()
-                        }
-                    },
-                    _ => false,
-                }
-            }
-            _ => false,
-        }
     }
 
     // Reads each declared output variable out of the local symbol table and
@@ -876,7 +672,7 @@ mod source_only {
     fn collect_function_output(
         p: &InterpreterExecution<'_>,
         fxn_def: &FunctionDefinition,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<ValueCell> {
         let symbols = p.symbols();
         let symbols_brrw = symbols.borrow();
         let mut outputs = vec![];
@@ -884,7 +680,7 @@ mod source_only {
         for output_arg in &fxn_def.code.output {
             let output_id = output_arg.name.hash();
             match symbols_brrw.get(output_id) {
-                Some(cell) => outputs.push(detach_value(&cell.borrow())),
+                Some(cell) => outputs.push(cell),
                 None => {
                     return Err(
                         MechError::new(FunctionOutputUndefinedError { output_id }, None)
@@ -895,27 +691,17 @@ mod source_only {
             }
         }
 
-        Ok(match outputs.len() {
-            0 => LegacyValue::Empty,
-            1 => outputs.remove(0),
+        match outputs.len() {
+            0 => Ok(ValueCell::unit()),
+            1 => Ok(outputs.remove(0)),
             #[cfg(feature = "tuple")]
-            _ => LegacyValue::Tuple(Ref::new(MechTuple::from_vec(outputs))),
+            _ => ValueCell::tuple_from_cells(&outputs),
             #[cfg(not(feature = "tuple"))]
             _ => {
                 return Err(MechError::new(FeatureNotEnabledError, None)
                     .with_compiler_loc()
                     .with_tokens(fxn_def.code.name.tokens()));
             }
-        })
-    }
-
-    // Peels off any MutableReference wrappers to get to the underlying value.
-    // Used before storing arguments or returning results so callers always see
-    // plain owned values, not live references into other cells.
-    pub(crate) fn detach_value(value: &LegacyValue) -> LegacyValue {
-        match value {
-            LegacyValue::MutableReference(reference) => detach_value(&reference.borrow()),
-            _ => value.clone(),
         }
     }
 
@@ -967,8 +753,8 @@ mod source_only {
     pub struct FunctionInputTypeMismatchError {
         pub function_name: String,
         pub argument_name: String,
-        pub expected: ValueKind,
-        pub found: ValueKind,
+        pub expected: String,
+        pub found: String,
     }
 
     impl MechErrorKind for FunctionInputTypeMismatchError {
@@ -994,13 +780,13 @@ mod source_only {
         impl FunctionSpecializer for NativeDependencyTestCompiler {
             fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
                 Ok(Box::new(NativeDependencyTestFunction {
-                    output: LegacyValue::F64(Ref::new(2.0)),
+                    output: Ref::new(2.0),
                 }))
             }
         }
 
         struct NativeDependencyTestFunction {
-            output: LegacyValue,
+            output: Ref<f64>,
         }
 
         impl MechFunctionImpl for NativeDependencyTestFunction {
@@ -1008,16 +794,12 @@ mod source_only {
                 Ok(())
             }
 
-            fn out(&self) -> LegacyValue {
-                self.output.clone()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.output))
             }
 
             fn to_string(&self) -> String {
                 "native-dependency-test".to_string()
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
 
@@ -1034,14 +816,14 @@ mod source_only {
         }
 
         struct IndexedInitializedFunction {
-            output: LegacyValue,
+            output: Ref<f64>,
             solve_calls: Arc<AtomicUsize>,
         }
 
         impl FunctionSpecializer for IndexedInitializedCompiler {
             fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
                 Ok(Box::new(IndexedInitializedFunction {
-                    output: LegacyValue::F64(Ref::new(self.output)),
+                    output: Ref::new(self.output),
                     solve_calls: self.solve_calls.clone(),
                 }))
             }
@@ -1053,16 +835,12 @@ mod source_only {
                 Ok(())
             }
 
-            fn out(&self) -> LegacyValue {
-                self.output.clone()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.output))
             }
 
             fn to_string(&self) -> String {
                 "indexed-initialized-test".to_string()
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
 
@@ -1134,14 +912,14 @@ mod source_only {
             solve_result_calls: Arc<std::sync::atomic::AtomicUsize>,
         }
         struct DeferredNativeSolveFunction {
-            output: LegacyValue,
+            output: Ref<f64>,
             solve_result_calls: Arc<std::sync::atomic::AtomicUsize>,
         }
 
         impl FunctionSpecializer for DeferredNativeSolveCompiler {
             fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
                 Ok(Box::new(DeferredNativeSolveFunction {
-                    output: LegacyValue::F64(Ref::new(2.0)),
+                    output: Ref::new(2.0),
                     solve_result_calls: self.solve_result_calls.clone(),
                 }))
             }
@@ -1152,15 +930,11 @@ mod source_only {
                     .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 Err(MechError::new(DeferredNativeSolveError, None))
             }
-            fn out(&self) -> LegacyValue {
-                self.output.clone()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.output))
             }
             fn to_string(&self) -> String {
                 "deferred-native-solve".to_string()
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -1298,6 +1072,10 @@ mod source_only {
                 ))
             }
 
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.output))
+            }
+
             fn initial_solve_policy(&self) -> InitialSolvePolicy {
                 self.initial_solve_policy
             }
@@ -1311,16 +1089,8 @@ mod source_only {
                 Ok(())
             }
 
-            fn out(&self) -> LegacyValue {
-                LegacyValue::F64(self.output.clone())
-            }
-
             fn to_string(&self) -> String {
                 "failing-initialization-test".to_string()
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
 

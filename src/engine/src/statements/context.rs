@@ -1,9 +1,9 @@
 use crate::{
     ContextBase, ContextDeclaration, ContextSend, ExecutionResourceRequest,
-    ExternalResourceReadFunction, ExternalResourceWriteFunction, GenericError, Identifier,
-    InitialSolvePolicy, InterpreterExecution, LegacyValue, MResult, MechError, ResourceDelivery,
-    ResourceIntent, UndefinedContextError, ValueCell, Var, execute_specialized_function,
-    expression,
+    ExternalResourceReadFunction, ExternalResourceWriteFunction, FunctionInstance,
+    FunctionInvocation, GenericError, Identifier, InitialSolvePolicy, InterpreterExecution,
+    MResult, MechError, ResourceDelivery, ResourceIntent, SpecializationInput, SpecializedFunction,
+    UndefinedContextError, ValueCell, Var, execute_bound_specialized_function, expression_cell,
 };
 #[cfg(feature = "variable_assign")]
 use crate::{Environment, VariableAssign};
@@ -12,16 +12,16 @@ use crate::{Environment, VariableAssign};
 pub fn context_declaration(
     ctx: &ContextDeclaration,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     match &ctx.base {
         ContextBase::ResourceUri(uri) => {
             p.bind_context(&ctx.name, uri.chars.iter().collect::<String>());
-            Ok(LegacyValue::Empty)
+            Ok(ValueCell::unit())
         }
         ContextBase::Context(base) => match p.context_binding(base) {
             Some(binding) => {
                 p.bind_context_with_name(&ctx.name, binding.context_name, binding.base_uri);
-                Ok(LegacyValue::Empty)
+                Ok(ValueCell::unit())
             }
             None => Err(MechError::new(
                 UndefinedContextError {
@@ -86,16 +86,24 @@ pub(crate) fn context_read(
         ResourceDelivery::Live,
         interpreter,
     )?;
-    let output = ValueCell::new(LegacyValue::Empty);
-    let function = ExternalResourceReadFunction {
-        interpreter_id: interpreter.id,
+    let representative =
+        interpreter.with_services(|services| services.plan_resource_read_output(&request))?;
+    let output = ValueCell::from_snapshot(representative)?;
+    let function = ExternalResourceReadFunction::new(
+        interpreter.id,
         request,
-        output: output.clone(),
-        initial_solve_policy: InitialSolvePolicy::Solve,
-        semantic_contract: None,
-    };
-    let arguments = Vec::<LegacyValue>::new();
-    execute_specialized_function(Box::new(function), &arguments, interpreter)?;
+        output.clone(),
+        false,
+        InitialSolvePolicy::Solve,
+        None,
+    );
+    let arguments = Vec::<SpecializationInput>::new();
+    let invocation = FunctionInvocation::nullary(output.clone());
+    execute_bound_specialized_function(
+        SpecializedFunction::new(FunctionInstance::new(Box::new(function), invocation)),
+        &arguments,
+        interpreter,
+    )?;
     Ok(output)
 }
 
@@ -104,7 +112,7 @@ pub(crate) fn context_assign(
     assignment: &VariableAssign,
     environment: Option<&Environment>,
     interpreter: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let context = assignment.target.context.as_ref().ok_or_else(|| {
         MechError::new(
             GenericError {
@@ -123,22 +131,28 @@ pub(crate) fn context_assign(
         ResourceDelivery::Snapshot,
         interpreter,
     )?;
-    let input = expression(&assignment.expression, environment, interpreter)?;
-    let arguments = vec![input.clone()];
+    let input_cell = expression_cell(&assignment.expression, environment, interpreter)?;
+    let arguments = vec![SpecializationInput::Cell(input_cell.clone())];
+    let output = ValueCell::unit();
     let function = ExternalResourceWriteFunction {
         request,
-        input,
-        output: ValueCell::new(LegacyValue::Empty),
+        input: input_cell.clone(),
+        output: output.clone(),
         initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
         semantic_contract: None,
     };
-    execute_specialized_function(Box::new(function), &arguments, interpreter)
+    let invocation = FunctionInvocation::unary(output, input_cell);
+    execute_bound_specialized_function(
+        SpecializedFunction::new(FunctionInstance::new(Box::new(function), invocation)),
+        &arguments,
+        interpreter,
+    )
 }
 
 /// Lower a direct source send into the same external resource node used by
 /// decoded bytecode. Runtime capability admission remains outside the engine;
 /// this path only resolves an interpreter-local context binding.
-pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult<ValueCell> {
     let context = send.target.context.as_ref().ok_or_else(|| {
         MechError::new(
             GenericError {
@@ -160,14 +174,20 @@ pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult
         ResourceDelivery::Snapshot,
         p,
     )?;
-    let input = expression(&send.expression, None, p)?;
-    let arguments = vec![input.clone()];
+    let input_cell = expression_cell(&send.expression, None, p)?;
+    let arguments = vec![SpecializationInput::Cell(input_cell.clone())];
+    let output = ValueCell::unit();
     let function = ExternalResourceWriteFunction {
         request,
-        input,
-        output: ValueCell::new(LegacyValue::Empty),
+        input: input_cell.clone(),
+        output: output.clone(),
         initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
         semantic_contract: None,
     };
-    execute_specialized_function(Box::new(function), &arguments, p)
+    let invocation = FunctionInvocation::unary(output, input_cell);
+    execute_bound_specialized_function(
+        SpecializedFunction::new(FunctionInstance::new(Box::new(function), invocation)),
+        &arguments,
+        p,
+    )
 }

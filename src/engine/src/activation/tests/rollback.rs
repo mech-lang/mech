@@ -102,7 +102,8 @@ fn activation_guard_non_boolean_result_rolls_back_plan_and_symbols() {
 fn activation_unmatched_guard_skips_runtime_error_and_guard_error_commits_nothing() {
     let mut i = interpret(
         r#"
-event := (:pressed, 1.0)
+<guard-event> := :pressed<f64> | :other<f64>
+event<guard-event> := :pressed(1.0)
 text := "abc"
 ~index := 1.0
 ~> event

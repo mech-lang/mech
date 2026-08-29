@@ -1,6 +1,6 @@
 use super::support::{
-    CompiledPattern, Finalize, GuardFinalize, Interpreter, LegacyValue, Matcher, MechFunctionImpl,
-    ReactiveDependencyKind, Ref, Select, UnmatchedFinalize, arm_register_nodes, f64_symbol,
+    CompiledPattern, Finalize, GuardFinalize, Interpreter, Matcher, MechFunctionImpl,
+    ReactiveDependencyKind, Select, UnmatchedFinalize, ValueCell, arm_register_nodes, f64_symbol,
     hash_str, interpret, interpret_more, plan_snapshot, registration, root_cell,
     selected_arm_index, set_f64_symbol, symbol,
 };
@@ -8,69 +8,80 @@ use super::support::{
 #[cfg(any(feature = "bool", feature = "variable_define"))]
 #[test]
 fn activation_transaction_state_exposes_hidden_mutable_cells() {
-    fn contains_bool(values: &[LegacyValue], target: &Ref<bool>) -> bool {
-        values
-            .iter()
-            .any(|value| matches!(value, LegacyValue::Bool(cell) if cell.addr() == target.addr()))
-    }
-    fn contains_index(values: &[LegacyValue], target: &Ref<usize>) -> bool {
-        values
-            .iter()
-            .any(|value| matches!(value, LegacyValue::Index(cell) if cell.addr() == target.addr()))
+    fn contains_representation(
+        ports: &[mech_core::FunctionStatePort<'_>],
+        expected: mech_core::FunctionValueRepresentation,
+    ) -> bool {
+        ports.iter().any(|port| port.representation() == expected)
     }
 
-    let matched = Ref::new(false);
+    let matched = ValueCell::from_exact(false).unwrap();
     let matcher = Matcher {
         pattern: CompiledPattern::Wildcard,
-        trigger: LegacyValue::Empty,
+        trigger: ValueCell::unit(),
         expression_values: Vec::new(),
         captures: Vec::new(),
         matched: matched.clone(),
-        out: Ref::new(0),
+        out: ValueCell::from_exact(1_usize).unwrap(),
     };
-    let matcher_values = matcher.transaction_state_values().unwrap();
-    assert_eq!(matcher_values.len(), 2);
-    assert!(contains_bool(&matcher_values, &matched));
+    let matcher_ports = matcher.transaction_state_ports().unwrap().unwrap();
+    assert_eq!(matcher_ports.len(), 2);
+    assert!(contains_representation(
+        &matcher_ports,
+        mech_core::FunctionValueRepresentation::Bool
+    ));
 
-    let eligible = Ref::new(false);
+    let eligible = ValueCell::from_exact(false).unwrap();
     let finalize = Finalize {
         matched: matched.clone(),
         eligible: eligible.clone(),
-        out: Ref::new(0),
+        out: ValueCell::from_exact(1_usize).unwrap(),
     };
-    let finalize_values = finalize.transaction_state_values().unwrap();
-    assert_eq!(finalize_values.len(), 2);
-    assert!(contains_bool(&finalize_values, &eligible));
+    let finalize_ports = finalize.transaction_state_ports().unwrap().unwrap();
+    assert_eq!(finalize_ports.len(), 2);
+    assert!(contains_representation(
+        &finalize_ports,
+        mech_core::FunctionValueRepresentation::Bool
+    ));
 
-    let unmatched_eligible = Ref::new(false);
+    let unmatched_eligible = ValueCell::from_exact(false).unwrap();
     let unmatched = UnmatchedFinalize {
         matched: matched.clone(),
         eligible: unmatched_eligible.clone(),
-        out: Ref::new(0),
+        out: ValueCell::from_exact(1_usize).unwrap(),
     };
-    let unmatched_values = unmatched.transaction_state_values().unwrap();
-    assert_eq!(unmatched_values.len(), 2);
-    assert!(contains_bool(&unmatched_values, &unmatched_eligible));
+    let unmatched_ports = unmatched.transaction_state_ports().unwrap().unwrap();
+    assert_eq!(unmatched_ports.len(), 2);
+    assert!(contains_representation(
+        &unmatched_ports,
+        mech_core::FunctionValueRepresentation::Bool
+    ));
 
-    let guard_eligible = Ref::new(false);
+    let guard_eligible = ValueCell::from_exact(false).unwrap();
     let guard = GuardFinalize {
-        guard: Ref::new(false),
+        guard: ValueCell::from_exact(false).unwrap(),
         eligible: guard_eligible.clone(),
-        out: Ref::new(0),
+        out: ValueCell::from_exact(1_usize).unwrap(),
     };
-    let guard_values = guard.transaction_state_values().unwrap();
-    assert_eq!(guard_values.len(), 2);
-    assert!(contains_bool(&guard_values, &guard_eligible));
+    let guard_ports = guard.transaction_state_ports().unwrap().unwrap();
+    assert_eq!(guard_ports.len(), 2);
+    assert!(contains_representation(
+        &guard_ports,
+        mech_core::FunctionValueRepresentation::Bool
+    ));
 
-    let selected = Ref::new(usize::MAX);
+    let selected = ValueCell::from_exact(usize::MAX).unwrap();
     let select = Select {
         eligible: vec![eligible],
         selected: selected.clone(),
-        out: Ref::new(0),
+        out: ValueCell::from_exact(1_usize).unwrap(),
     };
-    let select_values = select.transaction_state_values().unwrap();
-    assert_eq!(select_values.len(), 2);
-    assert!(contains_index(&select_values, &selected));
+    let select_ports = select.transaction_state_ports().unwrap().unwrap();
+    assert_eq!(select_ports.len(), 2);
+    assert!(contains_representation(
+        &select_ports,
+        mech_core::FunctionValueRepresentation::Index
+    ));
 }
 
 #[test]
@@ -201,7 +212,7 @@ fn activation_arm_alias_of_live_input_remains_sampled_until_trigger() {
     {
         let symbols = interpreter.symbols();
         let mut symbols = symbols.borrow_mut();
-        symbols.insert(outer_id, LegacyValue::F64(Ref::new(1.0)), true);
+        symbols.insert_cell(outer_id, ValueCell::from_exact(1.0_f64).unwrap(), true);
         symbols
             .dictionary
             .borrow_mut()

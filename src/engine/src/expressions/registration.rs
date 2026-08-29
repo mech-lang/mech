@@ -1,4 +1,4 @@
-use crate::{InitialSolvePolicy, MResult, Plan, SpecializedFunction, ValueCell};
+use crate::{MResult, Plan, SpecializedFunction};
 
 #[cfg(all(
     feature = "functions",
@@ -18,10 +18,10 @@ use crate::{InitialSolvePolicy, MResult, Plan, SpecializedFunction, ValueCell};
 pub(super) fn register_initialized_expression_function(
     plan: &Plan,
     specialized: SpecializedFunction,
-) -> MResult<ValueCell> {
+) -> MResult<crate::ValueCell> {
     let instance = specialized.into_instance();
     if !plan.activation_registration_active()
-        && instance.implementation().initial_solve_policy() == InitialSolvePolicy::Solve
+        && instance.implementation().initial_solve_policy() == crate::InitialSolvePolicy::Solve
     {
         instance.solve_result()?;
     }

@@ -1,6 +1,5 @@
-use crate::apply_stable_value_update;
 use mech_core::{
-    ExecutionHostFunctionRequest, InitialSolvePolicy, LegacyValue, MResult, MechExecutionServices,
+    ExecutionHostFunctionRequest, InitialSolvePolicy, MResult, MechExecutionServices,
     MechFunctionImpl, NoMechExecutionServices, ReactiveDependencyScope, ReactiveSolveStatus,
     ValueCell,
 };
@@ -11,7 +10,7 @@ use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCom
 #[derive(Clone, Debug)]
 pub struct ExternalHostCallFunction {
     pub request: ExecutionHostFunctionRequest,
-    pub arguments: Vec<LegacyValue>,
+    pub arguments: Vec<ValueCell>,
     pub output: ValueCell,
     pub initial_solve_policy: InitialSolvePolicy,
 }
@@ -23,10 +22,10 @@ impl ExternalHostCallFunction {
         let arguments = self
             .arguments
             .iter()
-            .map(LegacyValue::try_deep_snapshot)
+            .map(ValueCell::snapshot)
             .collect::<MResult<Vec<_>>>()?;
         let result = services.invoke_host_function(&self.request, &arguments)?;
-        apply_stable_value_update(self.output.clone(), result)?;
+        self.output.replace(&result)?;
         Ok(())
     }
 }
@@ -64,16 +63,6 @@ impl MechFunctionImpl for ExternalHostCallFunction {
         Some(vec![ReactiveDependencyScope::Logical; argument_count])
     }
 
-    fn out(&self) -> LegacyValue {
-        self.output.borrow().clone()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(vec![LegacyValue::MutableReference(
-            self.output.legacy_ref(),
-        )])
-    }
-
     fn to_string(&self) -> String {
         format!("ExternalHostCallFunction::{:?}", self.request)
     }
@@ -90,7 +79,7 @@ impl MechFunctionCompiler for ExternalHostCallFunction {
         let arguments = self
             .arguments
             .iter()
-            .map(|argument| super::compile_external_value(argument, context))
+            .map(|argument| super::compile_external_cell(argument, context))
             .collect::<MResult<Vec<Register>>>()?;
         let requirement = context
             .intern_requirement(ApplicationRequirement::HostFunction(self.request.clone()))?;

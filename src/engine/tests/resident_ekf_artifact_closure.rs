@@ -126,27 +126,31 @@ fn ordinary_source_and_bytecode_close_the_same_frozen_artifact() -> MResult<()> 
                 )
             })
     );
-    let observed_frame = services.live_bindings[0]
-        .target
-        .borrow()
-        .as_vecf64()
-        .expect("frozen observation must be a concrete f64 vector");
-    assert!((0..compilation.source_artifact.constants().len()).all(|index| {
-        let value = compilation
-            .source_artifact
-            .constants()
-            .get(ConstantId::new(index as u32))
-            .expect("constant ids are dense");
-        !matches!(
-            value.data(),
-            ValueData::Matrix(matrix)
-                if matches!(
-                    matrix.elements(),
-                    SequenceView::F64(values)
-                        if values.iter().map(|value| value.to_f64()).eq(observed_frame.iter().copied())
-                )
-        )
-    }));
+    let observed_frame = services.live_bindings[0].target.snapshot()?;
+    let ValueData::Matrix(observed_frame) = observed_frame.data() else {
+        panic!("frozen observation must be a concrete f64 vector");
+    };
+    let SequenceView::F64(observed_frame) = observed_frame.elements() else {
+        panic!("frozen observation must be a concrete f64 vector");
+    };
+    assert!(
+        (0..compilation.source_artifact.constants().len()).all(|index| {
+            let value = compilation
+                .source_artifact
+                .constants()
+                .get(ConstantId::new(index as u32))
+                .expect("constant ids are dense");
+            !matches!(
+                value.data(),
+                ValueData::Matrix(matrix)
+                    if matches!(
+                        matrix.elements(),
+                        SequenceView::F64(values)
+                            if values.iter().eq(observed_frame.iter())
+                    )
+            )
+        })
+    );
     Ok(())
 }
 
@@ -229,8 +233,12 @@ fn same_schema_observation_and_planning_payloads_preserve_program_identity() -> 
     let compilation_a = compile_frozen_ekf_source(SOURCE, &mut source_services_a)?;
     let compilation_b = compile_frozen_ekf_source(SOURCE, &mut source_services_b)?;
 
-    assert!(source_services_a.planned_reads.is_empty());
-    assert!(source_services_b.planned_reads.is_empty());
+    assert_eq!(source_services_a.planned_reads.len(), 1);
+    assert_eq!(source_services_b.planned_reads.len(), 1);
+    assert_eq!(
+        source_services_a.planned_reads,
+        source_services_b.planned_reads
+    );
     assert_eq!(source_services_a.reads.len(), 1);
     assert_eq!(source_services_b.reads.len(), 1);
     let parsed_a = ParsedProgram::from_bytes(&compilation_a.bytecode)?;
@@ -268,7 +276,16 @@ fn same_schema_observation_and_planning_payloads_preserve_program_identity() -> 
         compilation_b.decoded_artifact.revision()
     );
     assert_eq!(compilation_a.source_closure, compilation_b.source_closure);
-    assert_eq!(compilation_a.bytecode, compilation_b.bytecode);
+    assert_eq!(
+        compilation_a.bytecode,
+        compilation_b.bytecode,
+        "first differing byte: {:?}",
+        compilation_a
+            .bytecode
+            .iter()
+            .zip(&compilation_b.bytecode)
+            .position(|(left, right)| left != right)
+    );
 
     Ok(())
 }

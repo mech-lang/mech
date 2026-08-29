@@ -2,7 +2,7 @@
 
 use crate::{
     ArtifactSource, BindingDeclaration, CompilerPlanningConfig, CompilerPlanningProgram,
-    InitializerReference, ProducerReference, ProgramArtifact, SlotRole,
+    InitializerReference, OperationReference, ProducerReference, ProgramArtifact, SlotRole,
     decode_program_artifact_sections,
 };
 use crate::{
@@ -42,12 +42,8 @@ impl MechFunctionImpl for TestLessFunction {
         Ok(())
     }
 
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Bool(self.out.clone())
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn primary_output_state_port(&self) -> Option<mech_core::FunctionStatePort<'_>> {
+        Some(mech_core::FunctionStatePort::from_ref(&self.out))
     }
 
     fn to_string(&self) -> String {
@@ -285,13 +281,11 @@ fn generic_source_matrix_literals_fold_without_legacy_artifact_nodes() -> MResul
 #[test]
 fn heterogeneous_source_matrix_literal_fails_structurally() -> MResult<()> {
     let mut program = source_program();
-    program.plan_source_for_test("x := [1.0 \"x\"]\nx")?;
-    let error = program.compile_program_product().unwrap_err();
-    assert_eq!(error.kind_name(), "ProgramArtifactCompilationError");
-    assert!(
-        error.kind_message().contains("HeterogeneousMatrixLiteral"),
-        "{error:?}"
-    );
+    let error = program
+        .plan_source_for_test("x := [1.0 \"x\"]\nx")
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "CanonicalAggregateSchemaMismatch");
+    assert!(error.kind_message().contains("horizontal matrix literal"));
     Ok(())
 }
 
@@ -613,7 +607,8 @@ fn composite_helpers_and_mutable_metadata_without_a_declaration_do_not_become_st
         LegacyValue::from(2.0_f64),
     ])));
     let mut encoder = CompileCtx::new();
-    let tuple_register = encoder.resolve_value_register(&tuple)?;
+    let tuple_register =
+        compile_value_register(&tuple, std::ptr::from_ref(&tuple).addr(), &mut encoder)?;
     let encoded = encoder.finish_program(tuple_register)?;
     let template = encoded
         .program
@@ -717,7 +712,7 @@ fn collection_schemas_use_actual_element_cardinality() -> MResult<()> {
     assert!(matches!(
         set.schemas().get(set.outputs()[0].schema).unwrap().body(),
         SchemaBody::Set {
-            cardinality: DimensionExpr::Constant(3),
+            cardinality: mech_core::CardinalitySpec::Exact(DimensionExpr::Constant(3)),
             ..
         }
     ));
@@ -726,7 +721,7 @@ fn collection_schemas_use_actual_element_cardinality() -> MResult<()> {
     assert!(matches!(
         map.schemas().get(map.outputs()[0].schema).unwrap().body(),
         SchemaBody::Map {
-            cardinality: DimensionExpr::Constant(2),
+            cardinality: mech_core::CardinalitySpec::Exact(DimensionExpr::Constant(2)),
             ..
         }
     ));
@@ -757,6 +752,33 @@ fn compiled_fixture(
     requirements: Vec<ApplicationRequirement>,
     return_register: Register,
 ) -> CompiledBytecode {
+    fn schema(kind: &ValueKind) -> Option<SchemaBody> {
+        Some(match kind {
+            ValueKind::F64 => SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueKind::Bool => SchemaBody::Bool,
+            ValueKind::Tuple(elements) => SchemaBody::Tuple(
+                elements
+                    .iter()
+                    .map(schema)
+                    .collect::<Option<Vec<_>>>()?
+                    .into_boxed_slice(),
+            ),
+            ValueKind::Reference(inner) => return schema(inner),
+            ValueKind::Empty | ValueKind::Atom(_, _) => return None,
+            other => panic!("fixture does not define a canonical schema for {other:?}"),
+        })
+    }
+    let register_schemas = register_kinds
+        .iter()
+        .map(|kind| kind.as_ref().and_then(schema))
+        .collect();
+    let absent_registers = register_kinds
+        .iter()
+        .enumerate()
+        .filter_map(|(register, kind)| {
+            matches!(kind, Some(ValueKind::Empty)).then_some(register as Register)
+        })
+        .collect();
     let instruction_operations = instructions
         .iter()
         .zip(&instruction_roles)
@@ -789,10 +811,11 @@ fn compiled_fixture(
         instruction_operations,
         instruction_source_nodes: vec![None; instruction_roles.len()],
         instruction_roles,
+        register_schemas,
+        absent_registers,
         register_collection_cardinalities: vec![None; register_kinds.len()],
         register_state_initializers: vec![None; register_kinds.len()],
         matrix_literals: BTreeMap::new(),
-        register_kinds,
         symbol_definitions: Vec::new(),
         return_register,
         integrity_constraints: Vec::new(),
@@ -930,7 +953,7 @@ fn malformed_compiled_sidecars_fail_closed() {
         Err(crate::ArtifactBuildError::MissingSemanticOperation {
             instruction: 2,
             implementation,
-        }) if implementation == TEST_LESS_RUNTIME
+        }) if implementation == format!("0x{:016x}", hash_str(TEST_LESS_RUNTIME))
     ));
 
     let mut missing_role = valid_compiled_fixture();
@@ -956,11 +979,11 @@ fn malformed_compiled_sidecars_fail_closed() {
     ));
 
     let mut kind_length = valid_compiled_fixture();
-    kind_length.register_kinds.pop();
+    kind_length.register_schemas.pop();
     assert!(matches!(
         crate::compile_executable_program_artifact(&kind_length, &catalog),
         Err(crate::ArtifactBuildError::CompiledMetadataLengthMismatch {
-            table: "register_kinds",
+            table: "register_schemas",
             ..
         })
     ));
@@ -996,7 +1019,7 @@ fn malformed_compiled_sidecars_fail_closed() {
     ));
 
     let mut missing_destination_kind = valid_compiled_fixture();
-    missing_destination_kind.register_kinds[1] = None;
+    missing_destination_kind.register_schemas[1] = None;
     assert!(matches!(
         crate::compile_executable_program_artifact(&missing_destination_kind, &catalog),
         Err(crate::ArtifactBuildError::MissingRegisterKind {
@@ -1057,17 +1080,22 @@ fn malformed_compiled_sidecars_fail_closed() {
         })
     ));
 
-    let mut unknown_runtime = valid_compiled_fixture();
+    let mut stale_runtime_id = valid_compiled_fixture();
     let BytecodeInstruction::RuntimeUnary { function, .. } =
-        &mut unknown_runtime.program.instructions[2]
+        &mut stale_runtime_id.program.instructions[2]
     else {
         unreachable!()
     };
     *function = u64::MAX;
-    assert!(matches!(
-        crate::compile_executable_program_artifact(&unknown_runtime, &catalog),
-        Err(crate::ArtifactBuildError::UnknownRuntimeFunction { function: u64::MAX })
-    ));
+    let stale_runtime_artifact =
+        crate::compile_executable_program_artifact(&stale_runtime_id, &catalog).unwrap();
+    assert_eq!(
+        stale_runtime_artifact.nodes()[0].operation,
+        OperationReference {
+            module_path: vec!["compare".to_owned()].into_boxed_slice(),
+            operation_name: "lt".to_owned(),
+        }
+    );
 
     let requirement_mismatch = compiled_fixture(
         vec![
@@ -1245,16 +1273,17 @@ fn malformed_compiled_sidecars_fail_closed() {
         Vec::new(),
         0,
     );
-    assert!(matches!(
-        crate::compile_executable_program_artifact(&unresolved_nominal, &catalog),
-        Err(crate::ArtifactBuildError::Semantic(
-            mech_core::SemanticModelError::LegacyNominalUnresolved {
-                kind: mech_core::NominalKind::Atom,
-                legacy_id,
-                legacy_name,
-            }
-        )) if legacy_id == nominal_id && legacy_name == nominal_name
-    ));
+    let Err(crate::ArtifactBuildError::CoreBytecode(error)) =
+        crate::compile_executable_program_artifact(&unresolved_nominal, &catalog)
+    else {
+        panic!("unresolved bytecode nominal must fail at the canonical codec boundary")
+    };
+    assert!(
+        error
+            .kind_message()
+            .contains("authoritative semantic nominal resolver"),
+        "{error:?}"
+    );
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use super::support::{
-    FLAT_TUPLE_ACTIVATION, LegacyValue, MechTuple, NESTED_TUPLE_ACTIVATION,
-    REPEATED_CAPTURE_ACTIVATION, Ref, ValueKind, assert_dispatch_turn, hash_str, interpret,
+    FLAT_TUPLE_ACTIVATION, FloatWidth, LegacyValue, MechTuple, NESTED_TUPLE_ACTIVATION,
+    REPEATED_CAPTURE_ACTIVATION, Ref, SchemaBody, assert_dispatch_turn, hash_str, interpret,
     interpret_more, load_atom_tuple_activation, load_enum_activation, plan_snapshot, root_cell,
     set_atom_tuple_event, set_enum_event, set_f64_matrix_event, set_tuple_event,
     set_unit_enum_event, tuple_fixture, turn_executed_nodes,
@@ -23,7 +23,10 @@ fn activation_pattern_selects_pressed_released_and_wildcard() {
 #[test]
 fn activation_pattern_enum_arms_compile_independent_of_initial_variant() {
     let (mut i, trigger, r, topology) = load_enum_activation();
-    assert_eq!(r.arms[1].captures[0].kind, ValueKind::F64);
+    assert_eq!(
+        r.arms[1].captures[0].schema,
+        SchemaBody::FloatingPoint(FloatWidth::W64)
+    );
     set_enum_event(&i, "released", 20.);
     let o = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &o, 1, 1020.);
@@ -108,8 +111,14 @@ fn activation_pattern_atom_tagged_tuple_selects_arm() {
 #[test]
 fn activation_pattern_atom_tuple_arms_compile_independent_of_initial_tag() {
     let (mut i, trigger, r, topology) = load_atom_tuple_activation();
-    assert_eq!(r.arms[0].captures[0].kind, ValueKind::F64);
-    assert_eq!(r.arms[1].captures[0].kind, ValueKind::F64);
+    assert_eq!(
+        r.arms[0].captures[0].schema,
+        SchemaBody::FloatingPoint(FloatWidth::W64)
+    );
+    assert_eq!(
+        r.arms[1].captures[0].schema,
+        SchemaBody::FloatingPoint(FloatWidth::W64)
+    );
     set_atom_tuple_event(&i, "released", 20.);
     let o = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &o, 1, 1020.);
@@ -139,7 +148,10 @@ event := 1u64
 #[test]
 fn activation_pattern_atom_tagged_tuple_captures_payload() {
     let (mut i, trigger, r, topology) = load_atom_tuple_activation();
-    assert_eq!(r.arms[0].captures[0].kind, ValueKind::F64);
+    assert_eq!(
+        r.arms[0].captures[0].schema,
+        SchemaBody::FloatingPoint(FloatWidth::W64)
+    );
     let cell = r.arms[0].captures[0].cell;
     assert!(
         i.plan().borrow().nodes[r.arms[0].body_node_start..r.arms[0].body_node_end]

@@ -1,32 +1,12 @@
 use crate::patterns::*;
 use crate::tracing::summarize_pattern;
 #[cfg(feature = "trace")]
-use crate::tracing::{format_fsm_trace, summarize_guard_condition, summarize_value};
+use crate::tracing::{format_fsm_trace, summarize_guard_condition};
 use crate::*;
 use std::collections::HashSet;
 
 // Finite State Machines
 // ----------------------------------------------------------------------------
-
-fn fsm_argument_kind_matches(expected: &ValueKind, actual: &ValueKind) -> bool {
-    fn strip_references<'a>(kind: &'a ValueKind) -> &'a ValueKind {
-        match kind {
-            ValueKind::Reference(inner) => strip_references(inner.as_ref()),
-            _ => kind,
-        }
-    }
-
-    let expected = strip_references(expected);
-    let actual = strip_references(actual);
-
-    match (expected, actual) {
-        (
-            ValueKind::Matrix(expected_element, expected_dims),
-            ValueKind::Matrix(actual_element, _actual_dims),
-        ) if expected_dims.is_empty() => expected_element.as_ref() == actual_element.as_ref(),
-        _ => expected == actual,
-    }
-}
 
 // Review: how does this fail?
 pub fn register_fsm_implementation(
@@ -60,7 +40,7 @@ pub fn execute_fsm_pipe(
     fsm_pipe: &FsmPipe,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let fsm_id = fsm_pipe.start.name.hash();
     let fsm = {
         let fsms = p.user_state_machines.borrow();
@@ -76,7 +56,7 @@ pub fn execute_fsm_pipe(
     let mut args = Vec::new();
     if let Some(start_args) = &fsm_pipe.start.args {
         for (_, arg_expr) in start_args {
-            args.push(expression(arg_expr, env, p)?);
+            args.push(expression_cell(arg_expr, env, p)?);
         }
     }
     let input_decls = {
@@ -100,28 +80,27 @@ pub fn execute_fsm_pipe(
         .with_tokens(fsm_pipe.start.tokens()));
     }
     for (arg_decl, arg_value) in input_decls.iter().zip(args.iter()) {
-        let detached_arg = detach_value(arg_value);
         #[cfg(feature = "kind_annotation")]
         if let Some(kind_annotation_node) = &arg_decl.kind {
-            let expected_kind = kind_annotation(&kind_annotation_node.kind, p)?
-                .to_value_kind(&p.state.borrow().kinds)?;
-            let actual_kind = arg_value.kind();
-            if !fsm_argument_kind_matches(&expected_kind, &actual_kind) {
+            let expected_schema =
+                crate::structures::schema_body_from_kind(&kind_annotation_node.kind, p)?;
+            let actual_schema = arg_value.closed_schema_body()?;
+            if expected_schema != actual_schema {
                 return Err(MechError::new(
                     FsmArgumentKindMismatchError {
                         argument: arg_decl.name.to_string(),
-                        expected_kind,
-                        actual_kind,
+                        expected_kind: format!("{expected_schema:?}"),
+                        actual_kind: format!("{actual_schema:?}"),
                     },
                     None,
                 )
                 .with_compiler_loc()
                 .with_tokens(fsm_pipe.start.tokens()));
             }
-            call_env.insert(arg_decl.name.hash(), detached_arg);
+            call_env.insert(arg_decl.name.hash(), arg_value.clone());
             continue;
         }
-        call_env.insert(arg_decl.name.hash(), detached_arg);
+        call_env.insert(arg_decl.name.hash(), arg_value.clone());
     }
     let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
     validate_fsm_state_coverage(&fsm, fsm_pipe)?;
@@ -130,10 +109,10 @@ pub fn execute_fsm_pipe(
 
 fn execute_fsm_pipe_impl(
     fsm: &FsmImplementation,
-    state: &mut LegacyValue,
+    state: &mut ValueCell,
     call_env: &mut Environment,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     trace_println!(
         p,
         "{}",
@@ -142,7 +121,7 @@ fn execute_fsm_pipe_impl(
             format!(
                 "name={} state={}",
                 fsm.name.to_string(),
-                summarize_value(state)
+                format!("{state:?}")
             )
         )
     );
@@ -164,10 +143,7 @@ fn execute_fsm_pipe_impl(
         trace_println!(
             p,
             "{}",
-            format_fsm_trace(
-                "step",
-                format!("{step:>4} state={}", summarize_value(state))
-            )
+            format_fsm_trace("step", format!("{step:>4} state={state:?}"))
         );
         let mut transitioned = false;
         for (arm_idx, arm) in fsm.arms.iter().enumerate() {
@@ -202,7 +178,7 @@ fn execute_fsm_pipe_impl(
                     );
                     if matched {
                         #[cfg(feature = "trace")]
-                        let previous_state = summarize_value(state);
+                        let previous_state = format!("{state:?}");
                         let out = apply_transitions(transitions, state, &mut arm_env, p)?;
                         restore_arm_local_bindings(&pattern_match, &base_env, &mut arm_env);
                         *call_env = arm_env;
@@ -210,10 +186,7 @@ fn execute_fsm_pipe_impl(
                             trace_println!(
                                 p,
                                 "{}",
-                                format_fsm_trace(
-                                    "output",
-                                    format!("value={}", summarize_value(&value))
-                                )
+                                format_fsm_trace("output", format!("value={value:?}"))
                             );
                             return Ok(value);
                         }
@@ -225,7 +198,7 @@ fn execute_fsm_pipe_impl(
                                 format!(
                                     "arm[{arm_idx}] {} -> {}",
                                     previous_state,
-                                    summarize_value(state)
+                                    format!("{state:?}")
                                 )
                             )
                         );
@@ -268,14 +241,14 @@ fn execute_fsm_pipe_impl(
                             Pattern::Wildcard => true,
                             _ => {
                                 let cond = pattern_to_value(&guard.condition, &arm_env, p)?;
-                                match cond {
-                                    LegacyValue::Bool(x) => *x.borrow(),
-                                    other => {
+                                match cond.snapshot()?.data() {
+                                    ValueData::Bool(value) => *value,
+                                    _ => {
                                         return Err(MechError::new(
                                             FsmGuardConditionKindMismatchError {
                                                 arm_index: arm_idx,
                                                 guard_index: guard_idx,
-                                                actual_kind: other.kind(),
+                                                actual_kind: format!("{:?}", cond.representation()),
                                             },
                                             None,
                                         )
@@ -300,7 +273,7 @@ fn execute_fsm_pipe_impl(
                             continue;
                         }
                         #[cfg(feature = "trace")]
-                        let previous_state = summarize_value(state);
+                        let previous_state = format!("{state:?}");
                         let out = apply_transitions(&guard.transitions, state, &mut arm_env, p)?;
                         restore_arm_local_bindings(&pattern_match, &base_env, &mut arm_env);
                         *call_env = arm_env;
@@ -308,10 +281,7 @@ fn execute_fsm_pipe_impl(
                             trace_println!(
                                 p,
                                 "{}",
-                                format_fsm_trace(
-                                    "output",
-                                    format!("value={}", summarize_value(&value))
-                                )
+                                format_fsm_trace("output", format!("value={value:?}"))
                             );
                             return Ok(value);
                         }
@@ -323,7 +293,7 @@ fn execute_fsm_pipe_impl(
                                 format!(
                                     "arm[{arm_idx}] {} -> {}",
                                     previous_state,
-                                    summarize_value(state)
+                                    format!("{state:?}")
                                 )
                             )
                         );
@@ -340,7 +310,7 @@ fn execute_fsm_pipe_impl(
             trace_println!(
                 p,
                 "{}",
-                format_fsm_trace("halt", format!("state={}", summarize_value(state)))
+                format_fsm_trace("halt", format!("state={state:?}"))
             );
             return Ok(state.clone());
         }
@@ -466,10 +436,10 @@ fn state_name_from_pattern(pattern: &Pattern) -> Option<String> {
 
 fn apply_transitions(
     transitions: &[Transition],
-    state: &mut LegacyValue,
+    state: &mut ValueCell,
     env: &mut Environment,
     p: &InterpreterExecution<'_>,
-) -> MResult<Option<LegacyValue>> {
+) -> MResult<Option<ValueCell>> {
     for transition in transitions {
         match transition {
             Transition::Next(next_pattern) | Transition::Async(next_pattern) => {
@@ -530,7 +500,7 @@ impl MechErrorKind for FsmUndefinedStateError {
 pub struct FsmGuardConditionKindMismatchError {
     pub arm_index: usize,
     pub guard_index: usize,
-    pub actual_kind: ValueKind,
+    pub actual_kind: String,
 }
 
 impl MechErrorKind for FsmGuardConditionKindMismatchError {
@@ -541,9 +511,7 @@ impl MechErrorKind for FsmGuardConditionKindMismatchError {
     fn message(&self) -> String {
         format!(
             "FSM guard condition arm[{}] guard[{}] must evaluate to Bool, got '{}'",
-            self.arm_index,
-            self.guard_index,
-            self.actual_kind.to_string(),
+            self.arm_index, self.guard_index, self.actual_kind,
         )
     }
 }
@@ -569,8 +537,8 @@ impl MechErrorKind for FsmExceededTransitionLimitError {
 #[derive(Debug, Clone)]
 pub struct FsmArgumentKindMismatchError {
     pub argument: String,
-    pub expected_kind: ValueKind,
-    pub actual_kind: ValueKind,
+    pub expected_kind: String,
+    pub actual_kind: String,
 }
 
 impl MechErrorKind for FsmArgumentKindMismatchError {
@@ -580,9 +548,7 @@ impl MechErrorKind for FsmArgumentKindMismatchError {
     fn message(&self) -> String {
         format!(
             "FSM argument '{}' expected kind '{}' but received '{}'",
-            self.argument,
-            self.expected_kind.to_string(),
-            self.actual_kind.to_string()
+            self.argument, self.expected_kind, self.actual_kind
         )
     }
 }

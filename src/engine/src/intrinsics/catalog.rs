@@ -1,11 +1,15 @@
 #[cfg(all(feature = "semantic-compiler", feature = "set"))]
 use crate::intrinsics::constructors::SetDefine;
+#[cfg(feature = "matrix_horzcat")]
+use crate::intrinsics::constructors::ValueHorizontalConcatenation;
 #[cfg(feature = "matrix_comprehensions")]
 use crate::intrinsics::constructors::ValueMatrixComprehension;
 #[cfg(feature = "set")]
 use crate::intrinsics::constructors::ValueSet;
 #[cfg(feature = "set_comprehensions")]
 use crate::intrinsics::constructors::ValueSetComprehension;
+#[cfg(feature = "matrix_vertcat")]
+use crate::intrinsics::constructors::ValueVerticalConcatenation;
 #[cfg(all(feature = "semantic-compiler", feature = "variable_define"))]
 use crate::intrinsics::define::VarDefine;
 #[cfg(all(feature = "semantic-compiler", feature = "convert"))]
@@ -15,7 +19,9 @@ use crate::literals::ConvertKind;
     feature = "set",
     feature = "invariant_define",
     feature = "set_comprehensions",
-    feature = "matrix_comprehensions"
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
 ))]
 use crate::*;
 #[cfg(feature = "matrix_comprehensions")]
@@ -97,9 +103,31 @@ fn validate_matrix_comprehension(args: &FunctionArgs) -> MResult<()> {
     Ok(())
 }
 
+#[cfg(feature = "matrix_comprehensions")]
+fn validate_matrix_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) -> MResult<()> {
+    match output.closed_schema_body()? {
+        SchemaBody::Matrix { .. } => Ok(()),
+        _ => Err(function_shape_contract_violation(
+            "matrix_comprehension",
+            "output must be matrix-backed",
+        )),
+    }
+}
+
 #[cfg(feature = "set_comprehensions")]
 fn validate_set_comprehension(_args: &FunctionArgs) -> MResult<()> {
     Ok(())
+}
+
+#[cfg(feature = "set_comprehensions")]
+fn validate_set_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) -> MResult<()> {
+    match output.closed_schema_body()? {
+        SchemaBody::Set { .. } => Ok(()),
+        _ => Err(function_shape_contract_violation(
+            "set_comprehension",
+            "output must be set-backed",
+        )),
+    }
 }
 
 #[cfg(feature = "invariant_define")]
@@ -110,6 +138,21 @@ fn validate_integrity_constraint_marker(args: &FunctionArgs) -> MResult<()> {
         Err(function_shape_contract_violation(
             "integrity_constraint_marker",
             format!("expected 6 metadata inputs, found {}", args.input_count()),
+        ))
+    }
+}
+
+#[cfg(feature = "invariant_define")]
+fn validate_integrity_constraint_marker_canonical(
+    _: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    if inputs.len() == 6 {
+        Ok(())
+    } else {
+        Err(function_shape_contract_violation(
+            "integrity_constraint_marker",
+            format!("expected 6 metadata inputs, found {}", inputs.len()),
         ))
     }
 }
@@ -255,10 +298,11 @@ mech_core::declare_native_runtime_factory! {
     installer: install_integrity_constraint_marker,
     name: "integrity/constraint",
     factory_type: crate::intrinsics::define::BytecodeIntegrityConstraintMarker,
-    contract: RuntimeFunctionContract::custom(
+    contract: RuntimeFunctionContract::custom_with_canonical(
         "integrity_constraint_marker",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
         validate_integrity_constraint_marker,
+        validate_integrity_constraint_marker_canonical,
     ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_integrity_constraint_marker",
@@ -271,10 +315,11 @@ mech_core::declare_native_runtime_factory! {
     installer: install_set_comprehension,
     name: "set/comprehension",
     factory_type: ValueSetComprehension,
-    contract: RuntimeFunctionContract::custom(
+    contract: RuntimeFunctionContract::custom_with_canonical(
         "set_comprehension",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
         validate_set_comprehension,
+        validate_set_comprehension_canonical,
     ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_set_comprehension",
@@ -287,14 +332,43 @@ mech_core::declare_native_runtime_factory! {
     installer: install_matrix_comprehension,
     name: "matrix/comprehension",
     factory_type: ValueMatrixComprehension,
-    contract: RuntimeFunctionContract::custom(
+    contract: RuntimeFunctionContract::custom_with_canonical(
         "matrix_comprehension",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
         validate_matrix_comprehension,
+        validate_matrix_comprehension_canonical,
     ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_matrix_comprehension",
     extra_cargo_features: ["matrix_comprehensions"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "matrix_horzcat",
+    registration: register_value_horizontal_concatenation,
+    installer: install_value_horizontal_concatenation,
+    name: "matrix/horzcat",
+    factory_type: ValueHorizontalConcatenation,
+    contract: RuntimeFunctionContract::horizontal_concatenation(
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_value_horizontal_concatenation",
+    extra_cargo_features: ["matrix_horzcat"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "matrix_vertcat",
+    registration: register_value_vertical_concatenation,
+    installer: install_value_vertical_concatenation,
+    name: "matrix/vertcat",
+    factory_type: ValueVerticalConcatenation,
+    contract: RuntimeFunctionContract::vertical_concatenation(
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_value_vertical_concatenation",
+    extra_cargo_features: ["matrix_vertcat"],
 }
 
 pub fn install_runtime(
@@ -342,6 +416,10 @@ pub fn install_runtime(
     register_set_comprehension(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
     register_matrix_comprehension(builder)?;
+    #[cfg(feature = "matrix_horzcat")]
+    register_value_horizontal_concatenation(builder)?;
+    #[cfg(feature = "matrix_vertcat")]
+    register_value_vertical_concatenation(builder)?;
     #[cfg(feature = "invariant_define")]
     register_integrity_constraint_marker(builder)?;
 

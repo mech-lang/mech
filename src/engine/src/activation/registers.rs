@@ -1,7 +1,7 @@
 use crate::{
-    ActivationArm, ActivationArmBody, Expression, Interpreter, InterpreterExecution, LegacyValue,
-    MResult, MechError, MechFunctionImpl, ReactiveCellId, ReactiveSolveStatus, Ref, SliceRef,
-    Token,
+    ActivationArm, ActivationArmBody, Expression, FunctionStatePort, Interpreter,
+    InterpreterExecution, MResult, MechError, MechFunctionImpl, ReactiveCellId,
+    ReactiveSolveStatus, SliceRef, Token, ValueCell,
 };
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, GenericError, MechFunctionCompiler, Register};
@@ -31,13 +31,7 @@ pub(super) fn validate_patterned_register_write(
         .symbols()
         .borrow()
         .get(target_id)
-        .is_some_and(|value| {
-            value
-                .borrow()
-                .reactive_root_cell_ids()
-                .iter()
-                .any(|cell| trigger_cells.contains(cell))
-        });
+        .is_some_and(|value| trigger_cells.contains(&value.reactive_cell_id()));
     if target_id == trigger_id || aliases_trigger {
         return Err(
             MechError::new(ActivationScopeTriggerWriteUnsupported, None).with_tokens(tokens)
@@ -56,7 +50,7 @@ pub(super) fn validate_patterned_register_write(
 pub(super) fn elaborate_patterned_arm_body(
     arm: &ActivationArm,
     captures: &[ActivationPatternCapture],
-    pulse: &LegacyValue,
+    pulse: &ValueCell,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<(usize, usize)> {
     let symbols = interpreter.symbols();
@@ -67,7 +61,7 @@ pub(super) fn elaborate_patterned_arm_body(
         let mut symbols = symbols.borrow_mut();
         for capture in captures {
             symbols.mutable_variables.remove(&capture.id);
-            symbols.insert(capture.id, capture.committed.clone(), false);
+            symbols.insert_cell(capture.id, capture.committed.clone(), false);
             symbols
                 .dictionary
                 .borrow_mut()
@@ -76,7 +70,7 @@ pub(super) fn elaborate_patterned_arm_body(
     }
     let body_node_start = plan.len();
     plan.push_activation_registration_scope_with_sampled_cells(
-        pulse.reactive_root_cell_ids(),
+        vec![pulse.reactive_cell_id()],
         activation_scope_entry_cells(interpreter),
     );
     let body_result = (|| -> MResult<()> {
@@ -103,7 +97,7 @@ pub(super) fn elaborate_patterned_arm_body(
         let mut plan = plan.borrow_mut();
         for node in body_node_start..body_node_end {
             for capture in captures {
-                let cell = capture.committed.reactive_root_cell_ids()[0];
+                let cell = capture.committed.reactive_cell_id();
                 if !plan.add_sampled_dependency(node, cell) {
                     return Err(MechError::new(
                         ActivationPatternBodyDependencyInvariant,
@@ -118,9 +112,9 @@ pub(super) fn elaborate_patterned_arm_body(
 
 pub(super) struct Gate {
     pub(super) arm: usize,
-    pub(super) selected: Ref<usize>,
+    pub(super) selected: ValueCell,
     pub(super) captures: Vec<ActivationPatternCapture>,
-    pub(super) out: Ref<usize>,
+    pub(super) out: ValueCell,
 }
 
 impl MechFunctionImpl for Gate {
@@ -129,31 +123,43 @@ impl MechFunctionImpl for Gate {
     }
 
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        if *self.selected.borrow() == self.arm {
+        if super::captures::read_selected_arm(&self.selected)? == self.arm {
             commit_proposed_captures(&self.captures)?;
-            *self.out.borrow_mut() += 1;
+            super::captures::increment(&self.out)?;
             Ok(ReactiveSolveStatus::Changed)
         } else {
             Ok(ReactiveSolveStatus::Unchanged)
         }
     }
 
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Index(self.out.clone())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(&self.out))
     }
 
-    fn reactive_output_values(&self) -> Vec<LegacyValue> {
-        let mut outputs = vec![self.out()];
-        outputs.extend(
-            self.captures
-                .iter()
-                .map(|capture| capture.committed.clone()),
-        );
-        outputs
+    fn reactive_output_state_ports(&self) -> Option<Vec<FunctionStatePort<'_>>> {
+        Some(
+            std::iter::once(FunctionStatePort::from_cell(&self.out))
+                .chain(
+                    self.captures
+                        .iter()
+                        .map(|capture| FunctionStatePort::from_cell(&capture.committed)),
+                )
+                .collect(),
+        )
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        std::iter::once(self.out.clone())
+            .chain(
+                self.captures
+                    .iter()
+                    .map(|capture| capture.committed.clone()),
+            )
+            .collect()
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(self.reactive_output_state_ports())
     }
 
     fn to_string(&self) -> String {

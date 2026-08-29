@@ -5609,6 +5609,27 @@ fn validate_nullary_horizontal_concatenation(args: &FunctionArgs) -> MResult<()>
     Ok(())
 }
 
+#[cfg(feature = "row_vectord")]
+fn validate_nullary_horizontal_concatenation_canonical(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    let contract = "horizontal_concatenation_nullary";
+    if !inputs.is_empty() {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("expected no inputs, found {}", inputs.len()),
+        ));
+    }
+    match output.closed_schema_body()? {
+        SchemaBody::Matrix { .. } => Ok(()),
+        _ => Err(function_shape_contract_violation(
+            contract,
+            "output must be matrix-backed",
+        )),
+    }
+}
+
 macro_rules! declare_horzcat_scalar {
     (HorizontalConcatenateRD, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
         paste! {
@@ -5618,10 +5639,11 @@ macro_rules! declare_horzcat_scalar {
                 installer: [<install_horizontal_concatenate_r_d_ $token>],
                 name: concat!("HorizontalConcatenateRD<", $name, ">"),
                 factory_type: HorizontalConcatenateRD<$scalar>,
-                contract: RuntimeFunctionContract::custom(
+                contract: RuntimeFunctionContract::custom_with_canonical(
                     "horizontal_concatenation_nullary",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_nullary_horizontal_concatenation,
+                    validate_nullary_horizontal_concatenation_canonical,
                 ),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::install_horizontal_concatenate_r_d_", stringify!($token)),
@@ -6099,7 +6121,7 @@ impl CanonicalFunctionSpecializer for MatrixHorzCat {
         invocation: &SpecializationInvocation,
         _: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        ValueMatrixConcatenation::specialize(invocation, false)
+        ValueMatrixConcatenation::<false>::specialize(invocation)
     }
 }
 

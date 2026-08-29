@@ -1,26 +1,42 @@
-pub(super) use super::super::captures::{commit_capture_slot, detached};
+use super::super::captures::commit_capture_slot as commit_canonical_capture_slot;
 pub(super) use super::super::registers::Gate;
 pub(super) use super::super::{
     ActivationPatternCapture, Finalize, GuardFinalize, Matcher, ReactiveBindingSink, Select,
-    UnmatchedFinalize, create_capture_slot_for_kind,
+    UnmatchedFinalize, create_capture_slot_for_schema,
 };
 pub(super) use crate::patterns::PatternBindingSink;
 #[cfg(feature = "semantic-compiler")]
 pub(super) use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 pub(super) use crate::{
-    C64, CompiledPattern, Dictionary, FunctionExtensionEntry, FunctionSpecializer, GenericError,
-    Interpreter, LegacyValue, MResult, MechAtom, MechEnum, MechError, MechErrorKind, MechFunction,
+    C64, CompiledPattern, Dictionary, FloatWidth, FunctionExtensionEntry, FunctionSpecializer,
+    GenericError, Interpreter, LegacyValue, MResult, MechError, MechErrorKind, MechFunction,
     MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple, Pattern,
     PatternActivationRegistration, PatternBinding, PatternMatch, R64, ReactiveCellId,
     ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveRegisterCommit,
-    ReactiveTurnOutcome, Ref, SymbolTableSnapshot, ValueCell, ValueKind, hash_str,
+    ReactiveTurnOutcome, Ref, SchemaBody, SymbolTableSnapshot, ValueCell, ValueData, ValueKind,
+    hash_str,
 };
-pub(super) use mech_core::matrix::Matrix;
-pub(super) use std::collections::HashMap;
 pub(super) use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
 };
+
+pub(super) fn canonical_cell(value: LegacyValue) -> ValueCell {
+    ValueCell::new(value)
+}
+
+pub(super) fn assert_cell_eq(cell: &ValueCell, expected: LegacyValue) {
+    let expected = canonical_cell(expected);
+    assert!(
+        cell.snapshot_eq(&expected).unwrap(),
+        "canonical cell snapshots differ"
+    );
+}
+
+pub(super) fn commit_capture_slot(destination: &ValueCell, source: &LegacyValue) -> MResult<()> {
+    let source = mech_core::value_cell_from_legacy_function_value(source.clone());
+    commit_canonical_capture_slot(destination, &source)
+}
 
 pub(super) struct EagerGuardTestSpecializer {
     pub(super) compile_calls: Arc<AtomicUsize>,
@@ -59,18 +75,14 @@ impl MechFunctionImpl for FailingPatternRegister {
         self.stage_calls.fetch_add(1, Ordering::SeqCst);
         Err(MechError::new(PatternRegisterStageFailure, None))
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::F64(self.sink.clone())
-    }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         ReactiveNodeKind::Register
     }
+    fn primary_output_state_port(&self) -> Option<mech_core::FunctionStatePort<'_>> {
+        Some(mech_core::FunctionStatePort::from_ref(&self.sink))
+    }
     fn to_string(&self) -> String {
         "FailingPatternRegister".to_string()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "semantic-compiler")]
@@ -108,7 +120,8 @@ pub(super) fn install_function_extension(
     name: &str,
     specializer: Arc<dyn FunctionSpecializer>,
 ) {
-    let entry = FunctionExtensionEntry::new(name, specializer);
+    let entry =
+        FunctionExtensionEntry::new(name, mech_core::canonical_function_specializer(specializer));
     let extension = entry.id;
     let mut state = interpreter.state.borrow_mut();
     state.function_extensions.insert_or_replace(entry).unwrap();
@@ -159,14 +172,6 @@ pub(super) fn scalar_capture_cases() -> Vec<(ValueKind, LegacyValue)> {
         LegacyValue::String(Ref::new("captured".to_string())),
     ));
     cases.push((ValueKind::Index, LegacyValue::Index(Ref::new(42))));
-    #[cfg(feature = "atom")]
-    {
-        let atom = MechAtom::from_name("captured");
-        cases.push((
-            ValueKind::Atom(atom.id(), atom.name()),
-            LegacyValue::Atom(Ref::new(atom)),
-        ));
-    }
     cases
 }
 
@@ -196,7 +201,10 @@ pub(super) fn interpret(source: &str) -> Interpreter {
     interpreter
 }
 
-pub(super) fn interpret_more(interpreter: &mut Interpreter, source: &str) -> MResult<LegacyValue> {
+pub(super) fn interpret_more(
+    interpreter: &mut Interpreter,
+    source: &str,
+) -> MResult<Option<ValueCell>> {
     let tree = mech_syntax::parser::parse(source.trim_start()).unwrap();
     interpreter.interpret(&tree)
 }
@@ -209,22 +217,23 @@ pub(super) fn symbol_ref(interpreter: &Interpreter, name: &str) -> ValueCell {
         .unwrap_or_else(|| panic!("missing symbol `{name}`"))
 }
 pub(super) fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
-    symbol_ref(interpreter, name).borrow().clone()
+    mech_core::legacy_value_from_cell_compat(&symbol_ref(interpreter, name)).unwrap_or_else(
+        |error| panic!("cannot project symbol `{name}` for compatibility: {error:?}"),
+    )
 }
 pub(super) fn root_cell(interpreter: &Interpreter, name: &str) -> ReactiveCellId {
-    symbol(interpreter, name).reactive_root_cell_ids()[0]
+    symbol_ref(interpreter, name).reactive_cell_id()
 }
 pub(super) fn f64_symbol(interpreter: &Interpreter, name: &str) -> f64 {
-    *symbol(interpreter, name)
-        .as_f64()
-        .unwrap_or_else(|_| panic!("symbol `{name}` is not f64"))
-        .borrow()
+    let value = symbol_ref(interpreter, name).snapshot().unwrap();
+    let ValueData::F64(value) = value.data() else {
+        panic!("symbol `{name}` is not f64");
+    };
+    value.to_f64()
 }
 pub(super) fn set_f64_symbol(interpreter: &Interpreter, name: &str, value: f64) {
-    *symbol(interpreter, name)
-        .as_f64()
-        .unwrap_or_else(|_| panic!("symbol `{name}` is not f64"))
-        .borrow_mut() = value;
+    let replacement = ValueCell::from_exact(value).unwrap().snapshot().unwrap();
+    symbol_ref(interpreter, name).replace(&replacement).unwrap();
 }
 pub(super) fn registration(interpreter: &Interpreter) -> PatternActivationRegistration {
     let plan = interpreter.plan();
@@ -239,12 +248,20 @@ pub(super) fn node_output_for_cell(
 ) -> LegacyValue {
     let plan = interpreter.plan();
     let plan = plan.borrow();
-    plan.node(node)
+    let function = &plan
+        .node(node)
         .expect("missing activation dispatch node")
-        .function
-        .reactive_output_values()
+        .function;
+    let cells = function
+        .instance()
         .into_iter()
-        .find(|value| value.reactive_root_cell_ids().contains(&cell))
+        .map(|instance| instance.output().clone())
+        .chain(function.reactive_output_value_cells())
+        .collect::<Vec<_>>();
+    cells
+        .into_iter()
+        .find(|value| value.reactive_cell_id() == cell)
+        .map(|value| mech_core::legacy_value_from_cell_compat(&value).unwrap())
         .unwrap_or_else(|| panic!("node {node} does not expose cell {cell:?}"))
 }
 pub(super) fn committed_capture_value(
@@ -271,10 +288,11 @@ pub(super) fn proposed_capture_value(
     plan.node(arm.matcher_node)
         .expect("missing activation matcher")
         .function
-        .reactive_output_values()
+        .reactive_output_value_cells()
         .into_iter()
         .skip(1)
         .nth(capture)
+        .map(|cell| mech_core::legacy_value_from_cell_compat(&cell).unwrap())
         .expect("missing proposed capture output")
 }
 pub(super) fn arm_pulse_generation(interpreter: &Interpreter, arm: usize) -> usize {
@@ -286,7 +304,7 @@ pub(super) fn arm_pulse_generation(interpreter: &Interpreter, arm: usize) -> usi
         panic!("activation arm pulse is not an index")
     };
     let value = *generation.borrow();
-    value
+    value.saturating_sub(1)
 }
 pub(super) fn arm_register_nodes(
     interpreter: &Interpreter,
@@ -376,89 +394,130 @@ pub(super) fn body_output_f64(interpreter: &Interpreter, arm_index: usize) -> f6
     let plan = interpreter.plan();
     let plan = plan.borrow();
     for id in (arm.body_node_start..arm.body_node_end).rev() {
-        if let Ok(value) = plan.node(id).unwrap().function.out().as_f64() {
-            return *value.borrow();
+        let function = &plan.node(id).unwrap().function;
+        if let Some(instance) = function.instance() {
+            let snapshot = instance.output().snapshot().unwrap();
+            if let ValueData::F64(value) = snapshot.data() {
+                return value.to_f64();
+            }
+        } else {
+            for output in function.reactive_output_value_cells() {
+                if let ValueData::F64(value) = output.snapshot().unwrap().data() {
+                    return value.to_f64();
+                }
+            }
         }
     }
     panic!("no f64 output")
 }
-pub(super) fn body_output(interpreter: &Interpreter, arm_index: usize) -> LegacyValue {
+pub(super) fn body_output_cell(interpreter: &Interpreter, arm_index: usize) -> ValueCell {
     let registration = registration(interpreter);
     let arm = &registration.arms[arm_index];
     let plan = interpreter.plan();
     let plan = plan.borrow();
-    detached(
-        &plan
-            .node(arm.body_node_end - 1)
-            .expect("missing activation body node")
-            .function
-            .out(),
-    )
+    let function = &plan
+        .node(arm.body_node_end - 1)
+        .expect("missing activation body node")
+        .function;
+    if let Some(instance) = function.instance() {
+        return instance.output().clone();
+    }
+    function
+        .reactive_output_value_cells()
+        .into_iter()
+        .next()
+        .expect("activation body node has no canonical output")
+}
+pub(super) fn body_output(interpreter: &Interpreter, arm_index: usize) -> LegacyValue {
+    mech_core::legacy_value_from_cell_compat(&body_output_cell(interpreter, arm_index)).unwrap()
 }
 pub(super) fn set_enum_event(interpreter: &Interpreter, variant: &str, payload: f64) {
-    let LegacyValue::Enum(event) = symbol(interpreter, "event") else {
-        panic!("event is not an enum");
-    };
-    let enum_id = event.borrow().id;
-    let names = interpreter
+    let definition = interpreter
         .state
         .borrow()
         .enums
-        .get(&enum_id)
-        .expect("event enum definition is missing")
-        .names
-        .clone();
-    *event.borrow_mut() = MechEnum {
-        id: enum_id,
-        variants: vec![(hash_str(variant), Some(LegacyValue::F64(Ref::new(payload))))],
-        names,
-    };
+        .values()
+        .find(|definition| definition.variants.iter().any(|item| item.name == variant))
+        .cloned()
+        .expect("event enum definition is missing");
+    let ordinal = definition
+        .variants
+        .iter()
+        .position(|item| item.name == variant)
+        .expect("event enum variant is missing") as u32;
+    let payload = ValueCell::from_exact(payload)
+        .unwrap()
+        .snapshot()
+        .unwrap()
+        .canonical_data_draft()
+        .unwrap();
+    let replacement = ValueCell::from_schema_data(
+        crate::structures::enum_schema(&definition).unwrap(),
+        mech_core::snapshot::ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+            ordinal,
+            payload: Some(Box::new(payload)),
+        }),
+    )
+    .unwrap();
+    symbol_ref(interpreter, "event")
+        .replace(&replacement.snapshot().unwrap())
+        .unwrap();
 }
 pub(super) fn set_unit_enum_event(interpreter: &Interpreter, variant: &str) {
-    let event_value = symbol(interpreter, "event");
-    if let LegacyValue::Atom(event) = &event_value {
-        *event.borrow_mut() = MechAtom::from_name(variant);
-        return;
-    }
-    let LegacyValue::Enum(event) = event_value else {
-        panic!("event is neither an atom nor an enum");
-    };
-    let enum_id = event.borrow().id;
-    let names = interpreter
+    let definition = interpreter
         .state
         .borrow()
         .enums
-        .get(&enum_id)
-        .expect("event enum definition is missing")
-        .names
-        .clone();
-    *event.borrow_mut() = MechEnum {
-        id: enum_id,
-        variants: vec![(hash_str(variant), None)],
-        names,
-    };
+        .values()
+        .find(|definition| definition.variants.iter().any(|item| item.name == variant))
+        .cloned()
+        .expect("event enum definition is missing");
+    let ordinal = definition
+        .variants
+        .iter()
+        .position(|item| item.name == variant)
+        .expect("event enum variant is missing") as u32;
+    let replacement = ValueCell::from_schema_data(
+        crate::structures::enum_schema(&definition).unwrap(),
+        mech_core::snapshot::ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+            ordinal,
+            payload: None,
+        }),
+    )
+    .unwrap();
+    symbol_ref(interpreter, "event")
+        .replace(&replacement.snapshot().unwrap())
+        .unwrap();
 }
 pub(super) fn set_atom_tuple_event(interpreter: &Interpreter, tag: &str, payload: f64) {
-    let LegacyValue::Tuple(event) = symbol(interpreter, "event") else {
-        panic!("event is not tuple")
-    };
-    *event.borrow_mut() = MechTuple::from_vec(vec![
-        LegacyValue::Atom(Ref::new(MechAtom::from_name(tag))),
-        LegacyValue::F64(Ref::new(payload)),
-    ]);
+    set_enum_event(interpreter, tag, payload);
 }
 pub(super) fn set_tuple_event(interpreter: &Interpreter, values: Vec<LegacyValue>) {
-    let LegacyValue::Tuple(event) = symbol(interpreter, "event") else {
-        panic!("event is not tuple")
-    };
-    *event.borrow_mut() = MechTuple::from_vec(values);
+    let replacement = canonical_cell(LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))));
+    symbol_ref(interpreter, "event")
+        .replace(&replacement.snapshot().unwrap())
+        .unwrap();
 }
 #[cfg(all(feature = "matrix", feature = "f64"))]
 pub(super) fn set_f64_matrix_event(interpreter: &Interpreter, values: Vec<f64>) {
-    let LegacyValue::MatrixF64(event) = symbol(interpreter, "event") else {
-        panic!("event is not an f64 matrix")
-    };
-    event.set(values);
+    let columns = values.len() as u64;
+    let replacement = ValueCell::dynamic_matrix(
+        SchemaBody::FloatingPoint(FloatWidth::W64),
+        vec![1, columns].into_boxed_slice(),
+        values
+            .into_iter()
+            .map(|value| {
+                mech_core::snapshot::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(
+                    value,
+                ))
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+    )
+    .unwrap();
+    symbol_ref(interpreter, "event")
+        .replace(&replacement.snapshot().unwrap())
+        .unwrap();
 }
 pub(super) fn selected_arm_index(
     registration: &PatternActivationRegistration,
@@ -545,19 +604,20 @@ pub(super) fn load_enum_activation() -> (
     PlanSnapshot,
 ) {
     let interpreter = interpret(ENUM_ACTIVATION);
-    assert!(matches!(
-        symbol(&interpreter, "event"),
-        LegacyValue::Enum(_)
-    ));
-    let enum_id = match symbol(&interpreter, "event") {
-        LegacyValue::Enum(event) => event.borrow().id,
-        value => panic!("expected enum event, found {:?}", value.kind()),
+    let event_schema = symbol_ref(&interpreter, "event")
+        .closed_schema_body()
+        .unwrap();
+    let SchemaBody::Enum { .. } = &event_schema else {
+        panic!("expected canonical enum event, found {event_schema:?}");
     };
     let enum_definition = interpreter
         .state
         .borrow()
         .enums
-        .get(&enum_id)
+        .values()
+        .find(|definition| {
+            crate::structures::enum_schema(definition).is_ok_and(|schema| schema == event_schema)
+        })
         .cloned()
         .expect("event enum definition is missing");
     for variant in ["pressed", "released", "other"] {
@@ -565,7 +625,7 @@ pub(super) fn load_enum_activation() -> (
             enum_definition
                 .variants
                 .iter()
-                .any(|(variant_id, _)| *variant_id == hash_str(variant)),
+                .any(|item| item.id == hash_str(variant)),
             "missing enum variant `{variant}`"
         );
     }
@@ -574,8 +634,14 @@ pub(super) fn load_enum_activation() -> (
     assert_eq!(registration.arms.len(), 3);
     assert_eq!(registration.arms[0].captures.len(), 1);
     assert_eq!(registration.arms[1].captures.len(), 1);
-    assert_eq!(registration.arms[0].captures[0].kind, ValueKind::F64);
-    assert_eq!(registration.arms[1].captures[0].kind, ValueKind::F64);
+    assert_eq!(
+        registration.arms[0].captures[0].schema,
+        SchemaBody::FloatingPoint(FloatWidth::W64)
+    );
+    assert_eq!(
+        registration.arms[1].captures[0].schema,
+        SchemaBody::FloatingPoint(FloatWidth::W64)
+    );
     assert!(registration.arms[2].captures.is_empty());
     assert!(!interpreter.symbols().borrow().contains(hash_str("x")));
     assert!(
@@ -589,7 +655,8 @@ pub(super) fn load_enum_activation() -> (
 }
 
 pub(super) const ATOM_TUPLE_ACTIVATION: &str = r#"
-event := (:pressed, 0.0)
+<atom-event> := :pressed<f64> | :released<f64> | :other<f64>
+event<atom-event> := :pressed(0.0)
 ~> event
   | :pressed(x) => {
       selected := x + 0.0

@@ -1,24 +1,25 @@
 use crate::*;
-#[cfg(feature = "assign")]
+#[cfg(all(test, feature = "assign", feature = "semantic-compiler"))]
 pub fn compile_stable_value_update(
     sink: ValueCell,
     source: LegacyValue,
 ) -> MResult<Box<dyn MechFunction>> {
-    {
-        let current = sink.borrow();
-        validate_stable_value_update(&current, &source)?;
-    }
+    let current = sink.snapshot()?;
+    let source_value = source.to_canonical_value()?;
+    validate_stable_value_update(&current, &source_value)?;
 
-    crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink.legacy_ref()), source])
+    let source = ValueCell::from_snapshot(source_value)?;
+    Ok(crate::intrinsics::assign::canonical_stable_value_update(
+        sink, source,
+    ))
 }
-#[cfg(feature = "assign")]
+#[cfg(all(test, feature = "assign", feature = "semantic-compiler"))]
 pub fn apply_stable_value_update(sink: ValueCell, source: LegacyValue) -> MResult<LegacyValue> {
-    {
-        let current = sink.borrow();
-        validate_stable_value_update(&current, &source)?;
-    }
-    let update = crate::AssignValue {}
-        .specialize(&[LegacyValue::MutableReference(sink.legacy_ref()), source])?;
+    let current = sink.snapshot()?;
+    let source_value = source.to_canonical_value()?;
+    validate_stable_value_update(&current, &source_value)?;
+    let source = ValueCell::from_snapshot(source_value)?;
+    let update = crate::intrinsics::assign::canonical_stable_value_update(sink.clone(), source);
     update.solve_result()?;
     Ok(sink.borrow().clone())
 }
@@ -82,7 +83,7 @@ pub struct ProgramState {
     pub user_function_scope_depth: usize,
     #[cfg(feature = "functions")]
     pub compute_regions: Vec<ProgramComputeRegion>,
-    pub kinds: KindTable,
+    pub kinds: NamedSchemaTable,
     #[cfg(feature = "enum")]
     pub enums: EnumTable,
     #[cfg(feature = "invariant_define")]
@@ -138,7 +139,7 @@ impl ProgramState {
             user_function_scope_depth: 0,
             #[cfg(feature = "functions")]
             compute_regions: Vec::new(),
-            kinds: KindTable::default(),
+            kinds: NamedSchemaTable::default(),
             #[cfg(feature = "enum")]
             enums: EnumTable::new(),
             #[cfg(feature = "invariant_define")]
@@ -223,15 +224,9 @@ impl ProgramState {
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn save_symbol(
-        &self,
-        id: u64,
-        name: String,
-        value: LegacyValue,
-        mutable: bool,
-    ) -> ValueCell {
+    pub fn save_symbol(&self, id: u64, name: String, value: ValueCell, mutable: bool) -> ValueCell {
         let mut symbols_brrw = self.symbol_table.borrow_mut();
-        let val_ref = symbols_brrw.insert(id, value, mutable);
+        let val_ref = symbols_brrw.insert_cell(id, value, mutable);
         let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
         dict_brrw.insert(id, name);
         val_ref
@@ -242,12 +237,12 @@ impl ProgramState {
         &self,
         id: u64,
         name: String,
-        value: LegacyValue,
+        value: ValueCell,
         mutable: bool,
     ) -> ValueCell {
         if let Some(env) = &self.environment {
             let mut env_brrw = env.borrow_mut();
-            let val_ref = env_brrw.insert(id, value, mutable);
+            let val_ref = env_brrw.insert_cell(id, value, mutable);
             let mut dict_brrw = env_brrw.dictionary.borrow_mut();
             dict_brrw.insert(id, name);
             val_ref

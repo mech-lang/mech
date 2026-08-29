@@ -9,7 +9,7 @@ mod registers;
 
 use captures::{
     ActivationPatternCapture, ReactiveBindingSink, commit_proposed_captures,
-    create_capture_slot_for_kind, generation,
+    create_capture_slot_for_schema, generation,
 };
 use dispatch::{Finalize, MatchGate, Matcher, ScopePulse, Select, UnmatchedFinalize};
 use guards::{GuardFinalize, elaborate_patterned_arm_guard};

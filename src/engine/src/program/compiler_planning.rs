@@ -6,7 +6,7 @@ use std::sync::Arc;
 #[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{
-    ApplicationRequirement, FunctionSpecializer, LegacyValue, MResult, MechError, MechErrorKind,
+    ApplicationRequirement, CanonicalFunctionSpecializer, MResult, MechError, MechErrorKind,
     ResourceIntent, compare_application_requirements, hash_str, validate_application_requirement,
 };
 
@@ -232,7 +232,7 @@ impl CompilerPlanningProgram {
     pub fn register_function_extension(
         &mut self,
         name: impl Into<String>,
-        specializer: Arc<dyn FunctionSpecializer>,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> MResult<()> {
         let canonical_name = name.into();
         let entry = FunctionExtensionEntry::new(canonical_name.clone(), specializer);
@@ -254,7 +254,7 @@ impl CompilerPlanningProgram {
     pub fn register_native_closure(
         &mut self,
         name: impl Into<String>,
-        function: impl Fn(Vec<LegacyValue>) -> MResult<LegacyValue> + Send + Sync + 'static,
+        function: impl Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
     ) -> MResult<()> {
         let name = name.into();
 
@@ -271,7 +271,7 @@ impl CompilerPlanningProgram {
         &mut self,
         tree: &mech_core::Program,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<Option<ValueCell>> {
         self.interpreter.interpret_with_services(tree, services)
     }
 
@@ -285,14 +285,14 @@ impl CompilerPlanningProgram {
         &mut self,
         tree: &mech_core::Program,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<Option<ValueCell>> {
         let _persistent_user_function_plan =
             crate::function::PersistentUserFunctionPlanScope::enter(&self.interpreter);
         self.interpreter.interpret_with_services(tree, services)
     }
 
     #[cfg(test)]
-    pub(crate) fn plan_source_for_test(&mut self, source: &str) -> MResult<LegacyValue> {
+    pub(crate) fn plan_source_for_test(&mut self, source: &str) -> MResult<Option<ValueCell>> {
         let tree = mech_syntax::parser::parse(source.trim())?;
         let mut services = NoMechExecutionServices;
         self.plan_tree_with_services(&tree, &mut services)
@@ -301,7 +301,7 @@ impl CompilerPlanningProgram {
     /// Returns a host-inspection snapshot of a root symbol.
     ///
     /// Compiler ownership paths must use `compiler_root_symbol_cell` instead.
-    pub fn compiler_root_symbol_value(&self, name: &str) -> MResult<LegacyValue> {
+    pub fn compiler_root_symbol_value(&self, name: &str) -> MResult<Value> {
         let mut values = self.compiler_root_symbol_values(&[name])?;
         Ok(values.remove(0).1)
     }
@@ -309,10 +309,7 @@ impl CompilerPlanningProgram {
     /// Returns host-inspection snapshots of selected root symbols.
     ///
     /// These cloned values do not carry compiler register ownership.
-    pub fn compiler_root_symbol_values(
-        &self,
-        names: &[&str],
-    ) -> MResult<Vec<(String, LegacyValue)>> {
+    pub fn compiler_root_symbol_values(&self, names: &[&str]) -> MResult<Vec<(String, Value)>> {
         let symbols = self.interpreter.symbols();
         let symbols_brrw = symbols.borrow();
         let mut values = Vec::with_capacity(names.len());
@@ -326,24 +323,39 @@ impl CompilerPlanningProgram {
                     None,
                 ));
             };
-            values.push(((*name).to_string(), value_ref.borrow().clone()));
+            values.push(((*name).to_string(), value_ref.snapshot()?));
         }
         Ok(values)
     }
 
     /// Returns host-inspection snapshots of every root symbol.
-    pub fn compiler_root_symbol_values_all(&self) -> Vec<(String, LegacyValue)> {
+    pub fn compiler_root_symbol_values_all(&self) -> MResult<Vec<(String, Value)>> {
         let symbols = self.interpreter.symbols();
         let symbols_brrw = symbols.borrow();
-        let mut values = symbol_rows(&symbols_brrw, &[]);
+        let mut values = symbol_rows(&symbols_brrw, &[])?;
         values.sort_by(|left, right| left.0.cmp(&right.0));
-        values
+        Ok(values)
     }
 
     /// Returns the original compiler-owned cell for one root symbol.
     pub fn compiler_root_symbol_cell(&self, name: &str) -> MResult<ValueCell> {
         let mut cells = self.compiler_root_symbol_cells(&[name])?;
         Ok(cells.remove(0).1)
+    }
+
+    /// Returns the lexical root symbol that owns `cell`, when the program's
+    /// final expression is a direct symbol projection. This preserves the
+    /// source name when a multi-root compiler moves that projection into the
+    /// shared artifact program.
+    pub fn compiler_root_symbol_name_for_cell(&self, cell: &ValueCell) -> Option<String> {
+        let symbols = self.interpreter.symbols();
+        let symbols = symbols.borrow();
+        let mut names = symbol_cell_rows(&symbols, &[])
+            .into_iter()
+            .filter_map(|(name, candidate)| candidate.same_cell(cell).then_some(name))
+            .collect::<Vec<_>>();
+        names.sort();
+        names.into_iter().next()
     }
 
     /// Returns the original compiler-owned cells for selected root symbols.
@@ -369,7 +381,10 @@ impl CompilerPlanningProgram {
     /// Resolves stable formatted-document output addresses inside the
     /// short-lived compiler planner. Product runtimes only receive the
     /// resulting artifact output ordinals; the planner map never escapes.
-    pub fn compiler_document_output_values(&self, output_ids: &[u64]) -> MResult<Vec<LegacyValue>> {
+    pub fn compiler_document_output_cells(
+        &self,
+        output_ids: &[u64],
+    ) -> MResult<Vec<Option<ValueCell>>> {
         let outputs = self.interpreter.out_values.borrow();
         output_ids
             .iter()
@@ -389,19 +404,21 @@ impl CompilerPlanningProgram {
     /// Retains the observable result of one explicitly requested source root.
     /// Dependency-only planning never calls this method, so multi-root
     /// products publish each requested root exactly once in caller order.
-    pub fn publish_compiler_root_output(&mut self, value: LegacyValue) {
+    pub fn publish_compiler_root_output(&mut self, cell: ValueCell) {
         self.published_outputs.push(PublishedPlanningOutput {
             name: None,
-            source: CompilerValueSource::from_legacy(value),
+            source: CompilerValueSource::Cell(cell),
         });
     }
 
     /// Retain a document-addressed output whose ordinal is part of the host
     /// rendering contract, even when its register aliases a named symbol.
-    pub fn publish_compiler_document_output(&mut self, value: LegacyValue) {
+    pub fn publish_compiler_document_output(&mut self, cell: Option<ValueCell>) {
         self.published_outputs.push(PublishedPlanningOutput {
             name: None,
-            source: CompilerValueSource::from_legacy(value),
+            source: cell
+                .map(CompilerValueSource::Cell)
+                .unwrap_or(CompilerValueSource::Absent),
         });
     }
 
@@ -736,9 +753,9 @@ fn preserve_compiled_resource_send_operations(
 #[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 struct RetainedIntegrityMarkerMetadata {
     result: ValueCell,
-    name: LegacyValue,
-    expression: LegacyValue,
-    operator: LegacyValue,
+    name: ValueCell,
+    expression: ValueCell,
+    operator: Option<ValueCell>,
     lhs: Option<ValueCell>,
     rhs: Option<ValueCell>,
 }
@@ -836,27 +853,15 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
             let result_register =
                 mech_core::compile_value_cell_register(&constraint.result, &mut context)?;
             context.record_integrity_constraint(constraint.name.clone(), result_register)?;
-            let name = LegacyValue::String(Ref::new(constraint.name.clone()));
-            let expression = LegacyValue::String(Ref::new(constraint.expression.clone()));
+            let name = ValueCell::from_exact(constraint.name.clone())?;
+            let expression = ValueCell::from_exact(constraint.expression.clone())?;
             let operator = match &constraint.operator {
-                Some(FormulaOperator::Comparison(ComparisonOp::Equal)) => {
-                    LegacyValue::String(Ref::new("eq".to_owned()))
-                }
-                Some(FormulaOperator::Comparison(ComparisonOp::NotEqual)) => {
-                    LegacyValue::String(Ref::new("neq".to_owned()))
-                }
-                Some(FormulaOperator::Comparison(ComparisonOp::LessThan)) => {
-                    LegacyValue::String(Ref::new("lt".to_owned()))
-                }
-                Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)) => {
-                    LegacyValue::String(Ref::new("lte".to_owned()))
-                }
-                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => {
-                    LegacyValue::String(Ref::new("gt".to_owned()))
-                }
-                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual)) => {
-                    LegacyValue::String(Ref::new("gte".to_owned()))
-                }
+                Some(FormulaOperator::Comparison(ComparisonOp::Equal)) => Some("eq"),
+                Some(FormulaOperator::Comparison(ComparisonOp::NotEqual)) => Some("neq"),
+                Some(FormulaOperator::Comparison(ComparisonOp::LessThan)) => Some("lt"),
+                Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)) => Some("lte"),
+                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => Some("gt"),
+                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual)) => Some("gte"),
                 Some(other) => {
                     return Err(MechError::new(
                         BytecodeValidationError {
@@ -869,8 +874,10 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
                     )
                     .with_compiler_loc());
                 }
-                None => LegacyValue::Empty,
-            };
+                None => None,
+            }
+            .map(|operator| ValueCell::from_exact(operator.to_owned()))
+            .transpose()?;
             metadata.push(RetainedIntegrityMarkerMetadata {
                 result: constraint.result.clone(),
                 name,
@@ -886,27 +893,35 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     };
 
     #[cfg(feature = "invariant_define")]
-    let retained_integrity_marker_output =
-        (!retained_integrity_metadata.is_empty()).then(|| LegacyValue::Bool(Ref::new(false)));
+    let retained_integrity_marker_output = if retained_integrity_metadata.is_empty() {
+        None
+    } else {
+        Some(ValueCell::from_exact(false)?)
+    };
 
     #[cfg(feature = "invariant_define")]
     if let Some(marker_output) = retained_integrity_marker_output.as_ref() {
-        let marker_register = context.resolve_value_register(marker_output)?;
+        let marker_register = mech_core::compile_value_cell_register(marker_output, &mut context)?;
         for marker in &retained_integrity_metadata {
             let result = mech_core::compile_value_cell_register(&marker.result, &mut context)?;
             let lhs = match &marker.lhs {
                 Some(cell) => mech_core::compile_value_cell_register(cell, &mut context)?,
-                None => context.resolve_value_register(&LegacyValue::Empty)?,
+                None => mech_core::compile_absent_register(&mut context)?,
             };
             let rhs = match &marker.rhs {
                 Some(cell) => mech_core::compile_value_cell_register(cell, &mut context)?,
-                None => context.resolve_value_register(&LegacyValue::Empty)?,
+                None => mech_core::compile_absent_register(&mut context)?,
             };
             let metadata = vec![
                 result,
-                context.resolve_value_register(&marker.name)?,
-                context.resolve_value_register(&marker.expression)?,
-                context.resolve_value_register(&marker.operator)?,
+                mech_core::compile_value_cell_register(&marker.name, &mut context)?,
+                mech_core::compile_value_cell_register(&marker.expression, &mut context)?,
+                match &marker.operator {
+                    Some(operator) => {
+                        mech_core::compile_value_cell_register(operator, &mut context)?
+                    }
+                    None => mech_core::compile_absent_register(&mut context)?,
+                },
                 lhs,
                 rhs,
             ];
@@ -937,7 +952,10 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     // instruction normal source-node metadata instead of leaving it outside
     // the compiler's semantic plan boundary.
     context.begin_plan_node(CompiledNodeKind::Combinational)?;
-    let return_result = context.resolve_value_register(&program.interpreter.out);
+    let return_result = match &program.interpreter.out {
+        Some(cell) => mech_core::compile_value_cell_register(cell, &mut context),
+        None => mech_core::compile_absent_register(&mut context),
+    };
     context.end_plan_node();
     let return_register = return_result?;
     let bytecode = context.finish_program(return_register)?;
@@ -971,7 +989,7 @@ impl MechErrorKind for ProgramOutputNotFound {
 fn symbol_rows(
     symbol_table: &mech_core::SymbolTable,
     names: &[String],
-) -> Vec<(String, LegacyValue)> {
+) -> MResult<Vec<(String, Value)>> {
     let dictionary = symbol_table.dictionary.borrow();
     let mut rows = Vec::new();
 
@@ -980,8 +998,7 @@ fn symbol_rows(
             for (id, name) in dictionary.iter() {
                 if name == target_name {
                     if let Some(value_ref) = symbol_table.symbols.get(id) {
-                        let value = value_ref.borrow();
-                        rows.push((name.clone(), value.clone()));
+                        rows.push((name.clone(), value_ref.snapshot()?));
                     }
                     break;
                 }
@@ -990,13 +1007,12 @@ fn symbol_rows(
     } else {
         for (id, value_ref) in symbol_table.symbols.iter() {
             if let Some(name) = dictionary.get(id) {
-                let value = value_ref.borrow();
-                rows.push((name.clone(), value.clone()));
+                rows.push((name.clone(), value_ref.snapshot()?));
             }
         }
     }
 
-    rows
+    Ok(rows)
 }
 
 fn symbol_cell_rows(
@@ -1041,8 +1057,6 @@ mod tests {
     use super::*;
     #[cfg(feature = "functions")]
     use mech_core::FunctionCatalogBuilder;
-    #[cfg(feature = "native")]
-    use mech_core::Ref;
     #[cfg(all(
         feature = "semantic-compiler",
         feature = "source",
@@ -1076,7 +1090,7 @@ mod tests {
         let extension_count = program.interpreter.state.borrow().function_extensions.len();
 
         let error = program
-            .register_native_closure("", |_| Ok(LegacyValue::Empty))
+            .register_native_closure("", |_| Ok(ValueCell::unit().snapshot().unwrap()))
             .unwrap_err();
         assert_eq!(error.kind_name(), "FunctionExtensionInvalidEntry");
         assert_eq!(
@@ -1095,7 +1109,9 @@ mod tests {
     fn native_closure_bytecode_rejection_remains_structured() {
         let mut program = test_mech_program(CompilerPlanningConfig::default());
         program
-            .register_native_closure("host/source-only", |_| Ok(LegacyValue::F64(Ref::new(4.0))))
+            .register_native_closure("host/source-only", |_| {
+                ValueCell::from_exact(4.0_f64)?.snapshot()
+            })
             .unwrap();
         program
             .plan_source_for_test("source-only := host/source-only()")
@@ -1169,13 +1185,12 @@ mod tests {
             .unwrap();
         assert!(descriptor.lhs.as_ref().unwrap().same_cell(&target));
         assert!(descriptor.rhs.is_some());
-        if let LegacyValue::F64(value) = &*target.borrow() {
-            *value.borrow_mut() = 3.0;
-        } else {
-            panic!("target must be f64");
-        }
-        if let LegacyValue::F64(value) = &*descriptor.lhs.unwrap().borrow() {
-            assert_eq!(*value.borrow(), 3.0);
+        target
+            .replace(&ValueCell::from_exact(3.0_f64).unwrap().snapshot().unwrap())
+            .unwrap();
+        let lhs = descriptor.lhs.unwrap().snapshot().unwrap();
+        if let ValueData::F64(value) = lhs.data() {
+            assert_eq!(value.to_f64(), 3.0);
         } else {
             panic!("captured lhs must remain the target cell");
         }
@@ -1250,8 +1265,8 @@ mod tests {
                 let constant = constant_registers
                     .get(&register)
                     .expect("marker String metadata must be loaded from a constant");
-                match &constants[*constant as usize] {
-                    LegacyValue::String(value) => value.borrow().clone(),
+                match constants[*constant as usize].data() {
+                    mech_core::ValueData::String(value) => value.to_string(),
                     other => {
                         panic!("marker metadata register {register} must be String, got {other:?}")
                     }
@@ -1521,9 +1536,8 @@ mod live_input_tests {
             sink.clone(),
             LegacyValue::Typed(Box::new(LegacyValue::F64(Ref::new(9.0))), ValueKind::String),
         );
-        assert!(
-            format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
-        );
+        let error = result.unwrap_err();
+        assert_eq!(error.kind_name(), "LegacySnapshotError");
 
         assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
@@ -1543,7 +1557,7 @@ mod live_input_tests {
 
     #[cfg(feature = "f64")]
     #[test]
-    fn stable_value_update_rejects_typed_to_untyped() {
+    fn stable_value_update_preserves_legacy_annotation_for_canonical_scalar_source() {
         let sink = ValueCell::new(LegacyValue::Typed(
             Box::new(LegacyValue::F64(Ref::new(1.0))),
             ValueKind::F64,
@@ -1556,10 +1570,7 @@ mod live_input_tests {
             other => panic!("expected typed value, got {other:?}"),
         };
 
-        let result = apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(9.0)));
-        assert!(
-            format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
-        );
+        apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(9.0))).unwrap();
 
         match &*sink.borrow() {
             LegacyValue::Typed(inner, annotation) => {
@@ -1567,7 +1578,7 @@ mod live_input_tests {
                 match inner.as_ref() {
                     LegacyValue::F64(value) => {
                         assert_eq!(inner_pointer, value.as_ptr());
-                        assert_eq!(*value.borrow(), 1.0);
+                        assert_eq!(*value.borrow(), 9.0);
                     }
                     other => panic!("expected typed f64 inner, got {other:?}"),
                 }
@@ -1578,24 +1589,31 @@ mod live_input_tests {
 
     #[cfg(feature = "semantic-compiler")]
     #[test]
-    fn empty_stable_assignment_bytecode_compile_returns_error() {
-        let assignment =
-            compile_stable_value_update(ValueCell::new(LegacyValue::Empty), LegacyValue::Empty)
-                .unwrap();
-        let mut ctx = CompileCtx::new();
-        let error = assignment.compile(&mut ctx).unwrap_err();
-        let rendered = format!("{error:?}");
-        assert!(
-            rendered.contains("EmptyAssignmentNotBytecodeCompilable"),
-            "{rendered}"
-        );
+    fn source_absence_cannot_be_compiled_as_a_stable_value_cell() {
+        let error = match compile_stable_value_update(
+            ValueCell::new(LegacyValue::Empty),
+            LegacyValue::Empty,
+        ) {
+            Err(error) => error,
+            Ok(_) => panic!("source absence unexpectedly compiled as stable state"),
+        };
+        assert_eq!(error.kind_name(), "SemanticModelError");
     }
 
     #[test]
-    fn stable_value_update_accepts_empty_to_empty() {
+    fn source_absence_is_not_a_stable_runtime_value() {
         let sink = ValueCell::new(LegacyValue::Empty);
-        compile_stable_value_update(sink.clone(), LegacyValue::Empty).unwrap();
-        apply_stable_value_update(sink.clone(), LegacyValue::Empty).unwrap();
+        let compile_error = match compile_stable_value_update(sink.clone(), LegacyValue::Empty) {
+            Err(error) => error,
+            Ok(_) => panic!("source absence unexpectedly compiled as stable state"),
+        };
+        assert_eq!(compile_error.kind_name(), "SemanticModelError");
+        assert_eq!(
+            apply_stable_value_update(sink.clone(), LegacyValue::Empty)
+                .unwrap_err()
+                .kind_name(),
+            "SemanticModelError"
+        );
         assert_eq!(&*sink.borrow(), &LegacyValue::Empty);
     }
 
@@ -1603,10 +1621,9 @@ mod live_input_tests {
     #[test]
     fn stable_value_update_rejects_empty_to_value() {
         let sink = ValueCell::new(LegacyValue::Empty);
-        let result = apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(1.0)));
-        assert!(
-            format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
-        );
+        let error =
+            apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(1.0))).unwrap_err();
+        assert_eq!(error.kind_name(), "SemanticModelError");
         assert_eq!(&*sink.borrow(), &LegacyValue::Empty);
     }
 
@@ -1753,11 +1770,6 @@ mod live_input_tests {
                 )],
             )))
         };
-        let set = |value| {
-            LegacyValue::Set(Ref::new(mech_core::MechSet::from_vec(vec![
-                LegacyValue::F64(Ref::new(value)),
-            ])))
-        };
         let table = |value| {
             LegacyValue::Table(Ref::new(
                 mech_core::MechTable::from_records(vec![mech_core::MechRecord::new(vec![(
@@ -1807,7 +1819,6 @@ mod live_input_tests {
         for (current, incoming) in [
             (record(1.0), record(2.0)),
             (map(1.0), map(2.0)),
-            (set(1.0), set(2.0)),
             (table(1.0), table(2.0)),
             (tuple(1.0), tuple(2.0)),
         ] {
@@ -1863,9 +1874,9 @@ mod live_input_tests {
 mod root_symbol_snapshot_tests {
     use super::*;
 
-    fn f64_value(value: &LegacyValue) -> f64 {
-        match value {
-            LegacyValue::F64(value) => *value.borrow(),
+    fn f64_value(value: &Value) -> f64 {
+        match value.data() {
+            ValueData::F64(value) => value.to_f64(),
             other => panic!("expected f64, got {other:?}"),
         }
     }
@@ -1916,7 +1927,7 @@ mod root_symbol_snapshot_tests {
     #[test]
     fn root_symbol_publication_retains_cells_and_lexical_aliases() {
         let mut program = test_mech_program(CompilerPlanningConfig::default());
-        let shared = ValueCell::new(LegacyValue::F64(Ref::new(7.0)));
+        let shared = ValueCell::from_exact(7.0_f64).unwrap();
         program
             .install_compiler_symbol("left", shared.clone())
             .unwrap();
@@ -1934,7 +1945,7 @@ mod root_symbol_snapshot_tests {
         assert_eq!(alias_outputs.len(), 2);
         for output in alias_outputs {
             let CompilerValueSource::Cell(cell) = &output.source else {
-                panic!("root symbols must publish explicit cells")
+                panic!("root symbols always retain canonical cells")
             };
             assert!(cell.same_cell(&shared));
         }
@@ -1970,19 +1981,20 @@ mod root_symbol_snapshot_tests {
         let result = program
             .plan_source_for_test("answer := optional\nanswer")
             .unwrap();
-        let LegacyValue::MutableReference(result_reference) = &result else {
-            panic!("a later symbol read must return its mutable cell")
-        };
-        let result_cell = ValueCell::from_legacy_ref(result_reference.clone());
-        let payload = result_cell.borrow();
-        let LegacyValue::Typed(inner, annotation) = &*payload else {
+        let result_cell = program
+            .interpreter
+            .symbols()
+            .borrow()
+            .get(hash_str("answer"))
+            .expect("the later declaration retains an explicit value cell");
+        let payload = mech_core::legacy_value_from_cell_compat(&result_cell).unwrap();
+        let LegacyValue::Typed(inner, annotation) = &payload else {
             panic!("the later symbol read must retain its typed payload")
         };
         assert_eq!(annotation, &ValueKind::Option(Box::new(ValueKind::F64)));
         assert!(matches!(inner.as_ref(), LegacyValue::F64(_)));
-        drop(payload);
 
-        program.publish_compiler_root_output(result);
+        program.publish_compiler_root_output(result.expect("source returns the answer cell"));
         let compiled = compile_bytecode(&mut program).unwrap();
 
         assert_eq!(compiled.published_outputs.len(), 1);
@@ -2003,9 +2015,41 @@ mod root_symbol_snapshot_tests {
         program
             .plan_source_for_test("c := 3.0\na := 1.0\nb := 2.0")
             .unwrap();
-        let rows = program.compiler_root_symbol_values_all();
+        let rows = program.compiler_root_symbol_values_all().unwrap();
         let names: Vec<_> = rows.iter().map(|(name, _)| name.as_str()).collect();
         assert_eq!(names, vec!["a", "ans", "b", "c"]);
+    }
+
+    #[cfg(all(
+        feature = "semantic-compiler",
+        feature = "source",
+        feature = "table",
+        feature = "record",
+        feature = "kind_annotation",
+        feature = "string",
+        feature = "f64"
+    ))]
+    #[test]
+    fn dynamic_table_columns_compile_inside_records_without_schema_id_collisions() -> MResult<()> {
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program
+            .plan_source_for_test(
+                r#"
+scene :=
+  | fill<*> stroke<*> |
+  | "none"  4.0       |
+  | 3.0     "none"    |
+"#,
+            )
+            .expect("dynamic table source planning succeeds");
+        let result = program
+            .plan_source_for_test("presentation := { circles: scene }\npresentation")
+            .expect("record source planning succeeds");
+        program.publish_compiler_root_output(result.expect("source returns the presentation"));
+
+        let artifact = program.compile_program_artifact()?;
+        assert_eq!(artifact.outputs().len(), 1);
+        Ok(())
     }
 
     #[test]

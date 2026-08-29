@@ -2,16 +2,18 @@
 
 use std::sync::{Arc, LazyLock};
 
-use mech_core::matrix::Matrix as RuntimeMatrix;
+use mech_core::snapshot::F64Bits;
 use mech_core::{
-    AccessMode, AliasPolicy, BytecodeCompilerContext, ChangeDetectionPolicy, CompileConst,
-    DeliveryMode, ExternalInteraction, FunctionArgs, FunctionCatalog, FunctionCatalogBuilder,
-    FunctionExport, FunctionExposure, FunctionRuntimeType, FunctionSpecializer,
-    GuardFunctionSafety, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
-    MechErrorKind, MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
-    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ReactiveNodeKind, Ref,
-    Register, RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
-    ShapeRule, compile_runtime_produced_register, compile_value_register,
+    AccessMode, AliasPolicy, BytecodeCompilerContext, CanonicalFunctionSpecializer,
+    ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExternalInteraction, FunctionCatalog,
+    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionInstance, FunctionInvocation,
+    FunctionRuntimeType, FunctionStatePort, GuardFunctionSafety, InputPortLayout, InputPortPolicy,
+    MResult, MechError, MechErrorKind, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+    MechFunctionImpl, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
+    ReactiveNodeKind, Ref, Register, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy, SchemaBody, ShapeRule, SpecializationContext,
+    SpecializationInvocation, SpecializedFunction, ValueCell, ValueData, ValueDataDraft,
+    compile_runtime_produced_value_cell_register_with_seed, compile_value_cell_register,
     function_shape_contract_violation,
 };
 use nalgebra::{DMatrix, DVector};
@@ -125,17 +127,29 @@ pub(crate) struct FrozenEkfSpecializer {
     operation: FrozenEkfOperation,
 }
 
-impl FunctionSpecializer for FrozenEkfSpecializer {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        validate_source_arguments(self.operation, arguments)?;
+impl CanonicalFunctionSpecializer for FrozenEkfSpecializer {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        let inputs = invocation
+            .inputs()
+            .iter()
+            .map(|input| input.cell().cloned())
+            .collect::<MResult<Vec<_>>>()?;
+        validate_source_arguments(self.operation, &inputs)?;
+        let output = allocate_output(operation_spec(self.operation).output)?;
         let function = FrozenEkfFunction {
             operation: self.operation,
-            arguments: arguments.to_vec().into_boxed_slice(),
-            compile_arguments: frozen_compile_arguments(arguments),
-            output: allocate_output(operation_spec(self.operation).output),
+            inputs: inputs.clone().into_boxed_slice(),
+            output: output.clone(),
         };
         function.solve_result()?;
-        Ok(Box::new(function))
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            Box::new(function),
+            invocation_from_cells(output, inputs.into_boxed_slice()),
+        )))
     }
 
     fn guard_safety(&self) -> GuardFunctionSafety {
@@ -146,18 +160,18 @@ impl FunctionSpecializer for FrozenEkfSpecializer {
 #[derive(Debug)]
 pub(crate) struct FrozenEkfFunction {
     operation: FrozenEkfOperation,
-    arguments: Box<[LegacyValue]>,
-    compile_arguments: Box<[LegacyValue]>,
-    output: LegacyValue,
+    inputs: Box<[ValueCell]>,
+    output: ValueCell,
 }
 
 impl MechFunctionImpl for FrozenEkfFunction {
     fn solve_result(&self) -> MResult<()> {
-        evaluate_into(self.operation, &self.arguments, &self.output)
+        validate_operation_cells(self.operation, &self.output, &self.inputs)?;
+        evaluate_into(self.operation, &self.inputs, &self.output)
     }
 
-    fn out(&self) -> LegacyValue {
-        self.output.clone()
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(&self.output))
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -168,36 +182,26 @@ impl MechFunctionImpl for FrozenEkfFunction {
         ReactiveNodeKind::Combinational
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
-
     fn to_string(&self) -> String {
         operation_spec(self.operation).canonical_name.to_owned()
     }
 }
 
 impl MechFunctionCompiler for FrozenEkfFunction {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        std::iter::once(self.output.clone())
+            .chain(self.inputs.iter().cloned())
+            .collect()
+    }
+
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let zero = allocate_output(operation_spec(self.operation).output)?.snapshot()?;
         let destination =
-            compile_runtime_produced_register(&self.output, self.output.addr(), context)?;
-        let output_seed = match operation_spec(self.operation).output {
-            FrozenEkfValueShape::F64 => LegacyValue::F64(Ref::new(0.0)),
-            FrozenEkfValueShape::Bool => LegacyValue::Bool(Ref::new(false)),
-            FrozenEkfValueShape::Vector(rows) => {
-                LegacyValue::MatrixF64(RuntimeMatrix::DVector(Ref::new(DVector::zeros(rows))))
-            }
-            FrozenEkfValueShape::Matrix { rows, columns } => LegacyValue::MatrixF64(
-                RuntimeMatrix::DMatrix(Ref::new(DMatrix::zeros(rows, columns))),
-            ),
-        };
-        let output_seed = output_seed.compile_const(context)?;
-        context.record_register_constant_metadata(destination, output_seed)?;
-        context.emit_const_load(destination, output_seed);
+            compile_runtime_produced_value_cell_register_with_seed(&self.output, &zero, context)?;
         let inputs = self
-            .compile_arguments
+            .inputs
             .iter()
-            .map(|argument| compile_value_register(argument, argument.addr(), context))
+            .map(|argument| compile_value_cell_register(argument, context))
             .collect::<MResult<Vec<_>>>()?;
         let function = context.function_id(operation_spec(self.operation).canonical_name)?;
         match inputs.as_slice() {
@@ -211,33 +215,42 @@ impl MechFunctionCompiler for FrozenEkfFunction {
     }
 }
 
-fn frozen_compile_argument(value: &LegacyValue) -> LegacyValue {
-    match value {
-        LegacyValue::Typed(value, _) => frozen_compile_argument(value),
-        LegacyValue::MutableReference(value) => frozen_compile_argument(&value.borrow()),
-        LegacyValue::F64(value) => LegacyValue::F64(Ref::new(*value.borrow())),
-        _ => value.clone(),
+fn invocation_from_cells(output: ValueCell, inputs: Box<[ValueCell]>) -> FunctionInvocation {
+    match inputs.into_vec() {
+        inputs if inputs.len() == 1 => FunctionInvocation::unary(output, inputs[0].clone()),
+        inputs if inputs.len() == 2 => {
+            FunctionInvocation::binary(output, inputs[0].clone(), inputs[1].clone())
+        }
+        inputs if inputs.len() == 3 => FunctionInvocation::ternary(
+            output,
+            inputs[0].clone(),
+            inputs[1].clone(),
+            inputs[2].clone(),
+        ),
+        inputs if inputs.len() == 4 => FunctionInvocation::quaternary(
+            output,
+            inputs[0].clone(),
+            inputs[1].clone(),
+            inputs[2].clone(),
+            inputs[3].clone(),
+        ),
+        inputs => FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
     }
-}
-
-fn frozen_compile_arguments(arguments: &[LegacyValue]) -> Box<[LegacyValue]> {
-    arguments
-        .iter()
-        .map(frozen_compile_argument)
-        .collect::<Vec<_>>()
-        .into_boxed_slice()
 }
 
 fn instantiate(
     operation: FrozenEkfOperation,
-    arguments: FunctionArgs,
+    invocation: FunctionInvocation,
 ) -> MResult<Box<dyn MechFunction>> {
-    let input_values = arguments.input_values();
+    validate_operation_cells(
+        operation,
+        invocation.output_cell(),
+        invocation.input_cells(),
+    )?;
     Ok(Box::new(FrozenEkfFunction {
         operation,
-        compile_arguments: frozen_compile_arguments(&input_values),
-        arguments: input_values.into_boxed_slice(),
-        output: arguments.output_value().clone(),
+        inputs: invocation.input_cells().to_vec().into_boxed_slice(),
+        output: invocation.output_cell().clone(),
     }))
 }
 
@@ -249,12 +262,17 @@ macro_rules! factory {
                 <$output as FunctionRuntimeType>::REPRESENTATION,
                 <$a as FunctionRuntimeType>::REPRESENTATION,
             );
-            fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                instantiate($operation, arguments)
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                instantiate($operation, invocation)
             }
         }
-        fn $validator(arguments: &FunctionArgs) -> MResult<()> {
-            validate_runtime_shapes($operation, arguments)
+        fn $validator(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+            validate_operation_cells($operation, output, inputs).map_err(|error| {
+                function_shape_contract_violation(
+                    operation_spec($operation).canonical_name,
+                    error.simple_message(),
+                )
+            })
         }
     };
     ($factory:ident, $validator:ident, $operation:expr, binary, $output:ty, [$a:ty, $b:ty]) => {
@@ -265,12 +283,17 @@ macro_rules! factory {
                 <$a as FunctionRuntimeType>::REPRESENTATION,
                 <$b as FunctionRuntimeType>::REPRESENTATION,
             );
-            fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                instantiate($operation, arguments)
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                instantiate($operation, invocation)
             }
         }
-        fn $validator(arguments: &FunctionArgs) -> MResult<()> {
-            validate_runtime_shapes($operation, arguments)
+        fn $validator(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+            validate_operation_cells($operation, output, inputs).map_err(|error| {
+                function_shape_contract_violation(
+                    operation_spec($operation).canonical_name,
+                    error.simple_message(),
+                )
+            })
         }
     };
     ($factory:ident, $validator:ident, $operation:expr, ternary, $output:ty, [$a:ty, $b:ty, $c:ty]) => {
@@ -282,12 +305,17 @@ macro_rules! factory {
                 <$b as FunctionRuntimeType>::REPRESENTATION,
                 <$c as FunctionRuntimeType>::REPRESENTATION,
             );
-            fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                instantiate($operation, arguments)
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                instantiate($operation, invocation)
             }
         }
-        fn $validator(arguments: &FunctionArgs) -> MResult<()> {
-            validate_runtime_shapes($operation, arguments)
+        fn $validator(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+            validate_operation_cells($operation, output, inputs).map_err(|error| {
+                function_shape_contract_violation(
+                    operation_spec($operation).canonical_name,
+                    error.simple_message(),
+                )
+            })
         }
     };
     ($factory:ident, $validator:ident, $operation:expr, quaternary, $output:ty, [$a:ty, $b:ty, $c:ty, $d:ty]) => {
@@ -300,12 +328,17 @@ macro_rules! factory {
                 <$c as FunctionRuntimeType>::REPRESENTATION,
                 <$d as FunctionRuntimeType>::REPRESENTATION,
             );
-            fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                instantiate($operation, arguments)
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                instantiate($operation, invocation)
             }
         }
-        fn $validator(arguments: &FunctionArgs) -> MResult<()> {
-            validate_runtime_shapes($operation, arguments)
+        fn $validator(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+            validate_operation_cells($operation, output, inputs).map_err(|error| {
+                function_shape_contract_violation(
+                    operation_spec($operation).canonical_name,
+                    error.simple_message(),
+                )
+            })
         }
     };
 }
@@ -375,60 +408,12 @@ factory!(
     [DMatrix<f64>]
 );
 
-fn runtime_registration(
-    operation: FrozenEkfOperation,
-) -> (
-    RuntimeFunctionSignature,
-    fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>,
-    fn(&FunctionArgs) -> MResult<()>,
-) {
-    macro_rules! entry {
-        ($factory:ty, $validator:ident) => {
-            (<$factory>::SIGNATURE, <$factory>::new, $validator)
-        };
-    }
-    match operation {
-        Kernel(TrigonometricState) => entry!(TrigFactory, validate_trig),
-        Kernel(MotionJacobian) => entry!(MotionFactory, validate_motion),
-        Kernel(ControlJacobian) => entry!(ControlFactory, validate_control),
-        Kernel(PredictedState) => entry!(PredictedStateFactory, validate_predicted_state),
-        Kernel(PredictedCovariance) => {
-            entry!(PredictedCovarianceFactory, validate_predicted_covariance)
-        }
-        Kernel(LandmarkDeltaAndRange) => entry!(LandmarkFactory, validate_landmark),
-        Kernel(PredictedMeasurement) => entry!(MeasurementFactory, validate_measurement),
-        Kernel(MeasurementJacobian) => {
-            entry!(MeasurementJacobianFactory, validate_measurement_jacobian)
-        }
-        Kernel(InnovationCovariance) => {
-            entry!(InnovationCovarianceFactory, validate_innovation_covariance)
-        }
-        Kernel(Solve2x2) => entry!(SolveFactory, validate_solve),
-        Kernel(KalmanGain) => entry!(GainFactory, validate_gain),
-        Kernel(Innovation) => entry!(InnovationFactory, validate_innovation),
-        Kernel(CorrectedState) => entry!(CorrectedStateFactory, validate_corrected_state),
-        Kernel(JosephCovarianceUpdate) => entry!(JosephFactory, validate_joseph),
-        Kernel(CovarianceSymmetrization) => entry!(SymmetrizationFactory, validate_symmetrization),
-        Predicate(CandidateFinite) => entry!(FiniteFactory, validate_finite),
-        Predicate(CovariancePositiveDiagonal) => entry!(PositiveFactory, validate_positive),
-        Predicate(CovarianceSymmetric) => entry!(SymmetricFactory, validate_symmetric),
-    }
-}
-
-// Builder registration requires factory types at compile time, so keep the
-// ordered calls derived from the single operation table and assert alignment.
 macro_rules! register {
     ($builder:expr, $index:expr, $factory:ty, $validator:ident) => {{
         let spec = &FROZEN_EKF_OPERATIONS[$index];
-        let (signature, _, validator) = runtime_registration(spec.operation);
-        debug_assert_eq!(signature, <$factory>::SIGNATURE);
-        debug_assert!(std::ptr::fn_addr_eq(
-            validator,
-            $validator as fn(&FunctionArgs) -> MResult<()>,
-        ));
         $builder.insert_runtime_factory_with_semantic_contract::<$factory>(
             spec.canonical_name,
-            RuntimeFunctionContract::custom(
+            RuntimeFunctionContract::canonical_custom(
                 spec.canonical_name,
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
                 $validator,
@@ -477,7 +462,7 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 
 pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     for spec in FROZEN_EKF_OPERATIONS {
-        let operation = builder.insert_specializer(
+        let operation = builder.insert_canonical_specializer(
             spec.canonical_name,
             Arc::new(FrozenEkfSpecializer {
                 operation: spec.operation,
@@ -491,7 +476,8 @@ pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()
             exposure: FunctionExposure::ModuleOnly,
         })?;
     }
-    let negate = builder.insert_specializer("math/neg", Arc::new(FrozenF64NegateSpecializer))?;
+    let negate =
+        builder.insert_canonical_specializer("math/neg", Arc::new(FrozenF64NegateSpecializer))?;
     builder.insert_export(FunctionExport {
         operation: negate,
         canonical_name: "math/neg".to_owned(),
@@ -504,9 +490,13 @@ pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()
 
 struct FrozenF64NegateSpecializer;
 
-impl FunctionSpecializer for FrozenF64NegateSpecializer {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        let [argument] = arguments else {
+impl CanonicalFunctionSpecializer for FrozenF64NegateSpecializer {
+    fn specialize_invocation(
+        &self,
+        arguments: &SpecializationInvocation,
+        _: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if arguments.len() != 1 {
             return Err(MechError::new(
                 mech_core::IncorrectNumberOfArguments {
                     expected: 1,
@@ -515,28 +505,26 @@ impl FunctionSpecializer for FrozenF64NegateSpecializer {
                 None,
             )
             .with_compiler_loc());
+        }
+        let input = arguments
+            .input(0)
+            .expect("unary negation input")
+            .cell()?
+            .clone();
+        let snapshot = input.snapshot()?;
+        let ValueData::F64(value) = snapshot.data() else {
+            return Err(function_shape_contract_violation(
+                "math/neg",
+                "frozen source literal negation requires f64",
+            ));
         };
-        let value = match argument {
-            LegacyValue::F64(value) => -*value.borrow(),
-            LegacyValue::Typed(value, _) => match value.as_ref() {
-                LegacyValue::F64(value) => -*value.borrow(),
-                _ => {
-                    return Err(function_shape_contract_violation(
-                        "math/neg",
-                        "frozen source literal negation requires f64",
-                    ));
-                }
-            },
-            _ => {
-                return Err(function_shape_contract_violation(
-                    "math/neg",
-                    "frozen source literal negation requires f64",
-                ));
-            }
-        };
-        Ok(Box::new(FrozenF64NegateFunction {
-            output: Ref::new(value),
-        }))
+        let output = ValueCell::from_exact(-value.to_f64())?;
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            Box::new(FrozenF64NegateFunction {
+                output: output.clone(),
+            }),
+            FunctionInvocation::unary(output, input),
+        )))
     }
 
     fn guard_safety(&self) -> GuardFunctionSafety {
@@ -546,7 +534,7 @@ impl FunctionSpecializer for FrozenF64NegateSpecializer {
 
 #[derive(Debug)]
 struct FrozenF64NegateFunction {
-    output: Ref<f64>,
+    output: ValueCell,
 }
 
 impl MechFunctionImpl for FrozenF64NegateFunction {
@@ -554,12 +542,8 @@ impl MechFunctionImpl for FrozenF64NegateFunction {
         Ok(())
     }
 
-    fn out(&self) -> LegacyValue {
-        LegacyValue::F64(self.output.clone())
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(&self.output))
     }
 
     fn to_string(&self) -> String {
@@ -568,9 +552,12 @@ impl MechFunctionImpl for FrozenF64NegateFunction {
 }
 
 impl MechFunctionCompiler for FrozenF64NegateFunction {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = LegacyValue::F64(self.output.clone());
-        compile_value_register(&output, self.output.addr(), context)
+        compile_value_cell_register(&self.output, context)
     }
 }
 
@@ -586,30 +573,36 @@ pub fn frozen_ekf_compiler_catalog() -> MResult<Arc<FunctionCatalog>> {
     Ok(Arc::new(builder.build()?))
 }
 
-fn value_shape(value: &LegacyValue) -> Option<FrozenEkfValueShape> {
-    match value {
-        LegacyValue::Typed(value, _) => value_shape(value),
-        LegacyValue::MutableReference(value) => value_shape(&value.borrow()),
-        LegacyValue::F64(_) => Some(FrozenEkfValueShape::F64),
-        LegacyValue::Bool(_) => Some(FrozenEkfValueShape::Bool),
-        LegacyValue::MatrixF64(value) => {
-            let shape = value.shape();
-            match shape.as_slice() {
-                [rows, 1] if *rows > 1 => Some(FrozenEkfValueShape::Vector(*rows)),
-                [rows, columns] => Some(FrozenEkfValueShape::Matrix {
-                    rows: *rows,
-                    columns: *columns,
-                }),
-                _ => None,
+fn value_shape(value: &ValueCell) -> MResult<Option<FrozenEkfValueShape>> {
+    match value.snapshot()?.data() {
+        ValueData::F64(_) => Ok(Some(FrozenEkfValueShape::F64)),
+        ValueData::Bool(_) => Ok(Some(FrozenEkfValueShape::Bool)),
+        ValueData::Matrix(_) => {
+            let SchemaBody::Matrix { dimensions, .. } = value.closed_schema_body()? else {
+                return Ok(None);
+            };
+            let [
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ] = dimensions.as_ref()
+            else {
+                unreachable!("closed EKF matrix dimensions are constant")
+            };
+            let rows = *rows as usize;
+            let columns = *columns as usize;
+            if columns == 1 && rows > 1 {
+                Ok(Some(FrozenEkfValueShape::Vector(rows)))
+            } else {
+                Ok(Some(FrozenEkfValueShape::Matrix { rows, columns }))
             }
         }
-        _ => None,
+        _ => Ok(None),
     }
 }
 
 fn validate_source_arguments(
     operation: FrozenEkfOperation,
-    arguments: &[LegacyValue],
+    arguments: &[ValueCell],
 ) -> MResult<()> {
     let spec = operation_spec(operation);
     if arguments.len() != spec.inputs.len() {
@@ -622,7 +615,7 @@ fn validate_source_arguments(
         ));
     }
     for (index, (argument, expected)) in arguments.iter().zip(spec.inputs).enumerate() {
-        if value_shape(argument) != Some(*expected) {
+        if value_shape(argument)? != Some(*expected) {
             return Err(operation_error(
                 operation,
                 FrozenEkfOperationFailure::Shape {
@@ -635,139 +628,152 @@ fn validate_source_arguments(
     Ok(())
 }
 
-fn validate_runtime_shapes(operation: FrozenEkfOperation, args: &FunctionArgs) -> MResult<()> {
-    let spec = operation_spec(operation);
-    if args.input_count() != spec.inputs.len() {
-        return Err(function_shape_contract_violation(
-            spec.canonical_name,
-            format!(
-                "expected {} inputs, found {}",
-                spec.inputs.len(),
-                args.input_count()
-            ),
+fn validate_operation_cells(
+    operation: FrozenEkfOperation,
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    validate_source_arguments(operation, inputs)?;
+    if value_shape(output)? != Some(operation_spec(operation).output) {
+        return Err(operation_error(
+            operation,
+            FrozenEkfOperationFailure::OutputShape,
         ));
-    }
-    if value_shape(args.output_value()) != Some(spec.output) {
-        return Err(function_shape_contract_violation(
-            spec.canonical_name,
-            format!("output requires {:?}", spec.output),
-        ));
-    }
-    for (index, expected) in spec.inputs.iter().enumerate() {
-        let value = args.input_value(index).expect("arity checked");
-        if value_shape(value) != Some(*expected) {
-            return Err(function_shape_contract_violation(
-                spec.canonical_name,
-                format!("input {index} requires {expected:?}"),
-            ));
-        }
     }
     Ok(())
 }
 
-fn allocate_output(shape: FrozenEkfValueShape) -> LegacyValue {
+fn allocate_output(shape: FrozenEkfValueShape) -> MResult<ValueCell> {
     match shape {
-        FrozenEkfValueShape::Bool => LegacyValue::Bool(Ref::new(false)),
+        FrozenEkfValueShape::Bool => ValueCell::from_exact(false),
         FrozenEkfValueShape::Vector(length) => {
             #[cfg(feature = "vector2")]
             if length == 2 {
-                return LegacyValue::MatrixF64(RuntimeMatrix::Vector2(Ref::new(
-                    nalgebra::Vector2::zeros(),
-                )));
+                return ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::Vector2::<f64>::zeros()),
+                    2,
+                    1,
+                );
             }
             #[cfg(feature = "vector3")]
             if length == 3 {
-                return LegacyValue::MatrixF64(RuntimeMatrix::Vector3(Ref::new(
-                    nalgebra::Vector3::zeros(),
-                )));
+                return ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::Vector3::<f64>::zeros()),
+                    3,
+                    1,
+                );
             }
             #[cfg(feature = "vector4")]
             if length == 4 {
-                return LegacyValue::MatrixF64(RuntimeMatrix::Vector4(Ref::new(
-                    nalgebra::Vector4::zeros(),
-                )));
+                return ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::Vector4::<f64>::zeros()),
+                    4,
+                    1,
+                );
             }
-            LegacyValue::MatrixF64(RuntimeMatrix::DVector(Ref::new(DVector::zeros(length))))
+            ValueCell::from_exact_matrix_ref(Ref::new(DVector::<f64>::zeros(length)), length, 1)
         }
         FrozenEkfValueShape::Matrix { rows, columns } => {
             #[cfg(feature = "matrix2")]
             if (rows, columns) == (2, 2) {
-                return LegacyValue::MatrixF64(RuntimeMatrix::Matrix2(Ref::new(
-                    nalgebra::Matrix2::zeros(),
-                )));
+                return ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::Matrix2::<f64>::zeros()),
+                    rows,
+                    columns,
+                );
             }
             #[cfg(feature = "matrix3")]
             if (rows, columns) == (3, 3) {
-                return LegacyValue::MatrixF64(RuntimeMatrix::Matrix3(Ref::new(
-                    nalgebra::Matrix3::zeros(),
-                )));
+                return ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::Matrix3::<f64>::zeros()),
+                    rows,
+                    columns,
+                );
             }
             #[cfg(feature = "matrix2x3")]
             if (rows, columns) == (2, 3) {
-                return LegacyValue::MatrixF64(RuntimeMatrix::Matrix2x3(Ref::new(
-                    nalgebra::Matrix2x3::zeros(),
-                )));
+                return ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::Matrix2x3::<f64>::zeros()),
+                    rows,
+                    columns,
+                );
             }
             #[cfg(feature = "matrix3x2")]
             if (rows, columns) == (3, 2) {
-                return LegacyValue::MatrixF64(RuntimeMatrix::Matrix3x2(Ref::new(
-                    nalgebra::Matrix3x2::zeros(),
-                )));
+                return ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::Matrix3x2::<f64>::zeros()),
+                    rows,
+                    columns,
+                );
             }
-            LegacyValue::MatrixF64(RuntimeMatrix::DMatrix(Ref::new(DMatrix::zeros(
-                rows, columns,
-            ))))
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(DMatrix::<f64>::zeros(rows, columns)),
+                rows,
+                columns,
+            )
         }
-        FrozenEkfValueShape::F64 => LegacyValue::F64(Ref::new(0.0)),
+        FrozenEkfValueShape::F64 => ValueCell::from_exact(0.0_f64),
+    }
+}
+
+fn shape_dimensions(shape: FrozenEkfValueShape) -> Option<(usize, usize)> {
+    match shape {
+        FrozenEkfValueShape::Vector(rows) => Some((rows, 1)),
+        FrozenEkfValueShape::Matrix { rows, columns } => Some((rows, columns)),
+        FrozenEkfValueShape::F64 | FrozenEkfValueShape::Bool => None,
     }
 }
 
 fn read_array<const N: usize>(
     operation: FrozenEkfOperation,
     argument: usize,
-    value: &LegacyValue,
+    value: &ValueCell,
 ) -> MResult<[f64; N]> {
-    let mut result = [0.0; N];
-    match value {
-        LegacyValue::Typed(value, _) => return read_array(operation, argument, value),
-        LegacyValue::MutableReference(value) => {
-            return read_array(operation, argument, &value.borrow());
-        }
-        LegacyValue::MatrixF64(value) => {
-            let value = value.as_vec();
-            if value.len() != N {
-                return Err(operation_error(
-                    operation,
-                    FrozenEkfOperationFailure::Shape {
-                        argument,
-                        expected: operation_spec(operation).inputs[argument],
-                    },
-                ));
-            }
-            result.copy_from_slice(&value);
-        }
-        _ => {
+    let expected = operation_spec(operation).inputs[argument];
+    if value_shape(value)? != Some(expected) {
+        return Err(operation_error(
+            operation,
+            FrozenEkfOperationFailure::Shape { argument, expected },
+        ));
+    }
+    let Some((rows, columns)) = shape_dimensions(expected) else {
+        unreachable!("array EKF input has matrix dimensions")
+    };
+    let elements = value.matrix_elements()?.ok_or_else(|| {
+        operation_error(
+            operation,
+            FrozenEkfOperationFailure::Shape { argument, expected },
+        )
+    })?;
+    if elements.len() != N {
+        return Err(operation_error(
+            operation,
+            FrozenEkfOperationFailure::Shape { argument, expected },
+        ));
+    }
+    let mut row_major = Vec::with_capacity(N);
+    for element in elements {
+        let snapshot = element.snapshot()?;
+        let ValueData::F64(value) = snapshot.data() else {
             return Err(operation_error(
                 operation,
-                FrozenEkfOperationFailure::Shape {
-                    argument,
-                    expected: operation_spec(operation).inputs[argument],
-                },
+                FrozenEkfOperationFailure::Shape { argument, expected },
             ));
+        };
+        row_major.push(value.to_f64());
+    }
+    let mut result = [0.0; N];
+    for column in 0..columns {
+        for row in 0..rows {
+            result[column * rows + row] = row_major[row * columns + column];
         }
     }
     Ok(result)
 }
 
-fn read_scalar(
-    operation: FrozenEkfOperation,
-    argument: usize,
-    value: &LegacyValue,
-) -> MResult<f64> {
-    match value {
-        LegacyValue::Typed(value, _) => read_scalar(operation, argument, value),
-        LegacyValue::MutableReference(value) => read_scalar(operation, argument, &value.borrow()),
-        LegacyValue::F64(value) => Ok(*value.borrow()),
+fn read_scalar(operation: FrozenEkfOperation, argument: usize, value: &ValueCell) -> MResult<f64> {
+    match value.snapshot()?.data() {
+        ValueData::F64(value) => Ok(value.to_f64()),
         _ => Err(operation_error(
             operation,
             FrozenEkfOperationFailure::Shape {
@@ -780,78 +786,52 @@ fn read_scalar(
 
 fn write_array<const N: usize>(
     operation: FrozenEkfOperation,
-    output: &LegacyValue,
+    output: &ValueCell,
     value: [f64; N],
 ) -> MResult<()> {
-    #[cfg(any(
-        feature = "vector2",
-        feature = "vector3",
-        feature = "vector4",
-        feature = "matrix2",
-        feature = "matrix3",
-        feature = "matrix2x3",
-        feature = "matrix3x2"
-    ))]
-    macro_rules! write_fixed {
-        ($output:expr) => {{
-            let mut output = $output.borrow_mut();
-            if output.len() != N {
-                return Err(operation_error(
-                    operation,
-                    FrozenEkfOperationFailure::OutputShape,
-                ));
-            }
-            output.as_mut_slice().copy_from_slice(&value);
-            Ok(())
-        }};
-    }
-    match output {
-        #[cfg(feature = "vector2")]
-        LegacyValue::MatrixF64(RuntimeMatrix::Vector2(output)) => write_fixed!(output),
-        #[cfg(feature = "vector3")]
-        LegacyValue::MatrixF64(RuntimeMatrix::Vector3(output)) => write_fixed!(output),
-        #[cfg(feature = "vector4")]
-        LegacyValue::MatrixF64(RuntimeMatrix::Vector4(output)) => write_fixed!(output),
-        #[cfg(feature = "matrix2")]
-        LegacyValue::MatrixF64(RuntimeMatrix::Matrix2(output)) => write_fixed!(output),
-        #[cfg(feature = "matrix3")]
-        LegacyValue::MatrixF64(RuntimeMatrix::Matrix3(output)) => write_fixed!(output),
-        #[cfg(feature = "matrix2x3")]
-        LegacyValue::MatrixF64(RuntimeMatrix::Matrix2x3(output)) => write_fixed!(output),
-        #[cfg(feature = "matrix3x2")]
-        LegacyValue::MatrixF64(RuntimeMatrix::Matrix3x2(output)) => write_fixed!(output),
-        LegacyValue::MatrixF64(RuntimeMatrix::DVector(output)) if output.borrow().len() == N => {
-            output.borrow_mut().as_mut_slice().copy_from_slice(&value);
-            Ok(())
-        }
-        LegacyValue::MatrixF64(RuntimeMatrix::DMatrix(output)) if output.borrow().len() == N => {
-            output.borrow_mut().as_mut_slice().copy_from_slice(&value);
-            Ok(())
-        }
-        _ => Err(operation_error(
+    let expected = operation_spec(operation).output;
+    let Some((rows, columns)) = shape_dimensions(expected) else {
+        return Err(operation_error(
             operation,
             FrozenEkfOperationFailure::OutputShape,
-        )),
+        ));
+    };
+    if rows.saturating_mul(columns) != N || value_shape(output)? != Some(expected) {
+        return Err(operation_error(
+            operation,
+            FrozenEkfOperationFailure::OutputShape,
+        ));
     }
+    let mut row_major = Vec::with_capacity(N);
+    for row in 0..rows {
+        for column in 0..columns {
+            row_major.push(ValueDataDraft::F64(F64Bits::from_f64(
+                value[column * rows + row],
+            )));
+        }
+    }
+    let next = output.rebuild_matrix_drafts(
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        row_major.into_boxed_slice(),
+    )?;
+    output.replace(&next)
 }
 
-fn write_bool(operation: FrozenEkfOperation, output: &LegacyValue, value: bool) -> MResult<()> {
-    match output {
-        LegacyValue::Bool(output) => {
-            *output.borrow_mut() = value;
-            Ok(())
-        }
-        _ => Err(operation_error(
+fn write_bool(operation: FrozenEkfOperation, output: &ValueCell, value: bool) -> MResult<()> {
+    if value_shape(output)? != Some(FrozenEkfValueShape::Bool) {
+        return Err(operation_error(
             operation,
             FrozenEkfOperationFailure::OutputShape,
-        )),
+        ));
     }
+    let next = output.rebuild_data_draft(ValueDataDraft::Bool(value))?;
+    output.replace(&next)
 }
 
 fn evaluate_into(
     operation: FrozenEkfOperation,
-    inputs: &[LegacyValue],
-    output: &LegacyValue,
+    inputs: &[ValueCell],
+    output: &ValueCell,
 ) -> MResult<()> {
     match operation {
         Kernel(TrigonometricState) => write_array(

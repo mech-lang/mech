@@ -1,39 +1,38 @@
 use super::support::{
-    ActivationPatternCapture, FLAT_TUPLE_ACTIVATION, Gate, HashMap, Interpreter, LegacyValue,
-    Matrix, MechAtom, MechEnum, MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable,
-    MechTuple, PatternBinding, PatternBindingSink, PatternMatch, ReactiveBindingSink, Ref,
-    ValueKind, assert_dispatch_turn, body_output, commit_capture_slot, committed_capture_value,
-    create_capture_slot_for_kind, detached, hash_str, interpret, interpret_more,
-    load_enum_activation, plan_snapshot, proposed_capture_value, registration, root_cell,
-    scalar_capture_cases, selected_arm_index, set_enum_event, set_f64_matrix_event,
-    set_tuple_event, symbol, symbol_ref, tuple_fixture, turn_executed_nodes,
+    ActivationPatternCapture, FLAT_TUPLE_ACTIVATION, FloatWidth, Gate, LegacyValue,
+    MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple, PatternBinding,
+    PatternBindingSink, PatternMatch, ReactiveBindingSink, Ref, SchemaBody, ValueCell, ValueData,
+    ValueKind, assert_cell_eq, assert_dispatch_turn, body_output, body_output_cell, canonical_cell,
+    commit_capture_slot, committed_capture_value, create_capture_slot_for_schema, hash_str,
+    interpret, interpret_more, load_enum_activation, plan_snapshot, proposed_capture_value,
+    registration, root_cell, scalar_capture_cases, selected_arm_index, set_enum_event,
+    set_f64_matrix_event, set_tuple_event, symbol, symbol_ref, tuple_fixture, turn_executed_nodes,
 };
 
 #[test]
 fn activation_capture_slot_supports_all_enabled_scalar_kinds() {
-    let interpreter = Interpreter::new(0, 10_000);
-    for (kind, source) in scalar_capture_cases() {
-        let slot = create_capture_slot_for_kind(&kind, &interpreter).unwrap();
-        let cells_before = slot.reactive_root_cell_ids();
-        assert_eq!(cells_before.len(), 1);
+    for (_, source) in scalar_capture_cases() {
+        let source_cell = canonical_cell(source.clone());
+        let slot =
+            create_capture_slot_for_schema(&source_cell.closed_schema_body().unwrap()).unwrap();
+        let cell_before = slot.reactive_cell_id();
         commit_capture_slot(&slot, &source).unwrap();
-        assert_eq!(slot, source);
-        assert_eq!(slot.reactive_root_cell_ids(), cells_before);
+        assert_cell_eq(&slot, source);
+        assert_eq!(slot.reactive_cell_id(), cell_before);
     }
 }
 
 #[cfg(any(feature = "string", feature = "variable_define"))]
 #[test]
 fn activation_capture_slot_preserves_identity_across_updates() {
-    let interpreter = Interpreter::new(0, 10_000);
-    let slot = create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap();
-    let cells = slot.reactive_root_cell_ids();
+    let slot = ValueCell::from_exact(String::new()).unwrap();
+    let cell = slot.reactive_cell_id();
     commit_capture_slot(&slot, &LegacyValue::String(Ref::new("first".to_string()))).unwrap();
-    assert_eq!(slot, LegacyValue::String(Ref::new("first".to_string())));
-    assert_eq!(slot.reactive_root_cell_ids(), cells);
+    assert_cell_eq(&slot, LegacyValue::String(Ref::new("first".to_string())));
+    assert_eq!(slot.reactive_cell_id(), cell);
     commit_capture_slot(&slot, &LegacyValue::String(Ref::new("second".to_string()))).unwrap();
-    assert_eq!(slot, LegacyValue::String(Ref::new("second".to_string())));
-    assert_eq!(slot.reactive_root_cell_ids(), cells);
+    assert_cell_eq(&slot, LegacyValue::String(Ref::new("second".to_string())));
+    assert_eq!(slot.reactive_cell_id(), cell);
 }
 
 #[cfg(all(
@@ -48,23 +47,11 @@ fn activation_capture_slot_preserves_identity_across_updates() {
 ))]
 #[test]
 fn activation_capture_slots_support_enabled_composite_value_kinds() {
-    let interpreter = Interpreter::new(0, 10_000);
-    let enum_id = hash_str("capture-enum");
-    let variant_id = hash_str("payload");
-    let names = Ref::new(HashMap::from([
-        (enum_id, "capture-enum".to_string()),
-        (variant_id, "payload".to_string()),
-    ]));
     let cases = vec![
         LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
             LegacyValue::F64(Ref::new(1.0)),
             LegacyValue::String(Ref::new("tuple".to_string())),
         ]))),
-        LegacyValue::Enum(Ref::new(MechEnum {
-            id: enum_id,
-            variants: vec![(variant_id, Some(LegacyValue::F64(Ref::new(2.0))))],
-            names,
-        })),
         LegacyValue::Record(Ref::new(MechRecord::new(vec![(
             "field",
             LegacyValue::F64(Ref::new(3.0)),
@@ -87,33 +74,53 @@ fn activation_capture_slots_support_enabled_composite_value_kinds() {
     ];
 
     for source in cases {
-        let kind = source.kind();
-        let slot = create_capture_slot_for_kind(&kind, &interpreter).unwrap();
-        let cells = slot.reactive_root_cell_ids();
-        assert_eq!(cells.len(), 1, "missing stable root for {kind}");
+        let source_cell = canonical_cell(source.clone());
+        let schema = source_cell.closed_schema_body().unwrap();
+        let dynamic_extent = matches!(
+            schema,
+            SchemaBody::Table { .. } | SchemaBody::Set { .. } | SchemaBody::Map { .. }
+        );
+        let slot = create_capture_slot_for_schema(&schema).unwrap();
+        let cell = slot.reactive_cell_id();
         commit_capture_slot(&slot, &source).unwrap();
-        assert_eq!(slot, source);
-        assert_eq!(slot.reactive_root_cell_ids(), cells);
+        if dynamic_extent {
+            assert_eq!(
+                slot.snapshot().unwrap().canonical_data_draft().unwrap(),
+                source_cell
+                    .snapshot()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap()
+            );
+        } else {
+            assert_cell_eq(&slot, source);
+        }
+        assert_eq!(slot.reactive_cell_id(), cell);
     }
 }
 
 #[cfg(all(feature = "f64", feature = "string"))]
 #[test]
 fn activation_capture_commit_validates_every_binding_before_mutation() {
-    let interpreter = Interpreter::new(0, 10_000);
+    let number_schema = canonical_cell(LegacyValue::F64(Ref::new(0.0)))
+        .closed_schema_body()
+        .unwrap();
+    let text_schema = canonical_cell(LegacyValue::String(Ref::new(String::new())))
+        .closed_schema_body()
+        .unwrap();
     let number = ActivationPatternCapture {
         id: hash_str("number"),
         name: "number".to_string(),
-        kind: ValueKind::F64,
-        proposed: create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap(),
-        committed: create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap(),
+        schema: number_schema.clone(),
+        proposed: create_capture_slot_for_schema(&number_schema).unwrap(),
+        committed: create_capture_slot_for_schema(&number_schema).unwrap(),
     };
     let text = ActivationPatternCapture {
         id: hash_str("text"),
         name: "text".to_string(),
-        kind: ValueKind::String,
-        proposed: create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap(),
-        committed: create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap(),
+        schema: text_schema.clone(),
+        proposed: create_capture_slot_for_schema(&text_schema).unwrap(),
+        committed: create_capture_slot_for_schema(&text_schema).unwrap(),
     };
     let captures = vec![number, text];
     let attempted = PatternMatch {
@@ -123,15 +130,15 @@ fn activation_capture_commit_validates_every_binding_before_mutation() {
                 index: 0,
                 id: hash_str("number"),
                 name: "number".to_string(),
-                kind: ValueKind::F64,
-                value: LegacyValue::F64(Ref::new(9.0)),
+                schema: number_schema.clone(),
+                value: canonical_cell(LegacyValue::F64(Ref::new(9.0))),
             },
             PatternBinding {
                 index: 1,
                 id: hash_str("text"),
                 name: "text".to_string(),
-                kind: ValueKind::F64,
-                value: LegacyValue::F64(Ref::new(10.0)),
+                schema: number_schema,
+                value: canonical_cell(LegacyValue::F64(Ref::new(10.0))),
             },
         ],
     };
@@ -142,39 +149,45 @@ fn activation_capture_commit_validates_every_binding_before_mutation() {
     .commit(&attempted)
     .unwrap_err();
     assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
-    assert_eq!(captures[0].proposed, LegacyValue::F64(Ref::new(0.0)));
-    assert_eq!(
-        captures[1].proposed,
-        LegacyValue::String(Ref::new(String::new()))
+    assert_cell_eq(&captures[0].proposed, LegacyValue::F64(Ref::new(0.0)));
+    assert_cell_eq(
+        &captures[1].proposed,
+        LegacyValue::String(Ref::new(String::new())),
     );
-    assert_eq!(captures[0].committed, LegacyValue::F64(Ref::new(0.0)));
-    assert_eq!(
-        captures[1].committed,
-        LegacyValue::String(Ref::new(String::new()))
+    assert_cell_eq(&captures[0].committed, LegacyValue::F64(Ref::new(0.0)));
+    assert_cell_eq(
+        &captures[1].committed,
+        LegacyValue::String(Ref::new(String::new())),
     );
 }
 
 #[cfg(all(feature = "f64", feature = "string"))]
 #[test]
 fn activation_capture_gate_validates_entire_commit_before_mutation_or_pulse() {
+    let number_schema = canonical_cell(LegacyValue::F64(Ref::new(0.0)))
+        .closed_schema_body()
+        .unwrap();
+    let text_schema = canonical_cell(LegacyValue::String(Ref::new(String::new())))
+        .closed_schema_body()
+        .unwrap();
     let captures = vec![
         ActivationPatternCapture {
             id: hash_str("number"),
             name: "number".to_string(),
-            kind: ValueKind::F64,
-            proposed: LegacyValue::F64(Ref::new(9.0)),
-            committed: LegacyValue::F64(Ref::new(1.0)),
+            schema: number_schema.clone(),
+            proposed: canonical_cell(LegacyValue::F64(Ref::new(9.0))),
+            committed: canonical_cell(LegacyValue::F64(Ref::new(1.0))),
         },
         ActivationPatternCapture {
             id: hash_str("text"),
             name: "text".to_string(),
-            kind: ValueKind::String,
-            proposed: LegacyValue::F64(Ref::new(10.0)),
-            committed: LegacyValue::String(Ref::new("before".to_string())),
+            schema: text_schema,
+            proposed: canonical_cell(LegacyValue::F64(Ref::new(10.0))),
+            committed: canonical_cell(LegacyValue::String(Ref::new("before".to_string()))),
         },
     ];
-    let selected = Ref::new(0);
-    let pulse = Ref::new(0);
+    let selected = ValueCell::from_exact(1_usize).unwrap();
+    let pulse = ValueCell::from_exact(1_usize).unwrap();
     let gate = Gate {
         arm: 0,
         selected,
@@ -184,16 +197,12 @@ fn activation_capture_gate_validates_entire_commit_before_mutation_or_pulse() {
 
     let error = gate.solve_reactive().unwrap_err();
     assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
-    assert_eq!(captures[0].committed, LegacyValue::F64(Ref::new(1.0)));
-    assert_eq!(
-        captures[1].committed,
-        LegacyValue::String(Ref::new("before".to_string()))
+    assert_cell_eq(&captures[0].committed, LegacyValue::F64(Ref::new(1.0)));
+    assert_cell_eq(
+        &captures[1].committed,
+        LegacyValue::String(Ref::new("before".to_string())),
     );
-    assert_eq!(
-        *pulse.borrow(),
-        0,
-        "body pulse must follow a successful commit"
-    );
+    assert_cell_eq(&pulse, LegacyValue::Index(Ref::new(1)));
 }
 
 #[cfg(feature = "atom")]
@@ -201,7 +210,8 @@ fn activation_capture_gate_validates_entire_commit_before_mutation_or_pulse() {
 fn activation_atom_capture_accepts_a_new_atom_value() {
     let mut interpreter = interpret(
         r#"
-event := :first
+<event-kind> := :first | :second | :fallback
+event<event-kind> := :first
 ~> event
   | captured => {
       selected := captured
@@ -214,35 +224,22 @@ event := :first
     let trigger = root_cell(&interpreter, "event");
     let topology = plan_snapshot(&interpreter);
     let registration = registration(&interpreter);
-    let LegacyValue::Atom(event) = symbol(&interpreter, "event") else {
-        panic!("event is not an atom")
-    };
-    *event.borrow_mut() = MechAtom::from_name("second");
+    super::support::set_unit_enum_event(&interpreter, "second");
 
     let outcome = interpreter.advance_reactive_turn(&[trigger]).unwrap();
     assert_eq!(selected_arm_index(&registration, &outcome), 0);
-    let selected_atom = {
-        let plan = interpreter.plan();
-        let plan = plan.borrow();
-        (registration.arms[0].body_node_start..registration.arms[0].body_node_end)
-            .rev()
-            .find_map(
-                |node| match detached(&plan.node(node).unwrap().function.out()) {
-                    LegacyValue::Atom(atom) => Some(atom.borrow().id()),
-                    _ => None,
-                },
-            )
-            .expect("no atom output in selected arm body")
+    let selected = body_output_cell(&interpreter, 0).snapshot().unwrap();
+    let ValueData::Enum(selected) = selected.data() else {
+        panic!("selected output is not the authoritative event enum")
     };
-    assert_eq!(selected_atom, hash_str("second"));
+    assert_eq!(selected.ordinal(), 1);
     assert_eq!(plan_snapshot(&interpreter), topology);
 }
 
 #[cfg(all(feature = "f64", any(feature = "string", feature = "variable_define")))]
 #[test]
 fn activation_capture_slot_rejects_kind_mismatch() {
-    let interpreter = Interpreter::new(0, 10_000);
-    let slot = create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap();
+    let slot = ValueCell::from_exact(0.0_f64).unwrap();
     let error = commit_capture_slot(&slot, &LegacyValue::String(Ref::new("wrong".to_string())))
         .unwrap_err();
     assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
@@ -423,7 +420,7 @@ fn activation_pattern_capture_storage_identity_is_stable() {
         .arms
         .iter()
         .flat_map(|arm| arm.captures.iter())
-        .map(|capture| (capture.id, capture.kind.clone(), capture.cell))
+        .map(|capture| (capture.id, capture.schema.clone(), capture.cell))
         .collect::<Vec<_>>();
     for (name, payload) in [("pressed", 10.), ("released", 20.), ("other", 30.)] {
         set_enum_event(&i, name, payload);
@@ -432,7 +429,7 @@ fn activation_pattern_capture_storage_identity_is_stable() {
             .arms
             .iter()
             .flat_map(|arm| arm.captures.iter())
-            .map(|capture| (capture.id, capture.kind.clone(), capture.cell))
+            .map(|capture| (capture.id, capture.schema.clone(), capture.cell))
             .collect::<Vec<_>>();
         assert_eq!(current, captures);
         assert_eq!(plan_snapshot(&i), topology);
@@ -590,8 +587,14 @@ event := (1.0, 2.0)
     let activation = registration(&i);
     let capture = &activation.arms[0].captures[0];
     assert_eq!(
-        capture.kind,
-        ValueKind::Tuple(vec![ValueKind::F64, ValueKind::F64])
+        capture.schema,
+        SchemaBody::Tuple(
+            vec![
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+            ]
+            .into_boxed_slice()
+        )
     );
     let body_inputs = i.plan().borrow().nodes
         [activation.arms[0].body_node_start..activation.arms[0].body_node_end]
@@ -676,9 +679,12 @@ event := [1.0 2.0 3.0 4.0 5.0]
     let trigger = root_cell(&i, "event");
     let activation = registration(&i);
     let rest_capture = &activation.arms[0].captures[1];
+    let SchemaBody::Matrix { element, .. } = &rest_capture.schema else {
+        panic!("rest capture must retain a matrix schema")
+    };
     assert_eq!(
-        rest_capture.kind,
-        ValueKind::Matrix(Box::new(ValueKind::F64), Vec::new())
+        element.as_ref(),
+        &SchemaBody::FloatingPoint(FloatWidth::W64)
     );
     assert!(
         i.plan().borrow().nodes
@@ -690,15 +696,11 @@ event := [1.0 2.0 3.0 4.0 5.0]
                 .any(|dependency| dependency.cell == rest_capture.cell))
     );
     let topology = plan_snapshot(&i);
-    let LegacyValue::MatrixF64(event) = symbol(&i, "event") else {
-        panic!("event is not an f64 matrix")
-    };
     for values in [
         vec![10.0, 20.0, 30.0, 40.0, 50.0],
         vec![11.0, 21.0, 31.0, 41.0, 51.0, 61.0],
     ] {
-        let source = Matrix::from_vec(values.clone(), 1, values.len());
-        assert!(event.replace_payload_from(&source));
+        set_f64_matrix_event(&i, values.clone());
         let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
         assert_eq!(selected_arm_index(&activation, &outcome), 0);
         let LegacyValue::MatrixF64(rest) = body_output(&i, 0) else {

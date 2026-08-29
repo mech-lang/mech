@@ -53,7 +53,7 @@ use na::Vector2;
 use na::Vector3;
 #[cfg(feature = "vector4")]
 use na::Vector4;
-#[cfg(any(feature = "access", feature = "assign"))]
+#[cfg(any(feature = "access", feature = "assign", feature = "variable_define"))]
 use std::fmt::Debug;
 
 #[cfg(feature = "semantic-compiler")]

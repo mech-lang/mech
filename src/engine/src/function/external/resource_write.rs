@@ -1,9 +1,9 @@
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExecutionResourceRequest,
     ExternalInteraction, IdempotencyRequirement, InitialSolvePolicy, InputPortLayout,
-    InputPortPolicy, LegacyValue, MResult, MechError, MechErrorKind, MechExecutionServices,
-    MechFunctionImpl, NoMechExecutionServices, OperationContractDeclaration,
-    ReactiveDependencyScope, ReactiveSolveStatus, ResourceIntent, ValueCell,
+    InputPortPolicy, MResult, MechError, MechErrorKind, MechExecutionServices, MechFunctionImpl,
+    NoMechExecutionServices, OperationContractDeclaration, ReactiveDependencyScope,
+    ReactiveSolveStatus, ResourceIntent, ValueCell,
 };
 use std::sync::LazyLock;
 
@@ -29,7 +29,7 @@ use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCom
 #[derive(Clone, Debug)]
 pub struct ExternalResourceWriteFunction {
     pub request: ExecutionResourceRequest,
-    pub input: LegacyValue,
+    pub input: ValueCell,
     pub output: ValueCell,
     pub initial_solve_policy: InitialSolvePolicy,
     pub semantic_contract: Option<&'static OperationContractDeclaration>,
@@ -37,10 +37,11 @@ pub struct ExternalResourceWriteFunction {
 
 impl ExternalResourceWriteFunction {
     fn validate(&self) -> MResult<()> {
-        if *self.output.borrow() != LegacyValue::Empty {
+        let output = self.output.snapshot()?;
+        if !matches!(output.data(), mech_core::ValueData::Tuple(elements) if elements.is_empty()) {
             return Err(MechError::new(
                 ExternalResourceWriteOutputNotEmpty {
-                    found: self.output.borrow().kind(),
+                    found: self.output.representation(),
                 },
                 None,
             ));
@@ -65,7 +66,7 @@ impl ExternalResourceWriteFunction {
         // execution services receive the logical value at the time of the
         // effect. This also keeps source and reconstructed bytecode calls
         // observably equivalent for non-reactive service implementations.
-        let input = self.input.try_deep_snapshot()?;
+        let input = self.input.snapshot()?;
         services.write_resource(&self.request, &input)
     }
 }
@@ -114,18 +115,8 @@ impl MechFunctionImpl for ExternalResourceWriteFunction {
         self.solve_with_services(services)
     }
 
-    fn out(&self) -> LegacyValue {
-        self.output.borrow().clone()
-    }
-
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         self.semantic_contract.or(Some(&RESOURCE_EFFECT_CONTRACT))
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(vec![LegacyValue::MutableReference(
-            self.output.legacy_ref(),
-        )])
     }
 
     fn to_string(&self) -> String {
@@ -142,7 +133,7 @@ impl MechFunctionCompiler for ExternalResourceWriteFunction {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         self.validate()?;
         let output = super::compile_external_output(&self.output, context)?;
-        let input = super::compile_external_value(&self.input, context)?;
+        let input = super::compile_external_cell(&self.input, context)?;
         let requirement =
             context.intern_requirement(ApplicationRequirement::Resource(self.request.clone()))?;
         match self.request.intent {
@@ -156,7 +147,7 @@ impl MechFunctionCompiler for ExternalResourceWriteFunction {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExternalResourceWriteOutputNotEmpty {
-    pub found: mech_core::ValueKind,
+    pub found: mech_core::FunctionValueRepresentation,
 }
 
 impl MechErrorKind for ExternalResourceWriteOutputNotEmpty {
@@ -166,7 +157,7 @@ impl MechErrorKind for ExternalResourceWriteOutputNotEmpty {
 
     fn message(&self) -> String {
         format!(
-            "external resource writes require an Empty output cell, found {:?}",
+            "external resource writes require a canonical unit output cell, found {:?}",
             self.found,
         )
     }
@@ -193,7 +184,6 @@ impl MechErrorKind for ExternalResourceWriteIntentUnsupported {
 #[cfg(all(test, feature = "f64"))]
 mod tests {
     use super::*;
-    use mech_core::Ref;
 
     #[test]
     fn write_requires_an_empty_output_cell_before_calling_services() {
@@ -206,8 +196,8 @@ mod tests {
                 intent: ResourceIntent::Assign,
                 delivery: mech_core::ResourceDelivery::Snapshot,
             },
-            input: LegacyValue::F64(Ref::new(1.0)),
-            output: ValueCell::new(LegacyValue::F64(Ref::new(2.0))),
+            input: ValueCell::from_exact(1.0_f64).unwrap(),
+            output: ValueCell::from_exact(2.0_f64).unwrap(),
             initial_solve_policy: InitialSolvePolicy::Solve,
             semantic_contract: None,
         };
@@ -219,7 +209,7 @@ mod tests {
                 .kind_as::<ExternalResourceWriteOutputNotEmpty>()
                 .unwrap()
                 .found,
-            mech_core::ValueKind::F64,
+            mech_core::FunctionValueRepresentation::F64,
         );
     }
 }

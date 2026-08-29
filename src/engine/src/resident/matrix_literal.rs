@@ -26,6 +26,7 @@ fn resident_element_kind(element: &SchemaBody) -> Option<ResidentValueKind> {
         SchemaBody::FloatingPoint(FloatWidth::W64) => Some(ResidentValueKind::F64),
         SchemaBody::String => Some(ResidentValueKind::String),
         SchemaBody::Atom(_)
+        | SchemaBody::Dynamic
         | SchemaBody::Enum { .. }
         | SchemaBody::Option(_)
         | SchemaBody::Tuple(_)

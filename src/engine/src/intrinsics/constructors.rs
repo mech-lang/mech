@@ -71,7 +71,12 @@ static PURE_MATRIX_HORZCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
 static PURE_MATRIX_VERTCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| matrix_concatenation_contract("vertical-output"));
 
-#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
+#[cfg(any(
+    feature = "set_comprehensions",
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
 fn variadic_ports(
     invocation: &FunctionInvocation,
 ) -> MResult<(FunctionValueOutput, Vec<FunctionValueInput>)> {
@@ -461,26 +466,25 @@ fn matrix_concatenation_output(arguments: &[ValueCell], vertical: bool) -> MResu
 
 #[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
 #[derive(Debug)]
-pub struct ValueMatrixConcatenation {
+pub struct ValueMatrixConcatenation<const VERTICAL: bool> {
     arguments: Vec<FunctionValueInput>,
     output: FunctionValueOutput,
-    vertical: bool,
 }
 
 #[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
-impl MechFunctionImpl for ValueMatrixConcatenation {
+impl<const VERTICAL: bool> MechFunctionImpl for ValueMatrixConcatenation<VERTICAL> {
     fn solve_result(&self) -> MResult<()> {
         let arguments = self
             .arguments
             .iter()
             .map(|argument| argument.cell().clone())
             .collect::<Vec<_>>();
-        let next = matrix_concatenation_output(&arguments, self.vertical)?;
+        let next = matrix_concatenation_output(&arguments, VERTICAL)?;
         self.output.replace(&next.snapshot()?)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        if self.vertical {
+        if VERTICAL {
             #[cfg(feature = "matrix_vertcat")]
             return Some(&PURE_MATRIX_VERTCAT_CONTRACT);
             #[cfg(not(feature = "matrix_vertcat"))]
@@ -493,7 +497,7 @@ impl MechFunctionImpl for ValueMatrixConcatenation {
     }
 
     fn semantic_operation_name(&self) -> Option<&str> {
-        Some(if self.vertical {
+        Some(if VERTICAL {
             "matrix/vertcat"
         } else {
             "matrix/horzcat"
@@ -501,7 +505,7 @@ impl MechFunctionImpl for ValueMatrixConcatenation {
     }
 
     fn to_string(&self) -> String {
-        if self.vertical {
+        if VERTICAL {
             "ValueVerticalConcatenation".to_owned()
         } else {
             "ValueHorizontalConcatenation".to_owned()
@@ -513,7 +517,7 @@ impl MechFunctionImpl for ValueMatrixConcatenation {
     feature = "semantic-compiler",
     any(feature = "matrix_horzcat", feature = "matrix_vertcat")
 ))]
-impl MechFunctionCompiler for ValueMatrixConcatenation {
+impl<const VERTICAL: bool> MechFunctionCompiler for ValueMatrixConcatenation<VERTICAL> {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = self.output.compile_register(context)?;
         let arguments = self
@@ -522,7 +526,7 @@ impl MechFunctionCompiler for ValueMatrixConcatenation {
             .map(|argument| argument.compile_register(context))
             .collect::<MResult<Vec<_>>>()?;
         context.emit_varop(
-            hash_str(if self.vertical {
+            hash_str(if VERTICAL {
                 "matrix/vertcat"
             } else {
                 "matrix/horzcat"
@@ -535,22 +539,20 @@ impl MechFunctionCompiler for ValueMatrixConcatenation {
 }
 
 #[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
-impl ValueMatrixConcatenation {
+impl<const VERTICAL: bool> ValueMatrixConcatenation<VERTICAL> {
     pub(crate) fn specialize(
         invocation: &SpecializationInvocation,
-        vertical: bool,
     ) -> MResult<SpecializedFunction> {
         let arguments = invocation
             .inputs()
             .iter()
             .map(|input| Ok(input.cell()?.clone()))
             .collect::<MResult<Vec<_>>>()?;
-        let output = matrix_concatenation_output(&arguments, vertical)?;
+        let output = matrix_concatenation_output(&arguments, VERTICAL)?;
         let invocation = FunctionInvocation::variadic(output.clone(), arguments.into_boxed_slice());
         let implementation = Self {
             arguments: invocation.inputs().map(FunctionInputPort::value).collect(),
             output: invocation.output().value(),
-            vertical,
         };
         Ok(SpecializedFunction::new(FunctionInstance::new(
             Box::new(implementation),
@@ -558,6 +560,31 @@ impl ValueMatrixConcatenation {
         )))
     }
 }
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+impl<const VERTICAL: bool> MechFunctionFactory for ValueMatrixConcatenation<VERTICAL> {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+    );
+
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (output, arguments) = variadic_ports(&invocation)?;
+        let SchemaBody::Matrix { .. } = output.cell().closed_schema_body()? else {
+            return Err(matrix_comprehension_error(format!(
+                "matrix concatenation output must be a matrix, found {:?}",
+                output.representation(),
+            )));
+        };
+        Ok(Box::new(Self { arguments, output }))
+    }
+}
+
+#[cfg(feature = "matrix_horzcat")]
+pub type ValueHorizontalConcatenation = ValueMatrixConcatenation<false>;
+
+#[cfg(feature = "matrix_vertcat")]
+pub type ValueVerticalConcatenation = ValueMatrixConcatenation<true>;
 
 /// Runtime implementation for `matrix/comprehension`.
 #[cfg(feature = "matrix_comprehensions")]

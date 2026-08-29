@@ -90,7 +90,8 @@ event := 0.0
 fn activation_guard_outer_dependencies_are_sampled_until_the_next_trigger() {
     let mut i = interpret(
         r#"
-event := (:pressed, 0.0)
+<guard-event> := :pressed<f64> | :other<f64>
+event<guard-event> := :pressed(0.0)
 threshold := 10.0
 ~> event
   | :pressed(x), x > threshold => {
@@ -133,7 +134,8 @@ fn activation_guard_user_function_refreshes_on_each_matching_trigger() {
 passes(value<f64>, limit<f64>) => <bool>
   | value > limit.
 
-event := (:pressed, 0.0)
+<guard-event> := :pressed<f64> | :other<f64>
+event<guard-event> := :pressed(0.0)
 threshold := 5.0
 ~> event
   | :pressed(x), passes(x, threshold) => {

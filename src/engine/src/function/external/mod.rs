@@ -8,10 +8,12 @@ pub use resource_write::*;
 
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{
-    BytecodeCompilerContext, LegacyValue, MResult, Register, ValueCell,
+    BytecodeCompilerContext, MResult, Register, ValueCell,
     compile_runtime_produced_value_cell_register, compile_value_cell_register,
-    compile_value_register,
 };
+
+#[cfg(all(test, feature = "semantic-compiler"))]
+use mech_core::{LegacyValue, compile_value_register};
 
 #[cfg(feature = "semantic-compiler")]
 pub(super) fn compile_external_output(
@@ -22,6 +24,14 @@ pub(super) fn compile_external_output(
 }
 
 #[cfg(feature = "semantic-compiler")]
+pub(super) fn compile_external_cell(
+    value: &ValueCell,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    compile_value_cell_register(value, context)
+}
+
+#[cfg(feature = "semantic-compiler")]
 pub(super) fn compile_runtime_produced_external_output(
     output: &ValueCell,
     context: &mut dyn BytecodeCompilerContext,
@@ -29,7 +39,7 @@ pub(super) fn compile_runtime_produced_external_output(
     compile_runtime_produced_value_cell_register(output, context)
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(test, feature = "semantic-compiler"))]
 pub(super) fn compile_external_value(
     value: &LegacyValue,
     context: &mut dyn BytecodeCompilerContext,
@@ -45,7 +55,8 @@ mod tests {
     use mech_core::{
         BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError,
         InitialSolvePolicy, LegacyValue, MResult, MechError, MechExecutionServices,
-        MechFunctionCompiler, MechFunctionImpl, Ref, ResourceDelivery, ResourceIntent, ValueCell,
+        MechFunctionCompiler, MechFunctionImpl, Ref, ResourceDelivery, ResourceIntent, Value,
+        ValueCell, with_reactive_journal_participant,
     };
     use nalgebra::DMatrix;
     use std::collections::VecDeque;
@@ -72,13 +83,13 @@ mod tests {
         fn invoke_host_function(
             &mut self,
             _request: &ExecutionHostFunctionRequest,
-            _arguments: &[LegacyValue],
-        ) -> MResult<LegacyValue> {
+            _arguments: &[Value],
+        ) -> MResult<Value> {
             self.host_calls += 1;
             Err(Self::error("host call"))
         }
 
-        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<Value> {
             self.resource_reads += 1;
             Err(Self::error("resource read"))
         }
@@ -86,7 +97,7 @@ mod tests {
         fn write_resource(
             &mut self,
             _request: &ExecutionResourceRequest,
-            _value: &LegacyValue,
+            _value: &Value,
         ) -> MResult<()> {
             self.resource_writes += 1;
             Err(Self::error("resource write"))
@@ -103,8 +114,8 @@ mod tests {
     }
 
     struct RecordingReadServices {
-        results: VecDeque<LegacyValue>,
-        planning_representative: Option<LegacyValue>,
+        results: VecDeque<Value>,
+        planning_representative: Option<Value>,
         planning_calls: usize,
         resource_reads: usize,
         live_bindings: usize,
@@ -113,7 +124,7 @@ mod tests {
 
     impl RecordingReadServices {
         fn new(results: impl IntoIterator<Item = LegacyValue>) -> Self {
-            let results: VecDeque<_> = results.into_iter().collect();
+            let results: VecDeque<_> = results.into_iter().map(snapshot).collect();
             Self {
                 planning_representative: results.front().cloned(),
                 results,
@@ -129,23 +140,24 @@ mod tests {
         fn invoke_host_function(
             &mut self,
             _request: &ExecutionHostFunctionRequest,
-            _arguments: &[LegacyValue],
-        ) -> MResult<LegacyValue> {
+            _arguments: &[Value],
+        ) -> MResult<Value> {
             Err(FailingServices::error("unexpected host call"))
         }
 
         fn plan_resource_read_output(
             &mut self,
             _request: &ExecutionResourceRequest,
-        ) -> MResult<LegacyValue> {
+        ) -> MResult<Value> {
             self.planning_calls += 1;
-            self.planning_representative
+            let representative = self
+                .planning_representative
                 .as_ref()
-                .ok_or_else(|| FailingServices::error("missing planning representative"))?
-                .try_deep_snapshot()
+                .ok_or_else(|| FailingServices::error("missing planning representative"))?;
+            Ok(representative.clone())
         }
 
-        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<Value> {
             self.resource_reads += 1;
             self.results
                 .pop_front()
@@ -155,7 +167,7 @@ mod tests {
         fn write_resource(
             &mut self,
             _request: &ExecutionResourceRequest,
-            _value: &LegacyValue,
+            _value: &Value,
         ) -> MResult<()> {
             Err(FailingServices::error("unexpected resource write"))
         }
@@ -169,6 +181,43 @@ mod tests {
             self.live_bindings += 1;
             self.bound_targets.push(target);
             Ok(())
+        }
+    }
+
+    struct RecordingHostServices {
+        result: Value,
+        arguments: Vec<Vec<Value>>,
+    }
+
+    impl MechExecutionServices for RecordingHostServices {
+        fn invoke_host_function(
+            &mut self,
+            _request: &ExecutionHostFunctionRequest,
+            arguments: &[Value],
+        ) -> MResult<Value> {
+            self.arguments.push(arguments.to_vec());
+            Ok(self.result.clone())
+        }
+
+        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<Value> {
+            Err(FailingServices::error("unexpected resource read"))
+        }
+
+        fn write_resource(
+            &mut self,
+            _request: &ExecutionResourceRequest,
+            _value: &Value,
+        ) -> MResult<()> {
+            Err(FailingServices::error("unexpected resource write"))
+        }
+
+        fn bind_live_resource(
+            &mut self,
+            _interpreter_id: u64,
+            _request: &ExecutionResourceRequest,
+            _target: ValueCell,
+        ) -> MResult<()> {
+            Err(FailingServices::error("unexpected live binding"))
         }
     }
 
@@ -194,13 +243,35 @@ mod tests {
     ) -> ExternalResourceReadFunction {
         let mut request = resource_request(ResourceIntent::Read);
         request.delivery = delivery;
-        ExternalResourceReadFunction {
-            interpreter_id: 7,
+        ExternalResourceReadFunction::new(7, request, output, true, InitialSolvePolicy::Solve, None)
+    }
+
+    fn uninitialized_resource_read_function(
+        output: ValueCell,
+        delivery: ResourceDelivery,
+    ) -> ExternalResourceReadFunction {
+        let mut request = resource_request(ResourceIntent::Read);
+        request.delivery = delivery;
+        ExternalResourceReadFunction::new(
+            7,
             request,
             output,
-            initial_solve_policy: InitialSolvePolicy::Solve,
-            semantic_contract: None,
-        }
+            false,
+            InitialSolvePolicy::Solve,
+            None,
+        )
+    }
+
+    fn cell(value: LegacyValue) -> ValueCell {
+        mech_core::value_cell_from_legacy_function_value(value)
+    }
+
+    fn snapshot(value: LegacyValue) -> Value {
+        cell(value).snapshot().unwrap()
+    }
+
+    fn legacy(cell: &ValueCell) -> LegacyValue {
+        mech_core::legacy_function_value_from_cell(cell).unwrap()
     }
 
     fn matrix(rows: usize, columns: usize, values: Vec<f64>) -> LegacyValue {
@@ -213,7 +284,7 @@ mod tests {
         observed: LegacyValue,
         delivery: ResourceDelivery,
     ) -> (CompiledBytecode, Vec<u8>, u32) {
-        let output = ValueCell::new(observed);
+        let output = cell(observed);
         let function = resource_read_function(output, delivery);
         let mut context = CompileCtx::new();
         let destination = function.compile(&mut context).unwrap();
@@ -290,9 +361,9 @@ mod tests {
 
     #[test]
     fn cloned_output_cells_reuse_registers_and_distinct_cells_do_not() {
-        let shared = ValueCell::new(LegacyValue::Empty);
+        let shared = ValueCell::from_exact(0.0_f64).unwrap();
         let clone = shared.clone();
-        let distinct = ValueCell::new(LegacyValue::Empty);
+        let distinct = ValueCell::from_exact(0.0_f64).unwrap();
         let mut context = CompileCtx::new();
 
         let shared_register = compile_external_output(&shared, &mut context).unwrap();
@@ -305,7 +376,7 @@ mod tests {
 
     #[test]
     fn host_call_failure_propagates_without_publishing_a_stale_output() {
-        let output = ValueCell::new(LegacyValue::F64(Ref::new(41.0)));
+        let output = cell(LegacyValue::F64(Ref::new(41.0)));
         let function = ExternalHostCallFunction {
             request: ExecutionHostFunctionRequest {
                 name: "test/fail".into(),
@@ -320,54 +391,112 @@ mod tests {
 
         assert!(error.full_chain_message().contains("host call failure"));
         assert_eq!(services.host_calls, 1);
-        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 41.0));
+        assert!(matches!(legacy(&output), LegacyValue::F64(value) if *value.borrow() == 41.0));
+    }
+
+    #[test]
+    fn host_call_snapshots_scalar_and_aggregate_cells_and_replaces_canonical_output() {
+        let scalar = cell(LegacyValue::F64(Ref::new(3.0)));
+        let aggregate = ValueCell::unit();
+        let output = cell(LegacyValue::F64(Ref::new(0.0)));
+        let function = ExternalHostCallFunction {
+            request: ExecutionHostFunctionRequest {
+                name: "test/canonical".into(),
+            },
+            arguments: vec![scalar, aggregate],
+            output: output.clone(),
+            initial_solve_policy: InitialSolvePolicy::Solve,
+        };
+        let mut services = RecordingHostServices {
+            result: snapshot(LegacyValue::F64(Ref::new(9.0))),
+            arguments: Vec::new(),
+        };
+
+        function.solve_result_with(&mut services).unwrap();
+
+        assert!(
+            matches!(services.arguments[0][0].data(), mech_core::ValueData::F64(value) if value.to_f64() == 3.0)
+        );
+        assert!(
+            matches!(services.arguments[0][1].data(), mech_core::ValueData::Tuple(values) if values.is_empty())
+        );
+        assert!(
+            matches!(output.snapshot().unwrap().data(), mech_core::ValueData::F64(value) if value.to_f64() == 9.0)
+        );
+    }
+
+    #[test]
+    fn host_call_rejects_a_result_with_the_wrong_schema_without_mutating_output() {
+        let output = cell(LegacyValue::F64(Ref::new(7.0)));
+        let function = ExternalHostCallFunction {
+            request: ExecutionHostFunctionRequest {
+                name: "test/schema-mismatch".into(),
+            },
+            arguments: Vec::new(),
+            output: output.clone(),
+            initial_solve_policy: InitialSolvePolicy::Solve,
+        };
+        let mut services = RecordingHostServices {
+            result: snapshot(matrix(1, 1, vec![9.0])),
+            arguments: Vec::new(),
+        };
+
+        let error = function.solve_result_with(&mut services).unwrap_err();
+
+        assert_eq!(error.kind_name(), "ValueCellSchemaMismatch");
+        assert!(
+            matches!(output.snapshot().unwrap().data(), mech_core::ValueData::F64(value) if value.to_f64() == 7.0)
+        );
     }
 
     #[test]
     fn resource_read_failure_propagates_without_publishing_a_stale_output() {
-        let output = ValueCell::new(LegacyValue::F64(Ref::new(42.0)));
-        let function = ExternalResourceReadFunction {
-            interpreter_id: 7,
-            request: resource_request(ResourceIntent::Read),
-            output: output.clone(),
-            initial_solve_policy: InitialSolvePolicy::Solve,
-            semantic_contract: None,
-        };
+        let output = cell(LegacyValue::F64(Ref::new(42.0)));
+        let function = ExternalResourceReadFunction::new(
+            7,
+            resource_request(ResourceIntent::Read),
+            output.clone(),
+            true,
+            InitialSolvePolicy::Solve,
+            None,
+        );
         let mut services = FailingServices::default();
 
         let error = function.solve_result_with(&mut services).unwrap_err();
 
         assert!(error.full_chain_message().contains("resource read failure"));
         assert_eq!(services.resource_reads, 1);
-        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 42.0));
+        assert!(matches!(legacy(&output), LegacyValue::F64(value) if *value.borrow() == 42.0));
     }
 
     #[test]
     fn resource_read_initializes_empty_stable_output() {
-        let output = ValueCell::new(LegacyValue::Empty);
+        let output = cell(LegacyValue::F64(Ref::new(0.0)));
         let original_output = output.clone();
-        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let function =
+            uninitialized_resource_read_function(output.clone(), ResourceDelivery::Snapshot);
         let mut services = RecordingReadServices::new([LegacyValue::F64(Ref::new(42.0))]);
 
         function.solve_result_with(&mut services).unwrap();
 
         assert!(output.same_cell(&original_output));
-        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 42.0));
+        assert!(matches!(legacy(&output), LegacyValue::F64(value) if *value.borrow() == 42.0));
         assert_eq!(services.resource_reads, 1);
     }
 
     #[test]
     fn resource_read_initializes_empty_matrix_output() {
-        let output = ValueCell::new(LegacyValue::Empty);
+        let output = cell(matrix(2, 2, vec![0.0; 4]));
         let original_output = output.clone();
-        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let function =
+            uninitialized_resource_read_function(output.clone(), ResourceDelivery::Snapshot);
         let mut services = RecordingReadServices::new([matrix(2, 2, vec![1.0, 2.0, 3.0, 4.0])]);
 
         function.solve_result_with(&mut services).unwrap();
 
         assert!(output.same_cell(&original_output));
         assert!(matches!(
-            &*output.borrow(),
+            legacy(&output),
             LegacyValue::MatrixF64(Matrix::DMatrix(value))
                 if value.borrow().shape() == (2, 2)
         ));
@@ -375,9 +504,10 @@ mod tests {
 
     #[test]
     fn resource_read_subsequent_same_representation_update_uses_stable_contract() {
-        let output = ValueCell::new(LegacyValue::Empty);
+        let output = cell(LegacyValue::F64(Ref::new(0.0)));
         let original_output = output.clone();
-        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let function =
+            uninitialized_resource_read_function(output.clone(), ResourceDelivery::Snapshot);
         let mut services = RecordingReadServices::new([
             LegacyValue::F64(Ref::new(1.0)),
             LegacyValue::F64(Ref::new(2.0)),
@@ -387,61 +517,65 @@ mod tests {
         function.solve_result_with(&mut services).unwrap();
 
         assert!(output.same_cell(&original_output));
-        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 2.0));
+        assert!(matches!(legacy(&output), LegacyValue::F64(value) if *value.borrow() == 2.0));
     }
 
     #[test]
     fn resource_read_rejects_representation_change_after_initialization() {
-        let output = ValueCell::new(LegacyValue::Empty);
-        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let output = cell(LegacyValue::F64(Ref::new(0.0)));
+        let function =
+            uninitialized_resource_read_function(output.clone(), ResourceDelivery::Snapshot);
         let mut services =
             RecordingReadServices::new([LegacyValue::F64(Ref::new(1.0)), matrix(1, 1, vec![2.0])]);
 
         function.solve_result_with(&mut services).unwrap();
         let error = function.solve_result_with(&mut services).unwrap_err();
 
-        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
-        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 1.0));
+        assert_eq!(error.kind_name(), "ValueCellSchemaMismatch");
+        assert!(matches!(legacy(&output), LegacyValue::F64(value) if *value.borrow() == 1.0));
     }
 
     #[test]
-    fn resource_read_rejects_shape_change_after_initialization() {
-        let output = ValueCell::new(LegacyValue::Empty);
-        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+    fn resource_read_preserves_dynamic_matrix_identity_across_shape_changes() {
+        let output = cell(matrix(1, 2, vec![0.0, 0.0]));
+        let alias = output.clone();
+        let function =
+            uninitialized_resource_read_function(output.clone(), ResourceDelivery::Snapshot);
         let mut services = RecordingReadServices::new([
             matrix(1, 2, vec![1.0, 2.0]),
             matrix(2, 1, vec![3.0, 4.0]),
         ]);
 
         function.solve_result_with(&mut services).unwrap();
-        let error = function.solve_result_with(&mut services).unwrap_err();
+        function.solve_result_with(&mut services).unwrap();
 
-        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
+        assert!(output.same_cell(&alias));
         assert!(matches!(
-            &*output.borrow(),
+            legacy(&output),
             LegacyValue::MatrixF64(Matrix::DMatrix(value))
-                if value.borrow().shape() == (1, 2)
-                    && value.borrow().as_slice() == [1.0, 2.0]
+                if value.borrow().shape() == (2, 1)
+                    && value.borrow().as_slice() == [3.0, 4.0]
         ));
     }
 
     #[test]
-    fn resource_read_rejects_empty_initial_provider_result() {
-        let output = ValueCell::new(LegacyValue::Empty);
-        let function = resource_read_function(output.clone(), ResourceDelivery::Live);
-        let mut services = RecordingReadServices::new([LegacyValue::Empty]);
+    fn resource_read_rejects_preserving_an_uninitialized_output() {
+        let output = cell(LegacyValue::F64(Ref::new(0.0)));
+        let function = uninitialized_resource_read_function(output, ResourceDelivery::Live);
+        let mut services = RecordingReadServices::new([LegacyValue::F64(Ref::new(1.0))]);
 
-        let error = function.solve_result_with(&mut services).unwrap_err();
+        let error = function
+            .initialize_preserved_output_with(&mut services)
+            .unwrap_err();
 
         assert_eq!(error.kind_name(), "ExternalResourceReadUninitializedValue");
-        assert_eq!(*output.borrow(), LegacyValue::Empty);
         assert_eq!(services.live_bindings, 0);
     }
 
     #[test]
     fn resource_read_live_binding_observes_initialized_cell() {
-        let output = ValueCell::new(LegacyValue::Empty);
-        let function = resource_read_function(output.clone(), ResourceDelivery::Live);
+        let output = cell(matrix(2, 1, vec![0.0, 0.0]));
+        let function = uninitialized_resource_read_function(output.clone(), ResourceDelivery::Live);
         let mut services = RecordingReadServices::new([matrix(2, 1, vec![1.0, 2.0])]);
 
         function.solve_result_with(&mut services).unwrap();
@@ -449,7 +583,7 @@ mod tests {
         assert_eq!(services.live_bindings, 1);
         assert!(services.bound_targets[0].same_cell(&output));
         assert!(matches!(
-            &*services.bound_targets[0].borrow(),
+            legacy(&services.bound_targets[0]),
             LegacyValue::MatrixF64(Matrix::DMatrix(value))
                 if value.borrow().shape() == (2, 1)
         ));
@@ -457,8 +591,8 @@ mod tests {
 
     #[test]
     fn repeated_live_bindings_share_one_updated_output_cell() {
-        let output = ValueCell::new(LegacyValue::Empty);
-        let function = resource_read_function(output.clone(), ResourceDelivery::Live);
+        let output = cell(LegacyValue::F64(Ref::new(0.0)));
+        let function = uninitialized_resource_read_function(output.clone(), ResourceDelivery::Live);
         let mut services = RecordingReadServices::new([
             LegacyValue::F64(Ref::new(1.0)),
             LegacyValue::F64(Ref::new(2.0)),
@@ -472,35 +606,55 @@ mod tests {
         assert!(services.bound_targets[1].same_cell(&output));
         assert!(services.bound_targets[0].same_cell(&services.bound_targets[1]));
         assert!(matches!(
-            &*services.bound_targets[0].borrow(),
+            legacy(&services.bound_targets[0]),
             LegacyValue::F64(value) if *value.borrow() == 2.0
         ));
     }
 
     #[test]
-    fn resource_read_transaction_state_uses_the_same_legacy_handle() {
-        let output = ValueCell::new(LegacyValue::F64(Ref::new(1.0)));
+    fn resource_read_hidden_state_is_exposed_only_as_a_typed_port() {
+        let output = cell(LegacyValue::F64(Ref::new(1.0)));
         let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
 
-        let state = function.transaction_state_values().unwrap();
+        assert_eq!(function.retained_state_ports().unwrap().len(), 1);
+    }
 
-        let [LegacyValue::MutableReference(reference)] = state.as_slice() else {
-            panic!("resource read must expose one mutable-reference compatibility root")
-        };
-        assert!(reference.same_handle(&output.legacy_ref()));
+    #[test]
+    fn resource_read_rollback_restores_hidden_initialization_state() {
+        let output = cell(LegacyValue::F64(Ref::new(0.0)));
+        let function =
+            uninitialized_resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let mut services = RecordingReadServices::new([LegacyValue::F64(Ref::new(9.0))]);
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_value_cell(&output)?;
+            participant.capture_function_state(&function)?;
+            function.solve_result_with(&mut services)?;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+
+        assert!(matches!(legacy(&output), LegacyValue::F64(value) if *value.borrow() == 0.0));
+        let mut services = RecordingReadServices::new([]);
+        let error = function
+            .initialize_preserved_output_with(&mut services)
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "ExternalResourceReadUninitializedValue");
     }
 
     #[test]
     fn resource_read_compile_records_kind_without_const_load() {
         let observed = matrix(4, 1, vec![1.0, 2.0, 3.0, 4.0]);
-        let expected_kind = observed.kind();
+        let expected_schema = cell(observed.clone()).closed_schema_body().unwrap();
         let (compiled, _bytes, destination) =
             compile_resource_read(observed, ResourceDelivery::Live);
 
         assert_eq!(compiled.program.register_count, 1);
         assert_eq!(
-            compiled.register_kinds[destination as usize].as_ref(),
-            Some(&expected_kind)
+            compiled.register_schemas[destination as usize].as_ref(),
+            Some(&expected_schema)
         );
         assert_eq!(
             compiled
@@ -535,7 +689,7 @@ mod tests {
         );
 
         assert_eq!(first.program.register_count, second.program.register_count);
-        assert_eq!(first.register_kinds, second.register_kinds);
+        assert_eq!(first.register_schemas, second.register_schemas);
         assert_eq!(first.program.requirements, second.program.requirements);
         assert_eq!(first.program.instructions, second.program.instructions);
         assert_eq!(first.program.constants.len(), 0);
@@ -545,10 +699,10 @@ mod tests {
 
     #[test]
     fn resource_write_failure_propagates_without_changing_its_output() {
-        let output = ValueCell::new(LegacyValue::Empty);
+        let output = ValueCell::unit();
         let function = ExternalResourceWriteFunction {
             request: resource_request(ResourceIntent::Assign),
-            input: LegacyValue::F64(Ref::new(43.0)),
+            input: cell(LegacyValue::F64(Ref::new(43.0))),
             output: output.clone(),
             initial_solve_policy: InitialSolvePolicy::Solve,
             semantic_contract: None,
@@ -563,6 +717,8 @@ mod tests {
                 .contains("resource write failure")
         );
         assert_eq!(services.resource_writes, 1);
-        assert_eq!(*output.borrow(), LegacyValue::Empty);
+        assert!(
+            matches!(output.snapshot().unwrap().data(), mech_core::ValueData::Tuple(values) if values.is_empty())
+        );
     }
 }

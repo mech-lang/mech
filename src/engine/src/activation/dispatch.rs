@@ -1,26 +1,42 @@
-use super::captures::transaction_bool_state;
+use super::captures::{increment, read_bool, write_bool, write_selected_arm};
 use super::{ActivationPatternCapture, GuardFinalize, ReactiveBindingSink};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, GenericError, MechError, MechFunctionCompiler, Register};
 use crate::{
-    CompiledPattern, LegacyValue, MResult, MechFunctionImpl, PatternBindingSink,
-    ReactiveDependencyKind, ReactiveDependencyScope, ReactiveSolveStatus, Ref,
+    CompiledPattern, FunctionStatePort, MResult, MechFunctionImpl, PatternBindingSink,
+    ReactiveDependencyKind, ReactiveDependencyScope, ReactiveSolveStatus, ValueCell,
     match_compiled_pattern_with_values,
 };
 
+fn primary(cell: &ValueCell) -> Option<FunctionStatePort<'_>> {
+    Some(FunctionStatePort::from_cell(cell))
+}
+
+fn retained<'a>(cells: &[&'a ValueCell]) -> MResult<Option<Vec<FunctionStatePort<'a>>>> {
+    Ok(Some(
+        cells
+            .iter()
+            .map(|cell| FunctionStatePort::from_cell(cell))
+            .collect(),
+    ))
+}
+
 pub(super) struct ScopePulse {
-    pub(super) out: Ref<usize>,
+    pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for ScopePulse {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        *self.out.borrow_mut() += 1;
+        increment(&self.out)?;
         Ok(ReactiveSolveStatus::Changed)
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Index(self.out.clone())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        primary(&self.out)
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        retained(&[&self.out])
     }
     fn reactive_dependency_scopes(&self, _: usize) -> Option<Vec<ReactiveDependencyScope>> {
         Some(vec![ReactiveDependencyScope::Root])
@@ -28,18 +44,15 @@ impl MechFunctionImpl for ScopePulse {
     fn to_string(&self) -> String {
         "ActivationPatternScopePulse".into()
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
 }
+
 pub(super) struct Matcher {
     pub(super) pattern: CompiledPattern,
-    pub(super) trigger: LegacyValue,
-    pub(super) expression_values: Vec<LegacyValue>,
+    pub(super) trigger: ValueCell,
+    pub(super) expression_values: Vec<ValueCell>,
     pub(super) captures: Vec<ActivationPatternCapture>,
-    pub(super) matched: Ref<bool>,
-    pub(super) out: Ref<usize>,
+    pub(super) matched: ValueCell,
+    pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for Matcher {
     fn solve_result(&self) -> MResult<()> {
@@ -55,22 +68,41 @@ impl MechFunctionImpl for Matcher {
             captures: &self.captures,
         }
         .commit(&pattern_match)?;
-        *self.matched.borrow_mut() = pattern_match.matched;
-        *self.out.borrow_mut() += 1;
+        write_bool(&self.matched, pattern_match.matched)?;
+        increment(&self.out)?;
         Ok(ReactiveSolveStatus::Changed)
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Index(self.out.clone())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        primary(&self.out)
     }
-    fn reactive_output_values(&self) -> Vec<LegacyValue> {
-        let mut outputs = vec![self.out()];
-        outputs.extend(self.captures.iter().map(|capture| capture.proposed.clone()));
-        outputs
+    fn reactive_output_state_ports(&self) -> Option<Vec<FunctionStatePort<'_>>> {
+        Some(
+            std::iter::once(FunctionStatePort::from_cell(&self.out))
+                .chain(
+                    self.captures
+                        .iter()
+                        .map(|capture| FunctionStatePort::from_cell(&capture.proposed)),
+                )
+                .collect(),
+        )
     }
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let mut values = self.reactive_output_values();
-        values.push(transaction_bool_state(&self.matched)?);
-        Ok(values)
+
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        std::iter::once(self.out.clone())
+            .chain(self.captures.iter().map(|capture| capture.proposed.clone()))
+            .collect()
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(
+            std::iter::once(FunctionStatePort::from_cell(&self.out))
+                .chain(std::iter::once(FunctionStatePort::from_cell(&self.matched)))
+                .chain(
+                    self.captures
+                        .iter()
+                        .map(|capture| FunctionStatePort::from_cell(&capture.proposed)),
+                )
+                .collect(),
+        ))
     }
     fn reactive_dependency_kinds(
         &self,
@@ -86,119 +118,118 @@ impl MechFunctionImpl for Matcher {
         "ActivationPatternMatcher".into()
     }
 }
+
 pub(super) struct Finalize {
-    pub(super) matched: Ref<bool>,
-    pub(super) eligible: Ref<bool>,
-    pub(super) out: Ref<usize>,
+    pub(super) matched: ValueCell,
+    pub(super) eligible: ValueCell,
+    pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for Finalize {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        *self.eligible.borrow_mut() = *self.matched.borrow();
-        *self.out.borrow_mut() += 1;
+        write_bool(&self.eligible, read_bool(&self.matched)?)?;
+        increment(&self.out)?;
         Ok(ReactiveSolveStatus::Changed)
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Index(self.out.clone())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        primary(&self.out)
     }
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let mut values = self.reactive_output_values();
-        values.push(transaction_bool_state(&self.eligible)?);
-        Ok(values)
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        retained(&[&self.out, &self.eligible])
     }
     fn to_string(&self) -> String {
         "ActivationPatternArmFinalize".into()
     }
 }
+
 pub(super) struct MatchGate {
-    pub(super) matched: Ref<bool>,
-    pub(super) out: Ref<usize>,
+    pub(super) matched: ValueCell,
+    pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for MatchGate {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        if *self.matched.borrow() {
-            *self.out.borrow_mut() += 1;
+        if read_bool(&self.matched)? {
+            increment(&self.out)?;
             Ok(ReactiveSolveStatus::Changed)
         } else {
             Ok(ReactiveSolveStatus::Unchanged)
         }
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Index(self.out.clone())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        primary(&self.out)
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        retained(&[&self.out])
     }
     fn to_string(&self) -> String {
         "ActivationPatternGuardMatchGate".into()
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
 }
+
 pub(super) struct UnmatchedFinalize {
-    pub(super) matched: Ref<bool>,
-    pub(super) eligible: Ref<bool>,
-    pub(super) out: Ref<usize>,
+    pub(super) matched: ValueCell,
+    pub(super) eligible: ValueCell,
+    pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for UnmatchedFinalize {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        if *self.matched.borrow() {
+        if read_bool(&self.matched)? {
             Ok(ReactiveSolveStatus::Unchanged)
         } else {
-            *self.eligible.borrow_mut() = false;
-            *self.out.borrow_mut() += 1;
+            write_bool(&self.eligible, false)?;
+            increment(&self.out)?;
             Ok(ReactiveSolveStatus::Changed)
         }
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Index(self.out.clone())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        primary(&self.out)
     }
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let mut values = self.reactive_output_values();
-        values.push(transaction_bool_state(&self.eligible)?);
-        Ok(values)
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        retained(&[&self.out, &self.eligible])
     }
     fn to_string(&self) -> String {
         "ActivationPatternGuardUnmatchedFinalize".into()
     }
 }
+
 pub(super) struct Select {
-    pub(super) eligible: Vec<Ref<bool>>,
-    pub(super) selected: Ref<usize>,
-    pub(super) out: Ref<usize>,
+    pub(super) eligible: Vec<ValueCell>,
+    pub(super) selected: ValueCell,
+    pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for Select {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        *self.selected.borrow_mut() = self
+        let selected = self
             .eligible
             .iter()
-            .position(|x| *x.borrow())
+            .position(|cell| read_bool(cell).unwrap_or(false))
             .unwrap_or(usize::MAX);
-        *self.out.borrow_mut() += 1;
+        write_selected_arm(&self.selected, selected)?;
+        increment(&self.out)?;
         Ok(ReactiveSolveStatus::Changed)
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Index(self.out.clone())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        primary(&self.out)
     }
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let mut values = self.reactive_output_values();
-        values.push(LegacyValue::Index(self.selected.clone()));
-        Ok(values)
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        retained(&[&self.out, &self.selected])
     }
     fn to_string(&self) -> String {
         "ActivationPatternSelectArm".into()
     }
 }
+
 #[cfg(feature = "semantic-compiler")]
 macro_rules! interpreter_only {
     ($t:ty) => {

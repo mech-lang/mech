@@ -1,10 +1,4 @@
 use crate::*;
-#[cfg(feature = "dynamic-modules")]
-use mech_core::matrix::Matrix as RuntimeMatrix;
-#[cfg(feature = "dynamic-modules")]
-use nalgebra::{DMatrix, DVector, RowDVector};
-#[cfg(feature = "dynamic-modules")]
-use std::borrow::Borrow;
 use std::collections::{BTreeMap, BTreeSet};
 #[cfg(feature = "dynamic-modules")]
 use std::collections::{HashMap, HashSet};
@@ -277,7 +271,8 @@ impl ModuleLoader for DynamicModuleLoader {
 
         let mut seen_exports = HashSet::<(String, mech_abi::MechKernelKindV1)>::new();
         let mut canonical_order = Vec::<String>::new();
-        let mut dynamic_specializers = HashMap::<String, Vec<Arc<dyn FunctionSpecializer>>>::new();
+        let mut dynamic_specializers =
+            HashMap::<String, Vec<Arc<dyn CanonicalFunctionSpecializer>>>::new();
 
         for index in 0..export_count {
             let mut export = mech_abi::MechExportV1 {
@@ -390,7 +385,7 @@ impl ModuleLoader for DynamicModuleLoader {
             let mut specializers = dynamic_specializers
                 .remove(&canonical_name)
                 .expect("every ordered dynamic function has specializers");
-            let specializer: Arc<dyn FunctionSpecializer> = if specializers.len() == 1 {
+            let specializer: Arc<dyn CanonicalFunctionSpecializer> = if specializers.len() == 1 {
                 specializers.pop().expect("one dynamic specializer")
             } else {
                 Arc::new(DynamicOverloadedSpecializer {
@@ -478,20 +473,20 @@ fn check_dynamic_kernel_status(function: &str, status: mech_abi::MechStatusV1) -
     )))
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
 enum DynamicResidentKernelKind {
     UnaryScalar(mech_abi::MechUnaryF64ToF64KernelV1),
     BinaryScalar(mech_abi::MechBinaryF64F64ToF64KernelV1),
     UnaryView(mech_abi::MechUnaryF64ViewToF64ViewKernelV1),
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
 struct DynamicResidentKernelState {
     _library: Arc<libloading::Library>,
     kernel: DynamicResidentKernelKind,
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
 fn dynamic_resident_contract_matches(
     request: &ResidentKernelBindRequest<'_>,
     input_count: usize,
@@ -526,7 +521,7 @@ fn dynamic_resident_contract_matches(
         && request.output.shape.len().is_some()
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
 fn dynamic_binary_layout_matches(request: &ResidentKernelBindRequest<'_>) -> bool {
     let [lhs, rhs] = request.inputs else {
         return false;
@@ -537,7 +532,7 @@ fn dynamic_binary_layout_matches(request: &ResidentKernelBindRequest<'_>) -> boo
         && (lhs.shape == output || rhs.shape == output)
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
 fn dynamic_resident_kernel_kind(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Option<ValidatedDynamicKernelKind> {
@@ -560,7 +555,7 @@ fn dynamic_resident_kernel_kind(
     }
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
 fn load_dynamic_resident_kernel(
     module: &str,
     canonical_name: &str,
@@ -665,7 +660,7 @@ fn load_dynamic_resident_kernel(
     }))
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
 pub(crate) fn bind_dynamic_resident_operation(
     module_path: &[String],
     operation_name: &str,
@@ -715,7 +710,7 @@ pub(crate) fn bind_dynamic_resident_operation(
     .with_retained_state(state)))
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
 fn dynamic_resident_execute(
     bound: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -806,16 +801,20 @@ fn dynamic_resident_execute(
 #[cfg(feature = "dynamic-modules")]
 struct DynamicOverloadedSpecializer {
     name: String,
-    specializers: Vec<Arc<dyn FunctionSpecializer>>,
+    specializers: Vec<Arc<dyn CanonicalFunctionSpecializer>>,
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl FunctionSpecializer for DynamicOverloadedSpecializer {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+impl CanonicalFunctionSpecializer for DynamicOverloadedSpecializer {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
         let mut last_error = None;
 
         for specializer in &self.specializers {
-            match specializer.specialize(arguments) {
+            match specializer.specialize_invocation(invocation, context) {
                 Ok(function) => return Ok(function),
                 Err(err) => last_error = Some(err),
             }
@@ -836,8 +835,8 @@ impl FunctionSpecializer for DynamicOverloadedSpecializer {
 #[cfg(feature = "dynamic-modules")]
 #[derive(Clone)]
 enum DynamicF64Arg {
-    Scalar(Ref<f64>),
-    Matrix(RuntimeMatrix<f64>),
+    Scalar(ValueCell),
+    Matrix(ValueCell),
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -892,14 +891,28 @@ impl DynamicF64Arg {
     fn matrix_shape(&self) -> Option<(usize, usize)> {
         match self {
             DynamicF64Arg::Scalar(_) => None,
-            DynamicF64Arg::Matrix(matrix) => Some((matrix.rows(), matrix.cols())),
+            DynamicF64Arg::Matrix(matrix) => canonical_f64_matrix_values(matrix)
+                .ok()
+                .map(|(rows, columns, _)| (rows, columns)),
         }
     }
 
-    fn value_at(&self, index: usize) -> f64 {
+    fn value_at(&self, index: usize) -> MResult<f64> {
         match self {
-            DynamicF64Arg::Scalar(value) => unsafe { *value.as_ptr() },
-            DynamicF64Arg::Matrix(matrix) => matrix.index1d(index),
+            DynamicF64Arg::Scalar(value) => canonical_f64(value),
+            DynamicF64Arg::Matrix(matrix) => canonical_f64_matrix_values(matrix)?
+                .2
+                .get(index - 1)
+                .copied()
+                .ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "dynamic matrix argument index is out of bounds".to_owned(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                }),
         }
     }
 }
@@ -912,48 +925,65 @@ struct DynamicBinaryF64F64ToF64Specializer {
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl FunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 2 {
+impl CanonicalFunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 2,
-                    found: arguments.len(),
+                    found: invocation.len(),
                 },
                 None,
             )
             .with_compiler_loc());
         }
 
-        let lhs = dynamic_arg_as_f64_scalar_or_matrix(&arguments[0], &self.name)?;
-        let rhs = dynamic_arg_as_f64_scalar_or_matrix(&arguments[1], &self.name)?;
+        let lhs_cell = invocation.input(0).expect("validated lhs").cell()?.clone();
+        let rhs_cell = invocation.input(1).expect("validated rhs").cell()?.clone();
+        let lhs = dynamic_arg_as_f64_scalar_or_matrix(lhs_cell.clone(), &self.name)?;
+        let rhs = dynamic_arg_as_f64_scalar_or_matrix(rhs_cell.clone(), &self.name)?;
 
-        match (&lhs, &rhs) {
+        let (implementation, output): (Box<dyn MechFunction>, ValueCell) = match (&lhs, &rhs) {
             (DynamicF64Arg::Scalar(n), DynamicF64Arg::Scalar(k)) => {
-                Ok(Box::new(DynamicBinaryF64F64ToF64Function {
-                    name: self.name.clone(),
-                    n: n.clone(),
-                    k: k.clone(),
-                    out: Ref::new(0.0),
-                    kernel: self.kernel,
-                    _library: self._library.clone(),
-                }))
+                let output = ValueCell::from_exact(0.0_f64)?;
+                (
+                    Box::new(DynamicBinaryF64F64ToF64Function {
+                        name: self.name.clone(),
+                        n: n.clone(),
+                        k: k.clone(),
+                        output: output.clone(),
+                        kernel: self.kernel,
+                        _library: self._library.clone(),
+                    }),
+                    output,
+                )
             }
 
             _ => {
                 let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, &self.name)?;
-                let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
+                let output = dynamic_f64_matrix_output(plan.rows, plan.cols)?;
 
-                Ok(Box::new(DynamicBinaryF64F64BroadcastFunction {
-                    name: self.name.clone(),
-                    lhs,
-                    rhs,
-                    out,
-                    kernel: self.kernel,
-                    _library: self._library.clone(),
-                }))
+                (
+                    Box::new(DynamicBinaryF64F64BroadcastFunction {
+                        name: self.name.clone(),
+                        lhs,
+                        rhs,
+                        output: output.clone(),
+                        kernel: self.kernel,
+                        _library: self._library.clone(),
+                    }),
+                    output,
+                )
             }
-        }
+        };
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            implementation,
+            FunctionInvocation::binary(output, lhs_cell, rhs_cell),
+        )))
     }
 }
 
@@ -965,28 +995,41 @@ struct DynamicUnaryF64ToF64Specializer {
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl FunctionSpecializer for DynamicUnaryF64ToF64Specializer {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 1 {
+impl CanonicalFunctionSpecializer for DynamicUnaryF64ToF64Specializer {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 1,
-                    found: arguments.len(),
+                    found: invocation.len(),
                 },
                 None,
             )
             .with_compiler_loc());
         }
 
-        let input = dynamic_arg_as_f64_ref(&arguments[0], &self.name)?;
+        let input = invocation
+            .input(0)
+            .expect("validated input")
+            .cell()?
+            .clone();
+        dynamic_arg_as_f64_ref(&input, &self.name)?;
+        let output = ValueCell::from_exact(0.0_f64)?;
 
-        Ok(Box::new(DynamicUnaryF64ToF64Function {
-            name: self.name.clone(),
-            input,
-            out: Ref::new(0.0),
-            kernel: self.kernel,
-            _library: self._library.clone(),
-        }))
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            Box::new(DynamicUnaryF64ToF64Function {
+                name: self.name.clone(),
+                input: input.clone(),
+                output: output.clone(),
+                kernel: self.kernel,
+                _library: self._library.clone(),
+            }),
+            FunctionInvocation::unary(output, input),
+        )))
     }
 }
 
@@ -998,158 +1041,156 @@ struct DynamicUnaryF64ViewToF64ViewSpecializer {
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl FunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 1 {
+impl CanonicalFunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 1,
-                    found: arguments.len(),
+                    found: invocation.len(),
                 },
                 None,
             )
             .with_compiler_loc());
         }
 
-        let input = dynamic_arg_as_f64_matrix(&arguments[0], &self.name)?;
-        let rows = input.rows();
-        let cols = input.cols();
-        let len = rows * cols;
-        let out = initial_dynamic_unary_output(&input, rows, cols, len);
+        let input = invocation
+            .input(0)
+            .expect("validated input")
+            .cell()?
+            .clone();
+        let (rows, cols, _) = dynamic_arg_as_f64_matrix(&input, &self.name)?;
+        let output = dynamic_f64_matrix_output(rows, cols)?;
 
-        Ok(Box::new(DynamicUnaryF64ViewToF64ViewFunction {
-            name: self.name.clone(),
-            input,
-            out,
-            kernel: self.kernel,
-            _library: self._library.clone(),
-        }))
-    }
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn dynamic_arg_as_f64_ref(value: &LegacyValue, fxn_name: &str) -> MResult<Ref<f64>> {
-    match value {
-        LegacyValue::F64(v) => Ok(v.clone()),
-        LegacyValue::MutableReference(v) => {
-            let borrowed = v.borrow();
-            match &*borrowed {
-                LegacyValue::F64(inner) => Ok(inner.clone()),
-                x => Err(MechError::new(
-                    UnhandledFunctionArgumentKind1 {
-                        arg: x.kind(),
-                        fxn_name: fxn_name.to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            }
-        }
-        x => Err(MechError::new(
-            UnhandledFunctionArgumentKind1 {
-                arg: x.kind(),
-                fxn_name: fxn_name.to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn dynamic_arg_as_f64_scalar_or_matrix(
-    value: &LegacyValue,
-    fxn_name: &str,
-) -> MResult<DynamicF64Arg> {
-    match value {
-        #[cfg(feature = "f64")]
-        LegacyValue::F64(v) => Ok(DynamicF64Arg::Scalar(v.clone())),
-
-        #[cfg(all(feature = "matrix", feature = "f64"))]
-        LegacyValue::MatrixF64(matrix) => Ok(DynamicF64Arg::Matrix(matrix.clone())),
-
-        LegacyValue::MutableReference(v) => {
-            let borrowed = v.borrow();
-            match &*borrowed {
-                #[cfg(feature = "f64")]
-                LegacyValue::F64(inner) => Ok(DynamicF64Arg::Scalar(inner.clone())),
-
-                #[cfg(all(feature = "matrix", feature = "f64"))]
-                LegacyValue::MatrixF64(matrix) => Ok(DynamicF64Arg::Matrix(matrix.clone())),
-
-                x => Err(MechError::new(
-                    UnhandledFunctionArgumentKind1 {
-                        arg: x.kind(),
-                        fxn_name: fxn_name.to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            }
-        }
-
-        x => Err(MechError::new(
-            UnhandledFunctionArgumentKind1 {
-                arg: x.kind(),
-                fxn_name: fxn_name.to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn matrix_is_dmatrix(matrix: &RuntimeMatrix<f64>) -> bool {
-    matches!(matrix, RuntimeMatrix::DMatrix(_))
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn dynamic_arg_has_dmatrix(arg: &DynamicF64Arg) -> bool {
-    matches!(arg, DynamicF64Arg::Matrix(matrix) if matrix_is_dmatrix(matrix))
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn initial_dynamic_binary_output(
-    lhs: &DynamicF64Arg,
-    rhs: &DynamicF64Arg,
-    plan: &DynamicF64BinaryBroadcastPlan,
-) -> RuntimeMatrix<f64> {
-    if dynamic_arg_has_dmatrix(lhs) || dynamic_arg_has_dmatrix(rhs) {
-        RuntimeMatrix::DMatrix(Ref::new(DMatrix::from_vec(
-            plan.rows,
-            plan.cols,
-            vec![0.0; plan.len],
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            Box::new(DynamicUnaryF64ViewToF64ViewFunction {
+                name: self.name.clone(),
+                input: input.clone(),
+                output: output.clone(),
+                kernel: self.kernel,
+                _library: self._library.clone(),
+            }),
+            FunctionInvocation::unary(output, input),
         )))
-    } else {
-        RuntimeMatrix::from_vec(vec![0.0; plan.len], plan.rows, plan.cols)
     }
 }
 
 #[cfg(feature = "dynamic-modules")]
-fn initial_dynamic_unary_output(
-    input: &RuntimeMatrix<f64>,
-    rows: usize,
-    cols: usize,
-    len: usize,
-) -> RuntimeMatrix<f64> {
-    match input {
-        RuntimeMatrix::DMatrix(_) => {
-            RuntimeMatrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, vec![0.0; len])))
-        }
-        RuntimeMatrix::DVector(_) if cols == 1 => {
-            RuntimeMatrix::DVector(Ref::new(DVector::from_vec(vec![0.0; len])))
-        }
-        RuntimeMatrix::RowDVector(_) if rows == 1 => {
-            RuntimeMatrix::RowDVector(Ref::new(RowDVector::from_vec(vec![0.0; len])))
-        }
-        _ => RuntimeMatrix::from_vec(vec![0.0; len], rows, cols),
+fn dynamic_arg_as_f64_ref(value: &ValueCell, fxn_name: &str) -> MResult<()> {
+    if value.closed_schema_body()? == SchemaBody::FloatingPoint(FloatWidth::W64) {
+        Ok(())
+    } else {
+        Err(dynamic_argument_error(value, fxn_name, "f64 scalar"))
     }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_arg_as_f64_scalar_or_matrix(value: ValueCell, fxn_name: &str) -> MResult<DynamicF64Arg> {
+    match value.closed_schema_body()? {
+        SchemaBody::FloatingPoint(FloatWidth::W64) => Ok(DynamicF64Arg::Scalar(value)),
+        SchemaBody::Matrix { element, .. }
+            if *element == SchemaBody::FloatingPoint(FloatWidth::W64) =>
+        {
+            Ok(DynamicF64Arg::Matrix(value))
+        }
+        _ => Err(dynamic_argument_error(
+            &value,
+            fxn_name,
+            "f64 scalar or matrix",
+        )),
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_argument_error(value: &ValueCell, fxn_name: &str, expected: &str) -> MechError {
+    MechError::new(
+        GenericError {
+            msg: format!(
+                "dynamic function `{fxn_name}` expected {expected}, found {:?}",
+                value.representation(),
+            ),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn canonical_f64(value: &ValueCell) -> MResult<f64> {
+    let snapshot = value.snapshot()?;
+    let ValueData::F64(value) = snapshot.data() else {
+        return Err(dynamic_argument_error(
+            value,
+            "dynamic kernel",
+            "f64 scalar",
+        ));
+    };
+    Ok(value.to_f64())
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn canonical_f64_matrix_values(value: &ValueCell) -> MResult<(usize, usize, Vec<f64>)> {
+    use mech_core::snapshot::SequenceView;
+
+    let snapshot = value.snapshot()?;
+    let ValueData::Matrix(matrix) = snapshot.data() else {
+        return Err(dynamic_argument_error(
+            value,
+            "dynamic kernel",
+            "f64 matrix",
+        ));
+    };
+    let SequenceView::F64(elements) = matrix.elements() else {
+        return Err(dynamic_argument_error(
+            value,
+            "dynamic kernel",
+            "f64 matrix",
+        ));
+    };
+    let shape = value.shape();
+    let dimensions = shape.parameter_values();
+    let [rows, columns] = dimensions else {
+        return Err(dynamic_argument_error(
+            value,
+            "dynamic kernel",
+            "rank-two f64 matrix",
+        ));
+    };
+    Ok((
+        usize::try_from(*rows)
+            .map_err(|_| dynamic_argument_error(value, "dynamic kernel", "host-sized matrix"))?,
+        usize::try_from(*columns)
+            .map_err(|_| dynamic_argument_error(value, "dynamic kernel", "host-sized matrix"))?,
+        elements.iter().map(|element| element.to_f64()).collect(),
+    ))
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_f64_matrix_output(rows: usize, columns: usize) -> MResult<ValueCell> {
+    let count = rows.checked_mul(columns).ok_or_else(|| {
+        MechError::new(
+            GenericError {
+                msg: "dynamic matrix output shape overflowed".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    ValueCell::dynamic_rank_matrix(
+        SchemaBody::FloatingPoint(FloatWidth::W64),
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        vec![ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(0.0)); count]
+            .into_boxed_slice(),
+    )
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn replace_dynamic_matrix_output(
-    output: &RuntimeMatrix<f64>,
+    output: &ValueCell,
     rows: usize,
     cols: usize,
     values: Vec<f64>,
@@ -1183,56 +1224,15 @@ fn replace_dynamic_matrix_output(
         .with_compiler_loc());
     }
 
-    match output {
-        RuntimeMatrix::DMatrix(matrix) => {
-            *matrix.borrow_mut() = DMatrix::from_vec(rows, cols, values);
-            Ok(())
-        }
-        RuntimeMatrix::DVector(vector) => {
-            if cols != 1 {
-                return Err(MechError::new(GenericError { msg: format!("dynamic function `{}` output cannot represent shape {}x{} as a column vector", function_name, rows, cols) }, None).with_compiler_loc());
-            }
-            *vector.borrow_mut() = DVector::from_vec(values);
-            Ok(())
-        }
-        RuntimeMatrix::RowDVector(vector) => {
-            if rows != 1 {
-                return Err(MechError::new(GenericError { msg: format!("dynamic function `{}` output cannot represent shape {}x{} as a row vector", function_name, rows, cols) }, None).with_compiler_loc());
-            }
-            *vector.borrow_mut() = RowDVector::from_vec(values);
-            Ok(())
-        }
-        #[cfg(any(
-            feature = "matrix1",
-            feature = "matrix2",
-            feature = "matrix3",
-            feature = "matrix4",
-            feature = "matrix2x3",
-            feature = "matrix3x2",
-            feature = "vector2",
-            feature = "vector3",
-            feature = "vector4",
-            feature = "row_vector2",
-            feature = "row_vector3",
-            feature = "row_vector4"
-        ))]
-        _ => {
-            if output.rows() != rows || output.cols() != cols {
-                return Err(MechError::new(
-                    GenericError {
-                        msg: format!(
-                            "dynamic function `{}` output cannot represent changed shape {}x{}",
-                            function_name, rows, cols
-                        ),
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-            output.set(values);
-            Ok(())
-        }
-    }
+    let next = output.rebuild_matrix_drafts(
+        vec![rows as u64, cols as u64].into_boxed_slice(),
+        values
+            .into_iter()
+            .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+    )?;
+    output.replace(&next)
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -1289,69 +1289,42 @@ fn dynamic_binary_broadcast_plan(
 }
 
 #[cfg(feature = "dynamic-modules")]
-fn dynamic_arg_as_f64_matrix(value: &LegacyValue, fxn_name: &str) -> MResult<RuntimeMatrix<f64>> {
-    match value {
-        #[cfg(all(feature = "matrix", feature = "f64"))]
-        LegacyValue::MatrixF64(matrix) => Ok(matrix.clone()),
-        LegacyValue::MutableReference(v) => {
-            let borrowed = v.borrow();
-            match &*borrowed {
-                #[cfg(all(feature = "matrix", feature = "f64"))]
-                LegacyValue::MatrixF64(matrix) => Ok(matrix.clone()),
-                x => Err(MechError::new(
-                    UnhandledFunctionArgumentKind1 {
-                        arg: x.kind(),
-                        fxn_name: fxn_name.to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            }
-        }
-        x => Err(MechError::new(
-            UnhandledFunctionArgumentKind1 {
-                arg: x.kind(),
-                fxn_name: fxn_name.to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
+fn dynamic_arg_as_f64_matrix(
+    value: &ValueCell,
+    fxn_name: &str,
+) -> MResult<(usize, usize, Vec<f64>)> {
+    canonical_f64_matrix_values(value)
+        .map_err(|_| dynamic_argument_error(value, fxn_name, "f64 matrix"))
 }
 
 #[cfg(feature = "dynamic-modules")]
 struct DynamicBinaryF64F64ToF64Function {
     name: String,
-    n: Ref<f64>,
-    k: Ref<f64>,
-    out: Ref<f64>,
+    n: ValueCell,
+    k: ValueCell,
+    output: ValueCell,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn solve_dynamic_binary_scalar(
-    n: &Ref<f64>,
-    k: &Ref<f64>,
-    out: &Ref<f64>,
+    n: &ValueCell,
+    k: &ValueCell,
+    output: &ValueCell,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     name: &str,
 ) -> MResult<()> {
-    let mut next = *out.borrow();
-    let status = unsafe { (kernel)(*n.borrow(), *k.borrow(), &mut next as *mut f64) };
+    let mut next = canonical_f64(output)?;
+    let status = unsafe { (kernel)(canonical_f64(n)?, canonical_f64(k)?, &mut next as *mut f64) };
     check_dynamic_kernel_status(name, status)?;
-    *out.borrow_mut() = next;
-    Ok(())
+    output.replace(&ValueCell::from_exact(next)?.snapshot()?)
 }
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
     fn solve_result(&self) -> MResult<()> {
-        solve_dynamic_binary_scalar(&self.n, &self.k, &self.out, self.kernel, &self.name)
-    }
-
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
+        solve_dynamic_binary_scalar(&self.n, &self.k, &self.output, self.kernel, &self.name)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1361,18 +1334,14 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64ToF64Function {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_register_brrw!(self.out, ctx);
-        let lhs = compile_register_brrw!(self.n, ctx);
-        let rhs = compile_register_brrw!(self.k, ctx);
+        let output = compile_value_cell_register(&self.output, ctx)?;
+        let lhs = compile_value_cell_register(&self.n, ctx)?;
+        let rhs = compile_value_cell_register(&self.k, ctx)?;
         let function = ctx.function_id(&self.name)?;
         ctx.emit_binop(function, output, lhs, rhs);
         Ok(output)
@@ -1384,7 +1353,7 @@ struct DynamicBinaryF64F64BroadcastFunction {
     name: String,
     lhs: DynamicF64Arg,
     rhs: DynamicF64Arg,
-    out: RuntimeMatrix<f64>,
+    output: ValueCell,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
@@ -1393,7 +1362,7 @@ struct DynamicBinaryF64F64BroadcastFunction {
 fn solve_dynamic_binary_broadcast(
     lhs: &DynamicF64Arg,
     rhs: &DynamicF64Arg,
-    out: &RuntimeMatrix<f64>,
+    output: &ValueCell,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     name: &str,
 ) -> MResult<()> {
@@ -1403,25 +1372,21 @@ fn solve_dynamic_binary_broadcast(
         let mut value = 0.0;
         let status = unsafe {
             (kernel)(
-                lhs.value_at(index),
-                rhs.value_at(index),
+                lhs.value_at(index)?,
+                rhs.value_at(index)?,
                 &mut value as *mut f64,
             )
         };
         check_dynamic_kernel_status(name, status)?;
         out_vec.push(value);
     }
-    replace_dynamic_matrix_output(out, plan.rows, plan.cols, out_vec, name)
+    replace_dynamic_matrix_output(output, plan.rows, plan.cols, out_vec, name)
 }
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     fn solve_result(&self) -> MResult<()> {
-        solve_dynamic_binary_broadcast(&self.lhs, &self.rhs, &self.out, self.kernel, &self.name)
-    }
-
-    fn out(&self) -> LegacyValue {
-        LegacyValue::MatrixF64(self.out.clone())
+        solve_dynamic_binary_broadcast(&self.lhs, &self.rhs, &self.output, self.kernel, &self.name)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1431,16 +1396,12 @@ impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64BroadcastFunction {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_register_brrw!(self.out, ctx);
+        let output = compile_value_cell_register(&self.output, ctx)?;
         let lhs = compile_dynamic_f64_arg(&self.lhs, ctx)?;
         let rhs = compile_dynamic_f64_arg(&self.rhs, ctx)?;
         let function = ctx.function_id(&self.name)?;
@@ -1455,42 +1416,38 @@ fn compile_dynamic_f64_arg(
     ctx: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
     Ok(match argument {
-        DynamicF64Arg::Scalar(value) => compile_register_brrw!(value, ctx),
-        DynamicF64Arg::Matrix(value) => compile_register_brrw!(value, ctx),
+        DynamicF64Arg::Scalar(value) | DynamicF64Arg::Matrix(value) => {
+            compile_value_cell_register(value, ctx)?
+        }
     })
 }
 
 #[cfg(feature = "dynamic-modules")]
 struct DynamicUnaryF64ToF64Function {
     name: String,
-    input: Ref<f64>,
-    out: Ref<f64>,
+    input: ValueCell,
+    output: ValueCell,
     kernel: mech_abi::MechUnaryF64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn solve_dynamic_unary_scalar(
-    input: &Ref<f64>,
-    out: &Ref<f64>,
+    input: &ValueCell,
+    output: &ValueCell,
     kernel: mech_abi::MechUnaryF64ToF64KernelV1,
     name: &str,
 ) -> MResult<()> {
-    let mut next = *out.borrow();
-    let status = unsafe { (kernel)(*input.borrow(), &mut next as *mut f64) };
+    let mut next = canonical_f64(output)?;
+    let status = unsafe { (kernel)(canonical_f64(input)?, &mut next as *mut f64) };
     check_dynamic_kernel_status(name, status)?;
-    *out.borrow_mut() = next;
-    Ok(())
+    output.replace(&ValueCell::from_exact(next)?.snapshot()?)
 }
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
     fn solve_result(&self) -> MResult<()> {
-        solve_dynamic_unary_scalar(&self.input, &self.out, self.kernel, &self.name)
-    }
-
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
+        solve_dynamic_unary_scalar(&self.input, &self.output, self.kernel, &self.name)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1500,17 +1457,13 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_register_brrw!(self.out, ctx);
-        let input = compile_register_brrw!(self.input, ctx);
+        let output = compile_value_cell_register(&self.output, ctx)?;
+        let input = compile_value_cell_register(&self.input, ctx)?;
         let function = ctx.function_id(&self.name)?;
         ctx.emit_unop(function, output, input);
         Ok(output)
@@ -1520,21 +1473,20 @@ impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
 #[cfg(feature = "dynamic-modules")]
 struct DynamicUnaryF64ViewToF64ViewFunction {
     name: String,
-    input: RuntimeMatrix<f64>,
-    out: RuntimeMatrix<f64>,
+    input: ValueCell,
+    output: ValueCell,
     kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn solve_dynamic_unary_view(
-    input: &RuntimeMatrix<f64>,
-    out: &RuntimeMatrix<f64>,
+    input: &ValueCell,
+    output: &ValueCell,
     kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     name: &str,
 ) -> MResult<()> {
-    let rows = input.rows();
-    let cols = input.cols();
+    let (rows, cols, input_vec) = canonical_f64_matrix_values(input)?;
     let len = rows.checked_mul(cols).ok_or_else(|| {
         MechError::new(
             GenericError {
@@ -1544,10 +1496,6 @@ fn solve_dynamic_unary_view(
         )
         .with_compiler_loc()
     })?;
-    let mut input_vec = Vec::with_capacity(len);
-    for index in 1..=len {
-        input_vec.push(input.index1d(index));
-    }
     let mut out_vec = vec![0.0; len];
     let status = unsafe {
         (kernel)(
@@ -1566,17 +1514,13 @@ fn solve_dynamic_unary_view(
         )
     };
     check_dynamic_kernel_status(name, status)?;
-    replace_dynamic_matrix_output(out, rows, cols, out_vec, name)
+    replace_dynamic_matrix_output(output, rows, cols, out_vec, name)
 }
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     fn solve_result(&self) -> MResult<()> {
-        solve_dynamic_unary_view(&self.input, &self.out, self.kernel, &self.name)
-    }
-
-    fn out(&self) -> LegacyValue {
-        LegacyValue::MatrixF64(self.out.clone())
+        solve_dynamic_unary_view(&self.input, &self.output, self.kernel, &self.name)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1586,17 +1530,13 @@ impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ViewToF64ViewFunction {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_register_brrw!(self.out, ctx);
-        let input = compile_register_brrw!(self.input, ctx);
+        let output = compile_value_cell_register(&self.output, ctx)?;
+        let input = compile_value_cell_register(&self.input, ctx)?;
         let function = ctx.function_id(&self.name)?;
         ctx.emit_unop(function, output, input);
         Ok(output)
@@ -2101,8 +2041,10 @@ mod static_catalog_module_tests {
         let mut entries = Vec::with_capacity(items.len());
         let mut exports = Vec::with_capacity(items.len());
         for item in items {
-            let entry =
-                FunctionExtensionEntry::new(format!("{module}/{item}"), Arc::new(TestSpecializer));
+            let entry = FunctionExtensionEntry::new(
+                format!("{module}/{item}"),
+                canonical_function_specializer(Arc::new(TestSpecializer)),
+            );
             exports.push(DynamicFunctionExport {
                 item: (*item).to_string(),
                 extension: entry.id,
@@ -2271,11 +2213,13 @@ mod dynamic_binary_broadcast_tests {
     use super::*;
 
     fn scalar(value: f64) -> DynamicF64Arg {
-        DynamicF64Arg::Scalar(Ref::new(value))
+        DynamicF64Arg::Scalar(ValueCell::from_exact(value).unwrap())
     }
 
     fn matrix(values: Vec<f64>, rows: usize, cols: usize) -> DynamicF64Arg {
-        DynamicF64Arg::Matrix(RuntimeMatrix::from_vec(values, rows, cols))
+        let output = dynamic_f64_matrix_output(rows, cols).unwrap();
+        replace_dynamic_matrix_output(&output, rows, cols, values, "test").unwrap();
+        DynamicF64Arg::Matrix(output)
     }
 
     #[test]
@@ -2384,158 +2328,122 @@ mod dynamic_live_shape_solve_tests {
         mech_abi::MechStatusV1::OK
     }
 
-    fn dmatrix(values: Vec<f64>, rows: usize, cols: usize) -> RuntimeMatrix<f64> {
-        RuntimeMatrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, values)))
+    fn matrix(values: Vec<f64>, rows: usize, columns: usize) -> ValueCell {
+        let cell = dynamic_f64_matrix_output(rows, columns).unwrap();
+        set_matrix(&cell, values, rows, columns);
+        cell
     }
 
-    fn set_dmatrix(matrix: &RuntimeMatrix<f64>, values: Vec<f64>, rows: usize, cols: usize) {
-        match matrix {
-            RuntimeMatrix::DMatrix(inner) => {
-                *inner.borrow_mut() = DMatrix::from_vec(rows, cols, values)
-            }
-            _ => panic!("expected DMatrix"),
-        }
+    fn set_matrix(cell: &ValueCell, values: Vec<f64>, rows: usize, columns: usize) {
+        replace_dynamic_matrix_output(cell, rows, columns, values, "test").unwrap();
     }
 
-    fn values(matrix: &RuntimeMatrix<f64>) -> Vec<f64> {
-        (1..=matrix.rows() * matrix.cols())
-            .map(|index| matrix.index1d(index))
-            .collect()
-    }
-
-    fn ref_id(matrix: &RuntimeMatrix<f64>) -> u64 {
-        match matrix {
-            RuntimeMatrix::DMatrix(inner) => inner.id(),
-            RuntimeMatrix::DVector(inner) => inner.id(),
-            RuntimeMatrix::RowDVector(inner) => inner.id(),
-            _ => 0,
-        }
+    fn contents(cell: &ValueCell) -> (usize, usize, Vec<f64>) {
+        canonical_f64_matrix_values(cell).unwrap()
     }
 
     #[test]
     fn dynamic_binary_broadcast_recomputes_shape_on_solve() {
-        let lhs_matrix = dmatrix(vec![1.0, 2.0], 1, 2);
-        let rhs = DynamicF64Arg::Scalar(Ref::new(10.0));
+        let lhs_matrix = matrix(vec![1.0, 2.0], 1, 2);
+        let rhs = DynamicF64Arg::Scalar(ValueCell::from_exact(10.0_f64).unwrap());
         let lhs = DynamicF64Arg::Matrix(lhs_matrix.clone());
         let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
-        let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
+        let out = dynamic_f64_matrix_output(plan.rows, plan.cols).unwrap();
         solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
-        set_dmatrix(&lhs_matrix, vec![3.0, 4.0, 5.0, 6.0], 2, 2);
+        set_matrix(&lhs_matrix, vec![3.0, 4.0, 5.0, 6.0], 2, 2);
         solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
-        assert_eq!(
-            (out.rows(), out.cols(), values(&out)),
-            (2, 2, vec![13.0, 14.0, 15.0, 16.0])
-        );
+        assert_eq!(contents(&out), (2, 2, vec![13.0, 14.0, 15.0, 16.0]));
     }
 
     #[test]
     fn dynamic_binary_broadcast_handles_growth_without_truncation() {
-        let lhs_matrix = dmatrix(vec![1.0], 1, 1);
-        let rhs = DynamicF64Arg::Scalar(Ref::new(1.0));
+        let lhs_matrix = matrix(vec![1.0], 1, 1);
+        let rhs = DynamicF64Arg::Scalar(ValueCell::from_exact(1.0_f64).unwrap());
         let lhs = DynamicF64Arg::Matrix(lhs_matrix.clone());
         let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
-        let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
-        set_dmatrix(&lhs_matrix, vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+        let out = dynamic_f64_matrix_output(plan.rows, plan.cols).unwrap();
+        set_matrix(&lhs_matrix, vec![1.0, 2.0, 3.0, 4.0], 2, 2);
         solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
-        assert_eq!(
-            (out.rows(), out.cols(), values(&out)),
-            (2, 2, vec![2.0, 3.0, 4.0, 5.0])
-        );
+        assert_eq!(contents(&out), (2, 2, vec![2.0, 3.0, 4.0, 5.0]));
     }
 
     #[test]
     fn dynamic_binary_broadcast_handles_shrink_without_out_of_bounds() {
-        let lhs_matrix = dmatrix(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
-        let rhs = DynamicF64Arg::Scalar(Ref::new(1.0));
+        let lhs_matrix = matrix(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+        let rhs = DynamicF64Arg::Scalar(ValueCell::from_exact(1.0_f64).unwrap());
         let lhs = DynamicF64Arg::Matrix(lhs_matrix.clone());
         let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
-        let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
-        set_dmatrix(&lhs_matrix, vec![9.0], 1, 1);
+        let out = dynamic_f64_matrix_output(plan.rows, plan.cols).unwrap();
+        set_matrix(&lhs_matrix, vec![9.0], 1, 1);
         solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
-        assert_eq!((out.rows(), out.cols(), values(&out)), (1, 1, vec![10.0]));
+        assert_eq!(contents(&out), (1, 1, vec![10.0]));
     }
 
     #[test]
     fn dynamic_binary_shape_mismatch_preserves_last_successful_output() {
-        let lhs_matrix = dmatrix(vec![1.0, 2.0], 1, 2);
-        let rhs_matrix = dmatrix(vec![3.0, 4.0], 1, 2);
+        let lhs_matrix = matrix(vec![1.0, 2.0], 1, 2);
+        let rhs_matrix = matrix(vec![3.0, 4.0], 1, 2);
         let lhs = DynamicF64Arg::Matrix(lhs_matrix.clone());
         let rhs = DynamicF64Arg::Matrix(rhs_matrix.clone());
         let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
-        let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
+        let out = dynamic_f64_matrix_output(plan.rows, plan.cols).unwrap();
         solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
-        set_dmatrix(&rhs_matrix, vec![1.0, 2.0, 3.0], 1, 3);
+        set_matrix(&rhs_matrix, vec![1.0, 2.0, 3.0], 1, 3);
         assert!(solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").is_err());
-        assert_eq!(
-            (out.rows(), out.cols(), values(&out)),
-            (1, 2, vec![4.0, 6.0])
-        );
+        assert_eq!(contents(&out), (1, 2, vec![4.0, 6.0]));
     }
 
     #[test]
     fn dynamic_unary_view_recomputes_shape_on_solve() {
-        let input = dmatrix(vec![1.0, 2.0], 1, 2);
-        let out = initial_dynamic_unary_output(&input, 1, 2, 2);
-        set_dmatrix(&input, vec![3.0, 4.0, 5.0, 6.0], 2, 2);
+        let input = matrix(vec![1.0, 2.0], 1, 2);
+        let out = dynamic_f64_matrix_output(1, 2).unwrap();
+        set_matrix(&input, vec![3.0, 4.0, 5.0, 6.0], 2, 2);
         solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
-        assert_eq!(
-            (out.rows(), out.cols(), values(&out)),
-            (2, 2, vec![6.0, 8.0, 10.0, 12.0])
-        );
+        assert_eq!(contents(&out), (2, 2, vec![6.0, 8.0, 10.0, 12.0]));
     }
 
     #[test]
     fn dynamic_unary_view_handles_growth_without_truncation() {
-        let input = dmatrix(vec![1.0], 1, 1);
-        let out = initial_dynamic_unary_output(&input, 1, 1, 1);
-        set_dmatrix(&input, vec![1.0, 2.0, 3.0], 3, 1);
+        let input = matrix(vec![1.0], 1, 1);
+        let out = dynamic_f64_matrix_output(1, 1).unwrap();
+        set_matrix(&input, vec![1.0, 2.0, 3.0], 3, 1);
         solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
-        assert_eq!(
-            (out.rows(), out.cols(), values(&out)),
-            (3, 1, vec![2.0, 4.0, 6.0])
-        );
+        assert_eq!(contents(&out), (3, 1, vec![2.0, 4.0, 6.0]));
     }
 
     #[test]
     fn dynamic_unary_view_handles_shrink_without_out_of_bounds() {
-        let input = dmatrix(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
-        let out = initial_dynamic_unary_output(&input, 2, 2, 4);
-        set_dmatrix(&input, vec![7.0], 1, 1);
+        let input = matrix(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+        let out = dynamic_f64_matrix_output(2, 2).unwrap();
+        set_matrix(&input, vec![7.0], 1, 1);
         solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
-        assert_eq!((out.rows(), out.cols(), values(&out)), (1, 1, vec![14.0]));
+        assert_eq!(contents(&out), (1, 1, vec![14.0]));
     }
 
     #[test]
     fn dynamic_matrix_output_retains_reference_identity() {
-        let input = dmatrix(vec![1.0], 1, 1);
-        let out = initial_dynamic_unary_output(&input, 1, 1, 1);
-        let before = ref_id(&out);
-        set_dmatrix(&input, vec![1.0, 2.0], 2, 1);
+        let input = matrix(vec![1.0], 1, 1);
+        let out = dynamic_f64_matrix_output(1, 1).unwrap();
+        let alias = out.clone();
+        set_matrix(&input, vec![1.0, 2.0], 2, 1);
         solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
-        assert_eq!(before, ref_id(&out));
+        assert!(out.same_cell(&alias));
+        assert_eq!(contents(&out), (2, 1, vec![2.0, 4.0]));
     }
 
     #[test]
-    fn dynamic_row_vector_output_preserves_row_vector_representation() {
-        let input = RuntimeMatrix::RowDVector(Ref::new(RowDVector::from_vec(vec![1.0, 2.0])));
-        let out = initial_dynamic_unary_output(&input, 1, 2, 2);
+    fn dynamic_row_extent_remains_rank_two() {
+        let input = matrix(vec![1.0, 2.0], 1, 2);
+        let out = dynamic_f64_matrix_output(1, 2).unwrap();
         solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
-        assert!(matches!(out, RuntimeMatrix::RowDVector(_)));
-        assert_eq!(
-            (out.rows(), out.cols(), values(&out)),
-            (1, 2, vec![2.0, 4.0])
-        );
+        assert_eq!(contents(&out), (1, 2, vec![2.0, 4.0]));
     }
 
     #[test]
-    fn dynamic_column_vector_output_preserves_column_vector_representation() {
-        let input = RuntimeMatrix::DVector(Ref::new(DVector::from_vec(vec![1.0, 2.0])));
-        let out = initial_dynamic_unary_output(&input, 2, 1, 2);
+    fn dynamic_column_extent_remains_rank_two() {
+        let input = matrix(vec![1.0, 2.0], 2, 1);
+        let out = dynamic_f64_matrix_output(2, 1).unwrap();
         solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
-        assert!(matches!(out, RuntimeMatrix::DVector(_)));
-        assert_eq!(
-            (out.rows(), out.cols(), values(&out)),
-            (2, 1, vec![2.0, 4.0])
-        );
+        assert_eq!(contents(&out), (2, 1, vec![2.0, 4.0]));
     }
 }

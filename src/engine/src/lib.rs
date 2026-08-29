@@ -53,42 +53,8 @@ pub(crate) use interpreter::{Interpreter, InterpreterExecution, RuntimeContextBi
 pub mod intrinsics;
 #[cfg(feature = "semantic-compiler")]
 pub mod literals;
-#[cfg(all(
-    feature = "semantic-compiler",
-    any(
-        all(feature = "subscript", feature = "assign"),
-        all(feature = "subscript", feature = "access", feature = "subscript_slice"),
-        all(
-            any(
-                feature = "math_add_assign",
-                feature = "math_sub_assign",
-                feature = "math_div_assign",
-                feature = "math_mul_assign"
-            ),
-            any(feature = "subscript_formula", feature = "subscript_range")
-        )
-    )
-))]
-mod matrix_selector;
 #[cfg(feature = "semantic-compiler")]
 pub mod mechdown;
-#[cfg(all(
-    feature = "semantic-compiler",
-    any(
-        all(feature = "subscript", feature = "assign"),
-        all(feature = "subscript", feature = "access", feature = "subscript_slice"),
-        all(
-            any(
-                feature = "math_add_assign",
-                feature = "math_sub_assign",
-                feature = "math_div_assign",
-                feature = "math_mul_assign"
-            ),
-            any(feature = "subscript_formula", feature = "subscript_range")
-        )
-    )
-))]
-pub(crate) use matrix_selector::MatrixSelector;
 #[cfg(feature = "semantic-compiler")]
 pub mod patterns;
 #[cfg(any(
@@ -173,6 +139,10 @@ pub mod __mech_native {
     pub use crate::intrinsics::catalog::install_set_comprehension;
     #[cfg(feature = "set")]
     pub use crate::intrinsics::catalog::install_set_define;
+    #[cfg(feature = "matrix_horzcat")]
+    pub use crate::intrinsics::catalog::install_value_horizontal_concatenation;
+    #[cfg(feature = "matrix_vertcat")]
+    pub use crate::intrinsics::catalog::install_value_vertical_concatenation;
     #[cfg(feature = "convert")]
     pub use crate::intrinsics::convert::scalar::__mech_native::*;
     #[cfg(feature = "variable_define")]
@@ -227,6 +197,8 @@ pub use crate::intrinsics::access::table::*;
 pub use crate::intrinsics::access::tuple::*;
 #[cfg(feature = "access")]
 pub use crate::intrinsics::access::{AccessColumn, AccessRange, AccessScalar, AccessSwizzle};
+#[cfg(feature = "assign")]
+pub use crate::intrinsics::assign::EmptyAssignmentNotBytecodeCompilable;
 #[cfg(all(feature = "assign", feature = "map"))]
 pub use crate::intrinsics::assign::map::*;
 #[cfg(all(feature = "assign", feature = "matrix"))]
@@ -237,15 +209,8 @@ pub use crate::intrinsics::assign::record::*;
 pub use crate::intrinsics::assign::table::*;
 #[cfg(all(feature = "assign", feature = "tuple"))]
 pub use crate::intrinsics::assign::tuple::*;
-#[cfg(feature = "assign")]
-pub use crate::intrinsics::assign::{
-    AddAssignValue, AssignColumn, AssignValue, EmptyAssignmentNotBytecodeCompilable,
-    add_assign_value_fxn,
-};
-#[cfg(feature = "convert")]
-pub use crate::intrinsics::convert::scalar::*;
-#[cfg(all(feature = "convert", feature = "matrix"))]
-pub use crate::intrinsics::convert::{mat_to_mat::*, scalar_to_mat::*};
+#[cfg(all(feature = "assign", feature = "semantic-compiler"))]
+pub use crate::intrinsics::assign::{AddAssignValue, AssignColumn, AssignValue};
 #[cfg(feature = "matrix_horzcat")]
 pub use crate::intrinsics::horzcat::{HorizontalConcatenateDimensionMismatchError, MatrixHorzCat};
 #[cfg(feature = "table")]
@@ -256,43 +221,70 @@ pub use crate::intrinsics::table_ops::{
 #[cfg(feature = "matrix_vertcat")]
 pub use crate::intrinsics::vertcat::{MatrixVertCat, VerticalConcatenateDimensionMismatch};
 #[cfg(feature = "semantic-compiler")]
-pub fn load_stdkinds(kinds: &mut KindTable) {
+pub fn load_stdkinds(kinds: &mut NamedSchemaTable) {
     // `ix` is the canonical spelling used by value formatting; `index` is the
-    // long-form alias. Both names denote the same one-based scalar kind.
-    kinds.insert(hash_str("ix"), ValueKind::Index);
-    kinds.insert(hash_str("index"), ValueKind::Index);
+    // long-form alias. Both names denote the same one-based scalar schema.
+    kinds.insert(hash_str("ix"), SchemaBody::Index);
+    kinds.insert(hash_str("index"), SchemaBody::Index);
     #[cfg(feature = "u8")]
-    kinds.insert(hash_str("u8"), ValueKind::U8);
+    kinds.insert(
+        hash_str("u8"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8),
+    );
     #[cfg(feature = "u16")]
-    kinds.insert(hash_str("u16"), ValueKind::U16);
+    kinds.insert(
+        hash_str("u16"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W16),
+    );
     #[cfg(feature = "u32")]
-    kinds.insert(hash_str("u32"), ValueKind::U32);
+    kinds.insert(
+        hash_str("u32"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W32),
+    );
     #[cfg(feature = "u64")]
-    kinds.insert(hash_str("u64"), ValueKind::U64);
+    kinds.insert(
+        hash_str("u64"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W64),
+    );
     #[cfg(feature = "u128")]
-    kinds.insert(hash_str("u128"), ValueKind::U128);
+    kinds.insert(
+        hash_str("u128"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W128),
+    );
     #[cfg(feature = "i8")]
-    kinds.insert(hash_str("i8"), ValueKind::I8);
+    kinds.insert(hash_str("i8"), SchemaBody::SignedInteger(IntegerWidth::W8));
     #[cfg(feature = "i16")]
-    kinds.insert(hash_str("i16"), ValueKind::I16);
+    kinds.insert(
+        hash_str("i16"),
+        SchemaBody::SignedInteger(IntegerWidth::W16),
+    );
     #[cfg(feature = "i32")]
-    kinds.insert(hash_str("i32"), ValueKind::I32);
+    kinds.insert(
+        hash_str("i32"),
+        SchemaBody::SignedInteger(IntegerWidth::W32),
+    );
     #[cfg(feature = "i64")]
-    kinds.insert(hash_str("i64"), ValueKind::I64);
+    kinds.insert(
+        hash_str("i64"),
+        SchemaBody::SignedInteger(IntegerWidth::W64),
+    );
     #[cfg(feature = "i128")]
-    kinds.insert(hash_str("i128"), ValueKind::I128);
+    kinds.insert(
+        hash_str("i128"),
+        SchemaBody::SignedInteger(IntegerWidth::W128),
+    );
     #[cfg(feature = "f32")]
-    kinds.insert(hash_str("f32"), ValueKind::F32);
+    kinds.insert(hash_str("f32"), SchemaBody::FloatingPoint(FloatWidth::W32));
     #[cfg(feature = "f64")]
-    kinds.insert(hash_str("f64"), ValueKind::F64);
+    kinds.insert(hash_str("f64"), SchemaBody::FloatingPoint(FloatWidth::W64));
     #[cfg(feature = "c64")]
-    kinds.insert(hash_str("c64"), ValueKind::C64);
+    kinds.insert(hash_str("c64"), SchemaBody::Complex(FloatWidth::W64));
     #[cfg(feature = "r64")]
-    kinds.insert(hash_str("r64"), ValueKind::R64);
+    kinds.insert(hash_str("r64"), SchemaBody::Rational64);
     #[cfg(feature = "string")]
-    kinds.insert(hash_str("string"), ValueKind::String);
+    kinds.insert(hash_str("string"), SchemaBody::String);
     #[cfg(feature = "bool")]
-    kinds.insert(hash_str("bool"), ValueKind::Bool);
+    kinds.insert(hash_str("bool"), SchemaBody::Bool);
 }
 
 #[cfg(all(test, feature = "semantic-compiler"))]
@@ -301,10 +293,10 @@ mod standard_kind_tests {
 
     #[test]
     fn ix_and_index_are_aliases() {
-        let mut kinds = KindTable::new();
+        let mut kinds = NamedSchemaTable::default();
         load_stdkinds(&mut kinds);
-        assert_eq!(kinds.get(&hash_str("ix")), Some(&ValueKind::Index));
-        assert_eq!(kinds.get(&hash_str("index")), Some(&ValueKind::Index));
+        assert_eq!(kinds.get(&hash_str("ix")), Some(&SchemaBody::Index));
+        assert_eq!(kinds.get(&hash_str("index")), Some(&SchemaBody::Index));
     }
 }
 

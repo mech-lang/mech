@@ -14,9 +14,10 @@ use crate::Literal;
 use crate::hash_str;
 use crate::{
     Expression, FunctionValueRepresentation, InterpreterExecution, MResult, MatchArm,
-    MatchExpression, MechError, Pattern, SchemaBody, SpecializationInput, Token, ValueCell,
-    ValueCellSnapshotFailure, ValueData,
+    MatchExpression, MechError, Pattern, SpecializationInput, Token, ValueCell, ValueData,
 };
+#[cfg(feature = "matrix")]
+use crate::{SchemaBody, ValueCellSnapshotFailure};
 use mech_core::snapshot::SequenceView;
 #[cfg(feature = "matrix")]
 use mech_core::snapshot::{OptionDraft, ValueDataDraft};

@@ -179,7 +179,7 @@ variables = [
   "mech-core/variables", "mech-syntax?/variables",
 ]
 variable_define = [
-  "statements", "functions",
+  "statements", "functions", "bool", "string",
   "mech-core/variable_define", "mech-syntax?/variable_define",
 ]
 invariant_define = [

@@ -1,11 +1,11 @@
 #[cfg(all(test, feature = "functions", feature = "symbol_table", feature = "f64"))]
 mod checkpoint_tests {
     use super::super::super::{
-        Dictionary, ExtensionFunctionId, FunctionBinding, FunctionCatalogBuilder, FunctionDefine,
-        FunctionDefinition, FunctionExport, FunctionExposure, FunctionExtensionEntry,
-        FunctionSpecializer, Interpreter, LegacyValue, MResult, MechFunction, MechSourceCode,
-        ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
-        RuntimeContextBinding, ValueCell, ValueStateBorrowConflict, hash_str,
+        CellAccess, Dictionary, ExtensionFunctionId, FunctionBinding, FunctionCatalogBuilder,
+        FunctionDefine, FunctionDefinition, FunctionExport, FunctionExposure,
+        FunctionExtensionEntry, FunctionSpecializer, Interpreter, LegacyValue, MResult,
+        MechFunction, MechSourceCode, ModuleManifestCatalog, OperationId, ProgramState,
+        ReactiveCellId, Ref, RuntimeContextBinding, ValueCell, ValueCellBorrowConflict, hash_str,
         internal_pattern_value_identifier,
     };
     use std::collections::HashMap;
@@ -15,10 +15,6 @@ mod checkpoint_tests {
     use super::super::super::{ComparisonOp, FormulaOperator, IntegrityConstraint};
     #[cfg(feature = "state_machines")]
     use super::super::super::{FsmImplementation, FsmSpecification, Pattern};
-
-    fn f64_value(value: &Ref<f64>) -> LegacyValue {
-        LegacyValue::F64(value.clone())
-    }
 
     struct CheckpointSpecializer(u8);
 
@@ -43,18 +39,23 @@ mod checkpoint_tests {
     }
 
     fn index_payload(value: &ValueCell) -> usize {
-        let value = value.borrow();
-        let LegacyValue::Index(index) = &*value else {
+        let value = value.snapshot().unwrap();
+        let super::super::super::ValueData::Index(index) = value.data() else {
             panic!("expected retained index value, got {value:?}")
         };
-        *index.borrow()
+        usize::try_from(*index).unwrap()
     }
 
     fn install_scalar(interpreter: &Interpreter, name: &str, value: f64) -> (ValueCell, Ref<f64>) {
-        let backing = Ref::new(value);
+        let cell = ValueCell::from_exact(value).unwrap();
+        let LegacyValue::F64(backing) =
+            super::super::super::legacy_value_from_cell_compat(&cell).unwrap()
+        else {
+            unreachable!("exact canonical f64 cells retain f64 backing")
+        };
         let id = hash_str(name);
         let symbols = interpreter.symbols();
-        let cell = symbols.borrow_mut().insert(id, f64_value(&backing), true);
+        let cell = symbols.borrow_mut().insert_cell(id, cell, true);
         symbols
             .borrow()
             .dictionary
@@ -101,7 +102,7 @@ mod checkpoint_tests {
                 .function_extensions
                 .insert_or_replace(FunctionExtensionEntry::new(
                     extension_name,
-                    Arc::new(CheckpointSpecializer(0)),
+                    mech_core::canonical_function_specializer(Arc::new(CheckpointSpecializer(0))),
                 ))
                 .unwrap();
             state
@@ -113,7 +114,6 @@ mod checkpoint_tests {
                 .insert_or_replace(empty_user_function(user_name))
                 .unwrap();
         }
-
         let cloned = interpreter.clone();
         assert!(Arc::ptr_eq(cloned.function_catalog(), &catalog));
 
@@ -218,7 +218,7 @@ mod checkpoint_tests {
                 .function_extensions
                 .insert_or_replace(FunctionExtensionEntry::new(
                     canonical_name,
-                    Arc::clone(&original),
+                    mech_core::canonical_function_specializer(Arc::clone(&original)),
                 ))
                 .unwrap();
             state
@@ -230,6 +230,14 @@ mod checkpoint_tests {
                 .bind_extension(canonical_name, "read", extension)
                 .unwrap();
         }
+        let original_canonical = interpreter
+            .state
+            .borrow()
+            .function_extensions
+            .entry(extension)
+            .unwrap()
+            .specializer
+            .clone();
 
         let catalog = Arc::clone(interpreter.function_catalog());
         let checkpoint = interpreter.checkpoint().unwrap();
@@ -242,14 +250,14 @@ mod checkpoint_tests {
                 .function_extensions
                 .insert_or_replace(FunctionExtensionEntry::new(
                     canonical_name,
-                    Arc::clone(&replacement),
+                    mech_core::canonical_function_specializer(Arc::clone(&replacement)),
                 ))
                 .unwrap();
             state
                 .function_extensions
                 .insert_or_replace(FunctionExtensionEntry::new(
                     added_name,
-                    Arc::new(CheckpointSpecializer(3)),
+                    mech_core::canonical_function_specializer(Arc::new(CheckpointSpecializer(3))),
                 ))
                 .unwrap();
             state
@@ -261,6 +269,14 @@ mod checkpoint_tests {
                 .bind_extension(added_name, "write", added)
                 .unwrap();
         }
+        let replacement_canonical = interpreter
+            .state
+            .borrow()
+            .function_extensions
+            .entry(extension)
+            .unwrap()
+            .specializer
+            .clone();
 
         interpreter.restore(checkpoint).unwrap();
 
@@ -272,7 +288,7 @@ mod checkpoint_tests {
                 .entry(extension)
                 .unwrap()
                 .specializer,
-            &original,
+            &original_canonical,
         ));
         assert!(!Arc::ptr_eq(
             &state
@@ -280,7 +296,7 @@ mod checkpoint_tests {
                 .entry(extension)
                 .unwrap()
                 .specializer,
-            &replacement,
+            &replacement_canonical,
         ));
         assert_eq!(
             state
@@ -308,11 +324,11 @@ mod checkpoint_tests {
         let function_name = "user/checkpoint";
         let added_name = "user/added-after-checkpoint";
         let symbol_id = hash_str("retained");
-        let definition = empty_user_function(function_name);
-        *definition.out.borrow_mut() = LegacyValue::Index(Ref::new(10));
-        let symbol = definition.symbols.borrow_mut().insert(
+        let mut definition = empty_user_function(function_name);
+        definition.out = ValueCell::from_exact(10_usize).unwrap();
+        let symbol = definition.symbols.borrow_mut().insert_cell(
             symbol_id,
-            LegacyValue::Index(Ref::new(20)),
+            ValueCell::from_exact(20_usize).unwrap(),
             true,
         );
         let original_symbol_dictionary = definition.symbols.borrow().dictionary.clone();
@@ -335,8 +351,12 @@ mod checkpoint_tests {
 
         let checkpoint = interpreter.checkpoint().unwrap();
 
-        *original_out.borrow_mut() = LegacyValue::Index(Ref::new(99));
-        *symbol.borrow_mut() = LegacyValue::Index(Ref::new(98));
+        original_out
+            .replace(&ValueCell::from_exact(99_usize).unwrap().snapshot().unwrap())
+            .unwrap();
+        symbol
+            .replace(&ValueCell::from_exact(98_usize).unwrap().snapshot().unwrap())
+            .unwrap();
         {
             let mut symbols = original_symbols.borrow_mut();
             symbols.symbols.clear();
@@ -438,11 +458,11 @@ mod checkpoint_tests {
         let original_symbol_cell = symbol_cell.clone();
         let symbol_backing_address = symbol_backing.addr();
         let symbol_backing_identity = ReactiveCellId::new(symbol_backing.id());
-        root.out = f64_value(&symbol_backing);
+        root.out = Some(symbol_cell.clone());
         root.code.push(MechSourceCode::String("before".to_string()));
         root.out_values
             .borrow_mut()
-            .insert(hash_str("out"), f64_value(&symbol_backing));
+            .insert(hash_str("out"), Some(symbol_cell.clone()));
         *root.inline_eval_counter.borrow_mut() = 4;
         *root.persistent_user_function_plan_depth.borrow_mut() = 2;
         *root.deferred_expression_solve_depth.borrow_mut() = 3;
@@ -544,7 +564,7 @@ mod checkpoint_tests {
         root.id = 99;
         root.max_steps = 999;
         root.code.push(MechSourceCode::String("after".to_string()));
-        root.out = LegacyValue::Empty;
+        root.out = None;
         root.state = Ref::new(ProgramState::new());
         root.out_values = Ref::new(HashMap::new());
         root.inline_eval_counter = Ref::new(99);
@@ -599,8 +619,8 @@ mod checkpoint_tests {
         let held = symbol_backing.borrow();
         let error = root.restore(checkpoint.clone()).unwrap_err();
         assert_eq!(
-            error.kind_as::<ValueStateBorrowConflict>().unwrap().phase,
-            "restore-before"
+            error.kind_as::<ValueCellBorrowConflict>().unwrap().access,
+            CellAccess::Replace
         );
         assert_eq!(root.id, 99);
         assert_ne!(root.state.addr(), state_address);

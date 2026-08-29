@@ -16,7 +16,8 @@ fn whole_add_assignment_registers_state_node() {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    let output = mech_core::legacy_value_from_cell_compat(&output).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
     assert_eq!(
         distinct_assignment_graph_shape(&interpreter, "x", "y"),
@@ -34,7 +35,8 @@ fn whole_add_assignment_alias_is_sampled_once() {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    let output = mech_core::legacy_value_from_cell_compat(&output).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 4.0);
     let x_cell = root_cell(&symbol(&interpreter, "x"));
     let node_id = register_node_id_for_output(&interpreter, x_cell);
@@ -73,11 +75,9 @@ fn matrix_after_indexed_add_assignment(selector: &str, value: &str) -> Vec<f64> 
     );
     let output = interpreter
         .interpret(&tree)
-        .unwrap_or_else(|error| panic!("{selector}: {error:?}"));
-    let output = match output {
-        LegacyValue::MutableReference(value) => value.borrow().clone(),
-        value => value,
-    };
+        .unwrap_or_else(|error| panic!("{selector}: {error:?}"))
+        .unwrap();
+    let output = mech_core::legacy_value_from_cell_compat(&output).unwrap();
     let LegacyValue::MatrixF64(matrix) = output else {
         panic!("expected an f64 matrix add-assignment result");
     };
@@ -102,7 +102,7 @@ fn explicit_all_selector_preserves_applicable_matrix_add_assignment_layouts() {
         (
             "[2,:]",
             "10.0",
-            vec![1.0, 10.0, 7.0, 2.0, 10.0, 8.0, 3.0, 10.0, 9.0],
+            vec![1.0, 14.0, 7.0, 2.0, 15.0, 8.0, 3.0, 16.0, 9.0],
         ),
         (
             "[1..=2,:]",

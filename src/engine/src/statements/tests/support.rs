@@ -1,22 +1,18 @@
 use crate::{
-    Interpreter, LegacyValue, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId,
-    ReactiveNodeKind, hash_str,
+    Interpreter, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind,
+    ValueCell, ValueData, hash_str,
 };
 
-pub(super) fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
+pub(super) fn symbol(interpreter: &Interpreter, name: &str) -> ValueCell {
     interpreter
         .symbols()
         .borrow()
         .get(hash_str(name))
         .unwrap_or_else(|| panic!("missing symbol {name}"))
-        .borrow()
-        .clone()
 }
 
-pub(super) fn root_cell(value: &LegacyValue) -> ReactiveCellId {
-    let cells = value.reactive_root_cell_ids();
-    assert_eq!(cells.len(), 1);
-    cells[0]
+pub(super) fn root_cell(value: &ValueCell) -> ReactiveCellId {
+    value.reactive_cell_id()
 }
 
 pub(super) fn register_node_id_for_output(
@@ -95,15 +91,18 @@ pub(super) fn expected_distinct_assignment_shape() -> RegisterGraphShape {
 }
 
 pub(super) fn cell(i: &Interpreter, n: &str) -> ReactiveCellId {
-    let c = symbol(i, n).reactive_root_cell_ids();
-    assert_eq!(c.len(), 1);
-    c[0]
+    symbol(i, n).reactive_cell_id()
 }
 pub(super) fn value(i: &Interpreter, n: &str) -> f64 {
-    *symbol(i, n).as_f64().unwrap().borrow()
+    let value = symbol(i, n).snapshot().unwrap();
+    let ValueData::F64(value) = value.data() else {
+        panic!("expected f64 symbol {n}");
+    };
+    value.to_f64()
 }
 pub(super) fn set_value(i: &Interpreter, n: &str, v: f64) {
-    *symbol(i, n).as_f64().unwrap().borrow_mut() = v;
+    let replacement = ValueCell::from_exact(v).unwrap().snapshot().unwrap();
+    symbol(i, n).replace(&replacement).unwrap();
 }
 pub(super) fn register(i: &Interpreter, c: ReactiveCellId) -> ReactiveNodeId {
     let p = i.plan();

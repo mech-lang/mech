@@ -83,12 +83,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::F64(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<mech_core::FunctionStatePort<'_>> {
+            Some(mech_core::FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -133,12 +129,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::F64(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -198,12 +190,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Bool(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -265,12 +253,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Bool(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -319,12 +303,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Bool(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -370,6 +350,10 @@ mod test_operations {
             Ok(())
         }
 
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.sink))
+        }
+
         fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
             let next = *self.sink.borrow() + *self.source.borrow();
             Ok(Box::new(ReactiveRegisterWrite::new(
@@ -379,16 +363,8 @@ mod test_operations {
             )))
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::F64(self.sink.clone())
-        }
-
         fn reactive_node_kind(&self) -> ReactiveNodeKind {
             ReactiveNodeKind::Register
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
         }
 
         fn to_string(&self) -> String {
@@ -435,12 +411,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::MatrixF64(Matrix::DVector(self.out.clone()))
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -540,12 +512,10 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::MatrixF64(self.sink.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+            vec![value_cell_from_legacy_function_value(
+                LegacyValue::MatrixF64(self.sink.clone()),
+            )]
         }
 
         fn to_string(&self) -> String {
@@ -737,12 +707,8 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::F64(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(Vec::new())
+        fn primary_output_state_port(&self) -> Option<mech_core::FunctionStatePort<'_>> {
+            Some(mech_core::FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -931,7 +897,8 @@ mod tests {
             catalog,
         );
 
-        let output = program.plan_source_for_test("1.0 + 2.0").unwrap();
+        let output = program.plan_source_for_test("1.0 + 2.0").unwrap().unwrap();
+        let output = mech_core::legacy_value_from_cell_compat(&output).unwrap();
 
         let LegacyValue::F64(output) = output else {
             panic!("custom math/add must return f64");

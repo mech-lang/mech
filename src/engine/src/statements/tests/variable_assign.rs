@@ -3,8 +3,46 @@ use super::support::{
     register_node_id_for_output, set_value, symbol, value,
 };
 use crate::{
-    Interpreter, LegacyValue, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState,
+    DimensionExpr, Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState,
+    SchemaBody, ValueCell, ValueData,
 };
+
+fn f64_value(cell: &ValueCell) -> f64 {
+    let snapshot = cell.snapshot().unwrap();
+    let ValueData::F64(value) = snapshot.data() else {
+        panic!("expected f64 value");
+    };
+    value.to_f64()
+}
+
+#[cfg(feature = "matrix")]
+fn f64_matrix_column_major(cell: &ValueCell) -> Vec<f64> {
+    let SchemaBody::Matrix { dimensions, .. } = cell.closed_schema_body().unwrap() else {
+        panic!("expected f64 matrix value");
+    };
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        panic!("expected closed matrix dimensions");
+    };
+    let rows = *rows as usize;
+    let columns = *columns as usize;
+    let row_major = cell
+        .matrix_elements()
+        .unwrap()
+        .unwrap()
+        .into_iter()
+        .map(|cell| f64_value(&cell))
+        .collect::<Vec<_>>();
+    (0..columns)
+        .flat_map(|column| {
+            let values = &row_major;
+            (0..rows).map(move |row| values[row * columns + column])
+        })
+        .collect()
+}
 
 #[test]
 fn whole_variable_assignment_registers_state_node() {
@@ -15,8 +53,8 @@ fn whole_variable_assignment_registers_state_node() {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
-    assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    assert_eq!(f64_value(&output), 2.0);
     assert_eq!(
         distinct_assignment_graph_shape(&interpreter, "x", "y"),
         expected_distinct_assignment_shape()
@@ -33,15 +71,11 @@ fn whole_matrix_assignment_uses_root_cells() {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
     let x = symbol(&interpreter, "x");
     let y = symbol(&interpreter, "y");
-    let x_root_cells = x.reactive_root_cell_ids();
-    let y_root_cells = y.reactive_root_cell_ids();
-    assert_eq!(x_root_cells.len(), 1);
-    assert_eq!(y_root_cells.len(), 1);
-    let x_cell = x_root_cells[0];
-    let y_cell = y_root_cells[0];
+    let x_cell = x.reactive_cell_id();
+    let y_cell = y.reactive_cell_id();
     let node_id = register_node_id_for_output(&interpreter, x_cell);
     let plan = interpreter.plan();
     let plan = plan.borrow();
@@ -58,11 +92,8 @@ fn whole_matrix_assignment_uses_root_cells() {
     assert!(!plan.reactive_consumers_for(x_cell).contains(&node_id));
     assert!(plan.reactive_consumers_for(y_cell).contains(&node_id));
     assert!(!plan.sampled_consumers_for(y_cell).contains(&node_id));
-    let resolved_output = match output {
-        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
-        other => other,
-    };
-    assert_eq!(resolved_output, y);
+    assert!(output.same_cell(&x));
+    assert!(output.snapshot_eq(&y).unwrap());
 }
 
 #[cfg(all(
@@ -88,15 +119,9 @@ fn matrix_after_indexed_assignment(selector: &str, value: &str) -> Vec<f64> {
     );
     let output = interpreter
         .interpret(&tree)
-        .unwrap_or_else(|error| panic!("{selector}: {error:?}"));
-    let output = match output {
-        LegacyValue::MutableReference(value) => value.borrow().clone(),
-        value => value,
-    };
-    let LegacyValue::MatrixF64(matrix) = output else {
-        panic!("expected an f64 matrix assignment result");
-    };
-    matrix.as_vec()
+        .unwrap_or_else(|error| panic!("{selector}: {error:?}"))
+        .unwrap();
+    f64_matrix_column_major(&output)
 }
 
 #[cfg(all(
@@ -175,20 +200,15 @@ fn explicit_all_selector_preserves_plain_matrix_assignment_layouts() {
     feature = "variable_assign"
 ))]
 #[test]
-fn all_all_matrix_assignment_remains_rejected() {
-    let result = std::panic::catch_unwind(|| {
-        let tree = mech_syntax::parser::parse("~x := [1.0 2.0; 3.0 4.0]; x[:,:] = 0.0; x").unwrap();
-        let mut interpreter = Interpreter::with_function_catalog(
-            0,
-            10_000,
-            crate::test_support::catalog::function_catalog(),
-        );
-        interpreter.interpret(&tree)
-    });
-    assert!(match result {
-        Err(_) => true,
-        Ok(result) => result.is_err(),
-    });
+fn all_all_matrix_assignment_updates_the_complete_matrix() {
+    let tree = mech_syntax::parser::parse("~x := [1.0 2.0; 3.0 4.0]; x[:,:] = 0.0; x").unwrap();
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    assert_eq!(f64_matrix_column_major(&output), vec![0.0; 4]);
 }
 
 #[cfg(all(feature = "math_add", feature = "math_add_assign"))]

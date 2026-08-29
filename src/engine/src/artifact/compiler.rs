@@ -24,18 +24,12 @@ use crate::{
     CompiledSymbolDefinition,
 };
 #[cfg(feature = "semantic-compiler")]
-use mech_core::snapshot::SnapshotValidationContext;
-#[cfg(feature = "semantic-compiler")]
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeInstruction, CanonicalNominalPath,
-    ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder, DeliveryMode,
-    DimensionEnvironmentBuilder, DimensionExpr, ExternalInteraction, FunctionCatalog,
-    InputPortLayout, InputPortPolicy, KindId, LegacyEmptyPolicy, LegacyExtentRole,
-    LegacyExtentSite, LegacyNominalResolution, LegacyReferencePolicy, LegacyResolvedExtent,
-    LegacySemanticContext, LegacySnapshotContext, LegacyValue, NamedKindPathResolver, NominalKind,
-    OperationContractError, OutputConstruction, OutputPortPolicy, Register, SchemaBody,
-    SchemaHandle, SchemaTableBuilder, SemanticModelError, ShapeRule, Value, ValueKind,
-    schema_from_legacy_value_kind, snapshot_from_legacy,
+    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeInstruction, ChangeDetectionPolicy,
+    ConstantHandle, ConstantStoreBuilder, DeliveryMode, DimensionExpr, ExternalInteraction,
+    FunctionCatalog, InputPortLayout, InputPortPolicy, OperationContractError, OutputConstruction,
+    OutputPortPolicy, Register, RuntimeType, SchemaBody, SchemaDraft, SchemaHandle,
+    SchemaTableBuilder, ShapeRule, Value,
 };
 
 #[cfg(feature = "semantic-compiler")]
@@ -635,75 +629,6 @@ fn source_matrix_literal_from_registers(
     })
 }
 
-#[cfg(feature = "semantic-compiler")]
-#[derive(Clone, Debug, Default)]
-struct CompilerLegacyContext {
-    extent: u64,
-}
-
-#[cfg(feature = "semantic-compiler")]
-impl CompilerLegacyContext {
-    fn for_kind(
-        kind: &ValueKind,
-        collection_cardinality: Option<usize>,
-        register: u32,
-    ) -> Result<Self, ArtifactBuildError> {
-        let extent = match kind {
-            ValueKind::Matrix(_, dimensions) => dimensions.last().copied().unwrap_or(0),
-            ValueKind::Table(_, rows) => *rows,
-            ValueKind::Set(_, _) | ValueKind::Map(_, _) => collection_cardinality
-                .ok_or(ArtifactBuildError::MissingRegisterCollectionCardinality { register })?,
-            _ => 0,
-        };
-        Ok(Self {
-            extent: extent as u64,
-        })
-    }
-}
-
-#[cfg(feature = "semantic-compiler")]
-impl NamedKindPathResolver for CompilerLegacyContext {
-    fn canonical_path(&self, _id: KindId) -> Option<&CanonicalNominalPath> {
-        None
-    }
-}
-
-#[cfg(feature = "semantic-compiler")]
-impl LegacySemanticContext for CompilerLegacyContext {
-    fn resolve_named_kind(&mut self, legacy_id: u64) -> Result<KindId, SemanticModelError> {
-        Err(SemanticModelError::LegacyNamedKindUnresolved { legacy_id })
-    }
-
-    fn resolve_nominal(
-        &mut self,
-        nominal_kind: NominalKind,
-        legacy_id: u64,
-        legacy_name: &str,
-    ) -> Result<LegacyNominalResolution, SemanticModelError> {
-        Err(SemanticModelError::LegacyNominalUnresolved {
-            kind: nominal_kind,
-            legacy_id,
-            legacy_name: legacy_name.to_owned(),
-        })
-    }
-
-    fn resolve_unspecified_extent(
-        &mut self,
-        site: &LegacyExtentSite,
-        _dimensions: &mut DimensionEnvironmentBuilder,
-    ) -> Result<LegacyResolvedExtent, SemanticModelError> {
-        let value = DimensionExpr::Constant(self.extent);
-        Ok(match site.role {
-            LegacyExtentRole::MatrixDimensions => {
-                LegacyResolvedExtent::Dimensions(vec![value].into_boxed_slice())
-            }
-            LegacyExtentRole::TableRows
-            | LegacyExtentRole::SetCardinality
-            | LegacyExtentRole::MapCardinality => LegacyResolvedExtent::Cardinality(value),
-        })
-    }
-}
-
 /// Adapts the actual executable compiler product into C3's durable semantic
 /// graph. Execution still consumes the existing bytecode/plan; this product is
 /// emitted alongside it for bytecode-v1 persistence and later activation.
@@ -851,7 +776,6 @@ fn matrix_literal_mismatch(output: Register, reason: &'static str) -> ArtifactBu
 #[cfg(feature = "semantic-compiler")]
 fn validate_compiled_matrix_literals(
     compiled: &CompiledBytecode,
-    constants: &[LegacyValue],
 ) -> Result<BTreeMap<Register, usize>, ArtifactBuildError> {
     let mut instructions = BTreeMap::new();
     for (key, literal) in &compiled.matrix_literals {
@@ -917,77 +841,58 @@ fn validate_compiled_matrix_literals(
                 "CompositePack children do not match the sidecar",
             ));
         }
-        let Some(template_value) = constants.get(*template as usize) else {
+        let Some(template_constant) = compiled.program.constants.get(*template as usize) else {
             return Err(matrix_literal_mismatch(
                 output,
                 "CompositePack template constant is out of range",
             ));
         };
-        let Some(template_kind) = template_value.legacy_kind_literal() else {
+        let RuntimeType::Kind(mech_core::BytecodeKind::Matrix(
+            template_element,
+            template_dimensions,
+        )) = &template_constant.runtime_type
+        else {
             return Err(matrix_literal_mismatch(
                 output,
                 "CompositePack template is not a matrix kind",
             ));
         };
-        let Some((template_element, template_dimensions)) = template_kind.matrix_parts() else {
-            return Err(matrix_literal_mismatch(
-                output,
-                "CompositePack template is not a matrix kind",
-            ));
-        };
-        let [template_rows, template_columns] = template_dimensions else {
+        let [template_rows, template_columns] = template_dimensions.as_slice() else {
             return Err(matrix_literal_mismatch(
                 output,
                 "CompositePack matrix template is not rank two",
             ));
         };
-        let Some(Some(output_kind)) = compiled.register_kinds.get(output as usize) else {
+        let Some(Some(SchemaBody::Matrix {
+            element: output_element,
+            dimensions: output_dimensions,
+        })) = compiled.register_schemas.get(output as usize)
+        else {
             return Err(matrix_literal_mismatch(
                 output,
-                "output register kind is not a matrix",
+                "output register schema is not a matrix",
             ));
         };
-        let (output_kind, _) = normalize_legacy_binding_kind(output_kind.clone());
-        let Some((output_element, output_dimensions)) = output_kind.matrix_parts() else {
+        let [
+            DimensionExpr::Constant(output_rows),
+            DimensionExpr::Constant(output_columns),
+        ] = output_dimensions.as_ref()
+        else {
             return Err(matrix_literal_mismatch(
                 output,
-                "output register kind is not a matrix",
+                "output register matrix schema does not have concrete rank-two dimensions",
             ));
         };
-        if &output_kind != template_kind {
+        let expected_template_element = mech_core::bytecode_kind_from_schema(output_element)?;
+        let empty_extent = literal.rows == 0 || literal.columns == 0;
+        if !(empty_extent && matches!(template_element.as_ref(), mech_core::BytecodeKind::Any))
+            && template_element.as_ref() != &expected_template_element
+        {
             return Err(matrix_literal_mismatch(
                 output,
-                "output register kind does not match the matrix template",
+                "output register schema does not match the matrix template",
             ));
         }
-        if template_element.is_any() || output_element.is_any() {
-            let mut expected = None;
-            for (index, element) in literal.elements.iter().enumerate() {
-                let CompiledMatrixLiteralElement::Value { register } = element else {
-                    continue;
-                };
-                let Some(Some(kind)) = compiled.register_kinds.get(*register as usize) else {
-                    return Err(matrix_literal_mismatch(
-                        output,
-                        "matrix element register has no value kind",
-                    ));
-                };
-                let (kind, _) = normalize_legacy_binding_kind(kind.clone());
-                match &expected {
-                    None => expected = Some(kind),
-                    Some(expected) if expected == &kind => {}
-                    Some(_) => {
-                        return Err(CompilerIrError::HeterogeneousMatrixLiteral { index }.into());
-                    }
-                }
-            }
-        }
-        let [output_rows, output_columns] = output_dimensions else {
-            return Err(matrix_literal_mismatch(
-                output,
-                "output register matrix kind is not rank two",
-            ));
-        };
         let literal_rows = usize::try_from(literal.rows).map_err(|_| {
             matrix_literal_mismatch(output, "matrix literal row count exceeds usize")
         })?;
@@ -995,7 +900,7 @@ fn validate_compiled_matrix_literals(
             matrix_literal_mismatch(output, "matrix literal column count exceeds usize")
         })?;
         if [*template_rows, *template_columns] != [literal_rows, literal_columns]
-            || [*output_rows, *output_columns] != [literal_rows, literal_columns]
+            || [*output_rows as usize, *output_columns as usize] != [literal_rows, literal_columns]
         {
             return Err(matrix_literal_mismatch(
                 output,
@@ -1017,8 +922,8 @@ fn validate_compiled_matrix_literals(
             match element {
                 CompiledMatrixLiteralElement::Empty { .. } => {
                     if !constant
-                        .and_then(|constant| constants.get(constant as usize))
-                        .is_some_and(LegacyValue::is_legacy_empty)
+                        .and_then(|constant| compiled.program.constants.get(constant as usize))
+                        .is_some_and(|constant| constant.runtime_type == RuntimeType::Empty)
                     {
                         return Err(matrix_literal_mismatch(
                             output,
@@ -1028,8 +933,8 @@ fn validate_compiled_matrix_literals(
                 }
                 CompiledMatrixLiteralElement::Value { .. } => {
                     if constant
-                        .and_then(|constant| constants.get(constant as usize))
-                        .is_some_and(LegacyValue::is_legacy_empty)
+                        .and_then(|constant| compiled.program.constants.get(constant as usize))
+                        .is_some_and(|constant| constant.runtime_type == RuntimeType::Empty)
                     {
                         return Err(matrix_literal_mismatch(
                             output,
@@ -1201,9 +1106,9 @@ fn compile_executable_program_artifact_with_identity(
         compiled.instruction_source_nodes.len(),
     )?;
     validate_compiled_metadata_length(
-        "register_kinds",
+        "register_schemas",
         compiled.program.register_count as usize,
-        compiled.register_kinds.len(),
+        compiled.register_schemas.len(),
     )?;
     validate_compiled_metadata_length(
         "register_collection_cardinalities",
@@ -1217,40 +1122,35 @@ fn compile_executable_program_artifact_with_identity(
     )?;
     validate_compiled_instruction_roles(compiled, catalog)?;
 
-    let legacy_constants = mech_core::decode_encoded_constants(&compiled.program.constants)?;
-    let matrix_literal_instructions =
-        validate_compiled_matrix_literals(compiled, &legacy_constants)?;
+    let canonical_constants = mech_core::decode_encoded_constants(&compiled.program.constants)?;
+    let matrix_literal_instructions = validate_compiled_matrix_literals(compiled)?;
 
     struct PendingRegisterSchema {
         handle: SchemaHandle,
-        semantic: CompilerLegacyContext,
         contains_reference: bool,
     }
 
     let mut schema_builder = SchemaTableBuilder::new();
-    let mut pending_register_schemas = Vec::with_capacity(compiled.register_kinds.len());
-    for (register, kind) in compiled.register_kinds.iter().enumerate() {
-        let Some(kind) = kind else {
-            pending_register_schemas.push(None);
+    let mut pending_register_schemas = Vec::with_capacity(compiled.register_schemas.len());
+    for (register, body) in compiled.register_schemas.iter().enumerate() {
+        if let Some(body) = body.clone() {
+            let schema = SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()?;
+            pending_register_schemas.push(Some(PendingRegisterSchema {
+                handle: schema_builder.insert(schema)?,
+                contains_reference: false,
+            }));
             continue;
-        };
-        if is_compiler_pseudo_kind(kind) {
+        }
+        let register = checked_u32(register, "bytecode register")?;
+        if compiled.absent_registers.contains(&register) {
             pending_register_schemas.push(None);
             continue;
         }
-        let (kind, contains_reference) = normalize_legacy_binding_kind(kind.clone());
-        let register = checked_u32(register, "bytecode register")?;
-        let mut semantic = CompilerLegacyContext::for_kind(
-            &kind,
-            compiled.register_collection_cardinalities[register as usize],
-            register,
-        )?;
-        let schema = schema_from_legacy_value_kind(&kind, &mut semantic)?;
-        pending_register_schemas.push(Some(PendingRegisterSchema {
-            handle: schema_builder.insert(schema)?,
-            semantic,
-            contains_reference,
-        }));
+        pending_register_schemas.push(None);
     }
     let schema_build = schema_builder.finish()?;
     let register_schemas = pending_register_schemas
@@ -1355,7 +1255,7 @@ fn compile_executable_program_artifact_with_identity(
         });
     }
 
-    let mut pending_constants = BTreeMap::<(u32, SchemaId), CompilerLegacyContext>::new();
+    let mut pending_constants = BTreeSet::<(u32, SchemaId)>::new();
     for instruction in &compiled.program.instructions {
         let (register, constant) = match instruction {
             BytecodeInstruction::ConstLoad { dst, constant } => (*dst, *constant),
@@ -1393,20 +1293,13 @@ fn compile_executable_program_artifact_with_identity(
                 instruction: 0,
                 register,
             })?;
-        let semantic = pending_register_schemas[register_index]
-            .as_ref()
-            .expect("schema and pending schema are parallel")
-            .semantic
-            .clone();
-        legacy_constants.get(constant as usize).ok_or(
+        canonical_constants.get(constant as usize).ok_or(
             ArtifactBuildError::SourceGraphReferenceOutOfRange {
                 reference: "bytecode constant",
                 index: constant,
             },
         )?;
-        pending_constants
-            .entry((constant, schema))
-            .or_insert(semantic);
+        pending_constants.insert((constant, schema));
     }
     for (register, constant) in compiled.register_state_initializers.iter().enumerate() {
         let Some(constant) = constant else {
@@ -1418,39 +1311,25 @@ fn compile_executable_program_artifact_with_identity(
                 register: register as u32,
             },
         )?;
-        let semantic = pending_register_schemas[register]
-            .as_ref()
-            .expect("schema and pending schema are parallel")
-            .semantic
-            .clone();
-        legacy_constants.get(*constant as usize).ok_or(
+        canonical_constants.get(*constant as usize).ok_or(
             ArtifactBuildError::SourceGraphReferenceOutOfRange {
                 reference: "state initializer bytecode constant",
                 index: *constant,
             },
         )?;
-        pending_constants
-            .entry((*constant, schema))
-            .or_insert(semantic);
+        pending_constants.insert((*constant, schema));
     }
 
     let mut constant_builder = ConstantStoreBuilder::new(&schemas);
     let mut constant_handles = BTreeMap::<(u32, SchemaId), ConstantHandle>::new();
-    for ((constant, schema), mut semantic) in pending_constants {
-        let value = &legacy_constants[constant as usize];
-        let named = semantic.clone();
-        let validation = SnapshotValidationContext::with_named_kinds(&schemas, &named);
-        let mut snapshot_context = LegacySnapshotContext::new(
-            &mut semantic,
-            LegacyEmptyPolicy::Reject,
-            LegacyReferencePolicy::SnapshotCurrentValue,
-        );
-        let value = snapshot_from_legacy(
-            value,
+    for (constant, schema) in pending_constants {
+        let value = canonical_constants[constant as usize].rebind(
             schema,
-            Box::new([]),
-            &validation,
-            &mut snapshot_context,
+            &schemas
+                .get(schema)
+                .expect("registered artifact schema remains present")
+                .instantiate_shape(Box::new([]))?,
+            &schemas,
         )?;
         constant_handles.insert((constant, schema), constant_builder.insert(value)?);
     }
@@ -1939,11 +1818,7 @@ fn compile_executable_program_artifact_with_identity(
                 })?;
                 let dst = semantics.destination;
                 let schema = register_schemas.get(dst as usize).copied().flatten();
-                let pseudo_destination = compiled
-                    .register_kinds
-                    .get(dst as usize)
-                    .and_then(Option::as_ref)
-                    .is_some_and(is_compiler_pseudo_kind);
+                let pseudo_destination = compiled.absent_registers.contains(&dst);
                 if schema.is_none() && !pseudo_destination {
                     return Err(ArtifactBuildError::MissingRegisterKind {
                         instruction: instruction_id,
@@ -2117,21 +1992,24 @@ fn compile_executable_program_artifact_with_identity(
                         }
                     }
                 }
+                let exposes_output =
+                    declaration.is_none_or(|declaration| !declaration.outputs.is_empty());
                 nodes.push(SourceNode {
                     operation: semantics.operation,
                     requirement: semantics.requirement,
                     inputs: semantic_inputs,
-                    outputs: match (state_index, schema) {
-                        (Some(state), _) => vec![SourceNodeOutput::State(state)],
-                        (None, Some(schema)) => vec![SourceNodeOutput::Derived { schema }],
-                        (None, None) => Vec::new(),
+                    outputs: match (exposes_output, state_index, schema) {
+                        (false, _, _) => Vec::new(),
+                        (true, Some(state), _) => vec![SourceNodeOutput::State(state)],
+                        (true, None, Some(schema)) => vec![SourceNodeOutput::Derived { schema }],
+                        (true, None, None) => Vec::new(),
                     }
                     .into_boxed_slice(),
                 });
                 source_node_origins.push(compiled.instruction_source_nodes[instruction_index]);
                 node_contracts.push(declaration.cloned());
                 node_matrix_literals.push(None);
-                if schema.is_none() {
+                if schema.is_none() || !exposes_output {
                     set_register(&mut registers, dst, None)?;
                     continue;
                 }
@@ -2183,12 +2061,7 @@ fn compile_executable_program_artifact_with_identity(
     let mut outputs = Vec::with_capacity(output_registers.len());
     for (ordinal, output_register) in output_registers.into_iter().enumerate() {
         let Some(returned) = register(&registers, output_register)? else {
-            if compiled
-                .register_kinds
-                .get(output_register as usize)
-                .and_then(Option::as_ref)
-                .is_some_and(is_compiler_pseudo_kind)
-            {
+            if compiled.absent_registers.contains(&output_register) {
                 continue;
             }
             return Err(ArtifactBuildError::MissingRegisterSource {
@@ -2522,92 +2395,6 @@ fn prune_unused_inputs(
         }
     }
     Ok((retained, nodes, outputs, constraints))
-}
-
-#[cfg(feature = "semantic-compiler")]
-fn normalize_legacy_binding_kind(kind: ValueKind) -> (ValueKind, bool) {
-    match kind {
-        ValueKind::Reference(referenced) => {
-            let (kind, _) = normalize_legacy_binding_kind(*referenced);
-            (kind, true)
-        }
-        ValueKind::Matrix(element, dimensions) => {
-            let (element, contains_reference) = normalize_legacy_binding_kind(*element);
-            (
-                ValueKind::Matrix(Box::new(element), dimensions),
-                contains_reference,
-            )
-        }
-        ValueKind::Record(fields) => {
-            let mut contains_reference = false;
-            let fields = fields
-                .into_iter()
-                .map(|(name, kind)| {
-                    let (kind, nested_reference) = normalize_legacy_binding_kind(kind);
-                    contains_reference |= nested_reference;
-                    (name, kind)
-                })
-                .collect();
-            (ValueKind::Record(fields), contains_reference)
-        }
-        ValueKind::Map(key, value) => {
-            let (key, key_reference) = normalize_legacy_binding_kind(*key);
-            let (value, value_reference) = normalize_legacy_binding_kind(*value);
-            (
-                ValueKind::Map(Box::new(key), Box::new(value)),
-                key_reference || value_reference,
-            )
-        }
-        ValueKind::Table(columns, rows) => {
-            let mut contains_reference = false;
-            let columns = columns
-                .into_iter()
-                .map(|(name, kind)| {
-                    let (kind, nested_reference) = normalize_legacy_binding_kind(kind);
-                    contains_reference |= nested_reference;
-                    (name, kind)
-                })
-                .collect();
-            (ValueKind::Table(columns, rows), contains_reference)
-        }
-        ValueKind::Tuple(elements) => {
-            let mut contains_reference = false;
-            let elements = elements
-                .into_iter()
-                .map(|kind| {
-                    let (kind, nested_reference) = normalize_legacy_binding_kind(kind);
-                    contains_reference |= nested_reference;
-                    kind
-                })
-                .collect();
-            (ValueKind::Tuple(elements), contains_reference)
-        }
-        ValueKind::Set(element, maximum_len) => {
-            let (element, contains_reference) = normalize_legacy_binding_kind(*element);
-            (
-                ValueKind::Set(Box::new(element), maximum_len),
-                contains_reference,
-            )
-        }
-        ValueKind::Option(element) => {
-            let (element, contains_reference) = normalize_legacy_binding_kind(*element);
-            (ValueKind::Option(Box::new(element)), contains_reference)
-        }
-        ValueKind::Kind(reified) => {
-            let (reified, contains_reference) = normalize_legacy_binding_kind(*reified);
-            (ValueKind::Kind(Box::new(reified)), contains_reference)
-        }
-        kind => (kind, false),
-    }
-}
-
-#[cfg(feature = "semantic-compiler")]
-fn is_compiler_pseudo_kind(kind: &ValueKind) -> bool {
-    match kind {
-        ValueKind::Empty | ValueKind::Any | ValueKind::None => true,
-        ValueKind::Reference(referenced) => is_compiler_pseudo_kind(referenced),
-        _ => false,
-    }
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -2961,22 +2748,20 @@ fn instruction_semantics(
     runtime_function_names: &BTreeMap<u64, String>,
     requirements: &[ApplicationRequirement],
 ) -> Result<Option<CompiledInstructionSemantics>, ArtifactBuildError> {
-    let runtime = |function: u64| {
-        let implementation = catalog
-            .runtime_entry_by_raw(function)
-            .map(|entry| entry.name.as_str())
-            .or_else(|| runtime_function_names.get(&function).map(String::as_str))
-            .ok_or(ArtifactBuildError::UnknownRuntimeFunction { function })?;
-        match operation_identity {
-            RuntimeOperationIdentity::Semantic => semantic_operation
-                .ok_or_else(|| ArtifactBuildError::MissingSemanticOperation {
-                    instruction: instruction_id,
-                    implementation: implementation.to_owned(),
-                })
-                .and_then(semantic_operation_reference),
-            RuntimeOperationIdentity::Implementation => {
-                operation_reference_from_name("runtime", implementation)
-            }
+    let runtime = |function: u64| match operation_identity {
+        RuntimeOperationIdentity::Semantic => semantic_operation
+            .ok_or_else(|| ArtifactBuildError::MissingSemanticOperation {
+                instruction: instruction_id,
+                implementation: format!("0x{function:016x}"),
+            })
+            .and_then(semantic_operation_reference),
+        RuntimeOperationIdentity::Implementation => {
+            let implementation = catalog
+                .runtime_entry_by_raw(function)
+                .map(|entry| entry.name.as_str())
+                .or_else(|| runtime_function_names.get(&function).map(String::as_str))
+                .ok_or(ArtifactBuildError::UnknownRuntimeFunction { function })?;
+            operation_reference_from_name("runtime", implementation)
         }
     };
     let semantics = match instruction {

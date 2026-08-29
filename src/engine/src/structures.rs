@@ -5,8 +5,17 @@ use mech_core::nodes::Matrix as Mat;
 use mech_core::snapshot::EnumDraft;
 #[cfg(feature = "map")]
 use mech_core::snapshot::MapEntryDraft;
+#[cfg(any(feature = "matrix", feature = "set"))]
 use mech_core::snapshot::OptionDraft;
 
+#[cfg(any(
+    feature = "tuple",
+    feature = "map",
+    feature = "record",
+    feature = "set",
+    feature = "table",
+    feature = "matrix"
+))]
 fn snapshot_draft(cell: &ValueCell) -> MResult<ValueDataDraft> {
     cell.snapshot()?.canonical_data_draft().map_err(|error| {
         MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
@@ -195,6 +204,13 @@ impl MechFunctionCompiler for CanonicalTablePack {
     }
 }
 
+#[cfg(any(
+    feature = "map",
+    feature = "record",
+    feature = "set",
+    feature = "table",
+    feature = "matrix"
+))]
 fn schema_mismatch(context: &'static str, expected: &SchemaBody, actual: &SchemaBody) -> MechError {
     MechError::new(
         CanonicalAggregateSchemaMismatch {
@@ -209,8 +225,8 @@ fn schema_mismatch(context: &'static str, expected: &SchemaBody, actual: &Schema
 
 pub fn structure(
     structure: &Structure,
-    env: Option<&Environment>,
-    p: &InterpreterExecution<'_>,
+    _env: Option<&Environment>,
+    _p: &InterpreterExecution<'_>,
 ) -> MResult<ValueCell> {
     #[allow(
         unreachable_patterns,
@@ -219,19 +235,19 @@ pub fn structure(
     match structure {
         Structure::Empty => Ok(ValueCell::unit()),
         #[cfg(feature = "record")]
-        Structure::Record(record_node) => record(record_node, env, p),
+        Structure::Record(record_node) => record(record_node, _env, _p),
         #[cfg(feature = "matrix")]
-        Structure::Matrix(matrix_node) => matrix(matrix_node, env, p),
+        Structure::Matrix(matrix_node) => matrix(matrix_node, _env, _p),
         #[cfg(feature = "table")]
-        Structure::Table(table_node) => table(table_node, env, p),
+        Structure::Table(table_node) => table(table_node, _env, _p),
         #[cfg(feature = "tuple")]
-        Structure::Tuple(tuple_node) => tuple(tuple_node, env, p),
+        Structure::Tuple(tuple_node) => tuple(tuple_node, _env, _p),
         #[cfg(all(feature = "tuple", feature = "atom"))]
-        Structure::TupleStruct(tuple_node) => tuple_struct(tuple_node, env, p),
+        Structure::TupleStruct(tuple_node) => tuple_struct(tuple_node, _env, _p),
         #[cfg(feature = "set")]
-        Structure::Set(set_node) => set(set_node, env, p),
+        Structure::Set(set_node) => set(set_node, _env, _p),
         #[cfg(feature = "map")]
-        Structure::Map(map_node) => map(map_node, env, p),
+        Structure::Map(map_node) => map(map_node, _env, _p),
         _ => Err(MechError::new(
             FeatureNotEnabledError,
             Some("feature not enabled for this structure kind".to_owned()),

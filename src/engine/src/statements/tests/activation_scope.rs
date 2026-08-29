@@ -24,18 +24,20 @@ fn cell(i: &Interpreter, n: &str) -> ReactiveCellId {
         .borrow()
         .get(hash_str(n))
         .unwrap()
-        .borrow()
-        .reactive_root_cell_ids()[0]
+        .reactive_cell_id()
 }
 fn value(i: &Interpreter, n: &str) -> f64 {
-    *i.symbols()
+    let value = i
+        .symbols()
         .borrow()
         .get(hash_str(n))
         .unwrap()
-        .borrow()
-        .as_f64()
-        .unwrap()
-        .borrow()
+        .snapshot()
+        .unwrap();
+    let crate::ValueData::F64(value) = value.data() else {
+        panic!("symbol {n} is not f64")
+    };
+    value.to_f64()
 }
 fn nodes_for_output(i: &Interpreter, name: &str, kind: ReactiveNodeKind) -> Vec<ReactiveNodeId> {
     let output = cell(i, name);
@@ -277,25 +279,30 @@ fn activation_scope_ignores_external_value_change() {
 #[test]
 fn activation_scope_samples_latest_external_value() {
     let mut i = load();
-    let x = i
-        .symbols()
-        .borrow()
-        .get(hash_str("x"))
-        .unwrap()
-        .borrow()
-        .clone();
-    *x.as_f64().unwrap().borrow_mut() = 20.;
+    let x = i.symbols().borrow().get(hash_str("x")).unwrap();
+    x.replace(
+        &crate::ValueCell::from_exact(20.0)
+            .unwrap()
+            .snapshot()
+            .unwrap(),
+    )
+    .unwrap();
     let t = cell(&i, "tick");
     i.advance_reactive_turn(&[t]).unwrap();
     assert_eq!(
-        *i.symbols()
-            .borrow()
-            .get(hash_str("left"))
-            .unwrap()
-            .borrow()
-            .as_f64()
-            .unwrap()
-            .borrow(),
+        {
+            let value = i
+                .symbols()
+                .borrow()
+                .get(hash_str("left"))
+                .unwrap()
+                .snapshot()
+                .unwrap();
+            let crate::ValueData::F64(value) = value.data() else {
+                panic!("left is not f64")
+            };
+            value.to_f64()
+        },
         18.
     );
 }

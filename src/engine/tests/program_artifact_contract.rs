@@ -2249,7 +2249,7 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
         "set",
         SchemaBody::Set {
             element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
-            cardinality: DimensionExpr::Constant(2),
+            cardinality: DimensionExpr::Constant(2).into(),
         },
     );
     insert(

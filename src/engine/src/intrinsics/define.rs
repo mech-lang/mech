@@ -1,7 +1,19 @@
 use crate::intrinsics::*;
 use std::marker::PhantomData;
 
-#[cfg(feature = "variable_define")]
+#[cfg(all(
+    feature = "variable_define",
+    any(
+        feature = "semantic-compiler",
+        feature = "table",
+        feature = "set",
+        feature = "tuple",
+        feature = "record",
+        feature = "map",
+        feature = "atom",
+        feature = "enum"
+    )
+))]
 pub(crate) struct CanonicalVariableDefinition {
     pub(crate) value: ValueCell,
     #[cfg(feature = "semantic-compiler")]
@@ -14,7 +26,19 @@ pub(crate) struct CanonicalVariableDefinition {
     pub(crate) root_visible: bool,
 }
 
-#[cfg(feature = "variable_define")]
+#[cfg(all(
+    feature = "variable_define",
+    any(
+        feature = "semantic-compiler",
+        feature = "table",
+        feature = "set",
+        feature = "tuple",
+        feature = "record",
+        feature = "map",
+        feature = "atom",
+        feature = "enum"
+    )
+))]
 impl MechFunctionImpl for CanonicalVariableDefinition {
     fn solve_result(&self) -> MResult<()> {
         Ok(())

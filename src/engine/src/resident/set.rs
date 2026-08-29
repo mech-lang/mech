@@ -2,12 +2,35 @@ use mech_core::snapshot::{
     build_f64_set_snapshot, build_f64_set_snapshot_after_remove, f64_set_snapshot_contains,
 };
 use mech_core::{
-    AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    ExternalInteraction, FloatWidth, FunctionCatalogBuilder, MResult, OutputConstruction,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, ShapeRule, ValueData,
+    AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
+    DeliveryMode, ExternalInteraction, FloatWidth, FunctionCatalogBuilder, MResult,
+    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
+    ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
+    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, ShapeInstance,
+    ShapeRule, ValueData,
 };
+
+fn cardinality_bounds(
+    cardinality: &CardinalitySpec,
+    shape: &ShapeInstance,
+) -> Result<(Option<usize>, Option<usize>), ResidentKernelBindError> {
+    let resolve = |dimension| {
+        shape
+            .resolve_dimension(dimension)
+            .ok()
+            .and_then(|value| usize::try_from(value).ok())
+            .ok_or(ResidentKernelBindError::UnsupportedLayout)
+    };
+    match cardinality {
+        CardinalitySpec::Exact(value) => {
+            let value = resolve(value)?;
+            Ok((Some(value), Some(value)))
+        }
+        CardinalitySpec::Dynamic { upper_bound } => {
+            Ok((None, upper_bound.as_ref().map(resolve).transpose()?))
+        }
+    }
+}
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     builder.insert_resident_factory(["set"], "union", bind_union)?;
@@ -116,21 +139,16 @@ fn bind_union(
     let shape = schema
         .instantiate_shape(Box::new([]))
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let cardinality = shape
-        .resolve_dimension(cardinality)
-        .ok()
-        .and_then(|value| usize::try_from(value).ok())
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    Ok(
-        BoundResidentKernel::new(union, Box::new([])).with_snapshot_output(
-            ResidentSnapshotOutput {
-                schema: request.output.schema_id,
-                schema_key: request.output.schema_key,
-                shape,
-                cardinality,
-            },
-        ),
-    )
+    let (exact_cardinality, maximum_cardinality) = cardinality_bounds(cardinality, &shape)?;
+    Ok(BoundResidentKernel::new(union, Box::new([]))
+        .with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape,
+            exact_cardinality,
+            maximum_cardinality,
+        })
+        .with_snapshot_schemas(request.schemas.clone()))
 }
 
 fn bind_element_of(
@@ -203,21 +221,16 @@ fn bind_mutation(
     let shape = schema
         .instantiate_shape(Box::new([]))
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let cardinality = shape
-        .resolve_dimension(cardinality)
-        .ok()
-        .and_then(|value| usize::try_from(value).ok())
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    Ok(
-        BoundResidentKernel::new(kernel, Box::new([])).with_snapshot_output(
-            ResidentSnapshotOutput {
-                schema: request.output.schema_id,
-                schema_key: request.output.schema_key,
-                shape,
-                cardinality,
-            },
-        ),
-    )
+    let (exact_cardinality, maximum_cardinality) = cardinality_bounds(cardinality, &shape)?;
+    Ok(BoundResidentKernel::new(kernel, Box::new([]))
+        .with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape,
+            exact_cardinality,
+            maximum_cardinality,
+        })
+        .with_snapshot_schemas(request.schemas.clone()))
 }
 
 fn bind_insert(
@@ -263,11 +276,16 @@ fn union(
     let metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
     let next = build_f64_set_snapshot(
         metadata.schema,
         metadata.schema_key,
         metadata.shape.clone(),
-        metadata.cardinality,
+        schemas,
+        metadata.exact_cardinality,
+        metadata.maximum_cardinality,
         &values,
     )
     .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -408,11 +426,16 @@ fn insert(
     let metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
     let next = build_f64_set_snapshot(
         metadata.schema,
         metadata.schema_key,
         metadata.shape.clone(),
-        metadata.cardinality,
+        schemas,
+        metadata.exact_cardinality,
+        metadata.maximum_cardinality,
         &values,
     )
     .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -436,11 +459,16 @@ fn remove(
     let metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
     let next = build_f64_set_snapshot_after_remove(
         metadata.schema,
         metadata.schema_key,
         metadata.shape.clone(),
-        metadata.cardinality,
+        schemas,
+        metadata.exact_cardinality,
+        metadata.maximum_cardinality,
         set,
         *element,
     )
@@ -483,7 +511,7 @@ mod tests {
         let set = builder
             .insert(schema(SchemaBody::Set {
                 element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-                cardinality: mech_core::DimensionExpr::Constant(3),
+                cardinality: mech_core::DimensionExpr::Constant(3).into(),
             }))
             .unwrap();
         let build = builder.finish().unwrap();

@@ -1,6 +1,6 @@
 use crate::MechErrorKind;
 #[cfg(feature = "record")]
-use crate::ValueKind;
+use crate::SchemaBody;
 
 #[derive(Debug, Clone)]
 pub struct AddressedAssignmentUnsupported;
@@ -92,8 +92,8 @@ impl MechErrorKind for NotMutableError {
 #[cfg(feature = "record")]
 #[derive(Debug, Clone)]
 pub struct UnableToConvertRecordError {
-    pub source_record_kind: ValueKind,
-    pub target_record_kind: ValueKind,
+    pub source_record_kind: SchemaBody,
+    pub target_record_kind: SchemaBody,
 }
 
 #[cfg(feature = "record")]

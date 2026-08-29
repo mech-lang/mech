@@ -5,66 +5,66 @@ use super::variable_define::detach_variable_value;
 #[cfg(feature = "invariant_define")]
 use crate::{
     ComparisonOp, Expression, Factor, FormulaOperator, IntegrityConstraint, InterpreterExecution,
-    InvariantDefine, LegacyValue, Literal, MResult, MechError, OperationId, Ref, Token, ValueCell,
-    expression, literal,
+    InvariantDefine, Literal, MResult, MechError, OperationId, SpecializationInvocation, Token,
+    ValueCell, expression_cell, literal,
 };
 
 #[cfg(feature = "invariant_define")]
 pub fn invariant_define(
-    inv_def: &InvariantDefine,
-    p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let invariant_id = inv_def.name.hash();
-    let invariant_name = inv_def.name.to_string();
-    let invariant_expression = tokens_to_string(&inv_def.expression.tokens());
+    definition: &InvariantDefine,
+    interpreter: &InterpreterExecution<'_>,
+) -> MResult<ValueCell> {
+    let invariant_id = definition.name.hash();
+    let invariant_name = definition.name.to_string();
+    let invariant_expression = tokens_to_string(&definition.expression.tokens());
     {
-        let symbols = p.symbols();
+        let symbols = interpreter.symbols();
         if symbols.borrow().contains(invariant_id) {
             return Err(
                 MechError::new(VariableAlreadyDefinedError { id: invariant_id }, None)
                     .with_compiler_loc()
-                    .with_tokens(inv_def.name.tokens()),
+                    .with_tokens(definition.name.tokens()),
             );
         }
     }
-    let plan = p.plan();
-    let result = expression(&inv_def.expression, None, p)?;
-    let detached_result = detach_variable_value(&result);
-    let result_ref = {
-        let state = p.state.borrow();
-        state.save_symbol(
-            invariant_id,
-            invariant_name.clone(),
-            detached_result.clone(),
-            false,
-        )
-    };
 
-    let var_define_arguments = vec![
+    let result = expression_cell(&definition.expression, None, interpreter)?;
+    let detached_result = detach_variable_value(&result);
+    let result_cell = interpreter.state.borrow().save_symbol(
+        invariant_id,
+        invariant_name.clone(),
+        detached_result.clone(),
+        false,
+    );
+
+    let arguments = vec![
         detached_result,
-        LegacyValue::String(Ref::new(invariant_name.clone())),
-        LegacyValue::Bool(Ref::new(false)),
-        LegacyValue::Bool(Ref::new(!p.in_user_function_scope())),
+        ValueCell::from_exact(invariant_name.clone())?,
+        ValueCell::from_exact(false)?,
+        ValueCell::from_exact(!interpreter.in_user_function_scope())?,
     ];
-    let var_def_fxn = p.specialize_visible_operation_named(
+    let invocation = SpecializationInvocation::from_cells(arguments.into_boxed_slice());
+    let specialized = interpreter.specialize_visible_invocation_named(
         OperationId::from_name("var/define"),
         Some("var/define"),
-        &var_define_arguments,
+        &invocation,
     )?;
-    plan.register_function(var_def_fxn, &[])?;
+    interpreter
+        .plan()
+        .register_instance(specialized.into_instance())?;
 
-    let (lhs, operator, rhs) = integrity_constraint_operands(inv_def, p);
-    p.state.borrow_mut().integrity_constraints.insert(
+    let (lhs, operator, rhs) = integrity_constraint_operands(definition, interpreter);
+    interpreter.state.borrow_mut().integrity_constraints.insert(
         invariant_id,
         IntegrityConstraint {
             id: invariant_id,
             name: invariant_name,
             expression: invariant_expression,
-            result: result_ref,
+            result: result_cell,
             lhs,
             operator,
             rhs,
-            tokens: inv_def.expression.tokens(),
+            tokens: definition.expression.tokens(),
         },
     );
     Ok(result)
@@ -74,28 +74,20 @@ pub fn invariant_define(
 fn tokens_to_string(tokens: &[Token]) -> String {
     tokens
         .iter()
-        .flat_map(|t| t.chars.clone())
+        .flat_map(|token| token.chars.clone())
         .collect::<String>()
 }
 
 #[cfg(feature = "invariant_define")]
-fn value_to_cell(value: LegacyValue) -> ValueCell {
-    match value {
-        LegacyValue::MutableReference(reference) => ValueCell::from_legacy_ref(reference),
-        other => ValueCell::new(other),
-    }
-}
-
-#[cfg(feature = "invariant_define")]
 fn integrity_constraint_operands(
-    inv_def: &InvariantDefine,
-    p: &InterpreterExecution<'_>,
+    definition: &InvariantDefine,
+    interpreter: &InterpreterExecution<'_>,
 ) -> (
     Option<ValueCell>,
     Option<FormulaOperator>,
     Option<ValueCell>,
 ) {
-    let factor = match &inv_def.expression {
+    let factor = match &definition.expression {
         Expression::Formula(factor) => factor,
         _ => return (None, None, None),
     };
@@ -121,9 +113,9 @@ fn integrity_constraint_operands(
         return (None, None, None);
     }
     (
-        integrity_constraint_operand(&term.lhs, p),
+        integrity_constraint_operand(&term.lhs, interpreter),
         Some(operator.clone()),
-        integrity_constraint_operand(rhs_factor, p),
+        integrity_constraint_operand(rhs_factor, interpreter),
     )
 }
 
@@ -139,22 +131,24 @@ fn transparent_factor(factor: &Factor) -> &Factor {
 #[cfg(feature = "invariant_define")]
 fn integrity_constraint_operand(
     factor: &Factor,
-    p: &InterpreterExecution<'_>,
+    interpreter: &InterpreterExecution<'_>,
 ) -> Option<ValueCell> {
     let expression = match transparent_factor(factor) {
         Factor::Expression(expression) => expression.as_ref(),
         _ => return None,
     };
     match expression {
-        Expression::Var(var) if var.context.is_none() && var.kind.is_none() => {
-            p.state.borrow().get_symbol(var.name.hash())
+        Expression::Var(variable) if variable.context.is_none() && variable.kind.is_none() => {
+            interpreter.state.borrow().get_symbol(variable.name.hash())
         }
         Expression::Literal(
             literal_node @ (Literal::Atom(_)
             | Literal::Boolean(_)
             | Literal::Number(_)
             | Literal::String(_)),
-        ) => literal(literal_node, p).ok().map(value_to_cell),
+        ) => literal(literal_node, interpreter)
+            .ok()
+            .and_then(|input| input.cell().ok().cloned()),
         _ => None,
     }
 }

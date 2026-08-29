@@ -1223,6 +1223,9 @@ where
 #[cfg(feature = "matrix1")]
 #[derive(Debug)]
 struct VerticalConcatenateS1<T> {
+    output: FunctionValueOutput,
+    _marker: PhantomData<T>,
+    #[cfg(feature = "semantic-compiler")]
     out: Ref<Matrix1<T>>,
 }
 #[cfg(feature = "matrix1")]
@@ -1247,8 +1250,16 @@ where
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let out = invocation.expect_nullary()?;
+        let output = out.value();
         let out: Ref<Matrix1<T>> = out.try_ref()?;
-        Ok(Box::new(Self { out }))
+        #[cfg(not(feature = "semantic-compiler"))]
+        drop(out);
+        Ok(Box::new(Self {
+            output,
+            _marker: PhantomData,
+            #[cfg(feature = "semantic-compiler")]
+            out,
+        }))
     }
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1268,6 +1279,11 @@ where
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
+
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.cell().clone()]
+    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -2488,7 +2504,7 @@ impl CanonicalFunctionSpecializer for MatrixVertCat {
         invocation: &SpecializationInvocation,
         _: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        ValueMatrixConcatenation::specialize(invocation, true)
+        ValueMatrixConcatenation::<true>::specialize(invocation)
     }
 }
 

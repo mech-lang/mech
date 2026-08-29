@@ -54,7 +54,7 @@ use crate::{FunctionCatalogBuilder, MResult};
 #[cfg(all(feature = "native-plan", not(feature = "semantic-compiler")))]
 use crate::{
     FunctionInvocation, FunctionValueOutput, FunctionValueRepresentation, MechFunction,
-    MechFunctionImpl,
+    MechFunctionImpl, ValueCell,
 };
 #[cfg(all(feature = "native-plan", feature = "semantic-compiler"))]
 use crate::{FunctionValueOutput, MechFunction};
@@ -129,6 +129,10 @@ macro_rules! declare_structural_access_alias {
         impl MechFunctionImpl for $factory {
             fn solve_result(&self) -> MResult<()> {
                 Ok(())
+            }
+
+            fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+                vec![self.output.cell().clone()]
             }
 
             fn to_string(&self) -> String {

@@ -1,21 +1,21 @@
-use crate::{Interpreter, LegacyValue, ReactiveCellId, ReactiveNodeId, ReactiveNodeKind, hash_str};
+use crate::{
+    Interpreter, ReactiveCellId, ReactiveNodeId, ReactiveNodeKind, ValueCell, ValueData, hash_str,
+};
 
-fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
+fn symbol(interpreter: &Interpreter, name: &str) -> ValueCell {
     interpreter
         .symbols()
         .borrow()
         .get(hash_str(name))
         .unwrap_or_else(|| panic!("missing symbol {name}"))
-        .borrow()
-        .clone()
 }
 fn root_cell(interpreter: &Interpreter, name: &str) -> ReactiveCellId {
-    let cells = symbol(interpreter, name).reactive_root_cell_ids();
-    assert_eq!(cells.len(), 1);
-    cells[0]
+    symbol(interpreter, name).reactive_cell_id()
 }
 fn set_f64(interpreter: &Interpreter, name: &str, value: f64) {
-    *symbol(interpreter, name).as_f64().unwrap().borrow_mut() = value;
+    symbol(interpreter, name)
+        .replace(&ValueCell::from_exact(value).unwrap().snapshot().unwrap())
+        .unwrap();
 }
 fn output_nodes(interpreter: &Interpreter, cell: ReactiveCellId) -> Vec<ReactiveNodeId> {
     let plan = interpreter.plan();
@@ -38,7 +38,11 @@ fn executed_outputs(
         .any(|id| plan.node(*id).unwrap().outputs.contains(&cell))
 }
 fn value(interpreter: &Interpreter, name: &str) -> f64 {
-    *symbol(interpreter, name).as_f64().unwrap().borrow()
+    let value = symbol(interpreter, name).snapshot().unwrap();
+    let ValueData::F64(value) = value.data() else {
+        panic!("symbol {name} is not f64")
+    };
+    value.to_f64()
 }
 
 #[test]

@@ -1,15 +1,16 @@
 use crate::patterns::PatternBindingSink;
 use crate::{
-    ActivationArm, ActivationScope, Interpreter, InterpreterExecution, LegacyValue, MResult,
-    MechError, PatternActivationArmRegistration, PatternActivationCaptureRegistration,
-    PatternActivationGuardRegistration, PatternActivationRegistration, ReactiveCellId, Ref,
+    ActivationArm, ActivationScope, Interpreter, InterpreterExecution, MResult, MechError,
+    PatternActivationArmRegistration, PatternActivationCaptureRegistration,
+    PatternActivationGuardRegistration, PatternActivationRegistration, ReactiveCellId, ValueCell,
     match_compiled_pattern_with_values,
 };
 
 use super::{
-    ActivationPatternArmsNonExhaustive, ActivationPatternTriggerInvariant, Finalize, MatchGate,
-    Matcher, ReactiveBindingSink, ScopePulse, Select, UnmatchedFinalize,
+    ActivationPatternArmsNonExhaustive, Finalize, MatchGate, Matcher, ReactiveBindingSink,
+    ScopePulse, Select, UnmatchedFinalize,
     arms::PreflightPatternedActivation,
+    captures::{bool_state, read_selected_arm, register_node, selected_arm_state},
     commit_proposed_captures, elaborate_patterned_arm_guard, generation,
     registers::{Gate, elaborate_patterned_arm_body},
     validation::preflight_patterned_activation,
@@ -20,10 +21,9 @@ pub(crate) fn activation_scope_entry_cells(interpreter: &Interpreter) -> Vec<Rea
     let symbols = symbols.borrow();
     let mut cells = Vec::new();
     for symbol in symbols.symbols.values() {
-        for cell in symbol.borrow().reactive_cell_ids() {
-            if !cells.contains(&cell) {
-                cells.push(cell);
-            }
+        let cell = symbol.reactive_cell_id();
+        if !cells.contains(&cell) {
+            cells.push(cell);
         }
     }
     cells
@@ -31,13 +31,10 @@ pub(crate) fn activation_scope_entry_cells(interpreter: &Interpreter) -> Vec<Rea
 
 fn elaborate_patterned_activation_inner(
     arms: &[ActivationArm],
-    trigger: LegacyValue,
+    trigger: ValueCell,
     preflight: PreflightPatternedActivation,
     i: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    if trigger.kind().deref_kind() != preflight.trigger_kind {
-        return Err(MechError::new(ActivationPatternTriggerInvariant, None));
-    }
+) -> MResult<ValueCell> {
     let compiled = preflight.arms;
     let plan = i.plan();
     let _persistent_user_function_plan = crate::function::PersistentUserFunctionPlanScope::enter(i);
@@ -47,7 +44,7 @@ fn elaborate_patterned_activation_inner(
             arm.pattern
                 .expressions()
                 .iter()
-                .map(|expression| crate::expression(expression, None, i))
+                .map(|expression| crate::expression_cell(expression, None, i))
                 .collect::<MResult<Vec<_>>>()
         })
         .collect::<MResult<Vec<_>>>()?;
@@ -65,27 +62,34 @@ fn elaborate_patterned_activation_inner(
         .commit(&pattern_match)?;
     }
     let (scope_gen, scope_v) = generation();
-    let scope_node = plan
-        .borrow_mut()
-        .register(Box::new(ScopePulse { out: scope_gen }), &[trigger.clone()])?;
+    let scope_node = register_node(
+        &plan,
+        Box::new(ScopePulse {
+            out: scope_gen.clone(),
+        }),
+        scope_gen,
+        vec![trigger.clone()],
+    )?;
     let (mut matcher_nodes, mut completions, mut matched) = (Vec::new(), Vec::new(), Vec::new());
     for (arm, expression_values) in compiled.iter().zip(&pattern_expression_values) {
         let (o, v) = generation();
-        let f = Ref::new(false);
+        let f = bool_state(false);
         let mut inputs = Vec::with_capacity(2 + expression_values.len());
         inputs.push(scope_v.clone());
         inputs.push(trigger.clone());
         inputs.extend(expression_values.iter().cloned());
-        let n = plan.borrow_mut().register(
+        let n = register_node(
+            &plan,
             Box::new(Matcher {
                 pattern: arm.pattern.clone(),
                 trigger: trigger.clone(),
                 expression_values: expression_values.clone(),
                 captures: arm.captures.clone(),
                 matched: f.clone(),
-                out: o,
+                out: o.clone(),
             }),
-            &inputs,
+            o,
+            inputs,
         )?;
         matcher_nodes.push(n);
         completions.push(v);
@@ -94,24 +98,28 @@ fn elaborate_patterned_activation_inner(
     let (mut finalizers, mut guards, mut eligible, mut done) =
         (Vec::new(), Vec::new(), Vec::new(), Vec::new());
     for n in 0..arms.len() {
-        let e = Ref::new(false);
+        let e = bool_state(false);
         if let Some(guard) = &arms[n].guard {
             let (match_gate_out, match_gate_pulse) = generation();
-            let match_gate_node = plan.borrow_mut().register(
+            let match_gate_node = register_node(
+                &plan,
                 Box::new(MatchGate {
                     matched: matched[n].clone(),
-                    out: match_gate_out,
+                    out: match_gate_out.clone(),
                 }),
-                &[completions[n].clone()],
+                match_gate_out,
+                vec![completions[n].clone()],
             )?;
             let (unmatched_out, unmatched_done) = generation();
-            let unmatched_finalizer = plan.borrow_mut().register(
+            let unmatched_finalizer = register_node(
+                &plan,
                 Box::new(UnmatchedFinalize {
                     matched: matched[n].clone(),
                     eligible: e.clone(),
-                    out: unmatched_out,
+                    out: unmatched_out.clone(),
                 }),
-                &[completions[n].clone()],
+                unmatched_out,
+                vec![completions[n].clone()],
             )?;
             let (guard_out, guard_done) = generation();
             let elaborated = elaborate_patterned_arm_guard(
@@ -133,13 +141,15 @@ fn elaborate_patterned_activation_inner(
             done.push(guard_done);
         } else {
             let (out, arm_done) = generation();
-            finalizers.push(plan.borrow_mut().register(
+            finalizers.push(register_node(
+                &plan,
                 Box::new(Finalize {
                     matched: matched[n].clone(),
                     eligible: e.clone(),
-                    out,
+                    out: out.clone(),
                 }),
-                &[completions[n].clone()],
+                out,
+                vec![completions[n].clone()],
             )?);
             guards.push(None);
             done.push(arm_done);
@@ -147,18 +157,20 @@ fn elaborate_patterned_activation_inner(
         eligible.push(e);
     }
     let (o, selection) = generation();
-    let selected = Ref::new(usize::MAX);
-    let selector = plan.borrow_mut().register(
+    let selected = selected_arm_state(usize::MAX);
+    let selector = register_node(
+        &plan,
         Box::new(Select {
             eligible: eligible.clone(),
             selected: selected.clone(),
-            out: o,
+            out: o.clone(),
         }),
-        &done,
+        o,
+        done.clone(),
     )?;
-    let private_scope_cell = scope_v.reactive_root_cell_ids()[0];
+    let private_scope_cell = scope_v.reactive_cell_id();
     plan.solve_dirty_cells(&[private_scope_cell])?;
-    let initially_selected = *selected.borrow();
+    let initially_selected = read_selected_arm(&selected)?;
     if initially_selected >= compiled.len() {
         return Err(MechError::new(ActivationPatternArmsNonExhaustive, None));
     }
@@ -166,14 +178,16 @@ fn elaborate_patterned_activation_inner(
     let (mut gates, mut pulses) = (Vec::new(), Vec::new());
     for arm in 0..arms.len() {
         let (o, v) = generation();
-        gates.push(plan.borrow_mut().register(
+        gates.push(register_node(
+            &plan,
             Box::new(Gate {
                 arm,
                 selected: selected.clone(),
                 captures: compiled[arm].captures.clone(),
-                out: o,
+                out: o.clone(),
             }),
-            &[selection.clone()],
+            o,
+            vec![selection.clone()],
         )?);
         pulses.push(v);
     }
@@ -195,7 +209,7 @@ fn elaborate_patterned_activation_inner(
                 finalizer_node: finalizers[n],
                 guard: guards[n].clone(),
                 gate_node: gates[n],
-                pulse_cell: pulses[n].reactive_root_cell_ids()[0],
+                pulse_cell: pulses[n].reactive_cell_id(),
                 body_node_start: ranges[n].0,
                 body_node_end: ranges[n].1,
                 captures: compiled[n]
@@ -203,24 +217,24 @@ fn elaborate_patterned_activation_inner(
                     .iter()
                     .map(|c| PatternActivationCaptureRegistration {
                         id: c.id,
-                        kind: c.kind.clone(),
-                        cell: c.committed.reactive_root_cell_ids()[0],
+                        schema: c.schema.clone(),
+                        cell: c.committed.reactive_cell_id(),
                     })
                     .collect(),
             })
             .collect(),
     };
     plan.borrow_mut().register_pattern_activation(registration);
-    Ok(LegacyValue::Empty)
+    Ok(ValueCell::unit())
 }
 
 pub(crate) fn elaborate_patterned_activation(
     scope: &ActivationScope,
     arms: &[ActivationArm],
-    trigger: LegacyValue,
+    trigger: ValueCell,
     trigger_cells: Vec<ReactiveCellId>,
     interpreter: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let preflight =
         preflight_patterned_activation(scope, arms, &trigger, &trigger_cells, interpreter)?;
     let plan = interpreter.plan();
