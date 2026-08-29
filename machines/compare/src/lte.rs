@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // Less Than Equal ---------------------------------------------------------------
 
@@ -104,27 +102,9 @@ macro_rules! lte_row_mat_op {
 
 impl_compare_fxns!(LTE);
 
-#[cfg(feature = "source")]
-fn impl_lte_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      LTE,
-      (lhs_value, rhs_value),
-      I8,   bool, "i8";
-      I16,  bool, "i16";
-      I32,  bool, "i32";
-      I64,  bool, "i64";
-      I128, bool, "i128";
-      U8,   bool, "u8";
-      U16,  bool, "u16";
-      U32,  bool, "u32";
-      U64,  bool, "u64";
-      U128, bool, "u128";
-      F32,  bool, "f32";
-      F64,  bool, "f64";
-      R64, bool, "rational";
-      C64, bool, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(CompareLessThanEqual, impl_lte_fxn, "compare/lte");
+impl_canonical_numeric_compare_specializer!(
+    CompareLessThanEqual,
+    lte,
+    LTE,
+    "compare/lte"
+);

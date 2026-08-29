@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // Min ------------------------------------------------------------------------
 
@@ -159,27 +157,4 @@ macro_rules! min_row_mat_op {
 
 impl_compare_fxns2!(Min);
 
-#[cfg(feature = "source")]
-fn impl_min_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      Min,
-      (lhs_value, rhs_value),
-      I8,   i8, "i8";
-      I16,  i16, "i16";
-      I32,  i32, "i32";
-      I64,  i64, "i64";
-      I128, i128, "i128";
-      U8,   u8, "u8";
-      U16,  u16, "u16";
-      U32,  u32, "u32";
-      U64,  u64, "u64";
-      U128, u128, "u128";
-      F32,  f32, "f32";
-      F64,  f64, "f64";
-      R64, R64, "rational";
-      C64, C64, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(CompareMin, impl_min_fxn, "compare/min");
+impl_canonical_numeric_compare_specializer!(CompareMin, min, Min, "compare/min");

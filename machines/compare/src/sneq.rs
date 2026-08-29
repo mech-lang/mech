@@ -2,29 +2,18 @@ use crate::*;
 
 #[derive(Debug)]
 pub struct StrictNotEqValue {
-    pub lhs: LegacyValue,
-    pub rhs: LegacyValue,
+    lhs: FunctionValueInput,
+    rhs: FunctionValueInput,
     pub out: Ref<bool>,
 }
 
 impl MechFunctionImpl for StrictNotEqValue {
     fn solve_result(&self) -> MResult<()> {
-        let lhs = match &self.lhs {
-            LegacyValue::MutableReference(v) => v.borrow().clone(),
-            v => v.clone(),
-        };
-        let rhs = match &self.rhs {
-            LegacyValue::MutableReference(v) => v.borrow().clone(),
-            v => v.clone(),
-        };
-        *self.out.borrow_mut() = lhs != rhs;
+        *self.out.borrow_mut() = !self.lhs.snapshot_eq(&self.rhs)?;
         Ok(())
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_ref(&self.out))
-    }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(crate::compare_full_write_contract(
@@ -33,10 +22,6 @@ impl MechFunctionImpl for StrictNotEqValue {
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
@@ -51,45 +36,57 @@ impl MechFunctionFactory for StrictNotEqValue {
         FunctionValueRepresentation::AnyValue,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, lhs, rhs) => Ok(Box::new(Self {
-                lhs,
-                rhs,
-                out: out.try_function_ref(FunctionArgumentRole::Output)?,
-            })),
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        Ok(Box::new(Self {
+            lhs: lhs.value(),
+            rhs: rhs.value(),
+            out: out.try_ref()?,
+        }))
     }
 }
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for StrictNotEqValue {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = self.out.to_value();
-        let destination = compile_value_register(&output, self.out.addr(), ctx)?;
-        let lhs = compile_value_register(&self.lhs, core::ptr::from_ref(&self.lhs).addr(), ctx)?;
-        let rhs = compile_value_register(&self.rhs, core::ptr::from_ref(&self.rhs).addr(), ctx)?;
+        let destination = compile_register_brrw!(self.out, ctx);
+        let lhs = self.lhs.compile_register(ctx)?;
+        let rhs = self.rhs.compile_register(ctx)?;
         ctx.emit_binop(hash_str("compare/sneq"), destination, lhs, rhs);
         Ok(destination)
     }
 }
 
 #[cfg(feature = "source")]
-fn impl_sneq_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    Ok(Box::new(StrictNotEqValue {
-        lhs: lhs_value,
-        rhs: rhs_value,
-        out: Ref::new(false),
-    }))
-}
+pub struct CompareStrictNotEqual;
 
 #[cfg(feature = "source")]
-impl_mech_binop_fxn!(CompareStrictNotEqual, impl_sneq_fxn, "compare/sneq");
+impl CanonicalFunctionSpecializer for CompareStrictNotEqual {
+    fn specialize_invocation(
+        &self,
+        specialization: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if specialization.len() != 2 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: specialization.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let output = ValueCell::from_exact(false)?;
+        let invocation = FunctionInvocation::binary(
+            output,
+            specialization.input(0).expect("validated lhs").cell()?.clone(),
+            specialization.input(1).expect("validated rhs").cell()?.clone(),
+        );
+        let implementation = StrictNotEqValue::new_invocation(invocation.clone())?;
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            implementation,
+            invocation,
+        )))
+    }
+}

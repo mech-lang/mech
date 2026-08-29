@@ -91,6 +91,317 @@ fn compare_full_write_contract(
     }
 }
 
+#[cfg(feature = "source")]
+fn compare_boolean_output(
+    representation: FunctionValueRepresentation,
+    first: &SpecializationInput,
+    second: &SpecializationInput,
+) -> MResult<ValueCell> {
+    let FunctionValueRepresentation::Matrix {
+        element: FunctionMatrixElement::Bool,
+        storage: FunctionMatrixStoragePattern::Exact(storage),
+    } = representation
+    else {
+        if representation == FunctionValueRepresentation::Bool {
+            return ValueCell::from_exact(false);
+        }
+        return Err(MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Output,
+                expected: "Boolean scalar or exact Boolean matrix output".into(),
+                found: format!("{representation:?}"),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+
+    let template = [first, second]
+        .into_iter()
+        .find(|input| {
+            matches!(
+                input.representation(),
+                Some(FunctionValueRepresentation::Matrix {
+                    storage: FunctionMatrixStoragePattern::Exact(found),
+                    ..
+                }) if found == storage
+            )
+        })
+        .ok_or_else(|| {
+            MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Output,
+                    expected: format!("matrix template with {storage:?} storage"),
+                    found: format!(
+                        "inputs {:?} and {:?}",
+                        first.representation(),
+                        second.representation(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    let descriptor = template.matrix_descriptor()?.ok_or_else(|| {
+        MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Output,
+                expected: format!("matrix dimensions for {storage:?}"),
+                found: format!("{:?}", template.representation()),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    let (rows, columns) = (descriptor.rows, descriptor.cols);
+
+    #[allow(
+        unused_macros,
+        reason = "fixed matrix constructors are feature-selected below"
+    )]
+    macro_rules! fixed {
+        ($matrix:ident) => {
+            ValueCell::from_exact_matrix_ref(
+                Ref::new($matrix::<bool>::from_element(false)),
+                rows,
+                columns,
+            )
+        };
+    }
+    #[allow(
+        unreachable_patterns,
+        reason = "the fallback is reachable only in narrow matrix feature profiles"
+    )]
+    match storage {
+        #[cfg(feature = "matrix1")]
+        FunctionMatrixRepresentation::Matrix1 => fixed!(Matrix1),
+        #[cfg(feature = "matrix2")]
+        FunctionMatrixRepresentation::Matrix2 => fixed!(Matrix2),
+        #[cfg(feature = "matrix3")]
+        FunctionMatrixRepresentation::Matrix3 => fixed!(Matrix3),
+        #[cfg(feature = "matrix4")]
+        FunctionMatrixRepresentation::Matrix4 => fixed!(Matrix4),
+        #[cfg(feature = "matrix2x3")]
+        FunctionMatrixRepresentation::Matrix2x3 => fixed!(Matrix2x3),
+        #[cfg(feature = "matrix3x2")]
+        FunctionMatrixRepresentation::Matrix3x2 => fixed!(Matrix3x2),
+        #[cfg(feature = "row_vector2")]
+        FunctionMatrixRepresentation::RowVector2 => fixed!(RowVector2),
+        #[cfg(feature = "row_vector3")]
+        FunctionMatrixRepresentation::RowVector3 => fixed!(RowVector3),
+        #[cfg(feature = "row_vector4")]
+        FunctionMatrixRepresentation::RowVector4 => fixed!(RowVector4),
+        #[cfg(feature = "vector2")]
+        FunctionMatrixRepresentation::Vector2 => fixed!(Vector2),
+        #[cfg(feature = "vector3")]
+        FunctionMatrixRepresentation::Vector3 => fixed!(Vector3),
+        #[cfg(feature = "vector4")]
+        FunctionMatrixRepresentation::Vector4 => fixed!(Vector4),
+        #[cfg(feature = "row_vectord")]
+        FunctionMatrixRepresentation::RowVectorD => ValueCell::from_exact_matrix_ref(
+            Ref::new(RowDVector::<bool>::from_element(columns, false)),
+            rows,
+            columns,
+        ),
+        #[cfg(feature = "vectord")]
+        FunctionMatrixRepresentation::VectorD => ValueCell::from_exact_matrix_ref(
+            Ref::new(DVector::<bool>::from_element(rows, false)),
+            rows,
+            columns,
+        ),
+        #[cfg(feature = "matrixd")]
+        FunctionMatrixRepresentation::MatrixD => ValueCell::from_exact_matrix_ref(
+            Ref::new(DMatrix::<bool>::from_element(rows, columns, false)),
+            rows,
+            columns,
+        ),
+        _ => Err(MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Output,
+                expected: "enabled exact Boolean matrix storage".into(),
+                found: format!("{storage:?}"),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
+#[cfg(feature = "source")]
+fn specialize_compare_binary_factory<F>(
+    first: &SpecializationInput,
+    second: &SpecializationInput,
+) -> MResult<SpecializedFunction>
+where
+    F: MechFunctionFactory,
+{
+    let output = match F::SIGNATURE.output {
+        FunctionValueRepresentation::Bool
+        | FunctionValueRepresentation::Matrix {
+            element: FunctionMatrixElement::Bool,
+            ..
+        } => compare_boolean_output(F::SIGNATURE.output, first, second)?,
+        representation => [first, second]
+            .into_iter()
+            .find(|input| input.representation() == Some(representation))
+            .ok_or_else(|| {
+                MechError::new(
+                    FunctionArgumentTypeMismatch {
+                        role: FunctionArgumentRole::Output,
+                        expected: format!("input template matching {representation:?}"),
+                        found: format!(
+                            "inputs {:?} and {:?}",
+                            first.representation(),
+                            second.representation(),
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?
+            .cell()?
+            .detached_clone()?,
+    };
+    SpecializedFunction::bind_factory::<F>(
+        output,
+        vec![first.cell()?.clone(), second.cell()?.clone()].into_boxed_slice(),
+    )
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __try_compare_binary_factory {
+    (($module:ident, $first:ident, $second:ident), $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        mech_core::paste::paste! {
+            if let RuntimeFunctionInputs::Binary(expected_first, expected_second) =
+                <$crate::$module::[<$lib $suffix>]<$scalar> as MechFunctionFactory>::SIGNATURE.inputs
+                && $first.representation() == Some(expected_first)
+                && $second.representation() == Some(expected_second)
+            {
+                return $crate::specialize_compare_binary_factory::<
+                    $crate::$module::[<$lib $suffix>]<$scalar>
+                >($first, $second);
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! try_compare_binary_factories {
+    ($module:ident, $first:ident, $second:ident, $lib:ident) => {{
+        #[cfg(feature = "bool")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, bool, "bool", bool);
+        #[cfg(feature = "string")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, String, "string", string);
+        #[cfg(feature = "u8")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u8, "u8", u8);
+        #[cfg(feature = "u16")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u16, "u16", u16);
+        #[cfg(feature = "u32")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u32, "u32", u32);
+        #[cfg(feature = "u64")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u64, "u64", u64);
+        #[cfg(feature = "u128")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u128, "u128", u128);
+        #[cfg(feature = "i8")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i8, "i8", i8);
+        #[cfg(feature = "i16")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i16, "i16", i16);
+        #[cfg(feature = "i32")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i32, "i32", i32);
+        #[cfg(feature = "i64")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i64, "i64", i64);
+        #[cfg(feature = "i128")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i128, "i128", i128);
+        #[cfg(feature = "f32")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, f32, "f32", f32);
+        #[cfg(feature = "f64")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, f64, "f64", f64);
+        #[cfg(feature = "rational")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, R64, "r64", r64);
+        #[cfg(feature = "complex")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, C64, "c64", c64);
+    }};
+}
+
+#[macro_export]
+macro_rules! try_numeric_compare_binary_factories {
+    ($module:ident, $first:ident, $second:ident, $lib:ident) => {{
+        #[cfg(feature = "u8")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u8, "u8", u8);
+        #[cfg(feature = "u16")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u16, "u16", u16);
+        #[cfg(feature = "u32")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u32, "u32", u32);
+        #[cfg(feature = "u64")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u64, "u64", u64);
+        #[cfg(feature = "u128")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u128, "u128", u128);
+        #[cfg(feature = "i8")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i8, "i8", i8);
+        #[cfg(feature = "i16")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i16, "i16", i16);
+        #[cfg(feature = "i32")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i32, "i32", i32);
+        #[cfg(feature = "i64")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i64, "i64", i64);
+        #[cfg(feature = "i128")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i128, "i128", i128);
+        #[cfg(feature = "f32")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, f32, "f32", f32);
+        #[cfg(feature = "f64")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, f64, "f64", f64);
+        #[cfg(feature = "rational")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, R64, "r64", r64);
+        #[cfg(feature = "complex")]
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, C64, "c64", c64);
+    }};
+}
+
+#[macro_export]
+macro_rules! impl_canonical_numeric_compare_specializer {
+    ($specializer:ident, $module:ident, $lib:ident, $operation:literal) => {
+        #[cfg(feature = "source")]
+        pub struct $specializer;
+
+        #[cfg(feature = "source")]
+        impl CanonicalFunctionSpecializer for $specializer {
+            fn specialize_invocation(
+                &self,
+                specialization: &SpecializationInvocation,
+                _context: &mut SpecializationContext<'_>,
+            ) -> MResult<SpecializedFunction> {
+                if specialization.len() != 2 {
+                    return Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: specialization.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let first = specialization.input(0).expect("validated comparison lhs");
+                let second = specialization.input(1).expect("validated comparison rhs");
+                $crate::try_numeric_compare_binary_factories!($module, first, second, $lib);
+                Err(MechError::new(
+                    FunctionArgumentTypeMismatch {
+                        role: FunctionArgumentRole::Input(0),
+                        expected: concat!("matching numeric inputs for ", $operation).into(),
+                        found: format!(
+                            "{:?} and {:?}",
+                            first.representation(),
+                            second.representation(),
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc())
+            }
+        }
+    };
+}
+
 #[cfg(feature = "runtime")]
 pub mod catalog;
 #[cfg(feature = "runtime")]
@@ -197,9 +508,6 @@ macro_rules! impl_compare_binop {
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -217,9 +525,6 @@ macro_rules! impl_compare_binop {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(compare_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -227,10 +532,6 @@ macro_rules! impl_compare_binop {
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
