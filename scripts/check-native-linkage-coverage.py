@@ -32,9 +32,9 @@ PREFERRED_OWNER_REPRESENTATIVES = {
     "mech-engine": "VariableDefineF64",
     "mech-math": "AddSS<f64>",
 }
-EXPECTED_FULL_COUNT = 9_031
+EXPECTED_FULL_COUNT = 9_033
 EXPECTED_FULL_SURFACE_SHA256 = (
-    "31add5ab4f7a5b777f4d8d90e711062d1f36a1fdd99684eded79e46a0af1b238"
+    "031accdaa26458a494f5331b0e1db1b54b138a3ff2df4ac4c03351e5bf8eb306"
 )
 OWNERS: dict[str, tuple[Path, str, str]] = {
     "mech-engine": (ROOT / "src/engine/Cargo.toml", "extended-engine", "stdlib"),

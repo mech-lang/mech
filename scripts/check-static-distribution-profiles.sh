@@ -296,7 +296,7 @@ if set(profiles) != expected_profiles:
     raise SystemExit(
         "static distribution profile contract failed: deterministic profile set mismatch"
     )
-expected_digest = "29efa79d9ce1c2f10626775a1f3dab7274a42b747856fb3ef10f293bb70bf2e1"
+expected_digest = "605e2ea1b0b3cf8db9df3f21cc3d461e6c453c310936aba7cd30a5a15678affa"
 selected_digest = "a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d"
 runtime_surface = json.loads(runtime_surface_path.read_text(encoding="utf-8"))
 runtime_factories = runtime_surface.get("runtime_factories")
@@ -318,9 +318,9 @@ if actual_digest != expected_digest:
     )
 expected_surface = {
     "selected-runtime": (3, 0, 0, 0, 0, selected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "full-runtime": (9031, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "full-source": (9032, 119, 10, 52, 50, "427478979de64b5ad5d05a0c7ccda8718b8bfbe8be78bc3213785b6eec6f8daf", "sha256-canonical-id-tab-name-lf-v1"),
-    "full-compiler": (9032, 119, 10, 52, 50, "427478979de64b5ad5d05a0c7ccda8718b8bfbe8be78bc3213785b6eec6f8daf", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-runtime": (9033, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
+    "full-source": (9034, 119, 10, 52, 50, "1c024944469c5f4372c7d47035ad18375c6a913030c15286ce2685350ee08a8f", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-compiler": (9034, 119, 10, 52, 50, "1c024944469c5f4372c7d47035ad18375c6a913030c15286ce2685350ee08a8f", "sha256-canonical-id-tab-name-lf-v1"),
 }
 surface_keys = (
     "catalog_factory_count", "source_specializer_count", "intrinsic_count",

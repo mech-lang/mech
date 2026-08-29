@@ -8,21 +8,21 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_031;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_033;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_324;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_326;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 64;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "ce552cc80163fc113e62240ab077233d46c9304e45580ce31beaf1deb9814724";
+    "4cdec3ae41f29816d064635f13241b4fedea3e4d1a51d95bb2197cf65460924a";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 9_084;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 9_086;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "fe9127d1ae19599a7a6970250a0ea42a25fe06d5135520e2d6dd9d76631a92d5";
+    "9c238d594c0eb7d6c92900a471077591df907411038933debf8e1bee1b398508";
 #[cfg(feature = "full_runtime")]
-const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_017;
+const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_019;
 #[cfg(feature = "full_source")]
 const EXPECTED_NAMED_SPECIALIZERS: usize = 119;
 #[cfg(feature = "full_source")]
@@ -35,7 +35,7 @@ const EXPECTED_MODULE_EXPORTS: usize = 50;
 const EXPECTED_ALL_EXPORTS: usize = 120;
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
-    "31add5ab4f7a5b777f4d8d90e711062d1f36a1fdd99684eded79e46a0af1b238";
+    "031accdaa26458a494f5331b0e1db1b54b138a3ff2df4ac4c03351e5bf8eb306";
 #[cfg(feature = "full_runtime")]
 const SOURCE_ONLY_RUNTIME_FACTORY: &str = "HorizontalConcatenateNArgs<f64>";
 #[cfg(feature = "full_runtime")]

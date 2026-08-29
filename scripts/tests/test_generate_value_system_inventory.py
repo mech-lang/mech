@@ -1040,6 +1040,51 @@ class ValueSystemInventoryGeneratorTests(unittest.TestCase):
             any(inventory["high_risk_api_uses"].values())
         )
 
+    def test_retirement_check_skips_frozen_shape_and_byte_equality(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "frozen.json"
+            output.write_text('{"frozen":true}\n', encoding="utf-8")
+            args = mock.Mock(
+                root=root,
+                output=output,
+                reference_commit="f" * 40,
+                git_ref=None,
+                legacy_baseline_output=None,
+                check_legacy_baseline=False,
+                check=True,
+                mode="retirement",
+            )
+            with mock.patch.object(
+                GENERATOR, "parse_args", return_value=args
+            ), mock.patch.object(
+                GENERATOR, "generate", return_value={"live": True}
+            ) as generate:
+                self.assertEqual(GENERATOR.main(), 0)
+            generate.assert_called_once_with(
+                root.resolve(),
+                "f" * 40,
+                validate_type_contract_sources=False,
+            )
+
+    def test_retirement_generation_cannot_overwrite_the_frozen_inventory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "frozen.json"
+            args = mock.Mock(
+                root=root,
+                output=output,
+                reference_commit="f" * 40,
+                git_ref=None,
+                legacy_baseline_output=None,
+                check_legacy_baseline=False,
+                check=False,
+                mode="retirement",
+            )
+            with mock.patch.object(GENERATOR, "parse_args", return_value=args):
+                self.assertEqual(GENERATOR.main(), 2)
+            self.assertFalse(output.exists())
+
     def test_archived_generation_keeps_the_strict_default(self):
         archive_bytes = io.BytesIO()
         with tarfile.open(fileobj=archive_bytes, mode="w"):

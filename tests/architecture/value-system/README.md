@@ -1,5 +1,26 @@
 # Value-system architecture contracts
 
+## Canonical runtime boundary
+
+`Value` is immutable canonical data: its validated `ValueData`, schema key,
+schema table, and resolved shape describe semantic content without carrying
+process-local identity. `ValueCell` is the mutable identity of a program
+location. Its private `CellBinding` retains an exact scalar, matrix, or
+canonical-value backing without exposing erased storage or legacy references
+through the public API.
+
+Canonical aggregate data is acyclic. Aggregate elements are owned
+`ValueData`; they never contain `ValueCell`, `Ref<T>`, object identifiers, or
+back-references. Computation graphs may still be cyclic because graph edges
+connect `ValueCell` locations rather than being embedded in immutable data.
+
+The modules under `src/core/src/legacy_adapter/` are one-way compatibility
+ingress for the old universal value model and explicit compatibility tests.
+They are not part of normal solve, source-specialization, bytecode, resident,
+host, resource, or public API execution. The production legacy-closure check
+enforces that boundary. PR11 deletes the remaining legacy definitions and
+these adapters; it does not introduce another value behavior migration.
+
 This directory preserves the reviewed value-system architecture while
 `LegacyValue`, `ValueKind`, and semantic `Kind` are retired. It does not
 implement immutable values or authorize new legacy behavior.

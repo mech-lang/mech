@@ -73,9 +73,11 @@ jobs:
           python3 scripts/check-runtime-factory-safety.py
           python3 scripts/check-value-execution-boundary.py
           python3 scripts/check-value-system-contract.py --mode retirement
+          python3 scripts/check-production-legacy-closure.py
           python3 -B -m unittest \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
+            scripts/tests/test_check_production_legacy_closure.py \
             scripts/tests/test_check_value_execution_boundary.py \
             scripts/tests/test_warning_policy.py
           python3 scripts/check-bytecode-v1-format.py

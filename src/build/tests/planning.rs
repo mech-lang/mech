@@ -415,26 +415,26 @@ fn scalar_add_resolves_only_the_exact_scalar_installer() {
 }
 
 #[test]
-fn fixed_matrix_add_resolves_the_exact_fixed_matrix_installer() {
+fn fixed_profile_matrix_add_resolves_the_canonical_dynamic_installer() {
     let plan = assert_owner_runtime_function(
         OwnerProfile::Fixed,
         "fixed-matrix-add-f64.mecb",
         "fixed",
-        "AddM2M2<f64>",
-        "mech_math::__mech_native::install_add_m2m2_f64",
+        "AddMDMD<f64>",
+        "mech_math::__mech_native::install_add_mdmd_f64",
         "mech-math",
     );
     assert!(plan.engine_features.iter().any(|feature| feature == "bool"));
     assert!(
         plan.engine_features
             .iter()
-            .any(|feature| feature == "vector2")
+            .any(|feature| feature == "vectord")
     );
     assert!(plan.core_features.iter().all(|feature| feature != "bool"));
     assert!(
         plan.core_features
             .iter()
-            .all(|feature| feature != "vector2")
+            .all(|feature| feature != "vectord")
     );
 }
 
@@ -456,8 +456,8 @@ fn variadic_horzcat_resolves_the_exact_variadic_installer() {
         OwnerProfile::Standard,
         "variadic-horzcat-f64.mecb",
         "variadic",
-        "HorizontalConcatenateRDN<f64>",
-        "mech_engine::__mech_native::install_horizontal_concatenate_rdn_f64",
+        "matrix/horzcat",
+        "mech_engine::__mech_native::install_value_horizontal_concatenation",
         "mech-engine",
     );
 }
@@ -541,6 +541,13 @@ impl MechFunctionFactory for PlanningFunction {
             })),
             _ => unreachable!(),
         }
+    }
+
+    fn new_invocation(invocation: mech_core::FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let output = invocation.expect_nullary()?;
+        Ok(Box::new(PlanningFunction {
+            _output: output.try_ref()?,
+        }))
     }
 }
 
@@ -863,20 +870,14 @@ fn unrelated_program_types_do_not_become_machine_features() {
 }
 
 #[test]
-fn enum_inline_payload_types_select_native_decode_features() {
-    let plan = plan(&enum_with_f64_payload_bytecode());
-
-    for features in [&plan.core_features, &plan.engine_features] {
-        assert!(features.iter().any(|feature| feature == "enum"));
-        assert!(features.iter().any(|feature| feature == "f64"));
-    }
-    let core = plan
-        .packages
-        .iter()
-        .find(|package| package.package == "mech-core")
-        .unwrap();
-    assert!(core.cargo_features.iter().any(|feature| feature == "enum"));
-    assert!(core.cargo_features.iter().any(|feature| feature == "f64"));
+fn enum_inline_payloads_require_an_authoritative_complete_schema() {
+    let error = enum_with_f64_payload_bytecode().unwrap_err();
+    assert!(
+        error
+            .kind_message()
+            .contains("authoritative complete enum schema"),
+        "{error:?}"
+    );
 }
 
 #[test]
@@ -1016,7 +1017,7 @@ fn runtime_nullary_bytecode_with_constant(function: u64, output: EncodedConstant
     .unwrap()
 }
 
-fn enum_with_f64_payload_bytecode() -> Vec<u8> {
+fn enum_with_f64_payload_bytecode() -> MResult<Vec<u8>> {
     let enum_name = "measurement";
     let variant_name = "reading";
     let mut bytes = 1_u32.to_le_bytes().to_vec();
@@ -1053,7 +1054,6 @@ fn enum_with_f64_payload_bytecode() -> Vec<u8> {
         dictionary: BTreeMap::new(),
         requirements: Vec::new(),
     })
-    .unwrap()
 }
 
 fn host_function_only_bytecode(name: &str) -> Vec<u8> {

@@ -47,7 +47,8 @@ TEST_MODULE = re.compile(
 # directory or filename-pattern exception.
 APPROVED_LEGACY_VALUE_ADAPTERS = {
     Path("src/runtime/src/runtime/program/compiler.rs"),
-    Path("src/runtime/src/runtime/program/external/value_adapter.rs"),
+    # The resident compatibility adapter is compiled only by runtime tests.
+    Path("src/runtime/src/runtime/program/external/value_adapter_tests.rs"),
     Path("src/runtime/src/runtime/program/value.rs"),
     Path("hosts/browser/src/config.rs"),
     Path("hosts/browser/src/provider.rs"),

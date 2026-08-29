@@ -82,6 +82,10 @@ class FullWorkflowContractTests(unittest.TestCase):
         retirement = (
             "python3 scripts/check-value-system-contract.py --mode retirement"
         )
+        retirement_inventory = (
+            "python3 scripts/generate-value-system-inventory.py "
+            "--check --mode retirement"
+        )
         plain_inventory_check = re.compile(
             r"(?m)^\s*python3 scripts/generate-value-system-inventory\.py "
             r"--check\s*$"
@@ -89,6 +93,7 @@ class FullWorkflowContractTests(unittest.TestCase):
 
         self.assertIn(retirement, static)
         self.assertIn(retirement, architecture)
+        self.assertIn(retirement_inventory, architecture)
         self.assertRegex(
             architecture,
             r"(?m)^\s*python3 scripts/generate-value-system-inventory\.py \\\n"

@@ -150,7 +150,9 @@ def main() -> None:
             dom = ""
             while time.monotonic() < deadline:
                 try:
-                    dom = browser_session.evaluate("document.documentElement.outerHTML") or ""
+                    dom = browser_session.evaluate(
+                        "document.documentElement?.outerHTML || ''"
+                    ) or ""
                 except NavigationContextPending:
                     time.sleep(0.1)
                     continue

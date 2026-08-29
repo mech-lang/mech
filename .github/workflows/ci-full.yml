@@ -69,7 +69,9 @@ jobs:
           python3 scripts/generate-value-system-inventory.py \
             --git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \
             --check-legacy-baseline
+          python3 scripts/generate-value-system-inventory.py --check --mode retirement
           python3 scripts/check-value-system-contract.py --mode retirement
+          python3 scripts/check-production-legacy-closure.py
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
           python3 scripts/check-resident-activation-contract.py
@@ -1037,7 +1039,7 @@ jobs:
           status=$?
           set -e
           test "$status" -eq 0
-          grep '^│' /tmp/analog-clock.out > /tmp/clock-values.out
+          grep '^(' /tmp/analog-clock.out > /tmp/clock-values.out
           test "$(wc -l < /tmp/clock-values.out)" -ge 2
           test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
 

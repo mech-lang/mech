@@ -2149,7 +2149,7 @@ def assert_console_contract():
       Number(window.__MECH_DOCUMENT_RENDERS__ || 0) !== rendersBefore,
     printed:
       [...document.querySelectorAll('.mech-repl-result')]
-        .some(row => /999/.test(row.textContent)),
+        .some(row => /500\\s*…]/.test(row.textContent)),
   };
 })()
 """)
@@ -2204,7 +2204,7 @@ def assert_console_contract():
     elapsedMs,
     rerenderedDocument:
       Number(window.__MECH_DOCUMENT_RENDERS__ || 0) !== rendersBefore,
-    rendered: /999/.test(popup?.textContent || ''),
+    rendered: /500\\s*…]/.test(popup?.textContent || ''),
     closedThroughControl:
       root.dataset.mechConsoleOpen === 'false' && pane.hidden,
     transcriptClean: transcript.children.length === transcriptEntries,
