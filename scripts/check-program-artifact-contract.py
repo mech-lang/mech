@@ -94,7 +94,7 @@ def validate_source_compiler(source: str) -> list[str]:
             failures.append(f"source compiler retains forbidden compatibility token {token}")
     for required in (
         "CompiledInstructionRole",
-        "register_kinds",
+        "register_schemas",
         "symbol_definitions",
         "return_register",
         "integrity_constraints",
@@ -124,22 +124,9 @@ def validate_source_compiler(source: str) -> list[str]:
         if obsolete in adapter:
             failures.append(f"source compiler adapter retains obsolete semantic guess {obsolete}")
 
-    legacy_context = function_body(
-        source, "impl LegacySemanticContext for CompilerLegacyContext"
-    )
-    if legacy_context is None:
-        failures.append("source compiler legacy semantic boundary is missing")
-    else:
-        for required in ("LegacyNamedKindUnresolved", "LegacyNominalUnresolved"):
-            if required not in legacy_context:
-                failures.append(
-                    f"source compiler must fail closed without canonical nominal identity: {required}"
-                )
-        for fabricated in ('"legacy".to_owned()', "NominalKey::from_path"):
-            if fabricated in legacy_context:
-                failures.append(
-                    f"source compiler fabricates durable nominal identity with {fabricated}"
-                )
+    for retired in ("LegacySemanticContext", "CompilerLegacyContext"):
+        if retired in source:
+            failures.append(f"source compiler retains retired semantic boundary {retired}")
     return failures
 
 

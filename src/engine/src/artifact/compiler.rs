@@ -477,12 +477,8 @@ fn compile_source_program_with_metadata(
                         output: output_id,
                         source: artifact_source,
                     },
-                    initializer: match artifact_source {
-                        ArtifactSource::Constant(constant) => {
-                            Some(InitializerReference::Constant(constant))
-                        }
-                        ArtifactSource::Slot(_) => None,
-                    },
+                    initializer: published_output_initializer(graph, output.source)
+                        .map(InitializerReference::Constant),
                 });
                 published_sources.insert(artifact_source, target);
                 target
@@ -2009,8 +2005,17 @@ fn compile_executable_program_artifact_with_identity(
                 source_node_origins.push(compiled.instruction_source_nodes[instruction_index]);
                 node_contracts.push(declaration.cloned());
                 node_matrix_literals.push(None);
-                if schema.is_none() || !exposes_output {
+                if schema.is_none() {
                     set_register(&mut registers, dst, None)?;
+                    continue;
+                }
+                // Effect nodes such as resource writes deliberately expose no
+                // graph output, but their bytecode destination still owns the
+                // canonical unit seed returned by the source statement. Keep
+                // that prior source available when the statement itself is a
+                // published program result without fabricating an effect-node
+                // output binding.
+                if !exposes_output {
                     continue;
                 }
                 let source = match state_index {
@@ -2959,6 +2964,26 @@ fn resolve_source(
     })
 }
 
+fn published_output_initializer(graph: &SourceProgram, source: SourceValue) -> Option<ConstantId> {
+    match source {
+        SourceValue::Constant(constant) => Some(constant),
+        SourceValue::NodeOutput {
+            node,
+            output_ordinal: 0,
+        } => {
+            let node = graph.nodes.get(node as usize)?;
+            (node.operation.module_path.as_ref() == ["core"]
+                && node.operation.operation_name == "composite-pack")
+                .then(|| match node.inputs.first() {
+                    Some(SourceValue::Constant(template)) => Some(*template),
+                    _ => None,
+                })
+                .flatten()
+        }
+        SourceValue::Input(_) | SourceValue::State(_) | SourceValue::NodeOutput { .. } => None,
+    }
+}
+
 fn checked_u32(value: usize, identity: &'static str) -> Result<u32, ArtifactBuildError> {
     u32::try_from(value).map_err(|_| ArtifactBuildError::ArtifactIdentityExhausted { identity })
 }
@@ -3001,6 +3026,49 @@ mod tests {
         assert_ne!(
             ir.elements.as_ref(),
             [ExpressionIR::Slot(CellSlotId::new(9))]
+        );
+    }
+
+    #[test]
+    fn published_reactive_composite_retains_its_canonical_template_initializer() {
+        let template = ConstantId::new(3);
+        let graph = SourceProgram {
+            nodes: vec![SourceNode {
+                operation: OperationReference {
+                    module_path: vec!["core".to_owned()].into_boxed_slice(),
+                    operation_name: "composite-pack".to_owned(),
+                },
+                requirement: None,
+                inputs: vec![SourceValue::Constant(template), SourceValue::Input(0)]
+                    .into_boxed_slice(),
+                outputs: vec![SourceNodeOutput::Derived {
+                    schema: SchemaId::new(0),
+                }]
+                .into_boxed_slice(),
+            }]
+            .into_boxed_slice(),
+            ..SourceProgram::default()
+        };
+
+        assert_eq!(
+            published_output_initializer(
+                &graph,
+                SourceValue::NodeOutput {
+                    node: 0,
+                    output_ordinal: 0,
+                },
+            ),
+            Some(template),
+        );
+        assert_eq!(
+            published_output_initializer(
+                &graph,
+                SourceValue::NodeOutput {
+                    node: 0,
+                    output_ordinal: 1,
+                },
+            ),
+            None,
         );
     }
 }

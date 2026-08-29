@@ -2563,23 +2563,22 @@ pub(super) fn rendered_value(
     snapshot: mech_runtime::RuntimeValueSnapshot,
     max_elements: usize,
 ) -> Result<JsValue, JsValue> {
-    let value = snapshot.into_value();
     let rendered = Object::new();
     Reflect::set(
         &rendered,
         &JsValue::from_str("kind"),
-        &JsValue::from_str(&value.format_kind_with_element_limit(max_elements)),
+        &JsValue::from_str(&snapshot.kind().to_string()),
     )?;
     Reflect::set(
         &rendered,
         &JsValue::from_str("blockHtml"),
-        &JsValue::from_str(&value.to_html_with_element_limit(max_elements)),
+        &JsValue::from_str(&snapshot.format_repl_html(max_elements)),
     )?;
     Reflect::set(
         &rendered,
         &JsValue::from_str("inlineHtml"),
         &JsValue::from_str(&mech_core::escape_html_text(
-            &value.format_canonical_inline_with_element_limit(max_elements),
+            &snapshot.format_repl_inline(max_elements),
         )),
     )?;
     Ok(rendered.into())
@@ -3198,10 +3197,10 @@ mod tests {
 
         run_project_sources(&mut runtime, &document).unwrap();
         assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
-        assert_eq!(
-            runtime.root_symbol_value("greeting").unwrap().into_value(),
-            mech_core::LegacyValue::String(mech_core::Ref::new("Hello, Ada".to_string())),
-        );
+        assert!(matches!(
+            runtime.root_symbol_value("greeting").unwrap().value().data(),
+            mech_core::ValueData::String(value) if value.as_ref() == "Hello, Ada"
+        ));
     }
 
     #[test]
@@ -3351,9 +3350,11 @@ phase"#;
         );
         document.repl.session.select_value(
             "another-output",
-            mech_runtime::RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(
-                mech_core::Ref::new(7.0),
-            ))
+            mech_runtime::RuntimeValueSnapshot::from_value(
+                mech_runtime::RuntimeHostInputValue::F64(7.0)
+                    .into_value()
+                    .unwrap(),
+            )
             .unwrap(),
         );
         assert_eq!(
@@ -3457,12 +3458,8 @@ phase"#;
     }
 
     fn assert_f64(value: mech_runtime::RuntimeValueSnapshot, expected: f64) {
-        match value.into_value() {
-            mech_core::LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
-            mech_core::LegacyValue::MutableReference(value) => match &*value.borrow() {
-                mech_core::LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
-                other => panic!("expected f64 value, got {other:?}"),
-            },
+        match value.value().data() {
+            mech_core::ValueData::F64(value) => assert_eq!(value.to_f64(), expected),
             other => panic!("expected f64 value, got {other:?}"),
         }
     }

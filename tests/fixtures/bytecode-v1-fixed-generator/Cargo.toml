@@ -25,6 +25,7 @@ mech-stdlib = {
     "f64",
     "math_add",
     "matrix2",
+    "matrixd",
     "matrix_horzcat",
     "matrix_vertcat",
     "row_vector2",

@@ -1,12 +1,12 @@
 {
-  "activation_nodes": 140,
-  "artifact_nodes": 155,
+  "activation_nodes": 151,
+  "artifact_nodes": 166,
   "bytecode_format": "v1",
   "legacy_opaque_contracts": 0,
   "position_writer_chain": [
     "WholeValue ReadModifyWrite"
   ],
-  "program_revision": "a2bfb2e41aedb0afbc5795fcbd73e30ae841b736d771c0a741b6303d4ab4242b",
+  "program_revision": "a8c6e2931e471ad054a65d5dfe6a5c9d5096bfe07a180d0e4f3d0430f3490aad",
   "schema_version": 1,
   "source_bytecode_revision_equal": true,
   "source_sha256": "5a3a5a703d4db5a28e07acf40b9da8262b7056ffc9167cd3efd3b638b88054f7",

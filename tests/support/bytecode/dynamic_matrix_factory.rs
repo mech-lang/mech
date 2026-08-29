@@ -1,6 +1,6 @@
-use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{
-    BytecodeInstruction, LegacyValue, MResult, ParsedProgram, RuntimeFunctionId, hash_str,
+    BytecodeInstruction, MResult, ParsedProgram, RuntimeFunctionId, SchemaBody, hash_str,
+    snapshot::SequenceView,
 };
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
 
@@ -50,11 +50,30 @@ fn dynamic_matrix_addition_bytecode_reconstructs_from_full_runtime() -> MResult<
         .initial_value
         .into_value();
 
-    let LegacyValue::MatrixF64(ValueMatrix::DMatrix(matrix)) = decoded_output else {
-        panic!("dynamic matrix addition must return a dynamic f64 matrix");
+    let matrix = decoded_output
+        .matrix_view()
+        .expect("dynamic matrix addition must return a canonical matrix");
+    let SequenceView::F64(values) = matrix.elements() else {
+        panic!("dynamic matrix addition must return an f64 matrix");
     };
-    let matrix = matrix.borrow();
-    assert_eq!((matrix.nrows(), matrix.ncols()), (5, 5));
-    assert!(matrix.iter().all(|value| *value == 26.0));
+    let schemas = decoded_output
+        .schemas()
+        .expect("canonical matrix retains its schema arena");
+    let SchemaBody::Matrix { dimensions, .. } = schemas
+        .get(decoded_output.schema())
+        .expect("canonical matrix schema exists")
+        .body()
+    else {
+        panic!("expected canonical matrix schema");
+    };
+    assert_eq!(
+        (
+            decoded_output.shape().resolve_dimension(&dimensions[0]),
+            decoded_output.shape().resolve_dimension(&dimensions[1]),
+        ),
+        (Ok(5), Ok(5)),
+    );
+    assert_eq!(values.len(), 25);
+    assert!(values.iter().all(|value| value.to_f64() == 26.0));
     Ok(())
 }

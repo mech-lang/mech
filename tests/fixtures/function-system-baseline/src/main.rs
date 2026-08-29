@@ -2,7 +2,8 @@ use mech_core::matrix::Matrix as MechMatrix;
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, EncodedConstant, FunctionCatalog,
     FunctionCatalogBuilder, FunctionExposure, MResult, MechSet, OperationId, Ref, Register,
-    RuntimeFunctionId, LegacyValue, ValueKind, hash_str,
+    RuntimeFunctionId, LegacyValue, SpecializationContext, ValueKind, hash_str,
+    legacy_function_value_from_cell, specialization_invocation_from_legacy,
 };
 use mech_engine as _;
 use mech_engine::{FunctionBinding, FunctionEnvironment};
@@ -787,9 +788,26 @@ fn specialize_case(catalog: &FunctionCatalog, input: CaseInput) -> AppResult<Spe
         .iter()
         .map(value_spec)
         .collect::<AppResult<Vec<_>>>()?;
-    let function = specializer
+    let invocation = specialization_invocation_from_legacy(&input.arguments).map_err(|error| {
+        format!(
+            "specialization case {} failed to adapt {} arguments: {}",
+            input.name,
+            input.operation,
+            error.full_chain_message(),
+        )
+    })?;
+    let mut context = SpecializationContext::for_invocation(&invocation, Some(catalog)).map_err(
+        |error| {
+            format!(
+                "specialization case {} could not establish a shared schema arena: {}",
+                input.name,
+                error.full_chain_message(),
+            )
+        },
+    )?;
+    let specialized = specializer
         .specializer
-        .specialize(&input.arguments)
+        .specialize_invocation(&invocation, &mut context)
         .map_err(|error| {
             format!(
                 "specialization case {} failed to compile {}: {}",
@@ -798,16 +816,27 @@ fn specialize_case(catalog: &FunctionCatalog, input: CaseInput) -> AppResult<Spe
                 error.full_chain_message(),
             )
         })?;
-    let output = value_spec(&function.out())?;
+    let output_value = legacy_function_value_from_cell(specialized.output()).map_err(|error| {
+        format!(
+            "specialization case {} failed to project its compatibility output: {}",
+            input.name,
+            error.full_chain_message(),
+        )
+    })?;
+    let output = value_spec(&output_value)?;
 
     let mut linkage = RuntimeLinkageRecorder::default();
-    function.compile(&mut linkage).map_err(|error| {
+    specialized
+        .instance()
+        .implementation()
+        .compile(&mut linkage)
+        .map_err(|error| {
         format!(
             "specialization case {} failed to report runtime linkage: {}",
             input.name,
             error.full_chain_message(),
         )
-    })?;
+        })?;
     let mut runtime_factories = linkage.resolve(catalog, input.name)?;
     runtime_factories.sort();
 

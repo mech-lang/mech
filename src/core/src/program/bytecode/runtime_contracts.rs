@@ -264,7 +264,8 @@ impl ParsedProgram {
                             format!("constant {constant} is out of range"),
                         )
                     })?
-                    .clone();
+                    .detached_clone()
+                    .map_err(|error| violation_with_source(instruction_index, None, None, error))?;
                 let destination = registers.get_mut(*dst as usize).ok_or_else(|| {
                     violation(
                         instruction_index,
@@ -735,6 +736,46 @@ mod tests {
             )
             .unwrap();
         builder.build().unwrap()
+    }
+
+    #[test]
+    fn equal_constant_loads_retain_distinct_register_cell_identity() {
+        let constant = scalar(RuntimeType::F64, 1.0_f64.to_bits().to_le_bytes().to_vec());
+        let program = ParsedProgram::from_bytes(
+            &write_bytecode(&BytecodeProgram {
+                register_count: 3,
+                constants: vec![constant],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::ConstLoad {
+                        dst: 0,
+                        constant: 0,
+                    },
+                    BytecodeInstruction::ConstLoad {
+                        dst: 1,
+                        constant: 0,
+                    },
+                    BytecodeInstruction::ConstLoad {
+                        dst: 2,
+                        constant: 0,
+                    },
+                    BytecodeInstruction::RuntimeBinary {
+                        function: crate::hash_str("ExactF64Binary"),
+                        dst: 0,
+                        lhs: 1,
+                        rhs: 2,
+                    },
+                    BytecodeInstruction::Return { src: 0 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements: Vec::new(),
+            })
+            .unwrap(),
+        )
+        .unwrap();
+
+        program.validate_runtime_contracts(&catalog()).unwrap();
     }
 
     fn exact_read_request() -> ExecutionResourceRequest {

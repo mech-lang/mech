@@ -9,7 +9,7 @@
   "node_mask_word_bits": 64,
   "publication_store_count": 1,
   "schema_version": 1,
-  "slot_count": 154,
+  "slot_count": 165,
   "state_slot_count": 2,
   "typed_arenas": [
     "Bool/u8",

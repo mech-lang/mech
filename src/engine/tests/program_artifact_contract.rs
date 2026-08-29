@@ -2,7 +2,6 @@
 
 use mech_engine::*;
 
-use mech_core::matrix::Matrix;
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BytecodeProgram,
     CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder,
@@ -10,12 +9,13 @@ use mech_core::{
     DimensionParameterId, DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy,
     ExecutionResourceRequest, ExternalInteraction, FloatWidth, IdempotencyRequirement,
     InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr, LegacyOpaqueOperationContract,
-    LegacyValue, NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
+    NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
     OperationContractDeclaration, OperationContractId, OperationContractTable,
-    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, Ref, RegionPolicy,
+    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, RegionPolicy,
     ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, ResourceDelivery,
     ResourceIntent, SchemaBody, SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder,
-    ShapeContractReference, ShapeRule, Value, ValueData, ValueDataDraft, ValueDraft,
+    ShapeContractReference, ShapeRule, Value, ValueCell, ValueData, ValueDataDraft, ValueDraft,
+    compile_value_cell_matrix_literal_register,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
         MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SequenceView,
@@ -1031,26 +1031,59 @@ fn matrix_literal_dynamic_classification_is_recursive() {
 }
 
 fn compiled_generic_matrix(
-    values: Vec<LegacyValue>,
+    values: Vec<Option<f64>>,
     rows: usize,
     columns: usize,
 ) -> CompiledBytecode {
-    let matrix = LegacyValue::MatrixValue(Matrix::from_vec(values, rows, columns));
+    assert_eq!(values.len(), rows * columns);
+    let column_major = &values;
+    let values = (0..rows)
+        .flat_map(|row| (0..columns).map(move |column| column_major[column * rows + row]))
+        .collect::<Vec<_>>();
+    let elements = values
+        .iter()
+        .map(|value| value.map(|value| ValueCell::from_exact(value).unwrap()))
+        .collect::<Vec<_>>();
+    let optional = values.iter().any(Option::is_none);
+    let schema = if optional {
+        SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)))
+    } else {
+        SchemaBody::FloatingPoint(FloatWidth::W64)
+    };
+    let drafts = values
+        .into_iter()
+        .map(|value| match (optional, value) {
+            (false, Some(value)) => ValueDataDraft::F64(F64Bits::from_f64(value)),
+            (true, value) => ValueDataDraft::Option(OptionDraft {
+                present: value.is_some(),
+                value: value.map(|value| Box::new(ValueDataDraft::F64(F64Bits::from_f64(value)))),
+            }),
+            (false, None) => unreachable!("non-optional matrix element is present"),
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let matrix = ValueCell::dynamic_matrix(
+        schema,
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        drafts,
+    )
+    .unwrap();
     let mut context = CompileCtx::new();
-    let output = context.resolve_value_register(&matrix).unwrap();
+    let output = compile_value_cell_matrix_literal_register(
+        &matrix,
+        rows.try_into().unwrap(),
+        columns.try_into().unwrap(),
+        &elements,
+        &mut context,
+    )
+    .unwrap();
     context.finish_program(output).unwrap()
 }
 
 #[test]
 fn compiled_matrix_sidecars_fold_static_literals_through_canonical_ir() {
-    let compiled = compiled_generic_matrix(
-        [1.0, 3.0, 2.0, 4.0]
-            .into_iter()
-            .map(|value| LegacyValue::F64(Ref::new(value)))
-            .collect(),
-        2,
-        2,
-    );
+    let compiled =
+        compiled_generic_matrix([1.0, 3.0, 2.0, 4.0].into_iter().map(Some).collect(), 2, 2);
     let artifact = compile_executable_program_artifact(&compiled, &empty_function_catalog())
         .expect("a valid static matrix sidecar must compile");
     assert!(artifact.nodes().iter().all(|node| {
@@ -1080,14 +1113,7 @@ fn compiled_matrix_sidecars_fold_static_literals_through_canonical_ir() {
 
 #[test]
 fn compiled_matrix_sidecars_emit_fixed_row_major_dynamic_bindings() {
-    let mut compiled = compiled_generic_matrix(
-        vec![
-            LegacyValue::F64(Ref::new(1.0)),
-            LegacyValue::F64(Ref::new(2.0)),
-        ],
-        1,
-        2,
-    );
+    let mut compiled = compiled_generic_matrix(vec![Some(1.0), Some(2.0)], 1, 2);
     let literal = compiled
         .matrix_literals
         .get(&compiled.return_register)
@@ -1148,14 +1174,7 @@ fn compiled_matrix_sidecars_emit_fixed_row_major_dynamic_bindings() {
 
 #[test]
 fn compiled_matrix_sidecar_disagreement_fails_before_lowering() {
-    let mut compiled = compiled_generic_matrix(
-        vec![
-            LegacyValue::F64(Ref::new(1.0)),
-            LegacyValue::F64(Ref::new(2.0)),
-        ],
-        1,
-        2,
-    );
+    let mut compiled = compiled_generic_matrix(vec![Some(1.0), Some(2.0)], 1, 2);
     compiled
         .matrix_literals
         .get_mut(&compiled.return_register)
@@ -1170,11 +1189,7 @@ fn compiled_matrix_sidecar_disagreement_fails_before_lowering() {
 
 #[test]
 fn dynamic_matrix_sidecars_reject_empty_pseudo_values() {
-    let mut compiled = compiled_generic_matrix(
-        vec![LegacyValue::Empty, LegacyValue::F64(Ref::new(2.0))],
-        1,
-        2,
-    );
+    let mut compiled = compiled_generic_matrix(vec![None, Some(2.0)], 1, 2);
     let second = compiled.matrix_literals[&compiled.return_register].elements[1].register();
     compiled.symbol_definitions.push(CompiledSymbolDefinition {
         id: mech_core::hash_str("live"),
@@ -1202,14 +1217,8 @@ fn dynamic_matrix_sidecars_reject_empty_pseudo_values() {
 fn dynamic_matrix_literal_artifacts_execute_and_update_resident_output() {
     use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
 
-    let mut compiled = compiled_generic_matrix(
-        [1.0, 3.0, 2.0, 4.0]
-            .into_iter()
-            .map(|value| LegacyValue::F64(Ref::new(value)))
-            .collect(),
-        2,
-        2,
-    );
+    let mut compiled =
+        compiled_generic_matrix([1.0, 3.0, 2.0, 4.0].into_iter().map(Some).collect(), 2, 2);
     let first = compiled.matrix_literals[&compiled.return_register].elements[0].register();
     compiled.symbol_definitions.push(CompiledSymbolDefinition {
         id: mech_core::hash_str("live"),
@@ -2242,7 +2251,7 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
                 },
             ]
             .into_boxed_slice(),
-            rows: DimensionExpr::Constant(2),
+            rows: DimensionExpr::Constant(2).into(),
         },
     );
     insert(
@@ -2259,7 +2268,7 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
             value: Box::new(SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(
                 FloatWidth::W64,
             )))),
-            cardinality: DimensionExpr::Constant(1),
+            cardinality: DimensionExpr::Constant(1).into(),
         },
     );
     insert("type", SchemaBody::ReifiedType);

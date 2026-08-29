@@ -1,4 +1,4 @@
-use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
+use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder, RuntimeHostInputValue};
 use std::env;
 use std::fs;
 
@@ -16,6 +16,7 @@ fn main() {
         .expect("bytecode execution failed")
         .initial_value
         .into_value();
-    let value = result.as_f64().expect("expected f64 output");
-    assert_eq!(*value.borrow(), 3.0);
+    let value = RuntimeHostInputValue::from_numeric_value(&result)
+        .expect("expected canonical numeric output");
+    assert_eq!(value, RuntimeHostInputValue::F64(3.0));
 }

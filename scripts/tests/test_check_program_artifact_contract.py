@@ -63,7 +63,7 @@ pub fn compile_executable_program_artifact(_: CompiledBytecode) {
         failures = CHECKER.validate_source_compiler(source)
         self.assertTrue(any("runtime-" in failure for failure in failures))
 
-    def test_fabricated_legacy_nominal_path_is_rejected(self) -> None:
+    def test_retired_legacy_semantic_context_is_rejected(self) -> None:
         source = """
 pub fn compile_source_program() {}
 pub fn compile_executable_program_artifact(_: CompiledBytecode) {}
@@ -79,7 +79,7 @@ impl LegacySemanticContext for CompilerLegacyContext {
 // MissingRegisterSource IntegrityConstraintSchemaMismatch
 """
         failures = CHECKER.validate_source_compiler(source)
-        self.assertTrue(any("fabricates durable nominal identity" in failure for failure in failures))
+        self.assertTrue(any("retains retired semantic boundary" in failure for failure in failures))
 
     def test_reified_kind_without_canonical_round_trip_is_rejected(self) -> None:
         source = """
