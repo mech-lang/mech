@@ -410,51 +410,54 @@ The scene resource consumes typed tables of drawing primitives. Each table below
 
 Circles draw camera ranges and bodies, the three robot-state markers, and the compact legend keys. Opacity columns connect camera state directly to the rendered result.
 
-  scene-circles := |id<string> x<f64> y<f64> radius<f64> fill<*> stroke<*> stroke-width<f64> opacity<f64>|
-    | "camera-range-1" camera-screen[1,1] camera-screen[1,2] camera-max-range * screen-scale "none" 0xf4c95d<f64> 0.8 camera-range-opacity[1] |
-    | "camera-range-2" camera-screen[2,1] camera-screen[2,2] camera-max-range * screen-scale "none" 0xf4c95d<f64> 0.8 camera-range-opacity[2] |
-    | "camera-range-3" camera-screen[3,1] camera-screen[3,2] camera-max-range * screen-scale "none" 0xf4c95d<f64> 0.8 camera-range-opacity[3] |
-    | "camera-range-4" camera-screen[4,1] camera-screen[4,2] camera-max-range * screen-scale "none" 0xf4c95d<f64> 0.8 camera-range-opacity[4] |
-    | "camera-disabled-1" camera-screen[1,1] camera-screen[1,2] 9 0x59616b<f64> "none" 0 camera-disabled-opacity[1] |
-    | "camera-disabled-2" camera-screen[2,1] camera-screen[2,2] 9 0x59616b<f64> "none" 0 camera-disabled-opacity[2] |
-    | "camera-disabled-3" camera-screen[3,1] camera-screen[3,2] 9 0x59616b<f64> "none" 0 camera-disabled-opacity[3] |
-    | "camera-disabled-4" camera-screen[4,1] camera-screen[4,2] 9 0x59616b<f64> "none" 0 camera-disabled-opacity[4] |
-    | "camera-1" camera-screen[1,1] camera-screen[1,2] 9 0xf4c95d<f64> 0xfff1b8<f64> 2 camera-enabled[1] |
-    | "camera-2" camera-screen[2,1] camera-screen[2,2] 9 0xf4c95d<f64> 0xfff1b8<f64> 2 camera-enabled[2] |
-    | "camera-3" camera-screen[3,1] camera-screen[3,2] 9 0xf4c95d<f64> 0xfff1b8<f64> 2 camera-enabled[3] |
-    | "camera-4" camera-screen[4,1] camera-screen[4,2] 9 0xf4c95d<f64> 0xfff1b8<f64> 2 camera-enabled[4] |
-    | "truth" truth-screen[1] truth-screen[2] 8 0x63d6c5<f64> 0xd7fff8<f64> 1.5 1 |
-    | "prediction" predicted-screen[1] predicted-screen[2] 6 "none" 0xf2b84b<f64> 2 1 |
-    | "estimate" estimate-screen[1] estimate-screen[2] 7 0xf087b8<f64> 0xffe1ef<f64> 1.5 1 |
-    | "legend-truth" 30 718 4 0x63d6c5<f64> "none" 0 1 |
-    | "legend-prediction" 205 718 4 0xf2b84b<f64> "none" 0 1 |
-    | "legend-estimate" 405 718 4 0xf087b8<f64> "none" 0 1 |
+  scene-circles := 
+    | id<string>          x<f64>              y<f64>              radius<f64>                     fill<*>   stroke<*> stroke-width<f64> opacity<f64>               |
+    | "camera-range-1"    camera-screen[1,1]  camera-screen[1,2]  camera-max-range * screen-scale "none"    0xf4c95d  0.8               camera-range-opacity[1]    |
+    | "camera-range-2"    camera-screen[2,1]  camera-screen[2,2]  camera-max-range * screen-scale "none"    0xf4c95d  0.8               camera-range-opacity[2]    |
+    | "camera-range-3"    camera-screen[3,1]  camera-screen[3,2]  camera-max-range * screen-scale "none"    0xf4c95d  0.8               camera-range-opacity[3]    |
+    | "camera-range-4"    camera-screen[4,1]  camera-screen[4,2]  camera-max-range * screen-scale "none"    0xf4c95d  0.8               camera-range-opacity[4]    |
+    | "camera-disabled-1" camera-screen[1,1]  camera-screen[1,2]  9                               0x59616b  "none"    0                 camera-disabled-opacity[1] |
+    | "camera-disabled-2" camera-screen[2,1]  camera-screen[2,2]  9                               0x59616b  "none"    0                 camera-disabled-opacity[2] |
+    | "camera-disabled-3" camera-screen[3,1]  camera-screen[3,2]  9                               0x59616b  "none"    0                 camera-disabled-opacity[3] |
+    | "camera-disabled-4" camera-screen[4,1]  camera-screen[4,2]  9                               0x59616b  "none"    0                 camera-disabled-opacity[4] |
+    | "camera-1"          camera-screen[1,1]  camera-screen[1,2]  9                               0xf4c95d  0xfff1b8  2                 camera-enabled[1]          |
+    | "camera-2"          camera-screen[2,1]  camera-screen[2,2]  9                               0xf4c95d  0xfff1b8  2                 camera-enabled[2]          |
+    | "camera-3"          camera-screen[3,1]  camera-screen[3,2]  9                               0xf4c95d  0xfff1b8  2                 camera-enabled[3]          |
+    | "camera-4"          camera-screen[4,1]  camera-screen[4,2]  9                               0xf4c95d  0xfff1b8  2                 camera-enabled[4]          |
+    | "truth"             truth-screen[1]     truth-screen[2]     8                               0x63d6c5  0xd7fff8  1.5               1                          |
+    | "prediction"        predicted-screen[1] predicted-screen[2] 6                               "none"    0xf2b84b  2                 1                          |
+    | "estimate"          estimate-screen[1]  estimate-screen[2]  7                               0xf087b8  0xffe1ef  1.5               1                          |
+    | "legend-truth"      30                  718                 4                               0x63d6c5  "none"    0                 1                          |
+    | "legend-prediction" 205                 718                 4                               0xf2b84b  "none"    0                 1                          |
+    | "legend-estimate"   405                 718                 4                               0xf087b8  "none"    0                 1                          |
 
 (6.5.2) Fixed Lines
 
 Fixed line segments draw the field frame, camera-to-robot measurement rays, and the truth and estimate heading indicators.
 
-  scene-lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<f64> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
-    | "frame-top" 120 80 740 80 0x27313d<f64> 1 "butt" 1 0 0 0 |
-    | "frame-right" 740 80 740 700 0x27313d<f64> 1 "butt" 1 0 0 0 |
-    | "frame-bottom" 740 700 120 700 0x27313d<f64> 1 "butt" 1 0 0 0 |
-    | "frame-left" 120 700 120 80 0x27313d<f64> 1 "butt" 1 0 0 0 |
-    | "ray-1" camera-screen[1,1] camera-screen[1,2] truth-screen[1] truth-screen[2] 0xd9b652<f64> 0.7 "round" camera-ray-opacity[1] 0 0 0 |
-    | "ray-2" camera-screen[2,1] camera-screen[2,2] truth-screen[1] truth-screen[2] 0xd9b652<f64> 0.7 "round" camera-ray-opacity[2] 0 0 0 |
-    | "ray-3" camera-screen[3,1] camera-screen[3,2] truth-screen[1] truth-screen[2] 0xd9b652<f64> 0.7 "round" camera-ray-opacity[3] 0 0 0 |
-    | "ray-4" camera-screen[4,1] camera-screen[4,2] truth-screen[1] truth-screen[2] 0xd9b652<f64> 0.7 "round" camera-ray-opacity[4] 0 0 0 |
-    | "truth-heading" truth-screen[1] truth-screen[2] heading-screen-points[1,1] heading-screen-points[2,1] 0xd7fff8<f64> 2 "round" 1 0 0 0 |
-    | "estimate-heading" estimate-screen[1] estimate-screen[2] heading-screen-points[1,2] heading-screen-points[2,2] 0xffe1ef<f64> 1.5 "round" 1 0 0 0 |
+  scene-lines := 
+    | id<string>         x1<f64>            y1<f64>            x2<f64>                    y2<f64>                    stroke<f64>   stroke-width<f64> line-cap<string> opacity<f64>          rotation<f64> origin-x<f64> origin-y<f64>|
+    | "frame-top"        120                80                 740                        80                         0x27313d      1                 "butt"           1                     0             0             0            |
+    | "frame-right"      740                80                 740                        700                        0x27313d      1                 "butt"           1                     0             0             0            |
+    | "frame-bottom"     740                700                120                        700                        0x27313d      1                 "butt"           1                     0             0             0            |
+    | "frame-left"       120                700                120                        80                         0x27313d      1                 "butt"           1                     0             0             0            |
+    | "ray-1"            camera-screen[1,1] camera-screen[1,2] truth-screen[1]            truth-screen[2]            0xd9b652      0.7               "round"          camera-ray-opacity[1] 0             0             0            |
+    | "ray-2"            camera-screen[2,1] camera-screen[2,2] truth-screen[1]            truth-screen[2]            0xd9b652      0.7               "round"          camera-ray-opacity[2] 0             0             0            |
+    | "ray-3"            camera-screen[3,1] camera-screen[3,2] truth-screen[1]            truth-screen[2]            0xd9b652      0.7               "round"          camera-ray-opacity[3] 0             0             0            |
+    | "ray-4"            camera-screen[4,1] camera-screen[4,2] truth-screen[1]            truth-screen[2]            0xd9b652      0.7               "round"          camera-ray-opacity[4] 0             0             0            |
+    | "truth-heading"    truth-screen[1]    truth-screen[2]    heading-screen-points[1,1] heading-screen-points[2,1] 0xd7fff8      2                 "round"          1                     0             0             0            |
+    | "estimate-heading" estimate-screen[1] estimate-screen[2] heading-screen-points[1,2] heading-screen-points[2,2] 0xffe1ef      1.5               "round"          1                     0             0             0            |
 
 (6.5.3) Paths and Covariance
 
 Line strips draw the requested square, both resident trails, and the sampled covariance ellipse from their prepared point matrices.
 
-  scene-line-strips := |id<string> positions<*> stroke<f64> stroke-width<f64> line-cap<string> line-join<string> opacity<f64> closed<bool>|
-    | "square-guide" square-guide 0x536273<f64> 1 "round" "round" 0.38 true |
-    | "truth-path" next-truth-path 0x63d6c5<f64> 2 "round" "round" 0.8 false |
-    | "estimate-path" next-estimate-path 0xf087b8<f64> 2 "round" "round" 0.84 false |
-    | "covariance" covariance-ellipse 0xf087b8<f64> 1.5 "round" "round" 0.72 true |
+  scene-line-strips := 
+    | id<string>      positions<*>       stroke<f64> stroke-width<f64> line-cap<string> line-join<string> opacity<f64> closed<bool>|
+    | "square-guide"  square-guide       0x536273    1                 "round"          "round"           0.38         true        |
+    | "truth-path"    next-truth-path    0x63d6c5    2                 "round"          "round"           0.8          false       |
+    | "estimate-path" next-estimate-path 0xf087b8    2                 "round"          "round"           0.84         false       |
+    | "covariance"    covariance-ellipse 0xf087b8    1.5               "round"          "round"           0.72         true        |
 
 (6.5.4) Labels
 
@@ -462,15 +465,16 @@ Text primitives supply the field title, camera labels, and legend descriptions w
 
   sans-serif-font := "Inter, ui-sans-serif, system-ui, sans-serif"
 
-  scene-text := |id<string>                  x<f64> y<f64> fill<f64>      font-size<f64> font-family<string> font-weight<f64> text-anchor<string> opacity<f64>            value<string>                  |
-                | "title"                     24     62    0xedf2f7  36             sans-serif-font     620              "start"             1                       "Camera EKF Localization"      |
-                | "camera-label-1"           195    636    0xd7c27f  11             sans-serif-font     500              "start"             camera-label-opacity[1] "CAM 1"                        |
-                | "camera-label-2"           665    636    0xd7c27f  11             sans-serif-font     500              "end"               camera-label-opacity[2] "CAM 2"                        |
-                | "camera-label-3"           665    140    0xd7c27f  11             sans-serif-font     500              "end"               camera-label-opacity[3] "CAM 3"                        |
-                | "camera-label-4"           195    140    0xd7c27f  11             sans-serif-font     500              "start"             camera-label-opacity[4] "CAM 4"                        |
-                | "legend-truth-label"        40    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "actual robot + path"          |
-                | "legend-prediction-label"  215    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "motion prediction"            |
-                | "legend-estimate-label"    415    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "EKF estimate + 2σ covariance" |
+  scene-text := 
+    | id<string>                 x<f64> y<f64> fill<f64> font-size<f64> font-family<string> font-weight<f64> text-anchor<string> opacity<f64>            value<string>                  |
+    | "title"                     24     62    0xedf2f7  36             sans-serif-font     620              "start"             1                       "Camera EKF Localization"      |
+    | "camera-label-1"           195    636    0xd7c27f  11             sans-serif-font     500              "start"             camera-label-opacity[1] "CAM 1"                        |
+    | "camera-label-2"           665    636    0xd7c27f  11             sans-serif-font     500              "end"               camera-label-opacity[2] "CAM 2"                        |
+    | "camera-label-3"           665    140    0xd7c27f  11             sans-serif-font     500              "end"               camera-label-opacity[3] "CAM 3"                        |
+    | "camera-label-4"           195    140    0xd7c27f  11             sans-serif-font     500              "start"             camera-label-opacity[4] "CAM 4"                        |
+    | "legend-truth-label"        40    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "actual robot + path"          |
+    | "legend-prediction-label"  215    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "motion prediction"            |
+    | "legend-estimate-label"    415    722    0xbdc8d2  12             sans-serif-font     400              "start"             1                       "EKF estimate + 2σ covariance" |
 
 (6.6) Scene Publication
 
