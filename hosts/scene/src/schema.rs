@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use mech_core::{LegacyValue, MResult, MechRecord, MechTable, hash_str};
+use mech_core::{LegacyValue, MResult, MechRecord, MechTable, ValueKind, hash_str};
 use mech_runtime::{
     host_arg_f64, host_arg_matrix_f64, host_arg_matrix_value_matrix, host_arg_optional,
     host_arg_record, host_arg_resolved, host_arg_string, host_arg_table, host_arg_tuple,
@@ -798,29 +798,28 @@ fn required_paint(record: &MechRecord, field: &str, label: &str) -> MResult<Stri
             format!("field `{label}` must be a paint string or numeric RGB color"),
         )
     })?;
-    match resolved {
-        LegacyValue::String(value) => Ok(value.borrow().clone()),
-        LegacyValue::U64(value) if *value.borrow() <= 0x00ff_ffff => {
-            Ok(format!("#{:06x}", *value.borrow()))
-        }
-        LegacyValue::I64(value) if (0..=0x00ff_ffff).contains(&*value.borrow()) => {
-            Ok(format!("#{:06x}", *value.borrow()))
-        }
-        LegacyValue::F64(value)
-            if value.borrow().is_finite()
-                && value.borrow().fract() == 0.0
-                && (0.0..=16_777_215.0).contains(&*value.borrow()) =>
-        {
-            Ok(format!("#{:06x}", *value.borrow() as u32))
-        }
-        other => Err(scene_error(
-            "SceneSchema",
-            format!(
-                "field `{label}` must be a paint string or 24-bit numeric RGB color, got {:?}",
-                resolved_for_diagnostic(&other)
-            ),
-        )),
+    if let LegacyValue::String(value) = resolved {
+        return Ok(value.borrow().clone());
     }
+    let numeric = if matches!(resolved, LegacyValue::Index(_)) {
+        None
+    } else {
+        resolved.convert_to(&ValueKind::F64)
+    };
+    if let Some(LegacyValue::F64(value)) = numeric
+        && value.borrow().is_finite()
+        && value.borrow().fract() == 0.0
+        && (0.0..=16_777_215.0).contains(&*value.borrow())
+    {
+        return Ok(format!("#{:06x}", *value.borrow() as u32));
+    }
+    Err(scene_error(
+        "SceneSchema",
+        format!(
+            "field `{label}` must be a paint string or 24-bit numeric RGB color, got {:?}",
+            resolved_for_diagnostic(&resolved)
+        ),
+    ))
 }
 fn required_font_weight(record: &MechRecord, field: &str, label: &str) -> MResult<String> {
     let resolved = host_arg_resolved(

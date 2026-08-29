@@ -30,12 +30,6 @@ fn deliver_write(
 fn f(value: f64) -> LegacyValue {
     LegacyValue::F64(Ref::new(value))
 }
-fn u(value: u64) -> LegacyValue {
-    LegacyValue::U64(Ref::new(value))
-}
-fn i(value: i64) -> LegacyValue {
-    LegacyValue::I64(Ref::new(value))
-}
 fn ix(value: usize) -> LegacyValue {
     LegacyValue::Index(Ref::new(value))
 }
@@ -213,7 +207,7 @@ fn numeric_text_paint_and_weight_are_normalized_without_index_coercion() {
         ("id", s("title")),
         ("x", f(10.0)),
         ("y", f(20.0)),
-        ("fill", i(0xedf2f7)),
+        ("fill", f(0xedf2f7 as f64)),
         ("font-size", f(12.0)),
         ("font-family", s("sans-serif")),
         ("font-weight", f(620.0)),
@@ -224,7 +218,7 @@ fn numeric_text_paint_and_weight_are_normalized_without_index_coercion() {
     let scene = record(vec![
         ("width", f(100.0)),
         ("height", f(50.0)),
-        ("background", u(0x080b12)),
+        ("background", f(0x080b12 as f64)),
         ("texts", tuple(vec![numeric_text])),
     ]);
     let scene = SceneSnapshot::from_value(&scene).unwrap();
