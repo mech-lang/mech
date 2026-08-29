@@ -6,6 +6,10 @@ use crate::{
     ResourcePathCapability, ResourcePathScope, RuntimeCapabilityOperation, SharedCapabilityKernel,
 };
 
+#[allow(
+    dead_code,
+    reason = "shared test support is selected by feature-specific runtime suites"
+)]
 pub(crate) fn grant_resource(
     runtime: &mut MechRuntime,
     subject: &str,
@@ -76,11 +80,19 @@ fn grant_host_call_with_constraints(
 }
 
 #[derive(Clone, Debug)]
+#[allow(
+    dead_code,
+    reason = "shared test support is selected by feature-specific runtime suites"
+)]
 pub(crate) struct CapabilityUseProbe {
     kernel: SharedCapabilityKernel,
     capability: CapabilityId,
 }
 
+#[allow(
+    dead_code,
+    reason = "shared test support is selected by feature-specific runtime suites"
+)]
 impl CapabilityUseProbe {
     pub(crate) fn new(kernel: SharedCapabilityKernel, capability: CapabilityId) -> Self {
         Self { kernel, capability }

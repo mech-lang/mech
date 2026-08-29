@@ -1,6 +1,6 @@
 //! Isolated compiler workspace for resident source products.
 //!
-//! `CompilerPlanningProgram` and `LegacyValue` are private compilation
+//! `CompilerPlanningProgram` and canonical value cells are private compilation
 //! coordinates. They never become runtime owners: each planning program is
 //! local to one compilation and is dropped after finalization. Only immutable
 //! compilation products and detached typed initialization values
@@ -17,9 +17,9 @@ use mech_compute::{
     build_compute_region_interface,
 };
 use mech_core::{
-    ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue,
-    MResult, MechError, MechErrorKind, MechExecutionServices, MechSourceCode,
-    ModuleManifestCatalog, OperationContractDeclaration, ResourceIntent, ValueCell,
+    ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult,
+    MechError, MechErrorKind, MechExecutionServices, MechSourceCode, ModuleManifestCatalog,
+    OperationContractDeclaration, ResourceIntent, Value, ValueCell,
 };
 #[cfg(feature = "compute")]
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
@@ -327,23 +327,21 @@ struct CompilerModule {
 #[derive(Clone)]
 struct CompilerModuleInstance {
     exports: HashMap<String, CompilerExportValue>,
-    document_outputs: Vec<LegacyValue>,
-    result: LegacyValue,
+    document_outputs: Vec<Option<ValueCell>>,
+    result: Option<ValueCell>,
+    result_name: Option<String>,
 }
 
 #[derive(Clone)]
 struct CompilerExportValue {
     module: String,
     export: String,
-    value: LegacyValue,
+    value: Value,
 }
 
 impl CompilerExportValue {
     fn fresh_cell(&self) -> MResult<ValueCell> {
-        self.value
-            .try_deep_snapshot()
-            .map(ValueCell::new)
-            .map_err(|_| unsupported_compiler_import(self))
+        ValueCell::from_snapshot(self.value.clone()).map_err(|_| unsupported_compiler_import(self))
     }
 }
 
@@ -372,7 +370,7 @@ fn unsupported_compiler_import(value: &CompilerExportValue) -> MechError {
         CompilerImportValueUnsupported {
             module: value.module.clone(),
             export: value.export.clone(),
-            kind: value.value.kind().to_string(),
+            kind: value.value.data().kind().to_string(),
         },
         None,
     )
@@ -466,6 +464,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &operations,
+            planned_reads: BTreeMap::new(),
             #[cfg(feature = "compute")]
             compute_interface: None,
             #[cfg(feature = "compute")]
@@ -527,8 +526,10 @@ impl<'a> ProgramCompilerView<'a> {
     )> {
         let mut program = self.new_program();
         for (name, value) in inputs {
-            program
-                .install_compiler_symbol(name, ValueCell::new(value.clone().into_mech_value()?))?;
+            program.install_compiler_symbol(
+                name,
+                ValueCell::from_snapshot(value.clone().into_value()?)?,
+            )?;
         }
         let document_output_ids = root_document_output_ids(tree);
         let index = SourceIndex::from_program(tree);
@@ -542,6 +543,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &operations,
+            planned_reads: BTreeMap::new(),
             #[cfg(feature = "compute")]
             compute_interface,
             #[cfg(feature = "compute")]
@@ -563,10 +565,11 @@ impl<'a> ProgramCompilerView<'a> {
             .map(String::as_str)
             .collect::<Vec<_>>();
         let initial_inputs = program
-            .compiler_root_symbol_values(&input_names)?
+            .compiler_root_symbol_cells(&input_names)?
             .into_iter()
-            .map(|(name, value)| {
-                RuntimeHostInputValue::from_numeric_mech_value(&value).map(|value| (name, value))
+            .map(|(name, cell)| {
+                RuntimeHostInputValue::from_numeric_value(&cell.snapshot()?)
+                    .map(|value| (name, value))
             })
             .collect::<MResult<BTreeMap<_, _>>>()?;
         let resolver = CompilerExternalContractResolver {
@@ -697,7 +700,7 @@ impl<'a> ProgramCompilerView<'a> {
             instances
                 .get(root)
                 .expect("the requested root was executed"),
-        );
+        )?;
         if retain_root_symbols {
             program.publish_compiler_root_symbols();
         }
@@ -706,10 +709,11 @@ impl<'a> ProgramCompilerView<'a> {
             .map(String::as_str)
             .collect::<Vec<_>>();
         let initial_inputs = program
-            .compiler_root_symbol_values(&input_names)?
+            .compiler_root_symbol_cells(&input_names)?
             .into_iter()
-            .map(|(name, value)| {
-                RuntimeHostInputValue::from_numeric_mech_value(&value).map(|value| (name, value))
+            .map(|(name, cell)| {
+                RuntimeHostInputValue::from_numeric_value(&cell.snapshot()?)
+                    .map(|value| (name, value))
             })
             .collect::<MResult<BTreeMap<_, _>>>()?;
         let operations = modules
@@ -744,8 +748,10 @@ impl<'a> ProgramCompilerView<'a> {
     ) -> MResult<BTreeMap<String, RuntimeHostInputValue>> {
         let mut program = self.new_program();
         for (name, value) in inputs {
-            program
-                .install_compiler_symbol(name, ValueCell::new(value.clone().into_mech_value()?))?;
+            program.install_compiler_symbol(
+                name,
+                ValueCell::from_snapshot(value.clone().into_value()?)?,
+            )?;
         }
         let index = SourceIndex::from_program(tree);
         index.validate_address_targets()?;
@@ -758,6 +764,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &operations,
+            planned_reads: BTreeMap::new(),
             #[cfg(feature = "compute")]
             compute_interface: None,
             #[cfg(feature = "compute")]
@@ -767,10 +774,11 @@ impl<'a> ProgramCompilerView<'a> {
             .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
             .map_err(classify_source_planning)?;
         program
-            .compiler_root_symbol_values(names)?
+            .compiler_root_symbol_cells(names)?
             .into_iter()
-            .map(|(name, value)| {
-                RuntimeHostInputValue::from_numeric_mech_value(&value).map(|value| (name, value))
+            .map(|(name, cell)| {
+                RuntimeHostInputValue::from_numeric_value(&cell.snapshot()?)
+                    .map(|value| (name, value))
             })
             .collect()
     }
@@ -924,7 +932,7 @@ impl<'a> ProgramCompilerView<'a> {
         let instance = instances
             .get(&root)
             .expect("the requested root was executed");
-        publish_module_outputs(program, instance);
+        publish_module_outputs(program, instance)?;
         if matches!(
             output_projection,
             RootOutputProjection::ObservableResultsAndSymbols
@@ -987,7 +995,7 @@ impl<'a> ProgramCompilerView<'a> {
                 instances
                     .get(root)
                     .expect("every requested root was executed"),
-            );
+            )?;
         }
         let operations = modules
             .values()
@@ -1267,6 +1275,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &resource_send_operations,
+            planned_reads: BTreeMap::new(),
             #[cfg(feature = "compute")]
             compute_interface,
             #[cfg(feature = "compute")]
@@ -1278,12 +1287,15 @@ impl<'a> ProgramCompilerView<'a> {
         #[cfg(feature = "compute")]
         compute_activation_inputs.append(&mut services.compute_activation_inputs);
         let document_output_ids = root_document_output_ids(&tree);
-        let document_outputs = program.compiler_document_output_values(&document_output_ids)?;
+        let document_outputs = program.compiler_document_output_cells(&document_output_ids)?;
+        let result_name = result
+            .as_ref()
+            .and_then(|result| program.compiler_root_symbol_name_for_cell(result));
 
         let mut exports = HashMap::new();
         for export in source_exports(&module.source) {
             let name = export.name.clone();
-            let value = program.compiler_root_symbol_value(&name).map_err(|_| {
+            let value = program.compiler_root_symbol_cell(&name).map_err(|_| {
                 mech_core::MechError::new(
                     RuntimeModuleExportNotFound {
                         dependency: canonical_uri.to_owned(),
@@ -1292,12 +1304,12 @@ impl<'a> ProgramCompilerView<'a> {
                     None,
                 )
             })?;
-            let snapshot = value.try_deep_snapshot().map_err(|_| {
+            let snapshot = value.snapshot().map_err(|_| {
                 MechError::new(
                     CompilerImportValueUnsupported {
                         module: canonical_uri.to_owned(),
                         export: name.clone(),
-                        kind: value.kind().to_string(),
+                        kind: format!("{:?}", value.representation()),
                     },
                     None,
                 )
@@ -1317,6 +1329,7 @@ impl<'a> ProgramCompilerView<'a> {
                 exports,
                 document_outputs,
                 result,
+                result_name,
             },
         );
         active.pop();
@@ -1597,7 +1610,7 @@ fn compute_initializers(
                 values,
             } => ComputeValue::TensorF32 {
                 dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
-                layout: TensorLayout::ColumnMajor,
+                layout: TensorLayout::RowMajor,
                 values: Arc::from(values),
             },
             RuntimeHostInputValue::F64Matrix {
@@ -1606,7 +1619,7 @@ fn compute_initializers(
                 values,
             } => ComputeValue::TensorF32 {
                 dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
-                layout: TensorLayout::ColumnMajor,
+                layout: TensorLayout::RowMajor,
                 values: values
                     .into_iter()
                     .map(|value| narrow_compute_input_f64(port.name.as_ref(), value))
@@ -1707,23 +1720,31 @@ fn explicit_root_plan_order(
 fn publish_document_and_root_outputs(
     program: &mut CompilerPlanningProgram,
     document_output_ids: &[u64],
-    root: &LegacyValue,
+    root: &Option<ValueCell>,
 ) -> MResult<()> {
-    for output in program.compiler_document_output_values(document_output_ids)? {
+    for output in program.compiler_document_output_cells(document_output_ids)? {
         program.publish_compiler_document_output(output);
     }
-    program.publish_compiler_root_output(root.clone());
+    if let Some(root) = root {
+        program.publish_compiler_root_output(root.clone());
+    }
     Ok(())
 }
 
 fn publish_module_outputs(
     program: &mut CompilerPlanningProgram,
     instance: &CompilerModuleInstance,
-) {
+) -> MResult<()> {
     for output in &instance.document_outputs {
         program.publish_compiler_document_output(output.clone());
     }
-    program.publish_compiler_root_output(instance.result.clone());
+    if let Some(result) = &instance.result {
+        if let Some(name) = &instance.result_name {
+            program.install_compiler_symbol(name, result.clone())?;
+        }
+        program.publish_compiler_root_output(result.clone());
+    }
+    Ok(())
 }
 
 fn compiled_resource_send_operations(
@@ -2083,6 +2104,7 @@ fn install_environment(
 struct CompilerPlanningServices<'a> {
     providers: &'a RuntimeResourceRegistry,
     resource_send_operations: &'a [CompiledResourceSendOperation],
+    planned_reads: BTreeMap<ExecutionResourceRequest, Value>,
     #[cfg(feature = "compute")]
     compute_interface: Option<&'a ComputeRegionInterface>,
     #[cfg(feature = "compute")]
@@ -2123,30 +2145,23 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
-        _arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue> {
+        _arguments: &[Value],
+    ) -> MResult<Value> {
         Err(unsupported_route(format!(
             "resident source requires host function `{}`",
             request.name,
         )))
     }
 
-    fn plan_resource_read_output(
-        &mut self,
-        request: &ExecutionResourceRequest,
-    ) -> MResult<LegacyValue> {
-        self.plan_read(request)
+    fn plan_resource_read_output(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+        self.planned_read(request)
     }
 
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
-        self.plan_read(request)
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+        self.planned_read(request)
     }
 
-    fn write_resource(
-        &mut self,
-        request: &ExecutionResourceRequest,
-        value: &LegacyValue,
-    ) -> MResult<()> {
+    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()> {
         let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
         let intent = match request.intent {
             ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
@@ -2179,7 +2194,7 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
             path: key.path,
             context_name: request.context_name.clone(),
             operation: RuntimeCapabilityOperation::from_name(operation.to_owned())?,
-            value: value.try_deep_snapshot()?,
+            value: value.clone(),
             intent,
         })
     }
@@ -2195,7 +2210,16 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
 }
 
 impl CompilerPlanningServices<'_> {
-    fn plan_read(&self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+    fn planned_read(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+        if let Some(value) = self.planned_reads.get(request) {
+            return Ok(value.clone());
+        }
+        let value = self.plan_read(request)?;
+        self.planned_reads.insert(request.clone(), value.clone());
+        Ok(value)
+    }
+
+    fn plan_read(&self, request: &ExecutionResourceRequest) -> MResult<Value> {
         let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
         #[cfg(feature = "compute")]
         if is_compute_kernel_base(&key.base_uri)
@@ -2221,7 +2245,7 @@ fn is_compute_kernel_base(base_uri: &str) -> bool {
 fn plan_compute_read(
     interface: &ComputeRegionInterface,
     key: &RuntimeResourceKey,
-) -> MResult<LegacyValue> {
+) -> MResult<Value> {
     if let Some(name) = key.path.strip_prefix("sample/") {
         let port = interface
             .outputs
@@ -2236,19 +2260,19 @@ fn plan_compute_read(
             ))
         })?;
         return match port.dimensions.as_ref() {
-            [] => RuntimeHostInputValue::F64(0.0).into_mech_value(),
+            [] => RuntimeHostInputValue::F64(0.0).into_value(),
             [columns] => RuntimeHostInputValue::F64Matrix {
                 rows: 1,
                 columns: *columns as usize,
                 values: vec![0.0; elements],
             }
-            .into_mech_value(),
+            .into_value(),
             [rows, columns] => RuntimeHostInputValue::F64Matrix {
                 rows: *rows as usize,
                 columns: *columns as usize,
                 values: vec![0.0; elements],
             }
-            .into_mech_value(),
+            .into_value(),
             dimensions => Err(compute_planning_error(format!(
                 "sampled compute output `{name}` has unsupported rank {}",
                 dimensions.len(),
@@ -2256,10 +2280,8 @@ fn plan_compute_read(
         };
     }
     match key.path.as_str() {
-        "backend" | "last-fault" => RuntimeHostInputValue::String(String::new()).into_mech_value(),
-        "turns" | "dispatch-ms" | "fault-count" => {
-            RuntimeHostInputValue::F64(0.0).into_mech_value()
-        }
+        "backend" | "last-fault" => RuntimeHostInputValue::String(String::new()).into_value(),
+        "turns" | "dispatch-ms" | "fault-count" => RuntimeHostInputValue::F64(0.0).into_value(),
         path => Err(compute_planning_error(format!(
             "unknown compute telemetry path `{path}`"
         ))),
@@ -2271,7 +2293,7 @@ fn plan_compute_write(
     interface: &ComputeRegionInterface,
     key: &RuntimeResourceKey,
     intent: RuntimeResourceWriteIntent,
-    value: &LegacyValue,
+    value: &Value,
 ) -> MResult<Option<(String, ComputeValue)>> {
     if intent != RuntimeResourceWriteIntent::Send {
         return Err(compute_planning_error(
@@ -2287,39 +2309,39 @@ fn plan_compute_write(
     let port = interface.input_named(name).ok_or_else(|| {
         compute_planning_error(format!("unknown compute input path `{}`", key.path))
     })?;
-    let value =
-        RuntimeHostInputValue::from_numeric_mech_value(value).and_then(|value| match value {
-            RuntimeHostInputValue::F32(value) => Ok(ComputeValue::ScalarF32(value)),
-            RuntimeHostInputValue::F64(value) => Ok(ComputeValue::ScalarF32(
-                narrow_compute_input_f64(port.name.as_ref(), value)?,
-            )),
-            RuntimeHostInputValue::F32Matrix {
-                rows,
-                columns,
-                values,
-            } => Ok(ComputeValue::TensorF32 {
-                dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
-                layout: TensorLayout::ColumnMajor,
-                values: Arc::from(values),
-            }),
-            RuntimeHostInputValue::F64Matrix {
-                rows,
-                columns,
-                values,
-            } => Ok(ComputeValue::TensorF32 {
-                dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
-                layout: TensorLayout::ColumnMajor,
-                values: values
-                    .into_iter()
-                    .map(|value| narrow_compute_input_f64(port.name.as_ref(), value))
-                    .collect::<MResult<Vec<_>>>()?
-                    .into(),
-            }),
-            value => Err(compute_planning_error(format!(
-                "compute input `{}` requires fixed-shape f32 data, found `{value:?}`",
-                port.name
-            ))),
-        })?;
+    let value = RuntimeHostInputValue::from_numeric_value(value).and_then(|value| match value {
+        RuntimeHostInputValue::F32(value) => Ok(ComputeValue::ScalarF32(value)),
+        RuntimeHostInputValue::F64(value) => Ok(ComputeValue::ScalarF32(narrow_compute_input_f64(
+            port.name.as_ref(),
+            value,
+        )?)),
+        RuntimeHostInputValue::F32Matrix {
+            rows,
+            columns,
+            values,
+        } => Ok(ComputeValue::TensorF32 {
+            dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
+            layout: TensorLayout::RowMajor,
+            values: Arc::from(values),
+        }),
+        RuntimeHostInputValue::F64Matrix {
+            rows,
+            columns,
+            values,
+        } => Ok(ComputeValue::TensorF32 {
+            dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
+            layout: TensorLayout::RowMajor,
+            values: values
+                .into_iter()
+                .map(|value| narrow_compute_input_f64(port.name.as_ref(), value))
+                .collect::<MResult<Vec<_>>>()?
+                .into(),
+        }),
+        value => Err(compute_planning_error(format!(
+            "compute input `{}` requires fixed-shape f32 data, found `{value:?}`",
+            port.name
+        ))),
+    })?;
     let (value, _) = port
         .normalize_broadcast_value(value, None)
         .map_err(|error| {

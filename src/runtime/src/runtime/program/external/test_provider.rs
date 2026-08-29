@@ -6,15 +6,15 @@ use std::sync::{Arc, LazyLock, Mutex};
 
 use mech_core::{
     AccessMode, ChangeDetectionPolicy, DeliveryMode, EffectContract, EffectDeliveryPolicy,
-    ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue,
-    MResult, MechError, ObservationContract, ObservationReplayPolicy, OperationContractDeclaration,
+    ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
+    MechError, ObservationContract, ObservationReplayPolicy, OperationContractDeclaration,
     OutputConstruction, OutputPortPolicy, ShapeRule, TransactionalEffectProtocol,
-    TransactionalExternalContract,
+    TransactionalExternalContract, Value, ValueData,
 };
 
 use crate::{
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeCompensatableEffect, RuntimeEffectCost,
-    RuntimeEffectId, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimeEffectId, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostInputValue,
     RuntimeResidentResourceWriteRequest, RuntimeResourceProvider, RuntimeResourceReadRequest,
     RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
 };
@@ -118,19 +118,19 @@ impl RuntimeResourceProvider for D3InputProvider {
         Some(&D3_OBSERVATION_CONTRACT)
     }
 
-    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.trace.lock().expect("D3 provider trace").plan_calls += 1;
-        Ok(LegacyValue::F64(mech_core::Ref::new(self.sample)))
+        RuntimeHostInputValue::F64(self.sample).into_value()
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.trace.lock().expect("D3 provider trace").read_calls += 1;
         let mut failures = self.fail_reads.lock().expect("D3 input failure count");
         if *failures > 0 {
             *failures -= 1;
             return Err(provider_error("injected D3 input read failure"));
         }
-        Ok(LegacyValue::F64(mech_core::Ref::new(self.sample)))
+        RuntimeHostInputValue::F64(self.sample).into_value()
     }
 }
 
@@ -187,7 +187,7 @@ impl RuntimeResourceProvider for D3SceneProvider {
         intent == RuntimeResourceWriteIntent::Send
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         Err(provider_error(&format!(
             "D3 scene provider is write-only: {}#{}",
             request.base_uri, request.path
@@ -282,7 +282,7 @@ impl RuntimeResourceProvider for D3TransactionalProvider {
         (intent == RuntimeResourceWriteIntent::Send).then_some(&D3_TRANSACTIONAL_CONTRACT)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         Err(provider_error(&format!(
             "D3 transactional provider is write-only: {}#{}",
             request.base_uri, request.path
@@ -356,7 +356,7 @@ fn validate_d3_write(
     if request.base_uri != expected_base_uri
         || request.path != expected_path
         || request.intent != RuntimeResourceWriteIntent::Send
-        || !matches!(request.value, LegacyValue::F64(_))
+        || !matches!(request.value.data(), ValueData::F64(_))
     {
         return Err(provider_error(
             "D3 fixture write does not match its declared numeric send target",

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use super::support::{CountingAfterCommitEffect, PreviewUnsupportedCapability};
 use crate::runtime::test_support::capabilities::grant_host_call_with_limit;
 use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
@@ -8,12 +9,14 @@ use crate::{
     PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCallContext, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
-use mech_core::{LegacyValue, Ref};
 
-use super::support::{CountingAfterCommitEffect, PreviewUnsupportedCapability};
-
-fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
-    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+fn scalar_snapshot(value: f64) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::from_value(
+        crate::RuntimeHostInputValue::F64(value)
+            .into_value()
+            .unwrap(),
+    )
+    .unwrap()
 }
 
 #[test]
@@ -24,11 +27,11 @@ fn pure_host_call_consumes_single_use_capability() {
         .host_function(PlannedPureHostFunction::new(
             "demo/pure-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
+                Ok(scalar_snapshot(1.0))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
+                Ok(scalar_snapshot(1.0))
             },
         ))
         .unwrap()
@@ -56,11 +59,11 @@ fn runtime_managed_host_call_consumes_single_use_capability() {
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/managed-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
+                Ok(scalar_snapshot(1.0))
             },
             move |_services, _context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
+                Ok(scalar_snapshot(1.0))
             },
         ))
         .unwrap()
@@ -90,13 +93,13 @@ fn staged_host_call_consumes_single_use_capability() {
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
+                Ok(scalar_snapshot(1.0))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
                 let delivered = delivered.clone();
                 Ok(RuntimePreparedHostCall {
-                    value: snapshot(LegacyValue::F64(Ref::new(1.0))),
+                    value: scalar_snapshot(1.0),
                     effect: PreparedRuntimeEffect::AfterCommit(Box::new(
                         CountingAfterCommitEffect {
                             deliveries: delivered,

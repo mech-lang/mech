@@ -1,4 +1,4 @@
-use mech_core::{LegacyValue, MResult};
+use mech_core::{MResult, Value, ValueCell};
 use mech_runtime::{
     RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceReadRequest,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
@@ -16,8 +16,8 @@ impl RuntimeResourceProvider for ReadOnlyProvider {
         vec!["readonly://root".to_string()]
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::Empty)
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        ValueCell::unit().snapshot()
     }
 }
 

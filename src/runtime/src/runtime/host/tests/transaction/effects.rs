@@ -1,13 +1,20 @@
 use std::sync::{Arc, Mutex};
 
+use super::support::RecordingHostEffect;
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::{
     CapabilityId, HostCall, MechRuntime, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCallContext, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
-use mech_core::{LegacyValue, Ref};
 
-use super::support::RecordingHostEffect;
+fn string_snapshot(value: &str) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::from_value(
+        crate::RuntimeHostInputValue::String(value.to_owned())
+            .into_value()
+            .unwrap(),
+    )
+    .unwrap()
+}
 
 #[test]
 fn staged_host_call_returns_value_before_effect_delivery() {
@@ -17,15 +24,11 @@ fn staged_host_call_returns_value_before_effect_delivery() {
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(
-                    "provisional".to_string(),
-                )))
+                Ok(string_snapshot("provisional"))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 Ok(RuntimePreparedHostCall {
-                    value: RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(
-                        "provisional".to_string(),
-                    )))?,
+                    value: string_snapshot("provisional"),
                     effect: PreparedRuntimeEffect::AfterCommit(Box::new(RecordingHostEffect {
                         log: effect_log.clone(),
                         entry: "delivered".to_string(),
@@ -44,10 +47,7 @@ fn staged_host_call_returns_value_before_effect_delivery() {
         .call_host_with_context(&mut context, HostCall::new("demo/staged", Vec::new()))
         .unwrap();
 
-    assert_eq!(
-        value.to_value(),
-        LegacyValue::String(Ref::new("provisional".to_string())),
-    );
+    assert_eq!(value.format_canonical_inline(), "\"provisional\"");
     assert!(log.lock().unwrap().is_empty());
 
     runtime.commit_runtime_transaction(&mut context).unwrap();

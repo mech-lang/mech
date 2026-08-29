@@ -6,10 +6,18 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::{InMemoryAppendEventFailureKind, InMemoryStore};
 
 #[derive(Clone, Debug)]
+#[allow(
+    dead_code,
+    reason = "shared test support is selected by feature-specific runtime suites"
+)]
 pub(crate) struct StoreCommitProbe {
     calls: Arc<AtomicUsize>,
 }
 
+#[allow(
+    dead_code,
+    reason = "shared test support is selected by feature-specific runtime suites"
+)]
 impl StoreCommitProbe {
     pub(crate) fn new() -> (InMemoryStore, Self) {
         let calls = Arc::new(AtomicUsize::new(0));

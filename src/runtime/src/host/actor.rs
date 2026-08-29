@@ -1,4 +1,4 @@
-use mech_core::{LegacyValue, MResult, MechError, Ref, hash_str};
+use mech_core::{MResult, MechError, Value, hash_str};
 
 use crate::capability::CapabilityRequest;
 use crate::service::RuntimeManagedServices;
@@ -42,28 +42,28 @@ impl ActorHostPlanningState {
 
     /// Plans one trusted actor host call and advances the synthetic state for
     /// subsequent calls in the same source/bytecode instruction sequence.
-    pub fn plan(&mut self, name: &str, arguments: &[LegacyValue]) -> MResult<LegacyValue> {
+    pub fn plan(&mut self, name: &str, arguments: &[Value]) -> MResult<Value> {
         match name {
             "actor/message/kind" => {
                 expect_arity(name, arguments, 0)?;
-                Ok(LegacyValue::String(Ref::new(self.message_kind.clone())))
+                Ok(value_string(self.message_kind.clone()))
             }
             "actor/message/payload" => {
                 expect_arity(name, arguments, 0)?;
-                Ok(LegacyValue::String(Ref::new(self.message_payload.clone())))
+                Ok(value_string(self.message_payload.clone()))
             }
             "actor/state/get" => {
                 expect_arity(name, arguments, 0)?;
                 Ok(match &self.state {
-                    Some(state) => LegacyValue::String(Ref::new(state.clone())),
-                    None => LegacyValue::Empty,
+                    Some(state) => value_string(state.clone()),
+                    None => value_empty(),
                 })
             }
             "actor/state/id" => {
                 expect_arity(name, arguments, 0)?;
                 Ok(match &self.state_id {
-                    Some(state_id) => LegacyValue::String(Ref::new(state_id.clone())),
-                    None => LegacyValue::Empty,
+                    Some(state_id) => value_string(state_id.clone()),
+                    None => value_empty(),
                 })
             }
             "actor/state/put" => {
@@ -78,7 +78,7 @@ impl ActorHostPlanningState {
                 let state_id = format!("planning-state-put-{:016x}", self.state_id_seed);
                 self.state = Some(state);
                 self.state_id = Some(state_id.clone());
-                Ok(LegacyValue::String(Ref::new(state_id)))
+                Ok(value_string(state_id))
             }
             _ => Err(invalid_context(
                 name,
@@ -88,8 +88,8 @@ impl ActorHostPlanningState {
     }
 }
 
-fn snapshot(value: LegacyValue) -> MResult<RuntimeValueSnapshot> {
-    RuntimeValueSnapshot::try_capture(&value)
+fn snapshot(value: Value) -> MResult<RuntimeValueSnapshot> {
+    RuntimeValueSnapshot::from_value(value)
 }
 
 fn invalid_context(function: &str, reason: impl Into<String>) -> MechError {
@@ -132,7 +132,7 @@ impl HostFunctionPlan for ActorMessageKindHostFunction {
                 "no actor message is bound to the runtime context",
             )
         })?;
-        snapshot(LegacyValue::String(Ref::new(message.kind.clone())))
+        snapshot(value_string(message.kind.clone()))
     }
 
     fn estimated_cost_items(&self, _arguments: &[RuntimeValueSnapshot]) -> u64 {
@@ -180,9 +180,9 @@ impl HostFunctionPlan for ActorMessagePayloadHostFunction {
                 "no actor message is bound to the runtime context",
             )
         })?;
-        snapshot(LegacyValue::String(Ref::new(
+        snapshot(value_string(
             String::from_utf8_lossy(&message.payload).to_string(),
-        )))
+        ))
     }
 
     fn estimated_cost_items(&self, _arguments: &[RuntimeValueSnapshot]) -> u64 {
@@ -225,8 +225,8 @@ impl HostFunctionPlan for ActorStateIdHostFunction {
     ) -> MResult<RuntimeValueSnapshot> {
         expect_arity(self.name(), arguments, 0)?;
         match context.actor_state() {
-            Some(state) => snapshot(LegacyValue::String(Ref::new(state.to_string()))),
-            None => snapshot(LegacyValue::Empty),
+            Some(state) => snapshot(value_string(state.to_string())),
+            None => snapshot(value_empty()),
         }
     }
 
@@ -270,8 +270,8 @@ impl HostFunctionPlan for ActorStateGetHostFunction {
     ) -> MResult<RuntimeValueSnapshot> {
         expect_arity(self.name(), arguments, 0)?;
         match context.actor_state() {
-            Some(_) => snapshot(LegacyValue::String(Ref::new(String::new()))),
-            None => snapshot(LegacyValue::Empty),
+            Some(_) => snapshot(value_string(String::new())),
+            None => snapshot(value_empty()),
         }
     }
 
@@ -293,13 +293,13 @@ impl RuntimeManagedHostFunction for ActorStateGetHostFunction {
     ) -> MResult<RuntimeValueSnapshot> {
         expect_arity(self.name(), &arguments, 0)?;
         let Some(state) = context.actor_state() else {
-            return snapshot(LegacyValue::Empty);
+            return snapshot(value_empty());
         };
         let value = services
             .get_object(state)?
             .map(|object| String::from_utf8_lossy(&object.data).to_string())
             .unwrap_or_default();
-        snapshot(LegacyValue::String(Ref::new(value)))
+        snapshot(value_string(value))
     }
 }
 
@@ -334,7 +334,7 @@ impl HostFunctionPlan for ActorStatePutHostFunction {
             .collect::<Vec<_>>();
         expect_arity(self.name(), &values, 1)?;
         host_arg_string(self.name(), &values, 0)?;
-        snapshot(LegacyValue::String(Ref::new(String::new())))
+        snapshot(value_string(String::new()))
     }
 
     fn estimated_cost_items(&self, _arguments: &[RuntimeValueSnapshot]) -> u64 {
@@ -374,7 +374,7 @@ impl RuntimeManagedHostFunction for ActorStatePutHostFunction {
         actor.state = Some(object_id);
         services.update_actor(actor)?;
         services.set_current_actor_state(object_id)?;
-        snapshot(LegacyValue::String(Ref::new(object_id.to_string())))
+        snapshot(value_string(object_id.to_string()))
     }
 }
 
@@ -382,34 +382,32 @@ impl RuntimeManagedHostFunction for ActorStatePutHostFunction {
 mod tests {
     use super::*;
 
+    fn assert_same_value(left: &Value, right: &Value) {
+        let left_schemas = left.schemas().unwrap();
+        let right_schemas = right.schemas().unwrap();
+        assert!(
+            left.snapshot_eq(&left_schemas, right, &right_schemas)
+                .unwrap()
+        );
+    }
+
     #[test]
     fn planning_state_tracks_put_before_get_and_id() {
         let mut state = ActorHostPlanningState::new("actor:test", "message", "payload", None);
 
-        assert_eq!(
-            state.plan("actor/state/get", &[]).unwrap(),
-            LegacyValue::Empty
-        );
-        assert_eq!(
-            state.plan("actor/state/id", &[]).unwrap(),
-            LegacyValue::Empty
-        );
-        assert!(matches!(
-            state
-                .plan(
-                    "actor/state/put",
-                    &[LegacyValue::String(Ref::new("created".to_owned()))],
-                )
-                .unwrap(),
-            LegacyValue::String(_)
-        ));
-        assert_eq!(
-            state.plan("actor/state/get", &[]).unwrap(),
-            LegacyValue::String(Ref::new("created".to_owned())),
+        assert_same_value(&state.plan("actor/state/get", &[]).unwrap(), &value_empty());
+        assert_same_value(&state.plan("actor/state/id", &[]).unwrap(), &value_empty());
+        let state_id = state
+            .plan("actor/state/put", &[value_string("created")])
+            .unwrap();
+        assert!(matches!(state_id.data(), mech_core::ValueData::String(_)));
+        assert_same_value(
+            &state.plan("actor/state/get", &[]).unwrap(),
+            &value_string("created"),
         );
         assert!(matches!(
-            state.plan("actor/state/id", &[]).unwrap(),
-            LegacyValue::String(_)
+            state.plan("actor/state/id", &[]).unwrap().data(),
+            mech_core::ValueData::String(_)
         ));
     }
 
@@ -417,25 +415,14 @@ mod tests {
     fn planning_state_enforces_exact_actor_arities_and_put_type() {
         let mut state = ActorHostPlanningState::new("actor:test", "message", "payload", None);
 
-        assert!(
-            state
-                .plan("actor/message/kind", &[LegacyValue::Empty])
-                .is_err()
-        );
+        assert!(state.plan("actor/message/kind", &[value_empty()]).is_err());
         assert!(state.plan("actor/state/put", &[]).is_err());
-        assert!(
-            state
-                .plan("actor/state/put", &[LegacyValue::Empty])
-                .is_err()
-        );
+        assert!(state.plan("actor/state/put", &[value_empty()]).is_err());
         assert!(
             state
                 .plan(
                     "actor/state/put",
-                    &[
-                        LegacyValue::String(Ref::new("one".to_owned())),
-                        LegacyValue::String(Ref::new("two".to_owned())),
-                    ],
+                    &[value_string("one"), value_string("two")],
                 )
                 .is_err()
         );

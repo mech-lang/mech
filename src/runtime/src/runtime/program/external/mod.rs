@@ -11,7 +11,8 @@ mod receipt;
 pub mod test_provider;
 #[cfg(all(test, feature = "semantic-compiler"))]
 mod tests;
-mod value_adapter;
+#[cfg(test)]
+mod value_adapter_tests;
 
 pub use authority::*;
 pub use coordinator::*;
@@ -19,7 +20,8 @@ pub use input_facts::*;
 pub use outbox_delivery::*;
 pub use provider::*;
 pub use receipt::*;
-pub use value_adapter::*;
+#[cfg(test)]
+pub use value_adapter_tests::*;
 
 #[cfg(feature = "resident-routing")]
 pub(crate) use admission::ResidentAdmissionProof;

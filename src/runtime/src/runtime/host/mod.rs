@@ -32,7 +32,7 @@
 
 use super::MechRuntime;
 use crate::{HostCall, RuntimeContext, RuntimeEventKind, RuntimeValueSnapshot};
-use mech_core::{ExecutionHostFunctionRequest, LegacyValue, MResult, MechExecutionServices};
+use mech_core::{ExecutionHostFunctionRequest, MResult, MechExecutionServices, Value};
 
 impl MechRuntime {
     pub fn call_host(&mut self, call: HostCall) -> MResult<RuntimeValueSnapshot> {
@@ -45,16 +45,14 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         call: HostCall,
     ) -> MResult<RuntimeValueSnapshot> {
-        self.call_host_with_context_map(context, call, |value| {
-            RuntimeValueSnapshot::try_capture(&value)
-        })
+        self.call_host_with_context_map(context, call, RuntimeValueSnapshot::from_value)
     }
 
     fn call_host_with_context_map<T>(
         &mut self,
         context: &mut RuntimeContext,
         call: HostCall,
-        finish: impl FnOnce(LegacyValue) -> MResult<T>,
+        finish: impl FnOnce(Value) -> MResult<T>,
     ) -> MResult<T> {
         self.ensure_runtime_mutation_allowed("call_host_with_context")?;
         self.validate_context_for_runtime(context)?;
@@ -65,13 +63,14 @@ impl MechRuntime {
         } else {
             context.transaction
         };
+        let arguments = call.args.clone();
         let result = self
             .with_runtime_execution_session(context, |session| {
                 session.invoke_host_function(
                     &ExecutionHostFunctionRequest {
                         name: call.name.clone(),
                     },
-                    &call.args,
+                    &arguments,
                 )
             })
             .and_then(finish);

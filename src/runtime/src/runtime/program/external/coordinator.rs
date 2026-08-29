@@ -30,10 +30,9 @@ use crate::{
 use super::{
     BoundResidentEffect, BoundResidentExternalPlan, CapturedInputBatch, CapturedInputFact,
     ResidentExternalAuthority, ResidentOutboxPayload, ResidentTurnReceiptV1, ResidentTurnRecord,
-    bind_external_requirements, bind_replay_requirements, captured_value_from_legacy,
-    provider_value_from_canonical, resident_effect_id, resident_effect_ids_hash,
-    resident_idempotency_key, resident_idempotency_keys_hash, resident_outbox_policy,
-    resident_transaction_id,
+    bind_external_requirements, bind_replay_requirements, resident_effect_id,
+    resident_effect_ids_hash, resident_idempotency_key, resident_idempotency_keys_hash,
+    resident_outbox_policy, resident_transaction_id,
 };
 use crate::runtime::effect_journal::{
     RuntimeEffectJournal, deliver_prepared_after_commit, validate_prepared_after_commit,
@@ -320,13 +319,17 @@ impl ResidentExternalCoordinator {
             ) else {
                 continue;
             };
-            let legacy = provider_value_from_canonical(value, previous.artifact.schemas())?;
-            let migrated = captured_value_from_legacy(
-                &legacy,
-                target.input.schema,
-                &target.input.shape,
-                self.artifact.schemas(),
-            )?;
+            let migrated = value
+                .rebind(
+                    target.input.schema,
+                    &target.input.shape,
+                    self.artifact.schemas(),
+                )
+                .map_err(|error| {
+                    invalid_value(format!(
+                        "live input snapshot is incompatible with the replacement: {error:?}"
+                    ))
+                })?;
             self.latest_live_inputs[target_ordinal] = Some(migrated);
         }
         Ok(())
@@ -476,14 +479,19 @@ impl ResidentExternalCoordinator {
             if matching.is_empty() {
                 return invalid_coordinator("host input does not match an activated observation");
             }
-            let legacy = update.value.clone().into_mech_value()?;
+            let value = update.value.clone().into_value()?;
             for observation in matching {
-                captured_value_from_legacy(
-                    &legacy,
-                    observation.input.schema,
-                    &observation.input.shape,
-                    self.artifact.schemas(),
-                )?;
+                value
+                    .rebind(
+                        observation.input.schema,
+                        &observation.input.shape,
+                        self.artifact.schemas(),
+                    )
+                    .map_err(|error| {
+                        invalid_value(format!(
+                            "host input does not match its activated schema: {error:?}"
+                        ))
+                    })?;
             }
         }
         Ok(())
@@ -1112,13 +1120,20 @@ impl ResidentExternalCoordinator {
                     })
                 });
                 let value = if let Some(update) = packet_value {
-                    let legacy = update.value.clone().into_mech_value()?;
-                    captured_value_from_legacy(
-                        &legacy,
-                        observation.input.schema,
-                        &observation.input.shape,
-                        self.artifact.schemas(),
-                    )?
+                    update
+                        .value
+                        .clone()
+                        .into_value()?
+                        .rebind(
+                            observation.input.schema,
+                            &observation.input.shape,
+                            self.artifact.schemas(),
+                        )
+                        .map_err(|error| {
+                            invalid_value(format!(
+                                "host input does not match the observed schema: {error:?}"
+                            ))
+                        })?
                 } else if let Some(value) = host_updates.and_then(|_| {
                     self.bound.observations().iter().enumerate().find_map(
                         |(candidate_ordinal, candidate)| {
@@ -1147,17 +1162,22 @@ impl ResidentExternalCoordinator {
                         observation.provider_binding.as_ref().ok_or_else(|| {
                             invalid_value("live observation has no provider binding".to_owned())
                         })?;
-                    let legacy = provider_binding.read(RuntimeResourceReadRequest {
-                        base_uri: observation.request.base_uri.clone(),
-                        path: observation.request.path.clone(),
-                        context_name: observation.request.context_name.clone(),
-                    })?;
-                    captured_value_from_legacy(
-                        &legacy,
-                        observation.input.schema,
-                        &observation.input.shape,
-                        self.artifact.schemas(),
-                    )?
+                    provider_binding
+                        .read(RuntimeResourceReadRequest {
+                            base_uri: observation.request.base_uri.clone(),
+                            path: observation.request.path.clone(),
+                            context_name: observation.request.context_name.clone(),
+                        })?
+                        .rebind(
+                            observation.input.schema,
+                            &observation.input.shape,
+                            self.artifact.schemas(),
+                        )
+                        .map_err(|error| {
+                            invalid_value(format!(
+                                "provider input does not match the observed schema: {error:?}"
+                            ))
+                        })?
                 };
                 CapturedInputFact::new(
                     sequence,
@@ -1254,7 +1274,7 @@ impl ResidentExternalCoordinator {
                 .is_some_and(|binding| binding.scheme() == "scene");
             let result = (|| -> MResult<PreparedRuntimeEffect> {
                 let intent = request_write_intent(&effect.bound)?;
-                let value = provider_value_from_canonical(&effect.value, self.artifact.schemas())?;
+                let value = effect.value.clone();
                 let provider_binding = effect.bound.provider_binding.as_ref().ok_or_else(|| {
                     invalid_value("live effect has no provider binding".to_owned())
                 })?;
@@ -1464,10 +1484,7 @@ impl ResidentExternalCoordinator {
                 path: bound.request.path.clone(),
                 context_name: bound.request.context_name.clone(),
                 operation: RuntimeCapabilityOperation::from_name(bound.request.operation.clone())?,
-                value: provider_value_from_canonical(
-                    &front.payload.value,
-                    self.artifact.schemas(),
-                )?,
+                value: front.payload.value.clone(),
                 intent,
                 effect_id: id,
                 idempotency_key: front.idempotency_key.clone(),

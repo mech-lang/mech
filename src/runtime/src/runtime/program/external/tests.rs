@@ -8,7 +8,7 @@ use mech_core::{
     ObservationReplayPolicy, OperationContractDeclaration, OperationContractTableBuilder,
     OutputConstruction, OutputPortPolicy, ParsedProgram, ReactiveInstanceId, ResolvedInputPort,
     ResolvedOperationContract, ResourceDelivery, ResourceIntent, ShapeRule, ToMatrix,
-    TransactionalEffectProtocol, TransactionalExternalContract,
+    TransactionalEffectProtocol, TransactionalExternalContract, Value, ValueCell,
     snapshot::{SequenceView, ValueData},
 };
 use mech_engine::{
@@ -23,7 +23,7 @@ use mech_engine::{
 
 use crate::{
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeBuilder, RuntimeCompensatableEffect,
-    RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostInputValue,
     RuntimeResidentResourceWriteRequest, RuntimeResourceProvider, RuntimeResourceReadRequest,
     RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
     RuntimeTransactionalEffect, TransactionId, config::ResidentDurabilityPolicy,
@@ -169,10 +169,10 @@ impl RuntimeResourceProvider for SourceInputProvider {
     fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&OBSERVATION_CONTRACT)
     }
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::F64(mech_core::Ref::new(0.25)))
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        ValueCell::from_exact(0.25_f64)?.snapshot()
     }
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.read(request)
     }
 }
@@ -187,7 +187,7 @@ impl RuntimeResourceProvider for ObservationProvider {
     fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&OBSERVATION_CONTRACT)
     }
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         let mut trace = self.trace.lock().unwrap();
         trace.reads += 1;
         if trace.fail_read || trace.fail_read_at == Some(trace.reads) {
@@ -201,9 +201,12 @@ impl RuntimeResourceProvider for ObservationProvider {
         let shape = trace.observation_shape.unwrap_or((4, 1));
         drop(trace);
         let values = vec![0.2, 0.01, 5.0, -2.0];
-        Ok(LegacyValue::MatrixF64(ToMatrix::to_matrix(
-            values, shape.0, shape.1,
-        )))
+        RuntimeHostInputValue::F64Matrix {
+            rows: shape.0,
+            columns: shape.1,
+            values,
+        }
+        .into_value()
     }
 }
 
@@ -263,7 +266,7 @@ impl RuntimeResourceProvider for EffectProvider {
     fn supports_resident_idempotency(&self, _intent: RuntimeResourceWriteIntent) -> bool {
         self.protocol != ProviderProtocol::AfterCommitNoIdempotency
     }
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         Err(MechError::new(
             mech_core::GenericError {
                 msg: "write-only".to_owned(),
@@ -284,8 +287,8 @@ impl RuntimeResourceProvider for EffectProvider {
         request: RuntimeResidentResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
         let mut trace = self.trace.lock().unwrap();
-        if let LegacyValue::F64(value) = &request.value {
-            trace.prepared_f64.push(*value.borrow());
+        if let ValueData::F64(value) = request.value.data() {
+            trace.prepared_f64.push(value.to_f64());
         }
         trace
             .prepared

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
+use mech_core::{MResult, MechError, MechErrorKind, Value};
 use mech_runtime::*;
 
 #[derive(Debug, Clone)]
@@ -103,8 +103,8 @@ impl RuntimeResourceProvider for AliasProvider {
         self.bases.clone()
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::String(Ref::new("ok".to_owned())))
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        RuntimeHostInputValue::String("ok".to_owned()).into_value()
     }
 }
 
@@ -247,13 +247,17 @@ fn in_memory_docs_bases_are_not_implicit_aliases() {
     docs.insert(
         "docs://manual",
         "title",
-        LegacyValue::String(Ref::new("manual".to_owned())),
+        RuntimeHostInputValue::String("manual".to_owned())
+            .into_value()
+            .unwrap(),
     )
     .unwrap();
     docs.insert(
         "docs://guide",
         "title",
-        LegacyValue::String(Ref::new("guide".to_owned())),
+        RuntimeHostInputValue::String("guide".to_owned())
+            .into_value()
+            .unwrap(),
     )
     .unwrap();
 

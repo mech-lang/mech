@@ -1489,6 +1489,9 @@ impl<'a> BatchCompiler<'a> {
                     continue;
                 }
             }
+            if self.static_selector_slot(slot.slot) {
+                continue;
+            }
             let shape = match fixed_shape(self.artifact, slot.schema) {
                 Ok(shape) => shape,
                 Err(detail) => {
@@ -1576,6 +1579,13 @@ impl<'a> BatchCompiler<'a> {
                     },
                 )
                 .collect::<Vec<_>>();
+            if !outputs.is_empty()
+                && outputs
+                    .iter()
+                    .all(|output| self.static_selector_slot(*output))
+            {
+                continue;
+            }
             if outputs.iter().any(|slot| self.states.contains_key(slot)) {
                 self.lower_state(node.node, &operation, &inputs, &outputs);
                 continue;
@@ -2152,23 +2162,10 @@ impl<'a> BatchCompiler<'a> {
         upper: usize,
         role: &str,
     ) -> Result<Vec<usize>, String> {
-        let ArtifactSource::Constant(constant) = source else {
+        let Some(one_based) = self.static_selector_indices(source)? else {
             return Err(format!(
                 "matrix {role} selector must be compile-time constant"
             ));
-        };
-        let value = self
-            .artifact
-            .constants()
-            .get(constant)
-            .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
-        let one_based = match value.data() {
-            ValueData::Index(index) => vec![*index],
-            ValueData::Matrix(matrix) => match matrix.elements() {
-                SequenceView::Index(indices) => indices.to_vec(),
-                _ => return Err(format!("matrix {role} selector is not an index vector")),
-            },
-            _ => return Err(format!("matrix {role} selector is not an index value")),
         };
         one_based
             .into_iter()
@@ -2187,6 +2184,123 @@ impl<'a> BatchCompiler<'a> {
                 Ok(index)
             })
             .collect()
+    }
+
+    fn static_selector_indices(&self, source: ArtifactSource) -> Result<Option<Vec<u64>>, String> {
+        self.static_numeric_source(source)
+    }
+
+    fn static_numeric_source(&self, source: ArtifactSource) -> Result<Option<Vec<u64>>, String> {
+        match source {
+            ArtifactSource::Constant(constant) => {
+                let value = self
+                    .artifact
+                    .constants()
+                    .get(constant)
+                    .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
+                static_numeric_indices(value.data()).map(Some)
+            }
+            ArtifactSource::Slot(slot) => {
+                let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
+                    return Err(format!("selector slot {} does not exist", slot.get()));
+                };
+                let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                    return Ok(None);
+                };
+                let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
+                    return Err(format!(
+                        "selector producer node {} does not exist",
+                        node.get()
+                    ));
+                };
+                let inputs = node
+                    .input_bindings
+                    .clone()
+                    .filter_map(
+                        |binding| match self.artifact.bindings().get(binding as usize) {
+                            Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                            _ => None,
+                        },
+                    )
+                    .collect::<Vec<_>>();
+                match display_operation(&node.operation).as_str() {
+                    "access/index" => {
+                        let [input] = inputs.as_slice() else {
+                            return Err(
+                                "static index conversion must have exactly one input".to_owned()
+                            );
+                        };
+                        self.static_numeric_source(*input)
+                    }
+                    "range/inclusive" => {
+                        let [from, to] = inputs.as_slice() else {
+                            return Err("static inclusive range must have two inputs".to_owned());
+                        };
+                        let Some(from) = self.static_numeric_source(*from)? else {
+                            return Ok(None);
+                        };
+                        let Some(to) = self.static_numeric_source(*to)? else {
+                            return Ok(None);
+                        };
+                        let ([from], [to]) = (from.as_slice(), to.as_slice()) else {
+                            return Err("static inclusive range bounds must be scalar".to_owned());
+                        };
+                        if from > to {
+                            return Ok(Some(Vec::new()));
+                        }
+                        let count = to
+                            .checked_sub(*from)
+                            .and_then(|difference| difference.checked_add(1))
+                            .ok_or_else(|| "static inclusive range is too large".to_owned())?;
+                        let count = usize::try_from(count)
+                            .map_err(|_| "static inclusive range is too large".to_owned())?;
+                        Ok(Some((*from..=*to).take(count).collect()))
+                    }
+                    _ => Ok(None),
+                }
+            }
+        }
+    }
+
+    fn static_selector_slot(&self, slot: CellSlotId) -> bool {
+        if !self
+            .static_selector_indices(ArtifactSource::Slot(slot))
+            .is_ok_and(|indices| indices.is_some())
+        {
+            return false;
+        }
+        let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
+            return false;
+        };
+        let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+            return false;
+        };
+        let Some(producer) = self.artifact.nodes().get(node.get() as usize) else {
+            return false;
+        };
+        if display_operation(&producer.operation) == "access/index" {
+            return true;
+        }
+        let consumers = self
+            .artifact
+            .bindings()
+            .iter()
+            .filter_map(|binding| match binding {
+                BindingDeclaration::Input {
+                    node,
+                    source: ArtifactSource::Slot(source),
+                    ..
+                } if *source == slot => Some(*node),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        !consumers.is_empty()
+            && consumers.iter().all(|consumer| {
+                self.artifact
+                    .nodes()
+                    .get(consumer.get() as usize)
+                    .is_some_and(|node| display_operation(&node.operation) == "access/index")
+            })
     }
 
     fn source_shape(&self, source: ArtifactSource) -> Result<FixedShape, String> {
@@ -2310,8 +2424,92 @@ fn fixed_shape(
                 columns: dimensions.get(1).copied().unwrap_or(1),
             })
         }
-        _ => Err("schema is not fixed-shape f32 numeric data".to_owned()),
+        body => Err(format!(
+            "schema {body:?} is not fixed-shape f32 numeric data"
+        )),
     }
+}
+
+fn static_numeric_indices(data: &ValueData) -> Result<Vec<u64>, String> {
+    macro_rules! unsigned_scalar {
+        ($value:expr) => {
+            u64::try_from(*$value)
+                .map(|value| vec![value])
+                .map_err(|_| "static selector exceeds the portable index range".to_owned())
+        };
+    }
+    macro_rules! signed_scalar {
+        ($value:expr) => {
+            u64::try_from(*$value)
+                .map(|value| vec![value])
+                .map_err(|_| "static selector must be a nonnegative integer".to_owned())
+        };
+    }
+    match data {
+        ValueData::Index(value) | ValueData::U64(value) => Ok(vec![*value]),
+        ValueData::U8(value) => Ok(vec![u64::from(*value)]),
+        ValueData::U16(value) => Ok(vec![u64::from(*value)]),
+        ValueData::U32(value) => Ok(vec![u64::from(*value)]),
+        ValueData::U128(value) => unsigned_scalar!(value),
+        ValueData::I8(value) => signed_scalar!(value),
+        ValueData::I16(value) => signed_scalar!(value),
+        ValueData::I32(value) => signed_scalar!(value),
+        ValueData::I64(value) => signed_scalar!(value),
+        ValueData::I128(value) => signed_scalar!(value),
+        ValueData::F32(value) => {
+            exact_float_index(f64::from(value.to_f32())).map(|value| vec![value])
+        }
+        ValueData::F64(value) => exact_float_index(value.to_f64()).map(|value| vec![value]),
+        ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::Index(values) | SequenceView::U64(values) => Ok(values.to_vec()),
+            SequenceView::U8(values) => Ok(values.iter().copied().map(u64::from).collect()),
+            SequenceView::U16(values) => Ok(values.iter().copied().map(u64::from).collect()),
+            SequenceView::U32(values) => Ok(values.iter().copied().map(u64::from).collect()),
+            SequenceView::U128(values) => values
+                .iter()
+                .map(|value| {
+                    u64::try_from(*value)
+                        .map_err(|_| "static selector exceeds the portable index range".to_owned())
+                })
+                .collect(),
+            SequenceView::I8(values) => signed_indices(values),
+            SequenceView::I16(values) => signed_indices(values),
+            SequenceView::I32(values) => signed_indices(values),
+            SequenceView::I64(values) => signed_indices(values),
+            SequenceView::I128(values) => signed_indices(values),
+            SequenceView::F32(values) => values
+                .iter()
+                .map(|value| exact_float_index(f64::from(value.to_f32())))
+                .collect(),
+            SequenceView::F64(values) => values
+                .iter()
+                .map(|value| exact_float_index(value.to_f64()))
+                .collect(),
+            _ => Err("static matrix selector must contain real integers".to_owned()),
+        },
+        _ => Err("static selector must be a real integer or index".to_owned()),
+    }
+}
+
+fn signed_indices<T>(values: &[T]) -> Result<Vec<u64>, String>
+where
+    T: Copy,
+    u64: TryFrom<T>,
+{
+    values
+        .iter()
+        .map(|value| {
+            u64::try_from(*value)
+                .map_err(|_| "static selector must contain nonnegative integers".to_owned())
+        })
+        .collect()
+}
+
+fn exact_float_index(value: f64) -> Result<u64, String> {
+    if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value >= u64::MAX as f64 {
+        return Err("static selector must be a finite nonnegative integer".to_owned());
+    }
+    Ok(value as u64)
 }
 
 fn artifact_constant_values(

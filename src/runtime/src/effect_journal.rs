@@ -10,7 +10,7 @@ use crate::{
     RuntimeEffectProtocol, RuntimeEffectRecord, RuntimeEventKind,
     RuntimeExternalCommitIndeterminate, RuntimeInvalidOperationError, TransactionId,
 };
-use mech_core::{LegacyValue, MResult, MechError};
+use mech_core::{MResult, MechError, Value};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(in crate::runtime) enum RuntimeEffectState {
     Staged,
@@ -33,7 +33,7 @@ pub(in crate::runtime) struct RuntimeEffectEntry {
 struct RuntimeStagedResourceWrite {
     resource_identity: String,
     path: String,
-    value: LegacyValue,
+    value: Value,
 }
 
 pub(in crate::runtime) struct RuntimeEffectStepFailure {
@@ -288,7 +288,7 @@ impl RuntimeEffectJournal {
         effect: PreparedRuntimeEffect,
         resource_identity: String,
         path: String,
-        value: LegacyValue,
+        value: Value,
     ) -> RuntimeEffectId {
         self.stage_entry(
             transaction,
@@ -325,7 +325,7 @@ impl RuntimeEffectJournal {
         &self,
         resource_identity: &str,
         path: &str,
-    ) -> Option<LegacyValue> {
+    ) -> Option<Value> {
         self.entries.iter().rev().find_map(|entry| {
             let write = entry.resource_write.as_ref()?;
             if write.resource_identity == resource_identity && write.path == path {
@@ -871,7 +871,7 @@ impl MechRuntime {
         effect: PreparedRuntimeEffect,
         resource_identity: String,
         path: String,
-        value: LegacyValue,
+        value: Value,
     ) -> MResult<RuntimeEffectId> {
         self.ensure_runtime_mutation_allowed("stage_runtime_resource_effect_with_context")?;
         self.validate_context_for_runtime(context)?;

@@ -1,35 +1,23 @@
-//! Host argument helpers.
-//!
-//! These helpers are for authors of runtime `HostFunction`s. They keep demo,
-//! integration, and embedder host functions from repeating argument extraction,
-//! arity checks, and `Value` construction boilerplate.
-//!
-//! The scalar helpers use Mech's existing `Value::as_*` conversion methods where
-//! possible. Compound values are exposed as owned `Value`s here rather
-//! than overfitting this runtime crate to every internal container layout.
+//! Canonical host argument helpers.
 
 use crate::RuntimeValueSnapshot;
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref, ValueKind};
+use mech_core::{MResult, MechError, MechErrorKind, Value, ValueCell, ValueData};
 
 pub trait HostArgumentValue {
-    fn host_argument_value(&self) -> LegacyValue;
+    fn host_argument_value(&self) -> &Value;
 }
 
-impl HostArgumentValue for LegacyValue {
-    fn host_argument_value(&self) -> LegacyValue {
-        self.clone()
+impl HostArgumentValue for Value {
+    fn host_argument_value(&self) -> &Value {
+        self
     }
 }
 
 impl HostArgumentValue for RuntimeValueSnapshot {
-    fn host_argument_value(&self) -> LegacyValue {
-        self.to_value()
+    fn host_argument_value(&self) -> &Value {
+        self.value()
     }
 }
-
-// -----------------------------------------------------------------------------
-// Errors
-// -----------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
 pub struct HostArgumentError {
@@ -52,49 +40,39 @@ impl MechErrorKind for HostArgumentError {
     }
 
     fn message(&self) -> String {
-        format!("Invalid arguments for `{}`: {}", self.function, self.reason,)
+        format!("Invalid arguments for `{}`: {}", self.function, self.reason)
     }
 }
 
-fn host_argument_error(function: &str, reason: impl Into<String>) -> MechError {
+fn argument_error(function: &str, reason: impl Into<String>) -> MechError {
     MechError::new(HostArgumentError::new(function, reason), None)
 }
 
-fn wrong_type_error(
-    function: &str,
-    index: usize,
-    expected: &str,
-    actual: &LegacyValue,
-) -> MechError {
-    host_argument_error(
+fn wrong_type(function: &str, index: usize, expected: &str, actual: &Value) -> MechError {
+    argument_error(
         function,
-        format!("expected {} argument {}, got {:?}", expected, index, actual,),
+        format!(
+            "expected {expected} argument {index}, got {}",
+            actual.data().kind()
+        ),
     )
 }
 
-// -----------------------------------------------------------------------------
-// Generic argument access / arity
-// -----------------------------------------------------------------------------
-
-pub fn host_arg<A: HostArgumentValue>(
-    function: &str,
-    args: &[A],
-    index: usize,
-) -> MResult<LegacyValue> {
+pub fn host_arg(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<Value> {
     args.get(index)
-        .map(HostArgumentValue::host_argument_value)
-        .ok_or_else(|| host_argument_error(function, format!("missing argument {}", index)))
+        .map(|value| value.host_argument_value().clone())
+        .ok_or_else(|| argument_error(function, format!("missing argument {index}")))
 }
 
 pub fn host_arg_cloned(
     function: &str,
     args: &[impl HostArgumentValue],
     index: usize,
-) -> MResult<LegacyValue> {
-    host_arg_resolved(function, args, index)
+) -> MResult<Value> {
+    host_arg(function, args, index)
 }
 
-pub fn host_arg_raw(function: &str, args: &[LegacyValue], index: usize) -> MResult<LegacyValue> {
+pub fn host_arg_raw(function: &str, args: &[Value], index: usize) -> MResult<Value> {
     host_arg(function, args, index)
 }
 
@@ -102,33 +80,24 @@ pub fn host_arg_resolved(
     function: &str,
     args: &[impl HostArgumentValue],
     index: usize,
-) -> MResult<LegacyValue> {
-    let mut value = host_arg(function, args, index)?;
-
-    loop {
-        value = match value {
-            LegacyValue::MutableReference(value) => value.borrow().clone(),
-            LegacyValue::Typed(value, _) => *value,
-            other => return Ok(other),
-        };
-    }
+) -> MResult<Value> {
+    host_arg(function, args, index)
 }
 
 pub fn host_args_tail(
     function: &str,
     args: &[impl HostArgumentValue],
     start: usize,
-) -> MResult<Vec<LegacyValue>> {
+) -> MResult<Vec<Value>> {
     if start > args.len() {
-        return Err(host_argument_error(
+        return Err(argument_error(
             function,
-            format!("tail start {} is past argument count {}", start, args.len(),),
+            format!("tail start {start} is past argument count {}", args.len()),
         ));
     }
-
     Ok(args[start..]
         .iter()
-        .map(HostArgumentValue::host_argument_value)
+        .map(|value| value.host_argument_value().clone())
         .collect())
 }
 
@@ -138,13 +107,13 @@ pub fn expect_arity(
     expected: usize,
 ) -> MResult<()> {
     if args.len() == expected {
-        return Ok(());
+        Ok(())
+    } else {
+        Err(argument_error(
+            function,
+            format!("expected {expected} arguments, got {}", args.len()),
+        ))
     }
-
-    Err(host_argument_error(
-        function,
-        format!("expected {} arguments, got {}", expected, args.len(),),
-    ))
 }
 
 pub fn expect_min_arity(
@@ -153,13 +122,13 @@ pub fn expect_min_arity(
     min: usize,
 ) -> MResult<()> {
     if args.len() >= min {
-        return Ok(());
+        Ok(())
+    } else {
+        Err(argument_error(
+            function,
+            format!("expected at least {min} arguments, got {}", args.len()),
+        ))
     }
-
-    Err(host_argument_error(
-        function,
-        format!("expected at least {} arguments, got {}", min, args.len(),),
-    ))
 }
 
 pub fn expect_max_arity(
@@ -168,13 +137,13 @@ pub fn expect_max_arity(
     max: usize,
 ) -> MResult<()> {
     if args.len() <= max {
-        return Ok(());
+        Ok(())
+    } else {
+        Err(argument_error(
+            function,
+            format!("expected at most {max} arguments, got {}", args.len()),
+        ))
     }
-
-    Err(host_argument_error(
-        function,
-        format!("expected at most {} arguments, got {}", max, args.len(),),
-    ))
 }
 
 pub fn expect_arity_between(
@@ -183,55 +152,91 @@ pub fn expect_arity_between(
     min: usize,
     max: usize,
 ) -> MResult<()> {
-    if args.len() >= min && args.len() <= max {
-        return Ok(());
+    if (min..=max).contains(&args.len()) {
+        Ok(())
+    } else {
+        Err(argument_error(
+            function,
+            format!(
+                "expected between {min} and {max} arguments, got {}",
+                args.len()
+            ),
+        ))
     }
-
-    Err(host_argument_error(
-        function,
-        format!(
-            "expected between {} and {} arguments, got {}",
-            min,
-            max,
-            args.len(),
-        ),
-    ))
 }
 
 pub fn expect_no_args(function: &str, args: &[impl HostArgumentValue]) -> MResult<()> {
     expect_arity(function, args, 0)
 }
 
-pub fn is_empty_value(value: &LegacyValue) -> bool {
-    match value {
-        LegacyValue::Empty => true,
-        LegacyValue::Typed(value, _) => is_empty_value(value),
-        LegacyValue::MutableReference(value) => is_empty_value(&value.borrow()),
-        _ => false,
-    }
+pub fn is_empty_value(value: &Value) -> bool {
+    matches!(value.data(), ValueData::Tuple(values) if values.is_empty())
+        || matches!(value.data(), ValueData::Option(None))
 }
 
 pub fn host_arg_optional(
     function: &str,
     args: &[impl HostArgumentValue],
     index: usize,
-) -> MResult<Option<LegacyValue>> {
+) -> MResult<Option<Value>> {
     if index >= args.len() {
         return Ok(None);
     }
-
-    let value = host_arg_resolved(function, args, index)?;
-
-    if is_empty_value(&value) {
-        return Ok(None);
-    }
-
-    Ok(Some(value.clone()))
+    let value = host_arg(function, args, index)?;
+    Ok((!is_empty_value(&value)).then_some(value))
 }
 
-// -----------------------------------------------------------------------------
-// Strings / booleans
-// -----------------------------------------------------------------------------
+pub fn host_arg_optional_value(
+    function: &str,
+    args: &[impl HostArgumentValue],
+    index: usize,
+) -> MResult<Option<Value>> {
+    host_arg_optional(function, args, index)
+}
+
+macro_rules! scalar_arg {
+    ($name:ident, $type:ty, $variant:ident, $convert:expr) => {
+        pub fn $name(
+            function: &str,
+            args: &[impl HostArgumentValue],
+            index: usize,
+        ) -> MResult<$type> {
+            let value = host_arg(function, args, index)?;
+            match value.data() {
+                ValueData::$variant(value) => Ok($convert(value)),
+                _ => Err(wrong_type(function, index, stringify!($type), &value)),
+            }
+        }
+    };
+}
+
+scalar_arg!(host_arg_u8, u8, U8, |value: &u8| *value);
+scalar_arg!(host_arg_u16, u16, U16, |value: &u16| *value);
+scalar_arg!(host_arg_u32, u32, U32, |value: &u32| *value);
+scalar_arg!(host_arg_u64, u64, U64, |value: &u64| *value);
+scalar_arg!(host_arg_u128, u128, U128, |value: &u128| *value);
+scalar_arg!(host_arg_i8, i8, I8, |value: &i8| *value);
+scalar_arg!(host_arg_i16, i16, I16, |value: &i16| *value);
+scalar_arg!(host_arg_i32, i32, I32, |value: &i32| *value);
+scalar_arg!(host_arg_i64, i64, I64, |value: &i64| *value);
+scalar_arg!(host_arg_i128, i128, I128, |value: &i128| *value);
+
+#[cfg(feature = "f32")]
+scalar_arg!(
+    host_arg_f32,
+    f32,
+    F32,
+    |value: &mech_core::snapshot::F32Bits| value.to_f32()
+);
+#[cfg(feature = "f64")]
+scalar_arg!(
+    host_arg_f64,
+    f64,
+    F64,
+    |value: &mech_core::snapshot::F64Bits| value.to_f64()
+);
+#[cfg(feature = "bool")]
+scalar_arg!(host_arg_bool, bool, Bool, |value: &bool| *value);
 
 #[cfg(feature = "string")]
 pub fn host_arg_string(
@@ -239,9 +244,10 @@ pub fn host_arg_string(
     args: &[impl HostArgumentValue],
     index: usize,
 ) -> MResult<String> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::String(value) => Ok(value.borrow().clone()),
-        other => Err(wrong_type_error(function, index, "string", &other)),
+    let value = host_arg(function, args, index)?;
+    match value.data() {
+        ValueData::String(value) => Ok(value.to_string()),
+        _ => Err(wrong_type(function, index, "string", &value)),
     }
 }
 
@@ -254,624 +260,123 @@ pub fn host_arg_strict_string(
     host_arg_string(function, args, index)
 }
 
-#[cfg(feature = "string")]
-pub fn host_arg_optional_string(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<Option<String>> {
-    if index >= args.len() {
-        return Ok(None);
-    }
-
-    if is_empty_value(&host_arg(function, args, index)?) {
-        return Ok(None);
-    }
-
-    Ok(Some(host_arg_string(function, args, index)?))
-}
-
-#[cfg(feature = "bool")]
-pub fn host_arg_bool(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<bool> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::Bool(value) => Ok(*value.borrow()),
-        other => Err(wrong_type_error(function, index, "bool", &other)),
-    }
-}
-
-#[cfg(feature = "bool")]
-pub fn host_arg_optional_bool(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<Option<bool>> {
-    if index >= args.len() {
-        return Ok(None);
-    }
-
-    if is_empty_value(&host_arg(function, args, index)?) {
-        return Ok(None);
-    }
-
-    Ok(Some(host_arg_bool(function, args, index)?))
-}
-
-// -----------------------------------------------------------------------------
-// Unsigned integers
-// -----------------------------------------------------------------------------
-
-pub fn host_arg_u8(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<u8> {
-    Ok(*host_arg(function, args, index)?.as_u8()?.borrow())
-}
-
-pub fn host_arg_u16(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<u16> {
-    Ok(*host_arg(function, args, index)?.as_u16()?.borrow())
-}
-
-pub fn host_arg_u32(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<u32> {
-    Ok(*host_arg(function, args, index)?.as_u32()?.borrow())
-}
-
-pub fn host_arg_u64(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<u64> {
-    Ok(*host_arg(function, args, index)?.as_u64()?.borrow())
-}
-
-pub fn host_arg_u128(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<u128> {
-    Ok(*host_arg(function, args, index)?.as_u128()?.borrow())
-}
-
-pub fn host_arg_optional_u64(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<Option<u64>> {
-    if index >= args.len() {
-        return Ok(None);
-    }
-
-    if is_empty_value(&host_arg(function, args, index)?) {
-        return Ok(None);
-    }
-
-    Ok(Some(host_arg_u64(function, args, index)?))
-}
-
-// -----------------------------------------------------------------------------
-// Signed integers
-// -----------------------------------------------------------------------------
-
-pub fn host_arg_i8(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<i8> {
-    Ok(*host_arg(function, args, index)?.as_i8()?.borrow())
-}
-
-pub fn host_arg_i16(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<i16> {
-    Ok(*host_arg(function, args, index)?.as_i16()?.borrow())
-}
-
-pub fn host_arg_i32(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<i32> {
-    Ok(*host_arg(function, args, index)?.as_i32()?.borrow())
-}
-
-pub fn host_arg_i64(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<i64> {
-    Ok(*host_arg(function, args, index)?.as_i64()?.borrow())
-}
-
-pub fn host_arg_i128(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<i128> {
-    Ok(*host_arg(function, args, index)?.as_i128()?.borrow())
-}
-
-pub fn host_arg_optional_i64(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<Option<i64>> {
-    if index >= args.len() {
-        return Ok(None);
-    }
-
-    if is_empty_value(&host_arg(function, args, index)?) {
-        return Ok(None);
-    }
-
-    Ok(Some(host_arg_i64(function, args, index)?))
-}
-
-// -----------------------------------------------------------------------------
-// Floats
-// -----------------------------------------------------------------------------
-
-#[cfg(feature = "f32")]
-pub fn host_arg_f32(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<f32> {
-    Ok(*host_arg_resolved(function, args, index)?.as_f32()?.borrow())
-}
-
-#[cfg(feature = "f64")]
-pub fn host_arg_f64(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<f64> {
-    Ok(*host_arg_resolved(function, args, index)?.as_f64()?.borrow())
-}
-
-#[cfg(feature = "f64")]
-pub fn host_arg_optional_f64(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<Option<f64>> {
-    if index >= args.len() {
-        return Ok(None);
-    }
-
-    if is_empty_value(&host_arg_resolved(function, args, index)?) {
-        return Ok(None);
-    }
-
-    Ok(Some(host_arg_f64(function, args, index)?))
-}
-
-// -----------------------------------------------------------------------------
-// Index / IDs / atoms / enums / kind values
-// -----------------------------------------------------------------------------
-
 pub fn host_arg_index(
     function: &str,
     args: &[impl HostArgumentValue],
     index: usize,
 ) -> MResult<usize> {
-    match host_arg(function, args, index)? {
-        LegacyValue::Index(value) => Ok(*value.borrow()),
-        value => Ok(value.as_usize()?),
+    let value = host_arg(function, args, index)?;
+    match value.data() {
+        ValueData::Index(value) => usize::try_from(*value)
+            .map_err(|_| argument_error(function, format!("index argument {index} is too large"))),
+        _ => Err(wrong_type(function, index, "index", &value)),
     }
 }
 
 pub fn host_arg_id(function: &str, args: &[impl HostArgumentValue], index: usize) -> MResult<u64> {
-    match host_arg(function, args, index)? {
-        LegacyValue::Id(value) => Ok(value),
-        other => Err(wrong_type_error(function, index, "id", &other)),
-    }
-}
-
-#[cfg(feature = "enum")]
-pub fn host_arg_enum(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechEnum> {
-    match host_arg(function, args, index)? {
-        LegacyValue::Enum(value) => Ok(value.borrow().clone()),
-        other => Err(wrong_type_error(function, index, "enum", &other)),
-    }
-}
-
-pub fn host_arg_kind(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<ValueKind> {
-    match host_arg(function, args, index)? {
-        LegacyValue::Kind(kind) => Ok(kind.clone()),
-        other => Err(wrong_type_error(function, index, "kind", &other)),
-    }
-}
-
-// -----------------------------------------------------------------------------
-// Compound values
-// -----------------------------------------------------------------------------
-
-pub fn host_arg_reference_value(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<LegacyValue> {
-    match host_arg(function, args, index)? {
-        LegacyValue::MutableReference(value) => Ok(value.borrow().clone()),
-        other => Err(wrong_type_error(
-            function,
-            index,
-            "mutable reference",
-            &other,
-        )),
-    }
-}
-
-pub fn host_arg_deref_cloned(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<LegacyValue> {
-    match host_arg(function, args, index)? {
-        LegacyValue::MutableReference(value) => Ok(value.borrow().clone()),
-        other => Ok(other),
-    }
-}
-
-#[cfg(feature = "tuple")]
-pub fn host_arg_tuple(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechTuple> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::Tuple(value) => Ok(value.borrow().clone()),
-        other => Err(wrong_type_error(function, index, "tuple", &other)),
-    }
-}
-
-#[cfg(feature = "record")]
-pub fn host_arg_record(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechRecord> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::Record(value) => Ok(value.borrow().clone()),
-        other => Err(wrong_type_error(function, index, "record", &other)),
-    }
-}
-
-#[cfg(feature = "table")]
-pub fn host_arg_table(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechTable> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::Table(value) => Ok(value.borrow().clone()),
-        other => Err(wrong_type_error(function, index, "table", &other)),
-    }
-}
-
-#[cfg(feature = "map")]
-pub fn host_arg_map(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMap> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::Map(value) => Ok(value.borrow().clone()),
-        other => Err(wrong_type_error(function, index, "map", &other)),
-    }
-}
-
-#[cfg(feature = "set")]
-pub fn host_arg_set(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechSet> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::Set(value) => Ok(value.borrow().clone()),
-        other => Err(wrong_type_error(function, index, "set", &other)),
-    }
-}
-
-#[cfg(feature = "matrix")]
-pub fn host_arg_matrix_index(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<usize>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixIndex(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<index>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "bool"))]
-pub fn host_arg_matrix_bool(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<bool>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixBool(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<bool>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "u8"))]
-pub fn host_arg_matrix_u8(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<u8>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixU8(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<u8>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "u16"))]
-pub fn host_arg_matrix_u16(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<u16>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixU16(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<u16>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "u32"))]
-pub fn host_arg_matrix_u32(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<u32>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixU32(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<u32>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "u64"))]
-pub fn host_arg_matrix_u64(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<u64>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixU64(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<u64>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "u128"))]
-pub fn host_arg_matrix_u128(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<u128>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixU128(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<u128>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "i8"))]
-pub fn host_arg_matrix_i8(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<i8>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixI8(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<i8>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "i16"))]
-pub fn host_arg_matrix_i16(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<i16>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixI16(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<i16>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "i32"))]
-pub fn host_arg_matrix_i32(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<i32>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixI32(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<i32>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "i64"))]
-pub fn host_arg_matrix_i64(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<i64>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixI64(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<i64>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "i128"))]
-pub fn host_arg_matrix_i128(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<i128>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixI128(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<i128>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "f32"))]
-pub fn host_arg_matrix_f32(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<f32>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixF32(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<f32>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "f64"))]
-pub fn host_arg_matrix_f64(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<f64>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixF64(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<f64>", &other)),
-    }
-}
-
-#[cfg(all(feature = "matrix", feature = "string"))]
-pub fn host_arg_matrix_string(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<String>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixString(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<string>", &other)),
-    }
-}
-
-#[cfg(feature = "matrix")]
-pub fn host_arg_matrix_value_matrix(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<mech_core::MechMatrix<LegacyValue>> {
-    match host_arg_resolved(function, args, index)? {
-        LegacyValue::MatrixValue(value) => Ok(value.clone()),
-        other => Err(wrong_type_error(function, index, "matrix<value>", &other)),
-    }
-}
-
-pub fn host_arg_optional_value(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    index: usize,
-) -> MResult<Option<LegacyValue>> {
-    if index >= args.len() {
-        return Ok(None);
-    }
-
     let value = host_arg(function, args, index)?;
-
-    if is_empty_value(&value) {
-        return Ok(None);
+    match value.data() {
+        ValueData::Id(value) => Ok(*value),
+        _ => Err(wrong_type(function, index, "id", &value)),
     }
-
-    Ok(Some(value))
 }
 
-// -----------------------------------------------------------------------------
-// Value constructors
-// -----------------------------------------------------------------------------
-
-pub fn value_empty() -> LegacyValue {
-    LegacyValue::Empty
+macro_rules! optional_arg {
+    ($name:ident, $target:ty, $required:ident) => {
+        pub fn $name(
+            function: &str,
+            args: &[impl HostArgumentValue],
+            index: usize,
+        ) -> MResult<Option<$target>> {
+            if index >= args.len() || is_empty_value(args[index].host_argument_value()) {
+                Ok(None)
+            } else {
+                $required(function, args, index).map(Some)
+            }
+        }
+    };
 }
 
 #[cfg(feature = "string")]
-pub fn value_string(value: impl Into<String>) -> LegacyValue {
-    LegacyValue::String(Ref::new(value.into()))
-}
-
+optional_arg!(host_arg_optional_string, String, host_arg_string);
 #[cfg(feature = "bool")]
-pub fn value_bool(value: bool) -> LegacyValue {
-    LegacyValue::Bool(Ref::new(value))
-}
-
-#[cfg(feature = "u8")]
-pub fn value_u8(value: u8) -> LegacyValue {
-    LegacyValue::U8(Ref::new(value))
-}
-
-#[cfg(feature = "u16")]
-pub fn value_u16(value: u16) -> LegacyValue {
-    LegacyValue::U16(Ref::new(value))
-}
-
-#[cfg(feature = "u32")]
-pub fn value_u32(value: u32) -> LegacyValue {
-    LegacyValue::U32(Ref::new(value))
-}
-
-#[cfg(feature = "u64")]
-pub fn value_u64(value: u64) -> LegacyValue {
-    LegacyValue::U64(Ref::new(value))
-}
-
-#[cfg(feature = "u128")]
-pub fn value_u128(value: u128) -> LegacyValue {
-    LegacyValue::U128(Ref::new(value))
-}
-
-#[cfg(feature = "i8")]
-pub fn value_i8(value: i8) -> LegacyValue {
-    LegacyValue::I8(Ref::new(value))
-}
-
-#[cfg(feature = "i16")]
-pub fn value_i16(value: i16) -> LegacyValue {
-    LegacyValue::I16(Ref::new(value))
-}
-
-#[cfg(feature = "i32")]
-pub fn value_i32(value: i32) -> LegacyValue {
-    LegacyValue::I32(Ref::new(value))
-}
-
-#[cfg(feature = "i64")]
-pub fn value_i64(value: i64) -> LegacyValue {
-    LegacyValue::I64(Ref::new(value))
-}
-
-#[cfg(feature = "i128")]
-pub fn value_i128(value: i128) -> LegacyValue {
-    LegacyValue::I128(Ref::new(value))
-}
-
-#[cfg(feature = "f32")]
-pub fn value_f32(value: f32) -> LegacyValue {
-    LegacyValue::F32(Ref::new(value))
-}
-
+optional_arg!(host_arg_optional_bool, bool, host_arg_bool);
+optional_arg!(host_arg_optional_u64, u64, host_arg_u64);
+optional_arg!(host_arg_optional_i64, i64, host_arg_i64);
 #[cfg(feature = "f64")]
-pub fn value_f64(value: f64) -> LegacyValue {
-    LegacyValue::F64(Ref::new(value))
+optional_arg!(host_arg_optional_f64, f64, host_arg_f64);
+
+fn exact_value<T: mech_core::CanonicalCellBacking>(value: T) -> Value {
+    ValueCell::from_exact(value)
+        .and_then(|cell| cell.snapshot())
+        .expect("supported exact host values have a canonical schema")
 }
 
-pub fn value_index(value: usize) -> LegacyValue {
-    LegacyValue::Index(Ref::new(value))
+pub fn value_empty() -> Value {
+    ValueCell::unit()
+        .snapshot()
+        .expect("canonical unit snapshot is valid")
 }
 
-pub fn value_id(value: u64) -> LegacyValue {
-    LegacyValue::Id(value)
+#[cfg(feature = "string")]
+pub fn value_string(value: impl Into<String>) -> Value {
+    exact_value(value.into())
 }
-
-#[cfg(feature = "atom")]
-pub fn value_atom(value: mech_core::MechAtom) -> LegacyValue {
-    LegacyValue::Atom(Ref::new(value))
+#[cfg(feature = "bool")]
+pub fn value_bool(value: bool) -> Value {
+    exact_value(value)
 }
-
-#[cfg(feature = "enum")]
-pub fn value_enum(value: mech_core::MechEnum) -> LegacyValue {
-    LegacyValue::Enum(Ref::new(value))
+#[cfg(feature = "u8")]
+pub fn value_u8(value: u8) -> Value {
+    exact_value(value)
 }
-
-pub fn value_kind(kind: ValueKind) -> LegacyValue {
-    LegacyValue::Kind(kind)
+#[cfg(feature = "u16")]
+pub fn value_u16(value: u16) -> Value {
+    exact_value(value)
 }
-
-pub fn value_empty_kind(kind: ValueKind) -> LegacyValue {
-    LegacyValue::EmptyKind(kind)
+#[cfg(feature = "u32")]
+pub fn value_u32(value: u32) -> Value {
+    exact_value(value)
 }
-
-// -----------------------------------------------------------------------------
-// Rust conversion traits
-// -----------------------------------------------------------------------------
+#[cfg(feature = "u64")]
+pub fn value_u64(value: u64) -> Value {
+    exact_value(value)
+}
+#[cfg(feature = "u128")]
+pub fn value_u128(value: u128) -> Value {
+    exact_value(value)
+}
+#[cfg(feature = "i8")]
+pub fn value_i8(value: i8) -> Value {
+    exact_value(value)
+}
+#[cfg(feature = "i16")]
+pub fn value_i16(value: i16) -> Value {
+    exact_value(value)
+}
+#[cfg(feature = "i32")]
+pub fn value_i32(value: i32) -> Value {
+    exact_value(value)
+}
+#[cfg(feature = "i64")]
+pub fn value_i64(value: i64) -> Value {
+    exact_value(value)
+}
+#[cfg(feature = "i128")]
+pub fn value_i128(value: i128) -> Value {
+    exact_value(value)
+}
+#[cfg(feature = "f32")]
+pub fn value_f32(value: f32) -> Value {
+    exact_value(value)
+}
+#[cfg(feature = "f64")]
+pub fn value_f64(value: f64) -> Value {
+    exact_value(value)
+}
+pub fn value_index(value: usize) -> Value {
+    exact_value(value)
+}
 
 pub trait FromHostValue: Sized {
     fn from_host_value(
@@ -882,21 +387,21 @@ pub trait FromHostValue: Sized {
 }
 
 pub trait IntoHostValue {
-    fn into_host_value(self) -> LegacyValue;
+    fn into_host_value(self) -> Value;
 }
 
-impl FromHostValue for LegacyValue {
+impl FromHostValue for Value {
     fn from_host_value(
         function: &str,
         args: &[impl HostArgumentValue],
         index: usize,
     ) -> MResult<Self> {
-        host_arg_cloned(function, args, index)
+        host_arg(function, args, index)
     }
 }
 
-impl IntoHostValue for LegacyValue {
-    fn into_host_value(self) -> LegacyValue {
+impl IntoHostValue for Value {
+    fn into_host_value(self) -> Value {
         self
     }
 }
@@ -914,14 +419,14 @@ impl FromHostValue for String {
 
 #[cfg(feature = "string")]
 impl IntoHostValue for String {
-    fn into_host_value(self) -> LegacyValue {
+    fn into_host_value(self) -> Value {
         value_string(self)
     }
 }
 
 #[cfg(feature = "string")]
 impl IntoHostValue for &str {
-    fn into_host_value(self) -> LegacyValue {
+    fn into_host_value(self) -> Value {
         value_string(self)
     }
 }
@@ -939,7 +444,7 @@ impl FromHostValue for bool {
 
 #[cfg(feature = "bool")]
 impl IntoHostValue for bool {
-    fn into_host_value(self) -> LegacyValue {
+    fn into_host_value(self) -> Value {
         value_bool(self)
     }
 }
@@ -956,89 +461,72 @@ impl IntoHostValue for bool {
     feature = "i64",
     feature = "i128",
     feature = "f32",
-    feature = "f64",
+    feature = "f64"
 ))]
-macro_rules! impl_host_numeric {
-    ($rust:ty, $arg_fn:ident, $value_fn:ident) => {
-        impl FromHostValue for $rust {
+macro_rules! host_numeric {
+    ($type:ty, $arg:ident, $value:ident) => {
+        impl FromHostValue for $type {
             fn from_host_value(
                 function: &str,
                 args: &[impl HostArgumentValue],
                 index: usize,
             ) -> MResult<Self> {
-                $arg_fn(function, args, index)
+                $arg(function, args, index)
             }
         }
-
-        impl IntoHostValue for $rust {
-            fn into_host_value(self) -> LegacyValue {
-                $value_fn(self)
+        impl IntoHostValue for $type {
+            fn into_host_value(self) -> Value {
+                $value(self)
             }
         }
     };
 }
 
 #[cfg(feature = "u8")]
-impl_host_numeric!(u8, host_arg_u8, value_u8);
+host_numeric!(u8, host_arg_u8, value_u8);
 #[cfg(feature = "u16")]
-impl_host_numeric!(u16, host_arg_u16, value_u16);
+host_numeric!(u16, host_arg_u16, value_u16);
 #[cfg(feature = "u32")]
-impl_host_numeric!(u32, host_arg_u32, value_u32);
+host_numeric!(u32, host_arg_u32, value_u32);
 #[cfg(feature = "u64")]
-impl_host_numeric!(u64, host_arg_u64, value_u64);
+host_numeric!(u64, host_arg_u64, value_u64);
 #[cfg(feature = "u128")]
-impl_host_numeric!(u128, host_arg_u128, value_u128);
+host_numeric!(u128, host_arg_u128, value_u128);
 #[cfg(feature = "i8")]
-impl_host_numeric!(i8, host_arg_i8, value_i8);
+host_numeric!(i8, host_arg_i8, value_i8);
 #[cfg(feature = "i16")]
-impl_host_numeric!(i16, host_arg_i16, value_i16);
+host_numeric!(i16, host_arg_i16, value_i16);
 #[cfg(feature = "i32")]
-impl_host_numeric!(i32, host_arg_i32, value_i32);
+host_numeric!(i32, host_arg_i32, value_i32);
 #[cfg(feature = "i64")]
-impl_host_numeric!(i64, host_arg_i64, value_i64);
+host_numeric!(i64, host_arg_i64, value_i64);
 #[cfg(feature = "i128")]
-impl_host_numeric!(i128, host_arg_i128, value_i128);
+host_numeric!(i128, host_arg_i128, value_i128);
 #[cfg(feature = "f32")]
-impl_host_numeric!(f32, host_arg_f32, value_f32);
+host_numeric!(f32, host_arg_f32, value_f32);
 #[cfg(feature = "f64")]
-impl_host_numeric!(f64, host_arg_f64, value_f64);
+host_numeric!(f64, host_arg_f64, value_f64);
 
-impl<T> FromHostValue for Option<T>
-where
-    T: FromHostValue,
-{
+impl<T: FromHostValue> FromHostValue for Option<T> {
     fn from_host_value(
         function: &str,
         args: &[impl HostArgumentValue],
         index: usize,
     ) -> MResult<Self> {
-        if index >= args.len() {
-            return Ok(None);
-        }
-
-        if is_empty_value(&host_arg(function, args, index)?) {
-            return Ok(None);
-        }
-
-        Ok(Some(T::from_host_value(function, args, index)?))
-    }
-}
-
-impl<T> IntoHostValue for Option<T>
-where
-    T: IntoHostValue,
-{
-    fn into_host_value(self) -> LegacyValue {
-        match self {
-            Some(value) => value.into_host_value(),
-            None => LegacyValue::Empty,
+        if index >= args.len() || is_empty_value(args[index].host_argument_value()) {
+            Ok(None)
+        } else {
+            T::from_host_value(function, args, index).map(Some)
         }
     }
 }
 
-// -----------------------------------------------------------------------------
-// Typed extraction shortcuts
-// -----------------------------------------------------------------------------
+impl<T: IntoHostValue> IntoHostValue for Option<T> {
+    fn into_host_value(self) -> Value {
+        self.map(IntoHostValue::into_host_value)
+            .unwrap_or_else(value_empty)
+    }
+}
 
 pub fn host_arg_as<T: FromHostValue>(
     function: &str,
@@ -1048,323 +536,54 @@ pub fn host_arg_as<T: FromHostValue>(
     T::from_host_value(function, args, index)
 }
 
-pub fn host_return<T: IntoHostValue>(value: T) -> LegacyValue {
+pub fn host_return<T: IntoHostValue>(value: T) -> Value {
     value.into_host_value()
 }
 
-pub fn host_call0<R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce() -> R,
-) -> MResult<LegacyValue>
-where
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 0)?;
-    Ok(f().into_host_value())
+macro_rules! host_calls {
+    ($(($name:ident, $result:ident, $count:literal, $(($generic:ident, $index:literal)),*)),* $(,)?) => {
+        $(
+            pub fn $name<$($generic,)* R>(
+                function: &str,
+                args: &[impl HostArgumentValue],
+                f: impl FnOnce($($generic),*) -> R,
+            ) -> MResult<Value>
+            where
+                $($generic: FromHostValue,)*
+                R: IntoHostValue,
+            {
+                expect_arity(function, args, $count)?;
+                Ok(f($($generic::from_host_value(function, args, $index)?),*).into_host_value())
+            }
+
+            pub fn $result<$($generic,)* R>(
+                function: &str,
+                args: &[impl HostArgumentValue],
+                f: impl FnOnce($($generic),*) -> MResult<R>,
+            ) -> MResult<Value>
+            where
+                $($generic: FromHostValue,)*
+                R: IntoHostValue,
+            {
+                expect_arity(function, args, $count)?;
+                Ok(f($($generic::from_host_value(function, args, $index)?),*)?.into_host_value())
+            }
+        )*
+    };
 }
 
-pub fn host_call1<A, R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce(A) -> R,
-) -> MResult<LegacyValue>
-where
-    A: FromHostValue,
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 1)?;
-
-    let a = A::from_host_value(function, args, 0)?;
-
-    Ok(f(a).into_host_value())
-}
-
-pub fn host_call2<A, B, R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce(A, B) -> R,
-) -> MResult<LegacyValue>
-where
-    A: FromHostValue,
-    B: FromHostValue,
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 2)?;
-
-    let a = A::from_host_value(function, args, 0)?;
-    let b = B::from_host_value(function, args, 1)?;
-
-    Ok(f(a, b).into_host_value())
-}
-
-pub fn host_call3<A, B, C, R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce(A, B, C) -> R,
-) -> MResult<LegacyValue>
-where
-    A: FromHostValue,
-    B: FromHostValue,
-    C: FromHostValue,
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 3)?;
-
-    let a = A::from_host_value(function, args, 0)?;
-    let b = B::from_host_value(function, args, 1)?;
-    let c = C::from_host_value(function, args, 2)?;
-
-    Ok(f(a, b, c).into_host_value())
-}
-
-pub fn host_call4<A, B, C, D, R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce(A, B, C, D) -> R,
-) -> MResult<LegacyValue>
-where
-    A: FromHostValue,
-    B: FromHostValue,
-    C: FromHostValue,
-    D: FromHostValue,
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 4)?;
-
-    let a = A::from_host_value(function, args, 0)?;
-    let b = B::from_host_value(function, args, 1)?;
-    let c = C::from_host_value(function, args, 2)?;
-    let d = D::from_host_value(function, args, 3)?;
-
-    Ok(f(a, b, c, d).into_host_value())
-}
-
-pub fn host_call_result0<R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce() -> MResult<R>,
-) -> MResult<LegacyValue>
-where
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 0)?;
-    Ok(f()?.into_host_value())
-}
-
-pub fn host_call_result1<A, R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce(A) -> MResult<R>,
-) -> MResult<LegacyValue>
-where
-    A: FromHostValue,
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 1)?;
-
-    let a = A::from_host_value(function, args, 0)?;
-
-    Ok(f(a)?.into_host_value())
-}
-
-pub fn host_call_result2<A, B, R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce(A, B) -> MResult<R>,
-) -> MResult<LegacyValue>
-where
-    A: FromHostValue,
-    B: FromHostValue,
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 2)?;
-
-    let a = A::from_host_value(function, args, 0)?;
-    let b = B::from_host_value(function, args, 1)?;
-
-    Ok(f(a, b)?.into_host_value())
-}
-
-pub fn host_call_result3<A, B, C, R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce(A, B, C) -> MResult<R>,
-) -> MResult<LegacyValue>
-where
-    A: FromHostValue,
-    B: FromHostValue,
-    C: FromHostValue,
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 3)?;
-
-    let a = A::from_host_value(function, args, 0)?;
-    let b = B::from_host_value(function, args, 1)?;
-    let c = C::from_host_value(function, args, 2)?;
-
-    Ok(f(a, b, c)?.into_host_value())
-}
-
-pub fn host_call_result4<A, B, C, D, R>(
-    function: &str,
-    args: &[impl HostArgumentValue],
-    f: impl FnOnce(A, B, C, D) -> MResult<R>,
-) -> MResult<LegacyValue>
-where
-    A: FromHostValue,
-    B: FromHostValue,
-    C: FromHostValue,
-    D: FromHostValue,
-    R: IntoHostValue,
-{
-    expect_arity(function, args, 4)?;
-
-    let a = A::from_host_value(function, args, 0)?;
-    let b = B::from_host_value(function, args, 1)?;
-    let c = C::from_host_value(function, args, 2)?;
-    let d = D::from_host_value(function, args, 3)?;
-
-    Ok(f(a, b, c, d)?.into_host_value())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn typed(value: LegacyValue, kind: ValueKind) -> LegacyValue {
-        LegacyValue::Typed(Box::new(value), kind)
-    }
-
-    #[cfg(any(feature = "record", all(feature = "matrix", feature = "u8")))]
-    fn typed_reference(value: LegacyValue) -> LegacyValue {
-        let kind = value.kind();
-        LegacyValue::MutableReference(Ref::new(LegacyValue::Typed(Box::new(value), kind)))
-    }
-
-    #[test]
-    fn resolves_typed_strings_through_scalar_helpers() {
-        let args = vec![typed(
-            LegacyValue::String(Ref::new("hello".into())),
-            ValueKind::String,
-        )];
-
-        assert_eq!(host_arg_string("test", &args, 0).unwrap(), "hello");
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn resolves_typed_f64_through_scalar_helpers() {
-        let args = vec![typed(LegacyValue::F64(Ref::new(42.0)), ValueKind::F64)];
-
-        assert_eq!(host_arg_f64("test", &args, 0).unwrap(), 42.0);
-    }
-
-    #[test]
-    fn resolves_nested_typed_and_mutable_reference_values() {
-        let string = || LegacyValue::String(Ref::new("hello".into()));
-        let cases = vec![
-            typed(
-                LegacyValue::MutableReference(Ref::new(string())),
-                ValueKind::String,
-            ),
-            LegacyValue::MutableReference(Ref::new(typed(string(), ValueKind::String))),
-            LegacyValue::MutableReference(Ref::new(LegacyValue::MutableReference(Ref::new(
-                typed(string(), ValueKind::String),
-            )))),
-        ];
-
-        assert_eq!(host_arg_string("test", &cases[..1], 0).unwrap(), "hello");
-        assert_eq!(host_arg_string("test", &cases[1..2], 0).unwrap(), "hello");
-        assert_eq!(host_arg_string("test", &cases[2..], 0).unwrap(), "hello");
-    }
-
-    #[test]
-    fn typed_wrong_type_returns_an_error() {
-        let args = vec![typed(LegacyValue::Empty, ValueKind::String)];
-
-        assert!(host_arg_string("test", &args, 0).is_err());
-    }
-
-    #[cfg(feature = "tuple")]
-    #[test]
-    fn resolves_typed_tuples_through_compound_helpers() {
-        let tuple = mech_core::MechTuple::from_vec(vec![LegacyValue::Empty]);
-        let value = LegacyValue::Tuple(Ref::new(tuple.clone()));
-        let args = vec![typed(value.clone(), value.kind())];
-
-        assert_eq!(host_arg_tuple("test", &args, 0).unwrap(), tuple);
-    }
-
-    #[cfg(feature = "record")]
-    #[test]
-    fn resolves_typed_records_behind_mutable_references() {
-        let record = mech_core::MechRecord::new(vec![("field", LegacyValue::Empty)]);
-        let args = vec![typed_reference(LegacyValue::Record(Ref::new(
-            record.clone(),
-        )))];
-
-        assert_eq!(host_arg_record("test", &args, 0).unwrap(), record);
-    }
-
-    #[cfg(all(feature = "matrix", feature = "u8"))]
-    #[test]
-    fn resolves_typed_u8_matrices_behind_mutable_references() {
-        let matrix = mech_core::MechMatrix::from_vec(vec![1, 2], 1, 2);
-        let args = vec![typed_reference(LegacyValue::MatrixU8(matrix.clone()))];
-        let actual = host_arg_matrix_u8("test", &args, 0).unwrap();
-
-        assert_eq!(actual.shape(), matrix.shape());
-        assert_eq!(actual.as_vec(), matrix.as_vec());
-    }
-
-    #[cfg(feature = "tuple")]
-    #[test]
-    fn typed_non_tuple_returns_a_host_argument_error() {
-        let args = vec![typed(LegacyValue::Empty, ValueKind::Empty)];
-        let error = host_arg_tuple("test", &args, 0).unwrap_err();
-
-        assert!(error.kind_as::<HostArgumentError>().is_some());
-    }
-
-    #[test]
-    fn raw_and_reference_helpers_preserve_typed_wrappers() {
-        let typed_string = typed(
-            LegacyValue::String(Ref::new("hello".into())),
-            ValueKind::String,
-        );
-        let args = vec![typed_string.clone()];
-
-        assert!(matches!(
-            host_arg_raw("test", &args, 0).unwrap(),
-            LegacyValue::Typed(..)
-        ));
-        assert_eq!(
-            host_arg_optional_value("test", &args, 0).unwrap(),
-            Some(typed_string.clone())
-        );
-
-        let referenced = LegacyValue::MutableReference(Ref::new(typed_string.clone()));
-        assert_eq!(
-            host_arg_reference_value("test", &[referenced.clone()], 0).unwrap(),
-            typed_string
-        );
-
-        let nested_reference = LegacyValue::MutableReference(Ref::new(referenced.clone()));
-        assert_eq!(
-            host_arg_deref_cloned("test", &[nested_reference], 0).unwrap(),
-            referenced
-        );
-    }
-
-    #[test]
-    fn optional_helpers_treat_wrapped_empty_as_absent() {
-        let args = vec![
-            typed(LegacyValue::Empty, ValueKind::String),
-            LegacyValue::MutableReference(Ref::new(typed(LegacyValue::Empty, ValueKind::String))),
-        ];
-
-        assert_eq!(host_arg_optional_string("test", &args, 0).unwrap(), None);
-        assert_eq!(host_arg_optional_string("test", &args, 1).unwrap(), None);
-    }
-}
+host_calls!(
+    (host_call0, host_call_result0, 0,),
+    (host_call1, host_call_result1, 1, (A, 0)),
+    (host_call2, host_call_result2, 2, (A, 0), (B, 1)),
+    (host_call3, host_call_result3, 3, (A, 0), (B, 1), (C, 2)),
+    (
+        host_call4,
+        host_call_result4,
+        4,
+        (A, 0),
+        (B, 1),
+        (C, 2),
+        (D, 3)
+    ),
+);

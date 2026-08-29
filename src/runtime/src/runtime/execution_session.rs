@@ -14,8 +14,8 @@ use crate::{
     RuntimeValueSnapshot, default_host_capability_request,
 };
 use mech_core::{
-    ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
-    MechExecutionServices, ResourceIntent, ValueCell,
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult, MechError,
+    MechExecutionServices, ResourceIntent, Value, ValueCell,
 };
 
 pub(crate) struct RuntimeExecutionSession<'a> {
@@ -131,10 +131,7 @@ impl RuntimeSessionServices<'_> {
         self.check_capability(&request)
     }
 
-    fn read_external_resource(
-        &mut self,
-        request: &ExecutionResourceRequest,
-    ) -> MResult<LegacyValue> {
+    fn read_external_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
         self.validate_context()?;
         if request.intent != ResourceIntent::Read {
             return Err(MechError::new(
@@ -155,7 +152,7 @@ impl RuntimeSessionServices<'_> {
             .effects
             .staged_resource_value(&resource_identity, &key.path)
         {
-            return value.try_deep_snapshot();
+            return Ok(value);
         }
 
         let runtime_request = RuntimeResourceReadRequest {
@@ -163,14 +160,13 @@ impl RuntimeSessionServices<'_> {
             path: key.path,
             context_name: request.context_name.clone(),
         };
-        let value = self.resources.read(runtime_request)?;
-        value.try_deep_snapshot()
+        self.resources.read(runtime_request)
     }
 
     fn write_external_resource(
         &mut self,
         request: &ExecutionResourceRequest,
-        value: &LegacyValue,
+        value: &Value,
     ) -> MResult<()> {
         self.validate_context()?;
         let intent = match request.intent {
@@ -190,7 +186,7 @@ impl RuntimeSessionServices<'_> {
         let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())?;
         self.check_resource_capability(&operation, &key)?;
 
-        let value = value.try_deep_snapshot()?;
+        let value = value.clone();
         let runtime_request = RuntimeResourceWriteRequest {
             base_uri: key.base_uri,
             path: key.path,
@@ -268,7 +264,7 @@ impl RuntimeSessionServices<'_> {
         effect: PreparedRuntimeEffect,
         resource_identity: String,
         path: String,
-        value: LegacyValue,
+        value: Value,
     ) -> MResult<RuntimeEffectId> {
         self.validate_context()?;
         let (metadata, protocol) = catch_extension("prepared runtime effect", "metadata", || {
@@ -380,8 +376,8 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
-        arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue> {
+        arguments: &[Value],
+    ) -> MResult<Value> {
         let Self {
             runtime_id,
             max_events,
@@ -438,10 +434,11 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         };
 
         let call_context = RuntimeCallContext::capture(services.context);
-        let result = (|| -> MResult<LegacyValue> {
+        let result = (|| -> MResult<Value> {
             let arguments = arguments
                 .iter()
-                .map(RuntimeValueSnapshot::try_capture)
+                .cloned()
+                .map(RuntimeValueSnapshot::from_value)
                 .collect::<MResult<Vec<_>>>()?;
             invoke_extension("host call policy", "validate_call", || {
                 host_policy.validate_call(&call_context, &function, &arguments)
@@ -469,20 +466,20 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
                     let snapshot = invoke_extension(component, "invoke", || {
                         function.invoke(&call_context, arguments)
                     })?;
-                    snapshot.into_value().try_deep_snapshot()
+                    Ok(snapshot.into_value())
                 }
                 RegisteredHostFunction::RuntimeManaged(function) => {
                     let snapshot = invoke_extension(component, "invoke", || {
                         function.invoke(&mut services, &call_context, arguments)
                     })?;
-                    snapshot.into_value().try_deep_snapshot()
+                    Ok(snapshot.into_value())
                 }
                 RegisteredHostFunction::Staged(function) => {
                     let RuntimePreparedHostCall { value, effect } =
                         invoke_extension(component, "prepare", || {
                             function.prepare(&call_context, arguments)
                         })?;
-                    let value = value.into_value().try_deep_snapshot()?;
+                    let value = value.into_value();
                     services.stage_effect(effect)?;
                     Ok(value)
                 }
@@ -505,7 +502,7 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         result
     }
 
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
         let Self {
             runtime_id,
             max_events,
@@ -532,10 +529,7 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         .read_external_resource(request)
     }
 
-    fn plan_resource_read_output(
-        &mut self,
-        request: &ExecutionResourceRequest,
-    ) -> MResult<LegacyValue> {
+    fn plan_resource_read_output(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
         let Self {
             runtime_id,
             max_events,
@@ -562,11 +556,7 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         .read_external_resource(request)
     }
 
-    fn write_resource(
-        &mut self,
-        request: &ExecutionResourceRequest,
-        value: &LegacyValue,
-    ) -> MResult<()> {
+    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()> {
         let Self {
             runtime_id,
             max_events,

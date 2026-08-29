@@ -4430,6 +4430,15 @@ rows := |id<string> x<f64>|
                 .fixed_shape_storage()
                 .expect("EKF must lower to a fixed-shape kernel");
             assert_eq!(
+                storage
+                    .inputs
+                    .iter()
+                    .map(|input| input.name.as_ref())
+                    .collect::<std::collections::BTreeSet<_>>(),
+                std::collections::BTreeSet::from(["camera", "control", "measurement"]),
+                "the fixed-shape kernel must retain every declared activation input",
+            );
+            assert_eq!(
                 storage.instances, 1_000,
                 "the browser EKF must execute 1,000 independent filter lanes",
             );

@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
+use mech_core::{MResult, MechError, MechErrorKind, Value, ValueCell};
 
 use super::super::{MechRuntime, RuntimeBuilder};
 use crate::{
@@ -137,12 +137,12 @@ impl RuntimeResourceProvider for MockResourceProvider {
         Some(crate::resource_observation_contract())
     }
 
-    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::F64(Ref::new(1.0)))
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        ValueCell::from_exact(1.0_f64)?.snapshot()
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::F64(Ref::new(1.0)))
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        ValueCell::from_exact(1.0_f64)?.snapshot()
     }
 }
 

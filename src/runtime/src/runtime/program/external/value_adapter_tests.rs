@@ -75,6 +75,17 @@ pub fn provider_value_from_canonical(value: &Value, schemas: &SchemaTable) -> MR
     Ok(legacy)
 }
 
+pub fn canonical_value_from_legacy(value: LegacyValue) -> MResult<Value> {
+    value.to_canonical_value()
+}
+
+pub fn legacy_value_from_canonical(value: &Value) -> MResult<LegacyValue> {
+    let schemas = value
+        .schemas()
+        .ok_or_else(|| unsupported("canonical value does not retain its schema table"))?;
+    provider_value_from_canonical(value, &schemas)
+}
+
 fn legacy_data(
     value: &LegacyValue,
     body: &SchemaBody,

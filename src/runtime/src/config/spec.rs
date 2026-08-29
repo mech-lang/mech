@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use mech_core::{LegacyValue, MResult, MechErrorKind};
+use mech_core::{MResult, MechErrorKind, Value};
 
 use crate::{
     Capability, IdGenerator, InMemoryDocsProvider, ResourcePathCapability,
@@ -83,7 +83,7 @@ impl RuntimeInMemoryDocsResourceSpec {
         }
     }
 
-    pub fn with_entry(mut self, path: impl Into<String>, value: LegacyValue) -> Self {
+    pub fn with_entry(mut self, path: impl Into<String>, value: Value) -> Self {
         self.entries.push(RuntimeDocsEntrySpec {
             path: path.into(),
             value,
@@ -95,7 +95,7 @@ impl RuntimeInMemoryDocsResourceSpec {
 #[derive(Clone, Debug)]
 pub struct RuntimeDocsEntrySpec {
     pub path: String,
-    pub value: LegacyValue,
+    pub value: Value,
 }
 
 #[derive(Debug, Clone)]

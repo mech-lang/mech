@@ -36,7 +36,7 @@ pub use self::interface::*;
 use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 #[cfg(feature = "runtime")]
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind};
+use mech_core::{MResult, MechError, MechErrorKind, Value};
 
 #[cfg(feature = "runtime")]
 use crate::capability::{CapabilityRequest, Operation, Resource};
@@ -797,15 +797,15 @@ impl HostCallPolicy for DefaultHostCallPolicy {
 
 /// Utility functions for performing a host call.
 #[cfg(feature = "runtime")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct HostCall {
     pub name: String,
-    pub args: Vec<LegacyValue>,
+    pub args: Vec<Value>,
 }
 
 #[cfg(feature = "runtime")]
 impl HostCall {
-    pub fn new(name: impl Into<String>, args: Vec<LegacyValue>) -> Self {
+    pub fn new(name: impl Into<String>, args: Vec<Value>) -> Self {
         Self {
             name: name.into(),
             args,
@@ -1049,14 +1049,14 @@ mod tests {
     fn empty_function(
         name: &'static str,
     ) -> DeterministicHostFunction<
-        impl Fn(&RuntimeCallContext, &[RuntimeValueSnapshot]) -> MResult<LegacyValue>,
-        impl Fn(&RuntimeCallContext, &[RuntimeValueSnapshot]) -> MResult<LegacyValue>,
-        LegacyValue,
+        impl Fn(&RuntimeCallContext, &[RuntimeValueSnapshot]) -> MResult<RuntimeValueSnapshot>,
+        impl Fn(&RuntimeCallContext, &[RuntimeValueSnapshot]) -> MResult<RuntimeValueSnapshot>,
+        RuntimeValueSnapshot,
     > {
         DeterministicHostFunction::new(
             name,
-            |_context, _arguments| Ok(LegacyValue::Empty),
-            |_context, _arguments| Ok(LegacyValue::Empty),
+            |_context, _arguments| Ok(RuntimeValueSnapshot::empty()),
+            |_context, _arguments| Ok(RuntimeValueSnapshot::empty()),
         )
     }
 
@@ -1109,8 +1109,8 @@ mod tests {
         let context = RuntimeCallContext::capture(&context);
         let planned = function.plan(&context, &[]).unwrap();
         let invoked = function.invoke(&context, Vec::new()).unwrap();
-        assert_eq!(planned.kind(), mech_core::ValueKind::Empty);
-        assert_eq!(invoked.kind(), mech_core::ValueKind::Empty);
+        assert_eq!(planned.kind(), mech_core::snapshot::ValueDataKind::Tuple);
+        assert_eq!(invoked.kind(), mech_core::snapshot::ValueDataKind::Tuple);
     }
 
     #[test]
@@ -1121,10 +1121,10 @@ mod tests {
         let invocation_counter = invocations.clone();
         let function = DeterministicHostFunction::new(
             "host.counted",
-            |_context, _arguments| Ok(LegacyValue::Empty),
+            |_context, _arguments| Ok(RuntimeValueSnapshot::empty()),
             move |_context, _arguments| {
                 invocation_counter.fetch_add(1, Ordering::SeqCst);
-                Ok(LegacyValue::Empty)
+                Ok(RuntimeValueSnapshot::empty())
             },
         );
         let context = RuntimeContext::new(RuntimeId(1), "task:1");
@@ -1132,12 +1132,12 @@ mod tests {
 
         let planned = function.plan(&context, &[]).unwrap();
 
-        assert_eq!(planned.kind(), mech_core::ValueKind::Empty);
+        assert_eq!(planned.kind(), mech_core::snapshot::ValueDataKind::Tuple);
         assert_eq!(invocations.load(Ordering::SeqCst), 0);
 
         let invoked = function.invoke(&context, Vec::new()).unwrap();
 
-        assert_eq!(invoked.kind(), mech_core::ValueKind::Empty);
+        assert_eq!(invoked.kind(), mech_core::snapshot::ValueDataKind::Tuple);
         assert_eq!(invocations.load(Ordering::SeqCst), 1);
     }
 }
