@@ -124,6 +124,8 @@ fn source_layer_keeps_the_structured_syntax_highlighting_contract() {
         ".mech-table",
         ".mech-statement-table-define",
         ".mech-variable-define-table",
+        ".mech-statement-context-block",
+        ".mech-context-capabilities-block",
         "margin-left: 0",
     ] {
         assert!(css.contains(token), "source layer lost {token}");

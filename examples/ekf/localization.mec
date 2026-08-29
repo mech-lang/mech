@@ -18,7 +18,15 @@ Click a camera to disable it. Its color mutes, its range ring disappears, and it
 
 @clock := timer://clock/tick{:read(tick)}
 @scene := scene://localization/frame{:read(pointer-pulse), :read(pointer-position), :write(replace)}
-@filters := compute://filters/kernel{:read(sample/result.0), :read(sample/result.2), :read(turns), :write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}
+@filters := compute://filters/kernel {
+  :read(sample/result.0),
+  :read(sample/result.2),
+  :read(turns),
+  :write(input/control),
+  :write(input/camera),
+  :write(input/measurement),
+  :write(turn)
+}
 
   π := 3.141592654
   ~last-clock-tick := 0.0

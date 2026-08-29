@@ -487,6 +487,27 @@
     margin-top: 5px;
 }
 
+/* Long host capability sets are source blocks: the declaration owns the
+ * opening brace, each capability gets one indented row, and the closing brace
+ * returns to the declaration column. */
+:where([data-mech-source]).mech-statement-context-block,
+:where([data-mech-source]) .mech-statement-context-block,
+:where([data-mech-source]).mech-context-declaration-block,
+:where([data-mech-source]) .mech-context-declaration-block,
+:where([data-mech-source]).mech-context-capabilities-block,
+:where([data-mech-source]) .mech-context-capabilities-block,
+:where([data-mech-source]).mech-context-capability-row,
+:where([data-mech-source]) .mech-context-capability-row,
+:where([data-mech-source]).mech-context-declaration-block > .mech-context-capabilities-close,
+:where([data-mech-source]) .mech-context-declaration-block > .mech-context-capabilities-close {
+    display: block;
+}
+
+:where([data-mech-source]).mech-context-capabilities-block,
+:where([data-mech-source]) .mech-context-capabilities-block {
+    margin-left: 2ch;
+}
+
 :where([data-mech-source]).mech-fsm-specification-header,
 :where([data-mech-source]) .mech-fsm-specification-header {
     display: inline-flex;

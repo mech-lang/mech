@@ -342,6 +342,29 @@ fn formatter_exposes_every_context_declaration_color_role() {
 }
 
 #[test]
+fn formatter_breaks_long_context_capability_sets_into_indented_rows() {
+    let statement = first_statement(
+        "@filters := compute://filters/kernel{:read(sample/result.0), :read(sample/result.2), :read(turns), :write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}",
+    );
+    let expected = "@filters := compute://filters/kernel {\n  :read(sample/result.0),\n  :read(sample/result.2),\n  :read(turns),\n  :write(input/control),\n  :write(input/camera),\n  :write(input/measurement),\n  :write(turn)\n}";
+
+    assert_eq!(Formatter::new().statement(&statement), expected);
+
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.statement(&statement);
+    assert!(
+        html.contains("class=\"mech-statement mech-statement-context-block\""),
+        "{html}",
+    );
+    assert!(
+        html.contains("mech-context-capabilities mech-context-capabilities-block"),
+        "{html}",
+    );
+    assert_eq!(html.matches("mech-context-capability-row").count(), 7);
+}
+
+#[test]
 fn formatter_marks_table_definitions_for_full_width_block_layout() {
     let statement = first_statement("scene := |id<string> x<f64>|\n         | \"robot\" 1 |");
     let mut formatter = Formatter::new();

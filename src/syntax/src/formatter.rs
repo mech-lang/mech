@@ -2832,6 +2832,10 @@ impl Formatter {
                 ..
             })
         );
+        let is_block_context = matches!(
+            node,
+            Statement::ContextDeclaration(context) if context.capabilities.len() > 3
+        );
         let s = match node {
             Statement::ImportDeclaration(import) => format!("+> {}", import.specifier.to_string()),
             Statement::ExportDeclaration(export) => format!("<+ {}", export.name.to_string()),
@@ -2852,7 +2856,7 @@ impl Formatter {
                     ContextBase::ResourceUri(uri) => uri.to_string(),
                     ContextBase::Context(name) => format!("@{}", name.to_string()),
                 };
-                let capabilities_text = context
+                let capabilities = context
                     .capabilities
                     .iter()
                     .map(|capability| {
@@ -2862,12 +2866,13 @@ impl Formatter {
                         };
                         format!(":{}({})", capability.operation.to_string(), scope)
                     })
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                let capabilities_text = if capabilities_text.is_empty() {
+                    .collect::<Vec<_>>();
+                let capabilities_text = if capabilities.is_empty() {
                     String::new()
+                } else if is_block_context {
+                    format!(" {{\n  {}\n}}", capabilities.join(",\n  "))
                 } else {
-                    format!(" {{ {} }}", capabilities_text)
+                    format!(" {{ {} }}", capabilities.join(", "))
                 };
                 if self.html {
                     let base_html = match &context.base {
@@ -2900,29 +2905,54 @@ impl Formatter {
                     let capabilities_html = context
                         .capabilities
                         .iter()
-                        .map(|capability| {
+                        .enumerate()
+                        .map(|(index, capability)| {
                             let scope = match &capability.scope {
                                 ContextCapabilityScope::Path(path) => path.to_string(),
                                 ContextCapabilityScope::Wildcard(_) => "*".to_string(),
                             };
-                            format!(
+                            let capability_html = format!(
                                 "<span class=\"mech-context-capability\"><span class=\"mech-atom-sigil\">:</span><span class=\"mech-atom-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-context-path\">{}</span><span class=\"mech-right-paren\">)</span></span>",
                                 capability.operation.to_string(),
                                 escape_html_text(&scope)
-                            )
+                            );
+                            if is_block_context {
+                                let separator = if index + 1 == context.capabilities.len() {
+                                    ""
+                                } else {
+                                    "<span class=\"mech-context-capability-separator\">,</span>"
+                                };
+                                format!(
+                                    "<span class=\"mech-context-capability-row\">{}{}</span>",
+                                    capability_html, separator
+                                )
+                            } else {
+                                capability_html
+                            }
                         })
-                        .collect::<Vec<_>>()
-                        .join("<span class=\"mech-context-capability-separator\">, </span>");
+                        .collect::<Vec<_>>();
                     let capabilities_html = if capabilities_html.is_empty() {
                         String::new()
+                    } else if is_block_context {
+                        format!(
+                            " <span class=\"mech-context-capabilities-open\">{{</span><span class=\"mech-context-capabilities mech-context-capabilities-block\">{}</span><span class=\"mech-context-capabilities-close\">}}</span>",
+                            capabilities_html.join("")
+                        )
                     } else {
                         format!(
                             " <span class=\"mech-context-capabilities\"><span class=\"mech-context-capabilities-open\">{{</span>{}<span class=\"mech-context-capabilities-close\">}}</span></span>",
-                            capabilities_html
+                            capabilities_html.join(
+                                "<span class=\"mech-context-capability-separator\">, </span>"
+                            )
                         )
                     };
                     format!(
-                        "<span class=\"mech-context-declaration\"><span class=\"mech-context-name\">@{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-context-base\">{}</span>{}</span>",
+                        "<span class=\"mech-context-declaration{}\"><span class=\"mech-context-name\">@{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-context-base\">{}</span>{}</span>",
+                        if is_block_context {
+                            " mech-context-declaration-block"
+                        } else {
+                            ""
+                        },
                         context.name.to_string(),
                         base_html,
                         capabilities_html
@@ -2940,6 +2970,8 @@ impl Formatter {
         if self.html {
             let class = if is_table_define {
                 "mech-statement mech-statement-table-define"
+            } else if is_block_context {
+                "mech-statement mech-statement-context-block"
             } else {
                 "mech-statement"
             };
