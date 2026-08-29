@@ -41,11 +41,11 @@ mod scalar_f64 {
             assert_eq!(*invocation_sink.borrow(), $expected);
             assert_eq!(
                 legacy.reactive_output_cell_ids(),
-                legacy.out().reactive_root_cell_ids(),
+                legacy_sink.to_value().reactive_root_cell_ids(),
             );
             assert_eq!(
                 invocation.reactive_output_cell_ids(),
-                invocation.out().reactive_root_cell_ids(),
+                invocation_sink.to_value().reactive_root_cell_ids(),
             );
         }};
     }
@@ -102,7 +102,7 @@ mod scalar_f64 {
             1
         );
         let output_cells = function.reactive_output_cell_ids();
-        assert_eq!(output_cells, function.out().reactive_root_cell_ids());
+        assert_eq!(output_cells, sink.to_value().reactive_root_cell_ids());
 
         let staged = function.stage_register().unwrap();
         assert_eq!(staged.output_cells(), output_cells.as_slice());
@@ -143,7 +143,7 @@ mod scalar_f64 {
 
         let staged_cells = staged.reactive_output_cell_ids();
         assert_eq!(direct.reactive_output_cell_ids(), staged_cells);
-        assert_eq!(staged_cells, staged.out().reactive_root_cell_ids());
+        assert_eq!(staged_cells, sink.to_value().reactive_root_cell_ids());
         direct.solve_result().unwrap();
         let direct_result = *sink.borrow();
         *sink.borrow_mut() = 2.0;
@@ -158,7 +158,9 @@ mod scalar_f64 {
 
     #[cfg(feature = "semantic-compiler")]
     fn decoded_scalar_wrapper(reference: bool) -> mech_core::LegacyValue {
-        use mech_core::{EncodedConstant, RuntimeType, decode_encoded_constants};
+        use mech_core::{
+            EncodedConstant, RuntimeType, legacy_values_from_encoded_bytecode_constants,
+        };
 
         fn framed(payload: &[u8]) -> Vec<u8> {
             let mut framed = (payload.len() as u32).to_le_bytes().to_vec();
@@ -177,7 +179,7 @@ mod scalar_f64 {
             bytes.extend(framed(&payload));
             (RuntimeType::Option(Box::new(RuntimeType::F64)), bytes)
         };
-        decode_encoded_constants(&[EncodedConstant {
+        legacy_values_from_encoded_bytecode_constants(&[EncodedConstant {
             runtime_type,
             alignment: 8,
             bytes,
@@ -224,7 +226,7 @@ mod fixed_matrix_f64 {
         assert_eq!(*sink.borrow(), Matrix2::new(11.0_f64, 12.0, 13.0, 14.0),);
         assert_eq!(
             function.reactive_output_cell_ids(),
-            function.out().reactive_root_cell_ids(),
+            sink.to_value().reactive_root_cell_ids(),
         );
     }
 }
@@ -279,7 +281,10 @@ mod dynamic_matrix_f64 {
         );
 
         let output_cells = invocation.reactive_output_cell_ids();
-        assert_eq!(output_cells, invocation.out().reactive_root_cell_ids());
+        assert_eq!(
+            output_cells,
+            invocation_sink.to_value().reactive_root_cell_ids()
+        );
         let before_stage = invocation_sink.borrow().clone();
         let staged = invocation.stage_register().unwrap();
         assert_eq!(staged.output_cells(), output_cells.as_slice());
@@ -509,7 +514,7 @@ mod indexed_f64 {
             assert_eq!(invocation_sink.borrow().as_slice(), $expected);
             assert_eq!(
                 invocation.reactive_output_cell_ids(),
-                invocation.out().reactive_root_cell_ids(),
+                invocation_sink.to_value().reactive_root_cell_ids(),
             );
             assert_eq!(
                 invocation.transaction_state_ports().unwrap().unwrap().len(),
@@ -571,7 +576,7 @@ mod indexed_f64 {
         assert_eq!(sink.borrow().as_slice(), &[11.0, 20.0, 30.0, 42.0]);
         assert_eq!(
             function.reactive_output_cell_ids(),
-            function.out().reactive_root_cell_ids(),
+            sink.to_value().reactive_root_cell_ids(),
         );
         assert_eq!(
             function.transaction_state_ports().unwrap().unwrap().len(),

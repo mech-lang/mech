@@ -5,7 +5,7 @@ extern crate mech_core;
 #[path = "support/intrinsic_runner.rs"]
 mod intrinsic_runner;
 
-use mech_core::{LegacyValue, structures::matrix::Matrix};
+use mech_core::{ValueData, snapshot::SequenceView};
 
 fn run(source: &str) -> bool {
     intrinsic_runner::run(source).is_ok()
@@ -14,29 +14,14 @@ fn run(source: &str) -> bool {
 #[cfg(feature = "dynamic-modules")]
 fn run_matrix_round(source: &str) {
     let result = intrinsic_runner::run(source).unwrap();
-
-    let detached = match result {
-        LegacyValue::MutableReference(v) => v.borrow().clone(),
-        value => value,
-    };
-
-    assert_eq!(
-        detached,
-        LegacyValue::MatrixF64(Matrix::from_vec(vec![1.0, 5.0], 1, 2))
-    );
+    assert_matrix_f64(&result, &[1.0, 5.0], 1, 2);
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn run_scalar_f64(source: &str, expected: f64) {
     let result = intrinsic_runner::run(source).unwrap();
-
-    let detached = match result {
-        LegacyValue::MutableReference(v) => v.borrow().clone(),
-        value => value,
-    };
-
-    match detached {
-        LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
+    match result.data() {
+        ValueData::F64(value) => assert_eq!(value.to_f64(), expected),
         value => panic!("expected f64 result, got {:?}", value),
     }
 }
@@ -44,15 +29,21 @@ fn run_scalar_f64(source: &str, expected: f64) {
 #[cfg(feature = "dynamic-modules")]
 fn run_matrix_f64(source: &str, expected: Vec<f64>, rows: usize, cols: usize) {
     let result = intrinsic_runner::run(source).unwrap();
+    assert_matrix_f64(&result, &expected, rows, cols);
+}
 
-    let detached = match result {
-        LegacyValue::MutableReference(v) => v.borrow().clone(),
-        value => value,
+fn assert_matrix_f64(value: &mech_core::Value, expected: &[f64], rows: usize, cols: usize) {
+    let matrix = value.matrix_view().expect("expected matrix result");
+    let SequenceView::F64(actual) = matrix.elements() else {
+        panic!("expected f64 matrix result");
     };
-
+    assert_eq!(actual.len(), rows * cols);
     assert_eq!(
-        detached,
-        LegacyValue::MatrixF64(Matrix::from_vec(expected, rows, cols))
+        actual
+            .iter()
+            .map(|value| value.to_f64())
+            .collect::<Vec<_>>(),
+        expected
     );
 }
 

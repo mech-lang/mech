@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Mod ------------------------------------------------------------------------
@@ -121,9 +119,6 @@ macro_rules! impl_binop2 {
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -161,9 +156,6 @@ macro_rules! impl_binop2 {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(super::arithmetic_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -172,11 +164,6 @@ macro_rules! impl_binop2 {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
-
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
@@ -346,25 +333,4 @@ mod tests {
     }
 }
 
-#[cfg(feature = "source")]
-fn impl_mod_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      Mod,
-      (lhs_value, rhs_value),
-      I8,   i8,   "i8";
-      I16,  i16,  "i16";
-      I32,  i32,  "i32";
-      I64,  i64,  "i64";
-      I128, i128, "i128";
-      U8,   u8,   "u8";
-      U16,  u16,  "u16";
-      U32,  u32,  "u32";
-      U64,  u64,  "u64";
-      U128, u128, "u128";
-      F32,  f32,  "f32";
-      F64,  f64,  "f64";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(MathMod, impl_mod_fxn, "math/mod");
+impl_canonical_registered_math_binop_specializer!(MathMod, "Mod");

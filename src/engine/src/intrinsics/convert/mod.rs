@@ -4,17 +4,7 @@ use crate::intrinsics::*;
 // Type Conversion Library
 // ----------------------------------------------------------------------------
 
-#[cfg(feature = "matrix")]
-pub mod mat_to_mat;
 pub mod scalar;
-#[cfg(feature = "matrix")]
-pub mod scalar_to_mat;
-
-#[cfg(feature = "matrix")]
-pub use self::mat_to_mat::*;
-pub use self::scalar::*;
-#[cfg(feature = "matrix")]
-pub use self::scalar_to_mat::*;
 
 macro_rules! lossless_into {
     ($from_type:ty) => {
@@ -664,20 +654,3 @@ macro_rules! impl_lossy_from_numeric_to_string {
 }
 
 impl_lossy_from_numeric_to_string!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-
-#[derive(Debug, Clone)]
-pub struct UnsupportedConversionError {
-    from: ValueKind,
-    to: ValueKind,
-}
-impl MechErrorKind for UnsupportedConversionError {
-    fn name(&self) -> &str {
-        "UnsupportedConversion"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Unsupported conversion from {:?} to {:?}",
-            self.from, self.to
-        )
-    }
-}

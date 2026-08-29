@@ -1,4 +1,4 @@
-use crate::{LegacyValue, MResult, MechFunction, Plan};
+use crate::{InitialSolvePolicy, MResult, Plan, SpecializedFunction, ValueCell};
 
 #[cfg(all(
     feature = "functions",
@@ -17,16 +17,16 @@ use crate::{LegacyValue, MResult, MechFunction, Plan};
 ))]
 pub(super) fn register_initialized_expression_function(
     plan: &Plan,
-    function: Box<dyn MechFunction>,
-    arguments: &[LegacyValue],
-) -> MResult<LegacyValue> {
+    specialized: SpecializedFunction,
+) -> MResult<ValueCell> {
+    let instance = specialized.into_instance();
     if !plan.activation_registration_active()
-        && function.initial_solve_policy() == crate::InitialSolvePolicy::Solve
+        && instance.implementation().initial_solve_policy() == InitialSolvePolicy::Solve
     {
-        function.solve_result()?;
+        instance.solve_result()?;
     }
-    let output = function.out();
-    plan.register_function(function, arguments)?;
+    let output = instance.output().clone();
+    plan.register_instance(instance)?;
     Ok(output)
 }
 
@@ -71,10 +71,10 @@ pub(super) fn register_initialized_expression_function(
 ))]
 pub(super) fn register_expression_function_batch(
     plan: &Plan,
-    functions: Vec<(Box<dyn MechFunction>, Vec<LegacyValue>)>,
+    functions: Vec<SpecializedFunction>,
 ) -> MResult<()> {
-    for (function, arguments) in functions {
-        plan.register_function(function, &arguments)?;
+    for specialized in functions {
+        plan.register_instance(specialized.into_instance())?;
     }
     Ok(())
 }

@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // And ------------------------------------------------------------------------
 
@@ -113,14 +111,4 @@ macro_rules! and_row_mat_op {
 
 impl_logic_fxns!(And);
 
-#[cfg(feature = "source")]
-fn impl_and_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      And,
-      (lhs_value, rhs_value),
-      Bool, bool, "bool";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(LogicAnd, impl_and_fxn, "logic/and");
+impl_canonical_logic_binop_specializer!(LogicAnd, and, And, "logic/and");

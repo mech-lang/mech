@@ -1,4 +1,4 @@
-use mech_core::{FunctionSpecializer, MResult, MechError, MechErrorKind, hash_str};
+use mech_core::{CanonicalFunctionSpecializer, MResult, MechError, MechErrorKind, hash_str};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
@@ -20,13 +20,13 @@ impl ExtensionFunctionId {
 pub struct FunctionExtensionEntry {
     pub id: ExtensionFunctionId,
     pub canonical_name: String,
-    pub specializer: Arc<dyn FunctionSpecializer>,
+    pub specializer: Arc<dyn CanonicalFunctionSpecializer>,
 }
 
 impl FunctionExtensionEntry {
     pub fn new(
         canonical_name: impl Into<String>,
-        specializer: Arc<dyn FunctionSpecializer>,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> Self {
         let canonical_name = canonical_name.into();
         Self {
@@ -278,17 +278,23 @@ impl MechErrorKind for FunctionExtensionUnavailable {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{LegacyValue, MechFunction, OperationId};
+    use mech_core::{
+        OperationId, SpecializationContext, SpecializationInvocation, SpecializedFunction,
+    };
 
     struct TestSpecializer;
 
-    impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+    impl CanonicalFunctionSpecializer for TestSpecializer {
+        fn specialize_invocation(
+            &self,
+            _: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
             unreachable!("extension-store tests do not specialize functions")
         }
     }
 
-    fn specializer() -> Arc<dyn FunctionSpecializer> {
+    fn specializer() -> Arc<dyn CanonicalFunctionSpecializer> {
         Arc::new(TestSpecializer)
     }
 
@@ -304,6 +310,11 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
+        let first_canonical = extensions
+            .entry(ExtensionFunctionId::from_name("host/read"))
+            .unwrap()
+            .specializer
+            .clone();
         let replaced = extensions
             .insert_or_replace(FunctionExtensionEntry::new(
                 "host/read",
@@ -311,12 +322,17 @@ mod tests {
             ))
             .unwrap()
             .unwrap();
+        let replacement_canonical = extensions
+            .entry(ExtensionFunctionId::from_name("host/read"))
+            .unwrap()
+            .specializer
+            .clone();
 
         let id = ExtensionFunctionId::from_name("host/read");
-        assert!(Arc::ptr_eq(&replaced.specializer, &first));
+        assert!(Arc::ptr_eq(&replaced.specializer, &first_canonical));
         assert!(Arc::ptr_eq(
             &extensions.entry(id).unwrap().specializer,
-            &replacement,
+            &replacement_canonical,
         ));
     }
 
@@ -358,6 +374,7 @@ mod tests {
                 specializer.clone(),
             ))
             .unwrap();
+        let installed = extensions.entry(id).unwrap().specializer.clone();
         extensions
             .insert_module_export_or_replace("dynamic/math", "sin", id)
             .unwrap();
@@ -367,7 +384,7 @@ mod tests {
         assert_eq!(cloned.module_export("dynamic", "math/sin"), None);
         assert!(Arc::ptr_eq(
             &cloned.entry(id).unwrap().specializer,
-            &specializer,
+            &installed,
         ));
     }
 

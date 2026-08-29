@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use mech_core::LegacyValue;
+use mech_core::{Value, ValueData};
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
 use serde::Deserialize;
 
@@ -78,24 +78,16 @@ fn main() {
     }
 }
 
-fn dereference(value: LegacyValue) -> LegacyValue {
-    match value {
-        LegacyValue::MutableReference(reference) => dereference(reference.borrow().clone()),
-        LegacyValue::Typed(value, _) => dereference(*value),
-        value => value,
-    }
-}
-
-fn assert_expected(case: &SourceCase, actual: LegacyValue) {
-    match (&case.expected, dereference(actual)) {
+fn assert_expected(case: &SourceCase, actual: Value) {
+    match (&case.expected, actual.data()) {
         (
             ExpectedValue::F64 {
                 value: expected,
                 tolerance,
             },
-            LegacyValue::F64(actual),
+            ValueData::F64(actual),
         ) => {
-            let actual = *actual.borrow();
+            let actual = actual.to_f64();
             let tolerance = tolerance.unwrap_or(0.0);
             assert!(
                 (actual - expected).abs() <= tolerance,
@@ -103,17 +95,17 @@ fn assert_expected(case: &SourceCase, actual: LegacyValue) {
                 case.name,
             );
         }
-        (ExpectedValue::Bool { value: expected }, LegacyValue::Bool(actual)) => {
+        (ExpectedValue::Bool { value: expected }, ValueData::Bool(actual)) => {
             assert_eq!(
-                *actual.borrow(),
+                *actual,
                 *expected,
                 "source case `{}` returned the wrong bool",
                 case.name,
             );
         }
-        (ExpectedValue::String { value: expected }, LegacyValue::String(actual)) => {
+        (ExpectedValue::String { value: expected }, ValueData::String(actual)) => {
             assert_eq!(
-                &*actual.borrow(),
+                actual.as_ref(),
                 expected,
                 "source case `{}` returned the wrong string",
                 case.name,

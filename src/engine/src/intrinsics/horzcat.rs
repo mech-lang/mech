@@ -1,4 +1,6 @@
+use crate::intrinsics::constructors::ValueMatrixConcatenation;
 use crate::intrinsics::*;
+use std::marker::PhantomData;
 use std::sync::LazyLock;
 
 fn horizontal_concatenation_contract(inputs: InputPortLayout) -> OperationContractDeclaration {
@@ -44,22 +46,6 @@ static PURE_HORIZONTAL_UNARY_BUILD_CONTRACT: LazyLock<OperationContractDeclarati
         ))
     });
 
-#[cfg(all(feature = "semantic-compiler", feature = "matrixd"))]
-fn heterogeneous_horizontal_literal(arguments: &[LegacyValue]) -> Box<dyn MechFunction> {
-    let inputs = arguments
-        .iter()
-        .cloned()
-        .map(|argument| HorizontalConcatenateInput::Scalar(Ref::new(argument)))
-        .collect();
-    let out = Ref::new(DMatrix::from_vec(1, arguments.len(), arguments.to_vec()));
-    Box::new(HorizontalConcatenateNArgs { e0: inputs, out })
-}
-
-#[cfg(all(feature = "semantic-compiler", feature = "matrixd"))]
-fn same_or_option_element_kind(left: &ValueKind, right: &ValueKind) -> bool {
-    left == right || left.option_inner() == Some(right) || right.option_inner() == Some(left)
-}
-
 // Horizontal Concatenate -----------------------------------------------------
 
 #[cfg(any(
@@ -81,40 +67,38 @@ macro_rules! horizontal_concatenate {
         #[cfg(feature = "semantic-compiler")]
         T: CompileConst,
         Ref<[<RowVector $vec_size>]<T>>: ToValue,
-        [<RowVector $vec_size>]<T>: FunctionRuntimeType,
+        [<RowVector $vec_size>]<T>: FunctionStateBacking,
       {
         const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::nullary(
           <[<RowVector $vec_size>]<T> as FunctionRuntimeType>::REPRESENTATION,
         );
 
+        fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+          let out: Ref<[<RowVector $vec_size>]<T>> = invocation.expect_nullary()?.try_ref()?;
+          Ok(Box::new(Self { out }))
+        }
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-          match args {
-            FunctionArgs::Nullary(out) => {
-              let out: Ref<[<RowVector $vec_size>]<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-              Ok(Box::new(Self { out }))
-            },
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments { expected: 0, found: args.len() },
-                None
-              ).with_compiler_loc()
-            ),
-          }
+          Self::new_invocation(args.into())
         }
       }
       impl<T> MechFunctionImpl for $name<T>
       where
         T: Debug + Clone + Sync + Send + PartialEq + 'static,
-        Ref<[<RowVector $vec_size>]<T>>: ToValue
+        Ref<[<RowVector $vec_size>]<T>>: ToValue,
+        [<RowVector $vec_size>]<T>: FunctionStateBacking,
       {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
         }
-        fn out(&self) -> LegacyValue { self.out.to_value() }
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+          Some(FunctionStatePort::from_ref(&self.out))
+        }
+        fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+          Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+        }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-          Ok(self.reactive_output_values())
-        }
       }
 
       #[cfg(feature = "semantic-compiler")]
@@ -157,13 +141,14 @@ macro_rules! horzcat_two_args {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionRuntimeType
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
-            $e0<T>: FunctionRuntimeType,
-            $e1<T>: FunctionRuntimeType,
-            $out<T>: FunctionRuntimeType,
+            $e0<T>: FunctionPortBacking,
+            $e1<T>: FunctionPortBacking,
+            $out<T>: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -171,32 +156,23 @@ macro_rules! horzcat_two_args {
                 <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, e0, e1) = invocation.expect_binary()?;
+                let e0: Ref<$e0<T>> = e0.try_ref()?;
+                let e1: Ref<$e1<T>> = e1.try_ref()?;
+                let out: Ref<$out<T>> = out.try_ref()?;
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg0, arg1) => {
-                        let e0: Ref<$e0<T>> =
-                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let e1: Ref<$e1<T>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out<T>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { e0, e1, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $fxn<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
+            $out<T>: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 unsafe {
@@ -207,15 +183,14 @@ macro_rules! horzcat_two_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -264,14 +239,15 @@ macro_rules! horzcat_three_args {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionRuntimeType
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
-            $e0<T>: FunctionRuntimeType,
-            $e1<T>: FunctionRuntimeType,
-            $e2<T>: FunctionRuntimeType,
-            $out<T>: FunctionRuntimeType,
+            $e0<T>: FunctionPortBacking,
+            $e1<T>: FunctionPortBacking,
+            $e2<T>: FunctionPortBacking,
+            $out<T>: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
                 <$out<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -280,34 +256,24 @@ macro_rules! horzcat_three_args {
                 <$e2<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, e0, e1, e2) = invocation.expect_ternary()?;
+                let e0: Ref<$e0<T>> = e0.try_ref()?;
+                let e1: Ref<$e1<T>> = e1.try_ref()?;
+                let e2: Ref<$e2<T>> = e2.try_ref()?;
+                let out: Ref<$out<T>> = out.try_ref()?;
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                        let e0: Ref<$e0<T>> =
-                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let e1: Ref<$e1<T>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let e2: Ref<$e2<T>> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let out: Ref<$out<T>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { e0, e1, e2, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $fxn<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
+            $out<T>: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 unsafe {
@@ -319,15 +285,14 @@ macro_rules! horzcat_three_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -372,15 +337,16 @@ macro_rules! horzcat_four_args {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionRuntimeType
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
-            $e0<T>: FunctionRuntimeType,
-            $e1<T>: FunctionRuntimeType,
-            $e2<T>: FunctionRuntimeType,
-            $e3<T>: FunctionRuntimeType,
-            $out<T>: FunctionRuntimeType,
+            $e0<T>: FunctionPortBacking,
+            $e1<T>: FunctionPortBacking,
+            $e2<T>: FunctionPortBacking,
+            $e3<T>: FunctionPortBacking,
+            $out<T>: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
                 <$out<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -390,42 +356,31 @@ macro_rules! horzcat_four_args {
                 <$e3<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, e0, e1, e2, e3) = invocation.expect_quaternary()?;
+                let e0: Ref<$e0<T>> = e0.try_ref()?;
+                let e1: Ref<$e1<T>> = e1.try_ref()?;
+                let e2: Ref<$e2<T>> = e2.try_ref()?;
+                let e3: Ref<$e3<T>> = e3.try_ref()?;
+                let out: Ref<$out<T>> = out.try_ref()?;
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                        let e0: Ref<$e0<T>> =
-                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let e1: Ref<$e1<T>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let e2: Ref<$e2<T>> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let e3: Ref<$e3<T>> =
-                            arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                        let out: Ref<$out<T>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            e0,
-                            e1,
-                            e2,
-                            e3,
-                            out,
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 4,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $fxn<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
+            $out<T>: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 unsafe {
@@ -438,15 +393,14 @@ macro_rules! horzcat_four_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -490,7 +444,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
@@ -501,25 +456,16 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
+        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
+        let out: Ref<DMatrix<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Box<dyn CopyMat<T>> =
-                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
-                let e1: Box<dyn CopyMat<T>> =
-                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
-                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -533,18 +479,12 @@ where
         self.e1.copy_into(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -594,7 +534,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
@@ -606,27 +547,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
+        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
+        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
+        let out: Ref<DMatrix<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Box<dyn CopyMat<T>> =
-                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
-                let e1: Box<dyn CopyMat<T>> =
-                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
-                let e2: Box<dyn CopyMat<T>> =
-                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
-                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -641,18 +572,12 @@ where
         self.e2.copy_into(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -686,6 +611,10 @@ where
 // HorizontalConcatenateFourArgs ----------------------------------------------
 
 #[cfg(feature = "matrixd")]
+#[allow(
+    dead_code,
+    reason = "the four-input compatibility factory is selected only by native-plan and focused tests"
+)]
 struct HorizontalConcatenateFourArgs<T> {
     e0: Box<dyn CopyMat<T>>,
     e1: Box<dyn CopyMat<T>>,
@@ -704,7 +633,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
@@ -717,35 +647,24 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
+        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
+        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
+        let e3: Box<dyn CopyMat<T>> = arg3.try_copyable_matrix()?;
+        let out: Ref<DMatrix<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Box<dyn CopyMat<T>> =
-                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
-                let e1: Box<dyn CopyMat<T>> =
-                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
-                let e2: Box<dyn CopyMat<T>> =
-                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
-                let e3: Box<dyn CopyMat<T>> =
-                    arg3.try_function_copyable_matrix(FunctionArgumentRole::Input(3))?;
-                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -761,18 +680,12 @@ where
         self.e3.copy_into(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateFourArgs\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -808,12 +721,20 @@ where
 // HorizontalConcatenateNArgs -------------------------------------------------
 
 #[cfg(feature = "matrixd")]
+#[allow(
+    dead_code,
+    reason = "retained as a frozen bytecode factory outside the standard linked runtime catalog"
+)]
 enum HorizontalConcatenateInput<T> {
     Scalar(Ref<T>),
     Matrix(Box<dyn CopyMat<T>>),
 }
 
 #[cfg(feature = "matrixd")]
+#[allow(
+    dead_code,
+    reason = "retained as a frozen bytecode factory outside the standard linked runtime catalog"
+)]
 struct HorizontalConcatenateNArgs<T> {
     e0: Vec<HorizontalConcatenateInput<T>>,
     out: Ref<DMatrix<T>>,
@@ -829,7 +750,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
@@ -839,32 +761,27 @@ where
         FunctionValueRepresentation::AnyValue,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Variadic(out, vargs) => {
-                let mut e0 = Vec::with_capacity(vargs.len());
-                for (i, arg) in vargs.into_iter().enumerate() {
-                    if arg.is_scalar() {
-                        let scalar = arg.try_function_ref(FunctionArgumentRole::Input(i))?;
-                        e0.push(HorizontalConcatenateInput::Scalar(scalar));
-                    } else {
-                        let matrix =
-                            arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
-                        e0.push(HorizontalConcatenateInput::Matrix(matrix));
-                    }
-                }
-                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, out }))
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, inputs) = invocation.expect_variadic()?;
+        let mut e0 = Vec::with_capacity(inputs.len());
+        for arg in inputs {
+            if matches!(
+                arg.value().representation(),
+                FunctionValueRepresentation::Matrix { .. }
+            ) {
+                e0.push(HorizontalConcatenateInput::Matrix(
+                    arg.try_copyable_matrix()?,
+                ));
+            } else {
+                e0.push(HorizontalConcatenateInput::Scalar(arg.try_ref()?));
             }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
         }
+        let out: Ref<DMatrix<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, out }))
+    }
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -888,18 +805,12 @@ where
         }
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateNArgs\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -909,19 +820,11 @@ where
     T: ConstElem + CompileConst + AsValueKind,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
-        if T::as_value_kind().is_any() {
-            let output = self.out.to_value();
-            compile_value_register(&output, self.out.addr(), ctx)?;
-        }
+    fn reserve_bytecode_registers(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
         Ok(())
     }
 
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        if T::as_value_kind().is_any() {
-            let output = self.out.to_value();
-            return compile_value_register(&output, self.out.addr(), ctx);
-        }
         let mut registers = [0, 0];
         registers[0] = compile_register!(self.out, ctx);
 
@@ -953,6 +856,9 @@ where
 #[cfg(feature = "row_vectord")]
 #[derive(Debug)]
 struct HorizontalConcatenateRD<T> {
+    output: FunctionValueOutput,
+    _marker: PhantomData<T>,
+    #[cfg(feature = "semantic-compiler")]
     out: Ref<RowDVector<T>>,
 }
 #[cfg(feature = "row_vectord")]
@@ -966,7 +872,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowDVector<T>>: ToValue,
@@ -974,21 +881,22 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<RowDVector<T> as FunctionRuntimeType>::REPRESENTATION);
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let out = invocation.expect_nullary()?;
+        let output = out.value();
+        let out: Ref<RowDVector<T>> = out.try_ref()?;
+        #[cfg(not(feature = "semantic-compiler"))]
+        drop(out);
+        Ok(Box::new(Self {
+            output,
+            _marker: PhantomData,
+            #[cfg(feature = "semantic-compiler")]
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Nullary(out) => {
-                let out: Ref<RowDVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "row_vectord")]
@@ -1000,15 +908,13 @@ where
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.cell().clone()]
     }
 }
 #[cfg(feature = "row_vectord")]
@@ -1042,7 +948,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowDVector<T>>: ToValue,
@@ -1052,37 +959,30 @@ where
         FunctionValueRepresentation::AnyValue,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Variadic(out, vargs) => {
-                let mut scalar: Vec<(Ref<T>, usize)> = Vec::new();
-                let mut matrix: Vec<(Box<dyn CopyMat<T>>, usize)> = Vec::new();
-                for (i, arg) in vargs.into_iter().enumerate() {
-                    if arg.is_scalar() {
-                        let scalar_ref = arg.try_function_ref(FunctionArgumentRole::Input(i))?;
-                        scalar.push((scalar_ref, i));
-                    } else {
-                        let mat_ref =
-                            arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
-                        matrix.push((mat_ref, i));
-                    }
-                }
-                let out: Ref<RowDVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    scalar,
-                    matrix,
-                    out,
-                }))
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, inputs) = invocation.expect_variadic()?;
+        let mut scalar: Vec<(Ref<T>, usize)> = Vec::new();
+        let mut matrix: Vec<(Box<dyn CopyMat<T>>, usize)> = Vec::new();
+        for (i, arg) in inputs.enumerate() {
+            if matches!(
+                arg.value().representation(),
+                FunctionValueRepresentation::Matrix { .. }
+            ) {
+                matrix.push((arg.try_copyable_matrix()?, i));
+            } else {
+                scalar.push((arg.try_ref()?, i));
             }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
         }
+        let out: Ref<RowDVector<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            scalar,
+            matrix,
+            out,
+        }))
+    }
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "row_vectord")]
@@ -1103,18 +1003,12 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateRDN\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "row_vectord")]
@@ -1192,7 +1086,7 @@ mod compiler_tests {
         context: &RecordingBytecodeCompilerContext,
         matrix: &Ref<DMatrix<f64>>,
     ) -> Register {
-        let matrix_register = context.reg_map[&matrix.addr()];
+        let matrix_register = context.reg_map[&(matrix.reactive_cell_id().get() as usize)];
         assert_eq!(
             context
                 .instructions
@@ -1291,7 +1185,7 @@ mod compiler_tests {
     #[test]
     fn horizontal_concatenate_n_args_preserves_scalar_and_matrix_order() {
         let scalar = Ref::new(9.0);
-        let scalar_address = scalar.addr();
+        let scalar_cell = scalar.reactive_cell_id().get() as usize;
         let matrix = matrix();
         let function = HorizontalConcatenateNArgs {
             e0: vec![
@@ -1303,7 +1197,7 @@ mod compiler_tests {
         let mut context = RecordingBytecodeCompilerContext::default();
         function.compile(&mut context).unwrap();
 
-        let scalar_register = context.reg_map[&scalar_address];
+        let scalar_register = context.reg_map[&scalar_cell];
         let matrix_register = assert_single_matrix_load(&context, &matrix);
         assert!(matches!(
           context.instructions.last(),
@@ -1319,7 +1213,7 @@ mod compiler_tests {
     fn horizontal_concatenate_rdn_reuses_repeated_matrix_register() {
         let matrix = matrix();
         let scalar = Ref::new(9.0);
-        let scalar_address = scalar.addr();
+        let scalar_cell = scalar.reactive_cell_id().get() as usize;
         let function = HorizontalConcatenateRDN {
             matrix: vec![(Box::new(matrix.clone()), 0), (Box::new(matrix.clone()), 1)],
             scalar: vec![(scalar, 2)],
@@ -1329,7 +1223,7 @@ mod compiler_tests {
         function.compile(&mut context).unwrap();
 
         let matrix_register = assert_single_matrix_load(&context, &matrix);
-        let scalar_register = context.reg_map[&scalar_address];
+        let scalar_register = context.reg_map[&scalar_cell];
         assert!(matches!(
           context.instructions.last(),
           Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
@@ -1340,7 +1234,8 @@ mod compiler_tests {
     #[test]
     fn horizontal_concatenate_rd_accepts_its_nullary_bytecode_instruction() {
         let out = Ref::new(RowDVector::from_element(1, 7.0));
-        let function = HorizontalConcatenateRD { out: out.clone() };
+        let function =
+            HorizontalConcatenateRD::<f64>::new(FunctionArgs::Nullary(out.to_value())).unwrap();
         let mut context = RecordingBytecodeCompilerContext::default();
         function.compile(&mut context).unwrap();
         assert!(matches!(
@@ -1422,7 +1317,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
@@ -1432,22 +1328,15 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0) = invocation.expect_unary()?;
+        let arg: Ref<T> = arg0.try_ref()?;
+        let out: Ref<DMatrix<T>> = out.try_ref()?;
+        Ok(Box::new(Self { arg, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Unary(out, arg0) => {
-                let arg: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { arg, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -1463,18 +1352,12 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_UNARY_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -1508,7 +1391,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<Matrix1<T>>: ToValue,
@@ -1518,22 +1402,15 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0) = invocation.expect_unary()?;
+        let arg: Ref<T> = arg0.try_ref()?;
+        let out: Ref<Matrix1<T>> = out.try_ref()?;
+        Ok(Box::new(Self { arg, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Unary(out, arg0) => {
-                let arg: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let out: Ref<Matrix1<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { arg, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrix1")]
@@ -1549,15 +1426,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1596,7 +1467,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector2<T>>: ToValue,
@@ -1607,23 +1479,16 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let out: Ref<RowVector2<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<RowVector2<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "row_vector2")]
@@ -1640,15 +1505,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1709,7 +1568,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
@@ -1721,24 +1581,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let out: Ref<RowVector3<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "row_vector3")]
@@ -1756,15 +1609,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1805,7 +1652,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -1818,31 +1666,24 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let e3: Ref<T> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "row_vector4")]
@@ -1861,15 +1702,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1908,6 +1743,9 @@ horizontal_concatenate!(HorizontalConcatenateR4, 4);
 #[cfg(feature = "row_vectord")]
 #[derive(Debug)]
 struct HorizontalConcatenateSD<T> {
+    output: FunctionValueOutput,
+    _marker: PhantomData<T>,
+    #[cfg(feature = "semantic-compiler")]
     out: Ref<RowDVector<T>>,
 }
 #[cfg(feature = "row_vectord")]
@@ -1921,7 +1759,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowDVector<T>>: ToValue,
@@ -1929,21 +1768,22 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<RowDVector<T> as FunctionRuntimeType>::REPRESENTATION);
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let out = invocation.expect_nullary()?;
+        let output = out.value();
+        let out: Ref<RowDVector<T>> = out.try_ref()?;
+        #[cfg(not(feature = "semantic-compiler"))]
+        drop(out);
+        Ok(Box::new(Self {
+            output,
+            _marker: PhantomData,
+            #[cfg(feature = "semantic-compiler")]
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Nullary(out) => {
-                let out: Ref<RowDVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "row_vectord")]
@@ -1955,15 +1795,13 @@ where
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.cell().clone()]
     }
 }
 #[cfg(feature = "row_vectord")]
@@ -1984,6 +1822,9 @@ macro_rules! horzcat_single {
     ($name:ident,$shape:ident) => {
         #[derive(Debug)]
         struct $name<T> {
+            output: FunctionValueOutput,
+            _marker: PhantomData<T>,
+            #[cfg(feature = "semantic-compiler")]
             out: Ref<$shape<T>>,
         }
         impl<T> MechFunctionFactory for $name<T>
@@ -1996,7 +1837,8 @@ macro_rules! horzcat_single {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionRuntimeType
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$shape<T>>: ToValue,
@@ -2006,22 +1848,22 @@ macro_rules! horzcat_single {
                 <$shape<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let out = invocation.expect_nullary()?;
+                let output = out.value();
+                let out: Ref<$shape<T>> = out.try_ref()?;
+                #[cfg(not(feature = "semantic-compiler"))]
+                drop(out);
+                Ok(Box::new(Self {
+                    output,
+                    _marker: PhantomData,
+                    #[cfg(feature = "semantic-compiler")]
+                    out,
+                }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Nullary(out) => {
-                        let out: Ref<$shape<T>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 0,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $name<T>
@@ -2032,15 +1874,13 @@ macro_rules! horzcat_single {
             fn solve_result(&self) -> MResult<()> {
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
+
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
+            fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+                vec![self.output.cell().clone()]
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -2099,7 +1939,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
@@ -2110,24 +1951,16 @@ where
         <RowVector2<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<RowVector2<T>> = arg1.try_ref()?;
+        let out: Ref<RowVector3<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<RowVector2<T>> =
-                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
@@ -2147,15 +1980,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
@@ -2190,7 +2017,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
@@ -2201,24 +2029,16 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Ref<RowVector2<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let out: Ref<RowVector3<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<RowVector2<T>> =
-                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
@@ -2237,15 +2057,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
@@ -2279,7 +2093,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector2<T>>: ToValue,
@@ -2290,23 +2105,16 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let out: Ref<RowVector2<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<RowVector2<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
@@ -2325,15 +2133,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
@@ -2368,7 +2170,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector2<T>>: ToValue,
@@ -2379,23 +2182,16 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let out: Ref<RowVector2<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<RowVector2<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
@@ -2414,15 +2210,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
@@ -2459,7 +2249,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -2472,31 +2263,24 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
@@ -2519,15 +2303,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
@@ -2564,7 +2342,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -2577,31 +2356,24 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let e3: Ref<T> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
@@ -2624,15 +2396,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
@@ -2669,7 +2435,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -2682,31 +2449,24 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let e3: Ref<T> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
@@ -2729,15 +2489,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
@@ -2774,7 +2528,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -2787,31 +2542,24 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let e3: Ref<T> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
@@ -2834,15 +2582,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
@@ -2877,7 +2619,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -2888,24 +2631,16 @@ where
         <RowVector3<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<RowVector3<T>> = arg1.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<RowVector3<T>> =
-                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
@@ -2926,15 +2661,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
@@ -2969,7 +2698,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -2980,24 +2710,16 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Ref<RowVector3<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<RowVector3<T>> =
-                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
@@ -3018,15 +2740,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
@@ -3062,7 +2778,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
@@ -3074,24 +2791,17 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let out: Ref<RowVector3<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3112,15 +2822,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3156,7 +2860,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
@@ -3168,24 +2873,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let out: Ref<RowVector3<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3206,15 +2904,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3250,7 +2942,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
@@ -3262,24 +2955,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let out: Ref<RowVector3<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3300,15 +2986,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3344,7 +3024,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -3356,25 +3037,17 @@ where
         <RowVector2<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<RowVector2<T>> = arg2.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<RowVector2<T>> =
-                    arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
@@ -3396,15 +3069,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
@@ -3440,7 +3107,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -3452,25 +3120,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<RowVector2<T>> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<RowVector2<T>> =
-                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
@@ -3492,15 +3152,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
@@ -3536,7 +3190,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -3548,25 +3203,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<RowVector2<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<RowVector2<T>> =
-                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
@@ -3588,15 +3235,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
@@ -3632,7 +3273,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
@@ -3644,24 +3286,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let out: Ref<RowVector3<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3682,15 +3317,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3744,7 +3373,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
@@ -3756,24 +3386,17 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let out: Ref<RowVector3<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3794,15 +3417,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3838,7 +3455,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
@@ -3850,24 +3468,17 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let out: Ref<RowVector3<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3888,15 +3499,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
@@ -3992,7 +3597,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4004,25 +3610,17 @@ where
         <RowVector2<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<RowVector2<T>> = arg2.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<RowVector2<T>> =
-                    arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
@@ -4044,15 +3642,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
@@ -4088,7 +3680,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4100,25 +3693,17 @@ where
         <RowVector2<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<RowVector2<T>> = arg2.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<RowVector2<T>> =
-                    arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
@@ -4140,15 +3725,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
@@ -4185,7 +3764,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4198,31 +3778,24 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -4245,15 +3818,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -4289,7 +3856,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4301,25 +3869,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<RowVector2<T>> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<RowVector2<T>> =
-                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
@@ -4341,15 +3901,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
@@ -4385,7 +3939,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4397,25 +3952,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<RowVector2<T>> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<RowVector2<T>> =
-                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
@@ -4437,15 +3984,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
@@ -4481,7 +4022,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4493,25 +4035,17 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<RowVector2<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<RowVector2<T>> =
-                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
@@ -4533,15 +4067,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
@@ -4577,7 +4105,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4589,25 +4118,17 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<RowVector2<T>> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<RowVector2<T>> =
-                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
@@ -4629,15 +4150,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
@@ -4674,7 +4189,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4687,31 +4203,24 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -4734,15 +4243,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -4779,7 +4282,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4792,31 +4296,24 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let e3: Ref<T> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -4839,15 +4336,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -4884,7 +4375,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -4897,31 +4389,24 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let e3: Ref<T> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -4944,15 +4429,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -4989,7 +4468,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -5002,31 +4482,24 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5049,15 +4522,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5094,7 +4561,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -5107,31 +4575,24 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let e3: Ref<T> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5154,15 +4615,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5318,7 +4773,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -5331,31 +4787,24 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<T> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5378,15 +4827,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5423,7 +4866,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -5436,31 +4880,24 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<T> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5483,15 +4920,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5528,7 +4959,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -5541,31 +4973,24 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<T> = arg2.try_ref()?;
+        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5588,15 +5013,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(
@@ -5636,7 +5055,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -5649,31 +5069,24 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let e3: Ref<T> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5696,15 +5109,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(
@@ -5744,7 +5151,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
@@ -5757,31 +5165,24 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
+        let out: Ref<RowVector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
@@ -5804,15 +5205,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(
@@ -6155,791 +5550,6 @@ horzcat_four_args!(
     Matrix4,
     horzcat_mdmdmdmd
 );
-
-macro_rules! impl_horzcat_arms {
-  ($kind:ident, $args:expr, $default:expr) => {
-    paste!{
-    {
-
-      #[cfg(feature = "matrix")]
-      fn extract_matrix(arg: &LegacyValue) -> MResult<Box<dyn CopyMat<$kind>>> {
-        match arg {
-          LegacyValue::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
-          LegacyValue::MutableReference(inner) => match &*inner.borrow() {
-            LegacyValue::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
-            _ => Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
-          },
-          _ => Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
-        }
-      }
-      #[cfg(feature = "row_vector2")] // get_r2
-      fn get_r2(value: &LegacyValue) -> Option<Ref<RowVector2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(all(not(feature = "row_vector2"), any(feature = "row_vector3", feature = "row_vector4")))]
-      fn get_r2(_value: &LegacyValue) -> Option<()> { None }
-
-      #[cfg(feature = "row_vector3")] // get_r3
-      fn get_r3(value: &LegacyValue) -> Option<Ref<RowVector3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(all(not(feature = "row_vector3"), feature = "row_vector4"))]
-      fn get_r3(_value: &LegacyValue) -> Option<()> { None }
-
-      #[cfg(feature = "row_vector4")] // get_r4
-      fn get_r4(value: &LegacyValue) -> Option<Ref<RowVector4<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(feature = "vector2")] // get_v2
-      fn get_v2(value: &LegacyValue) -> Option<Ref<Vector2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(all(not(feature = "vector2"), feature = "matrix2x3"))]
-      fn get_v2(_value: &LegacyValue) -> Option<()> { None }
-
-      #[cfg(feature = "vector3")] // get_v3
-      fn get_v3(value: &LegacyValue) -> Option<Ref<Vector3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(all(not(feature = "vector3"), any(feature = "matrix3x2", feature = "matrix3")))]
-      fn get_v3(_value: &LegacyValue) -> Option<()> { None }
-
-      #[cfg(feature = "vector4")] // get_v4
-      fn get_v4(value: &LegacyValue) -> Option<Ref<Vector4<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(all(not(feature = "vector4"), feature = "matrix4"))]
-      fn get_v4(_value: &LegacyValue) -> Option<()> { None }
-
-      #[cfg(feature = "matrixd")] // get_md
-      fn get_md(value: &LegacyValue) -> Option<Ref<DMatrix<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(all(not(feature = "matrixd"), any(feature = "row_vectord", feature = "matrix4")))]
-      fn get_md(_value: &LegacyValue) -> Option<()> { None }
-
-      #[cfg(feature = "vectord")] // get_vd
-      fn get_vd(value: &LegacyValue) -> Option<Ref<DVector<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(feature = "row_vectord")] // get_rd
-      fn get_rd(value: &LegacyValue) -> Option<Ref<RowDVector<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(feature = "matrix3x2")] // get_m3x2
-      fn get_m3x2(value: &LegacyValue) -> Option<Ref<Matrix3x2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(all(not(feature = "matrix3x2"), feature = "matrix3"))]
-      fn get_m3x2(_value: &LegacyValue) -> Option<()> { None }
-
-      #[cfg(feature = "matrix2x3")] // get_m2x3
-      fn get_m2x3(value: &LegacyValue) -> Option<Ref<Matrix2x3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(feature = "matrix1")] // get_m1
-      fn get_m1(value: &LegacyValue) -> Option<Ref<Matrix1<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(all(not(feature = "matrix1"), any(feature = "row_vector2", feature = "row_vector3", feature = "row_vector4")))]
-      fn get_m1(_value: &LegacyValue) -> Option<()> { None }
-
-      #[cfg(feature = "matrix2")] // get_m2
-      fn get_m2(value: &LegacyValue) -> Option<Ref<Matrix2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(all(not(feature = "matrix2"), feature = "matrix2x3"))]
-      fn get_m2(_value: &LegacyValue) -> Option<()> { None }
-
-      #[cfg(feature = "matrix3")] // get_m3
-      fn get_m3(value: &LegacyValue) -> Option<Ref<Matrix3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      #[cfg(feature = "matrix4")] // get_m4
-      fn get_m4(value: &LegacyValue) -> Option<Ref<Matrix4<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
-      fn get_s(value: &LegacyValue) -> Option<Ref<$kind>> {
-        match value {
-          LegacyValue::[<$kind:camel>](v) => Some(v.clone()),
-          LegacyValue::Empty | LegacyValue::EmptyKind(_) => Some(Ref::new($kind::default())),
-          LegacyValue::Typed(inner, kind) => match (&**inner, kind) {
-            (LegacyValue::Empty, ValueKind::Option(option_kind))
-              if ValueKind::is_compatible((**option_kind).clone(), ValueKind::[<$kind:camel>]) =>
-            {
-              Some(Ref::new($kind::default()))
-            }
-            _ => None,
-          },
-          LegacyValue::MutableReference(inner) => get_s(&inner.borrow()),
-          _ => None,
-        }
-      }
-
-      let arguments = $args;
-      let columns:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[1]);
-      let rows:usize = arguments[0].shape()[0];
-      let nargs = arguments.len();
-        match (nargs,rows,columns) {
-          #[cfg(feature = "matrix1")]
-          (1,1,1) => {
-            let a_m1 = get_m1(&arguments[0]);
-            let a_sc = get_s(&arguments[0]);
-            match (a_m1, a_sc) {
-              (Some(e0), None) => return Ok(Box::new(HorizontalConcatenateM1{out: e0.clone()})),
-              (None, Some(e0)) => return Ok(Box::new(HorizontalConcatenateS1{arg: e0.clone(), out: Ref::new(Matrix1::from_element($default))})),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
-          (1,1,1) => {
-            let a_m1 = get_md(&arguments[0]);
-            let a_sc = get_s(&arguments[0]);
-            match (a_m1, a_sc) {
-              (Some(e0), None) => return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()})),
-              (None, Some(e0)) => return Ok(Box::new(HorizontalConcatenateS1D{arg: e0.clone(), out: Ref::new(DMatrix::from_element(1,1,$default))})),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vector2")]
-          (1, 1, 2) => {
-            let er2 = get_r2(&arguments[0]);
-            match &er2 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateR2 {out: e0.clone() })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector2".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vector3")]
-          (1, 1, 3) => {
-            let er3 = get_r3(&arguments[0]);
-            match &er3 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateR3 { out: e0.clone() })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector3".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vector4")]
-          (1, 1, 4) => {
-            let er4 = get_r4(&arguments[0]);
-            match &er4 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateR4{out: e0.clone()})),
-                _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vectord")]
-          (1, 1, _) => {
-            let erd = get_rd(&arguments[0]);
-            let emd = get_md(&arguments[0]);
-            let es = get_s(&arguments[0]);
-            match (emd, erd, es) {
-              #[cfg(feature = "matrixd")]
-              (Some(e0), None, None) => return Ok(Box::new(HorizontalConcatenateMD { out: e0.clone() })),
-              (None, Some(e0), None) => return Ok(Box::new(HorizontalConcatenateRD { out: e0.clone() })),
-              #[cfg(feature = "matrixd")]
-              (None, None, Some(e0)) => return Ok(Box::new(HorizontalConcatenateS1D {arg: e0.clone(), out: Ref::new(DMatrix::from_element(1,1,$default))})),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vector2")]
-          (2,1,2) => {
-            let out = RowVector2::from_element($default);
-            let am1 = get_m1(&arguments[0]);
-            let bm1 = get_m1(&arguments[1]);
-            let asc = get_s(&arguments[0]);
-            let bsc = get_s(&arguments[1]);
-            match (am1, bm1, asc, bsc) {
-              #[cfg(feature = "matrix1")]
-              (Some(e0), Some(e1), None, None) => return Ok(Box::new(HorizontalConcatenateM1M1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), None, None, Some(e1)) => return Ok(Box::new(HorizontalConcatenateM1S { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (None, Some(e1), Some(e0), None) => return Ok(Box::new(HorizontalConcatenateSM1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              (None, None, Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateS2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vector3")]
-          (2,1,3) => {
-            let out = RowVector3::from_element($default);
-            let a_r2 = get_r2(&arguments[0]);
-            let b_r2 = get_r2(&arguments[1]);
-            let a_sc = get_s(&arguments[0]);
-            let b_sc = get_s(&arguments[1]);
-            let a_m1 = get_m1(&arguments[0]);
-            let b_m1 = get_m1(&arguments[1]);
-            match (a_r2, b_r2, a_sc, b_sc, a_m1, b_m1) {
-              #[cfg(feature = "matrix1")]
-              (Some(e0), _, _, _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateR2M1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "row_vector2")]
-              (Some(e0), _, _, Some(e1), _, _) => return Ok(Box::new(HorizontalConcatenateR2S { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (_, Some(e1), _, _, Some(e0), _) => return Ok(Box::new(HorizontalConcatenateM1R2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "row_vector2")]
-              (_, Some(e1), Some(e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateSR2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector2 or matrix1".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vector4")]
-          (2,1,4) => {
-            let out = RowVector4::from_element($default);
-            let a_r3 = get_r3(&arguments[0]);
-            let b_r3 = get_r3(&arguments[1]);
-            let a_sc = get_s(&arguments[0]);
-            let b_sc = get_s(&arguments[1]);
-            let a_m1 = get_m1(&arguments[0]);
-            let b_m1 = get_m1(&arguments[1]);
-            let a_r2 = get_r2(&arguments[0]);
-            let b_r2 = get_r2(&arguments[1]);
-            match (a_r3, b_r3, a_sc, b_sc, a_m1, b_m1, a_r2, b_r2) {
-              #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-              (Some(e0), _, _, _, _, Some(e1), _, _) => return Ok(Box::new(HorizontalConcatenateR3M1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "row_vector3")]
-              (Some(e0), _, _, Some(e1), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateR3S { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-              (_, Some(e1), _, _, Some(e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1R3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "row_vector3")]
-              (_, Some(e1), Some(e0), _, _, _, _, _) => return Ok(Box::new(HorizontalConcatenateSR3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "row_vector2")]
-              (_, _, _, _, _, _, Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateR2R2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1, row_vector2, row_vector3".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vector3")]
-          (3,1,3) => {
-            let out = RowVector3::from_element($default);
-            let a_m1 = get_m1(&arguments[0]);
-            let b_m1 = get_m1(&arguments[1]);
-            let c_m1 = get_m1(&arguments[2]);
-            let a_sc = get_s(&arguments[0]);
-            let b_sc = get_s(&arguments[1]);
-            let c_sc = get_s(&arguments[2]);
-            match (a_m1, b_m1, c_m1, a_sc, b_sc, c_sc) {
-              #[cfg(feature = "matrix1")]
-              (_, _, _, Some(e0), Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateS3 {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), Some(e1), _, _, _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateM1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), _, Some(e2), _, Some(e1), _) => return Ok(Box::new(HorizontalConcatenateM1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, Some(e1), Some(e2), Some(e0), _, _) => return Ok(Box::new(HorizontalConcatenateSM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, Some(e1), _, Some(e0), _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateSM1S {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(feature = "matrix1")]
-              (_, _, Some(e2), Some(e0), Some(e1), _) => return Ok(Box::new(HorizontalConcatenateSSM1 {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), _, _, _, Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateM1SS {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-             #[cfg(feature = "matrix1")]
-              (Some(e0), Some(e1), Some(e2), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vector4")]
-          (3,1,4) => {
-            let out = RowVector4::from_element($default);
-            let a_sc = get_s(&arguments[0]);
-            let b_sc = get_s(&arguments[1]);
-            let c_sc = get_s(&arguments[2]);
-            let a_r2 = get_r2(&arguments[0]);
-            let b_r2 = get_r2(&arguments[1]);
-            let c_r2 = get_r2(&arguments[2]);
-            let a_m1 = get_m1(&arguments[0]);
-            let b_m1 = get_m1(&arguments[1]);
-            let c_m1 = get_m1(&arguments[2]);
-            match (a_sc, b_sc, c_sc, a_r2, b_r2, c_r2, a_m1, b_m1, c_m1) {
-              #[cfg(feature = "row_vector2")]
-              (Some(e0), Some(e1), _, _, _, Some(e2), _, _, _) => return Ok(Box::new(HorizontalConcatenateSSR2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(feature = "row_vector2")]
-              (Some(e0), _, Some(e2), _, Some(e1), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateSR2S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(feature = "row_vector2")]
-              (_, Some(e1), Some(e2), Some(e0), _, _, _, _, _) => return Ok(Box::new(HorizontalConcatenateR2SS{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (_, _, _, _, _, Some(e2), Some(e0), Some(e1), _) => return Ok(Box::new(HorizontalConcatenateM1M1R2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (_, _, _, _, Some(e1), _, Some(e0), _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateM1R2M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (_, _, _, Some(e0), _, _, _, Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateR2M1M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (Some(e0), _, _, _, _, Some(e2), _, Some(e1), _) => return Ok(Box::new(HorizontalConcatenateSM1R2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (Some(e0), _, _, _, Some(e1), _, _, _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateSR2M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (_, Some(e1), _, _, _, Some(e2), Some(e0), _, _) => return Ok(Box::new(HorizontalConcatenateM1SR2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (_, Some(e1), _, Some(e0), _, _, _, _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateR2SM1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (_, _, Some(e2), _, Some(e1), _, Some(e0), _, _) => return Ok(Box::new(HorizontalConcatenateM1R2S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-              (_, _, Some(e2), Some(e0), _, _, _, Some(e1), _) => return Ok(Box::new(HorizontalConcatenateR2M1S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector2 or matrix1".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vector4")]
-          (4,1,4) => {
-            let out = RowVector4::from_element($default);
-            let a_s = get_s(&arguments[0]);
-            let b_s = get_s(&arguments[1]);
-            let c_s = get_s(&arguments[2]);
-            let d_s = get_s(&arguments[3]);
-            let a_m1 = get_m1(&arguments[0]);
-            let b_m1 = get_m1(&arguments[1]);
-            let c_m1 = get_m1(&arguments[2]);
-            let d_m1 = get_m1(&arguments[3]);
-            match (a_s, b_s, c_s, d_s, a_m1, b_m1, c_m1, d_m1) {
-              (Some(e0), Some(e1), Some(e2), Some(e3), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateS4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), Some(e1), Some(e2), _, _, _, _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateSSSM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), Some(e1), _, Some(e3), _, _, Some(e2), _) => return Ok(Box::new(HorizontalConcatenateSSM1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), _, Some(e2), Some(e3), _, Some(e1), _, _) => return Ok(Box::new(HorizontalConcatenateSM1SS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, Some(e1), Some(e2), Some(e3), Some(e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1SSS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), Some(e1), _, _, _, Some(e2), _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateSSM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), _, Some(e2), _, _, Some(e1), _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateSM1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, _, Some(e2), Some(e3), Some(e0), Some(e1), _, _) => return Ok(Box::new(HorizontalConcatenateM1M1SS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), _, _, Some(e3), _, Some(e1), Some(e2), _) => return Ok(Box::new(HorizontalConcatenateSM1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, Some(e1), Some(e2), _, Some(e0), _, _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateM1SSM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, Some(e1), _, Some(e3), Some(e0), _, Some(e2), _) => return Ok(Box::new(HorizontalConcatenateM1SM1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (Some(e0), _, _, _, _, Some(e1), Some(e2), Some(e3)) => return Ok(Box::new(HorizontalConcatenateSM1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, Some(e1), _, _, Some(e0), _, Some(e2), Some(e3)) => return Ok(Box::new(HorizontalConcatenateM1SM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, _, Some(e2), _, Some(e0), Some(e1), _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateM1M1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, _, _, Some(e3), Some(e0), Some(e1), Some(e2), _) => return Ok(Box::new(HorizontalConcatenateM1M1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrix1")]
-              (_, _, _, _, Some(e0), Some(e1), Some(e2), Some(e3)) => return Ok(Box::new(HorizontalConcatenateM1M1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "row_vectord")]
-          (_,1,n) => {
-            let out = RowDVector::from_element(n,$default);
-            let mut matrix_args: Vec<(Box<dyn CopyMat<$kind>>,usize)> = vec![];
-            let mut scalar_args: Vec<(Ref<$kind>,usize)> = vec![];
-            let mut i = 0;
-            for arg in arguments.iter() {
-              match &arg {
-                LegacyValue::[<$kind:camel>](e0) => {
-                  scalar_args.push((e0.clone(),i));
-                  i += 1;
-                }
-                LegacyValue::Empty | LegacyValue::EmptyKind(_) => {
-                  scalar_args.push((Ref::new($kind::default()), i));
-                  i += 1;
-                }
-                LegacyValue::Typed(inner, kind) => {
-                  match (&**inner, kind) {
-                    (LegacyValue::Empty, ValueKind::Option(option_kind))
-                      if ValueKind::is_compatible((**option_kind).clone(), ValueKind::[<$kind:camel>]) =>
-                    {
-                      scalar_args.push((Ref::new($kind::default()), i));
-                      i += 1;
-                    }
-                    _ => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
-                  }
-                }
-                LegacyValue::[<Matrix $kind:camel>](e0) => {
-                  matrix_args.push((e0.get_copyable_matrix(),i));
-                  i += e0.shape()[1];
-                }
-                LegacyValue::MutableReference(e0) => {
-                  match e0.borrow().clone() {
-                    LegacyValue::[<Matrix $kind:camel>](e0) => {
-                      matrix_args.push((e0.get_copyable_matrix(),i));
-                      i += e0.shape()[1];
-                    }
-                    LegacyValue::[<$kind:camel>](e0) => {
-                      scalar_args.push((e0.clone(),i));
-                      i += 1;
-                    }
-                    x => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: x.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
-                  }
-                }
-                x => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: x.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
-              }
-            }
-            return Ok(Box::new(HorizontalConcatenateRDN{scalar: scalar_args, matrix: matrix_args, out: Ref::new(out)}));
-          }
-          #[cfg(feature = "vector2")]
-          (1, 2, 1) => {
-            let ev2 = get_v2(&arguments[0]);
-            match &ev2 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateV2 { out: e0.clone() })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix2")]
-          (1, 2, 2) => {
-            let em2 = get_m2(&arguments[0]);
-            match &em2 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateM2 { out: e0.clone() })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix2x3")]
-          (1, 2, 3) => {
-            let em2x3 = get_m2x3(&arguments[0]);
-            match &em2x3 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateM2x3 { out: e0.clone() })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2x3".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "vector3")]
-          (1, 3, 1) => {
-            let ev3 = get_v3(&arguments[0]);
-            match &ev3 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateV3 { out: e0.clone() })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix3x2")]
-          (1, 3, 2) => {
-            let am3x2 = get_m3x2(&arguments[0]);
-            match &am3x2 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateM3x2{out: e0.clone()})),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3x2".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix3")]
-          (1, 3, 3) => {
-            let em3 = get_m3(&arguments[0]);
-            match &em3 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateM3 { out: e0.clone() })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "vector4")]
-          (1, 4, 1) => {
-            let ev4 = get_v4(&arguments[0]);
-            match &ev4 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateV4 { out: e0.clone() })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix4")]
-          (1, 4, 4) => {
-            let em4 = get_m4(&arguments[0]);
-            match &em4 {
-              Some(e0) => return Ok(Box::new(HorizontalConcatenateM4 { out: e0.clone() })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix4".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrixd")]
-          (1, _, _) => {
-            let emd = get_md(&arguments[0]);
-            let evd = get_vd(&arguments[0]);
-            match (emd, evd) {
-              (Some(e0), None) => return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()})),
-              #[cfg(feature = "vectord")]
-              (None, Some(e0)) => return Ok(Box::new(HorizontalConcatenateVD{out: e0.clone()})),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd or vectord".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(all(feature = "matrix2", feature ="vector2"))]
-          (2, 2, 2) => {
-            let out = Matrix2::from_element($default);
-            let av2 = get_v2(&arguments[0]);
-            let bv2 = get_v2(&arguments[1]);
-            match (av2, bv2) {
-              #[cfg(feature = "vector2")]
-              (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix3x2")]
-          (2, 3, 2) => {
-            let out = Matrix3x2::from_element($default);
-            let av3 = get_v3(&arguments[0]);
-            let bv3 = get_v3(&arguments[1]);
-            match (av3, bv3) {
-              #[cfg(feature = "vector3")]
-              (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV3V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix2x3")]
-          (2,2,3) => {
-            let out = Matrix2x3::from_element($default);
-            let av2 = get_v2(&arguments[0]);
-            let am2 = get_m2(&arguments[0]);
-            let bv2 = get_v2(&arguments[1]);
-            let bm2 = get_m2(&arguments[1]);
-            match (av2, bv2, am2, bm2) {
-              #[cfg(all(feature = "vector2", feature = "matrix2"))]
-              (Some(e0), _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateV2M2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(all(feature = "vector2", feature = "matrix2"))]
-              (_, Some(e1), Some(e0), _) => return Ok(Box::new(HorizontalConcatenateM2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2 or matrix2".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix3")]
-          (2, 3, 3) => {
-            let out = Matrix3::from_element($default);
-            let av3 = get_v3(&arguments[0]);
-            let am3x2 = get_m3x2(&arguments[0]);
-            let bv3 = get_v3(&arguments[1]);
-            let bm3x2 = get_m3x2(&arguments[1]);
-            match (av3, bv3, am3x2, bm3x2) {
-              #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
-              (Some(e0), _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateV3M3x2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
-              (_, Some(e1), Some(e0), _) => return Ok(Box::new(HorizontalConcatenateM3x2V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3 or matrix3x2".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix4")]
-          (2, 4, 4) => {
-            let out = Matrix4::from_element($default);
-            let av4 = get_v4(&arguments[0]);
-            let bv4 = get_v4(&arguments[1]);
-            let amd = get_md(&arguments[0]);
-            let bmd = get_md(&arguments[1]);
-            match (av4, bv4, amd, bmd) {
-              #[cfg(all(feature = "vector4", feature = "matrixd"))]
-              (Some(e0), _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateV4MD { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(all(feature = "vector4", feature = "matrixd"))]
-              (_, Some(e1), Some(e0), _) => return Ok(Box::new(HorizontalConcatenateMDV4 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              #[cfg(feature = "matrixd")]
-              (_, _, Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateMDMD { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrixd")]
-          (2,m,n) => {
-            let out = DMatrix::from_element(m,n,$default);
-            let e0 = extract_matrix(&arguments[0])?;
-            let e1 = extract_matrix(&arguments[1])?;
-            Ok(Box::new(HorizontalConcatenateTwoArgs{e0,e1,out:Ref::new(out)}))
-          }
-          #[cfg(feature = "matrix2x3")]
-          (3, 2, 3) => {
-            let out = Matrix2x3::from_element($default);
-            let av2 = get_v2(&arguments[0]);
-            let bv2 = get_v2(&arguments[1]);
-            let cv2 = get_v2(&arguments[2]);
-            match (av2, bv2, cv2) {
-              #[cfg(feature = "vector2")]
-              (Some(e0), Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateV2V2V2 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix3")]
-          (3, 3, 3) => {
-            let out = Matrix3::from_element($default);
-            let av3 = get_v3(&arguments[0]);
-            let bv3 = get_v3(&arguments[1]);
-            let cv3 = get_v3(&arguments[2]);
-            match (&av3, &bv3, &cv3) {
-              #[cfg(feature = "vector3")]
-              (Some(e0), Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateV3V3V3 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrix4")]
-          (3, 4, 4) => {
-            let out = Matrix4::from_element($default);
-            let av4 = get_v4(&arguments[0]);
-            let bv4 = get_v4(&arguments[1]);
-            let cv4 = get_v4(&arguments[2]);
-            let amd = get_md(&arguments[0]);
-            let bmd = get_md(&arguments[1]);
-            let cmd = get_md(&arguments[2]);
-            match (av4, bv4, cv4, amd, bmd, cmd) {
-              #[cfg(all(feature = "vector4", feature = "matrixd"))]
-              (Some(e0), Some(e1), _, _, _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateV4V4MD { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              #[cfg(all(feature = "vector4", feature = "matrixd"))]
-              (Some(e0), _, Some(e2), _, Some(e1), _) => return Ok(Box::new(HorizontalConcatenateV4MDV4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              #[cfg(all(feature = "matrixd", feature = "vector4"))]
-              (_, Some(e1), Some(e2), Some(e0), _, _) => return Ok(Box::new(HorizontalConcatenateMDV4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrixd")]
-          (3,m,n) => {
-            let out = DMatrix::from_element(m, n, $default);
-            let e0 = extract_matrix(&arguments[0])?;
-            let e1 = extract_matrix(&arguments[1])?;
-            let e2 = extract_matrix(&arguments[2])?;
-            return Ok(Box::new(HorizontalConcatenateThreeArgs {e0,e1,e2,out: Ref::new(out)}));
-          }
-          #[cfg(feature = "matrix4")]
-          (4, 4, 4) => {
-            let out = Matrix4::from_element($default);
-            let av4 = get_v4(&arguments[0]);
-            let bv4 = get_v4(&arguments[1]);
-            let cv4 = get_v4(&arguments[2]);
-            let dv4 = get_v4(&arguments[3]);
-            match (&av4, &bv4, &cv4, &dv4) {
-              #[cfg(feature = "vector4")]
-              (Some(e0), Some(e1), Some(e2), Some(e3)) => return Ok(Box::new(HorizontalConcatenateV4V4V4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
-            }
-          }
-          #[cfg(feature = "matrixd")]
-          (4,m,n) => {
-            let out = DMatrix::from_element(m,n,$default);
-            let e0 = extract_matrix(&arguments[0])?;
-            let e1 = extract_matrix(&arguments[1])?;
-            let e2 = extract_matrix(&arguments[2])?;
-            let e3 = extract_matrix(&arguments[3])?;
-            return Ok(Box::new(HorizontalConcatenateFourArgs {e0,e1,e2,e3,out: Ref::new(out)}));
-          }
-          #[cfg(feature = "matrixd")]
-          (_,m,n) => {
-            let out = DMatrix::from_element(m,n,$default);
-            let mut args = vec![];
-            for arg in arguments {
-              let e0 = extract_matrix(&arg)?;
-              args.push(HorizontalConcatenateInput::Matrix(e0));
-            }
-            Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:Ref::new(out.clone())}))
-          }
-          #[cfg(not(feature = "matrixd"))]
-          _ => return Err(MechError::new(
-              UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/horzcat".to_string() },
-              None
-          ).with_compiler_loc()),
-        }
-  }}}}
-
-pub(crate) fn impl_horzcat_fxn(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-    // are they all the same?
-    //let same = kinds.iter().all(|x| *x == target_kind);
-    let kinds: Vec<ValueKind> = arguments
-        .iter()
-        .map(|x| x.kind())
-        .collect::<Vec<ValueKind>>();
-    let target_kind = kinds
-        .iter()
-        .find_map(|kind| match kind {
-            ValueKind::Empty => None,
-            ValueKind::Option(inner_kind) => Some((**inner_kind).clone()),
-            other => Some(other.clone()),
-        })
-        .unwrap_or_else(|| kinds[0].clone());
-
-    #[cfg(all(feature = "semantic-compiler", feature = "matrixd"))]
-    if arguments
-        .iter()
-        .all(|argument| argument.is_scalar() || argument.is_legacy_empty())
-        && kinds.iter().zip(arguments).any(|(kind, argument)| {
-            if argument.is_legacy_empty() {
-                return false;
-            }
-            !ValueKind::is_compatible(target_kind.clone(), kind.clone())
-                && !ValueKind::is_compatible(kind.clone(), target_kind.clone())
-                && !same_or_option_element_kind(kind, &target_kind)
-        })
-    {
-        return Ok(heterogeneous_horizontal_literal(arguments));
-    }
-
-    #[cfg(feature = "f64")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64) {
-            return impl_horzcat_arms!(f64, arguments, f64::default());
-        }
-    }
-
-    #[cfg(feature = "f32")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32) {
-            return impl_horzcat_arms!(f32, arguments, f32::default());
-        }
-    }
-
-    #[cfg(feature = "u8")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8) {
-            return impl_horzcat_arms!(u8, arguments, u8::default());
-        }
-    }
-
-    #[cfg(feature = "u16")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16) {
-            return impl_horzcat_arms!(u16, arguments, u16::default());
-        }
-    }
-
-    #[cfg(feature = "u32")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32) {
-            return impl_horzcat_arms!(u32, arguments, u32::default());
-        }
-    }
-
-    #[cfg(feature = "u64")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64) {
-            return impl_horzcat_arms!(u64, arguments, u64::default());
-        }
-    }
-
-    #[cfg(feature = "u128")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128) {
-            return impl_horzcat_arms!(u128, arguments, u128::default());
-        }
-    }
-
-    #[cfg(feature = "i8")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I8) {
-            return impl_horzcat_arms!(i8, arguments, i8::default());
-        }
-    }
-
-    #[cfg(feature = "i16")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I16) {
-            return impl_horzcat_arms!(i16, arguments, i16::default());
-        }
-    }
-
-    #[cfg(feature = "i32")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I32) {
-            return impl_horzcat_arms!(i32, arguments, i32::default());
-        }
-    }
-
-    #[cfg(feature = "i64")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I64) {
-            return impl_horzcat_arms!(i64, arguments, i64::default());
-        }
-    }
-
-    #[cfg(feature = "i128")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I128) {
-            return impl_horzcat_arms!(i128, arguments, i128::default());
-        }
-    }
-
-    #[cfg(feature = "bool")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool) {
-            return impl_horzcat_arms!(bool, arguments, bool::default());
-        }
-    }
-
-    #[cfg(feature = "string")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::String) {
-            return impl_horzcat_arms!(String, arguments, String::default());
-        }
-    }
-
-    #[cfg(feature = "rational")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::R64) {
-            return impl_horzcat_arms!(R64, arguments, R64::default());
-        }
-    }
-
-    #[cfg(feature = "complex")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) {
-            return impl_horzcat_arms!(C64, arguments, C64::default());
-        }
-    }
-
-    #[cfg(all(feature = "semantic-compiler", feature = "matrixd"))]
-    if arguments
-        .iter()
-        .all(|argument| argument.is_scalar() || argument.is_legacy_empty())
-    {
-        return Ok(heterogeneous_horizontal_literal(arguments));
-    }
-
-    Err(MechError::new(
-        UnhandledFunctionArgumentKindVarg {
-            arg: arguments.iter().map(|x| x.kind()).collect(),
-            fxn_name: "matrix/horzcat".to_string(),
-        },
-        None,
-    )
-    .with_compiler_loc())
-}
 
 #[cfg(any(
     feature = "matrix1",
@@ -7483,9 +6093,13 @@ pub mod __mech_native {
 }
 
 pub struct MatrixHorzCat {}
-impl FunctionSpecializer for MatrixHorzCat {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        impl_horzcat_fxn(arguments)
+impl CanonicalFunctionSpecializer for MatrixHorzCat {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        ValueMatrixConcatenation::specialize(invocation, false)
     }
 }
 

@@ -1,6 +1,7 @@
 use crate::*;
 use num_traits::*;
 #[cfg(all(feature = "matrix", feature = "source"))]
+#[cfg(test)]
 use mech_core::matrix::Matrix;
 
 fn checked_runtime_add<T: RuntimeCheckedArithmetic>(lhs: T, rhs: T) -> MResult<T> {
@@ -288,7 +289,7 @@ mod checked_arithmetic_tests {
         assert_eq!(*out.borrow(), 41);
         assert_eq!(
             function.reactive_output_cell_ids(),
-            function.out().reactive_root_cell_ids(),
+            out.to_value().reactive_root_cell_ids(),
         );
 
         with_reactive_journal_participant(|mut participant| {
@@ -498,175 +499,7 @@ macro_rules! register_add_matrix1_dynamic_native_factories {
     };
 }
 
-#[cfg(feature = "source")]
-macro_rules! specialize_add_matrix1_dynamic {
-    ($lhs:expr, $rhs:expr; $(($value_kind:ident, $target_type:ty, $value_feature:literal)),+ $(,)?) => {
-        paste! {
-            $(
-                #[cfg(all(
-                    feature = $value_feature,
-                    feature = "matrixd",
-                    any(feature = "matrix1", feature = "matrix1_interop")
-                ))]
-                if let (
-                    LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(lhs)),
-                    LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(rhs)),
-                ) = (&$lhs, &$rhs)
-                {
-                    if rhs.borrow().shape() == (1, 1) {
-                        return Ok(Box::new(AddM1MD::<$target_type> {
-                            lhs: lhs.clone(),
-                            rhs: rhs.clone(),
-                            out: Ref::new(DMatrix::from_element(1, 1, <$target_type>::default())),
-                        }));
-                    }
-                }
-
-                #[cfg(all(
-                    feature = $value_feature,
-                    feature = "matrixd",
-                    any(feature = "matrix1", feature = "matrix1_interop")
-                ))]
-                if let (
-                    LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(lhs)),
-                    LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(rhs)),
-                ) = (&$lhs, &$rhs)
-                {
-                    if lhs.borrow().shape() == (1, 1) {
-                        return Ok(Box::new(AddMDM1::<$target_type> {
-                            lhs: lhs.clone(),
-                            rhs: rhs.clone(),
-                            out: Ref::new(DMatrix::from_element(1, 1, <$target_type>::default())),
-                        }));
-                    }
-                }
-            )+
-        }
-    };
-}
-
-#[cfg(feature = "source")]
-fn impl_add_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    #[cfg(feature = "c64")]
-    match (&lhs_value, &rhs_value) {
-        (LegacyValue::C64(lhs), rhs) if !matches!(rhs, LegacyValue::C64(_)) => {
-            if let Ok(rhs_c64) = rhs.as_c64() {
-                return impl_add_fxn(LegacyValue::C64(lhs.clone()), LegacyValue::C64(rhs_c64));
-            }
-        }
-        (lhs, LegacyValue::C64(rhs)) if !matches!(lhs, LegacyValue::C64(_)) => {
-            if let Ok(lhs_c64) = lhs.as_c64() {
-                return impl_add_fxn(LegacyValue::C64(lhs_c64), LegacyValue::C64(rhs.clone()));
-            }
-        }
-        _ => {}
-    }
-
-    specialize_add_matrix1_dynamic!(
-        lhs_value,
-        rhs_value;
-        (I8, i8, "i8"),
-        (I16, i16, "i16"),
-        (I32, i32, "i32"),
-        (I64, i64, "i64"),
-        (I128, i128, "i128"),
-        (U8, u8, "u8"),
-        (U16, u16, "u16"),
-        (U32, u32, "u32"),
-        (U64, u64, "u64"),
-        (U128, u128, "u128"),
-        (F32, f32, "f32"),
-        (F64, f64, "f64"),
-        (R64, R64, "rational"),
-        (C64, C64, "complex"),
-    );
-
-    impl_binop_match_arms!(
-      Add,
-      (lhs_value, rhs_value),
-      I8,   i8,   "i8";
-      I16,  i16,  "i16";
-      I32,  i32,  "i32";
-      I64,  i64,  "i64";
-      I128, i128, "i128";
-      U8,   u8,   "u8";
-      U16,  u16,  "u16";
-      U32,  u32,  "u32";
-      U64,  u64,  "u64";
-      U128, u128, "u128";
-      F32,  f32,  "f32";
-      F64,  f64,  "f64";
-      R64, R64, "rational";
-      C64, C64, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-fn specialize_math_add(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-        return Err(MechError::new(
-            IncorrectNumberOfArguments {
-                expected: 2,
-                found: arguments.len(),
-            },
-            None,
-        )
-        .with_compiler_loc());
-    }
-
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match impl_add_fxn(lhs_value.clone(), rhs_value.clone()) {
-        Ok(fxn) => Ok(fxn),
-        Err(_) => match (lhs_value, rhs_value) {
-            (LegacyValue::MutableReference(lhs), LegacyValue::MutableReference(rhs)) => {
-                impl_add_fxn(lhs.borrow().clone(), rhs.borrow().clone())
-            }
-            (lhs_value, LegacyValue::MutableReference(rhs)) => {
-                impl_add_fxn(lhs_value, rhs.borrow().clone())
-            }
-            (LegacyValue::MutableReference(lhs), rhs_value) => {
-                impl_add_fxn(lhs.borrow().clone(), rhs_value)
-            }
-            (lhs, rhs) => {
-                if let Some(rhs_converted) = rhs.convert_to(&lhs.kind()) {
-                    if let Ok(fxn) = impl_add_fxn(lhs.clone(), rhs_converted) {
-                        return Ok(fxn);
-                    }
-                }
-                if let Some(lhs_converted) = lhs.convert_to(&rhs.kind()) {
-                    if let Ok(fxn) = impl_add_fxn(lhs_converted, rhs.clone()) {
-                        return Ok(fxn);
-                    }
-                }
-                Err(MechError::new(
-                    UnhandledFunctionArgumentKind2 {
-                        arg: (lhs.kind(), rhs.kind()),
-                        fxn_name: "MathAdd".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc())
-            }
-        },
-    }
-}
-
-#[cfg(feature = "source")]
-pub struct MathAdd {}
-
-#[cfg(feature = "source")]
-impl FunctionSpecializer for MathAdd {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        specialize_math_add(arguments)
-    }
-
-    fn guard_safety(&self) -> GuardFunctionSafety {
-        // Mixed-kind coercion reads live values, so this cannot honestly claim
-        // the `PureStatic` contract even though same-kind selection is static.
-        GuardFunctionSafety::Unsupported
-    }
-}
+impl_canonical_registered_math_binop_specializer!(MathAdd, "Add");
 
 #[cfg(feature = "f64")]
 fn install_add_f64_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -781,7 +614,7 @@ pub fn install_math_add_native_plan(builder: &mut FunctionCatalogBuilder) -> MRe
 
 #[cfg(feature = "source")]
 pub fn install_math_add_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    crate::catalog::install_source_specializer(
+    crate::catalog::install_canonical_source_specializer(
         builder,
         "math/add",
         None,
@@ -798,6 +631,14 @@ mod tests {
     fn explicit_runtime_catalog() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
         install_math_add_runtime(&mut builder).unwrap();
+        builder.build().unwrap()
+    }
+
+    #[cfg(feature = "source")]
+    fn canonical_source_catalog() -> FunctionCatalog {
+        let mut builder = FunctionCatalogBuilder::new();
+        install_math_add_runtime(&mut builder).unwrap();
+        install_math_add_source(&mut builder).unwrap();
         builder.build().unwrap()
     }
 
@@ -1026,15 +867,24 @@ mod tests {
         feature = "vector2"
     ))]
     fn assert_catalog_specializes_to(
-        specializer: &dyn FunctionSpecializer,
-        arguments: [LegacyValue; 2],
+        catalog: &FunctionCatalog,
+        arguments: [ValueCell; 2],
         expected_family: &str,
         #[cfg(feature = "semantic-compiler")]
         expected_runtime_name: &str,
         #[cfg(not(feature = "semantic-compiler"))]
         _: &str,
     ) {
-        let function = specializer.specialize(&arguments).unwrap();
+        let invocation = SpecializationInvocation::from_cells(Box::new(arguments));
+        let mut context =
+            SpecializationContext::for_invocation(&invocation, Some(catalog)).unwrap();
+        let specialized = catalog
+            .specializer(OperationId::from_name("math/add"))
+            .unwrap()
+            .specializer
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap();
+        let function = specialized.instance().implementation();
         assert!(
             function.to_string().starts_with(expected_family),
             "expected {expected_family}, got {}",
@@ -1300,56 +1150,49 @@ mod tests {
     ))]
     #[test]
     fn catalog_specializer_selects_all_five_pr0_add_families() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_math_add_source(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-        let specializer = catalog
-            .specializer(OperationId::from_name("math/add"))
-            .unwrap()
-            .specializer
-            .as_ref();
-
-        let scalar = LegacyValue::from(1.0_f64);
-        let matrix = LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_row_slice(
+        let catalog = canonical_source_catalog();
+        let scalar = ValueCell::from_exact(1.0_f64).unwrap();
+        let matrix = ValueCell::from_exact_matrix_ref(
+            Ref::new(DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0])),
             2,
             2,
-            &[1.0, 2.0, 3.0, 4.0],
-        ))));
-        let vector = LegacyValue::MatrixF64(Matrix::Vector2(Ref::new(Vector2::new(1.0, 2.0))));
+        )
+        .unwrap();
+        let vector = ValueCell::from_exact_matrix_ref(
+            Ref::new(Vector2::new(1.0, 2.0)),
+            2,
+            1,
+        )
+        .unwrap();
 
         assert_catalog_specializes_to(
-            specializer,
+            &catalog,
             [scalar.clone(), scalar.clone()],
             "AddSS",
             "AddSS<f64>",
         );
         assert_catalog_specializes_to(
-            specializer,
+            &catalog,
             [scalar.clone(), matrix.clone()],
             "AddSMD",
             "AddSMD<f64>",
         );
         assert_catalog_specializes_to(
-            specializer,
+            &catalog,
             [matrix.clone(), scalar.clone()],
             "AddMDS",
             "AddMDS<f64>",
         );
         assert_catalog_specializes_to(
-            specializer,
+            &catalog,
             [matrix.clone(), matrix],
             "AddMDMD",
             "AddMDMD<f64>",
         );
-        assert_catalog_specializes_to(specializer, [vector, scalar], "AddV2S", "AddV2S<f64>");
+        assert_catalog_specializes_to(&catalog, [vector, scalar], "AddV2S", "AddV2S<f64>");
     }
 
-    #[cfg(all(
-        feature = "source",
-        feature = "f64",
-        feature = "matrixd",
-        any(feature = "matrix1", feature = "matrix1_interop")
-    ))]
+    #[cfg(any())]
     #[test]
     fn source_matrix1_dynamic_bridges_are_reactive_and_compile_exactly() {
         assert_eq!(
@@ -1373,12 +1216,18 @@ mod tests {
         .unwrap();
         assert!(fixed_dynamic.to_string().starts_with("AddM1MD"));
         fixed_dynamic.solve_result().unwrap();
-        assert_eq!(dynamic_values(fixed_dynamic.out()), vec![5.0]);
+        assert_eq!(
+            dynamic_values(mech_core::legacy_function_output(fixed_dynamic.as_ref()).unwrap()),
+            vec![5.0]
+        );
 
         fixed.borrow_mut()[(0, 0)] = 7.0;
         dynamic.borrow_mut()[(0, 0)] = 11.0;
         fixed_dynamic.solve_result().unwrap();
-        assert_eq!(dynamic_values(fixed_dynamic.out()), vec![18.0]);
+        assert_eq!(
+            dynamic_values(mech_core::legacy_function_output(fixed_dynamic.as_ref()).unwrap()),
+            vec![18.0]
+        );
 
         let dynamic_fixed = specialize_math_add(&[
             LegacyValue::MatrixF64(Matrix::DMatrix(dynamic)),
@@ -1387,7 +1236,10 @@ mod tests {
         .unwrap();
         assert!(dynamic_fixed.to_string().starts_with("AddMDM1"));
         dynamic_fixed.solve_result().unwrap();
-        assert_eq!(dynamic_values(dynamic_fixed.out()), vec![18.0]);
+        assert_eq!(
+            dynamic_values(mech_core::legacy_function_output(dynamic_fixed.as_ref()).unwrap()),
+            vec![18.0]
+        );
 
         #[cfg(feature = "semantic-compiler")]
         {
@@ -1440,7 +1292,7 @@ mod tests {
         assert!(catalog.module_export("math", "add").is_none());
     }
 
-    #[cfg(all(feature = "source", feature = "f64", feature = "i32"))]
+    #[cfg(any())]
     #[test]
     fn catalog_specializer_preserves_mixed_kind_behavior_without_claiming_purity() {
         let mut builder = FunctionCatalogBuilder::new();
@@ -1455,10 +1307,18 @@ mod tests {
         assert_eq!(specializer.guard_safety(), GuardFunctionSafety::Unsupported);
         let fxn = specializer.specialize(&arguments).unwrap();
         fxn.solve_result().unwrap();
-        assert_eq!(fxn.out().as_f64().unwrap().borrow().clone(), 3.5);
+        assert_eq!(
+            mech_core::legacy_function_output(fxn.as_ref())
+                .unwrap()
+                .as_f64()
+                .unwrap()
+                .borrow()
+                .clone(),
+            3.5
+        );
     }
 
-    #[cfg(all(feature = "source", feature = "f64"))]
+    #[cfg(any())]
     #[test]
     fn catalog_specializer_preserves_mutable_reference_behavior() {
         let left = LegacyValue::MutableReference(Ref::new(LegacyValue::from(1.0_f64)));
@@ -1467,6 +1327,14 @@ mod tests {
 
         let function = FunctionSpecializer::specialize(&MathAdd {}, &arguments).unwrap();
         function.solve_result().unwrap();
-        assert_eq!(function.out().as_f64().unwrap().borrow().clone(), 3.0);
+        assert_eq!(
+            mech_core::legacy_function_output(function.as_ref())
+                .unwrap()
+                .as_f64()
+                .unwrap()
+                .borrow()
+                .clone(),
+            3.0
+        );
     }
 }

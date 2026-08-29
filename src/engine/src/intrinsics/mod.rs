@@ -78,10 +78,20 @@ pub mod catalog;
 pub mod access;
 #[cfg(feature = "assign")]
 pub mod assign;
+#[cfg(all(any(
+    feature = "table",
+    all(
+        feature = "semantic-compiler",
+        any(feature = "access", feature = "assign")
+    )
+)))]
+pub(crate) mod canonical_access;
 #[cfg(any(
     feature = "set",
     feature = "set_comprehensions",
-    feature = "matrix_comprehensions"
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
 ))]
 pub mod constructors;
 #[cfg(feature = "convert")]
@@ -139,10 +149,10 @@ macro_rules! impl_range_range_fxn_v {
                 + AsValueKind,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
-            IxVec1: ConstElem + AsNaKind + Debug + AsRef<[$ix1]> + FunctionRuntimeType,
+            IxVec1: ConstElem + AsNaKind + Debug + AsRef<[$ix1]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec1: CompileConst,
-            IxVec2: ConstElem + AsNaKind + Debug + AsRef<[$ix2]> + FunctionRuntimeType,
+            IxVec2: ConstElem + AsNaKind + Debug + AsRef<[$ix2]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec2: CompileConst,
             R1: Dim,
@@ -151,10 +161,10 @@ macro_rules! impl_range_range_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
@@ -165,33 +175,22 @@ macro_rules! impl_range_range_fxn_v {
                 <IxVec2 as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (sink, source, ix1, ix2) = invocation.expect_ternary()?;
+                let source: Ref<naMatrix<T, R2, C2, S2>> = source.try_ref()?;
+                let ix1: Ref<IxVec1> = ix1.try_ref()?;
+                let ix2: Ref<IxVec2> = ix2.try_ref()?;
+                let sink: Ref<naMatrix<T, R1, C1, S1>> = sink.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes: (ix1, ix2),
+                    _marker: std::marker::PhantomData::default(),
+                }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ix1: Ref<IxVec1> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let ix2: Ref<IxVec2> =
-                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes: (ix1, ix2),
-                            _marker: std::marker::PhantomData::default(),
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T, R1, C1, S1, R2, C2, S2, IxVec1, IxVec2> MechFunctionImpl
@@ -204,6 +203,7 @@ macro_rules! impl_range_range_fxn_v {
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
@@ -218,15 +218,14 @@ macro_rules! impl_range_range_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -290,7 +289,7 @@ macro_rules! impl_all_fxn_v {
                 + AsValueKind,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
-            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionRuntimeType,
+            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
@@ -299,10 +298,10 @@ macro_rules! impl_all_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
@@ -312,31 +311,23 @@ macro_rules! impl_all_fxn_v {
                 <IxVec as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (sink, source, ixes) = invocation.expect_binary()?;
+                let source: Ref<naMatrix<T, R2, C2, S2>> = source.try_ref()?;
+                let ixes: Ref<IxVec> = ixes.try_ref()?;
+                let sink: Ref<naMatrix<T, R1, C1, S1>> = sink.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes,
+                    _marker: std::marker::PhantomData::default(),
+                }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ixes: Ref<IxVec> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes,
-                            _marker: std::marker::PhantomData::default(),
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
@@ -348,6 +339,7 @@ macro_rules! impl_all_fxn_v {
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
@@ -361,8 +353,13 @@ macro_rules! impl_all_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(
+                &self,
+            ) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 optional_operation_contract!($($semantic_contract)?)
@@ -371,9 +368,6 @@ macro_rules! impl_all_fxn_v {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler

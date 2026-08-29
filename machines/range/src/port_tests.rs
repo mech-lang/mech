@@ -13,9 +13,10 @@ mod dynamic_ranges {
         RangeInclusiveScalar,
     };
     use mech_core::{
-        EncodedConstant, FunctionArgs, FunctionArgumentRole, FunctionInvocation,
-        IncorrectNumberOfArguments, LegacyValue, MechError, MechFunction, MechFunctionFactory,
-        Ref, RuntimeType, ToValue, decode_encoded_constants, with_reactive_journal_participant,
+        EncodedConstant, FunctionArgs, FunctionInvocation, IncorrectNumberOfArguments,
+        LegacyValue, MechError, MechFunction, MechFunctionFactory, Ref, RuntimeType, ToValue,
+        legacy_values_from_encoded_bytecode_constants,
+        with_reactive_journal_participant,
     };
     use nalgebra::{DMatrix, RowDVector};
 
@@ -48,7 +49,7 @@ mod dynamic_ranges {
             bytes.extend(framed(&payload));
             (RuntimeType::Option(Box::new(RuntimeType::F64)), bytes)
         };
-        decode_encoded_constants(&[EncodedConstant {
+        legacy_values_from_encoded_bytecode_constants(&[EncodedConstant {
             runtime_type,
             alignment: 8,
             bytes,
@@ -63,14 +64,6 @@ mod dynamic_ranges {
             function.reactive_output_cell_ids(),
             out.to_value().reactive_root_cell_ids(),
         );
-        let projected = function
-            .out()
-            .try_function_matrix::<f64>(FunctionArgumentRole::Output)
-            .unwrap();
-        let mech_core::matrix::Matrix::DMatrix(projected) = projected else {
-            panic!("range output changed its dynamic matrix representation")
-        };
-        assert!(projected.same_handle(out));
     }
 
     #[test]
@@ -297,11 +290,11 @@ mod dynamic_ranges {
         let stepped_before = stepped_out.borrow().clone();
         assert_eq!(
             binary.reactive_output_cell_ids(),
-            binary.out().reactive_root_cell_ids(),
+            binary_out.to_value().reactive_root_cell_ids(),
         );
         assert_eq!(
             stepped.reactive_output_cell_ids(),
-            stepped.out().reactive_root_cell_ids(),
+            stepped_out.to_value().reactive_root_cell_ids(),
         );
 
         with_reactive_journal_participant(|mut participant| {
@@ -322,7 +315,7 @@ mod dynamic_ranges {
     }
 
     #[test]
-    fn range_shape_failure_is_atomic_and_prior_state_remains_restorable() {
+    fn dynamic_range_extent_preserves_identity_and_prior_state_is_restorable() {
         let to = Ref::new(3.0_f64);
         let out = output(3);
         let out_alias = out.clone();
@@ -341,9 +334,9 @@ mod dynamic_ranges {
         with_reactive_journal_participant(|mut participant| {
             participant.capture_function_state(&*function)?;
             *to.borrow_mut() = 4.0;
-            let error = function.solve_result().unwrap_err();
-            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-            assert_eq!(*out.borrow(), successful);
+            function.solve_result().unwrap();
+            assert_eq!(out.borrow().as_slice(), &[1.0, 2.0, 3.0, 4.0]);
+            assert!(out.same_handle(&out_alias));
             *out.borrow_mut() = DMatrix::from_element(2, 2, -1.0);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -359,12 +352,13 @@ mod dynamic_ranges {
 #[cfg(all(feature = "f64", feature = "row_vector2", feature = "inclusive"))]
 mod fixed_range {
     use crate::RangeInclusiveScalar;
-    use mech_core::{FunctionArgs, FunctionArgumentRole, MechFunctionFactory, Ref, ToValue};
+    use mech_core::{FunctionArgs, MechFunctionFactory, Ref, ToValue};
     use nalgebra::RowVector2;
 
     #[test]
     fn fixed_row_vector_output_retains_exact_representation_and_handle() {
-        let out = Ref::new(RowVector2::zeros());
+        let out: Ref<RowVector2<f64>> = Ref::new(RowVector2::zeros());
+        let alias = out.clone();
         let function = RangeInclusiveScalar::<f64, RowVector2<f64>>::new_invocation(
             FunctionArgs::Binary(
                 out.to_value(),
@@ -377,13 +371,6 @@ mod fixed_range {
         function.solve_result().unwrap();
         assert_eq!(out.borrow().as_slice(), &[1.0, 2.0]);
 
-        let projected = function
-            .out()
-            .try_function_matrix::<f64>(FunctionArgumentRole::Output)
-            .unwrap();
-        let mech_core::matrix::Matrix::RowVector2(projected) = projected else {
-            panic!("fixed range output changed its representation")
-        };
-        assert!(projected.same_handle(&out));
+        assert!(alias.same_handle(&out));
     }
 }

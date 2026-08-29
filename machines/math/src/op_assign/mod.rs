@@ -274,9 +274,6 @@ macro_rules! impl_op_assign_range_fxn_s {
                 }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T, R1, C1, S1, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
@@ -324,18 +321,11 @@ macro_rules! impl_op_assign_range_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
-            }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -445,9 +435,6 @@ macro_rules! impl_op_assign_range_fxn_v {
                 }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
@@ -498,18 +485,11 @@ macro_rules! impl_op_assign_range_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
-            }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -536,65 +516,192 @@ macro_rules! impl_op_assign_range_fxn_v {
     };
 }
 
-//impl_set_range_arms
 #[cfg(feature = "source")]
 #[macro_export]
-macro_rules! op_assign_range_fxn {
-  ($op_fxn_name:tt, $fxn_name:ident) => {
-    paste::paste! {
-      fn $op_fxn_name(sink: LegacyValue, source: LegacyValue, ixes: Vec<LegacyValue>) -> MResult<Box<dyn MechFunction>> {
-        let arg = (sink.clone(), ixes.as_slice(), source.clone());
-                     impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, f64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, R64, "rational"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64, "complex"))
-        .map_err(|_| MechError::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
-            None
-          ).with_compiler_loc()
-        )
-      }
-    }
-  }
+macro_rules! try_canonical_op_assign_vs_shape {
+    (($operation:ident, $sink:ident, $source:ident); $scalar:ty; $matrix:ty) => {
+        paste::paste! {
+            if $sink.try_ref::<$matrix>().is_ok() && $source.try_ref::<$scalar>().is_ok() {
+                return SpecializedFunction::bind_factory::<[<$operation AssignVS>]<$scalar, $matrix>>(
+                    $sink.cell()?.clone(),
+                    vec![$sink.cell()?.clone(), $source.cell()?.clone()].into_boxed_slice(),
+                );
+            }
+        }
+    };
 }
 
 #[cfg(feature = "source")]
 #[macro_export]
-macro_rules! op_assign_range_all_fxn {
-  ($op_fxn_name:tt, $fxn_name:ident) => {
-    paste::paste! {
-      fn $op_fxn_name(sink: LegacyValue, source: LegacyValue, ixes: Vec<LegacyValue>) -> MResult<Box<dyn MechFunction>> {
-        let arg = (sink.clone(), ixes.as_slice(), source.clone());
-                     impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, f64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
-        .map_err(|_| MechError::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
-            None
-          ).with_compiler_loc()
-        )
-      }
-    }
-  }
+macro_rules! try_canonical_op_assign_vs_scalar {
+    (($operation:ident, $sink:ident, $source:ident); $scalar:ty) => {
+        #[cfg(feature = "matrix1")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; Matrix1<$scalar>);
+        #[cfg(feature = "matrix2")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; Matrix2<$scalar>);
+        #[cfg(feature = "matrix2x3")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; Matrix2x3<$scalar>);
+        #[cfg(feature = "matrix3x2")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; Matrix3x2<$scalar>);
+        #[cfg(feature = "matrix3")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; Matrix3<$scalar>);
+        #[cfg(feature = "matrix4")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; Matrix4<$scalar>);
+        #[cfg(feature = "matrixd")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; DMatrix<$scalar>);
+        #[cfg(feature = "vector2")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; Vector2<$scalar>);
+        #[cfg(feature = "vector3")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; Vector3<$scalar>);
+        #[cfg(feature = "vector4")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; Vector4<$scalar>);
+        #[cfg(feature = "vectord")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; DVector<$scalar>);
+        #[cfg(feature = "row_vector2")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; RowVector2<$scalar>);
+        #[cfg(feature = "row_vector3")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; RowVector3<$scalar>);
+        #[cfg(feature = "row_vector4")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; RowVector4<$scalar>);
+        #[cfg(feature = "row_vectord")]
+        $crate::try_canonical_op_assign_vs_shape!(($operation, $sink, $source); $scalar; RowDVector<$scalar>);
+    };
+}
+
+#[cfg(feature = "source")]
+#[macro_export]
+macro_rules! try_canonical_op_assign_vs {
+    (($operation:ident, $sink:ident, $source:ident)) => {
+        #[cfg(feature = "u8")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); u8);
+        #[cfg(feature = "u16")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); u16);
+        #[cfg(feature = "u32")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); u32);
+        #[cfg(feature = "u64")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); u64);
+        #[cfg(feature = "u128")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); u128);
+        #[cfg(feature = "i8")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); i8);
+        #[cfg(feature = "i16")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); i16);
+        #[cfg(feature = "i32")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); i32);
+        #[cfg(feature = "i64")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); i64);
+        #[cfg(feature = "i128")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); i128);
+        #[cfg(feature = "f32")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); f32);
+        #[cfg(feature = "f64")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); f64);
+        #[cfg(feature = "r64")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); R64);
+        #[cfg(feature = "c64")]
+        $crate::try_canonical_op_assign_vs_scalar!(($operation, $sink, $source); C64);
+    };
+}
+
+#[cfg(feature = "source")]
+#[macro_export]
+macro_rules! impl_canonical_op_assign_specializers {
+    (
+        $value_specializer:ident,
+        $range_specializer:ident,
+        $range_all_specializer:ident,
+        $operation:ident,
+        $value_prefix:literal,
+        $range_prefix:literal,
+        $range_all_prefix:literal
+    ) => {
+        pub struct $value_specializer;
+
+        impl CanonicalFunctionSpecializer for $value_specializer {
+            fn specialize_invocation(
+                &self,
+                invocation: &SpecializationInvocation,
+                context: &mut SpecializationContext<'_>,
+            ) -> MResult<SpecializedFunction> {
+                if invocation.len() != 2 {
+                    return Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: invocation.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let sink = invocation.input(0).expect("validated assignment sink");
+                let source = invocation.input(1).expect("validated assignment source");
+                $crate::try_canonical_op_assign_vs!(($operation, sink, source));
+                context.bind_runtime_factory_existing_output($value_prefix, sink, &[source])
+            }
+        }
+
+        pub struct $range_specializer;
+
+        impl CanonicalFunctionSpecializer for $range_specializer {
+            fn specialize_invocation(
+                &self,
+                invocation: &SpecializationInvocation,
+                context: &mut SpecializationContext<'_>,
+            ) -> MResult<SpecializedFunction> {
+                if invocation.len() != 3 {
+                    return Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 3,
+                            found: invocation.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let sink = invocation.input(0).expect("validated indexed assignment sink");
+                let source = invocation.input(1).expect("validated indexed assignment source");
+                let index = invocation.input(2).expect("validated assignment index");
+                context.bind_runtime_factory_existing_output(
+                    $range_prefix,
+                    sink,
+                    &[source, index],
+                )
+            }
+        }
+
+        pub struct $range_all_specializer;
+
+        impl CanonicalFunctionSpecializer for $range_all_specializer {
+            fn specialize_invocation(
+                &self,
+                invocation: &SpecializationInvocation,
+                context: &mut SpecializationContext<'_>,
+            ) -> MResult<SpecializedFunction> {
+                if invocation.len() != 4 {
+                    return Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 4,
+                            found: invocation.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let sink = invocation.input(0).expect("validated indexed assignment sink");
+                let source = invocation.input(1).expect("validated indexed assignment source");
+                let row_index = invocation.input(2).expect("validated row assignment index");
+                invocation
+                    .input(3)
+                    .expect("validated all-selection input")
+                    .require_matrix_all_selection()?;
+                context.bind_runtime_factory_existing_output(
+                    $range_all_prefix,
+                    sink,
+                    &[source, row_index],
+                )
+            }
+        }
+    };
 }
 
 #[macro_export]
@@ -629,9 +736,6 @@ macro_rules! impl_assign_scalar_scalar {
           Ok(Box::new(Self { sink, source }))
         }
 
-        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-          Self::new_invocation(args.into())
-        }
       }
       impl<T> MechFunctionImpl for [<$op_name AssignSS>]<T>
       where
@@ -657,16 +761,11 @@ macro_rules! impl_assign_scalar_scalar {
           let next = $checked_op(*self.sink.borrow(), *self.source.borrow())?;
           Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
-        fn out(&self) -> LegacyValue { self.sink.to_value() }
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
           Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
         }
         fn to_string(&self) -> String { format!("{:#?}", self) }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-          Ok(self.reactive_output_values())
-        }
       }
       #[cfg(feature = "semantic-compiler")]
       impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T>
@@ -724,9 +823,6 @@ macro_rules! impl_assign_vector_vector {
           Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
         }
 
-        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-          Self::new_invocation(args.into())
-        }
       }
       impl<T, MatA, MatB> MechFunctionImpl for [<$op_name AssignVV>]<T, MatA, MatB>
       where
@@ -766,16 +862,11 @@ macro_rules! impl_assign_vector_vector {
           }
           Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
-        fn out(&self) -> LegacyValue {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
           Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
         }
         fn to_string(&self) -> String {format!("{:#?}", self)}
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-          Ok(self.reactive_output_values())
-        }
       }
       #[cfg(feature = "semantic-compiler")]
       impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB>
@@ -832,9 +923,6 @@ macro_rules! impl_assign_vector_scalar {
           Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
         }
 
-        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-          Self::new_invocation(args.into())
-        }
       }
       impl<T, MatA> MechFunctionImpl for [<$op_name AssignVS>]<T, MatA>
       where
@@ -868,16 +956,11 @@ macro_rules! impl_assign_vector_scalar {
           }
           Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
-        fn out(&self) -> LegacyValue {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
           Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
         }
         fn to_string(&self) -> String {format!("{:#?}", self)}
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-          Ok(self.reactive_output_values())
-        }
       }
       #[cfg(feature = "semantic-compiler")]
       impl<T, MatA> MechFunctionCompiler for [<$op_name AssignVS>]<T, MatA>
@@ -927,83 +1010,3 @@ impl_scalar_op_assign_module!(mul_assign, Mul, checked_mul_assign);
     not(any(feature = "matrix", feature = "source"))
 ))]
 impl_scalar_op_assign_module!(sub_assign, Sub, checked_sub_assign);
-
-#[cfg(feature = "source")]
-#[macro_export]
-macro_rules! impl_op_assign_value_match_arms {
-  ($op:tt, $arg:expr,$($value_kind:ident, $feature:tt);+ $(;)?) => {
-    paste::paste! {
-      match $arg {
-        $(
-          #[cfg(feature = $feature)]
-          (LegacyValue::$value_kind(sink), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignSS>]{ sink: sink.clone(), source: source.clone() })),
-          #[cfg(all(feature = $feature, feature = "matrix1"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix2"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix2x3"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix3x2"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix3"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix4"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix4(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrixd"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "vector2"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector2(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "vector3"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector3(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "vector4"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector4(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "vectord"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::DVector(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "row_vector2"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector2(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "row_vector3"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector3(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "row_vector4"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector4(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "row_vectord"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::RowDVector(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix1"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix2"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix2x3"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix3x2"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix3"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrix4"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix4(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix4(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "matrixd"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "vector2"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "vector3"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "vector4"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector4(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "vectord"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::DVector(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "row_vector2"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowVector2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "row_vector3"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "row_vector4"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector4(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowVector4(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $feature, feature = "row_vectord"))]
-          (LegacyValue::[<Matrix $value_kind>](Matrix::RowDVector(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-        )+
-        (arg1,arg2) => Err(MechError::new(
-            UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($op).to_string() },
-            None
-          ).with_compiler_loc()
-        ),
-      }
-    }
-  };
-}

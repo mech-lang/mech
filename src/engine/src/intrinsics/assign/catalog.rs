@@ -2,31 +2,43 @@
 use super::matrix::*;
 use super::*;
 #[cfg(feature = "matrix")]
-use mech_core::{FunctionArgs, FunctionArgumentRole, function_shape_contract_violation};
+use mech_core::{
+    DimensionExpr, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
+};
 use mech_core::{FunctionCatalogBuilder, MResult};
 
 #[cfg(feature = "matrix")]
-fn validate_assign_matrix_sizes(args: &FunctionArgs) -> MResult<()> {
+fn canonical_matrix_dimensions(cell: &ValueCell) -> MResult<Option<(usize, usize)>> {
+    let SchemaBody::Matrix { dimensions, .. } = cell.closed_schema_body()? else {
+        return Ok(None);
+    };
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        unreachable!("closed canonical matrix dimensions are constant")
+    };
+    Ok(Some((*rows as usize, *columns as usize)))
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_matrix_sizes(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     let contract = "assign_slice";
-    let output = args
-        .output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "output must be matrix-backed")
-        })?;
-    for index in 0..args.input_count() {
-        if let Some(input) = args
-            .input_value(index)
-            .expect("input index is bounded")
-            .function_matrix_descriptor(FunctionArgumentRole::Input(index))?
-            && input.rows.saturating_mul(input.cols) > output.rows.saturating_mul(output.cols)
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation(contract, "output must be matrix-backed")
+    })?;
+    let output_len = rows.saturating_mul(columns);
+    for (index, input) in inputs.iter().enumerate() {
+        if let Some((input_rows, input_columns)) = canonical_matrix_dimensions(input)?
+            && input_rows.saturating_mul(input_columns) > output_len
         {
             return Err(function_shape_contract_violation(
                 contract,
                 format!(
                     "matrix input {index} has {} elements, output has {}",
-                    input.rows.saturating_mul(input.cols),
-                    output.rows.saturating_mul(output.cols),
+                    input_rows.saturating_mul(input_columns),
+                    output_len,
                 ),
             ));
         }
@@ -43,27 +55,25 @@ enum AssignIndexAxis {
 
 #[cfg(feature = "matrix")]
 fn validate_assign_index(
-    args: &FunctionArgs,
+    output: &ValueCell,
+    inputs: &[ValueCell],
     input_index: usize,
     axis: AssignIndexAxis,
 ) -> MResult<()> {
     let contract = "assign_slice";
-    let output = args
-        .output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "output must be matrix-backed")
-        })?;
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation(contract, "output must be matrix-backed")
+    })?;
     let bound = match axis {
-        AssignIndexAxis::Row => output.rows,
-        AssignIndexAxis::Column => output.cols,
+        AssignIndexAxis::Row => rows,
+        AssignIndexAxis::Column => columns,
     };
     let axis_name = match axis {
         AssignIndexAxis::Row => "row",
         AssignIndexAxis::Column => "column",
     };
-    let input = args
-        .input_value(input_index)
+    let input = inputs
+        .get(input_index)
         .expect("assignment index input is fixed by its runtime factory");
     let invalid = |index: usize| {
         function_shape_contract_violation(
@@ -71,15 +81,20 @@ fn validate_assign_index(
             format!("input {input_index} contains {axis_name} index {index}, expected 1..={bound}",),
         )
     };
-    match input {
-        LegacyValue::Index(index) => {
-            let index = *index.borrow();
+    match input.snapshot()?.data() {
+        ValueData::Index(index) => {
+            let index = *index as usize;
             if index == 0 || index > bound {
                 return Err(invalid(index));
             }
         }
-        LegacyValue::MatrixIndex(indices) => {
-            for index in indices.as_vec() {
+        ValueData::Matrix(_) => {
+            for value in input.matrix_elements()?.unwrap_or_default() {
+                let snapshot = value.snapshot()?;
+                let ValueData::Index(index) = snapshot.data() else {
+                    continue;
+                };
+                let index = *index as usize;
                 if index == 0 || index > bound {
                     return Err(invalid(index));
                 }
@@ -91,10 +106,10 @@ fn validate_assign_index(
 }
 
 #[cfg(feature = "matrix")]
-fn validate_assign_row_and_column_indices(args: &FunctionArgs) -> MResult<()> {
-    validate_assign_matrix_sizes(args)?;
-    validate_assign_index(args, 1, AssignIndexAxis::Row)?;
-    validate_assign_index(args, 2, AssignIndexAxis::Column)
+fn validate_assign_row_and_column_indices(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_assign_matrix_sizes(output, inputs)?;
+    validate_assign_index(output, inputs, 1, AssignIndexAxis::Row)?;
+    validate_assign_index(output, inputs, 2, AssignIndexAxis::Column)
 }
 
 // Assignment's scalar factories deliberately keep the Rust type, emitted
@@ -354,7 +369,7 @@ macro_rules! declare_matrix_assign_factory {
                 installer: [<install_assign_ $fxn_name:lower _ $scalar:lower $( _ $shape:lower )*>],
                 name: concat!(stringify!($fxn_name), "<", $scalar_name, $(stringify!($shape)),*, ">"),
                 factory_type: $factory,
-                contract: RuntimeFunctionContract::custom(
+                contract: RuntimeFunctionContract::canonical_custom(
                     "assign_slice",
                     assign_output_alias_policy!($fxn_name),
                     validate_assign_row_and_column_indices,
@@ -2166,42 +2181,43 @@ pub mod __mech_native {
 #[cfg(all(test, feature = "matrix", feature = "u8"))]
 mod tests {
     use super::*;
-    use mech_core::{Ref, matrix::Matrix};
+    use mech_core::Ref;
+    use nalgebra::{DMatrix, DVector};
 
-    fn output() -> LegacyValue {
-        LegacyValue::MatrixU8(Matrix::from_vec(vec![0; 6], 2, 3))
+    fn output() -> ValueCell {
+        ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::<u8>::zeros(2, 3)), 2, 3).unwrap()
     }
 
-    fn source() -> LegacyValue {
-        LegacyValue::U8(Ref::new(7))
+    fn source() -> ValueCell {
+        ValueCell::from_exact(7_u8).unwrap()
+    }
+
+    fn indices(values: &[usize]) -> ValueCell {
+        ValueCell::from_exact_matrix_ref(
+            Ref::new(DVector::from_column_slice(values)),
+            values.len(),
+            1,
+        )
+        .unwrap()
+    }
+
+    fn index(value: usize) -> ValueCell {
+        ValueCell::from_exact(value).unwrap()
     }
 
     #[test]
     fn two_dimensional_assignment_indices_use_their_exact_axes() {
-        validate_assign_row_and_column_indices(&FunctionArgs::Ternary(
-            output(),
-            source(),
-            LegacyValue::MatrixIndex(Matrix::from_vec(vec![1, 2], 1, 2)),
-            LegacyValue::Index(Ref::new(3)),
-        ))
-        .unwrap();
+        validate_assign_row_and_column_indices(&output(), &[source(), indices(&[1, 2]), index(3)])
+            .unwrap();
 
-        let row_error = validate_assign_row_and_column_indices(&FunctionArgs::Ternary(
-            output(),
-            source(),
-            LegacyValue::MatrixIndex(Matrix::from_vec(vec![3], 1, 1)),
-            LegacyValue::Index(Ref::new(1)),
-        ))
-        .unwrap_err();
+        let row_error =
+            validate_assign_row_and_column_indices(&output(), &[source(), indices(&[3]), index(1)])
+                .unwrap_err();
         assert!(row_error.kind_message().contains("row index 3"));
 
-        let column_error = validate_assign_row_and_column_indices(&FunctionArgs::Ternary(
-            output(),
-            source(),
-            LegacyValue::Index(Ref::new(1)),
-            LegacyValue::Index(Ref::new(4)),
-        ))
-        .unwrap_err();
+        let column_error =
+            validate_assign_row_and_column_indices(&output(), &[source(), index(1), index(4)])
+                .unwrap_err();
         assert!(column_error.kind_message().contains("column index 4"));
     }
 }

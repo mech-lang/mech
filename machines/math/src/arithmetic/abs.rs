@@ -1,8 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
-#[cfg(feature = "source")]
-use num_traits::*;
 
 // Abs ------------------------------------------------------------------------
 
@@ -253,58 +249,55 @@ mod checked_abs_tests {
     }
 }
 
-#[cfg(feature = "source")]
-fn impl_abs_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_urnop_match_arms2!(
-      MathAbs,
-      lhs_value,
-      U8 => MatrixU8, u8, u8::zero(), "u8";
-      U16 => MatrixU16, u16, u16::zero(), "u16";
-      U32 => MatrixU32, u32, u32::zero(), "u32";
-      U64 => MatrixU64, u64, u64::zero(), "u64";
-      U128 => MatrixU128, u128, u128::zero(), "u128";
-      I8 => MatrixI8, i8, i8::zero(), "i8";
-      I16 => MatrixI16, i16, i16::zero(), "i16";
-      I32 => MatrixI32, i32, i32::zero(), "i32";
-      I64 => MatrixI64, i64, i64::zero(), "i64";
-      I128 => MatrixI128, i128, i128::zero(), "i128";
-      F32 => MatrixF32, f32, f32::zero(), "f32";
-      F64 => MatrixF64, f64, f64::zero(), "f64";
-      C64 => MatrixC64, C64, C64::default(), "c64";
-      R64 => MatrixR64, R64, R64::zero(), "r64";
-    )
-}
+impl_canonical_registered_math_unop_specializer!(MathAbs, "MathAbs");
 
-#[cfg(feature = "source")]
-pub struct MathAbs {}
+#[cfg(all(test, feature = "source", feature = "f32"))]
+mod canonical_source_tests {
+    use super::*;
 
-#[cfg(feature = "source")]
-impl FunctionSpecializer for MathAbs {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let input = arguments[0].clone();
-        match impl_abs_fxn(input.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match input {
-                LegacyValue::MutableReference(input) => impl_abs_fxn(input.borrow().clone()),
-                x => Err(MechError::new(
-                    UnhandledFunctionArgumentKind1 {
-                        arg: x.kind(),
-                        fxn_name: "math/abs".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
+    #[test]
+    fn f32_abs_binds_the_registered_runtime_factory() {
+        let mut builder = FunctionCatalogBuilder::new();
+        crate::catalog::register_math_abs_f32_s(&mut builder).unwrap();
+        crate::catalog::install_canonical_source_specializer(
+            &mut builder,
+            "math/abs",
+            Some("math"),
+            Some("abs"),
+            FunctionExposure::ModuleOnly,
+            crate::MathAbs {},
+        )
+        .unwrap();
+        let catalog = builder.build().unwrap();
+        let invocation = SpecializationInvocation::from_cells(
+            vec![ValueCell::from_exact(-3.0_f32).unwrap()].into_boxed_slice(),
+        );
+        let mut context =
+            SpecializationContext::for_invocation(&invocation, Some(&catalog)).unwrap();
+
+        let specialized = catalog
+            .specializer(OperationId::from_name("math/abs"))
+            .unwrap()
+            .specializer
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap();
+
+        assert!(
+            specialized
+                .instance()
+                .implementation()
+                .to_string()
+                .starts_with("MathAbsF32S")
+        );
+        specialized
+            .instance()
+            .implementation()
+            .solve_result()
+            .unwrap();
+        let output = specialized.output().snapshot().unwrap();
+        let ValueData::F32(output) = output.data() else {
+            panic!("expected the exact f32 absolute-value output")
+        };
+        assert_eq!(output.to_f32().to_bits(), 3.0_f32.to_bits());
     }
 }

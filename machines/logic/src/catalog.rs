@@ -2,20 +2,22 @@ use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(feature = "not")]
 use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 #[cfg(feature = "source")]
-use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+use mech_core::{FunctionExport, FunctionExposure};
+#[cfg(feature = "source")]
+use mech_core::CanonicalFunctionSpecializer;
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
 #[cfg(feature = "source")]
-fn install_operation<T>(
+fn install_canonical_operation<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
     compiler: T,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
+    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -28,13 +30,13 @@ where
 #[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "and")]
-    install_operation(builder, "logic/and", crate::LogicAnd {})?;
+    install_canonical_operation(builder, "logic/and", crate::LogicAnd {})?;
     #[cfg(feature = "not")]
-    install_operation(builder, "logic/not", crate::LogicNot {})?;
+    install_canonical_operation(builder, "logic/not", crate::LogicNot {})?;
     #[cfg(feature = "or")]
-    install_operation(builder, "logic/or", crate::LogicOr {})?;
+    install_canonical_operation(builder, "logic/or", crate::LogicOr {})?;
     #[cfg(feature = "xor")]
-    install_operation(builder, "logic/xor", crate::LogicXor {})?;
+    install_canonical_operation(builder, "logic/xor", crate::LogicXor {})?;
     Ok(())
 }
 

@@ -1,6 +1,4 @@
 use super::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Mul Assign -----------------------------------------------------------------
@@ -51,6 +49,11 @@ macro_rules! impl_mul_assign_range_fxn_v {
 impl_assign_scalar_scalar!(Mul, checked_mul_assign);
 impl_assign_vector_vector!(Mul, checked_mul_assign);
 impl_assign_vector_scalar!(Mul, checked_mul_assign);
+
+#[cfg(test)]
+mod retired_legacy_value_specializer {
+#![cfg(any())]
+use super::*;
 
 #[cfg(feature = "source")]
 fn mul_assign_value_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Box<dyn MechFunction>> {
@@ -114,6 +117,7 @@ impl FunctionSpecializer for MulAssignValue {
             },
         }
     }
+}
 }
 
 // x[1..3] *= 1 ----------------------------------------------------------------
@@ -181,6 +185,11 @@ impl_mul_assign_range_fxn_v!(MulAssign1DRV, mul_assign_1d_range_vec, usize);
 #[cfg(feature = "matrix")]
 impl_mul_assign_range_fxn_v!(MulAssign1DRVB, mul_assign_1d_range_vec_b, bool);
 
+#[cfg(test)]
+mod retired_legacy_range_specializer {
+#![cfg(any())]
+use super::*;
+
 #[cfg(feature = "source")]
 op_assign_range_fxn!(mul_assign_range_fxn, MulAssign1DR);
 
@@ -233,6 +242,7 @@ impl FunctionSpecializer for MulAssignRange {
             },
         }
     }
+}
 }
 
 // x[1..3,:] *= 1 ------------------------------------------------------------------
@@ -316,6 +326,11 @@ impl_mul_assign_range_fxn_v!(MulAssign2DRAV, mul_assign_2d_vector_all_mat, usize
 #[cfg(feature = "matrix")]
 impl_mul_assign_range_fxn_v!(MulAssign2DRAVB, mul_assign_2d_vector_all_mat_b, bool);
 
+#[cfg(test)]
+mod retired_legacy_range_all_specializer {
+#![cfg(any())]
+use super::*;
+
 #[cfg(feature = "source")]
 op_assign_range_all_fxn!(mul_assign_range_all_fxn, MulAssign2DRA);
 
@@ -376,3 +391,15 @@ impl FunctionSpecializer for MulAssignRangeAll {
         }
     }
 }
+}
+
+#[cfg(feature = "source")]
+crate::impl_canonical_op_assign_specializers!(
+    MulAssignValue,
+    MulAssignRange,
+    MulAssignRangeAll,
+    Mul,
+    "MulAssign",
+    "MulAssign1DR",
+    "MulAssign2DRA"
+);

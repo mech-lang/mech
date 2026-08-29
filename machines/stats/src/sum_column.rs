@@ -7,8 +7,6 @@
     all(feature = "matrixd", feature = "row_vectord")
 ))]
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 #[cfg(any(
     feature = "matrix1",
     feature = "vector2",
@@ -117,9 +115,6 @@ where
         Ok(Box::new(StatsSumColumnRD2 { arg, out }))
     }
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
 impl<T> MechFunctionImpl for StatsSumColumnRD2<T>
@@ -155,15 +150,8 @@ where
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -179,82 +167,44 @@ where
     }
 }
 #[cfg(feature = "source")]
-macro_rules! impl_stats_sum_column_match_arms {
-  ($arg:expr, $($input_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          $(
-            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix1"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowVector4(arg)) => Ok(Box::new(StatsSumColumnR4{arg: arg.clone(), out: Ref::new(Matrix1::from_element($target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix1"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowVector3(arg)) => Ok(Box::new(StatsSumColumnR3{arg: arg.clone(), out: Ref::new(Matrix1::from_element($target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix1"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowVector2(arg)) => Ok(Box::new(StatsSumColumnR2{arg: arg.clone(), out: Ref::new(Matrix1::from_element($target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector4"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Vector4(arg))    => Ok(Box::new(StatsSumColumnV4{arg: arg.clone(), out: Ref::new(Vector4::from_element($target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector3"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Vector3(arg))    => Ok(Box::new(StatsSumColumnV3{arg: arg.clone(), out: Ref::new(Vector3::from_element($target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector2"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Vector2(arg))    => Ok(Box::new(StatsSumColumnV2{arg: arg.clone(), out: Ref::new(Vector2::from_element($target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "vector4"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix4(arg))    => Ok(Box::new(StatsSumColumnM4{arg: arg.clone(), out: Ref::new(Vector4::from_element($target_type::default()))})),
-            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "vector3"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3(arg))    => Ok(Box::new(StatsSumColumnM3{arg: arg.clone(), out: Ref::new(Vector3::from_element($target_type::default()))})),
-            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2(arg))    => Ok(Box::new(StatsSumColumnM2{arg: arg.clone(), out: Ref::new(Vector2::from_element($target_type::default()))})),
-            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "matrix1"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix1(arg))    => Ok(Box::new(StatsSumColumnM1{arg: arg.clone(), out: Ref::new(Matrix1::from_element($target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "vector2"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2x3(arg))  => Ok(Box::new(StatsSumColumnM2x3{arg: arg.clone(), out: Ref::new(Vector2::from_element($target_type::default()))})),
-            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector3"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3x2(arg))  => Ok(Box::new(StatsSumColumnM3x2{arg: arg.clone(), out: Ref::new(Vector3::from_element($target_type::default()))})),
-            #[cfg(all(feature = $value_string, feature = "vectord", feature = "vectord"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(StatsSumColumnVD{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().len(),$target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrix1"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(StatsSumColumnRD{arg: arg.clone(), out: Ref::new(Matrix1::from_element($target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(StatsSumColumnRD2{arg: arg.clone(), out: Ref::new(DMatrix::from_element(1,1,$target_type::default())) })),
-            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumColumnMD{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().nrows(),$target_type::default())) })),
-          )+
-        )+
-        _ => Err(MechError::new(
-          UnhandledFunctionArgumentKind1 {arg: $arg.kind(), fxn_name: stringify!(StatsSumColumn).to_string() },
-          None
-        ).with_compiler_loc()),
-      }
+pub struct StatsSumColumn;
+
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for StatsSumColumn {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: invocation.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let input = invocation.input(0).expect("validated column-sum input");
+        let shape = input.matrix_descriptor()?.ok_or_else(|| {
+            MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Input(0),
+                    expected: "matrix input".into(),
+                    found: format!("{:?}", input.representation()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        context.bind_runtime_factory_derived_output(
+            "StatsSumColumn",
+            Some((shape.rows, 1)),
+            &[input],
+        )
     }
-  }
 }
-
-#[cfg(feature = "source")]
-fn impl_stats_sum_column_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_stats_sum_column_match_arms!(
-      lhs_value,
-      I8,   i8,   "i8";
-      I16,  i16,  "i16";
-      I32,  i32,  "i32";
-      I64,  i64,  "i64";
-      I128, i128, "i128";
-      U8,   u8,   "u8";
-      U16,  u16,  "u16";
-      U32,  u32,  "u32";
-      U64,  u64,  "u64";
-      U128, u128, "u128";
-      F32,  f32,  "f32";
-      F64,  f64,  "f64";
-      C64, C64, "complex";
-      R64, R64, "rational"
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_urnop_fxn!(
-    StatsSumColumn,
-    impl_stats_sum_column_fxn,
-    "stats/sum/column"
-);
 
 #[cfg(all(test, any(feature = "u8", feature = "rational")))]
 mod checked_sum_tests {
@@ -355,7 +305,7 @@ mod invocation_port_tests {
         assert_eq!(*dynamic_out.borrow(), DVector::from_vec(vec![6.0, 15.0]));
         assert_eq!(
             dynamic.reactive_output_cell_ids(),
-            dynamic.out().reactive_root_cell_ids(),
+            dynamic_out.to_value().reactive_root_cell_ids(),
         );
         with_reactive_journal_participant(|mut participant| {
             participant.capture_function_state(&*dynamic)?;
@@ -414,7 +364,7 @@ mod direct_dynamic_invocation_tests {
         assert_eq!(*out.borrow(), DMatrix::from_element(1, 1, 6.0));
         assert_eq!(
             function.reactive_output_cell_ids(),
-            function.out().reactive_root_cell_ids(),
+            out.to_value().reactive_root_cell_ids(),
         );
         with_reactive_journal_participant(|mut participant| {
             participant.capture_function_state(&*function)?;

@@ -56,34 +56,6 @@ static PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclar
 // Assign -----------------------------------------------------------------
 
 #[macro_export]
-macro_rules! impl_set_match_arms {
-    ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
-        paste! {
-          [<impl_set_ $macro_name _match_arms>]!(
-            $fxn_name,
-            $arg,
-            Bool, "bool";
-            U8, "u8";
-            U16, "u16";
-            U32, "u32";
-            U64, "u64";
-            U128, "u128";
-            I8, "i8";
-            I16, "i16";
-            I32, "i32";
-            I64, "i64";
-            U128, "u128";
-            F32, "f32";
-            F64, "f64" ;
-            String, "string";
-            C64, "complex";
-            R64, "rational";
-          )
-        }
-    };
-}
-
-#[macro_export]
 macro_rules! impl_set_all_fxn_s {
     ($struct_name:ident, $op:ident, $ix:ty $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
@@ -105,16 +77,16 @@ macro_rules! impl_set_all_fxn_s {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionRuntimeType,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
         {
@@ -125,36 +97,29 @@ macro_rules! impl_set_all_fxn_s {
             );
 
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
+                Self::new_invocation(args.into())
+            }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2) = invocation.expect_binary()?;
                         let source: Ref<T> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                            arg1.try_ref()?;
                         let ixes: Ref<IxVec> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                            arg2.try_ref()?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
+                            out.try_ref()?;
                         Ok(Box::new(Self {
                             sink,
                             source,
                             ixes,
                             _marker: PhantomData::default(),
                         }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
             }
         }
         impl<T, R1, C1, S1, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
             Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             IxVec: AsRef<[$ix]> + Debug,
             R1: Dim,
@@ -170,8 +135,11 @@ macro_rules! impl_set_all_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 optional_operation_contract!($($semantic_contract)?)
@@ -180,9 +148,6 @@ macro_rules! impl_set_all_fxn_s {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, IxVec> MechFunctionCompiler
@@ -259,14 +224,14 @@ macro_rules! impl_assign_fxn_s {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + AsNaKind + FunctionRuntimeType,
-            $ix: FunctionRuntimeType,
+            naMatrix<T, R, C, S>: ConstElem + AsNaKind + FunctionStateBacking,
+            $ix: FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
@@ -277,35 +242,28 @@ macro_rules! impl_assign_fxn_s {
             );
 
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
+                Self::new_invocation(args.into())
+            }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2) = invocation.expect_binary()?;
                         let source: Ref<T> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                            arg1.try_ref()?;
                         let ixes: Ref<$ix> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                            arg2.try_ref()?;
                         let sink: Ref<naMatrix<T, R, C, S>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
+                            out.try_ref()?;
                         Ok(Box::new(Self {
                             sink,
                             source,
                             ixes,
                             _marker: PhantomData::default(),
                         }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
             }
         }
         impl<T, R, C, S> MechFunctionImpl for $struct_name<T, naMatrix<T, R, C, S>>
         where
             Ref<naMatrix<T, R, C, S>>: ToValue,
+            naMatrix<T, R, C, S>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             R: Dim,
             C: Dim,
@@ -320,8 +278,11 @@ macro_rules! impl_assign_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 optional_operation_contract!($($semantic_contract)?)
@@ -330,9 +291,6 @@ macro_rules! impl_assign_fxn_s {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T, R, C, S> MechFunctionCompiler for $struct_name<T, naMatrix<T, R, C, S>>
@@ -366,99 +324,6 @@ impl_assign_fxn_s!(
     PURE_MATRIX_WHOLE_ASSIGNMENT_CONTRACT
 );
 impl_assign_scalar_fxn_v!(Assign1DVB, assign_1d_scalar_vb, bool);
-
-fn impl_assign_scalar_fxn(
-    sink: LegacyValue,
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (sink.clone(), ixes.as_slice(), source.clone());
-    impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, i128, "i128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, f64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, R64, "rational"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, C64, "complex"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, bool, "bool"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, String, "string"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, u8, "u8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, i128, "i128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, f64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, R64, "rational"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, C64, "complex"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, bool, "bool"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b, Assign1D, arg, String, "string"))
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxes {
-                    arg: (
-                        sink.kind(),
-                        ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                        source.kind(),
-                    ),
-                    fxn_name: "matrix/assign-scalar".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAssignScalar {}
-impl FunctionSpecializer for MatrixAssignScalar {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match sink {
-                LegacyValue::MutableReference(sink) => {
-                    impl_assign_scalar_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                sink => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "matrix/assign-scalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
 
 // x[1..3] = 1 ----------------------------------------------------------------
 
@@ -523,109 +388,6 @@ impl_all_fxn_v!(
     PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
 );
 
-fn impl_assign_range_fxn(
-    sink: LegacyValue,
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (sink.clone(), ixes.as_slice(), source.clone());
-    impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, i128, "i128"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, f64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, R64, "rational"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, C64, "complex"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, bool, "bool"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, String, "string"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u8, "u8"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u16, "u16"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u32, "u32"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u64, "u64"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u128, "u128"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i8, "i8"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i16, "i16"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i32, "i32"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i64, "i64"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i128, "i128"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, f32, "f32"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, f64, "f64"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, R64, "rational"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, C64, "complex"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, bool, "bool"))
-        .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, String, "string"))
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxes {
-                    arg: (
-                        sink.kind(),
-                        ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                        source.kind(),
-                    ),
-                    fxn_name: "MatrixAssignRange".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAssignRange {}
-impl FunctionSpecializer for MatrixAssignRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (sink.clone(), &ixes, source.clone()) {
-                (LegacyValue::MutableReference(sink), _, LegacyValue::MutableReference(source)) => {
-                    impl_assign_range_fxn(
-                        sink.borrow().clone(),
-                        source.borrow().clone(),
-                        ixes.clone(),
-                    )
-                }
-                (sink, _, LegacyValue::MutableReference(source)) => {
-                    impl_assign_range_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
-                }
-                (LegacyValue::MutableReference(sink), _, source) => {
-                    impl_assign_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                (sink, ixes, source) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "MatrixAssignRange".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
 // x[:] = 1 ------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -645,13 +407,13 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     R: Dim,
     C: Dim,
     S: StorageMut<T, R, C> + Debug + IsContiguous + 'static,
-    naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+    naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
     #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R, C, S>: CompileConst,
 {
@@ -661,31 +423,23 @@ where
     );
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Unary(out, arg1) => {
-                let source: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let sink: Ref<naMatrix<T, R, C, S>> =
-                    out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    sink,
-                    source,
-                    _marker: PhantomData::default(),
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
+    }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg1) = invocation.expect_unary()?;
+        let source: Ref<T> = arg1.try_ref()?;
+        let sink: Ref<naMatrix<T, R, C, S>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            sink,
+            source,
+            _marker: PhantomData::default(),
+        }))
     }
 }
 impl<T, R, C, S> MechFunctionImpl for Set1DAS<T, naMatrix<T, R, C, S>>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    naMatrix<T, R, C, S>: FunctionStateBacking,
     R: Dim,
     C: Dim,
     S: StorageMut<T, R, C> + Debug + IsContiguous,
@@ -702,15 +456,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.sink.to_value()
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.sink))
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "semantic-compiler")]
@@ -729,85 +482,6 @@ where
     }
 }
 
-fn impl_assign_all_fxn(
-    sink: LegacyValue,
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (sink.clone(), ixes.as_slice(), source.clone());
-    impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i128, "i128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, f64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, R64, "rational"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, C64, "complex"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, bool, "bool"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, String, "string"))
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxes {
-                    arg: (
-                        sink.kind(),
-                        ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                        source.kind(),
-                    ),
-                    fxn_name: "MatrixAssignAll".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAssignAll {}
-impl FunctionSpecializer for MatrixAssignAll {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match sink {
-                LegacyValue::MutableReference(sink) => {
-                    impl_assign_all_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "MatrixAssignAll".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1,1] = 1 ----------------------------------------------------------------
-
 #[derive(Debug)]
 pub struct Assign2DSSS<T, MatA> {
     pub source: Ref<T>,
@@ -818,6 +492,7 @@ pub struct Assign2DSSS<T, MatA> {
 impl<T, R1, C1, S1: 'static> MechFunctionFactory for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
 where
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+    naMatrix<T, R1, C1, S1>: FunctionStateBacking,
     T: Scalar
         + Clone
         + Debug
@@ -826,13 +501,13 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     R1: Dim,
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
-    naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind + FunctionRuntimeType,
+    naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind + FunctionStateBacking,
     #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst,
 {
@@ -844,34 +519,26 @@ where
     );
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                let source: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let ix1: Ref<usize> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let ix2: Ref<usize> = arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                    out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    sink,
-                    source,
-                    ixes: (ix1, ix2),
-                    _marker: PhantomData,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
+    }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
+        let source: Ref<T> = arg1.try_ref()?;
+        let ix1: Ref<usize> = arg2.try_ref()?;
+        let ix2: Ref<usize> = arg3.try_ref()?;
+        let sink: Ref<naMatrix<T, R1, C1, S1>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            sink,
+            source,
+            ixes: (ix1, ix2),
+            _marker: PhantomData,
+        }))
     }
 }
 impl<T, R1, C1, S1> MechFunctionImpl for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
 where
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+    naMatrix<T, R1, C1, S1>: FunctionStateBacking,
     T: Scalar + Clone + Debug + Sync + Send + 'static,
     R1: Dim,
     C1: Dim,
@@ -887,18 +554,17 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.sink.to_value()
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.sink))
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "semantic-compiler")]
@@ -916,135 +582,6 @@ where
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
     }
 }
-
-fn impl_assign_scalar_scalar_fxn(
-    sink: LegacyValue,
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (sink.clone(), ixes.as_slice(), source.clone());
-    impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u64, "u64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_scalar_arms,
-                Assign2DSS,
-                arg,
-                u128,
-                "u128"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, i64, "i64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_scalar_arms,
-                Assign2DSS,
-                arg,
-                i128,
-                "i128"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, f64, "f64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_scalar_arms,
-                Assign2DSS,
-                arg,
-                R64,
-                "rational"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_scalar_arms,
-                Assign2DSS,
-                arg,
-                C64,
-                "complex"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_scalar_arms,
-                Assign2DSS,
-                arg,
-                bool,
-                "bool"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_scalar_arms,
-                Assign2DSS,
-                arg,
-                String,
-                "string"
-            )
-        })
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxes {
-                    arg: (
-                        sink.kind(),
-                        ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                        source.kind(),
-                    ),
-                    fxn_name: "MatrixAssignScalarScalar".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAssignScalarScalar {}
-impl FunctionSpecializer for MatrixAssignScalarScalar {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_scalar_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match sink {
-                LegacyValue::MutableReference(sink) => impl_assign_scalar_scalar_fxn(
-                    sink.borrow().clone(),
-                    source.clone(),
-                    ixes.clone(),
-                ),
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "MatrixAssignScalarScalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[:,1] = 1 -----------------------------------------------------------------
 
 macro_rules! assign_2d_all_scalar {
     ($source:expr, $ix:expr, $sink:expr) => {
@@ -1095,11 +632,11 @@ macro_rules! impl_assign_scalar_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            $ix: FunctionRuntimeType,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionPortBacking,
+            $ix: FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
@@ -1110,36 +647,26 @@ macro_rules! impl_assign_scalar_fxn_v {
             );
 
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ixes: Ref<$ix> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes,
-                            _marker: PhantomData::default(),
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
+            }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2) = invocation.expect_binary()?;
+                let source: Ref<naMatrix<T, R2, C2, S2>> = arg1.try_ref()?;
+                let ixes: Ref<$ix> = arg2.try_ref()?;
+                let sink: Ref<naMatrix<T, R1, C1, S1>> = out.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes,
+                    _marker: PhantomData::default(),
+                }))
             }
         }
         impl<T, R1, C1, S1, R2, C2, S2> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
         where
             Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
             R1: Dim,
             C1: Dim,
@@ -1157,15 +684,14 @@ macro_rules! impl_assign_scalar_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -1193,85 +719,6 @@ macro_rules! impl_assign_scalar_fxn_v {
 impl_assign_fxn_s!(Assign2DASS, assign_2d_all_scalar, usize);
 impl_assign_scalar_fxn_v!(Assign2DASV, assign_2d_all_vector, usize);
 
-fn impl_assign_all_scalar_fxn(
-    sink: LegacyValue,
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (sink.clone(), ixes.as_slice(), source.clone());
-    impl_assign_all_scalar_arms!(Assign2DAS, &arg, u8, "u8")
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, u16, "u16"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, u32, "u32"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, u64, "u64"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, u128, "u128"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i8, "i8"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i16, "i16"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i32, "i32"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i64, "i64"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i128, "i128"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, f32, "f32"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, f64, "f64"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, R64, "rational"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, C64, "complex"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, bool, "bool"))
-        .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, String, "string"))
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxes {
-                    arg: (
-                        sink.kind(),
-                        ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                        source.kind(),
-                    ),
-                    fxn_name: "MatrixAssignRangeScalar".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAssignAllScalar {}
-impl FunctionSpecializer for MatrixAssignAllScalar {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_all_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match sink {
-                LegacyValue::MutableReference(sink) => {
-                    impl_assign_all_scalar_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                sink => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "MatrixAssignRangeScalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1,:] = 1 -----------------------------------------------------------------
-
 macro_rules! assign_2d_scalar_all_scalar {
     ($source:expr, $ix:expr, $sink:expr) => {
         for i in 0..$sink.ncols() {
@@ -1290,85 +737,6 @@ macro_rules! assign_2d_scalar_all_vector {
 
 impl_assign_fxn_s!(Assign2DSAS, assign_2d_scalar_all_scalar, usize);
 impl_assign_scalar_fxn_v!(Assign2DSAV, assign_2d_scalar_all_vector, usize);
-
-fn impl_assign_scalar_all_fxn(
-    sink: LegacyValue,
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (sink.clone(), ixes.as_slice(), source.clone());
-    impl_assign_scalar_all_arms!(Assign2DSA, &arg, u8, "u8")
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, u16, "u16"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, u32, "u32"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, u64, "u64"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, u128, "u128"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i8, "i8"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i16, "i16"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i32, "i32"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i64, "i64"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i128, "i128"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, f32, "f32"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, f64, "f64"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, R64, "rational"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, C64, "complex"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, bool, "bool"))
-        .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, String, "string"))
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxes {
-                    arg: (
-                        sink.kind(),
-                        ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                        source.kind(),
-                    ),
-                    fxn_name: "MatrixAssignRangeScalar".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAssignScalarAll {}
-impl FunctionSpecializer for MatrixAssignScalarAll {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_scalar_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match sink {
-                LegacyValue::MutableReference(sink) => {
-                    impl_assign_scalar_all_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "MatrixAssignRangeScalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1..3,1] = 1 ------------------------------------------------------------------
 
 macro_rules! assign_2d_range_scalar {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
@@ -1432,16 +800,16 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionRuntimeType,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
@@ -1453,37 +821,26 @@ macro_rules! impl_assign_range_scalar_fxn_s {
             );
 
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<T> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ix1: Ref<IxVec> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let ix2: Ref<usize> =
-                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let sink: Ref<na::Matrix<T, R, C, S>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes: (ix1, ix2),
-                            _marker: PhantomData,
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
+            }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
+                let source: Ref<T> = arg1.try_ref()?;
+                let ix1: Ref<IxVec> = arg2.try_ref()?;
+                let ix2: Ref<usize> = arg3.try_ref()?;
+                let sink: Ref<na::Matrix<T, R, C, S>> = out.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes: (ix1, ix2),
+                    _marker: PhantomData,
+                }))
             }
         }
         impl<T, R, C, S, IxVec> MechFunctionImpl for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
             Ref<naMatrix<T, R, C, S>>: ToValue,
+            naMatrix<T, R, C, S>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             IxVec: AsRef<[$ix]> + Debug,
             R: Dim,
@@ -1500,15 +857,14 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -1568,7 +924,7 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                 + AsValueKind,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
-            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionRuntimeType,
+            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
@@ -1577,10 +933,10 @@ macro_rules! impl_assign_range_scalar_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
@@ -1592,38 +948,27 @@ macro_rules! impl_assign_range_scalar_fxn_v {
             );
 
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ix1: Ref<IxVec> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let ix2: Ref<usize> =
-                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes: (ix1, ix2),
-                            _marker: PhantomData::default(),
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
+            }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
+                let source: Ref<naMatrix<T, R2, C2, S2>> = arg1.try_ref()?;
+                let ix1: Ref<IxVec> = arg2.try_ref()?;
+                let ix2: Ref<usize> = arg3.try_ref()?;
+                let sink: Ref<naMatrix<T, R1, C1, S1>> = out.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes: (ix1, ix2),
+                    _marker: PhantomData::default(),
+                }))
             }
         }
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
             Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
             IxVec: AsRef<[$ix]> + Debug,
             R1: Dim,
@@ -1643,15 +988,14 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -1684,175 +1028,6 @@ impl_assign_range_scalar_fxn_s!(Assign2DRSS, assign_2d_range_scalar, usize);
 impl_assign_range_scalar_fxn_s!(Assign2DRSB, assign_2d_range_scalar_b, bool);
 impl_assign_range_scalar_fxn_v!(Assign2DRSV, assign_2d_range_scalar_v, usize);
 impl_assign_range_scalar_fxn_v!(Assign2DRSVB, assign_2d_range_scalar_vb, bool);
-
-fn impl_assign_range_scalar_fxn(
-    sink: LegacyValue,
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (sink.clone(), ixes.as_slice(), source.clone());
-    impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, i128, "i128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, f64, "f64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_scalar_arms,
-                Assign2DRS,
-                arg,
-                R64,
-                "rational"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_scalar_arms,
-                Assign2DRS,
-                arg,
-                C64,
-                "complex"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, bool, "bool"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_scalar_arms,
-                Assign2DRS,
-                arg,
-                String,
-                "string"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, u8, "u8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, u64, "u64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_scalar_arms_b,
-                Assign2DRS,
-                arg,
-                u128,
-                "u128"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, i64, "i64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_scalar_arms_b,
-                Assign2DRS,
-                arg,
-                i128,
-                "i128"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, f64, "f64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_scalar_arms_b,
-                Assign2DRS,
-                arg,
-                R64,
-                "rational"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_scalar_arms_b,
-                Assign2DRS,
-                arg,
-                C64,
-                "complex"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_scalar_arms_b,
-                Assign2DRS,
-                arg,
-                bool,
-                "bool"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_scalar_arms_b,
-                Assign2DRS,
-                arg,
-                String,
-                "string"
-            )
-        })
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxes {
-                    arg: (
-                        sink.kind(),
-                        ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                        source.kind(),
-                    ),
-                    fxn_name: "MatrixAssignRangeScalar".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAssignRangeScalar {}
-impl FunctionSpecializer for MatrixAssignRangeScalar {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_range_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match sink {
-                LegacyValue::MutableReference(sink) => impl_assign_range_scalar_fxn(
-                    sink.borrow().clone(),
-                    source.clone(),
-                    ixes.clone(),
-                ),
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "MatrixAssignRangeScalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1,1..3] = 1 ------------------------------------------------------------------
 
 macro_rules! assign_2d_scalar_range {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
@@ -1914,16 +1089,16 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionRuntimeType,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
@@ -1935,37 +1110,26 @@ macro_rules! impl_assign_scalar_range_fxn_s {
             );
 
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<T> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ix1: Ref<usize> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let ix2: Ref<IxVec> =
-                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let sink: Ref<na::Matrix<T, R, C, S>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes: (ix1, ix2),
-                            _marker: PhantomData,
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
+            }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
+                let source: Ref<T> = arg1.try_ref()?;
+                let ix1: Ref<usize> = arg2.try_ref()?;
+                let ix2: Ref<IxVec> = arg3.try_ref()?;
+                let sink: Ref<na::Matrix<T, R, C, S>> = out.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes: (ix1, ix2),
+                    _marker: PhantomData,
+                }))
             }
         }
         impl<T, R, C, S, IxVec> MechFunctionImpl for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
             Ref<naMatrix<T, R, C, S>>: ToValue,
+            naMatrix<T, R, C, S>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             IxVec: AsRef<[$ix]> + Debug,
             R: Dim,
@@ -1982,15 +1146,14 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -2050,7 +1213,7 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                 + AsValueKind,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
-            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionRuntimeType,
+            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
@@ -2059,10 +1222,10 @@ macro_rules! impl_assign_scalar_range_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
@@ -2074,38 +1237,27 @@ macro_rules! impl_assign_scalar_range_fxn_v {
             );
 
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ix1: Ref<usize> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let ix2: Ref<IxVec> =
-                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes: (ix1, ix2),
-                            _marker: PhantomData::default(),
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
+            }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
+                let source: Ref<naMatrix<T, R2, C2, S2>> = arg1.try_ref()?;
+                let ix1: Ref<usize> = arg2.try_ref()?;
+                let ix2: Ref<IxVec> = arg3.try_ref()?;
+                let sink: Ref<naMatrix<T, R1, C1, S1>> = out.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes: (ix1, ix2),
+                    _marker: PhantomData::default(),
+                }))
             }
         }
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
             Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+            naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
             IxVec: AsRef<[$ix]> + Debug,
             R1: Dim,
@@ -2125,15 +1277,14 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -2164,175 +1315,6 @@ impl_assign_scalar_range_fxn_s!(Assign2DSRS, assign_2d_scalar_range, usize);
 impl_assign_scalar_range_fxn_s!(Assign2DSRB, assign_2d_scalar_range_b, bool);
 impl_assign_scalar_range_fxn_v!(Assign2DSRV, assign_2d_scalar_range_v, usize);
 impl_assign_scalar_range_fxn_v!(Assign2DSRVB, assign_2d_scalar_range_vb, bool);
-
-fn impl_assign_scalar_range_fxn(
-    sink: LegacyValue,
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (sink.clone(), ixes.as_slice(), source.clone());
-    impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, i128, "i128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, f64, "f64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_range_arms,
-                Assign2DSR,
-                arg,
-                R64,
-                "rational"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_range_arms,
-                Assign2DSR,
-                arg,
-                C64,
-                "complex"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, bool, "bool"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_range_arms,
-                Assign2DSR,
-                arg,
-                String,
-                "string"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, u8, "u8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, u64, "u64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_range_arms_b,
-                Assign2DSR,
-                arg,
-                u128,
-                "u128"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, i64, "i64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_range_arms_b,
-                Assign2DSR,
-                arg,
-                i128,
-                "i128"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, f64, "f64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_range_arms_b,
-                Assign2DSR,
-                arg,
-                R64,
-                "rational"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_range_arms_b,
-                Assign2DSR,
-                arg,
-                C64,
-                "complex"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_range_arms_b,
-                Assign2DSR,
-                arg,
-                bool,
-                "bool"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_scalar_range_arms_b,
-                Assign2DSR,
-                arg,
-                String,
-                "string"
-            )
-        })
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxes {
-                    arg: (
-                        sink.kind(),
-                        ixes.iter().map(|x| x.kind()).collect(),
-                        source.kind(),
-                    ),
-                    fxn_name: "MatrixAssignScalarRange".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAssignScalarRange {}
-impl FunctionSpecializer for MatrixAssignScalarRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_scalar_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match sink {
-                LegacyValue::MutableReference(sink) => impl_assign_scalar_range_fxn(
-                    sink.borrow().clone(),
-                    source.clone(),
-                    ixes.clone(),
-                ),
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "MatrixAssignScalarRange".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1..3,1..3] = 1 ------------------------------------------------------------------
 
 macro_rules! assign_2d_range_range {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
@@ -2465,19 +1447,19 @@ macro_rules! impl_assign_range_range_fxn_s {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
-            IxVec1: ConstElem + Debug + AsRef<[$ix1]> + AsNaKind + FunctionRuntimeType,
+            IxVec1: ConstElem + Debug + AsRef<[$ix1]> + AsNaKind + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec1: CompileConst,
-            IxVec2: ConstElem + Debug + AsRef<[$ix2]> + AsNaKind + FunctionRuntimeType,
+            IxVec2: ConstElem + Debug + AsRef<[$ix2]> + AsNaKind + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec2: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
@@ -2489,38 +1471,27 @@ macro_rules! impl_assign_range_range_fxn_s {
             );
 
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<T> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ix1: Ref<IxVec1> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let ix2: Ref<IxVec2> =
-                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let sink: Ref<na::Matrix<T, R, C, S>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            sink,
-                            source,
-                            ixes: (ix1, ix2),
-                            _marker: PhantomData,
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
+            }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
+                let source: Ref<T> = arg1.try_ref()?;
+                let ix1: Ref<IxVec1> = arg2.try_ref()?;
+                let ix2: Ref<IxVec2> = arg3.try_ref()?;
+                let sink: Ref<na::Matrix<T, R, C, S>> = out.try_ref()?;
+                Ok(Box::new(Self {
+                    sink,
+                    source,
+                    ixes: (ix1, ix2),
+                    _marker: PhantomData,
+                }))
             }
         }
         impl<T, R, C, S, IxVec1, IxVec2> MechFunctionImpl
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
         where
             Ref<naMatrix<T, R, C, S>>: ToValue,
+            naMatrix<T, R, C, S>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             IxVec1: AsRef<[$ix1]> + Debug,
             IxVec2: AsRef<[$ix2]> + Debug,
@@ -2538,15 +1509,14 @@ macro_rules! impl_assign_range_range_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.sink.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.sink))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -2584,173 +1554,6 @@ impl_range_range_fxn_v!(Assign2DRRVBU, assign_2d_range_range_vbu, bool, usize);
 
 impl_assign_range_range_fxn_s!(Assign2DRRUB, assign_2d_range_range_ub, usize, bool);
 impl_range_range_fxn_v!(Assign2DRRVUB, assign_2d_range_range_vub, usize, bool);
-
-fn impl_assign_range_range_fxn(
-    sink: LegacyValue,
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (sink.clone(), ixes.as_slice(), source.clone());
-    impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, i128, "i128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, f64, "f64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_range_arms,
-                Assign2DRR,
-                arg,
-                R64,
-                "rational"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_range_arms,
-                Assign2DRR,
-                arg,
-                C64,
-                "complex"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, bool, "bool"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_range_arms,
-                Assign2DRR,
-                arg,
-                String,
-                "string"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, u8, "u8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, u64, "u64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_range_arms_b,
-                Assign2DRR,
-                arg,
-                u128,
-                "u128"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, i64, "i64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_range_arms_b,
-                Assign2DRR,
-                arg,
-                i128,
-                "i128"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, f64, "f64"))
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_range_arms_b,
-                Assign2DRR,
-                arg,
-                R64,
-                "rational"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_range_arms_b,
-                Assign2DRR,
-                arg,
-                C64,
-                "complex"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_range_arms_b,
-                Assign2DRR,
-                arg,
-                bool,
-                "bool"
-            )
-        })
-        .or_else(|_| {
-            impl_assign_fxn!(
-                impl_assign_range_range_arms_b,
-                Assign2DRR,
-                arg,
-                String,
-                "string"
-            )
-        })
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_bu, Assign2DRR, arg, f64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_ub, Assign2DRR, arg, f64, "f64"))
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxes {
-                    arg: (
-                        sink.kind(),
-                        ixes.iter().map(|x| x.kind()).collect(),
-                        source.kind(),
-                    ),
-                    fxn_name: "matrix/assign-range".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAssignRangeRange {}
-impl FunctionSpecializer for MatrixAssignRangeRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_range_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match sink {
-                LegacyValue::MutableReference(sink) => {
-                    impl_assign_range_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "matrix/assign-range".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
 
 // x[:,1..3] = 1 ------------------------------------------------------------------
 
@@ -2811,107 +1614,6 @@ impl_set_all_fxn_s!(Set2DARS, assign_2d_all_range, usize);
 impl_set_all_fxn_s!(Set2DARB, assign_2d_all_range_b, bool);
 impl_all_fxn_v!(Set2DARVB, assign_2d_all_range_vb, bool);
 
-macro_rules! matrix_assign_all_range_fxn {
-  ($op_fxn_name:tt, $fxn_name:ident) => {
-    paste::paste! {
-      fn $op_fxn_name(sink: LegacyValue, source: LegacyValue, ixes: Vec<LegacyValue>) -> MResult<Box<dyn MechFunction>> {
-        let arg = (sink.clone(), ixes.as_slice(), source.clone());
-                     impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i128, "i128"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, f64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, R64, "rational"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, C64, "complex"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, bool, "bool"))
-        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, String, "string"))
-
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u8,  "u8"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u16, "u16"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u32, "u32"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u64, "u64"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u128,"u128"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i8,  "i8"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i16, "i16"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i32, "i32"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i64, "i64"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i128,"i128"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, f32, "f32"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, f64, "f64"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, R64, "rational"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, C64, "complex"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, bool, "bool"))
-        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, String, "string"))
-        .map_err(|_| MechError::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "matrix/assign-scalar".to_string() },
-            None
-          ).with_compiler_loc()
-        )
-      }
-    }
-  }
-}
-
-matrix_assign_all_range_fxn!(impl_assign_all_range_fxn, Set2DAR);
-
-pub struct MatrixAssignAllRange {}
-impl FunctionSpecializer for MatrixAssignAllRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_all_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (sink.clone(), ixes.clone(), source.clone()) {
-                (
-                    LegacyValue::MutableReference(sink),
-                    ixes,
-                    LegacyValue::MutableReference(source),
-                ) => impl_assign_all_range_fxn(
-                    sink.borrow().clone(),
-                    source.borrow().clone(),
-                    ixes.clone(),
-                ),
-                (sink, ixes, LegacyValue::MutableReference(source)) => {
-                    impl_assign_all_range_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
-                }
-                (LegacyValue::MutableReference(sink), ixes, source) => {
-                    impl_assign_all_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                (sink, ixes, source) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "matrix/assign-scalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
 // x[1..3,:] = 1 ------------------------------------------------------------------
 
 macro_rules! assign_2d_range_all {
@@ -2968,106 +1670,6 @@ impl_all_fxn_v!(Set2DRAV, assign_2d_range_all_v, usize);
 impl_set_all_fxn_s!(Set2DRAS, assign_2d_range_all, usize);
 impl_set_all_fxn_s!(Set2DRAB, assign_2d_range_all_b, bool);
 impl_all_fxn_v!(Set2DRAVB, assign_2d_range_all_vb, bool);
-
-macro_rules! matrix_assign_range_all_fxn {
-  ($op_fxn_name:tt, $fxn_name:ident) => {
-    paste::paste! {
-      fn $op_fxn_name(sink: LegacyValue, source: LegacyValue, ixes: Vec<LegacyValue>) -> MResult<Box<dyn MechFunction>> {
-        let arg = (sink.clone(), ixes.as_slice(), source.clone());
-                     impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, f32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, f64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, bool, "bool"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, String, "string"))
-
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u8,  "u8"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u16, "u16"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u32, "u32"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u64, "u64"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u128,"u128"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i8,  "i8"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i16, "i16"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i32, "i32"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i64, "i64"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i128,"i128"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, f32, "f32"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, f64, "f64"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, R64, "rational"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, C64, "complex"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, bool, "bool"))
-        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, String, "string"))
-        .map_err(|_| MechError::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "matrix/assign-range-all".to_string() },
-            None
-          ).with_compiler_loc()
-        )
-      }
-    }
-  }
-}
-
-matrix_assign_range_all_fxn!(impl_assign_range_all_fxn, Set2DRA);
-
-pub struct MatrixAssignRangeAll {}
-impl FunctionSpecializer for MatrixAssignRangeAll {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match impl_assign_range_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (sink.clone(), ixes.clone(), source.clone()) {
-                (
-                    LegacyValue::MutableReference(sink),
-                    ixes,
-                    LegacyValue::MutableReference(source),
-                ) => impl_assign_range_all_fxn(
-                    sink.borrow().clone(),
-                    source.borrow().clone(),
-                    ixes.clone(),
-                ),
-                (sink, ixes, LegacyValue::MutableReference(source)) => {
-                    impl_assign_range_all_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
-                }
-                (LegacyValue::MutableReference(sink), ixes, source) => {
-                    impl_assign_range_all_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(),
-                            source.kind(),
-                        ),
-                        fxn_name: "matrix/assign-range-all".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
 
 static PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {

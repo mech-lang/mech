@@ -1,4 +1,4 @@
-use crate::{FormulaOperator, MechErrorKind, ValueKind};
+use crate::{FormulaOperator, FunctionValueRepresentation, MechErrorKind};
 
 #[derive(Debug, Clone)]
 pub struct UnhandledFormulaOperatorError {
@@ -28,21 +28,8 @@ impl MechErrorKind for UndefinedVariableError {
     }
 }
 #[derive(Debug, Clone)]
-pub struct InvalidIndexKindError {
-    pub(super) kind: ValueKind,
-}
-impl MechErrorKind for InvalidIndexKindError {
-    fn name(&self) -> &str {
-        "InvalidIndexKind"
-    }
-    fn message(&self) -> String {
-        format!("Invalid index kind: {:?}", self.kind)
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct ComprehensionGeneratorError {
-    pub(super) found: ValueKind,
+    pub(super) found: FunctionValueRepresentation,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -72,19 +59,6 @@ impl MechErrorKind for ComprehensionGeneratorError {
             "Comprehension generator must produce a set or matrix, found kind: {:?}",
             self.found
         )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct PatternExpectedTupleError {
-    found: ValueKind,
-}
-impl MechErrorKind for PatternExpectedTupleError {
-    fn name(&self) -> &str {
-        "PatternExpectedTuple"
-    }
-    fn message(&self) -> String {
-        format!("Pattern expected a tuple, found kind: {:?}", self.found)
     }
 }
 
@@ -125,8 +99,8 @@ impl MechErrorKind for MatchNoArmMatchedError {
 
 #[derive(Debug, Clone)]
 pub struct MatchArmKindMismatchError {
-    pub(super) expected: ValueKind,
-    pub(super) found: ValueKind,
+    pub(super) expected: FunctionValueRepresentation,
+    pub(super) found: FunctionValueRepresentation,
 }
 impl MechErrorKind for MatchArmKindMismatchError {
     fn name(&self) -> &str {
@@ -180,7 +154,7 @@ impl MechErrorKind for PatternMatchError {
 
 #[derive(Debug, Clone)]
 pub struct InvalidGuardExpressionError {
-    pub(super) found: ValueKind,
+    pub(super) found: FunctionValueRepresentation,
 }
 
 impl MechErrorKind for InvalidGuardExpressionError {

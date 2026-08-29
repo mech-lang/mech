@@ -3,7 +3,9 @@ use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
 #[cfg(all(feature = "dot", feature = "matrix"))]
-use mech_core::{FunctionArgs, FunctionArgumentRole, function_shape_contract_violation};
+use mech_core::{SchemaBody, ValueCell, function_shape_contract_violation};
+#[cfg(all(test, feature = "dot", feature = "matrix"))]
+use mech_core::{FunctionArgs, FunctionArgumentRole};
 #[cfg(any(
     feature = "dot",
     feature = "matmul",
@@ -23,7 +25,7 @@ use mech_core::{
         feature = "transpose"
     )
 ))]
-use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(all(
     feature = "source",
     any(
@@ -50,9 +52,9 @@ fn install_operation<T>(
     compiler: T,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
+    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -113,10 +115,10 @@ macro_rules! matrix_numeric_runtime_contract {
         RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
     };
     (dot, $factory:ident) => {
-        RuntimeFunctionContract::custom(
+        RuntimeFunctionContract::canonical_custom(
             "dot_reduction",
             RuntimeOutputAliasPolicy::DisallowInputAlias,
-            validate_dot_reduction,
+            validate_canonical_dot_reduction,
         )
     };
     (matmul, MatMulScalar) => {
@@ -127,7 +129,7 @@ macro_rules! matrix_numeric_runtime_contract {
     };
 }
 
-#[cfg(all(feature = "dot", feature = "matrix"))]
+#[cfg(all(test, feature = "dot", feature = "matrix"))]
 fn validate_dot_reduction(args: &FunctionArgs) -> MResult<()> {
     let contract = "dot_reduction";
     if args
@@ -157,6 +159,41 @@ fn validate_dot_reduction(args: &FunctionArgs) -> MResult<()> {
                 "lhs is {}x{}, rhs is {}x{}",
                 lhs.rows, lhs.cols, rhs.rows, rhs.cols,
             ),
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(all(feature = "dot", feature = "matrix"))]
+fn validate_canonical_dot_reduction(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    let contract = "dot_reduction";
+    if matches!(output.closed_schema_body()?, SchemaBody::Matrix { .. }) {
+        return Err(function_shape_contract_violation(
+            contract,
+            "dot output must be scalar",
+        ));
+    }
+    let [lhs, rhs] = inputs else {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("expected 2 inputs, found {}", inputs.len()),
+        ));
+    };
+    let dimensions = |cell: &ValueCell, label: &str| -> MResult<Box<[mech_core::DimensionExpr]>> {
+        let SchemaBody::Matrix { dimensions, .. } = cell.closed_schema_body()? else {
+            return Err(function_shape_contract_violation(
+                contract,
+                format!("{label} must be matrix-backed"),
+            ));
+        };
+        Ok(dimensions)
+    };
+    let lhs = dimensions(lhs, "lhs")?;
+    let rhs = dimensions(rhs, "rhs")?;
+    if lhs != rhs {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("lhs shape {lhs:?} differs from rhs shape {rhs:?}"),
         ));
     }
     Ok(())

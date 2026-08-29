@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 
-use crate::{Expression, InterpreterExecution, LegacyValue, MResult, literal, structure};
+use crate::{
+    Expression, InterpreterExecution, MResult, SpecializationInput, ValueCell, literal, structure,
+};
 
 use std::collections::HashMap;
 
@@ -86,10 +88,9 @@ pub use comprehensions::{SetComprehensionDefine, ValueSetComprehension, set_comp
 pub(crate) use environment::DeferredExpressionSolveScope;
 pub use errors::{
     ArityMismatchError, ComprehensionGeneratorError, InvalidGuardExpressionError,
-    InvalidIndexKindError, MatchArmKindMismatchError, MatchNoArmMatchedError,
-    MatchNonExhaustiveError, MatchNonExhaustiveVariantsError, PatternExpectedTupleError,
-    PatternMatchError, ReactiveComprehensionStructureUnsupported, UndefinedVariableError,
-    UnhandledFormulaOperatorError,
+    MatchArmKindMismatchError, MatchNoArmMatchedError, MatchNonExhaustiveError,
+    MatchNonExhaustiveVariantsError, PatternMatchError, ReactiveComprehensionStructureUnsupported,
+    UndefinedVariableError, UnhandledFormulaOperatorError,
 };
 pub use formulas::{factor, term};
 #[cfg(feature = "functions")]
@@ -128,37 +129,47 @@ mod tests;
 // Expressions
 // ----------------------------------------------------------------------------
 
-pub type Environment = HashMap<u64, LegacyValue>;
+pub type Environment = HashMap<u64, ValueCell>;
 
 pub fn expression(
     expr: &Expression,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<SpecializationInput> {
     match &expr {
         #[cfg(feature = "variables")]
-        Expression::Var(v) => var(v, env, p),
+        Expression::Var(v) => var(v, env, p).map(SpecializationInput::Cell),
         #[cfg(any(
             feature = "range_inclusive",
             feature = "range_exclusive",
             feature = "range_inclusive_increment",
             feature = "range_exclusive_increment"
         ))]
-        Expression::Range(rng) => range(&rng, env, p),
+        Expression::Range(rng) => range(&rng, env, p).map(SpecializationInput::Cell),
         #[cfg(all(feature = "subscript_slice", feature = "access"))]
-        Expression::Slice(slc) => slice(&slc, env, p),
-        Expression::Formula(fctr) => factor(fctr, env, p),
-        Expression::Structure(strct) => structure(strct, env, p),
+        Expression::Slice(slc) => slice(&slc, env, p).map(SpecializationInput::Cell),
+        Expression::Formula(fctr) => factor(fctr, env, p).map(SpecializationInput::Cell),
+        Expression::Structure(strct) => structure(strct, env, p).map(SpecializationInput::Cell),
         Expression::Literal(ltrl) => literal(&ltrl, p),
         #[cfg(feature = "functions")]
-        Expression::FunctionCall(fxn_call) => function_call(fxn_call, env, p),
+        Expression::FunctionCall(fxn_call) => {
+            function_call(fxn_call, env, p).map(SpecializationInput::Cell)
+        }
         #[cfg(feature = "set_comprehensions")]
-        Expression::SetComprehension(set_comp) => set_comprehension(set_comp, p),
+        Expression::SetComprehension(set_comp) => {
+            set_comprehension(set_comp, p).map(SpecializationInput::Cell)
+        }
         #[cfg(feature = "matrix_comprehensions")]
-        Expression::MatrixComprehension(matrix_comp) => matrix_comprehension(matrix_comp, p),
-        Expression::Match(match_expr) => match_expression(match_expr, env, p),
+        Expression::MatrixComprehension(matrix_comp) => {
+            matrix_comprehension(matrix_comp, p).map(SpecializationInput::Cell)
+        }
+        Expression::Match(match_expr) => {
+            match_expression(match_expr, env, p).map(SpecializationInput::Cell)
+        }
         #[cfg(feature = "state_machines")]
-        Expression::FsmPipe(fsm_pipe) => crate::state_machines::execute_fsm_pipe(fsm_pipe, env, p),
+        Expression::FsmPipe(fsm_pipe) => {
+            crate::state_machines::execute_fsm_pipe(fsm_pipe, env, p).map(SpecializationInput::Cell)
+        }
         #[cfg(not(all(
             feature = "variables",
             any(
@@ -178,4 +189,12 @@ pub fn expression(
             .with_compiler_loc()
             .with_tokens(x.tokens())),
     }
+}
+
+pub(crate) fn expression_cell(
+    expr: &Expression,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<ValueCell> {
+    expression(expr, env, p)?.cell().cloned()
 }

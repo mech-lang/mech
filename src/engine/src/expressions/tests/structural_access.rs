@@ -1,13 +1,15 @@
-use crate::{Interpreter, LegacyValue, Plan, hash_str};
+use crate::{Interpreter, Plan, ValueCell, ValueData, hash_str};
 
-fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
-    interpreter
-        .symbols()
-        .borrow()
-        .get(hash_str(name))
-        .unwrap()
-        .borrow()
-        .clone()
+fn symbol(interpreter: &Interpreter, name: &str) -> ValueCell {
+    interpreter.symbols().borrow().get(hash_str(name)).unwrap()
+}
+
+fn f64_value(cell: &ValueCell) -> f64 {
+    let snapshot = cell.snapshot().unwrap();
+    match snapshot.data() {
+        ValueData::F64(value) => value.to_f64(),
+        other => panic!("expected f64, got {other:?}"),
+    }
 }
 
 fn alias_node(plan: &Plan, name: &str) -> usize {
@@ -20,23 +22,17 @@ fn alias_node(plan: &Plan, name: &str) -> usize {
         .unwrap_or_else(|| panic!("missing {name} node"))
 }
 
-fn assert_alias_node(plan: &Plan, name: &str, output: &LegacyValue, container: &LegacyValue) {
-    let output_cell = output.reactive_root_cell_ids()[0];
-    let container_cell = container.reactive_root_cell_ids()[0];
+fn assert_access_node(plan: &Plan, name: &str, output: &ValueCell, container: &ValueCell) {
+    let output_cell = output.reactive_cell_id();
+    let container_cell = container.reactive_cell_id();
     let node_id = alias_node(plan, name);
     let plan_borrow = plan.borrow();
     let node = plan_borrow.node(node_id).unwrap();
-    assert!(node.inputs.is_empty());
+    assert!(node.inputs.iter().any(|input| input.cell == container_cell));
     assert_eq!(node.outputs.as_slice(), &[output_cell]);
-    assert!(!node.inputs.iter().any(|input| input.cell == container_cell));
     assert!(
-        !plan_borrow
+        plan_borrow
             .reactive_consumers_for(container_cell)
-            .contains(&node_id)
-    );
-    assert!(
-        !plan_borrow
-            .sampled_consumers_for(container_cell)
             .contains(&node_id)
     );
 }
@@ -49,9 +45,9 @@ fn record_field_access_registers_structural_node() {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
-    assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
-    assert_alias_node(
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    assert_eq!(f64_value(&output), 2.0);
+    assert_access_node(
         &interpreter.plan(),
         "RecordAccessField",
         &output,
@@ -67,9 +63,9 @@ fn tuple_element_access_registers_structural_node() {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
-    assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
-    assert_alias_node(
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    assert_eq!(f64_value(&output), 2.0);
+    assert_access_node(
         &interpreter.plan(),
         "TupleAccessElement",
         &output,
@@ -85,24 +81,22 @@ fn record_field_consumer_depends_on_member_cell() {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
-    assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    assert_eq!(f64_value(&output), 3.0);
     let record = symbol(&interpreter, "record");
-    let record_cell = record.reactive_root_cell_ids()[0];
-    let field_cell = {
-        let LegacyValue::Record(record) = record else {
-            panic!("expected record")
-        };
-        record
-            .borrow()
-            .get(&hash_str("field"))
-            .unwrap()
-            .reactive_root_cell_ids()[0]
-    };
+    let record_cell = record.reactive_cell_id();
     let plan = interpreter.plan();
     let alias_id = alias_node(&plan, "RecordAccessField");
-    assert!(plan.borrow().node(alias_id).unwrap().inputs.is_empty());
-    let output_cell = output.reactive_root_cell_ids()[0];
+    assert!(
+        plan.borrow()
+            .node(alias_id)
+            .unwrap()
+            .inputs
+            .iter()
+            .any(|input| input.cell == record_cell)
+    );
+    let field_cell = plan.borrow().node(alias_id).unwrap().outputs[0];
+    let output_cell = output.reactive_cell_id();
     let plan = plan.borrow();
     let (consumer_id, consumer) = (0..plan.len())
         .find_map(|node_id| {
@@ -114,11 +108,5 @@ fn record_field_consumer_depends_on_member_cell() {
     assert!(
         plan.reactive_consumers_for(field_cell)
             .contains(&consumer_id)
-    );
-    assert!(
-        !consumer
-            .inputs
-            .iter()
-            .any(|input| input.cell == record_cell)
     );
 }

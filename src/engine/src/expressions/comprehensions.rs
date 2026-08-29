@@ -1,35 +1,36 @@
 use super::{
-    ComprehensionGeneratorError, Environment, ReactiveComprehensionStructureUnsupported, expression,
+    ComprehensionGeneratorError, Environment, ReactiveComprehensionStructureUnsupported,
+    expression_cell,
 };
 #[cfg(feature = "matrix_comprehensions")]
 use crate::MatrixComprehension;
-#[cfg(any(feature = "rational", feature = "complex"))]
-use crate::ToValue;
+#[cfg(feature = "set_comprehensions")]
+use crate::SetComprehension;
+#[cfg(feature = "matrix_comprehensions")]
+use crate::execute_function_instance;
 #[cfg(feature = "matrix_comprehensions")]
 pub use crate::intrinsics::constructors::ValueMatrixComprehension;
 #[cfg(feature = "set_comprehensions")]
 pub use crate::intrinsics::constructors::ValueSetComprehension;
 use crate::patterns::PatternBindingSink;
 use crate::{
-    ComprehensionQualifier, ExternalInteraction, FunctionSpecializer, Interpreter,
-    InterpreterExecution, LegacyValue, MResult, MechError, MechFunction, ReactiveNodeKind, Ref,
-    execute_catalog_operation, hash_str, legacy_ref_reactive_cell_ids,
+    CanonicalFunctionSpecializer, ComprehensionQualifier, Expression, ExternalInteraction,
+    FunctionInstance, FunctionInvocation, Interpreter, InterpreterExecution, MResult, MechError,
+    MechFunctionFactory, ReactiveNodeKind, SchemaBody, SpecializationContext,
+    SpecializationInvocation, SpecializedFunction, ValueCell, ValueData, execute_catalog_operation,
+    hash_str,
 };
-#[cfg(feature = "set_comprehensions")]
-use crate::{MechSet, SetComprehension};
-#[cfg(feature = "matrix_comprehensions")]
-use mech_core::matrix::Matrix;
 use std::collections::{HashMap, HashSet};
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-fn value_depends_on_reactive_turn(value: &LegacyValue, p: &InterpreterExecution<'_>) -> bool {
+fn value_depends_on_reactive_turn(value: &ValueCell, p: &InterpreterExecution<'_>) -> bool {
     let mut turn_cells = {
         let state = p.state.borrow();
         let symbols = state.symbol_table.borrow();
         symbols
             .mutable_variables
             .values()
-            .flat_map(|cell| legacy_ref_reactive_cell_ids(&cell.legacy_ref()))
+            .map(ValueCell::reactive_cell_id)
             .collect::<HashSet<_>>()
     };
     let plan = p.plan();
@@ -49,15 +50,12 @@ fn value_depends_on_reactive_turn(value: &LegacyValue, p: &InterpreterExecution<
             turn_cells.extend(node.outputs.iter().copied());
         }
     }
-    value
-        .reactive_cell_ids()
-        .iter()
-        .any(|cell| turn_cells.contains(cell))
+    turn_cells.contains(&value.reactive_cell_id())
 }
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 fn reject_reactive_structure(
-    value: &LegacyValue,
+    value: &ValueCell,
     qualifier: &'static str,
     p: &InterpreterExecution<'_>,
 ) -> MResult<()> {
@@ -76,8 +74,9 @@ fn comprehension_environments(
     qualifiers: &[ComprehensionQualifier],
     comprehension_id: u64,
     p: &InterpreterExecution<'_>,
-) -> MResult<(Vec<Environment>, Interpreter)> {
+) -> MResult<(Vec<Environment>, Interpreter, Option<Environment>)> {
     let mut envs: Vec<Environment> = vec![HashMap::new()];
+    let mut schema_environment = None;
     let mut new_p: Interpreter = (**p).clone();
     new_p.id = comprehension_id;
     // A comprehension has its own lexical environment, not its own reactive
@@ -91,7 +90,7 @@ fn comprehension_environments(
                 let mut new_envs = Vec::new();
                 for env in &envs {
                     let collection = p.with_interpreter(&new_p, |execution| {
-                        expression(expr, Some(env), execution)
+                        expression_cell(expr, Some(env), execution)
                     })?;
                     reject_reactive_structure(&collection, "generator", p)?;
                     for elmnt in comprehension_generator_values(&collection)? {
@@ -114,10 +113,10 @@ fn comprehension_environments(
                 let mut filtered = Vec::new();
                 for env in envs {
                     let result = p.with_interpreter(&new_p, |execution| {
-                        expression(expr, Some(&env), execution)
+                        expression_cell(expr, Some(&env), execution)
                     })?;
                     reject_reactive_structure(&result, "filter", p)?;
-                    if matches!(result, LegacyValue::Bool(value) if *value.borrow()) {
+                    if matches!(result.snapshot()?.data(), ValueData::Bool(true)) {
                         filtered.push(env);
                     }
                 }
@@ -127,148 +126,125 @@ fn comprehension_environments(
                 .into_iter()
                 .map(|mut env| -> MResult<_> {
                     let val = p.with_interpreter(&new_p, |execution| {
-                        expression(&var_def.expression, Some(&env), execution)
+                        expression_cell(&var_def.expression, Some(&env), execution)
                     })?;
                     env.insert(var_def.var.name.hash(), val);
                     Ok(env)
                 })
                 .collect::<MResult<Vec<_>>>()?,
         };
+        if let Some(environment) = envs.first() {
+            schema_environment = Some(environment.clone());
+        }
     }
-    Ok((envs, new_p))
+    Ok((envs, new_p, schema_environment))
+}
+
+#[cfg(feature = "matrix_comprehensions")]
+fn empty_comprehension_element(
+    expression: &Expression,
+    environment: Option<&Environment>,
+) -> MResult<Option<ValueCell>> {
+    let Expression::Var(variable) = expression else {
+        return Ok(None);
+    };
+    Ok(environment
+        .and_then(|environment| environment.get(&variable.name.hash()))
+        .map(ValueCell::detached_clone)
+        .transpose()?)
 }
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-fn comprehension_generator_values(collection: &LegacyValue) -> MResult<Vec<LegacyValue>> {
-    match collection {
-        #[cfg(feature = "set")]
-        LegacyValue::Set(mset) => Ok(mset.borrow().set.iter().cloned().collect()),
-        #[cfg(feature = "matrix")]
-        LegacyValue::MatrixIndex(matrix) => Ok(matrix
-            .as_vec()
-            .into_iter()
-            .map(|value| LegacyValue::Index(Ref::new(value)))
-            .collect()),
-        #[cfg(all(feature = "matrix", feature = "bool"))]
-        LegacyValue::MatrixBool(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u8"))]
-        LegacyValue::MatrixU8(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u16"))]
-        LegacyValue::MatrixU16(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u32"))]
-        LegacyValue::MatrixU32(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u64"))]
-        LegacyValue::MatrixU64(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u128"))]
-        LegacyValue::MatrixU128(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i8"))]
-        LegacyValue::MatrixI8(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i16"))]
-        LegacyValue::MatrixI16(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i32"))]
-        LegacyValue::MatrixI32(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i64"))]
-        LegacyValue::MatrixI64(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i128"))]
-        LegacyValue::MatrixI128(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "f32"))]
-        LegacyValue::MatrixF32(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "f64"))]
-        LegacyValue::MatrixF64(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "string"))]
-        LegacyValue::MatrixString(matrix) => {
-            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "rational"))]
-        LegacyValue::MatrixR64(matrix) => Ok(matrix
-            .as_vec()
-            .into_iter()
-            .map(|value| value.to_value())
-            .collect()),
-        #[cfg(all(feature = "matrix", feature = "complex"))]
-        LegacyValue::MatrixC64(matrix) => Ok(matrix
-            .as_vec()
-            .into_iter()
-            .map(|value| value.to_value())
-            .collect()),
-        #[cfg(feature = "matrix")]
-        LegacyValue::MatrixValue(matrix) => Ok(matrix.as_vec()),
-        LegacyValue::MutableReference(reference) => {
-            comprehension_generator_values(&reference.borrow())
-        }
-        x => Err(
-            MechError::new(ComprehensionGeneratorError { found: x.kind() }, None)
-                .with_compiler_loc(),
-        ),
+fn comprehension_generator_values(collection: &ValueCell) -> MResult<Vec<ValueCell>> {
+    if let Some(values) = collection.set_element_cells()? {
+        return Ok(values);
     }
+    if let Some(values) = collection.matrix_elements()? {
+        return Ok(values);
+    }
+    Err(MechError::new(
+        ComprehensionGeneratorError {
+            found: collection.representation(),
+        },
+        None,
+    )
+    .with_compiler_loc())
 }
 
 #[cfg(feature = "set_comprehensions")]
 pub struct SetComprehensionDefine {}
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
-impl FunctionSpecializer for SetComprehensionDefine {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        Ok(Box::new(ValueSetComprehension {
-            arguments: arguments.to_vec(),
-            out: Ref::new(MechSet::from_vec(arguments.to_vec())),
-        }))
+impl CanonicalFunctionSpecializer for SetComprehensionDefine {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        let arguments = invocation
+            .inputs()
+            .iter()
+            .map(|input| input.cell().cloned())
+            .collect::<MResult<Vec<_>>>()?;
+        let element = arguments
+            .first()
+            .map(ValueCell::closed_schema_body)
+            .transpose()?
+            .unwrap_or_else(|| SchemaBody::Tuple(Box::new([])));
+        for argument in &arguments {
+            if argument.closed_schema_body()? != element {
+                return Err(MechError::new(
+                    ComprehensionGeneratorError {
+                        found: argument.representation(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        }
+        let output = ValueCell::empty_dynamic_set(element)?;
+        let invocation = FunctionInvocation::variadic(output, arguments.into_boxed_slice());
+        let implementation = ValueSetComprehension::new_invocation(invocation.clone())?;
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            implementation,
+            invocation,
+        )))
     }
 }
 #[cfg(feature = "matrix_comprehensions")]
 pub struct MatrixComprehensionDefine {}
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
-impl FunctionSpecializer for MatrixComprehensionDefine {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        let out = if arguments.is_empty() {
-            LegacyValue::MatrixValue(Matrix::from_vec(vec![], 0, 0))
-        } else {
-            let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(arguments)?;
-            fxn.solve_result()?;
-            fxn.out()
-        };
-        Ok(Box::new(ValueMatrixComprehension {
-            arguments: arguments.to_vec(),
-            out: Ref::new(out),
-        }))
+impl CanonicalFunctionSpecializer for MatrixComprehensionDefine {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        let arguments = invocation
+            .inputs()
+            .iter()
+            .map(|input| input.cell().cloned())
+            .collect::<MResult<Vec<_>>>()?;
+        let output = crate::intrinsics::constructors::matrix_comprehension_output(&arguments)?;
+        let invocation = FunctionInvocation::variadic(output, arguments.into_boxed_slice());
+        let implementation = ValueMatrixComprehension::new_invocation(invocation.clone())?;
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            implementation,
+            invocation,
+        )))
     }
 }
 #[cfg(feature = "set_comprehensions")]
 pub fn set_comprehension(
     set_comp: &SetComprehension,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let comprehension_id = hash_str(&format!("{:?}", set_comp));
-    let (envs, new_p) = comprehension_environments(&set_comp.qualifiers, comprehension_id, p)?;
+    let (envs, new_p, _schema_environment) =
+        comprehension_environments(&set_comp.qualifiers, comprehension_id, p)?;
     let mut values = Vec::new();
     for env in envs {
         let val = p.with_interpreter(&new_p, |execution| {
-            expression(&set_comp.expression, Some(&env), execution)
+            expression_cell(&set_comp.expression, Some(&env), execution)
         })?;
         values.push(val);
     }
@@ -280,15 +256,34 @@ pub fn set_comprehension(
 pub fn matrix_comprehension(
     matrix_comp: &MatrixComprehension,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let comprehension_id = hash_str(&format!("{:?}", matrix_comp));
-    let (envs, new_p) = comprehension_environments(&matrix_comp.qualifiers, comprehension_id, p)?;
+    let (envs, new_p, schema_environment) =
+        comprehension_environments(&matrix_comp.qualifiers, comprehension_id, p)?;
     let mut values = Vec::new();
     for env in envs {
         values.push(p.with_interpreter(&new_p, |execution| {
-            expression(&matrix_comp.expression, Some(&env), execution)
+            expression_cell(&matrix_comp.expression, Some(&env), execution)
         })?);
     }
     let plan = p.plan();
+    if values.is_empty()
+        && let Some(element) =
+            empty_comprehension_element(&matrix_comp.expression, schema_environment.as_ref())?
+    {
+        let element_schema = match element.closed_schema_body()? {
+            SchemaBody::Matrix { element, .. } => *element,
+            schema => schema,
+        };
+        let output =
+            ValueCell::dynamic_matrix(element_schema, vec![0, 0].into_boxed_slice(), Box::new([]))?;
+        let invocation = FunctionInvocation::variadic(output.clone(), Box::new([]));
+        let implementation = ValueMatrixComprehension::new_invocation(invocation.clone())?;
+        return execute_function_instance(
+            p,
+            &plan,
+            FunctionInstance::new(implementation, invocation),
+        );
+    }
     execute_catalog_operation(p, &plan, "matrix/comprehension", values)
 }

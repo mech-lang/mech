@@ -35,10 +35,10 @@ macro_rules! declare_n_choose_k_scalar {
                 installer: [<install_n_choose_k_ $scalar_token>],
                 name: concat!("NChooseK<", $scalar_name, ">"),
                 factory_type: crate::n_choose_k::NChooseK<$scalar>,
-                contract: mech_core::RuntimeFunctionContract::custom(
+                contract: mech_core::RuntimeFunctionContract::canonical_custom(
                     "n_choose_k_scalar",
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
-                    crate::n_choose_k::validate_n_choose_k_scalar_contract,
+                    crate::n_choose_k::validate_canonical_n_choose_k_scalar_contract,
                 ),
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
@@ -58,10 +58,10 @@ macro_rules! declare_n_choose_k_matrix {
                 installer: [<install_n_choose_k_matrix_ $scalar_token>],
                 name: concat!("NChooseKMatrix<", $scalar_name, ">"),
                 factory_type: crate::n_choose_k::NChooseKMatrix<$scalar>,
-                contract: mech_core::RuntimeFunctionContract::custom(
+                contract: mech_core::RuntimeFunctionContract::canonical_custom(
                     "n_choose_k_matrix",
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
-                    crate::n_choose_k::validate_n_choose_k_matrix_contract,
+                    crate::n_choose_k::validate_canonical_n_choose_k_matrix_contract,
                 ),
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
@@ -82,7 +82,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     {
         let canonical_name = "combinatorics/n-choose-k";
         let operation =
-            builder.insert_specializer(canonical_name, Arc::new(CombinatoricsNChooseK {}))?;
+            builder.insert_canonical_specializer(canonical_name, Arc::new(CombinatoricsNChooseK {}))?;
         builder.insert_export(FunctionExport {
             operation,
             canonical_name: canonical_name.to_string(),

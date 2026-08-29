@@ -1,6 +1,4 @@
 use super::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use num_traits::*;
 use std::ops::DivAssign;
 
@@ -54,6 +52,11 @@ macro_rules! impl_div_assign_range_fxn_v {
 impl_assign_scalar_scalar!(Div, checked_div_assign);
 impl_assign_vector_vector!(Div, checked_div_assign);
 impl_assign_vector_scalar!(Div, checked_div_assign);
+#[cfg(test)]
+mod retired_legacy_value_specializer {
+#![cfg(any())]
+use super::*;
+
 #[cfg(feature = "source")]
 fn div_assign_value_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_op_assign_value_match_arms!(
@@ -116,6 +119,7 @@ impl FunctionSpecializer for DivAssignValue {
             },
         }
     }
+}
 }
 
 // x[1..3] /= 1 ----------------------------------------------------------------
@@ -183,6 +187,11 @@ impl_div_assign_range_fxn_v!(DivAssign1DRV, div_assign_1d_range_vec, usize);
 #[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_v!(DivAssign1DRVB, div_assign_1d_range_vec_b, bool);
 
+#[cfg(test)]
+mod retired_legacy_range_specializer {
+#![cfg(any())]
+use super::*;
+
 #[cfg(feature = "source")]
 op_assign_range_fxn!(div_assign_range_fxn, DivAssign1DR);
 
@@ -235,6 +244,7 @@ impl FunctionSpecializer for DivAssignRange {
             },
         }
     }
+}
 }
 
 // x[1..3,:] /= 1 ------------------------------------------------------------------
@@ -318,6 +328,11 @@ impl_div_assign_range_fxn_v!(DivAssign2DRAV, div_assign_2d_vector_all_mat, usize
 #[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_v!(DivAssign2DRAVB, div_assign_2d_vector_all_mat_b, bool);
 
+#[cfg(test)]
+mod retired_legacy_range_all_specializer {
+#![cfg(any())]
+use super::*;
+
 #[cfg(feature = "source")]
 op_assign_range_all_fxn!(div_assign_range_all_fxn, DivAssign2DRA);
 
@@ -371,3 +386,15 @@ impl FunctionSpecializer for DivAssignRangeAll {
         }
     }
 }
+}
+
+#[cfg(feature = "source")]
+crate::impl_canonical_op_assign_specializers!(
+    DivAssignValue,
+    DivAssignRange,
+    DivAssignRangeAll,
+    Div,
+    "DivAssign",
+    "DivAssign1DR",
+    "DivAssign2DRA"
+);

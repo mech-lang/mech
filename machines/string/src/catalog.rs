@@ -13,7 +13,8 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "concat")]
     {
         let canonical_name = "string/concat";
-        let operation = builder.insert_specializer(canonical_name, Arc::new(StringConcat {}))?;
+        let operation =
+            builder.insert_canonical_specializer(canonical_name, Arc::new(StringConcat {}))?;
 
         builder.insert_export(FunctionExport {
             operation,

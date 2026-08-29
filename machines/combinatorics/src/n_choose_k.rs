@@ -196,6 +196,14 @@ pub trait RuntimeNChooseK: Copy {
     fn runtime_n_choose_k(self, k: Self) -> Option<Self>;
 }
 
+trait NChooseKSelection: Copy {
+    fn selection_count(self) -> Option<u128>;
+
+    fn result_maximum() -> Option<u128> {
+        None
+    }
+}
+
 macro_rules! impl_runtime_integer_n_choose_k {
     ($($type:ty),+ $(,)?) => {
         $(
@@ -204,6 +212,16 @@ macro_rules! impl_runtime_integer_n_choose_k {
                     let n = u128::try_from(self).ok()?;
                     let k = u128::try_from(k).ok()?;
                     <$type>::try_from(checked_integer_n_choose_k(n, k)?).ok()
+                }
+            }
+
+            impl NChooseKSelection for $type {
+                fn selection_count(self) -> Option<u128> {
+                    u128::try_from(self).ok()
+                }
+
+                fn result_maximum() -> Option<u128> {
+                    u128::try_from(<$type>::MAX).ok()
                 }
             }
         )+
@@ -218,9 +236,23 @@ impl RuntimeNChooseK for f32 {
     }
 }
 
+impl NChooseKSelection for f32 {
+    fn selection_count(self) -> Option<u128> {
+        (self.is_finite() && self >= 0.0 && self.fract() == 0.0 && self <= u128::MAX as f32)
+            .then_some(self as u128)
+    }
+}
+
 impl RuntimeNChooseK for f64 {
     fn runtime_n_choose_k(self, k: Self) -> Option<Self> {
         Some(crate::kernels::n_choose_k::scalar(self, k))
+    }
+}
+
+impl NChooseKSelection for f64 {
+    fn selection_count(self) -> Option<u128> {
+        (self.is_finite() && self >= 0.0 && self.fract() == 0.0 && self <= u128::MAX as f64)
+            .then_some(self as u128)
     }
 }
 
@@ -234,6 +266,20 @@ impl RuntimeNChooseK for R64 {
     }
 }
 
+
+#[cfg(feature = "rational")]
+impl NChooseKSelection for R64 {
+    fn selection_count(self) -> Option<u128> {
+        (*self.denom() == 1)
+            .then(|| u128::try_from(*self.numer()).ok())
+            .flatten()
+    }
+
+    fn result_maximum() -> Option<u128> {
+        Some(i64::MAX as u128)
+    }
+}
+
 #[cfg(feature = "complex")]
 impl RuntimeNChooseK for C64 {
     fn runtime_n_choose_k(self, k: Self) -> Option<Self> {
@@ -241,6 +287,57 @@ impl RuntimeNChooseK for C64 {
     }
 }
 
+
+#[cfg(feature = "complex")]
+impl NChooseKSelection for C64 {
+    fn selection_count(self) -> Option<u128> {
+        let value = self.0;
+        (value.re.is_finite()
+            && value.im.is_finite()
+            && value.im == 0.0
+            && value.re >= 0.0
+            && value.re.fract() == 0.0
+            && value.re <= u128::MAX as f64)
+            .then_some(value.re as u128)
+    }
+}
+
+fn validate_n_choose_k_typed<T: NChooseKSelection>(n: T, k: T) -> MResult<()> {
+    let contract = "n_choose_k_scalar";
+    let n = n.selection_count().ok_or_else(|| {
+        function_shape_contract_violation(
+            contract,
+            "input 0 must be a finite, non-negative whole-number scalar",
+        )
+    })?;
+    let k = k.selection_count().ok_or_else(|| {
+        function_shape_contract_violation(
+            contract,
+            "input 1 must be a finite, non-negative whole-number scalar",
+        )
+    })?;
+    let steps = if k > n { 0 } else { k.min(n - k) };
+    if steps > crate::kernels::n_choose_k::MAX_SCALAR_STEPS {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "selection requires {steps} kernel steps, exceeding the bytecode v1 limit of {}",
+                crate::kernels::n_choose_k::MAX_SCALAR_STEPS,
+            ),
+        ));
+    }
+    if let Some(maximum) = T::result_maximum()
+        && checked_integer_n_choose_k(n, k).is_none_or(|result| result > maximum)
+    {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("selection result exceeds the operand representation maximum {maximum}"),
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
 fn scalar_integer_result_max(value: &LegacyValue) -> Option<u128> {
     match value {
         #[cfg(feature = "u8")]
@@ -269,6 +366,7 @@ fn scalar_integer_result_max(value: &LegacyValue) -> Option<u128> {
     }
 }
 
+#[cfg(test)]
 fn scalar_selection_count(value: &LegacyValue) -> Option<u128> {
     match value {
         #[cfg(feature = "u8")]
@@ -325,6 +423,7 @@ fn scalar_selection_count(value: &LegacyValue) -> Option<u128> {
     }
 }
 
+#[cfg(test)]
 fn validate_n_choose_k_scalar_values(n: &LegacyValue, k: &LegacyValue) -> MResult<()> {
     let contract = "n_choose_k_scalar";
     let result_maximum = scalar_integer_result_max(n);
@@ -361,6 +460,7 @@ fn validate_n_choose_k_scalar_values(n: &LegacyValue, k: &LegacyValue) -> MResul
     Ok(())
 }
 
+#[cfg(test)]
 pub(crate) fn validate_n_choose_k_scalar_contract(args: &FunctionArgs) -> MResult<()> {
     let contract = "n_choose_k_scalar";
     let n = args
@@ -370,6 +470,127 @@ pub(crate) fn validate_n_choose_k_scalar_contract(args: &FunctionArgs) -> MResul
         .input_value(1)
         .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?;
     validate_n_choose_k_scalar_values(n, k)
+}
+
+fn canonical_scalar_selection(value: &ValueData) -> Option<(u128, Option<u128>)> {
+    Some(match value {
+        #[cfg(feature = "u8")]
+        ValueData::U8(value) => ((*value).into(), Some(u8::MAX.into())),
+        #[cfg(feature = "u16")]
+        ValueData::U16(value) => ((*value).into(), Some(u16::MAX.into())),
+        #[cfg(feature = "u32")]
+        ValueData::U32(value) => ((*value).into(), Some(u32::MAX.into())),
+        #[cfg(feature = "u64")]
+        ValueData::U64(value) => ((*value).into(), Some(u64::MAX.into())),
+        #[cfg(feature = "u128")]
+        ValueData::U128(value) => (*value, Some(u128::MAX)),
+        #[cfg(feature = "i8")]
+        ValueData::I8(value) => (u128::try_from(*value).ok()?, Some(i8::MAX as u128)),
+        #[cfg(feature = "i16")]
+        ValueData::I16(value) => (u128::try_from(*value).ok()?, Some(i16::MAX as u128)),
+        #[cfg(feature = "i32")]
+        ValueData::I32(value) => (u128::try_from(*value).ok()?, Some(i32::MAX as u128)),
+        #[cfg(feature = "i64")]
+        ValueData::I64(value) => (u128::try_from(*value).ok()?, Some(i64::MAX as u128)),
+        #[cfg(feature = "i128")]
+        ValueData::I128(value) => (u128::try_from(*value).ok()?, Some(i128::MAX as u128)),
+        #[cfg(feature = "f32")]
+        ValueData::F32(value) => {
+            let value = value.to_f32();
+            if !value.is_finite()
+                || value < 0.0
+                || value.fract() != 0.0
+                || value > u128::MAX as f32
+            {
+                return None;
+            }
+            (value as u128, None)
+        }
+        #[cfg(feature = "f64")]
+        ValueData::F64(value) => {
+            let value = value.to_f64();
+            if !value.is_finite()
+                || value < 0.0
+                || value.fract() != 0.0
+                || value > u128::MAX as f64
+            {
+                return None;
+            }
+            (value as u128, None)
+        }
+        #[cfg(feature = "rational")]
+        ValueData::Rational64(value) => {
+            if value.denominator() != 1 {
+                return None;
+            }
+            (
+                u128::try_from(value.numerator()).ok()?,
+                Some(i64::MAX as u128),
+            )
+        }
+        #[cfg(feature = "complex")]
+        ValueData::Complex64(value) => {
+            let real = value.real().to_f64();
+            let imaginary = value.imaginary().to_f64();
+            if !real.is_finite()
+                || !imaginary.is_finite()
+                || imaginary != 0.0
+                || real < 0.0
+                || real.fract() != 0.0
+                || real > u128::MAX as f64
+            {
+                return None;
+            }
+            (real as u128, None)
+        }
+        _ => return None,
+    })
+}
+
+pub(crate) fn validate_canonical_n_choose_k_scalar_contract(
+    _output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    let contract = "n_choose_k_scalar";
+    let n = inputs
+        .first()
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing input 0"))?
+        .snapshot()?;
+    let k = inputs
+        .get(1)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?
+        .snapshot()?;
+    let (n, result_maximum) = canonical_scalar_selection(n.data()).ok_or_else(|| {
+        function_shape_contract_violation(
+            contract,
+            "input 0 must be a finite, non-negative whole-number scalar",
+        )
+    })?;
+    let (k, _) = canonical_scalar_selection(k.data()).ok_or_else(|| {
+        function_shape_contract_violation(
+            contract,
+            "input 1 must be a finite, non-negative whole-number scalar",
+        )
+    })?;
+    let steps = if k > n { 0 } else { k.min(n - k) };
+    if steps > crate::kernels::n_choose_k::MAX_SCALAR_STEPS {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "selection requires {steps} kernel steps, exceeding the bytecode v1 limit of {}",
+                crate::kernels::n_choose_k::MAX_SCALAR_STEPS,
+            ),
+        ));
+    }
+    if let Some(maximum) = result_maximum
+        && checked_integer_n_choose_k(n, k).is_none_or(|result| result > maximum)
+    {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("selection result exceeds the operand representation maximum {maximum}"),
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
@@ -382,7 +603,12 @@ fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
     Some(result)
 }
 
-#[cfg(all(feature = "matrix", feature = "matrixd"))]
+#[cfg(all(
+    test,
+    feature = "matrix",
+    feature = "matrixd",
+    feature = "i8"
+))]
 fn matrix_selection_size(value: &LegacyValue) -> Option<usize> {
     match value {
         LegacyValue::Index(value) => Some(*value.borrow()),
@@ -390,7 +616,12 @@ fn matrix_selection_size(value: &LegacyValue) -> Option<usize> {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "matrixd"))]
+#[cfg(all(
+    test,
+    feature = "matrix",
+    feature = "matrixd",
+    feature = "i8"
+))]
 pub(crate) fn validate_n_choose_k_matrix_contract(args: &FunctionArgs) -> MResult<()> {
     let contract = "n_choose_k_matrix";
     let input = args
@@ -439,6 +670,97 @@ pub(crate) fn validate_n_choose_k_matrix_contract(args: &FunctionArgs) -> MResul
             format!(
                 "output is {}x{}, expected {k}x{combinations}",
                 output.rows, output.cols,
+            ),
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
+pub(crate) fn validate_canonical_n_choose_k_matrix_contract(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    let contract = "n_choose_k_matrix";
+    let input = inputs
+        .first()
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?;
+    let SchemaBody::Matrix {
+        dimensions: input_dimensions,
+        ..
+    } = input.closed_schema_body()?
+    else {
+        return Err(function_shape_contract_violation(
+            contract,
+            "input 0 must be matrix-backed",
+        ));
+    };
+    let SchemaBody::Matrix {
+        dimensions: output_dimensions,
+        ..
+    } = output.closed_schema_body()?
+    else {
+        return Err(function_shape_contract_violation(
+            contract,
+            "output must be matrix-backed",
+        ));
+    };
+    if !matches!(
+        output.representation(),
+        FunctionValueRepresentation::Matrix {
+            storage: FunctionMatrixStoragePattern::Exact(FunctionMatrixRepresentation::MatrixD),
+            ..
+        }
+    ) {
+        return Err(function_shape_contract_violation(
+            contract,
+            "output must use MatrixD storage",
+        ));
+    }
+    let dimensions = |dimensions: &[DimensionExpr]| -> MResult<(usize, usize)> {
+        let [DimensionExpr::Constant(rows), DimensionExpr::Constant(columns)] = dimensions else {
+            return Err(function_shape_contract_violation(
+                contract,
+                "matrix dimensions must be resolved",
+            ));
+        };
+        Ok((
+            usize::try_from(*rows).unwrap_or(usize::MAX),
+            usize::try_from(*columns).unwrap_or(usize::MAX),
+        ))
+    };
+    let (input_rows, input_columns) = dimensions(&input_dimensions)?;
+    let (output_rows, output_columns) = dimensions(&output_dimensions)?;
+    let k = inputs
+        .get(1)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?
+        .snapshot()?;
+    let k = canonical_scalar_selection(k.data())
+        .and_then(|(value, _)| usize::try_from(value).ok())
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "input 1 must be a selection scalar")
+        })?;
+    let n = input_rows.checked_mul(input_columns).ok_or_else(|| {
+        function_shape_contract_violation(contract, "input element count overflowed usize")
+    })?;
+    if k == 0 || k > n {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("selection size {k} is outside 1..={n}"),
+        ));
+    }
+    let combinations = checked_combination_count(n, k).ok_or_else(|| {
+        function_shape_contract_violation(contract, "combination count overflowed usize")
+    })?;
+    if matches!(
+        output.extent_evolution(),
+        ExtentEvolution::Fixed | ExtentEvolution::ActivationFixed
+    ) && (output_rows != k || output_columns != combinations)
+    {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "output is {output_rows}x{output_columns}, expected {k}x{combinations}"
             ),
         ));
     }
@@ -550,6 +872,7 @@ where
         + One
         + AsValueKind
         + RuntimeNChooseK
+        + NChooseKSelection
         + PartialEq
         + PartialOrd,
     #[cfg(feature = "semantic-compiler")]
@@ -568,9 +891,6 @@ where
         Ok(Box::new(Self { n, k, out }))
     }
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 impl<T> MechFunctionImpl for NChooseK<T>
 where
@@ -588,6 +908,7 @@ where
         + Zero
         + One
         + RuntimeNChooseK
+        + NChooseKSelection
         + PartialEq
         + PartialOrd,
     Ref<T>: ToValue,
@@ -602,7 +923,7 @@ where
     fn solve_result(&self) -> MResult<()> {
         // Validate every reactive solve, not only bytecode installation: host
         // or live-resource producers may replace a previously safe operand.
-        validate_n_choose_k_scalar_values(&self.n.to_value(), &self.k.to_value())?;
+        validate_n_choose_k_typed(*self.n.borrow(), *self.k.borrow())?;
         let next = (*self.n.borrow())
             .runtime_n_choose_k(*self.k.borrow())
             .ok_or_else(|| {
@@ -617,18 +938,11 @@ where
         *self.out.borrow_mut() = next;
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_N_CHOOSE_K_SCALAR_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -654,7 +968,7 @@ mod scalar_contract_tests {
             bytes.extend(framed(&payload));
             (RuntimeType::Option(Box::new(RuntimeType::F64)), bytes)
         };
-        decode_encoded_constants(&[EncodedConstant {
+        legacy_values_from_encoded_bytecode_constants(&[EncodedConstant {
             runtime_type,
             alignment: 8,
             bytes,
@@ -733,7 +1047,7 @@ mod scalar_contract_tests {
         assert_eq!(*invocation_out.borrow(), 10.0);
         assert_eq!(
             invocation.reactive_output_cell_ids(),
-            invocation.out().reactive_root_cell_ids(),
+            invocation_out.to_value().reactive_root_cell_ids(),
         );
 
         with_reactive_journal_participant(|mut participant| {
@@ -930,7 +1244,9 @@ where
 pub struct NChooseKMatrix<T> {
     n: Matrix<T>,
     k: Ref<T>,
+    #[cfg(feature = "semantic-compiler")]
     out: Ref<DMatrix<T>>,
+    output_value: FunctionValueOutput,
 }
 
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
@@ -964,6 +1280,7 @@ where
 impl<T> MechFunctionFactory for NChooseKMatrix<T>
 where
     T: Copy
+        + CanonicalMatrixElementBacking
         + Debug
         + Clone
         + Sync
@@ -977,6 +1294,7 @@ where
         + Zero
         + One
         + AsValueKind
+        + NChooseKSelection
         + PartialEq
         + PartialOrd,
     #[cfg(feature = "semantic-compiler")]
@@ -995,20 +1313,28 @@ where
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, n, k) = invocation.expect_binary()?;
+        let output_value = out.value();
         let n: Matrix<T> = n.try_matrix()?;
         let k: Ref<T> = k.try_ref()?;
+        #[cfg(feature = "semantic-compiler")]
         let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self { n, k, out }))
+        #[cfg(not(feature = "semantic-compiler"))]
+        out.try_ref::<DMatrix<T>>()?;
+        Ok(Box::new(Self {
+            n,
+            k,
+            #[cfg(feature = "semantic-compiler")]
+            out,
+            output_value,
+        }))
     }
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
 impl<T> MechFunctionImpl for NChooseKMatrix<T>
 where
     T: Copy
+        + CanonicalMatrixElementBacking
         + Debug
         + Clone
         + Sync
@@ -1021,6 +1347,7 @@ where
         + Div<Output = T>
         + Zero
         + One
+        + NChooseKSelection
         + PartialEq
         + PartialOrd,
     Ref<T>: ToValue,
@@ -1028,26 +1355,33 @@ where
     DMatrix<T>: FunctionStateBacking,
 {
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.out))
+        Some(self.output_value.state_port())
     }
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+        Ok(Some(vec![self.output_value.state_port()]))
     }
     fn solve_result(&self) -> MResult<()> {
-        let requested =
-            matrix_selection_size(&self.k.to_value()).ok_or_else(invalid_matrix_selection_value)?;
+        let requested = self
+            .k
+            .borrow()
+            .selection_count()
+            .and_then(|value| usize::try_from(value).ok())
+            .ok_or_else(invalid_matrix_selection_value)?;
         let next = n_choose_k_matrix_result(&self.n, requested)?;
-        *self.out.borrow_mut() = next;
-        Ok(())
-    }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
+        let (rows, columns) = (next.nrows(), next.ncols());
+        let mut elements = Vec::with_capacity(rows.saturating_mul(columns));
+        for row in 0..rows {
+            for column in 0..columns {
+                elements.push(next[(row, column)].data_draft());
+            }
+        }
+        self.output_value.replace_matrix_drafts(
+            vec![rows as u64, columns as u64].into_boxed_slice(),
+            elements.into_boxed_slice(),
+        )
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_N_CHOOSE_K_MATRIX_CONTRACT)
-    }
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -1099,7 +1433,7 @@ mod transaction_state_tests {
             bytes.extend(framed(&payload));
             (RuntimeType::Option(Box::new(matrix_type)), bytes)
         };
-        decode_encoded_constants(&[EncodedConstant {
+        legacy_values_from_encoded_bytecode_constants(&[EncodedConstant {
             runtime_type,
             alignment: 8,
             bytes,
@@ -1115,7 +1449,7 @@ mod transaction_state_tests {
         bytes.extend_from_slice(&1_u32.to_le_bytes());
         bytes.extend_from_slice(&1_u64.to_le_bytes());
         bytes.extend_from_slice(&2_u64.to_le_bytes());
-        decode_encoded_constants(&[EncodedConstant {
+        legacy_values_from_encoded_bytecode_constants(&[EncodedConstant {
             runtime_type: RuntimeType::Matrix {
                 element: Box::new(RuntimeType::Index),
                 storage: MatrixStorage::MatrixD,
@@ -1141,14 +1475,15 @@ mod transaction_state_tests {
     fn matrix_combinations_expose_value_backed_transaction_state() {
         let n = f64::to_matrix(vec![1.0, 2.0], 2, 1);
         let out = Ref::new(DMatrix::from_element(1, 1, 0.0));
-        let function = NChooseKMatrix {
-            n,
-            k: Ref::new(1.0),
-            out: out.clone(),
-        };
-        let state = function.transaction_state_values().unwrap();
-
-        assert_eq!(state, vec![out.to_value()]);
+        let function = NChooseKMatrix::<f64>::new_invocation(
+            FunctionArgs::Binary(out.to_value(), n.to_value(), Ref::new(1.0).to_value()).into(),
+        )
+        .unwrap();
+        assert_eq!(function.transaction_state_ports().unwrap().unwrap().len(), 1);
+        assert_eq!(
+            function.reactive_output_cell_ids(),
+            out.to_value().reactive_root_cell_ids()
+        );
     }
 
     #[test]
@@ -1185,7 +1520,7 @@ mod transaction_state_tests {
         );
         assert_eq!(
             invocation.reactive_output_cell_ids(),
-            invocation.out().reactive_root_cell_ids(),
+            invocation_out.to_value().reactive_root_cell_ids(),
         );
 
         let successful = invocation_out.borrow().clone();
@@ -1233,11 +1568,10 @@ mod transaction_state_tests {
         let n = f64::to_matrix(vec![1.0, 2.0, 3.0], 3, 1);
         let k = Ref::new(1.0);
         let out = Ref::new(DMatrix::from_element(1, 1, 0.0));
-        let function = NChooseKMatrix {
-            n,
-            k: k.clone(),
-            out: out.clone(),
-        };
+        let function = NChooseKMatrix::<f64>::new_invocation(
+            FunctionArgs::Binary(out.to_value(), n.to_value(), k.to_value()).into(),
+        )
+        .unwrap();
         let output_alias = out.clone();
 
         function.solve_result().unwrap();
@@ -1262,17 +1596,16 @@ mod transaction_state_tests {
         let n = f64::to_matrix(vec![1.0, 2.0, 3.0], 3, 1);
         let k = Ref::new(1.0);
         let out = Ref::new(DMatrix::from_element(1, 1, 0.0));
-        let function = NChooseKMatrix {
-            n,
-            k: k.clone(),
-            out: out.clone(),
-        };
+        let function = NChooseKMatrix::<f64>::new_invocation(
+            FunctionArgs::Binary(out.to_value(), n.to_value(), k.to_value()).into(),
+        )
+        .unwrap();
         function.solve_result().unwrap();
         let expected = out.borrow().clone();
         let out_alias = out.clone();
 
         with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&function)?;
+            participant.capture_function_state(&*function)?;
             for invalid in [0.0, 4.0] {
                 *k.borrow_mut() = invalid;
                 let error = function.solve_result().unwrap_err();
@@ -1335,11 +1668,7 @@ mod signed_matrix_selection_tests {
         let planning_error = validate_n_choose_k_matrix_contract(&args).unwrap_err();
         assert_eq!(planning_error.kind_name(), "FunctionShapeContractViolation");
 
-        let function = NChooseKMatrix {
-            n,
-            k: k.clone(),
-            out: out.clone(),
-        };
+        let function = NChooseKMatrix::<i8>::new_invocation(args.clone().into()).unwrap();
         *k.borrow_mut() = 1;
         function.solve_result().unwrap();
         let previous = out.borrow().clone();
@@ -1351,8 +1680,32 @@ mod signed_matrix_selection_tests {
     }
 }
 
+#[cfg(feature = "source")]
+fn specialize_n_choose_k_scalar<T>(
+    n: &SpecializationInput,
+    k: &SpecializationInput,
+) -> MResult<SpecializedFunction>
+where
+    T: FunctionStateBacking,
+    NChooseK<T>: MechFunctionFactory,
+{
+    let invocation = FunctionInvocation::binary(
+        n.cell()?.detached_clone()?,
+        n.cell()?.clone(),
+        k.cell()?.clone(),
+    );
+    let implementation = NChooseK::<T>::new_invocation(invocation.clone())?;
+    Ok(SpecializedFunction::new(FunctionInstance::new(
+        implementation,
+        invocation,
+    )))
+}
+
 #[cfg(all(feature = "source", feature = "matrix", feature = "matrixd"))]
-fn n_choose_k_matrix_specialization<T>(n: Matrix<T>, k: Ref<T>) -> Box<dyn MechFunction>
+fn specialize_n_choose_k_matrix<T>(
+    n: &SpecializationInput,
+    k: &SpecializationInput,
+) -> MResult<SpecializedFunction>
 where
     T: Copy
         + Debug
@@ -1368,221 +1721,121 @@ where
         + Zero
         + One
         + AsValueKind
+        + NChooseKSelection
+        + CanonicalMatrixElementBacking
+        + FunctionPortBacking
         + PartialEq
         + PartialOrd,
     #[cfg(feature = "semantic-compiler")]
     T: ConstElem + CompileConst,
     Ref<T>: ToValue,
     Ref<DMatrix<T>>: ToValue,
-    DMatrix<T>: FunctionStateBacking,
+    Matrix<T>: FunctionRuntimeType,
+    DMatrix<T>: FunctionRuntimeType + FunctionStateBacking,
 {
-    Box::new(NChooseKMatrix {
-        n,
-        k,
-        out: Ref::new(DMatrix::from_element(1, 1, T::zero())),
-    })
+    let matrix = n.try_matrix::<T>(0)?;
+    let requested = k
+        .try_ref::<T>()?
+        .borrow()
+        .selection_count()
+        .and_then(|value| usize::try_from(value).ok())
+        .ok_or_else(invalid_matrix_selection_value)?;
+    let output = n_choose_k_matrix_result(&matrix, requested)?;
+    let (rows, columns) = (output.nrows(), output.ncols());
+    let output = ValueCell::from_exact_matrix_ref(Ref::new(output), rows, columns)?;
+    let invocation = FunctionInvocation::binary(output, n.cell()?.clone(), k.cell()?.clone());
+    let implementation = NChooseKMatrix::<T>::new_invocation(invocation.clone())?;
+    Ok(SpecializedFunction::new(FunctionInstance::new(
+        implementation,
+        invocation,
+    )))
 }
 
 #[cfg(feature = "source")]
-fn impl_combinatorics_n_choose_k_fxn(
-    n: LegacyValue,
-    k: LegacyValue,
-) -> MResult<Box<dyn MechFunction>> {
-    match (n, k) {
-        #[cfg(feature = "u8")]
-        (LegacyValue::U8(n), LegacyValue::U8(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(u8::default()),
-        })),
-        #[cfg(feature = "u16")]
-        (LegacyValue::U16(n), LegacyValue::U16(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(u16::default()),
-        })),
-        #[cfg(feature = "u32")]
-        (LegacyValue::U32(n), LegacyValue::U32(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(u32::default()),
-        })),
-        #[cfg(feature = "u64")]
-        (LegacyValue::U64(n), LegacyValue::U64(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(u64::default()),
-        })),
-        #[cfg(feature = "u128")]
-        (LegacyValue::U128(n), LegacyValue::U128(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(u128::default()),
-        })),
-        #[cfg(feature = "i8")]
-        (LegacyValue::I8(n), LegacyValue::I8(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(i8::default()),
-        })),
-        #[cfg(feature = "i16")]
-        (LegacyValue::I16(n), LegacyValue::I16(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(i16::default()),
-        })),
-        #[cfg(feature = "i32")]
-        (LegacyValue::I32(n), LegacyValue::I32(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(i32::default()),
-        })),
-        #[cfg(feature = "i64")]
-        (LegacyValue::I64(n), LegacyValue::I64(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(i64::default()),
-        })),
-        #[cfg(feature = "i128")]
-        (LegacyValue::I128(n), LegacyValue::I128(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(i128::default()),
-        })),
-        #[cfg(feature = "f32")]
-        (LegacyValue::F32(n), LegacyValue::F32(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(f32::default()),
-        })),
-        #[cfg(feature = "f64")]
-        (LegacyValue::F64(n), LegacyValue::F64(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(f64::default()),
-        })),
-        #[cfg(feature = "rational")]
-        (LegacyValue::R64(n), LegacyValue::R64(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(R64::default()),
-        })),
-        #[cfg(feature = "complex")]
-        (LegacyValue::C64(n), LegacyValue::C64(k)) => Ok(Box::new(NChooseK {
-            n: n,
-            k: k,
-            out: Ref::new(C64::default()),
-        })),
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u8"))]
-        (LegacyValue::MatrixU8(n), LegacyValue::U8(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
+macro_rules! try_n_choose_k_type {
+    ($n:ident, $k:ident, $type:ty) => {{
+        let scalar = <NChooseK<$type> as MechFunctionFactory>::SIGNATURE;
+        if let RuntimeFunctionInputs::Binary(expected_n, expected_k) = scalar.inputs
+            && expected_n.matches($n.representation().unwrap_or(FunctionValueRepresentation::Empty))
+            && expected_k.matches($k.representation().unwrap_or(FunctionValueRepresentation::Empty))
+        {
+            return specialize_n_choose_k_scalar::<$type>($n, $k);
         }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u16"))]
-        (LegacyValue::MatrixU16(n), LegacyValue::U16(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
+        #[cfg(all(feature = "matrix", feature = "matrixd"))]
+        {
+            let matrix = <NChooseKMatrix<$type> as MechFunctionFactory>::SIGNATURE;
+            if let RuntimeFunctionInputs::Binary(expected_n, expected_k) = matrix.inputs
+                && expected_n.matches($n.representation().unwrap_or(FunctionValueRepresentation::Empty))
+                && expected_k.matches($k.representation().unwrap_or(FunctionValueRepresentation::Empty))
+            {
+                return specialize_n_choose_k_matrix::<$type>($n, $k);
+            }
         }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u32"))]
-        (LegacyValue::MatrixU32(n), LegacyValue::U32(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u64"))]
-        (LegacyValue::MatrixU64(n), LegacyValue::U64(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u128"))]
-        (LegacyValue::MatrixU128(n), LegacyValue::U128(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i8"))]
-        (LegacyValue::MatrixI8(n), LegacyValue::I8(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i16"))]
-        (LegacyValue::MatrixI16(n), LegacyValue::I16(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i32"))]
-        (LegacyValue::MatrixI32(n), LegacyValue::I32(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i64"))]
-        (LegacyValue::MatrixI64(n), LegacyValue::I64(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i128"))]
-        (LegacyValue::MatrixI128(n), LegacyValue::I128(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "f32"))]
-        (LegacyValue::MatrixF32(n), LegacyValue::F32(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "f64"))]
-        (LegacyValue::MatrixF64(n), LegacyValue::F64(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "rational"))]
-        (LegacyValue::MatrixR64(n), LegacyValue::R64(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "complex"))]
-        (LegacyValue::MatrixC64(n), LegacyValue::C64(k)) => {
-            Ok(n_choose_k_matrix_specialization(n, k))
-        }
-        (n, k) => Err(MechError::new(
-            UnhandledFunctionArgumentKind2 {
-                arg: (n.kind(), k.kind()),
-                fxn_name: "combinatorics/n-choose-k".to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
+    }};
 }
 
 #[cfg(feature = "source")]
 pub struct CombinatoricsNChooseK {}
+
 #[cfg(feature = "source")]
-impl FunctionSpecializer for CombinatoricsNChooseK {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 2 {
+impl CanonicalFunctionSpecializer for CombinatoricsNChooseK {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 2,
-                    found: arguments.len(),
+                    found: invocation.len(),
                 },
                 None,
             )
             .with_compiler_loc());
         }
-        let n = arguments[0].clone();
-        let k = arguments[1].clone();
-
-        match impl_combinatorics_n_choose_k_fxn(n.clone(), k.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (n, k) {
-                (LegacyValue::MutableReference(n), LegacyValue::MutableReference(k)) => {
-                    let n_brrw = n.borrow();
-                    let k_brrw = k.borrow();
-                    impl_combinatorics_n_choose_k_fxn(n_brrw.clone(), k_brrw.clone())
-                }
-                (n, LegacyValue::MutableReference(k)) => {
-                    let k_brrw = k.borrow();
-                    impl_combinatorics_n_choose_k_fxn(n.clone(), k_brrw.clone())
-                }
-                (LegacyValue::MutableReference(n), k) => {
-                    let n_brrw = n.borrow();
-                    impl_combinatorics_n_choose_k_fxn(n_brrw.clone(), k.clone())
-                }
-                (n, k) => Err(MechError::new(
-                    UnhandledFunctionArgumentKind2 {
-                        arg: (n.kind(), k.kind()),
-                        fxn_name: "combinatorics/n-choose-k".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
+        let n = invocation.input(0).expect("validated n-choose-k input");
+        let k = invocation.input(1).expect("validated n-choose-k selection");
+        #[cfg(feature = "u8")]
+        try_n_choose_k_type!(n, k, u8);
+        #[cfg(feature = "u16")]
+        try_n_choose_k_type!(n, k, u16);
+        #[cfg(feature = "u32")]
+        try_n_choose_k_type!(n, k, u32);
+        #[cfg(feature = "u64")]
+        try_n_choose_k_type!(n, k, u64);
+        #[cfg(feature = "u128")]
+        try_n_choose_k_type!(n, k, u128);
+        #[cfg(feature = "i8")]
+        try_n_choose_k_type!(n, k, i8);
+        #[cfg(feature = "i16")]
+        try_n_choose_k_type!(n, k, i16);
+        #[cfg(feature = "i32")]
+        try_n_choose_k_type!(n, k, i32);
+        #[cfg(feature = "i64")]
+        try_n_choose_k_type!(n, k, i64);
+        #[cfg(feature = "i128")]
+        try_n_choose_k_type!(n, k, i128);
+        #[cfg(feature = "f32")]
+        try_n_choose_k_type!(n, k, f32);
+        #[cfg(feature = "f64")]
+        try_n_choose_k_type!(n, k, f64);
+        #[cfg(feature = "rational")]
+        try_n_choose_k_type!(n, k, R64);
+        #[cfg(feature = "complex")]
+        try_n_choose_k_type!(n, k, C64);
+        Err(MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Input(0),
+                expected: "matching scalar or matrix n-choose-k inputs".into(),
+                found: format!(
+                    "{:?} and {:?}",
+                    n.representation(),
+                    k.representation(),
+                ),
             },
-        }
+            None,
+        )
+        .with_compiler_loc())
     }
 }

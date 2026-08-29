@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // Greater Than ---------------------------------------------------------------
 
@@ -112,16 +110,94 @@ macro_rules! concat_row_mat_op {
 impl_string_fxns!(Concat);
 
 #[cfg(feature = "source")]
-fn impl_concat_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      Concat,
-      (lhs_value, rhs_value),
-      String, String, "string";
+fn specialize_concat_factory<F>(
+    lhs: &SpecializationInput,
+    rhs: &SpecializationInput,
+) -> MResult<SpecializedFunction>
+where
+    F: MechFunctionFactory,
+{
+    let output = [lhs, rhs]
+        .into_iter()
+        .find(|input| input.representation() == Some(F::SIGNATURE.output))
+        .ok_or_else(|| {
+            MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Output,
+                    expected: format!("input template matching {:?}", F::SIGNATURE.output),
+                    found: format!("{:?} and {:?}", lhs.representation(), rhs.representation()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?
+        .cell()?
+        .detached_clone()?;
+    SpecializedFunction::bind_factory::<F>(
+        output,
+        vec![lhs.cell()?.clone(), rhs.cell()?.clone()].into_boxed_slice(),
     )
 }
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __try_string_concat_factory {
+    (($lhs:ident, $rhs:ident), $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        mech_core::paste::paste! {
+            if let RuntimeFunctionInputs::Binary(expected_lhs, expected_rhs) =
+                <$crate::[<$lib $suffix>]<$scalar> as MechFunctionFactory>::SIGNATURE.inputs
+                && $lhs.representation() == Some(expected_lhs)
+                && $rhs.representation() == Some(expected_rhs)
+            {
+                return $crate::concat::specialize_concat_factory::<
+                    $crate::[<$lib $suffix>]<$scalar>
+                >($lhs, $rhs);
+            }
+        }
+    };
+}
+
 #[cfg(feature = "source")]
-impl_mech_binop_fxn!(StringConcat, impl_concat_fxn, "string/concat");
+pub struct StringConcat;
+
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for StringConcat {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 2 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: invocation.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let lhs = invocation.input(0).expect("validated concat lhs");
+        let rhs = invocation.input(1).expect("validated concat rhs");
+        mech_core::for_each_canonical_binop_factory!(
+            crate::__try_string_concat_factory,
+            (lhs, rhs),
+            Concat,
+            String,
+            "string",
+            string
+        );
+        Err(MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Input(0),
+                expected: "supported String scalar or matrix inputs".into(),
+                found: format!("{:?} and {:?}", lhs.representation(), rhs.representation()),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
 
 #[cfg(all(test, feature = "string"))]
 mod scalar_port_tests {
@@ -165,7 +241,7 @@ mod scalar_port_tests {
         function.solve_result().unwrap();
         assert_eq!(
             function.reactive_output_cell_ids(),
-            function.out().reactive_root_cell_ids()
+            out.to_value().reactive_root_cell_ids()
         );
 
         with_reactive_journal_participant(|mut participant| {
@@ -224,16 +300,23 @@ mod scalar_port_tests {
     #[cfg(feature = "source")]
     #[test]
     fn source_specialization_keeps_existing_concat_behavior() {
-        let lhs = Ref::new("source".to_string());
-        let rhs = Ref::new("-path".to_string());
+        let invocation = SpecializationInvocation::from_cells(
+            vec![
+                ValueCell::from_exact("source".to_string()).unwrap(),
+                ValueCell::from_exact("-path".to_string()).unwrap(),
+            ]
+            .into_boxed_slice(),
+        );
+        let mut context = SpecializationContext::for_invocation(&invocation, None).unwrap();
         let function = StringConcat {}
-            .specialize(&[lhs.to_value(), rhs.to_value()])
-            .unwrap();
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap()
+            .into_instance();
         function.solve_result().unwrap();
-        let LegacyValue::String(out) = function.out() else {
-            panic!("expected string output")
-        };
-        assert_eq!(&*out.borrow(), "source-path");
+        assert!(matches!(
+            function.output().snapshot().unwrap().data(),
+            ValueData::String(value) if value.as_ref() == "source-path"
+        ));
     }
 }
 
@@ -371,7 +454,7 @@ mod dynamic_matrix_port_tests {
         let expected = invocation_out.borrow().clone();
         assert_eq!(
             invocation.reactive_output_cell_ids(),
-            invocation.out().reactive_root_cell_ids()
+            invocation_out.to_value().reactive_root_cell_ids()
         );
 
         with_reactive_journal_participant(|mut participant| {

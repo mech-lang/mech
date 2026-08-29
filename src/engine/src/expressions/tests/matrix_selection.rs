@@ -1,4 +1,4 @@
-use crate::{Interpreter, LegacyValue};
+use crate::{DimensionExpr, Interpreter, SchemaBody, ValueData};
 
 fn evaluate_selection(selector: &str) -> (Vec<usize>, Vec<f64>) {
     let source = format!("x := [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]; x{selector}");
@@ -8,16 +8,36 @@ fn evaluate_selection(selector: &str) -> (Vec<usize>, Vec<f64>) {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
-    let output = match output {
-        LegacyValue::MutableReference(value) => value.borrow().clone(),
-        value => value,
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    let SchemaBody::Matrix { dimensions, .. } = output.closed_schema_body().unwrap() else {
+        panic!("expected a canonical matrix selection");
     };
-    let shape = output.shape();
-    let LegacyValue::MatrixF64(matrix) = output else {
-        panic!("expected an f64 matrix selection");
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        panic!("expected closed matrix dimensions");
     };
-    (shape, matrix.as_vec())
+    let rows = *rows as usize;
+    let columns = *columns as usize;
+    let row_major = output
+        .matrix_elements()
+        .unwrap()
+        .unwrap()
+        .into_iter()
+        .map(|cell| match cell.snapshot().unwrap().data() {
+            ValueData::F64(value) => value.to_f64(),
+            _ => panic!("expected f64 matrix elements"),
+        })
+        .collect::<Vec<_>>();
+    let column_major = (0..columns)
+        .flat_map(|column| {
+            let values = &row_major;
+            (0..rows).map(move |row| values[row * columns + column])
+        })
+        .collect();
+    (vec![rows, columns], column_major)
 }
 
 #[test]

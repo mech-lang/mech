@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use std::sync::LazyLock;
 
 static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
@@ -67,9 +65,6 @@ macro_rules! impl_transpose {
                 Ok(Box::new($struct_name { arg, out }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -89,18 +84,11 @@ macro_rules! impl_transpose {
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_TRANSPOSE_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -222,7 +210,7 @@ mod invocation_port_tests {
         );
         assert_eq!(
             dynamic_function.reactive_output_cell_ids(),
-            dynamic_function.out().reactive_root_cell_ids(),
+            dynamic_out.to_value().reactive_root_cell_ids(),
         );
         with_reactive_journal_participant(|mut participant| {
             participant.capture_function_state(&*dynamic_function)?;
@@ -293,79 +281,79 @@ mod invocation_port_tests {
 }
 
 #[cfg(feature = "source")]
-macro_rules! impl_transpose_match_arms {
-  ($arg:expr, $($input_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          $(
-            #[cfg(all(feature = "row_vector4", feature = "vector4", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowVector4(arg)) => Ok(Box::new(TransposeR4{arg: arg.clone(), out: Ref::new(Vector4::from_element($target_type::default())) })),
-            #[cfg(all(feature = "row_vector3", feature = "vector3", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowVector3(arg)) => Ok(Box::new(TransposeR3{arg: arg.clone(), out: Ref::new(Vector3::from_element($target_type::default())) })),
-            #[cfg(all(feature = "row_vector2", feature = "vector2", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowVector2(arg)) => Ok(Box::new(TransposeR2{arg: arg.clone(), out: Ref::new(Vector2::from_element($target_type::default())) })),
-            #[cfg(all(feature = "vector4", feature = "row_vector4", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Vector4(arg))    => Ok(Box::new(TransposeV4{arg: arg.clone(), out: Ref::new(RowVector4::from_element($target_type::default())) })),
-            #[cfg(all(feature = "vector3", feature = "row_vector3", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Vector3(arg))    => Ok(Box::new(TransposeV3{arg: arg.clone(), out: Ref::new(RowVector3::from_element($target_type::default())) })),
-            #[cfg(all(feature = "vector2", feature = "row_vector2", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Vector2(arg))    => Ok(Box::new(TransposeV2{arg: arg.clone(), out: Ref::new(RowVector2::from_element($target_type::default())) })),
-            #[cfg(all(feature = "matrix4", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix4(arg))    => Ok(Box::new(TransposeM4{arg: arg.clone(), out: Ref::new(Matrix4::from_element($target_type::default()))})),
-            #[cfg(all(feature = "matrix3", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3(arg))    => Ok(Box::new(TransposeM3{arg: arg.clone(), out: Ref::new(Matrix3::from_element($target_type::default()))})),
-            #[cfg(all(feature = "matrix2", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2(arg))    => Ok(Box::new(TransposeM2{arg: arg.clone(), out: Ref::new(Matrix2::from_element($target_type::default()))})),
-            #[cfg(all(feature = "matrix1", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix1(arg))    => Ok(Box::new(TransposeM1{arg: arg.clone(), out: Ref::new(Matrix1::from_element($target_type::default()))})),
-            #[cfg(all(feature = "matrix2x3", feature = "matrix3x2", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2x3(arg))  => Ok(Box::new(TransposeM2x3{arg: arg.clone(), out: Ref::new(Matrix3x2::from_element($target_type::default()))})),
-            #[cfg(all(feature = "matrix3x2", feature = "matrix2x3", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3x2(arg))  => Ok(Box::new(TransposeM3x2{arg: arg.clone(), out: Ref::new(Matrix2x3::from_element($target_type::default()))})),
-            #[cfg(all(feature = "vectord", feature = "row_vectord", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(TransposeVD{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().len(),$target_type::default())) })),
-            #[cfg(all(feature = "vectord", feature = "row_vectord", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(TransposeRD{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().len(),$target_type::default())) })),
-            #[cfg(all(feature = "matrixd", feature = $value_string))]
-            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => {
-              let (rows,cols) = {arg.borrow().shape()};
-              Ok(Box::new(TransposeMD{arg, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-            },
-          )+
-        )+
-        x => Err(MechError::new(
-            UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "MatrixTranspose".to_string() },
-            None
-          ).with_compiler_loc()
-        ),
-      }
+pub struct MatrixTranspose;
+
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for MatrixTranspose {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: invocation.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let input = invocation.input(0).expect("validated transpose input");
+        let descriptor = input.matrix_descriptor()?.ok_or_else(|| {
+            MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Input(0),
+                    expected: "exact matrix input".into(),
+                    found: format!("{:?}", input.representation()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let FunctionValueRepresentation::Matrix { element, storage } =
+            input.representation().expect("matrix descriptor has representation")
+        else {
+            unreachable!("matrix descriptor requires matrix representation")
+        };
+        let storage = match storage {
+            FunctionMatrixStoragePattern::Exact(storage) => {
+                FunctionMatrixStoragePattern::Exact(match storage {
+                    FunctionMatrixRepresentation::Matrix1 => FunctionMatrixRepresentation::Matrix1,
+                    FunctionMatrixRepresentation::Matrix2 => FunctionMatrixRepresentation::Matrix2,
+                    FunctionMatrixRepresentation::Matrix3 => FunctionMatrixRepresentation::Matrix3,
+                    FunctionMatrixRepresentation::Matrix4 => FunctionMatrixRepresentation::Matrix4,
+                    FunctionMatrixRepresentation::Matrix2x3 => FunctionMatrixRepresentation::Matrix3x2,
+                    FunctionMatrixRepresentation::Matrix3x2 => FunctionMatrixRepresentation::Matrix2x3,
+                    FunctionMatrixRepresentation::RowVector2 => FunctionMatrixRepresentation::Vector2,
+                    FunctionMatrixRepresentation::RowVector3 => FunctionMatrixRepresentation::Vector3,
+                    FunctionMatrixRepresentation::RowVector4 => FunctionMatrixRepresentation::Vector4,
+                    FunctionMatrixRepresentation::RowVectorD => FunctionMatrixRepresentation::VectorD,
+                    FunctionMatrixRepresentation::Vector2 => FunctionMatrixRepresentation::RowVector2,
+                    FunctionMatrixRepresentation::Vector3 => FunctionMatrixRepresentation::RowVector3,
+                    FunctionMatrixRepresentation::Vector4 => FunctionMatrixRepresentation::RowVector4,
+                    FunctionMatrixRepresentation::VectorD => FunctionMatrixRepresentation::RowVectorD,
+                    FunctionMatrixRepresentation::MatrixD => FunctionMatrixRepresentation::MatrixD,
+                })
+            }
+            FunctionMatrixStoragePattern::AnyStorage => {
+                return Err(MechError::new(
+                    FunctionArgumentTypeMismatch {
+                        role: FunctionArgumentRole::Input(0),
+                        expected: "exact matrix storage".into(),
+                        found: format!("{storage:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        };
+        context.bind_runtime_factory(
+            "Transpose",
+            FunctionValueRepresentation::Matrix { element, storage },
+            Some((descriptor.cols, descriptor.rows)),
+            &[input],
+        )
     }
-  }
 }
-
-#[cfg(feature = "source")]
-fn impl_transpose_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_transpose_match_arms!(
-      lhs_value,
-      Bool,   bool,   "bool";
-      I8,     i8,     "i8";
-      I16,    i16,    "i16";
-      I32,    i32,    "i32";
-      I64,    i64,    "i64";
-      I128,   i128,   "i128";
-      U8,     u8,     "u8";
-      U16,    u16,    "u16";
-      U32,    u32,    "u32";
-      U64,    u64,    "u64";
-      U128,   u128,   "u128";
-      F32,    f32,    "f32";
-      F64,    f64,    "f64";
-      String, String, "string";
-      C64, C64, "complex";
-      R64, R64, "rational";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_urnop_fxn!(MatrixTranspose, impl_transpose_fxn, "matrix/transpose");

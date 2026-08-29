@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use simba::scalar::ClosedNeg;
 
 // Negate ---------------------------------------------------------------------
@@ -42,9 +40,6 @@ where
         }))
     }
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 impl<O> MechFunctionImpl for NegateV<O>
 where
@@ -74,20 +69,12 @@ where
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_ref(&self.out))
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(crate::ops::unary_full_write_contract(O::REPRESENTATION))
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
-
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
@@ -141,9 +128,6 @@ where
         }))
     }
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 impl<O> MechFunctionImpl for NegateS<O>
 where
@@ -174,20 +158,12 @@ where
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_ref(&self.out))
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(crate::ops::unary_full_write_contract(O::REPRESENTATION))
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
-
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
@@ -249,22 +225,4 @@ mod checked_arithmetic_tests {
     }
 }
 
-#[cfg(feature = "source")]
-fn impl_neg_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_urnop_match_arms!(
-      Negate,
-      lhs_value,
-      I8,   i8,   "i8";
-      I16,  i16,  "i16";
-      I32,  i32,  "i32";
-      I64,  i64,  "i64";
-      I128, i128, "i128";
-      F32,  f32,  "f32";
-      F64,  f64,  "f64";
-      R64, R64, "rational";
-      C64, C64, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_urnop_fxn!(MathNegate, impl_neg_fxn, "math/neg");
+impl_canonical_registered_math_unop_specializer!(MathNegate, "NegateS");

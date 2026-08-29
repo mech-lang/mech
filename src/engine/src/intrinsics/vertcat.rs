@@ -1,4 +1,6 @@
+use crate::intrinsics::constructors::ValueMatrixConcatenation;
 use crate::intrinsics::*;
+use std::marker::PhantomData;
 use std::sync::LazyLock;
 
 static PURE_VERTICAL_VARIADIC_BUILD_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -56,7 +58,8 @@ macro_rules! vertcat_two_args {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionRuntimeType
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
@@ -70,26 +73,16 @@ macro_rules! vertcat_two_args {
                 <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg0, arg1) = invocation.expect_binary()?;
+                let e0: Ref<$e0<T>> = arg0.try_ref()?;
+                let e1: Ref<$e1<T>> = arg1.try_ref()?;
+                let out: Ref<$out<T>> = out.try_ref()?;
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg0, arg1) => {
-                        let e0: Ref<$e0<T>> =
-                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let e1: Ref<$e1<T>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out<T>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { e0, e1, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $fxn<T>
@@ -106,18 +99,12 @@ macro_rules! vertcat_two_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
+
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -166,7 +153,8 @@ macro_rules! vertcat_three_args {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionRuntimeType
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
@@ -182,28 +170,17 @@ macro_rules! vertcat_three_args {
                 <$e2<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+                let e0: Ref<$e0<T>> = arg0.try_ref()?;
+                let e1: Ref<$e1<T>> = arg1.try_ref()?;
+                let e2: Ref<$e2<T>> = arg2.try_ref()?;
+                let out: Ref<$out<T>> = out.try_ref()?;
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                        let e0: Ref<$e0<T>> =
-                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let e1: Ref<$e1<T>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let e2: Ref<$e2<T>> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let out: Ref<$out<T>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { e0, e1, e2, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $fxn<T>
@@ -221,18 +198,12 @@ macro_rules! vertcat_three_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
+
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -269,7 +240,8 @@ macro_rules! vertcat_four_args {
                 + 'static
                 + ConstElem
                 + AsValueKind
-                + FunctionRuntimeType,
+                + FunctionRuntimeType
+                + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
@@ -287,36 +259,24 @@ macro_rules! vertcat_four_args {
                 <$e3<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+                let e0: Ref<$e0<T>> = arg0.try_ref()?;
+                let e1: Ref<$e1<T>> = arg1.try_ref()?;
+                let e2: Ref<$e2<T>> = arg2.try_ref()?;
+                let e3: Ref<$e3<T>> = arg3.try_ref()?;
+                let out: Ref<$out<T>> = out.try_ref()?;
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                        let e0: Ref<$e0<T>> =
-                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let e1: Ref<$e1<T>> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let e2: Ref<$e2<T>> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let e3: Ref<$e3<T>> =
-                            arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                        let out: Ref<$out<T>> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self {
-                            e0,
-                            e1,
-                            e2,
-                            e3,
-                            out,
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 4,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+                Self::new_invocation(args.into())
             }
         }
         impl<T> MechFunctionImpl for $fxn<T>
@@ -335,18 +295,12 @@ macro_rules! vertcat_four_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
+
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -381,7 +335,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
@@ -392,25 +347,16 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
+        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
+        let out: Ref<DMatrix<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Box<dyn CopyMat<T>> =
-                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
-                let e1: Box<dyn CopyMat<T>> =
-                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
-                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -424,18 +370,12 @@ where
         self.e1.copy_into_row_major(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateTwoArgs\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -485,7 +425,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
@@ -497,27 +438,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
+        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
+        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
+        let out: Ref<DMatrix<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Box<dyn CopyMat<T>> =
-                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
-                let e1: Box<dyn CopyMat<T>> =
-                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
-                let e2: Box<dyn CopyMat<T>> =
-                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
-                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -532,18 +463,12 @@ where
         self.e2.copy_into_row_major(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateThreeArgs\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -595,7 +520,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
@@ -608,35 +534,24 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
+        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
+        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
+        let e3: Box<dyn CopyMat<T>> = arg3.try_copyable_matrix()?;
+        let out: Ref<DMatrix<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Box<dyn CopyMat<T>> =
-                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
-                let e1: Box<dyn CopyMat<T>> =
-                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
-                let e2: Box<dyn CopyMat<T>> =
-                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
-                let e3: Box<dyn CopyMat<T>> =
-                    arg3.try_function_copyable_matrix(FunctionArgumentRole::Input(3))?;
-                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -652,18 +567,12 @@ where
         self.e3.copy_into_row_major(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateFourArgs\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -714,7 +623,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
@@ -724,27 +634,18 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Variadic(out, arg0) => {
-                let mut e0: Vec<Box<dyn CopyMat<T>>> = Vec::new();
-                for (i, arg) in arg0.into_iter().enumerate() {
-                    let mat: Box<dyn CopyMat<T>> =
-                        arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
-                    e0.push(mat);
-                }
-                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, inputs) = invocation.expect_variadic()?;
+        let mut e0: Vec<Box<dyn CopyMat<T>>> = Vec::with_capacity(inputs.len());
+        for arg in inputs {
+            e0.push(arg.try_copyable_matrix()?);
         }
+        let out: Ref<DMatrix<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, out }))
+    }
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -760,18 +661,12 @@ where
         }
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateNArgs\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "matrixd")]
@@ -835,7 +730,7 @@ mod compiler_tests {
 
         function.compile(&mut context).unwrap();
 
-        let matrix_register = context.reg_map[&matrix.addr()];
+        let matrix_register = context.reg_map[&(matrix.reactive_cell_id().get() as usize)];
         assert_eq!(
             context
                 .instructions
@@ -860,66 +755,81 @@ mod compiler_tests {
 // VerticalConcatenateVec -----------------------------------------------------
 
 macro_rules! vertical_concatenate {
-  ($name:ident, $vec_size:expr) => {
-    paste!{
-      #[derive(Debug)]
-      struct $name<T> {
-        out: Ref<[<$vec_size>]<T>>,
-      }
-      impl<T> MechFunctionFactory for $name<T>
-      where
-        T: Debug + Clone + Sync + Send + PartialEq + 'static +
-        ConstElem + AsValueKind + FunctionRuntimeType,
-        #[cfg(feature = "semantic-compiler")]
-        T: CompileConst,
-        Ref<[<$vec_size>]<T>>: ToValue,
-        [<$vec_size>]<T>: FunctionRuntimeType,
-      {
-        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
-          <[<$vec_size>]<T> as FunctionRuntimeType>::REPRESENTATION,
-          FunctionValueRepresentation::AnyValue,
-        );
+    ($name:ident, $vec_size:expr) => {
+        paste! {
+          #[derive(Debug)]
+          struct $name<T> {
+            output: FunctionValueOutput,
+            _marker: PhantomData<T>,
+            #[cfg(feature = "semantic-compiler")]
+            out: Ref<[<$vec_size>]<T>>,
+          }
+          impl<T> MechFunctionFactory for $name<T>
+          where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static +
+            ConstElem + AsValueKind + FunctionRuntimeType
+            + FunctionPortBacking,
+            #[cfg(feature = "semantic-compiler")]
+            T: CompileConst,
+            Ref<[<$vec_size>]<T>>: ToValue,
+            [<$vec_size>]<T>: FunctionRuntimeType,
+          {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+              <[<$vec_size>]<T> as FunctionRuntimeType>::REPRESENTATION,
+              FunctionValueRepresentation::AnyValue,
+            );
 
-        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-          match args {
-            FunctionArgs::Unary(out, _arg0) => {
-              let out: Ref<[<$vec_size>]<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-              Ok(Box::new(Self { out }))
-            },
-            _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 1, found: args.len()}, None).with_compiler_loc())
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, _arg0) = invocation.expect_unary()?;
+                let output = out.value();
+                let out: Ref<[<$vec_size>]<T>> = out.try_ref()?;
+                #[cfg(not(feature = "semantic-compiler"))]
+                drop(out);
+                Ok(Box::new(Self {
+                    output,
+                    _marker: PhantomData,
+                    #[cfg(feature = "semantic-compiler")]
+                    out,
+                }))
+
+            }
+
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                Self::new_invocation(args.into())
+            }
+          }
+          impl<T> MechFunctionImpl for $name<T>
+          where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<[<$vec_size>]<T>>: ToValue
+          {
+            fn solve_result(&self) -> MResult<()> {
+                Ok(())
+            }
+
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+              Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
+            }
+            fn to_string(&self) -> String { format!("{:#?}", self) }
+
+            fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+                vec![self.output.cell().clone()]
+            }
+
+          }
+          #[cfg(feature = "semantic-compiler")]
+          impl<T> MechFunctionCompiler for $name<T>
+          where
+            T: ConstElem + CompileConst + AsValueKind + AsValueKind
+          {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+              let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
+              compile_unop!(name, self.out, self.out, ctx);
+            }
           }
         }
-      }
-      impl<T> MechFunctionImpl for $name<T>
-      where
-        T: Debug + Clone + Sync + Send + PartialEq + 'static,
-        Ref<[<$vec_size>]<T>>: ToValue
-      {
-        fn solve_result(&self) -> MResult<()> {
-            Ok(())
-        }
-        fn out(&self) -> LegacyValue { self.out.to_value() }
-        fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-          Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-        }
-        fn to_string(&self) -> String { format!("{:#?}", self) }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-          Ok(self.reactive_output_values())
-        }
-      }
-      #[cfg(feature = "semantic-compiler")]
-      impl<T> MechFunctionCompiler for $name<T>
-      where
-        T: ConstElem + CompileConst + AsValueKind + AsValueKind
-      {
-        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-          let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
-          compile_unop!(name, self.out, self.out, ctx);
-        }
-      }
-    }
-  };}
+    };
+}
 
 // VerticalConcatenateVD2 -----------------------------------------------------
 
@@ -940,7 +850,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
@@ -951,25 +862,16 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1) = invocation.expect_binary()?;
+        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
+        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
+        let out: Ref<DVector<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Box<dyn CopyMat<T>> =
-                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
-                let e1: Box<dyn CopyMat<T>> =
-                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
-                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "vectord")]
@@ -983,18 +885,12 @@ where
         self.e1.copy_into_v(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateVD2\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "vectord")]
@@ -1042,7 +938,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
@@ -1054,27 +951,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
+        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
+        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
+        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
+        let out: Ref<DVector<T>> = out.try_ref()?;
+        Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Box<dyn CopyMat<T>> =
-                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
-                let e1: Box<dyn CopyMat<T>> =
-                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
-                let e2: Box<dyn CopyMat<T>> =
-                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
-                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "vectord")]
@@ -1089,18 +976,12 @@ where
         self.e2.copy_into_v(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateVD3\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "vectord")]
@@ -1149,7 +1030,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
@@ -1162,35 +1044,24 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
+        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
+        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
+        let e3: Box<dyn CopyMat<T>> = arg3.try_copyable_matrix()?;
+        let out: Ref<DVector<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Box<dyn CopyMat<T>> =
-                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
-                let e1: Box<dyn CopyMat<T>> =
-                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
-                let e2: Box<dyn CopyMat<T>> =
-                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
-                let e3: Box<dyn CopyMat<T>> =
-                    arg3.try_function_copyable_matrix(FunctionArgumentRole::Input(3))?;
-                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "vectord")]
@@ -1206,18 +1077,12 @@ where
         self.e3.copy_into_v(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateVD3\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "vectord")]
@@ -1266,7 +1131,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
@@ -1276,37 +1142,30 @@ where
         FunctionValueRepresentation::AnyValue,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Variadic(out, vargs) => {
-                let mut scalar: Vec<(Ref<T>, usize)> = Vec::new();
-                let mut matrix: Vec<(Box<dyn CopyMat<T>>, usize)> = Vec::new();
-                for (i, arg) in vargs.into_iter().enumerate() {
-                    if arg.is_scalar() {
-                        let scalar_ref = arg.try_function_ref(FunctionArgumentRole::Input(i))?;
-                        scalar.push((scalar_ref, i));
-                    } else {
-                        let mat_ref =
-                            arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
-                        matrix.push((mat_ref, i));
-                    }
-                }
-                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    scalar,
-                    matrix,
-                    out,
-                }))
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, inputs) = invocation.expect_variadic()?;
+        let mut scalar: Vec<(Ref<T>, usize)> = Vec::new();
+        let mut matrix: Vec<(Box<dyn CopyMat<T>>, usize)> = Vec::new();
+        for (i, arg) in inputs.enumerate() {
+            if matches!(
+                arg.value().representation(),
+                FunctionValueRepresentation::Matrix { .. }
+            ) {
+                matrix.push((arg.try_copyable_matrix()?, i));
+            } else {
+                scalar.push((arg.try_ref()?, i));
             }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
         }
+        let out: Ref<DVector<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            scalar,
+            matrix,
+            out,
+        }))
+    }
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "vectord")]
@@ -1327,18 +1186,12 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateVDN\n{:#?}", self.out)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "vectord")]
@@ -1383,7 +1236,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<Matrix1<T>>: ToValue,
@@ -1391,21 +1245,14 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<Matrix1<T> as FunctionRuntimeType>::REPRESENTATION);
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let out = invocation.expect_nullary()?;
+        let out: Ref<Matrix1<T>> = out.try_ref()?;
+        Ok(Box::new(Self { out }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Nullary(out) => {
-                let out: Ref<Matrix1<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "matrix1")]
@@ -1417,18 +1264,12 @@ where
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -1442,61 +1283,6 @@ where
         compile_nullop!(name, self.out, ctx);
     }
 }
-
-// VerticalConcatenateS2 ------------------------------------------------------
-
-#[cfg(feature = "vector2")]
-vertical_concatenate!(VerticalConcatenateS2, Vector2);
-
-// VerticalConcatenateS3 ------------------------------------------------------
-
-#[cfg(feature = "vector3")]
-vertical_concatenate!(VerticalConcatenateS3, Vector3);
-
-// VerticalConcatenateS4 ------------------------------------------------------
-
-#[cfg(feature = "vector4")]
-vertical_concatenate!(VerticalConcatenateS4, Vector4);
-
-// VerticalConcatenateV2 ------------------------------------------------------
-
-#[cfg(feature = "vector2")]
-vertical_concatenate!(VerticalConcatenateV2, Vector2);
-
-// VerticalConcatenateV3 ------------------------------------------------------
-
-#[cfg(feature = "vector3")]
-vertical_concatenate!(VerticalConcatenateV3, Vector3);
-
-// VerticalConcatenateV4 ------------------------------------------------------
-
-#[cfg(feature = "vector4")]
-vertical_concatenate!(VerticalConcatenateV4, Vector4);
-
-// VerticalConcatenateM2 ------------------------------------------------------
-
-#[cfg(feature = "matrix2")]
-vertical_concatenate!(VerticalConcatenateM2, Matrix2);
-
-// VerticalConcatenateM3 ------------------------------------------------------
-
-#[cfg(feature = "matrix3")]
-vertical_concatenate!(VerticalConcatenateM3, Matrix3);
-
-// VerticalConcatenateM2x3 ----------------------------------------------------
-
-#[cfg(feature = "matrix2x3")]
-vertical_concatenate!(VerticalConcatenateM2x3, Matrix2x3);
-
-// VerticalConcatenateM3x2 ----------------------------------------------------
-
-#[cfg(feature = "matrix3x2")]
-vertical_concatenate!(VerticalConcatenateM3x2, Matrix3x2);
-
-// VerticalConcatenateM4 ------------------------------------------------------
-
-#[cfg(feature = "matrix4")]
-vertical_concatenate!(VerticalConcatenateM4, Matrix4);
 
 // VerticalConcatenateMD ------------------------------------------------------
 
@@ -1513,6 +1299,9 @@ vertical_concatenate!(VerticalConcatenateVD, DVector);
 #[cfg(feature = "vectord")]
 #[derive(Debug)]
 struct VerticalConcatenateSD<T> {
+    output: FunctionValueOutput,
+    _marker: PhantomData<T>,
+    #[cfg(feature = "semantic-compiler")]
     out: Ref<DVector<T>>,
 }
 #[cfg(feature = "vectord")]
@@ -1526,7 +1315,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
@@ -1534,21 +1324,22 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<DVector<T> as FunctionRuntimeType>::REPRESENTATION);
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let out = invocation.expect_nullary()?;
+        let output = out.value();
+        let out: Ref<DVector<T>> = out.try_ref()?;
+        #[cfg(not(feature = "semantic-compiler"))]
+        drop(out);
+        Ok(Box::new(Self {
+            output,
+            _marker: PhantomData,
+            #[cfg(feature = "semantic-compiler")]
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Nullary(out) => {
-                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(feature = "vectord")]
@@ -1560,15 +1351,13 @@ where
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.cell().clone()]
     }
 }
 #[cfg(all(feature = "vectord", feature = "semantic-compiler"))]
@@ -1803,7 +1592,8 @@ where
         + 'static
         + ConstElem
         + AsValueKind
-        + FunctionRuntimeType,
+        + FunctionRuntimeType
+        + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<Vector4<T>>: ToValue,
@@ -1816,31 +1606,24 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
+        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
+        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
+        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
+        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
+        let out: Ref<Vector4<T>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            e0,
+            e1,
+            e2,
+            e3,
+            out,
+        }))
+    }
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
-                let out: Ref<Vector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 4,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        Self::new_invocation(args.into())
     }
 }
 #[cfg(all(feature = "matrix1", feature = "vector4"))]
@@ -1863,15 +1646,9 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(
@@ -2281,545 +2058,6 @@ vertcat_four_args!(
     Matrix4,
     vertcat_mdmdmdmd
 );
-
-macro_rules! impl_vertcat_arms {
-  ($kind:ident, $args:expr, $default:expr) => {
-    paste!{
-    {
-      #[cfg(feature = "matrix")]
-      fn extract_matrix(arg: &LegacyValue) -> MResult<Box<dyn CopyMat<$kind>>> {
-        match arg {
-          LegacyValue::[<Matrix $kind:camel>](matrix) => Ok(matrix.get_copyable_matrix()),
-          LegacyValue::MutableReference(inner) => extract_matrix(&inner.borrow()),
-          LegacyValue::Typed(inner, _) => extract_matrix(inner),
-          _ => Err(MechError::new(
-            UnhandledFunctionArgumentKind1 {
-              arg: arg.kind(),
-              fxn_name: "matrix/vertcat".to_string(),
-            },
-            None,
-          ).with_compiler_loc()),
-        }
-      }
-      let arguments = $args;
-      let rows:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[0]);
-      let columns:usize = arguments[0].shape()[1];
-      let nargs = arguments.len();
-      let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
-      let no_refs = !kinds.iter().any(|x| {
-        match x {
-          ValueKind::Reference(_) => true,
-          ValueKind::Matrix(_,_) => true,
-          _ => false,
-      }});
-      if no_refs {
-        fn to_column_major<T: Clone>(out: &[LegacyValue], col_n: usize, extract_fn: impl Fn(&LegacyValue) -> MResult<Vec<T>> + Clone) -> Vec<T> {
-          (0..col_n).flat_map(|col| out.iter().map({let value = extract_fn.clone();move |row| value(row).unwrap()[col].clone()})).collect()
-        }
-        let mat = to_column_major(&arguments, columns, |v| v.[<as_vec $kind:lower>]());
-        match (rows,columns) {
-          #[cfg(feature = "matrix1")]
-          (1,1) => {return Ok(Box::new(VerticalConcatenateS1{out:Ref::new(Matrix1::from_vec(mat))}));}
-          #[cfg(feature = "vector2")]
-          (2,1) => {return Ok(Box::new(VerticalConcatenateS2{out:Ref::new(Vector2::from_vec(mat))}));}
-          #[cfg(feature = "vector3")]
-          (3,1) => {return Ok(Box::new(VerticalConcatenateS3{out:Ref::new(Vector3::from_vec(mat))}));}
-          #[cfg(feature = "vector4")]
-          (4,1) => {return Ok(Box::new(VerticalConcatenateS4{out:Ref::new(Vector4::from_vec(mat))}));}
-          #[cfg(feature = "vectord")]
-          (_,1) => {return Ok(Box::new(VerticalConcatenateSD{out:Ref::new(DVector::from_vec(mat))}));}
-          #[cfg(feature = "matrix2")]
-          (2,2) => {return Ok(Box::new(VerticalConcatenateM2{out:Ref::new(Matrix2::from_vec(mat))}));}
-          #[cfg(feature = "matrix3")]
-          (3,3) => {return Ok(Box::new(VerticalConcatenateM3{out:Ref::new(Matrix3::from_vec(mat))}));}
-          #[cfg(feature = "matrix4")]
-          (4,4) => {return Ok(Box::new(VerticalConcatenateM4{out:Ref::new(Matrix4::from_vec(mat))}));}
-          #[cfg(feature = "matrix2x3")]
-          (2,3) => {return Ok(Box::new(VerticalConcatenateM2x3{out:Ref::new(Matrix2x3::from_vec(mat))}));}
-          #[cfg(feature = "matrix3x2")]
-          (3,2) => {return Ok(Box::new(VerticalConcatenateM3x2{out:Ref::new(Matrix3x2::from_vec(mat))}));}
-          #[cfg(feature = "matrixd")]
-          (m,n) => {return Ok(Box::new(VerticalConcatenateMD{out:Ref::new(DMatrix::from_vec(m,n,mat))}));}
-          #[cfg(not(feature = "matrixd"))]
-          _ => Err(MechError::new(
-            FeatureNotEnabledError,
-            None
-          ).with_compiler_loc()),
-        }
-      } else {
-        match (nargs,rows,columns) {
-          #[cfg(feature = "vector2")]
-          (1,2,1) => {
-            match &arguments[..] {
-              // r2
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e0))] => {
-                return Ok(Box::new(VerticalConcatenateV2{out: e0.clone()}));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "vector3")]
-          (1,3,1) => {
-            match &arguments[..] {
-              // r3
-              [LegacyValue::MutableReference(e0)] => {
-                match &*e0.borrow() {
-                  LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(e0)) => {
-                    return Ok(Box::new(VerticalConcatenateV3{out: e0.clone()}));
-                  }
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "vector4")]
-          (1,4,1) => {
-            match &arguments[..] {
-              // r4
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector4(e0))] => {
-                return Ok(Box::new(VerticalConcatenateV4{out: e0.clone()}));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "vectord")]
-          (1,_,1) => {
-            match &arguments[..] {
-              // rd
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::DVector(e0))] => {
-                return Ok(Box::new(VerticalConcatenateVD{out: e0.clone()}));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(all(feature = "matrix1", feature = "vector2"))]
-          (2,2,1) => {
-            let out = Vector2::from_element($default);
-            match &arguments[..] {
-              // m1m1
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
-                return Ok(Box::new(VerticalConcatenateM1M1{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector2"))]
-          (2,3,1) => {
-            let out = Vector3::from_element($default);
-            match &arguments[..] {
-              //m1v2
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e1))] => {
-                return Ok(Box::new(VerticalConcatenateM1V2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
-              }
-              //v2m1
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
-                return Ok(Box::new(VerticalConcatenateV2M1{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "vector4")]
-          (2,4,1) => {
-            #[cfg(any(all(feature = "matrix1", feature = "vector3"), feature = "vector2"))]
-            let out = Vector4::from_element($default);
-            match &arguments[..] {
-              // m1v3
-              #[cfg(all(feature = "matrix1", feature = "vector3"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(e1))] => {
-                return Ok(Box::new(VerticalConcatenateM1V3{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
-              }
-              // v3m1
-              #[cfg(all(feature = "matrix1", feature = "vector3"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
-                return Ok(Box::new(VerticalConcatenateV3M1{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
-              }
-              // v2v2
-              #[cfg(feature = "vector2")]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e1))] => {
-                return Ok(Box::new(VerticalConcatenateV2V2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "vectord")]
-          (2,m,1) => {
-            let out = DVector::from_element(m,$default);
-            match &arguments[..] {
-              [LegacyValue::[<Matrix $kind:camel>](e0),LegacyValue::[<Matrix $kind:camel>](e1)] => {
-                let e0 = e0.get_copyable_matrix();
-                let e1 = e1.get_copyable_matrix();
-                return Ok(Box::new(VerticalConcatenateVD2{e0, e1, out: Ref::new(out)}));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "vector3")]
-          (3,3,1) => {
-            #[cfg(feature = "matrix1")]
-            let out = Vector3::from_element($default);
-            match &arguments[..] {
-              // m1 m1 m1
-              #[cfg(feature = "matrix1")]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e2))] => {
-                return Ok(Box::new(VerticalConcatenateM1M1M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)}));
-              }
-              _ => todo!()
-            }
-          }
-          #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
-          (3,4,1) => {
-            let out = Vector4::from_element($default);
-            match &arguments[..] {
-              // m1 m1 v2
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e2))] => {
-                return Ok(Box::new(VerticalConcatenateM1M1V2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)}));
-              }
-              // m1 v2 m1
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e2))] => {
-                return Ok(Box::new(VerticalConcatenateM1V2M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)}));
-              }
-              // v2 m1 m1
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e2))] => {
-                return Ok(Box::new(VerticalConcatenateV2M1M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)}));
-              }
-              _ => todo!()
-            }
-          }
-          #[cfg(feature = "vectord")]
-          (3,m,1) => {
-            let out = DVector::from_element(m,$default);
-            match &arguments[..] {
-              [LegacyValue::[<Matrix $kind:camel>](e0),LegacyValue::[<Matrix $kind:camel>](e1),LegacyValue::[<Matrix $kind:camel>](e2)] => {
-                let e0 = e0.get_copyable_matrix();
-                let e1 = e1.get_copyable_matrix();
-                let e2 = e2.get_copyable_matrix();
-                return Ok(Box::new(VerticalConcatenateVD3{e0, e1, e2, out: Ref::new(out)}));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(all(feature = "matrix1", feature = "vector4"))]
-          (4,4,1) => {
-            let out = Vector4::from_element($default);
-            match &arguments[..] {
-              // m1 m1 m1 m1
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e2)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e3))] => {
-                return Ok(Box::new(VerticalConcatenateM1M1M1M1{ e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) }));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "vectord")]
-          (4,m,1) => {
-            let out = DVector::from_element(m,$default);
-            match &arguments[..] {
-              [LegacyValue::[<Matrix $kind:camel>](e0),LegacyValue::[<Matrix $kind:camel>](e1),LegacyValue::[<Matrix $kind:camel>](e2),LegacyValue::[<Matrix $kind:camel>](e3)] => {
-                let e0 = e0.get_copyable_matrix();
-                let e1 = e1.get_copyable_matrix();
-                let e2 = e2.get_copyable_matrix();
-                let e3 = e3.get_copyable_matrix();
-                return Ok(Box::new(VerticalConcatenateVD4{e0, e1, e2, e3, out: Ref::new(out)}));
-              }
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "vectord")]
-          (_,m,1) => {
-            let out = DVector::from_element(m,$default);
-            let mut matrix_args: Vec<(Box<dyn CopyMat<$kind>>,usize)> = vec![];
-            let mut scalar_args: Vec<(Ref<$kind>,usize)> = vec![];
-            let mut i = 0;
-            for arg in arguments.iter() {
-              match &arg {
-                LegacyValue::[<$kind:camel>](e0) => {
-                  scalar_args.push((e0.clone(),i));
-                  i += 1;
-                }
-                LegacyValue::[<Matrix $kind:camel>](e0) => {
-                  matrix_args.push((e0.get_copyable_matrix(),i));
-                  i += e0.shape()[0];
-                }
-                _ => todo!(),
-              }
-            }
-            return Ok(Box::new(VerticalConcatenateVDN{scalar: scalar_args, matrix: matrix_args, out: Ref::new(out)}));
-          }
-          #[cfg(feature = "matrix2")]
-          (2,2,2) => {
-            #[cfg(feature = "row_vector2")]
-            let out = Matrix2::from_element($default);
-            match &arguments[..] {
-              // v2v2
-              #[cfg(feature = "row_vector2")]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e1))] => {return Ok(Box::new(VerticalConcatenateR2R2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));}
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "matrix2x3")]
-          (2,2,3) => {
-            #[cfg(feature = "row_vector3")]
-            let out = Matrix2x3::from_element($default);
-            match &arguments[..] {
-              // r3r3
-              #[cfg(feature = "row_vector3")]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e1))] => {return Ok(Box::new(VerticalConcatenateR3R3{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));}
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "matrix3x2")]
-          (2,3,2) => {
-            #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
-            let out = Matrix3x2::from_element($default);
-            match &arguments[..] {
-              // v2m2
-              #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(e1))] => {
-                return Ok(Box::new(VerticalConcatenateR2M2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
-              }
-              // m2v2
-              #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e1))] => {
-                return Ok(Box::new(VerticalConcatenateM2R2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
-              }
-              _ => todo!(),
-            }
-
-          }
-          #[cfg(feature = "matrix3")]
-          (2,3,3) => {
-            #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
-            let out = Matrix3::from_element($default);
-            match &arguments[..] {
-              // v3m3x2
-              #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(e1))] => {
-                return Ok(Box::new(VerticalConcatenateR3M2x3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) }));
-              }
-              // m3x2v3
-              #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e1))] => {
-                return Ok(Box::new(VerticalConcatenateM2x3R3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) }));
-              }
-              _ => todo!(),
-            }
-
-          }
-          #[cfg(feature = "matrix4")]
-          (2,4,4) => {
-            #[cfg(feature = "matrixd")]
-            let out = Matrix4::from_element($default);
-            match &arguments[..] {
-              // r4md
-              #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e1))] => Ok(Box::new(VerticalConcatenateR4MD{e0:e0.clone(),e1:e1.clone(),out:Ref::new(out)})),
-              // mdr4
-              #[cfg(all(feature = "matrixd", feature = "row_vector4"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e1))] => Ok(Box::new(VerticalConcatenateMDR4{e0:e0.clone(),e1:e1.clone(),out:Ref::new(out)})),
-              // mdmd
-              #[cfg(feature = "matrixd")]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e1))] => Ok(Box::new(VerticalConcatenateMDMD{e0:e0.clone(),e1:e1.clone(),out:Ref::new(out)})),
-              _ => todo!(),
-            }
-
-          }
-          #[cfg(feature = "matrixd")]
-          (2,m,n) => {
-            let out = DMatrix::from_element(m,n,$default);
-            let e0 = extract_matrix(&arguments[0])?;
-            let e1 = extract_matrix(&arguments[1])?;
-            Ok(Box::new(VerticalConcatenateTwoArgs{e0, e1, out: Ref::new(out)}))
-          }
-          #[cfg(feature = "matrix3x2")]
-          (3,3,2) => {
-            #[cfg(feature = "row_vector2")]
-            let out = Matrix3x2::from_element($default);
-            match &arguments[..] {
-              // r2r2r2
-              #[cfg(feature = "row_vector2")]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e2))]=>Ok(Box::new(VerticalConcatenateR2R2R2{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "matrix3")]
-          (3,3,3) => {
-            #[cfg(feature = "row_vector3")]
-            let out = Matrix3::from_element($default);
-            match &arguments[..] {
-              // r3r3r3
-              #[cfg(feature = "row_vector3")]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e2))]=>Ok(Box::new(VerticalConcatenateR3R3R3{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "matrix4")]
-          (3,4,4) => {
-            #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-            let out = Matrix4::from_element($default);
-            match &arguments[..] {
-              // r4r4md
-              #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e2))]=>Ok(Box::new(VerticalConcatenateR4R4MD{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
-              // r4mdr4
-              #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e2))]=>Ok(Box::new(VerticalConcatenateR4MDR4{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
-              // mdr4r4
-              #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e2))]=>Ok(Box::new(VerticalConcatenateMDR4R4{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "matrixd")]
-          (3,m,n) => {
-            let out = DMatrix::from_element(m,n,$default);
-            let e0 = extract_matrix(&arguments[0])?;
-            let e1 = extract_matrix(&arguments[1])?;
-            let e2 = extract_matrix(&arguments[2])?;
-            Ok(Box::new(VerticalConcatenateThreeArgs{e0,e1,e2,out:Ref::new(out)}))
-          }
-          #[cfg(feature = "matrix4")]
-          (4,4,4) => {
-            #[cfg(feature = "row_vector4")]
-            let out = Matrix4::from_element($default);
-            match &arguments[..] {
-              // r4r4r4r4
-              #[cfg(feature = "row_vector4")]
-              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e2)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e3))]=>Ok(Box::new(VerticalConcatenateR4R4R4R4{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),e3:e3.clone(),out:Ref::new(out)})),
-              _ => todo!(),
-            }
-          }
-          #[cfg(feature = "matrixd")]
-          (4,m,n) => {
-            let out = DMatrix::from_element(m,n,$default);
-            let e0 = extract_matrix(&arguments[0])?;
-            let e1 = extract_matrix(&arguments[1])?;
-            let e2 = extract_matrix(&arguments[2])?;
-            let e3 = extract_matrix(&arguments[3])?;
-            Ok(Box::new(VerticalConcatenateFourArgs{e0,e1,e2,e3,out:Ref::new(out)}))
-          }
-          #[cfg(feature = "matrixd")]
-          (_,m,n) => {
-            let out = DMatrix::from_element(m,n,$default);
-            let mut args = vec![];
-            for arg in arguments {
-              args.push(extract_matrix(arg)?);
-            }
-            Ok(Box::new(VerticalConcatenateNArgs{e0: args, out:Ref::new(out)}))
-          }
-          #[cfg(not(feature = "matrixd"))]
-          _ => {return Err(MechError::new(
-                UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/vertcat".to_string() },
-                None
-              ).with_compiler_loc()
-            );
-          }
-        }
-  }}}}}
-
-fn impl_vertcat_fxn(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-    // Mutable variables are wrappers around the same typed matrix references
-    // consumed by the concatenation kernels. Normalize only the wrapper here;
-    // cloning the inner LegacyValue retains its reactive matrix identity.
-    let normalized_arguments = arguments
-        .iter()
-        .map(|argument| match argument {
-            LegacyValue::MutableReference(reference) => reference.borrow().clone(),
-            _ => argument.clone(),
-        })
-        .collect::<Vec<_>>();
-    let arguments = normalized_arguments.as_slice();
-    let kinds: Vec<ValueKind> = arguments
-        .iter()
-        .map(|x| x.kind())
-        .collect::<Vec<ValueKind>>();
-    let target_kind = kinds[0].clone();
-
-    #[cfg(feature = "f64")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64) {
-            return impl_vertcat_arms!(f64, arguments, f64::default());
-        }
-    }
-
-    #[cfg(feature = "f32")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32) {
-            return impl_vertcat_arms!(f32, arguments, f32::default());
-        }
-    }
-
-    #[cfg(feature = "u8")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8) {
-            return impl_vertcat_arms!(u8, arguments, u8::default());
-        }
-    }
-
-    #[cfg(feature = "u16")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16) {
-            return impl_vertcat_arms!(u16, arguments, u16::default());
-        }
-    }
-
-    #[cfg(feature = "u32")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32) {
-            return impl_vertcat_arms!(u32, arguments, u32::default());
-        }
-    }
-
-    #[cfg(feature = "u64")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64) {
-            return impl_vertcat_arms!(u64, arguments, u64::default());
-        }
-    }
-
-    #[cfg(feature = "u128")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128) {
-            return impl_vertcat_arms!(u128, arguments, u128::default());
-        }
-    }
-
-    #[cfg(feature = "bool")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool) {
-            return impl_vertcat_arms!(bool, arguments, bool::default());
-        }
-    }
-
-    #[cfg(feature = "string")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::String) {
-            return impl_vertcat_arms!(String, arguments, String::default());
-        }
-    }
-
-    #[cfg(feature = "rational")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::R64) {
-            return impl_vertcat_arms!(R64, arguments, R64::default());
-        }
-    }
-
-    #[cfg(feature = "complex")]
-    {
-        if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) {
-            return impl_vertcat_arms!(C64, arguments, C64::default());
-        }
-    }
-
-    Err(MechError::new(
-        UnhandledFunctionArgumentKindVarg {
-            arg: arguments.iter().map(|x| x.kind()).collect(),
-            fxn_name: "matrix/vertcat".to_string(),
-        },
-        None,
-    )
-    .with_compiler_loc())
-}
 
 macro_rules! for_each_vertcat_scalar {
     ($callback:ident, ($($context:tt)*)) => {
@@ -3244,9 +2482,13 @@ pub mod __mech_native {
 }
 
 pub struct MatrixVertCat {}
-impl FunctionSpecializer for MatrixVertCat {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        impl_vertcat_fxn(arguments)
+impl CanonicalFunctionSpecializer for MatrixVertCat {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        ValueMatrixConcatenation::specialize(invocation, true)
     }
 }
 

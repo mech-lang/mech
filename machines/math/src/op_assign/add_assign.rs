@@ -1,6 +1,4 @@
 use super::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Add Assign -----------------------------------------------------------------
@@ -51,6 +49,11 @@ macro_rules! impl_add_assign_range_fxn_v {
 impl_assign_scalar_scalar!(Add, checked_add_assign);
 impl_assign_vector_vector!(Add, checked_add_assign);
 impl_assign_vector_scalar!(Add, checked_add_assign);
+
+#[cfg(test)]
+mod retired_legacy_value_specializer {
+#![cfg(any())]
+use super::*;
 
 #[cfg(feature = "source")]
 pub fn add_assign_math_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Box<dyn MechFunction>> {
@@ -114,6 +117,7 @@ impl FunctionSpecializer for AddAssignMath {
             },
         }
     }
+}
 }
 
 // x[1..3] += 1 ----------------------------------------------------------------
@@ -181,6 +185,11 @@ impl_add_assign_range_fxn_v!(AddAssign1DRV, add_assign_1d_range_vec, usize);
 #[cfg(feature = "matrix")]
 impl_add_assign_range_fxn_v!(AddAssign1DRVB, add_assign_1d_range_vec_b, bool);
 
+#[cfg(test)]
+mod retired_legacy_range_specializer {
+#![cfg(any())]
+use super::*;
+
 #[cfg(feature = "source")]
 op_assign_range_fxn!(add_assign_range_fxn, AddAssign1DR);
 
@@ -233,6 +242,7 @@ impl FunctionSpecializer for AddAssignRange {
             },
         }
     }
+}
 }
 
 // x[1..3,:] += 1 ------------------------------------------------------------------
@@ -316,6 +326,11 @@ impl_add_assign_range_fxn_v!(AddAssign2DRAV, add_assign_2d_vector_all_mat, usize
 #[cfg(feature = "matrix")]
 impl_add_assign_range_fxn_v!(AddAssign2DRAVB, add_assign_2d_vector_all_mat_b, bool);
 
+#[cfg(test)]
+mod retired_legacy_range_all_specializer {
+#![cfg(any())]
+use super::*;
+
 #[cfg(feature = "source")]
 op_assign_range_all_fxn!(add_assign_range_all_fxn, AddAssign2DRA);
 
@@ -369,3 +384,15 @@ impl FunctionSpecializer for AddAssignRangeAll {
         }
     }
 }
+}
+
+#[cfg(feature = "source")]
+crate::impl_canonical_op_assign_specializers!(
+    AddAssignMath,
+    AddAssignRange,
+    AddAssignRangeAll,
+    Add,
+    "AddAssign",
+    "AddAssign1DR",
+    "AddAssign2DRA"
+);

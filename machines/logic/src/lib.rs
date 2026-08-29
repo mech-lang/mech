@@ -212,9 +212,6 @@ macro_rules! impl_logic_binop {
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl MechFunctionImpl for $struct_name {
             fn solve_result(&self) -> MResult<()> {
@@ -227,9 +224,6 @@ macro_rules! impl_logic_binop {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some($crate::logic_binary_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -238,11 +232,6 @@ macro_rules! impl_logic_binop {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
-
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
@@ -261,6 +250,115 @@ macro_rules! impl_logic_binop {
 macro_rules! impl_logic_fxns {
     ($lib:ident) => {
         impl_fxns!($lib, bool, bool, impl_logic_binop);
+    };
+}
+
+#[cfg(feature = "source")]
+fn specialize_logic_binary_factory<F>(
+    first: &SpecializationInput,
+    second: &SpecializationInput,
+) -> MResult<SpecializedFunction>
+where
+    F: MechFunctionFactory,
+{
+    let output_representation = F::SIGNATURE.output;
+    let template = if first.representation() == Some(output_representation) {
+        first
+    } else if second.representation() == Some(output_representation) {
+        second
+    } else {
+        return Err(MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Output,
+                expected: format!("{output_representation:?}"),
+                found: format!(
+                    "inputs {:?} and {:?}",
+                    first.representation(),
+                    second.representation(),
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    let invocation = FunctionInvocation::binary(
+        template.cell()?.detached_clone()?,
+        first.cell()?.clone(),
+        second.cell()?.clone(),
+    );
+    let implementation = F::new_invocation(invocation.clone())?;
+    Ok(SpecializedFunction::new(FunctionInstance::new(
+        implementation,
+        invocation,
+    )))
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __try_logic_binary_factory {
+    (($module:ident, $first:ident, $second:ident), $lib:ident, $suffix:ident, $shape_features:tt, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        mech_core::paste::paste! {
+            if let RuntimeFunctionInputs::Binary(expected_first, expected_second) =
+                <$crate::$module::[<$lib $suffix>] as MechFunctionFactory>::SIGNATURE.inputs
+                && $first.representation() == Some(expected_first)
+                && $second.representation() == Some(expected_second)
+            {
+                return $crate::specialize_logic_binary_factory::<
+                    $crate::$module::[<$lib $suffix>]
+                >($first, $second);
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_canonical_logic_binop_specializer {
+    ($specializer:ident, $module:ident, $lib:ident, $operation:literal) => {
+        #[cfg(feature = "source")]
+        pub struct $specializer {}
+
+        #[cfg(feature = "source")]
+        impl CanonicalFunctionSpecializer for $specializer {
+            fn specialize_invocation(
+                &self,
+                specialization: &SpecializationInvocation,
+                _context: &mut SpecializationContext<'_>,
+            ) -> MResult<SpecializedFunction> {
+                if specialization.len() != 2 {
+                    return Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: specialization.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let first = specialization.input(0).expect("validated first input");
+                let second = specialization.input(1).expect("validated second input");
+                mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+                    $crate::__try_logic_binary_factory,
+                    ($module, first, second),
+                    $lib,
+                    bool,
+                    "bool",
+                    bool
+                );
+                Err(MechError::new(
+                    FunctionArgumentTypeMismatch {
+                        role: FunctionArgumentRole::Input(0),
+                        expected: concat!("supported Bool inputs for ", $operation).into(),
+                        found: format!(
+                            "{:?} and {:?}",
+                            first.representation(),
+                            second.representation(),
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc())
+            }
+        }
     };
 }
 
@@ -297,7 +395,7 @@ mod invocation_port_tests {
         assert!(!*binary_out.borrow());
         assert_eq!(
             binary.reactive_output_cell_ids(),
-            binary.out().reactive_root_cell_ids(),
+            binary_out.to_value().reactive_root_cell_ids(),
         );
 
         let unary_out = Ref::new(false);

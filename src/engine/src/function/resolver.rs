@@ -4,7 +4,8 @@ use crate::function::extensions::{
 };
 use mech_core::{
     FunctionCatalog, FunctionDefinition, FunctionOperationUnavailable, FunctionSpecializerEntry,
-    LegacyValue, MResult, MechError, MechFunction, OperationId, UserFunctionTable, hash_str,
+    MResult, MechError, OperationId, SpecializationInvocation, SpecializedFunction,
+    UserFunctionTable, hash_str,
 };
 
 /// A named source function could not be resolved in the current environment.
@@ -99,17 +100,17 @@ impl<'a> FunctionResolver<'a> {
     pub fn specialize_operation(
         &self,
         operation: OperationId,
-        arguments: &[LegacyValue],
-    ) -> MResult<Box<dyn MechFunction>> {
-        self.specialize_operation_named(operation, None, arguments)
+        invocation: &SpecializationInvocation,
+    ) -> MResult<SpecializedFunction> {
+        self.specialize_operation_named(operation, None, invocation)
     }
 
     pub(crate) fn specialize_operation_named(
         &self,
         operation: OperationId,
         canonical_name: Option<&str>,
-        arguments: &[LegacyValue],
-    ) -> MResult<Box<dyn MechFunction>> {
+        invocation: &SpecializationInvocation,
+    ) -> MResult<SpecializedFunction> {
         let entry = self
             .catalog
             .operation_specializer(operation)
@@ -126,23 +127,29 @@ impl<'a> FunctionResolver<'a> {
 
         self.environment
             .require_operation_enabled(operation, Some(&entry.canonical_name))?;
-        entry.specializer.specialize(arguments).map(|function| {
-            mech_core::with_semantic_operation(entry.canonical_name.clone(), function)
-        })
+        let mut context =
+            mech_core::SpecializationContext::for_invocation(invocation, Some(self.catalog))?;
+        entry
+            .specializer
+            .specialize_invocation(invocation, &mut context)
+            .map(|function| function.with_semantic_operation(entry.canonical_name.clone()))
     }
 
     pub fn specialize_named_extension(
         &self,
         extension: ExtensionFunctionId,
-        arguments: &[LegacyValue],
-    ) -> MResult<Box<dyn MechFunction>> {
+        invocation: &SpecializationInvocation,
+    ) -> MResult<SpecializedFunction> {
         let entry = self
             .extensions
             .entry(extension)
             .ok_or_else(|| extension_unavailable(extension, None))?;
-        entry.specializer.specialize(arguments).map(|function| {
-            mech_core::with_semantic_operation(entry.canonical_name.clone(), function)
-        })
+        let mut context =
+            mech_core::SpecializationContext::for_invocation(invocation, Some(self.catalog))?;
+        entry
+            .specializer
+            .specialize_invocation(invocation, &mut context)
+            .map(|function| function.with_semantic_operation(entry.canonical_name.clone()))
     }
 }
 
@@ -164,7 +171,8 @@ mod tests {
     use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
     use mech_core::{
         FunctionCatalogBuilder, FunctionDefine, FunctionExport, FunctionExposure,
-        FunctionSpecializer, MechFunctionImpl, internal_pattern_value_identifier,
+        FunctionSpecializer, LegacyValue, MechFunction, MechFunctionImpl,
+        internal_pattern_value_identifier,
     };
     use std::sync::Arc;
 
@@ -175,12 +183,8 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Empty
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(Vec::new())
+        fn reactive_output_value_cells(&self) -> Vec<mech_core::ValueCell> {
+            vec![mech_core::ValueCell::unit()]
         }
 
         fn to_string(&self) -> String {
@@ -262,7 +266,7 @@ mod tests {
         extensions
             .insert_or_replace(FunctionExtensionEntry::new(
                 extension_name,
-                Arc::new(TestSpecializer("extension")),
+                mech_core::canonical_function_specializer(Arc::new(TestSpecializer("extension"))),
             ))
             .unwrap();
         environment
@@ -291,7 +295,7 @@ mod tests {
         extensions
             .insert_or_replace(FunctionExtensionEntry::new(
                 extension_name,
-                Arc::new(TestSpecializer("extension")),
+                mech_core::canonical_function_specializer(Arc::new(TestSpecializer("extension"))),
             ))
             .unwrap();
         environment
@@ -309,8 +313,13 @@ mod tests {
         ));
         assert_eq!(
             resolver
-                .specialize_operation(OperationId::from_name("math/add"), &[])
+                .specialize_operation(
+                    OperationId::from_name("math/add"),
+                    &SpecializationInvocation::new(Box::new([])),
+                )
                 .unwrap()
+                .instance()
+                .implementation()
                 .to_string(),
             "catalog",
         );
@@ -337,7 +346,9 @@ mod tests {
         let users = UserFunctionTable::default();
         let resolver = FunctionResolver::new(&catalog, &environment, &extensions, &users);
 
-        let error = match resolver.specialize_operation(operation, &[]) {
+        let error = match resolver
+            .specialize_operation(operation, &SpecializationInvocation::new(Box::new([])))
+        {
             Ok(_) => panic!("disabled catalog operation unexpectedly specialized"),
             Err(error) => error,
         };

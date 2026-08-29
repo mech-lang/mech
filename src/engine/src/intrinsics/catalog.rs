@@ -1,3 +1,5 @@
+#[cfg(all(feature = "semantic-compiler", feature = "set"))]
+use crate::intrinsics::constructors::SetDefine;
 #[cfg(feature = "matrix_comprehensions")]
 use crate::intrinsics::constructors::ValueMatrixComprehension;
 #[cfg(feature = "set")]
@@ -6,6 +8,8 @@ use crate::intrinsics::constructors::ValueSet;
 use crate::intrinsics::constructors::ValueSetComprehension;
 #[cfg(all(feature = "semantic-compiler", feature = "variable_define"))]
 use crate::intrinsics::define::VarDefine;
+#[cfg(all(feature = "semantic-compiler", feature = "convert"))]
+use crate::literals::ConvertKind;
 #[cfg(any(
     feature = "semantic-compiler",
     feature = "set",
@@ -16,8 +20,6 @@ use crate::intrinsics::define::VarDefine;
 use crate::*;
 #[cfg(feature = "matrix_comprehensions")]
 use mech_core::FunctionArgumentRole;
-#[cfg(feature = "semantic-compiler")]
-use mech_core::FunctionSpecializer;
 #[cfg(any(
     feature = "invariant_define",
     feature = "matrix_comprehensions",
@@ -49,7 +51,7 @@ use std::sync::Arc;
         feature = "set"
     )
 ))]
-fn install_named<T>(
+fn install_canonical_named<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
     module: Option<&str>,
@@ -58,9 +60,9 @@ fn install_named<T>(
     compiler: T,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
+    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -71,16 +73,16 @@ where
 }
 
 #[cfg(feature = "semantic-compiler")]
-fn install_intrinsic<T>(
+fn install_canonical_intrinsic<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
     compiler: T,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
     builder
-        .insert_intrinsic_specializer(canonical_name, Arc::new(compiler))
+        .insert_canonical_intrinsic_specializer(canonical_name, Arc::new(compiler))
         .map(|_| ())
 }
 
@@ -117,7 +119,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix_horzcat")]
     crate::intrinsics::horzcat::install_source_runtime(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
-    install_named(
+    install_canonical_named(
         builder,
         "matrix/comprehension",
         None,
@@ -126,7 +128,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         MatrixComprehensionDefine {},
     )?;
     #[cfg(feature = "matrix_horzcat")]
-    install_named(
+    install_canonical_named(
         builder,
         "matrix/horzcat",
         None,
@@ -135,7 +137,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         MatrixHorzCat {},
     )?;
     #[cfg(feature = "matrix_vertcat")]
-    install_named(
+    install_canonical_named(
         builder,
         "matrix/vertcat",
         None,
@@ -144,7 +146,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         MatrixVertCat {},
     )?;
     #[cfg(feature = "set_comprehensions")]
-    install_named(
+    install_canonical_named(
         builder,
         "set/comprehension",
         None,
@@ -153,55 +155,83 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         SetComprehensionDefine {},
     )?;
     #[cfg(feature = "set")]
-    install_named(
+    install_canonical_named(
         builder,
         "set/define",
         None,
         None,
         FunctionExposure::Prelude,
-        SetDefine {},
+        SetDefine,
     )?;
-
     #[cfg(feature = "table")]
     {
-        let table_specializers: [(&str, Arc<dyn FunctionSpecializer>); 6] = [
-            ("table/join", Arc::new(TableInnerJoin {})),
-            ("table/left-outer-join", Arc::new(TableLeftOuterJoin {})),
-            ("table/right-outer-join", Arc::new(TableRightOuterJoin {})),
-            ("table/full-outer-join", Arc::new(TableFullOuterJoin {})),
-            ("table/left-semi-join", Arc::new(TableLeftSemiJoin {})),
-            ("table/left-anti-join", Arc::new(TableLeftAntiJoin {})),
-        ];
-        for (canonical_name, compiler) in table_specializers {
-            let operation = builder.insert_specializer(canonical_name, compiler)?;
-            builder.insert_export(FunctionExport {
-                operation,
-                canonical_name: canonical_name.to_string(),
-                module: None,
-                item: None,
-                exposure: FunctionExposure::Internal,
-            })?;
-        }
+        install_canonical_named(
+            builder,
+            "table/join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableInnerJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/left-outer-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableLeftOuterJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/right-outer-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableRightOuterJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/full-outer-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableFullOuterJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/left-semi-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableLeftSemiJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/left-anti-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableLeftAntiJoin,
+        )?;
     }
 
     #[cfg(feature = "access")]
     {
-        install_intrinsic(builder, "access/scalar", AccessScalar {})?;
-        install_intrinsic(builder, "access/range", AccessRange {})?;
-        install_intrinsic(builder, "access/column", AccessColumn {})?;
-        install_intrinsic(builder, "access/swizzle", AccessSwizzle {})?;
+        install_canonical_intrinsic(builder, "access/scalar", AccessScalar {})?;
+        install_canonical_intrinsic(builder, "access/range", AccessRange {})?;
+        install_canonical_intrinsic(builder, "access/column", AccessColumn {})?;
+        install_canonical_intrinsic(builder, "access/swizzle", AccessSwizzle {})?;
     }
     #[cfg(feature = "assign")]
     {
-        install_intrinsic(builder, "assign", AssignValue {})?;
-        install_intrinsic(builder, "assign/column", AssignColumn {})?;
-        install_intrinsic(builder, "assign/add", AddAssignValue {})?;
+        install_canonical_intrinsic(builder, "assign", AssignValue {})?;
+        install_canonical_intrinsic(builder, "assign/column", AssignColumn {})?;
+        install_canonical_intrinsic(builder, "assign/add", AddAssignValue {})?;
     }
     #[cfg(feature = "convert")]
-    install_intrinsic(builder, "convert/kind", ConvertKind {})?;
+    install_canonical_intrinsic(builder, "convert/kind", ConvertKind)?;
     #[cfg(feature = "variable_define")]
-    install_intrinsic(builder, "var/define", VarDefine {})?;
-
+    install_canonical_intrinsic(builder, "var/define", VarDefine)?;
     Ok(())
 }
 

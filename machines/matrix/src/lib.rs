@@ -21,9 +21,6 @@ extern crate paste;
 ))]
 use mech_core::*;
 
-#[cfg(all(feature = "source", feature = "transpose"))]
-use paste::paste;
-
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
 #[cfg(feature = "vectord")]
@@ -361,9 +358,6 @@ macro_rules! impl_checked_matrix_binop {
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
 
         impl<T> MechFunctionImpl for $struct_name<T>
@@ -388,9 +382,6 @@ macro_rules! impl_checked_matrix_binop {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
 
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 matrix_semantic_contract!($out_type $(, $semantic_contract)?)
@@ -398,10 +389,6 @@ macro_rules! impl_checked_matrix_binop {
 
             fn to_string(&self) -> String {
                 format!("{self:#?}")
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
 

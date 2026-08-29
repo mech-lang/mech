@@ -5,7 +5,7 @@ extern crate mech_core;
 #[path = "support/intrinsic_runner.rs"]
 mod intrinsic_runner;
 
-use mech_core::{LegacyValue, structures::matrix::Matrix};
+use mech_core::snapshot::SequenceView;
 
 fn run(source: &str) -> bool {
     intrinsic_runner::run(source).is_ok()
@@ -14,15 +14,17 @@ fn run(source: &str) -> bool {
 #[cfg(feature = "dynamic-modules")]
 fn run_matrix_n_choose_k(source: &str, expected: Vec<f64>) {
     let result = intrinsic_runner::run(source).unwrap();
-
-    let detached = match result {
-        LegacyValue::MutableReference(v) => v.borrow().clone(),
-        value => value,
+    let matrix = result.matrix_view().expect("expected matrix result");
+    let SequenceView::F64(actual) = matrix.elements() else {
+        panic!("expected f64 matrix result");
     };
-
+    assert_eq!(actual.len(), 2);
     assert_eq!(
-        detached,
-        LegacyValue::MatrixF64(Matrix::from_vec(expected, 1, 2))
+        actual
+            .iter()
+            .map(|value| value.to_f64())
+            .collect::<Vec<_>>(),
+        expected
     );
 }
 

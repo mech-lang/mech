@@ -152,9 +152,6 @@ macro_rules! impl_string_binop {
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -175,9 +172,6 @@ macro_rules! impl_string_binop {
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some($crate::string_binary_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -185,10 +179,6 @@ macro_rules! impl_string_binop {
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]

@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use nalgebra::ComplexField;
 use num_traits::{One, Zero};
 
@@ -98,9 +96,6 @@ macro_rules! impl_binop_solve {
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -140,15 +135,8 @@ macro_rules! impl_binop_solve {
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -330,82 +318,70 @@ mod fixed_invocation_port_tests {
 }
 
 #[cfg(feature = "source")]
-macro_rules! impl_solve_match_arms {
-  ($arg:expr, $($($matrix_kind:tt, $target_type:tt, $value_string:tt),+);+ $(;)?) => {
-    match $arg {
-      $(
-        $(
-          #[cfg(all(feature = $value_string, feature = "matrixd"))]
-          (LegacyValue::$matrix_kind(Matrix::DMatrix(lhs)), LegacyValue::$matrix_kind(Matrix::DMatrix(rhs))) => {
-            let (a_rows, a_cols) = lhs.borrow().shape();
-            let (b_rows, b_cols) = rhs.borrow().shape();
-            if a_rows != a_cols || a_rows != b_rows {
-              return Err(MechError::new(
-                DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
-                Some("Matrix solve requires a square coefficient matrix whose rows match the right-hand side".to_string())
-              ).with_compiler_loc());
-            }
-            Ok(Box::new(MatrixSolveMDMD {
-              lhs: lhs.clone(),
-              rhs: rhs.clone(),
-              out: Ref::new(DMatrix::from_element(a_rows, b_cols, $target_type::zero())),
-            }))
-          },
-          #[cfg(all(feature = $value_string, feature = "matrix2", feature = "matrix2x3"))]
-          (LegacyValue::$matrix_kind(Matrix::Matrix2(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix2x3(rhs))) => {
-            Ok(Box::new(MatrixSolveM2M2x3 {
-              lhs: lhs.clone(),
-              rhs: rhs.clone(),
-              out: Ref::new(Matrix2x3::from_element($target_type::zero())),
-            }))
-          },
-          #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
-          (LegacyValue::$matrix_kind(Matrix::DMatrix(lhs)), LegacyValue::$matrix_kind(Matrix::DVector(rhs))) => {
-            let (a_rows, a_cols) = lhs.borrow().shape();
-            let (b_rows, b_cols) = rhs.borrow().shape();
-            if b_cols != 1 {
-              return Err(MechError::new(
-                DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
-                Some("Right-hand side must be a vector (1 column)".to_string())
-              ).with_compiler_loc());
-            }
-            if a_rows != a_cols || a_rows != b_rows {
-              return Err(MechError::new(
-                DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
-                Some("Matrix solve requires a square coefficient matrix whose rows match the right-hand side".to_string())
-              ).with_compiler_loc());
-            }
-            Ok(Box::new(MatrixSolveMDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DVector::from_element(a_rows, $target_type::zero())) }))
-          },
-          #[cfg(feature = $value_string)]
-          (LegacyValue::$matrix_kind(lhs), LegacyValue::$matrix_kind(rhs)) => {
-            let lhs_shape = lhs.shape();
-            let rhs_shape = rhs.shape();
+pub struct MatrixSolve;
+
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for MatrixSolve {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 2 {
             return Err(MechError::new(
-              DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rhs_shape[0], rhs_shape[1]] },
-              Some("Matrix solve is not implemented for this pair of matrix representations".to_string())
-            ).with_compiler_loc());
-          }
-        )+
-      )+
-      (arg1,arg2) => Err(MechError::new(
-        UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
-        Some("Unsupported types for matrix solve".to_string())
-      ).with_compiler_loc()),
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: invocation.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let lhs = invocation.input(0).expect("validated solve lhs");
+        let rhs = invocation.input(1).expect("validated solve rhs");
+        let lhs_shape = lhs.matrix_descriptor()?.ok_or_else(|| {
+            MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Input(0),
+                    expected: "matrix coefficient input".into(),
+                    found: format!("{:?}", lhs.representation()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let rhs_shape = rhs.matrix_descriptor()?.ok_or_else(|| {
+            MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Input(1),
+                    expected: "matrix right-hand side".into(),
+                    found: format!("{:?}", rhs.representation()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        if lhs_shape.rows != lhs_shape.cols || lhs_shape.rows != rhs_shape.rows {
+            return Err(MechError::new(
+                DimensionMismatch {
+                    dims: vec![
+                        lhs_shape.rows,
+                        lhs_shape.cols,
+                        rhs_shape.rows,
+                        rhs_shape.cols,
+                    ],
+                },
+                Some(
+                    "Matrix solve requires a square coefficient matrix whose rows match the right-hand side"
+                        .into(),
+                ),
+            )
+            .with_compiler_loc());
+        }
+        context.bind_runtime_factory_derived_output(
+            "MatrixSolve",
+            Some((rhs_shape.rows, rhs_shape.cols)),
+            &[lhs, rhs],
+        )
     }
-  }
 }
-
-#[cfg(feature = "source")]
-fn impl_solve_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_solve_match_arms!(
-      (lhs_value, rhs_value),
-      MatrixF32,  f32,  "f32";
-      MatrixF64,  f64,  "f64";
-      //R64, MatrixR64, R64, "rational";
-      //C64, MatrixC64, C64, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(MatrixSolve, impl_solve_fxn, "matrix/solve");

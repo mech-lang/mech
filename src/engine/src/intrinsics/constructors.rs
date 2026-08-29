@@ -1,5 +1,9 @@
 use crate::intrinsics::*;
-#[cfg(feature = "matrix_comprehensions")]
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
 use std::sync::LazyLock;
 
 #[cfg(feature = "matrix_comprehensions")]
@@ -30,31 +34,93 @@ static PURE_MATRIX_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration
         interaction: ExternalInteraction::Pure,
     });
 
-#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-fn detach_comprehension_value(value: &LegacyValue) -> LegacyValue {
-    match value {
-        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
-        _ => value.clone(),
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+fn matrix_concatenation_contract(contract_name: &str) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 1,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
+                        .into_boxed_slice(),
+                    contract_name: contract_name.to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
     }
 }
 
+#[cfg(feature = "matrix_horzcat")]
+static PURE_MATRIX_HORZCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| matrix_concatenation_contract("horizontal-output"));
+
+#[cfg(feature = "matrix_vertcat")]
+static PURE_MATRIX_VERTCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| matrix_concatenation_contract("vertical-output"));
+
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
+fn variadic_ports(
+    invocation: &FunctionInvocation,
+) -> MResult<(FunctionValueOutput, Vec<FunctionValueInput>)> {
+    if invocation.input_count() == 0 {
+        if invocation.expect_nullary().is_err() {
+            invocation.expect_variadic()?;
+        }
+    } else {
+        invocation.expect_variadic()?;
+    }
+    Ok((
+        invocation.output().value(),
+        invocation.inputs().map(FunctionInputPort::value).collect(),
+    ))
+}
+
 // Set -----------------------------------------------------------------------
+
+#[cfg(feature = "set")]
+pub struct SetDefine;
+
+#[cfg(all(feature = "set", feature = "functions", feature = "semantic-compiler"))]
+impl CanonicalFunctionSpecializer for SetDefine {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        let output = crate::structures::canonical_set_from_inputs(invocation.inputs().to_vec())?;
+        let invocation = FunctionInvocation::nullary(output);
+        let implementation = ValueSet::new_invocation(invocation.clone())?;
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            implementation,
+            invocation,
+        )))
+    }
+}
 
 /// Runtime implementation for `set/define`.
 #[cfg(feature = "set")]
 #[derive(Debug)]
 pub struct ValueSet {
-    pub out: Ref<MechSet>,
+    output: FunctionValueOutput,
 }
 
 #[cfg(all(feature = "set", feature = "functions"))]
 impl MechFunctionImpl for ValueSet {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
-    }
-
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Set(self.out.clone())
     }
 
     fn reactive_dependency_scopes(
@@ -65,11 +131,11 @@ impl MechFunctionImpl for ValueSet {
     }
 
     fn to_string(&self) -> String {
-        format!("{:#?}", self)
+        format!("{self:#?}")
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.cell().clone()]
     }
 }
 
@@ -78,40 +144,36 @@ impl MechFunctionFactory for ValueSet {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Set);
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Nullary(out) => {
-                let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(ValueSet { out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let output = invocation.expect_nullary()?.value();
+        let SchemaBody::Set { .. } = output.cell().closed_schema_body()? else {
+            return Err(comprehension_output_error(
+                "set/define",
+                output.representation(),
+            ));
+        };
+        Ok(Box::new(Self { output }))
     }
 }
 
 #[cfg(all(feature = "set", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueSet {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!("set/define", self.out, ctx);
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.output.compile_register(context)?;
+        context.emit_nullop(hash_str("set/define"), output);
+        Ok(output)
     }
 }
 
 // Set comprehensions --------------------------------------------------------
 
-#[cfg(feature = "set_comprehensions")]
+#[cfg(any(feature = "set", feature = "set_comprehensions"))]
 #[derive(Debug, Clone)]
 struct SetComprehensionOutputKindMismatchError {
-    found: ValueKind,
+    found: FunctionValueRepresentation,
 }
 
-#[cfg(feature = "set_comprehensions")]
+#[cfg(any(feature = "set", feature = "set_comprehensions"))]
 impl MechErrorKind for SetComprehensionOutputKindMismatchError {
     fn name(&self) -> &str {
         "SetComprehensionOutputKindMismatch"
@@ -125,36 +187,39 @@ impl MechErrorKind for SetComprehensionOutputKindMismatchError {
     }
 }
 
+#[cfg(any(feature = "set", feature = "set_comprehensions"))]
+fn comprehension_output_error(
+    _operation: &'static str,
+    found: FunctionValueRepresentation,
+) -> MechError {
+    MechError::new(SetComprehensionOutputKindMismatchError { found }, None).with_compiler_loc()
+}
+
 /// Runtime implementation for `set/comprehension`.
 #[cfg(feature = "set_comprehensions")]
 #[derive(Debug)]
 pub struct ValueSetComprehension {
-    pub arguments: Vec<LegacyValue>,
-    pub out: Ref<MechSet>,
+    arguments: Vec<FunctionValueInput>,
+    output: FunctionValueOutput,
 }
 
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueSetComprehension {
     fn solve_result(&self) -> MResult<()> {
-        let args = self
+        let values = self
             .arguments
             .iter()
-            .map(detach_comprehension_value)
-            .collect::<Vec<LegacyValue>>();
-        *self.out.borrow_mut() = MechSet::from_vec(args);
-        Ok(())
-    }
-
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Set(self.out.clone())
+            .map(FunctionValueInput::snapshot)
+            .collect::<MResult<Vec<_>>>()?
+            .into_iter()
+            .map(|value| value.data().clone())
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        self.output.replace_set(values)
     }
 
     fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+        format!("{self:#?}")
     }
 }
 
@@ -165,95 +230,375 @@ impl MechFunctionFactory for ValueSetComprehension {
         FunctionValueRepresentation::AnyValue,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            // Bytecode v1 uses RuntimeNullary for a variadic operation with
-            // zero inputs. Accept that canonical encoding as the empty
-            // argument list while retaining the checked set output lane.
-            FunctionArgs::Nullary(LegacyValue::Set(out)) => Ok(Box::new(ValueSetComprehension {
-                arguments: Vec::new(),
-                out,
-            })),
-            FunctionArgs::Variadic(LegacyValue::Set(out), arguments) => {
-                Ok(Box::new(ValueSetComprehension { arguments, out }))
-            }
-            FunctionArgs::Nullary(out) | FunctionArgs::Variadic(out, _) => Err(MechError::new(
-                SetComprehensionOutputKindMismatchError { found: out.kind() },
-                None,
-            )
-            .with_compiler_loc()),
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (output, arguments) = variadic_ports(&invocation)?;
+        let SchemaBody::Set { .. } = output.cell().closed_schema_body()? else {
+            return Err(comprehension_output_error(
+                "set/comprehension",
+                output.representation(),
+            ));
+        };
+        Ok(Box::new(Self { arguments, output }))
     }
 }
 
 #[cfg(all(feature = "set_comprehensions", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueSetComprehension {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = LegacyValue::Set(self.out.clone());
-        let destination = compile_value_register(&output, self.out.addr(), ctx)?;
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.output.compile_register(context)?;
         let arguments = self
             .arguments
             .iter()
-            .map(|argument| {
-                compile_value_register(argument, core::ptr::from_ref(argument).addr(), ctx)
-            })
+            .map(|argument| argument.compile_register(context))
             .collect::<MResult<Vec<_>>>()?;
-        ctx.emit_varop(hash_str("set/comprehension"), destination, arguments);
-        Ok(destination)
+        context.emit_varop(hash_str("set/comprehension"), output, arguments);
+        Ok(output)
     }
 }
 
 // Matrix comprehensions -----------------------------------------------------
 
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn matrix_input_cells(input: &ValueCell) -> MResult<(usize, usize, Vec<ValueCell>)> {
+    if let Some(elements) = input.matrix_elements()? {
+        let SchemaBody::Matrix { dimensions, .. } = input.closed_schema_body()? else {
+            unreachable!("matrix elements retain a matrix schema")
+        };
+        let [
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ] = dimensions.as_ref()
+        else {
+            return Err(matrix_comprehension_error(
+                "matrix input must have exactly two dimensions",
+            ));
+        };
+        return Ok((
+            usize::try_from(*rows)
+                .map_err(|_| matrix_comprehension_error("matrix row extent exceeds usize"))?,
+            usize::try_from(*columns)
+                .map_err(|_| matrix_comprehension_error("matrix column extent exceeds usize"))?,
+            elements,
+        ));
+    }
+    Ok((1, 1, vec![input.clone()]))
+}
+
+#[cfg(all(
+    test,
+    feature = "f32",
+    feature = "matrixd",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+mod matrix_input_tests {
+    use super::*;
+    use mech_core::{
+        FloatWidth, ValueData, ValueDataDraft,
+        snapshot::{F32Bits, SequenceView},
+    };
+
+    fn matrix(rows: u64, columns: u64, values: &[f32]) -> ValueCell {
+        ValueCell::from_schema_data(
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W32)),
+                dimensions: vec![
+                    DimensionExpr::Constant(rows),
+                    DimensionExpr::Constant(columns),
+                ]
+                .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(
+                values
+                    .iter()
+                    .map(|value| ValueDataDraft::F32(F32Bits::from_f32(*value)))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        )
+        .unwrap()
+    }
+
+    fn values(cell: &ValueCell) -> Vec<f32> {
+        let snapshot = cell.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = snapshot.data() else {
+            panic!("concatenation output must remain a matrix")
+        };
+        let SequenceView::F32(values) = matrix.elements() else {
+            panic!("concatenation output must retain f32 elements")
+        };
+        values.iter().map(|value| value.to_f32()).collect()
+    }
+
+    #[test]
+    fn fixed_matrix_extents_drive_horizontal_and_vertical_concatenation() {
+        let left = matrix(2, 1, &[1.0, 2.0]);
+        let right = matrix(2, 1, &[3.0, 4.0]);
+        assert!(left.shape().parameter_values().is_empty());
+
+        let horizontal = matrix_concatenation_output(&[left, right], false).unwrap();
+        assert_eq!(horizontal.shape().parameter_values(), &[2, 2]);
+        assert_eq!(values(&horizontal), vec![1.0, 3.0, 2.0, 4.0]);
+
+        let top = matrix(1, 2, &[1.0, 2.0]);
+        let bottom = matrix(1, 2, &[3.0, 4.0]);
+        let vertical = matrix_concatenation_output(&[top, bottom], true).unwrap();
+        assert_eq!(vertical.shape().parameter_values(), &[2, 2]);
+        assert_eq!(values(&vertical), vec![1.0, 2.0, 3.0, 4.0]);
+    }
+}
+
+#[cfg(any(feature = "matrix_comprehensions", feature = "matrix_horzcat"))]
+fn horizontal_comprehension_cells(
+    arguments: &[ValueCell],
+) -> MResult<(usize, usize, Vec<ValueCell>)> {
+    if arguments.is_empty() {
+        return Ok((0, 0, Vec::new()));
+    }
+    let parts = arguments
+        .iter()
+        .map(matrix_input_cells)
+        .collect::<MResult<Vec<_>>>()?;
+    let rows = parts[0].0;
+    if parts.iter().any(|(candidate, _, _)| *candidate != rows) {
+        return Err(matrix_comprehension_error(
+            "horizontal inputs must have the same row extent",
+        ));
+    }
+    let columns = parts.iter().try_fold(0_usize, |total, (_, columns, _)| {
+        total
+            .checked_add(*columns)
+            .ok_or_else(|| matrix_comprehension_error("matrix column extent overflowed"))
+    })?;
+    let mut cells = Vec::with_capacity(rows.saturating_mul(columns));
+    for row in 0..rows {
+        for (_, part_columns, part_cells) in &parts {
+            let start = row.saturating_mul(*part_columns);
+            cells.extend_from_slice(&part_cells[start..start + part_columns]);
+        }
+    }
+    Ok((rows, columns, cells))
+}
+
+#[cfg(feature = "matrix_vertcat")]
+fn vertical_concatenation_cells(
+    arguments: &[ValueCell],
+) -> MResult<(usize, usize, Vec<ValueCell>)> {
+    if arguments.is_empty() {
+        return Ok((0, 0, Vec::new()));
+    }
+    let parts = arguments
+        .iter()
+        .map(matrix_input_cells)
+        .collect::<MResult<Vec<_>>>()?;
+    let columns = parts[0].1;
+    if parts.iter().any(|(_, candidate, _)| *candidate != columns) {
+        return Err(matrix_comprehension_error(
+            "vertical inputs must have the same column extent",
+        ));
+    }
+    let rows = parts.iter().try_fold(0_usize, |total, (rows, _, _)| {
+        total
+            .checked_add(*rows)
+            .ok_or_else(|| matrix_comprehension_error("matrix row extent overflowed"))
+    })?;
+    let cells = parts.into_iter().flat_map(|(_, _, cells)| cells).collect();
+    Ok((rows, columns, cells))
+}
+
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn matrix_comprehension_error(reason: impl Into<String>) -> MechError {
+    MechError::new(GenericError { msg: reason.into() }, None).with_compiler_loc()
+}
+
+#[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
+pub(crate) fn matrix_comprehension_output(arguments: &[ValueCell]) -> MResult<ValueCell> {
+    if arguments.is_empty() {
+        return ValueCell::dynamic_matrix(
+            SchemaBody::Tuple(Box::new([])),
+            vec![0, 0].into_boxed_slice(),
+            Box::new([]),
+        );
+    }
+    let (rows, columns, cells) = horizontal_comprehension_cells(arguments)?;
+    ValueCell::dynamic_matrix_from_cells(rows, columns, &cells)
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+fn matrix_concatenation_output(arguments: &[ValueCell], vertical: bool) -> MResult<ValueCell> {
+    let (rows, columns, cells) = if vertical {
+        #[cfg(feature = "matrix_vertcat")]
+        {
+            vertical_concatenation_cells(arguments)?
+        }
+        #[cfg(not(feature = "matrix_vertcat"))]
+        unreachable!()
+    } else {
+        #[cfg(feature = "matrix_horzcat")]
+        {
+            horizontal_comprehension_cells(arguments)?
+        }
+        #[cfg(not(feature = "matrix_horzcat"))]
+        unreachable!()
+    };
+    if cells.is_empty() {
+        return ValueCell::dynamic_matrix(
+            SchemaBody::Tuple(Box::new([])),
+            vec![rows as u64, columns as u64].into_boxed_slice(),
+            Box::new([]),
+        );
+    }
+    ValueCell::dynamic_matrix_from_cells(rows, columns, &cells)
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+#[derive(Debug)]
+pub struct ValueMatrixConcatenation {
+    arguments: Vec<FunctionValueInput>,
+    output: FunctionValueOutput,
+    vertical: bool,
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+impl MechFunctionImpl for ValueMatrixConcatenation {
+    fn solve_result(&self) -> MResult<()> {
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| argument.cell().clone())
+            .collect::<Vec<_>>();
+        let next = matrix_concatenation_output(&arguments, self.vertical)?;
+        self.output.replace(&next.snapshot()?)
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        if self.vertical {
+            #[cfg(feature = "matrix_vertcat")]
+            return Some(&PURE_MATRIX_VERTCAT_CONTRACT);
+            #[cfg(not(feature = "matrix_vertcat"))]
+            unreachable!();
+        }
+        #[cfg(feature = "matrix_horzcat")]
+        return Some(&PURE_MATRIX_HORZCAT_CONTRACT);
+        #[cfg(not(feature = "matrix_horzcat"))]
+        unreachable!();
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some(if self.vertical {
+            "matrix/vertcat"
+        } else {
+            "matrix/horzcat"
+        })
+    }
+
+    fn to_string(&self) -> String {
+        if self.vertical {
+            "ValueVerticalConcatenation".to_owned()
+        } else {
+            "ValueHorizontalConcatenation".to_owned()
+        }
+    }
+}
+
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(feature = "matrix_horzcat", feature = "matrix_vertcat")
+))]
+impl MechFunctionCompiler for ValueMatrixConcatenation {
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.output.compile_register(context)?;
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| argument.compile_register(context))
+            .collect::<MResult<Vec<_>>>()?;
+        context.emit_varop(
+            hash_str(if self.vertical {
+                "matrix/vertcat"
+            } else {
+                "matrix/horzcat"
+            }),
+            output,
+            arguments,
+        );
+        Ok(output)
+    }
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+impl ValueMatrixConcatenation {
+    pub(crate) fn specialize(
+        invocation: &SpecializationInvocation,
+        vertical: bool,
+    ) -> MResult<SpecializedFunction> {
+        let arguments = invocation
+            .inputs()
+            .iter()
+            .map(|input| Ok(input.cell()?.clone()))
+            .collect::<MResult<Vec<_>>>()?;
+        let output = matrix_concatenation_output(&arguments, vertical)?;
+        let invocation = FunctionInvocation::variadic(output.clone(), arguments.into_boxed_slice());
+        let implementation = Self {
+            arguments: invocation.inputs().map(FunctionInputPort::value).collect(),
+            output: invocation.output().value(),
+            vertical,
+        };
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            Box::new(implementation),
+            invocation,
+        )))
+    }
+}
+
 /// Runtime implementation for `matrix/comprehension`.
 #[cfg(feature = "matrix_comprehensions")]
 #[derive(Debug)]
 pub struct ValueMatrixComprehension {
-    pub arguments: Vec<LegacyValue>,
-    pub out: Ref<LegacyValue>,
+    arguments: Vec<FunctionValueInput>,
+    output: FunctionValueOutput,
 }
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueMatrixComprehension {
     fn solve_result(&self) -> MResult<()> {
-        let args = self
+        let arguments = self
             .arguments
             .iter()
-            .map(detach_comprehension_value)
-            .collect::<Vec<LegacyValue>>();
-        let out = if args.is_empty() {
-            LegacyValue::MatrixValue(Matrix::from_vec(vec![], 0, 0))
-        } else {
-            let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(&args)?;
-            fxn.solve_result()?;
-            fxn.out()
-        };
-        *self.out.borrow_mut() = out;
-        Ok(())
-    }
-
-    fn out(&self) -> LegacyValue {
-        self.out.borrow().clone()
+            .map(|argument| argument.cell().clone())
+            .collect::<Vec<_>>();
+        let (rows, columns, cells) = horizontal_comprehension_cells(&arguments)?;
+        let drafts = cells
+            .iter()
+            .map(|cell| {
+                cell.snapshot()?
+                    .canonical_data_draft()
+                    .map_err(|error| matrix_comprehension_error(format!("{error:?}")))
+            })
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
+        self.output
+            .replace_matrix_drafts(vec![rows as u64, columns as u64].into_boxed_slice(), drafts)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_MATRIX_COMPREHENSION_CONTRACT)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(vec![LegacyValue::MutableReference(self.out.clone())])
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some("matrix/comprehension")
     }
 
     fn to_string(&self) -> String {
-        format!("{:#?}", self)
+        format!("{self:#?}")
     }
 }
 
@@ -264,61 +609,32 @@ impl MechFunctionFactory for ValueMatrixComprehension {
         FunctionValueRepresentation::AnyValue,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            // Bytecode v1 represents a zero-input variadic operation as a
-            // nullary call. Empty comprehensions are valid 0x0 matrices, so
-            // retain that canonical encoding instead of imposing an
-            // accidental one-element minimum at reconstruction time.
-            FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension {
-                arguments: Vec::new(),
-                out: Ref::new(out),
-            })),
-            FunctionArgs::Variadic(out, arguments) => Ok(Box::new(ValueMatrixComprehension {
-                arguments,
-                out: Ref::new(out),
-            })),
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (output, arguments) = variadic_ports(&invocation)?;
+        let SchemaBody::Matrix { .. } = output.cell().closed_schema_body()? else {
+            return Err(matrix_comprehension_error(format!(
+                "matrix comprehension output must be a matrix, found {:?}",
+                output.representation(),
+            )));
+        };
+        Ok(Box::new(Self { arguments, output }))
     }
 }
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueMatrixComprehension {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = self.out.borrow().clone();
-        let output_kind = output.kind();
-        let destination = if output_kind
-            .matrix_parts()
-            .is_some_and(|(element, _)| element.is_any())
-        {
-            let (destination, initialize) =
-                ctx.register_for_ptr_with_initialization_status(self.out.addr());
-            ctx.record_register_kind(destination, output_kind)?;
-            if initialize {
-                let template = output.compile_const(ctx)?;
-                ctx.record_register_constant_metadata(destination, template)?;
-                ctx.emit_composite_pack(destination, template, Vec::new());
-            }
-            destination
-        } else {
-            compile_value_register(&output, self.out.addr(), ctx)?
-        };
-        let arguments = self
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.output.compile_register(context)?;
+        let mut arguments = self
             .arguments
             .iter()
-            .map(|argument| {
-                compile_value_register(argument, core::ptr::from_ref(argument).addr(), ctx)
-            })
+            .map(|argument| argument.compile_register(context))
             .collect::<MResult<Vec<_>>>()?;
-        ctx.emit_varop(hash_str("matrix/comprehension"), destination, arguments);
-        Ok(destination)
+        if arguments.is_empty() {
+            let seed = self.output.cell().detached_clone()?;
+            arguments.push(compile_value_cell_register(&seed, context)?);
+        }
+        context.emit_varop(hash_str("matrix/comprehension"), output, arguments);
+        Ok(output)
     }
 }

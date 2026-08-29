@@ -375,9 +375,6 @@ macro_rules! impl_checked_arithmetic_binop {
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
 
         impl<T> MechFunctionImpl for $struct_name<T>
@@ -417,20 +414,12 @@ macro_rules! impl_checked_arithmetic_binop {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
 
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
-
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 arithmetic_semantic_contract!($out_type $(, $semantic_contract)?)
             }
 
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {

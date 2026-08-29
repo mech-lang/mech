@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::Not;
@@ -37,9 +35,6 @@ where
         }))
     }
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 impl<T> MechFunctionImpl for NotS<T>
 where
@@ -65,20 +60,12 @@ where
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_ref(&self.out))
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(crate::logic_unary_full_write_contract(T::REPRESENTATION))
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
-
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
@@ -128,9 +115,6 @@ where
         }))
     }
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 impl<T, MatA> MechFunctionImpl for NotV<T, MatA>
 where
@@ -155,20 +139,12 @@ where
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_ref(&self.out))
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(crate::logic_unary_full_write_contract(MatA::REPRESENTATION))
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
-
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
@@ -186,13 +162,159 @@ where
 }
 
 #[cfg(feature = "source")]
-fn impl_not_fxn(arg_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_urnop_match_arms!(
-      Not,
-      arg_value,
-      Bool, bool, "bool";
-    )
+fn specialize_not_factory<F>(input: &SpecializationInput) -> MResult<SpecializedFunction>
+where
+    F: MechFunctionFactory,
+{
+    let output = input.cell()?.detached_clone()?;
+    let invocation = FunctionInvocation::unary(output, input.cell()?.clone());
+    let implementation = F::new_invocation(invocation.clone())?;
+    Ok(SpecializedFunction::new(FunctionInstance::new(
+        implementation,
+        invocation,
+    )))
 }
 
 #[cfg(feature = "source")]
-impl_mech_urnop_fxn!(LogicNot, impl_not_fxn, "logic/not");
+pub struct LogicNot;
+
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for LogicNot {
+    fn specialize_invocation(
+        &self,
+        specialization: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if specialization.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: specialization.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let input = specialization.input(0).expect("validated unary input");
+        match input.representation() {
+            #[cfg(feature = "bool")]
+            Some(FunctionValueRepresentation::Bool) => {
+                specialize_not_factory::<NotS<bool>>(input)
+            }
+            #[cfg(all(feature = "bool", feature = "matrix1"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::Matrix1,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::Matrix1<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "matrix2"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::Matrix2,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::Matrix2<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "matrix3"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::Matrix3,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::Matrix3<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "matrix4"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::Matrix4,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::Matrix4<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "matrix2x3"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::Matrix2x3,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::Matrix2x3<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "matrix3x2"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::Matrix3x2,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::Matrix3x2<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "row_vector2"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::RowVector2,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::RowVector2<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "row_vector3"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::RowVector3,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::RowVector3<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "row_vector4"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::RowVector4,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::RowVector4<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "row_vectord"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::RowVectorD,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::RowDVector<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "vector2"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::Vector2,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::Vector2<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "vector3"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::Vector3,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::Vector3<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "vector4"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::Vector4,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::Vector4<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "vectord"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::VectorD,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::DVector<bool>>>(input),
+            #[cfg(all(feature = "bool", feature = "matrixd"))]
+            Some(FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::Bool,
+                storage: FunctionMatrixStoragePattern::Exact(
+                    FunctionMatrixRepresentation::MatrixD,
+                ),
+            }) => specialize_not_factory::<NotV<bool, nalgebra::DMatrix<bool>>>(input),
+            found => Err(MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Input(0),
+                    expected: "Bool scalar or exact Bool matrix".into(),
+                    found: format!("{found:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}

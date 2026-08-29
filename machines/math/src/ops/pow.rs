@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use num_traits::*;
 
 fn checked_runtime_pow<T: RuntimeCheckedPow>(lhs: T, rhs: T) -> MResult<T> {
@@ -174,9 +172,6 @@ macro_rules! impl_powop {
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -213,9 +208,6 @@ macro_rules! impl_powop {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(crate::ops::arithmetic_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -224,11 +216,6 @@ macro_rules! impl_powop {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
-
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
@@ -325,9 +312,6 @@ impl MechFunctionFactory for PowRational {
         Ok(Box::new(Self { lhs, rhs, out }))
     }
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(all(feature = "rational", feature = "i32"))]
 impl MechFunctionImpl for PowRational {
@@ -343,17 +327,9 @@ impl MechFunctionImpl for PowRational {
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_ref(&self.out))
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
-    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
-
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
@@ -366,29 +342,4 @@ impl MechFunctionCompiler for PowRational {
     }
 }
 
-#[cfg(feature = "source")]
-fn impl_pow_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    match (&lhs_value, &rhs_value) {
-        #[cfg(all(feature = "rational", feature = "i32"))]
-        (LegacyValue::R64(lhs), LegacyValue::I32(rhs)) => {
-            return Ok(Box::new(PowRational {
-                lhs: lhs.clone(),
-                rhs: rhs.clone(),
-                out: Ref::new(R64::default()),
-            }));
-        }
-        _ => (),
-    }
-    impl_binop_match_arms!(
-      Pow,
-      (lhs_value, rhs_value),
-      U8,   u8,   "u8";
-      U16,  u16,  "u16";
-      U32,  u32,  "u32";
-      F32,  f32,  "f32";
-      F64,  f64,  "f64";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(MathPow, impl_pow_fxn, "math/pow");
+impl_canonical_registered_math_binop_specializer!(MathPow, "Pow");

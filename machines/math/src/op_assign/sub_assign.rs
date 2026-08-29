@@ -1,6 +1,4 @@
 use super::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Sub Assign -----------------------------------------------------------------
@@ -51,6 +49,11 @@ macro_rules! impl_sub_assign_range_fxn_v {
 impl_assign_scalar_scalar!(Sub, checked_sub_assign);
 impl_assign_vector_vector!(Sub, checked_sub_assign);
 impl_assign_vector_scalar!(Sub, checked_sub_assign);
+
+#[cfg(test)]
+mod retired_legacy_value_specializer {
+#![cfg(any())]
+use super::*;
 
 #[cfg(feature = "source")]
 fn sub_assign_value_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Box<dyn MechFunction>> {
@@ -114,6 +117,7 @@ impl FunctionSpecializer for SubAssignValue {
             },
         }
     }
+}
 }
 
 // x[1..3] -= 1 ----------------------------------------------------------------
@@ -181,6 +185,11 @@ impl_sub_assign_range_fxn_v!(SubAssign1DRV, sub_assign_1d_range_vec, usize);
 #[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_v!(SubAssign1DRVB, sub_assign_1d_range_vec_b, bool);
 
+#[cfg(test)]
+mod retired_legacy_range_specializer {
+#![cfg(any())]
+use super::*;
+
 #[cfg(feature = "source")]
 op_assign_range_fxn!(sub_assign_range_fxn, SubAssign1DR);
 
@@ -233,6 +242,7 @@ impl FunctionSpecializer for SubAssignRange {
             },
         }
     }
+}
 }
 
 // x[1..3,:] -= 1 ------------------------------------------------------------------
@@ -316,6 +326,11 @@ impl_sub_assign_range_fxn_v!(SubAssign2DRAV, sub_assign_2d_vector_all_mat, usize
 #[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_v!(SubAssign2DRAVB, sub_assign_2d_vector_all_mat_b, bool);
 
+#[cfg(test)]
+mod retired_legacy_range_all_specializer {
+#![cfg(any())]
+use super::*;
+
 #[cfg(feature = "source")]
 op_assign_range_all_fxn!(sub_assign_range_all_fxn, SubAssign2DRA);
 
@@ -369,3 +384,15 @@ impl FunctionSpecializer for SubAssignRangeAll {
         }
     }
 }
+}
+
+#[cfg(feature = "source")]
+crate::impl_canonical_op_assign_specializers!(
+    SubAssignValue,
+    SubAssignRange,
+    SubAssignRangeAll,
+    Sub,
+    "SubAssign",
+    "SubAssign1DR",
+    "SubAssign2DRA"
+);
