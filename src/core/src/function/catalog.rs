@@ -4,8 +4,8 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, FunctionInvocation, GuardFunctionSafety, LegacyValue, MResult, MechError,
-    MechErrorKind, MechFunction, MechFunctionFactory, OperationContractDeclaration,
+    FunctionArgs, FunctionInstance, FunctionInvocation, GuardFunctionSafety, LegacyValue, MResult,
+    MechError, MechErrorKind, MechFunction, MechFunctionFactory, OperationContractDeclaration,
     ResidentKernelFactory, ResidentKernelFactoryEntry, ResidentOperationKey,
     RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, hash_str,
 };
@@ -195,11 +195,9 @@ impl RuntimeFunctionEntry {
     pub fn validate_invocation(&self, invocation: &FunctionInvocation) -> MResult<()> {
         let invocation = invocation.clone().normalize_for_signature(self.signature);
         invocation
-            .legacy_args()
             .validate_signature(self.signature)
             .map_err(|error| self.wrap_contract_error(error))?;
         invocation
-            .legacy_args()
             .validate_contract(self.contract)
             .map_err(|error| self.wrap_contract_error(error))?;
         let function = (self.invocation_factory)(invocation)
@@ -216,16 +214,21 @@ impl RuntimeFunctionEntry {
         &self,
         invocation: FunctionInvocation,
     ) -> MResult<Box<dyn MechFunction>> {
+        self.bind_invocation(invocation)
+            .map(FunctionInstance::into_implementation)
+    }
+
+    pub fn bind_invocation(&self, invocation: FunctionInvocation) -> MResult<FunctionInstance> {
         let invocation = invocation.normalize_for_signature(self.signature);
         invocation
-            .legacy_args()
             .validate_signature(self.signature)
             .map_err(|error| self.wrap_contract_error(error))?;
         invocation
-            .legacy_args()
             .validate_contract(self.contract)
             .map_err(|error| self.wrap_contract_error(error))?;
-        (self.invocation_factory)(invocation).map_err(|error| self.wrap_contract_error(error))
+        let implementation = (self.invocation_factory)(invocation.clone())
+            .map_err(|error| self.wrap_contract_error(error))?;
+        Ok(FunctionInstance::new(implementation, invocation))
     }
 }
 

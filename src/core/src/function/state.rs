@@ -226,6 +226,7 @@ trait ErasedFunctionState {
     fn representation(&self) -> FunctionValueRepresentation;
     fn reactive_cell_ids(&self) -> Vec<FunctionReactiveCell>;
     fn capture(&self, journal: &mut function_state_sealed::Journal) -> MResult<()>;
+    fn matches_cell(&self, cell: &crate::ValueCell) -> bool;
 }
 
 impl<T> ErasedFunctionState for Ref<T>
@@ -243,6 +244,11 @@ where
 
     fn capture(&self, journal: &mut function_state_sealed::Journal) -> MResult<()> {
         <T as function_state_sealed::PortSealed>::capture(self, journal)
+    }
+
+    fn matches_cell(&self, cell: &crate::ValueCell) -> bool {
+        cell.try_ref::<T>()
+            .is_ok_and(|reference| self.same_handle(&reference))
     }
 }
 
@@ -275,6 +281,10 @@ impl<'a> FunctionStatePort<'a> {
 
     pub(crate) fn capture_into(self, journal: &mut crate::ValueStateJournal) -> MResult<()> {
         self.inner.capture(journal)
+    }
+
+    pub(crate) fn matches_cell(self, cell: &crate::ValueCell) -> bool {
+        self.inner.matches_cell(cell)
     }
 }
 

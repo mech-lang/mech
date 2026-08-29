@@ -1,7 +1,10 @@
 #[cfg(feature = "no_std")]
-use alloc::string::{String, ToString};
-#[cfg(all(feature = "no_std", test))]
-use alloc::vec;
+use alloc::{
+    boxed::Box,
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 #[cfg(not(feature = "no_std"))]
 use std::string::{String, ToString};
 
@@ -10,8 +13,10 @@ use core::{any::type_name, fmt};
 #[cfg(feature = "matrix")]
 use crate::structures::Matrix;
 use crate::{
-    FunctionArgs, FunctionRuntimeType, IncorrectNumberOfArguments, LegacyValue, MResult, MechError,
-    MechErrorKind, ReactiveCellId, Ref, RuntimeFunctionSignature,
+    FunctionArgs, FunctionMatrixStoragePattern, FunctionRuntimeType, FunctionSignatureViolation,
+    FunctionValueRepresentation, IncorrectNumberOfArguments, LegacyValue, MResult, MechError,
+    MechErrorKind, ReactiveCellId, Ref, RuntimeFunctionContract, RuntimeFunctionInputs,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaId, ShapeInstance, Value, ValueCell,
 };
 
 mod function_port_backing {
@@ -112,7 +117,20 @@ exact_matrix_function_port_backing!(DMatrix, "matrixd");
 
 #[derive(Clone)]
 pub struct FunctionInvocation {
-    args: FunctionArgs,
+    layout: FunctionInvocationLayout,
+    output: ValueCell,
+    inputs: Box<[ValueCell]>,
+    compatibility_args: Option<FunctionArgs>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FunctionInvocationLayout {
+    Nullary,
+    Unary,
+    Binary,
+    Ternary,
+    Quaternary,
+    Variadic,
 }
 
 #[derive(Clone, Copy)]
@@ -131,15 +149,115 @@ pub struct FunctionInputPorts<'a> {
     next: usize,
 }
 
-impl From<FunctionArgs> for FunctionInvocation {
-    fn from(args: FunctionArgs) -> Self {
-        Self { args }
-    }
-}
-
 impl FunctionInvocation {
+    pub fn nullary(output: ValueCell) -> Self {
+        Self::from_cells(
+            FunctionInvocationLayout::Nullary,
+            output,
+            Vec::new().into_boxed_slice(),
+        )
+        .expect("nullary invocation layout is valid")
+    }
+
+    pub fn unary(output: ValueCell, input: ValueCell) -> Self {
+        Self::from_cells(
+            FunctionInvocationLayout::Unary,
+            output,
+            vec![input].into_boxed_slice(),
+        )
+        .expect("unary invocation layout is valid")
+    }
+
+    pub fn binary(output: ValueCell, first: ValueCell, second: ValueCell) -> Self {
+        Self::from_cells(
+            FunctionInvocationLayout::Binary,
+            output,
+            vec![first, second].into_boxed_slice(),
+        )
+        .expect("binary invocation layout is valid")
+    }
+
+    pub fn ternary(
+        output: ValueCell,
+        first: ValueCell,
+        second: ValueCell,
+        third: ValueCell,
+    ) -> Self {
+        Self::from_cells(
+            FunctionInvocationLayout::Ternary,
+            output,
+            vec![first, second, third].into_boxed_slice(),
+        )
+        .expect("ternary invocation layout is valid")
+    }
+
+    pub fn quaternary(
+        output: ValueCell,
+        first: ValueCell,
+        second: ValueCell,
+        third: ValueCell,
+        fourth: ValueCell,
+    ) -> Self {
+        Self::from_cells(
+            FunctionInvocationLayout::Quaternary,
+            output,
+            vec![first, second, third, fourth].into_boxed_slice(),
+        )
+        .expect("quaternary invocation layout is valid")
+    }
+
+    pub fn variadic(output: ValueCell, inputs: Box<[ValueCell]>) -> Self {
+        Self::from_cells(FunctionInvocationLayout::Variadic, output, inputs)
+            .expect("variadic invocation layout is valid")
+    }
+
+    pub fn from_cells(
+        layout: FunctionInvocationLayout,
+        output: ValueCell,
+        inputs: Box<[ValueCell]>,
+    ) -> MResult<Self> {
+        let expected = match layout {
+            FunctionInvocationLayout::Nullary => Some(0),
+            FunctionInvocationLayout::Unary => Some(1),
+            FunctionInvocationLayout::Binary => Some(2),
+            FunctionInvocationLayout::Ternary => Some(3),
+            FunctionInvocationLayout::Quaternary => Some(4),
+            FunctionInvocationLayout::Variadic => None,
+        };
+        if expected.is_some_and(|expected| expected != inputs.len()) {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: expected.expect("fixed invocation layout"),
+                    found: inputs.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(Self {
+            layout,
+            output,
+            inputs,
+            compatibility_args: None,
+        })
+    }
+
+    pub(crate) fn from_legacy_cells(
+        layout: FunctionInvocationLayout,
+        output: ValueCell,
+        inputs: Box<[ValueCell]>,
+        args: FunctionArgs,
+    ) -> Self {
+        Self {
+            layout,
+            output,
+            inputs,
+            compatibility_args: Some(args),
+        }
+    }
+
     pub fn input_count(&self) -> usize {
-        self.legacy_args().input_count()
+        self.inputs.len()
     }
 
     pub fn output(&self) -> FunctionOutputPort<'_> {
@@ -147,7 +265,7 @@ impl FunctionInvocation {
     }
 
     pub fn input(&self, index: usize) -> Option<FunctionInputPort<'_>> {
-        self.args.input_value(index).map(|_| FunctionInputPort {
+        self.inputs.get(index).map(|_| FunctionInputPort {
             invocation: self,
             index,
         })
@@ -161,7 +279,7 @@ impl FunctionInvocation {
     }
 
     pub fn expect_nullary(&self) -> MResult<FunctionOutputPort<'_>> {
-        if matches!(self.args, FunctionArgs::Nullary(_)) {
+        if self.layout == FunctionInvocationLayout::Nullary {
             Ok(self.output())
         } else {
             Err(self.layout_error(0))
@@ -169,7 +287,7 @@ impl FunctionInvocation {
     }
 
     pub fn expect_unary(&self) -> MResult<(FunctionOutputPort<'_>, FunctionInputPort<'_>)> {
-        if matches!(self.args, FunctionArgs::Unary(_, _)) {
+        if self.layout == FunctionInvocationLayout::Unary {
             Ok((self.output(), self.input(0).expect("unary input")))
         } else {
             Err(self.layout_error(1))
@@ -183,7 +301,7 @@ impl FunctionInvocation {
         FunctionInputPort<'_>,
         FunctionInputPort<'_>,
     )> {
-        if matches!(self.args, FunctionArgs::Binary(_, _, _)) {
+        if self.layout == FunctionInvocationLayout::Binary {
             Ok((
                 self.output(),
                 self.input(0).expect("binary left input"),
@@ -202,7 +320,7 @@ impl FunctionInvocation {
         FunctionInputPort<'_>,
         FunctionInputPort<'_>,
     )> {
-        if matches!(self.args, FunctionArgs::Ternary(_, _, _, _)) {
+        if self.layout == FunctionInvocationLayout::Ternary {
             Ok((
                 self.output(),
                 self.input(0).expect("ternary first input"),
@@ -223,7 +341,7 @@ impl FunctionInvocation {
         FunctionInputPort<'_>,
         FunctionInputPort<'_>,
     )> {
-        if matches!(self.args, FunctionArgs::Quaternary(_, _, _, _, _)) {
+        if self.layout == FunctionInvocationLayout::Quaternary {
             Ok((
                 self.output(),
                 self.input(0).expect("quaternary first input"),
@@ -237,7 +355,7 @@ impl FunctionInvocation {
     }
 
     pub fn expect_variadic(&self) -> MResult<(FunctionOutputPort<'_>, FunctionInputPorts<'_>)> {
-        if matches!(self.args, FunctionArgs::Variadic(_, _)) {
+        if self.layout == FunctionInvocationLayout::Variadic {
             Ok((self.output(), self.inputs()))
         } else {
             Err(self.layout_error(self.input_count()))
@@ -245,17 +363,21 @@ impl FunctionInvocation {
     }
 
     pub(crate) fn normalize_for_signature(self, signature: RuntimeFunctionSignature) -> Self {
+        if !matches!(signature.inputs, RuntimeFunctionInputs::Variadic { .. }) {
+            return self;
+        }
         Self {
-            args: self.args.normalize_for_signature(signature),
+            layout: FunctionInvocationLayout::Variadic,
+            compatibility_args: self
+                .compatibility_args
+                .map(|args| args.normalize_for_signature(signature)),
+            ..self
         }
     }
 
-    pub(crate) fn legacy_args(&self) -> &FunctionArgs {
-        &self.args
-    }
-
     pub(crate) fn into_legacy_args(self) -> FunctionArgs {
-        self.args
+        self.compatibility_args
+            .expect("legacy factory bridge requires compatibility arguments")
     }
 
     fn layout_error(&self, expected: usize) -> MechError {
@@ -270,15 +392,239 @@ impl FunctionInvocation {
     }
 
     fn layout_name(&self) -> &'static str {
-        match self.args {
-            FunctionArgs::Nullary(_) => "Nullary",
-            FunctionArgs::Unary(_, _) => "Unary",
-            FunctionArgs::Binary(_, _, _) => "Binary",
-            FunctionArgs::Ternary(_, _, _, _) => "Ternary",
-            FunctionArgs::Quaternary(_, _, _, _, _) => "Quaternary",
-            FunctionArgs::Variadic(_, _) => "Variadic",
+        match self.layout {
+            FunctionInvocationLayout::Nullary => "Nullary",
+            FunctionInvocationLayout::Unary => "Unary",
+            FunctionInvocationLayout::Binary => "Binary",
+            FunctionInvocationLayout::Ternary => "Ternary",
+            FunctionInvocationLayout::Quaternary => "Quaternary",
+            FunctionInvocationLayout::Variadic => "Variadic",
         }
     }
+
+    pub fn validate_signature(&self, signature: RuntimeFunctionSignature) -> MResult<()> {
+        let expected_layout = match signature.inputs {
+            RuntimeFunctionInputs::Nullary => FunctionInvocationLayout::Nullary,
+            RuntimeFunctionInputs::Unary(_) => FunctionInvocationLayout::Unary,
+            RuntimeFunctionInputs::Binary(_, _) => FunctionInvocationLayout::Binary,
+            RuntimeFunctionInputs::Ternary(_, _, _) => FunctionInvocationLayout::Ternary,
+            RuntimeFunctionInputs::Quaternary(_, _, _, _) => FunctionInvocationLayout::Quaternary,
+            RuntimeFunctionInputs::Variadic { .. } => FunctionInvocationLayout::Variadic,
+        };
+        if self.layout != expected_layout {
+            return Err(self.layout_error(expected_signature_input_count(
+                signature,
+                self.input_count(),
+            )));
+        }
+        validate_cell_representation(
+            &self.output,
+            signature.output,
+            crate::FunctionArgumentRole::Output,
+        )?;
+        let expected_inputs = expected_signature_inputs(signature, self.input_count());
+        for (index, (cell, expected)) in self.inputs.iter().zip(expected_inputs).enumerate() {
+            validate_cell_representation(
+                cell,
+                expected,
+                crate::FunctionArgumentRole::Input(index),
+            )?;
+        }
+        Ok(())
+    }
+
+    pub fn validate_contract(&self, contract: RuntimeFunctionContract) -> MResult<()> {
+        if contract.output_alias == RuntimeOutputAliasPolicy::DisallowInputAlias {
+            for (index, input) in self.inputs.iter().enumerate() {
+                if self.output.same_cell(input) {
+                    return Err(
+                        MechError::new(FunctionCellAliasViolation { input: index }, None)
+                            .with_compiler_loc(),
+                    );
+                }
+            }
+        }
+        if let Some(args) = &self.compatibility_args {
+            (contract.validate_shapes)(args)?;
+        }
+        Ok(())
+    }
+
+    pub fn output_cell(&self) -> &ValueCell {
+        &self.output
+    }
+
+    pub fn input_cells(&self) -> &[ValueCell] {
+        &self.inputs
+    }
+}
+
+fn expected_signature_input_count(
+    signature: RuntimeFunctionSignature,
+    variadic_count: usize,
+) -> usize {
+    match signature.inputs {
+        RuntimeFunctionInputs::Nullary => 0,
+        RuntimeFunctionInputs::Unary(_) => 1,
+        RuntimeFunctionInputs::Binary(_, _) => 2,
+        RuntimeFunctionInputs::Ternary(_, _, _) => 3,
+        RuntimeFunctionInputs::Quaternary(_, _, _, _) => 4,
+        RuntimeFunctionInputs::Variadic { .. } => variadic_count,
+    }
+}
+
+fn expected_signature_inputs(
+    signature: RuntimeFunctionSignature,
+    variadic_count: usize,
+) -> Vec<FunctionValueRepresentation> {
+    match signature.inputs {
+        RuntimeFunctionInputs::Nullary => Vec::new(),
+        RuntimeFunctionInputs::Unary(input) => vec![input],
+        RuntimeFunctionInputs::Binary(first, second) => vec![first, second],
+        RuntimeFunctionInputs::Ternary(first, second, third) => vec![first, second, third],
+        RuntimeFunctionInputs::Quaternary(first, second, third, fourth) => {
+            vec![first, second, third, fourth]
+        }
+        RuntimeFunctionInputs::Variadic { element } => vec![element; variadic_count],
+    }
+}
+
+fn validate_cell_representation(
+    cell: &ValueCell,
+    expected: FunctionValueRepresentation,
+    role: FunctionArgumentRole,
+) -> MResult<()> {
+    let found = cell.representation();
+    if expected.matches(found) {
+        Ok(())
+    } else {
+        Err(MechError::new(
+            FunctionSignatureViolation {
+                role,
+                expected,
+                found,
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+fn function_argument_type_mismatch<T>(cell: &ValueCell, role: FunctionArgumentRole) -> MechError {
+    MechError::new(
+        FunctionArgumentTypeMismatch {
+            role,
+            expected: type_name::<Ref<T>>().to_string(),
+            found: format!("{:?}", cell.representation()),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_from_cell<T>(cell: &ValueCell, role: FunctionArgumentRole) -> MResult<Matrix<T>>
+where
+    T: FunctionPortBacking + Clone,
+{
+    let FunctionValueRepresentation::Matrix {
+        storage: FunctionMatrixStoragePattern::Exact(storage),
+        ..
+    } = cell.representation()
+    else {
+        return Err(function_matrix_type_mismatch::<T>(cell, role));
+    };
+    let matrix = match storage {
+        #[cfg(feature = "matrix1")]
+        FunctionMatrixRepresentation::Matrix1 => Matrix::Matrix1(
+            cell.try_ref::<crate::Matrix1<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "matrix2")]
+        FunctionMatrixRepresentation::Matrix2 => Matrix::Matrix2(
+            cell.try_ref::<crate::Matrix2<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "matrix3")]
+        FunctionMatrixRepresentation::Matrix3 => Matrix::Matrix3(
+            cell.try_ref::<crate::Matrix3<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "matrix4")]
+        FunctionMatrixRepresentation::Matrix4 => Matrix::Matrix4(
+            cell.try_ref::<crate::Matrix4<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "matrix2x3")]
+        FunctionMatrixRepresentation::Matrix2x3 => Matrix::Matrix2x3(
+            cell.try_ref::<crate::Matrix2x3<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "matrix3x2")]
+        FunctionMatrixRepresentation::Matrix3x2 => Matrix::Matrix3x2(
+            cell.try_ref::<crate::Matrix3x2<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "row_vector2")]
+        FunctionMatrixRepresentation::RowVector2 => Matrix::RowVector2(
+            cell.try_ref::<crate::RowVector2<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "row_vector3")]
+        FunctionMatrixRepresentation::RowVector3 => Matrix::RowVector3(
+            cell.try_ref::<crate::RowVector3<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "row_vector4")]
+        FunctionMatrixRepresentation::RowVector4 => Matrix::RowVector4(
+            cell.try_ref::<crate::RowVector4<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "vector2")]
+        FunctionMatrixRepresentation::Vector2 => Matrix::Vector2(
+            cell.try_ref::<crate::Vector2<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "vector3")]
+        FunctionMatrixRepresentation::Vector3 => Matrix::Vector3(
+            cell.try_ref::<crate::Vector3<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "vector4")]
+        FunctionMatrixRepresentation::Vector4 => Matrix::Vector4(
+            cell.try_ref::<crate::Vector4<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "row_vectord")]
+        FunctionMatrixRepresentation::RowVectorD => Matrix::RowDVector(
+            cell.try_ref::<crate::RowDVector<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "vectord")]
+        FunctionMatrixRepresentation::VectorD => Matrix::DVector(
+            cell.try_ref::<crate::DVector<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+        #[cfg(feature = "matrixd")]
+        FunctionMatrixRepresentation::MatrixD => Matrix::DMatrix(
+            cell.try_ref::<crate::DMatrix<T>>()
+                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
+        ),
+    };
+    Ok(matrix)
+}
+
+#[cfg(feature = "matrix")]
+fn function_matrix_type_mismatch<T>(cell: &ValueCell, role: FunctionArgumentRole) -> MechError {
+    MechError::new(
+        FunctionArgumentTypeMismatch {
+            role,
+            expected: type_name::<Matrix<T>>().to_string(),
+            found: format!("{:?}", cell.representation()),
+        },
+        None,
+    )
+    .with_compiler_loc()
 }
 
 impl fmt::Debug for FunctionInvocation {
@@ -310,13 +656,14 @@ impl FunctionInputPort<'_> {
     /// let _: Ref<LegacyValue> = input.try_ref::<LegacyValue>().unwrap();
     /// ```
     pub fn try_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
-        require_function_ref(
-            self.invocation
-                .args
-                .input_value(self.index)
-                .expect("function input port index remains valid"),
-            FunctionArgumentRole::Input(self.index),
-        )
+        self.invocation.inputs[self.index]
+            .try_ref::<T>()
+            .map_err(|_| {
+                function_argument_type_mismatch::<T>(
+                    &self.invocation.inputs[self.index],
+                    FunctionArgumentRole::Input(self.index),
+                )
+            })
     }
 
     /// Extracts the exact typed matrix input wrapper without exposing legacy values.
@@ -337,11 +684,16 @@ impl FunctionInputPort<'_> {
     where
         T: FunctionPortBacking + Clone,
     {
-        self.invocation
-            .args
-            .input_value(self.index)
-            .expect("function input port index remains valid")
-            .try_function_matrix(FunctionArgumentRole::Input(self.index))
+        matrix_from_cell(
+            &self.invocation.inputs[self.index],
+            FunctionArgumentRole::Input(self.index),
+        )
+    }
+
+    pub fn value(self) -> FunctionValueInput {
+        FunctionValueInput {
+            cell: self.invocation.inputs[self.index].clone(),
+        }
     }
 }
 
@@ -368,10 +720,60 @@ impl FunctionOutputPort<'_> {
     /// let _: Ref<LegacyValue> = output.try_ref::<LegacyValue>().unwrap();
     /// ```
     pub fn try_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
-        require_function_ref(
-            self.invocation.args.output_value(),
-            FunctionArgumentRole::Output,
-        )
+        self.invocation.output.try_ref::<T>().map_err(|_| {
+            function_argument_type_mismatch::<T>(
+                &self.invocation.output,
+                FunctionArgumentRole::Output,
+            )
+        })
+    }
+
+    pub fn value(self) -> FunctionValueOutput {
+        FunctionValueOutput {
+            cell: self.invocation.output.clone(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct FunctionValueInput {
+    cell: ValueCell,
+}
+
+#[derive(Clone)]
+pub struct FunctionValueOutput {
+    cell: ValueCell,
+}
+
+impl FunctionValueInput {
+    pub fn snapshot(&self) -> MResult<Value> {
+        self.cell.snapshot()
+    }
+
+    pub const fn schema(&self) -> SchemaId {
+        self.cell.schema()
+    }
+
+    pub const fn shape(&self) -> &ShapeInstance {
+        self.cell.shape()
+    }
+}
+
+impl FunctionValueOutput {
+    pub fn snapshot(&self) -> MResult<Value> {
+        self.cell.snapshot()
+    }
+
+    pub fn replace(&self, value: &Value) -> MResult<()> {
+        self.cell.replace(value)
+    }
+
+    pub const fn schema(&self) -> SchemaId {
+        self.cell.schema()
+    }
+
+    pub const fn shape(&self) -> &ShapeInstance {
+        self.cell.shape()
     }
 }
 
@@ -458,6 +860,24 @@ pub struct FunctionMatrixDescriptor {
 pub struct FunctionArgumentAliasViolation {
     pub input: usize,
     pub cell: ReactiveCellId,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FunctionCellAliasViolation {
+    pub input: usize,
+}
+
+impl MechErrorKind for FunctionCellAliasViolation {
+    fn name(&self) -> &str {
+        "FunctionCellAliasViolation"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "function output aliases canonical input cell {}",
+            self.input
+        )
+    }
 }
 
 impl MechErrorKind for FunctionArgumentAliasViolation {
@@ -626,6 +1046,148 @@ mod tests {
         let reference = Ref::new(value);
         let value = reference.to_value();
         (reference, value)
+    }
+
+    #[cfg(feature = "f64")]
+    fn canonical_scalar(value: f64) -> (Ref<f64>, ValueCell) {
+        let reference = Ref::new(value);
+        let cell = ValueCell::from_inferred_ref(reference.clone(), None).unwrap();
+        (reference, cell)
+    }
+
+    #[cfg(feature = "f64")]
+    #[test]
+    fn canonical_invocation_layouts_preserve_cells_handles_and_value_capabilities() {
+        let (output, output_cell) = canonical_scalar(0.0);
+        let (first, first_cell) = canonical_scalar(1.0);
+        let (second, second_cell) = canonical_scalar(2.0);
+        let (third, third_cell) = canonical_scalar(3.0);
+        let (fourth, fourth_cell) = canonical_scalar(4.0);
+        let invocation = FunctionInvocation::binary(
+            output_cell.clone(),
+            first_cell.clone(),
+            second_cell.clone(),
+        );
+        let (output_port, first_port, second_port) = invocation.expect_binary().unwrap();
+
+        assert!(output_port.try_ref::<f64>().unwrap().same_handle(&output));
+        assert!(first_port.try_ref::<f64>().unwrap().same_handle(&first));
+        assert!(second_port.try_ref::<f64>().unwrap().same_handle(&second));
+        assert_eq!(first_port.value().schema(), first_cell.schema());
+        assert_eq!(first_port.value().shape(), first_cell.shape());
+        assert_eq!(
+            first_port.value().snapshot().unwrap(),
+            first_cell.snapshot().unwrap()
+        );
+
+        let replacement = second_cell.snapshot().unwrap();
+        output_port.value().replace(&replacement).unwrap();
+        assert_eq!(*output.borrow(), 2.0);
+        assert_eq!(output_port.value().schema(), output_cell.schema());
+        assert_eq!(output_port.value().shape(), output_cell.shape());
+
+        let nullary = FunctionInvocation::nullary(output_cell.clone());
+        assert!(
+            nullary
+                .expect_nullary()
+                .unwrap()
+                .try_ref::<f64>()
+                .unwrap()
+                .same_handle(&output)
+        );
+        let unary = FunctionInvocation::unary(output_cell.clone(), first_cell.clone());
+        assert!(
+            unary
+                .expect_unary()
+                .unwrap()
+                .1
+                .try_ref::<f64>()
+                .unwrap()
+                .same_handle(&first)
+        );
+        let ternary = FunctionInvocation::ternary(
+            output_cell.clone(),
+            first_cell.clone(),
+            second_cell.clone(),
+            third_cell.clone(),
+        );
+        let (_, ternary_first, ternary_second, ternary_third) = ternary.expect_ternary().unwrap();
+        assert!(ternary_first.try_ref::<f64>().unwrap().same_handle(&first));
+        assert!(
+            ternary_second
+                .try_ref::<f64>()
+                .unwrap()
+                .same_handle(&second)
+        );
+        assert!(ternary_third.try_ref::<f64>().unwrap().same_handle(&third));
+        let quaternary = FunctionInvocation::quaternary(
+            output_cell.clone(),
+            first_cell.clone(),
+            second_cell.clone(),
+            third_cell.clone(),
+            fourth_cell.clone(),
+        );
+        let (_, first_port, second_port, third_port, fourth_port) =
+            quaternary.expect_quaternary().unwrap();
+        assert!(first_port.try_ref::<f64>().unwrap().same_handle(&first));
+        assert!(second_port.try_ref::<f64>().unwrap().same_handle(&second));
+        assert!(third_port.try_ref::<f64>().unwrap().same_handle(&third));
+        assert!(fourth_port.try_ref::<f64>().unwrap().same_handle(&fourth));
+        let variadic = FunctionInvocation::variadic(
+            output_cell,
+            vec![first_cell, second_cell, third_cell, fourth_cell].into_boxed_slice(),
+        );
+        let (_, mut ports) = variadic.expect_variadic().unwrap();
+        for expected in [&first, &second, &third, &fourth] {
+            assert!(
+                ports
+                    .next()
+                    .unwrap()
+                    .try_ref::<f64>()
+                    .unwrap()
+                    .same_handle(expected)
+            );
+        }
+        assert!(ports.next().is_none());
+    }
+
+    #[cfg(feature = "f64")]
+    #[test]
+    fn canonical_invocation_preserves_aliases_and_effect_unit_output() {
+        let (_, shared) = canonical_scalar(3.0);
+        let invocation = FunctionInvocation::unary(shared.clone(), shared.clone());
+        assert!(
+            invocation
+                .output_cell()
+                .same_cell(&invocation.input_cells()[0])
+        );
+        assert!(
+            invocation
+                .validate_contract(RuntimeFunctionContract::no_matrix(
+                    RuntimeOutputAliasPolicy::AllowInputAlias,
+                ))
+                .is_ok()
+        );
+        assert!(
+            invocation
+                .validate_contract(RuntimeFunctionContract::no_matrix(
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ))
+                .unwrap_err()
+                .kind_as::<FunctionCellAliasViolation>()
+                .is_some()
+        );
+
+        let unit = ValueCell::from_inferred_value_data(
+            crate::SchemaBody::Tuple(Vec::new().into_boxed_slice()),
+            crate::ValueDataDraft::Tuple(Vec::new().into_boxed_slice()),
+        )
+        .unwrap();
+        let effect = FunctionInvocation::nullary(unit);
+        assert!(matches!(
+            effect.output().value().snapshot().unwrap().data(),
+            crate::ValueData::Tuple(elements) if elements.is_empty()
+        ));
     }
 
     #[cfg(feature = "f64")]

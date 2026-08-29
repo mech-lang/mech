@@ -1,5 +1,6 @@
 use crate::{
-    LegacyValue, MResult, MechError, MechErrorKind, MechFunction, ValueCell, ValueStateJournal,
+    FunctionInstance, LegacyValue, MResult, MechError, MechErrorKind, MechFunction, ValueCell,
+    ValueStateJournal,
 };
 use std::cell::Cell;
 
@@ -42,6 +43,10 @@ impl ReactiveTurnJournal {
             self.values.capture_value(&value)?;
         }
         Ok(())
+    }
+
+    pub(crate) fn capture_function_instance(&mut self, instance: &FunctionInstance) -> MResult<()> {
+        instance.capture_state(&mut self.values)
     }
 
     pub(crate) fn preflight_restore_before(&self) -> MResult<()> {
@@ -93,6 +98,10 @@ impl ReactiveJournalParticipant<'_> {
 
     pub fn capture_function_state(&mut self, function: &dyn MechFunction) -> MResult<()> {
         self.journal.capture_function_state(function)
+    }
+
+    pub fn capture_function_instance(&mut self, instance: &FunctionInstance) -> MResult<()> {
+        self.journal.capture_function_instance(instance)
     }
 
     pub fn preflight_restore_before(&self) -> MResult<()> {
@@ -858,6 +867,32 @@ mod tests {
 
         assert_eq!(*typed_output.borrow(), 1);
         assert_eq!((*legacy_output.borrow(), *legacy_retained.borrow()), (3, 4));
+    }
+
+    #[test]
+    fn canonical_function_instance_state_uses_the_reactive_participant() {
+        let (function, out_calls, legacy_state_calls, _) =
+            typed_journal_function(TypedStateMode::State);
+        let output = function.output.clone();
+        let retained = function.retained.clone();
+        let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
+        let instance =
+            FunctionInstance::new(Box::new(function), FunctionInvocation::nullary(output_cell));
+
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_instance(&instance)?;
+            assert_eq!(participant.cell_count(), 2);
+            *output.borrow_mut() = 10;
+            *retained.borrow_mut() = 20;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+
+        assert_eq!((*output.borrow(), *retained.borrow()), (1, 2));
+        assert_eq!(out_calls.get(), 0);
+        assert_eq!(legacy_state_calls.get(), 0);
     }
 
     #[test]

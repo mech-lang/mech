@@ -1,8 +1,10 @@
 //! Explicit boundary adapters from the current mutable value model.
 
+mod function;
 mod kind;
 mod value;
 
+pub use self::function::*;
 pub use self::kind::*;
 pub use self::value::*;
 

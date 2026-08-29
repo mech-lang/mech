@@ -433,6 +433,9 @@ pub trait MechFunctionImpl {
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(None)
     }
+    fn retained_state_ports(&self) -> MResult<Vec<FunctionStatePort<'_>>> {
+        Ok(self.transaction_state_ports()?.unwrap_or_default())
+    }
     /// Returns the function output through the legacy universal-value bridge.
     ///
     /// This compatibility API remains required until every function family has
@@ -630,6 +633,138 @@ impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompiler {}
 pub trait MechFunction: MechFunctionImpl {}
 #[cfg(not(feature = "semantic-compiler"))]
 impl<T> MechFunction for T where T: MechFunctionImpl {}
+
+/// A runtime implementation bound to its visible canonical cells.
+pub struct FunctionInstance {
+    implementation: Box<dyn MechFunction>,
+    invocation: FunctionInvocation,
+}
+
+impl FunctionInstance {
+    pub fn new(implementation: Box<dyn MechFunction>, invocation: FunctionInvocation) -> Self {
+        Self {
+            implementation,
+            invocation,
+        }
+    }
+
+    pub fn solve_result(&self) -> MResult<()> {
+        self.implementation.solve_result()
+    }
+
+    pub fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
+        self.implementation.solve_result_with(services)
+    }
+
+    pub fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+        self.implementation.solve_reactive()
+    }
+
+    pub fn solve_reactive_with(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        self.implementation.solve_reactive_with(services)
+    }
+
+    pub fn invocation(&self) -> &FunctionInvocation {
+        &self.invocation
+    }
+
+    pub fn output(&self) -> &ValueCell {
+        self.invocation.output_cell()
+    }
+
+    pub fn inputs(&self) -> &[ValueCell] {
+        self.invocation.input_cells()
+    }
+
+    pub fn implementation(&self) -> &dyn MechFunction {
+        self.implementation.as_ref()
+    }
+
+    pub fn capture_state(&self, journal: &mut ValueStateJournal) -> MResult<()> {
+        journal.capture_value_cell(self.output())?;
+        for state in self.implementation.retained_state_ports()? {
+            if !state.matches_cell(self.output()) {
+                state.capture_into(journal)?;
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn into_implementation(self) -> Box<dyn MechFunction> {
+        self.implementation
+    }
+}
+
+#[cfg(all(test, feature = "f64"))]
+mod canonical_function_instance_tests {
+    use super::*;
+
+    struct CanonicalStateFunction {
+        output: Ref<f64>,
+        hidden: Ref<f64>,
+    }
+
+    impl MechFunctionImpl for CanonicalStateFunction {
+        fn solve_result(&self) -> MResult<()> {
+            *self.output.borrow_mut() += 1.0;
+            *self.hidden.borrow_mut() += 1.0;
+            Ok(())
+        }
+
+        fn retained_state_ports(&self) -> MResult<Vec<FunctionStatePort<'_>>> {
+            Ok(vec![
+                FunctionStatePort::from_ref(&self.output),
+                FunctionStatePort::from_ref(&self.hidden),
+            ])
+        }
+
+        fn out(&self) -> LegacyValue {
+            panic!("canonical function instances must not query legacy output")
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+            panic!("canonical function instances must not query legacy transaction state")
+        }
+
+        fn to_string(&self) -> String {
+            "CanonicalStateFunction".into()
+        }
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    impl MechFunctionCompiler for CanonicalStateFunction {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            unreachable!("test function is never compiled")
+        }
+    }
+
+    #[test]
+    fn bound_instances_checkpoint_visible_output_and_hidden_state_without_legacy_methods() {
+        let output = Ref::new(1.0_f64);
+        let hidden = Ref::new(10.0_f64);
+        let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
+        let invocation = FunctionInvocation::nullary(output_cell.clone());
+        let instance = FunctionInstance::new(
+            Box::new(CanonicalStateFunction {
+                output: output.clone(),
+                hidden: hidden.clone(),
+            }),
+            invocation,
+        );
+        let mut journal = ValueStateJournal::new();
+
+        assert!(instance.output().same_cell(&output_cell));
+        instance.capture_state(&mut journal).unwrap();
+        assert_eq!(journal.cell_count(), 2);
+        instance.solve_result().unwrap();
+        assert_eq!((*output.borrow(), *hidden.borrow()), (2.0, 11.0));
+        journal.restore_before().unwrap();
+        assert_eq!((*output.borrow(), *hidden.borrow()), (1.0, 10.0));
+    }
+}
 
 /// Attaches portable semantic identity to a selected runtime implementation.
 ///

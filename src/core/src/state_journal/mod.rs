@@ -595,6 +595,40 @@ where
     }
 }
 
+struct CanonicalValueCellStateEntry {
+    target: ValueCell,
+    before: Value,
+    after: Option<Value>,
+}
+
+impl CanonicalValueCellStateEntry {
+    fn preflight_restore_before(&self) -> MResult<()> {
+        self.target.preflight_replace()
+    }
+
+    fn preflight_restore_after(&self) -> MResult<()> {
+        if self.after.is_some() {
+            self.target.preflight_replace()
+        } else {
+            Ok(())
+        }
+    }
+
+    fn apply_restore_before(&self) {
+        self.target
+            .replace(&self.before)
+            .expect("canonical value-cell restore was preflighted");
+    }
+
+    fn apply_restore_after(&self) {
+        if let Some(after) = &self.after {
+            self.target
+                .replace(after)
+                .expect("canonical value-cell replay was preflighted");
+        }
+    }
+}
+
 /// A reversible snapshot of all live cells reachable from explicitly captured
 /// roots.
 ///
@@ -607,6 +641,7 @@ where
 /// preflight and apply operations without reaching into cell storage.
 pub struct ValueStateJournal {
     entries: Vec<Box<dyn ErasedValueStateEntry>>,
+    canonical_entries: Vec<CanonicalValueCellStateEntry>,
     entry_indices: HashMap<ValueStateKey, usize>,
     roots: Vec<ValueStateRoot>,
     after_recorded: bool,
@@ -617,6 +652,7 @@ impl ValueStateJournal {
     pub fn new() -> Self {
         Self {
             entries: Vec::new(),
+            canonical_entries: Vec::new(),
             entry_indices: HashMap::default(),
             roots: Vec::new(),
             after_recorded: false,
@@ -641,7 +677,21 @@ impl ValueStateJournal {
     /// current [`LegacyValue`].
     pub fn capture_value_cell(&mut self, cell: &ValueCell) -> MResult<()> {
         self.ensure_open()?;
-        let reference = cell.legacy_ref();
+        let Some(reference) = cell.legacy_ref_compat() else {
+            if self
+                .canonical_entries
+                .iter()
+                .any(|entry| entry.target.same_cell(cell))
+            {
+                return Ok(());
+            }
+            self.canonical_entries.push(CanonicalValueCellStateEntry {
+                target: cell.clone(),
+                before: cell.snapshot()?,
+                after: None,
+            });
+            return Ok(());
+        };
 
         let mut preflight_seen = HashSet::default();
         self.preflight_ref(
@@ -708,6 +758,9 @@ impl ValueStateJournal {
         for entry in &self.entries {
             entry.preflight_restore_before()?;
         }
+        for entry in &self.canonical_entries {
+            entry.preflight_restore_before()?;
+        }
         Ok(())
     }
 
@@ -718,6 +771,9 @@ impl ValueStateJournal {
     /// [`Self::preflight_restore_before`] and this method.
     pub fn apply_restore_before(&self) {
         for entry in &self.entries {
+            entry.apply_restore_before();
+        }
+        for entry in &self.canonical_entries {
             entry.apply_restore_before();
         }
     }
@@ -745,6 +801,10 @@ impl ValueStateJournal {
             self.visit_root(root, CaptureSide::After, &mut capture_seen)?;
         }
 
+        for entry in &mut self.canonical_entries {
+            entry.after = Some(entry.target.snapshot()?);
+        }
+
         self.after_recorded = true;
         self.sealed = true;
         Ok(())
@@ -757,15 +817,16 @@ impl ValueStateJournal {
         }
         Ok(CommittedValueStateDelta {
             entries: self.entries,
+            canonical_entries: self.canonical_entries,
         })
     }
 
     pub fn cell_count(&self) -> usize {
-        self.entries.len()
+        self.entries.len() + self.canonical_entries.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.entries.is_empty()
+        self.entries.is_empty() && self.canonical_entries.is_empty()
     }
 
     fn ensure_open(&self) -> MResult<()> {
@@ -785,7 +846,9 @@ impl ValueStateJournal {
         match root {
             ValueStateRoot::Value(value) => self.preflight_value(value, side, seen),
             ValueStateRoot::Cell(cell) => {
-                let reference = cell.legacy_ref();
+                let Some(reference) = cell.legacy_ref_compat() else {
+                    return Ok(());
+                };
                 self.preflight_ref(&reference, side, seen, |journal, value, seen| {
                     journal.preflight_value(value, side, seen)
                 })
@@ -804,7 +867,9 @@ impl ValueStateJournal {
         match root {
             ValueStateRoot::Value(value) => self.visit_value(value, side, seen),
             ValueStateRoot::Cell(cell) => {
-                let reference = cell.legacy_ref();
+                let Some(reference) = cell.legacy_ref_compat() else {
+                    return Ok(());
+                };
                 self.visit_ref(&reference, side, seen, |journal, value, seen| {
                     journal.visit_value(value, side, seen)
                 })
@@ -1507,6 +1572,7 @@ impl Default for ValueStateJournal {
 /// A reusable, process-local before/after delta over the original live cells.
 pub struct CommittedValueStateDelta {
     entries: Vec<Box<dyn ErasedValueStateEntry>>,
+    canonical_entries: Vec<CanonicalValueCellStateEntry>,
 }
 
 impl CommittedValueStateDelta {
@@ -1515,7 +1581,13 @@ impl CommittedValueStateDelta {
         for entry in &self.entries {
             entry.preflight_restore_before()?;
         }
+        for entry in &self.canonical_entries {
+            entry.preflight_restore_before()?;
+        }
         for entry in &self.entries {
+            entry.apply_restore_before();
+        }
+        for entry in &self.canonical_entries {
             entry.apply_restore_before();
         }
         Ok(())
@@ -1526,14 +1598,20 @@ impl CommittedValueStateDelta {
         for entry in &self.entries {
             entry.preflight_restore_after()?;
         }
+        for entry in &self.canonical_entries {
+            entry.preflight_restore_after()?;
+        }
         for entry in &self.entries {
+            entry.apply_restore_after();
+        }
+        for entry in &self.canonical_entries {
             entry.apply_restore_after();
         }
         Ok(())
     }
 
     pub fn cell_count(&self) -> usize {
-        self.entries.len()
+        self.entries.len() + self.canonical_entries.len()
     }
 }
 
@@ -1654,7 +1732,7 @@ impl MechErrorKind for ValueStateAfterNotRecorded {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "functions"))]
 #[path = "tests/exact_minimal.rs"]
 mod exact_ref_feature_smoke_tests;
 

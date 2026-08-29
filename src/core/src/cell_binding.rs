@@ -83,6 +83,7 @@ trait ErasedCellStorage {
         schemas: &SchemaTable,
     ) -> MResult<Value>;
     fn replace(&self, value: &Value) -> MResult<()>;
+    fn preflight_replace(&self) -> MResult<()>;
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool;
     fn borrow_state(&self) -> CellBorrowState;
 }
@@ -93,6 +94,7 @@ struct ExactCellStorage<T> {
 
 struct LegacyCellStorage {
     reference: Ref<LegacyValue>,
+    representation: FunctionValueRepresentation,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -129,6 +131,13 @@ impl<T: CanonicalCellBacking> ErasedCellStorage for ExactCellStorage<T> {
             .replace_bound(value)
     }
 
+    fn preflight_replace(&self) -> MResult<()> {
+        self.reference
+            .try_borrow_mut()
+            .map(|_| ())
+            .map_err(|_| borrow_conflict(CellAccess::Replace))
+    }
+
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool {
         other
             .as_any()
@@ -151,7 +160,7 @@ impl ErasedCellStorage for LegacyCellStorage {
     }
 
     fn representation(&self, _schema: &SchemaBody) -> FunctionValueRepresentation {
-        FunctionValueRepresentation::AnyValue
+        self.representation
     }
 
     fn snapshot(
@@ -169,6 +178,13 @@ impl ErasedCellStorage for LegacyCellStorage {
         Err(backing_mismatch::<LegacyValue>(
             FunctionValueRepresentation::AnyValue,
         ))
+    }
+
+    fn preflight_replace(&self) -> MResult<()> {
+        self.reference
+            .try_borrow_mut()
+            .map(|_| ())
+            .map_err(|_| borrow_conflict(CellAccess::Replace))
     }
 
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool {
@@ -254,6 +270,28 @@ impl ValueCell {
         }
     }
 
+    pub(crate) fn from_inferred_ref<T>(
+        reference: Ref<T>,
+        matrix_extents: Option<(usize, usize)>,
+    ) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
+        let body = schema_body_for_representation(T::REPRESENTATION, matrix_extents)
+            .ok_or_else(|| backing_mismatch::<T>(T::REPRESENTATION))?;
+        let (schema, shape, schemas) = standalone_schema(body)?;
+        Self::from_ref(reference, schema, shape, schemas)
+    }
+
+    pub(crate) fn from_inferred_value_data(
+        body: SchemaBody,
+        data: ValueDataDraft,
+    ) -> MResult<Self> {
+        let (schema, shape, schemas) = standalone_schema(body)?;
+        let value = finalize_draft(schema, &shape, &schemas, data)?;
+        Ok(Self::from_value(value, schemas))
+    }
+
     pub const fn schema(&self) -> SchemaId {
         self.binding.schema
     }
@@ -315,35 +353,45 @@ impl ValueCell {
         self.binding.storage.replace(value)
     }
 
+    pub(crate) fn preflight_replace(&self) -> MResult<()> {
+        self.binding.storage.preflight_replace()
+    }
+
     pub fn same_cell(&self, other: &Self) -> bool {
         self.binding
             .storage
             .same_storage(other.binding.storage.as_ref())
     }
 
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "used by canonical function ports in the next cutover commit"
-        )
-    )]
-    pub(crate) fn try_ref<T: CanonicalCellBacking>(&self) -> MResult<Ref<T>> {
-        self.binding
+    pub(crate) fn try_ref<T: 'static>(&self) -> MResult<Ref<T>> {
+        let exact = self
+            .binding
             .storage
             .as_any()
             .downcast_ref::<ExactCellStorage<T>>()
-            .map(|storage| storage.reference.clone())
-            .ok_or_else(|| {
-                MechError::new(
-                    ValueCellBackingMismatch {
-                        expected: type_name::<T>().into(),
-                        representation: self.representation(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })
+            .map(|storage| storage.reference.clone());
+        let compatibility = self
+            .binding
+            .storage
+            .as_any()
+            .downcast_ref::<LegacyCellStorage>()
+            .and_then(|storage| storage.reference.try_borrow().ok())
+            .and_then(|value| {
+                value
+                    .exact_ref_any()
+                    .and_then(|reference| reference.downcast_ref::<Ref<T>>())
+                    .cloned()
+            });
+        exact.or(compatibility).ok_or_else(|| {
+            MechError::new(
+                ValueCellBackingMismatch {
+                    expected: type_name::<T>().into(),
+                    representation: self.representation(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })
     }
 
     #[doc(hidden)]
@@ -353,6 +401,7 @@ impl ValueCell {
 
     #[doc(hidden)]
     pub fn from_legacy_ref(reference: Ref<LegacyValue>) -> Self {
+        let representation = FunctionValueRepresentation::from_value(&reference.borrow());
         let (schema, shape, schemas) = compatibility_unit_schema();
         let schema_key = schemas
             .entry(schema)
@@ -364,20 +413,26 @@ impl ValueCell {
                 schema_key,
                 shape,
                 schemas,
-                storage: Rc::new(LegacyCellStorage { reference }),
+                storage: Rc::new(LegacyCellStorage {
+                    reference,
+                    representation,
+                }),
             },
         }
     }
 
     #[doc(hidden)]
     pub fn legacy_ref(&self) -> Ref<LegacyValue> {
+        self.legacy_ref_compat()
+            .expect("legacy compatibility requires a legacy-backed value cell")
+    }
+
+    pub(crate) fn legacy_ref_compat(&self) -> Option<Ref<LegacyValue>> {
         self.binding
             .storage
             .as_any()
             .downcast_ref::<LegacyCellStorage>()
-            .expect("legacy compatibility requires a legacy-backed value cell")
-            .reference
-            .clone()
+            .map(|storage| storage.reference.clone())
     }
 
     #[doc(hidden)]
@@ -1128,6 +1183,90 @@ fn backing_mismatch<T>(representation: FunctionValueRepresentation) -> MechError
         None,
     )
     .with_compiler_loc()
+}
+
+fn schema_body_for_representation(
+    representation: FunctionValueRepresentation,
+    matrix_extents: Option<(usize, usize)>,
+) -> Option<SchemaBody> {
+    Some(match representation {
+        FunctionValueRepresentation::U8 => SchemaBody::UnsignedInteger(IntegerWidth::W8),
+        FunctionValueRepresentation::U16 => SchemaBody::UnsignedInteger(IntegerWidth::W16),
+        FunctionValueRepresentation::U32 => SchemaBody::UnsignedInteger(IntegerWidth::W32),
+        FunctionValueRepresentation::U64 => SchemaBody::UnsignedInteger(IntegerWidth::W64),
+        FunctionValueRepresentation::U128 => SchemaBody::UnsignedInteger(IntegerWidth::W128),
+        FunctionValueRepresentation::I8 => SchemaBody::SignedInteger(IntegerWidth::W8),
+        FunctionValueRepresentation::I16 => SchemaBody::SignedInteger(IntegerWidth::W16),
+        FunctionValueRepresentation::I32 => SchemaBody::SignedInteger(IntegerWidth::W32),
+        FunctionValueRepresentation::I64 => SchemaBody::SignedInteger(IntegerWidth::W64),
+        FunctionValueRepresentation::I128 => SchemaBody::SignedInteger(IntegerWidth::W128),
+        FunctionValueRepresentation::F32 => SchemaBody::FloatingPoint(FloatWidth::W32),
+        FunctionValueRepresentation::F64 => SchemaBody::FloatingPoint(FloatWidth::W64),
+        FunctionValueRepresentation::C64 => SchemaBody::Complex(FloatWidth::W64),
+        FunctionValueRepresentation::R64 => SchemaBody::Rational64,
+        FunctionValueRepresentation::String => SchemaBody::String,
+        FunctionValueRepresentation::Bool => SchemaBody::Bool,
+        FunctionValueRepresentation::Id => SchemaBody::Id,
+        FunctionValueRepresentation::Index => SchemaBody::Index,
+        FunctionValueRepresentation::Matrix { element, .. } => {
+            let (rows, columns) = matrix_extents?;
+            SchemaBody::Matrix {
+                element: Box::new(schema_body_for_matrix_element(element)?),
+                dimensions: vec![
+                    crate::DimensionExpr::Constant(rows as u64),
+                    crate::DimensionExpr::Constant(columns as u64),
+                ]
+                .into_boxed_slice(),
+            }
+        }
+        _ => return None,
+    })
+}
+
+fn schema_body_for_matrix_element(element: FunctionMatrixElement) -> Option<SchemaBody> {
+    Some(match element {
+        FunctionMatrixElement::U8 => SchemaBody::UnsignedInteger(IntegerWidth::W8),
+        FunctionMatrixElement::U16 => SchemaBody::UnsignedInteger(IntegerWidth::W16),
+        FunctionMatrixElement::U32 => SchemaBody::UnsignedInteger(IntegerWidth::W32),
+        FunctionMatrixElement::U64 => SchemaBody::UnsignedInteger(IntegerWidth::W64),
+        FunctionMatrixElement::U128 => SchemaBody::UnsignedInteger(IntegerWidth::W128),
+        FunctionMatrixElement::I8 => SchemaBody::SignedInteger(IntegerWidth::W8),
+        FunctionMatrixElement::I16 => SchemaBody::SignedInteger(IntegerWidth::W16),
+        FunctionMatrixElement::I32 => SchemaBody::SignedInteger(IntegerWidth::W32),
+        FunctionMatrixElement::I64 => SchemaBody::SignedInteger(IntegerWidth::W64),
+        FunctionMatrixElement::I128 => SchemaBody::SignedInteger(IntegerWidth::W128),
+        FunctionMatrixElement::F32 => SchemaBody::FloatingPoint(FloatWidth::W32),
+        FunctionMatrixElement::F64 => SchemaBody::FloatingPoint(FloatWidth::W64),
+        FunctionMatrixElement::C64 => SchemaBody::Complex(FloatWidth::W64),
+        FunctionMatrixElement::R64 => SchemaBody::Rational64,
+        FunctionMatrixElement::String => SchemaBody::String,
+        FunctionMatrixElement::Bool => SchemaBody::Bool,
+        FunctionMatrixElement::Index => SchemaBody::Index,
+        FunctionMatrixElement::Value => return None,
+    })
+}
+
+fn standalone_schema(body: SchemaBody) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
+    let schema = crate::SchemaDraft {
+        dimension_parameters: Vec::new().into_boxed_slice(),
+        body,
+    }
+    .finalize()
+    .map_err(|error| snapshot_failure(error.into()))?;
+    let shape = schema
+        .instantiate_shape(Vec::new().into_boxed_slice())
+        .map_err(|error| snapshot_failure(error.into()))?;
+    let mut builder = crate::SchemaTableBuilder::new();
+    let handle = builder
+        .insert(schema)
+        .map_err(|error| snapshot_failure(error.into()))?;
+    let build = builder
+        .finish()
+        .map_err(|error| snapshot_failure(error.into()))?;
+    let schema = build
+        .resolve(handle)
+        .map_err(|error| snapshot_failure(error.into()))?;
+    Ok((schema, shape, Rc::new(build.table)))
 }
 
 fn compatibility_unit_schema() -> (SchemaId, ShapeInstance, Rc<SchemaTable>) {
