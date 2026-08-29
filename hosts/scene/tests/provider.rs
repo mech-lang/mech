@@ -1,8 +1,10 @@
 use std::collections::BTreeMap;
 
+#[cfg(feature = "browser")]
+use mech_core::ValueData;
 use mech_core::{
     EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, LegacyValue,
-    MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref, ToMatrix,
+    MResult, MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref, ToMatrix, Value,
 };
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
@@ -44,6 +46,39 @@ fn record(fields: Vec<(&str, LegacyValue)>) -> LegacyValue {
 }
 fn tuple(values: Vec<LegacyValue>) -> LegacyValue {
     LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values)))
+}
+
+fn canonical(value: LegacyValue) -> Value {
+    value
+        .to_canonical_value()
+        .expect("test value must have a canonical schema")
+}
+
+fn scene_snapshot(value: &LegacyValue) -> MResult<SceneSnapshot> {
+    value
+        .to_canonical_value()
+        .and_then(|value| SceneSnapshot::from_value(&value))
+}
+
+#[cfg(feature = "browser")]
+fn snapshot_f64(value: mech_runtime::RuntimeValueSnapshot) -> f64 {
+    let value = value.into_value();
+    let ValueData::F64(value) = value.data() else {
+        panic!("runtime symbol must remain f64")
+    };
+    value.to_f64()
+}
+
+#[cfg(feature = "browser")]
+fn snapshot_f64_matrix(value: mech_runtime::RuntimeValueSnapshot) -> Vec<f64> {
+    let value = value.into_value();
+    let Some(matrix) = value.matrix_view() else {
+        panic!("runtime symbol must remain an f64 matrix")
+    };
+    let mech_core::snapshot::SequenceView::F64(values) = matrix.elements() else {
+        panic!("runtime symbol must remain an f64 matrix")
+    };
+    values.iter().map(|value| value.to_f64()).collect()
 }
 fn table(records: Vec<LegacyValue>) -> LegacyValue {
     let records: Vec<MechRecord> = records
@@ -87,7 +122,7 @@ fn points_write(value: LegacyValue) -> RuntimeResourceWriteRequest {
         context_name: "view".to_string(),
         operation: RuntimeCapabilityOperation::Write,
         intent: RuntimeResourceWriteIntent::Send,
-        value,
+        value: canonical(value),
     }
 }
 fn circle(id: &str) -> LegacyValue {
@@ -162,7 +197,7 @@ fn line_strip(id: &str) -> LegacyValue {
 
 #[test]
 fn valid_empty_scene() {
-    assert!(SceneSnapshot::from_value(&empty_scene()).is_ok());
+    assert!(scene_snapshot(&empty_scene()).is_ok());
 }
 
 #[test]
@@ -174,7 +209,7 @@ fn valid_circle_scene() {
         ("circles", tuple(vec![circle("c1")])),
         ("lines", tuple(vec![])),
     ]);
-    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles.len(), 1);
+    assert_eq!(scene_snapshot(&scene).unwrap().circles.len(), 1);
 }
 
 #[test]
@@ -186,7 +221,7 @@ fn valid_line_scene() {
         ("circles", tuple(vec![])),
         ("lines", tuple(vec![line("l1")])),
     ]);
-    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().lines.len(), 1);
+    assert_eq!(scene_snapshot(&scene).unwrap().lines.len(), 1);
 }
 
 #[test]
@@ -197,7 +232,7 @@ fn valid_text_scene() {
         ("background", s("#000")),
         ("texts", tuple(vec![text("title")])),
     ]);
-    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    let scene = scene_snapshot(&scene).unwrap();
     assert_eq!(scene.texts[0].value, "Scene label");
 }
 
@@ -221,7 +256,7 @@ fn numeric_text_paint_and_weight_are_normalized_without_index_coercion() {
         ("background", f(0x080b12 as f64)),
         ("texts", tuple(vec![numeric_text])),
     ]);
-    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    let scene = scene_snapshot(&scene).unwrap();
     assert_eq!(scene.background, "#080b12");
     assert_eq!(scene.texts[0].fill, "#edf2f7");
     assert_eq!(scene.texts[0].font_weight, "620");
@@ -259,10 +294,7 @@ fn numeric_text_paint_and_weight_are_normalized_without_index_coercion() {
             ("background", s("#000")),
             ("texts", tuple(vec![invalid_text])),
         ]);
-        assert!(
-            SceneSnapshot::from_value(&invalid_scene).is_err(),
-            "{field}"
-        );
+        assert!(scene_snapshot(&invalid_scene).is_err(), "{field}");
     }
 }
 
@@ -274,7 +306,7 @@ fn valid_text_table() {
         ("background", s("#000")),
         ("texts", table(vec![text("title"), text("caption")])),
     ]);
-    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    let scene = scene_snapshot(&scene).unwrap();
     assert_eq!(scene.texts.len(), 2);
     assert_eq!(scene.texts[1].id, "caption");
 }
@@ -287,7 +319,7 @@ fn point_set_expands_matrix_rows_into_stable_circles() {
         ("background", s("#000")),
         ("point-sets", point_set("body")),
     ]);
-    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    let scene = scene_snapshot(&scene).unwrap();
     assert_eq!(scene.circles.len(), 2);
     assert_eq!(scene.circles[0].id, "body-0");
     assert_eq!(scene.circles[0].radius, 6.0);
@@ -306,7 +338,7 @@ fn point_set_table_expands_every_record() {
             table(vec![point_set("body"), point_set("marker")]),
         ),
     ]);
-    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    let scene = scene_snapshot(&scene).unwrap();
     assert_eq!(scene.circles.len(), 4);
     assert_eq!(scene.circles[2].id, "marker-0");
 }
@@ -319,7 +351,7 @@ fn line_strip_keeps_matrix_rows_as_one_closed_path() {
         ("background", s("#000")),
         ("line-strips", tuple(vec![line_strip("orbit-earth")])),
     ]);
-    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    let scene = scene_snapshot(&scene).unwrap();
     assert_eq!(scene.line_strips.len(), 1);
     assert_eq!(scene.line_strips[0].id, "orbit-earth");
     assert_eq!(
@@ -340,7 +372,7 @@ fn line_strip_table_keeps_each_matrix_as_one_path() {
             table(vec![line_strip("orbit-a"), line_strip("orbit-b")]),
         ),
     ]);
-    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    let scene = scene_snapshot(&scene).unwrap();
     assert_eq!(scene.line_strips.len(), 2);
     assert_eq!(scene.line_strips[1].id, "orbit-b");
     assert_eq!(scene.line_strips[1].positions.len(), 3);
@@ -364,7 +396,7 @@ fn point_set_rejects_a_palette_with_the_wrong_length() {
         ("background", s("#000")),
         ("point-sets", bad),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -386,7 +418,7 @@ fn point_set_rejects_nonfinite_radii() {
             ("background", s("#000")),
             ("point-sets", bad),
         ]);
-        assert!(SceneSnapshot::from_value(&scene).is_err());
+        assert!(scene_snapshot(&scene).is_err());
     }
 }
 
@@ -397,7 +429,7 @@ fn invalid_dimensions() {
         ("height", f(50.0)),
         ("background", s("#000")),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -409,12 +441,12 @@ fn duplicate_ids() {
         ("circles", tuple(vec![circle("x")])),
         ("lines", tuple(vec![line("x")])),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
 fn missing_required_columns() {
-    assert!(SceneSnapshot::from_value(&record(vec![("width", f(1.0))])).is_err());
+    assert!(scene_snapshot(&record(vec![("width", f(1.0))])).is_err());
 }
 
 #[test]
@@ -436,7 +468,7 @@ fn invalid_opacity() {
         ("circles", tuple(vec![bad])),
         ("lines", tuple(vec![])),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -452,7 +484,7 @@ fn valid_empty_circle_table() {
         ("circles", LegacyValue::Table(Ref::new(base))),
         ("lines", tuple(vec![])),
     ]);
-    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles.len(), 0);
+    assert_eq!(scene_snapshot(&scene).unwrap().circles.len(), 0);
 }
 
 #[test]
@@ -464,7 +496,7 @@ fn valid_single_circle_table() {
         ("circles", table(vec![circle("c1")])),
         ("lines", tuple(vec![])),
     ]);
-    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles.len(), 1);
+    assert_eq!(scene_snapshot(&scene).unwrap().circles.len(), 1);
 }
 
 #[test]
@@ -476,7 +508,7 @@ fn valid_many_circle_table() {
         ("circles", table(vec![circle("c1"), circle("c2")])),
         ("lines", tuple(vec![])),
     ]);
-    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles.len(), 2);
+    assert_eq!(scene_snapshot(&scene).unwrap().circles.len(), 2);
 }
 
 #[test]
@@ -488,7 +520,7 @@ fn valid_many_line_table() {
         ("circles", tuple(vec![])),
         ("lines", table(vec![line("l1"), line("l2")])),
     ]);
-    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().lines.len(), 2);
+    assert_eq!(scene_snapshot(&scene).unwrap().lines.len(), 2);
 }
 
 #[test]
@@ -510,10 +542,7 @@ fn table_columns_may_be_reordered() {
         ("circles", table(vec![circle])),
         ("lines", tuple(vec![])),
     ]);
-    assert_eq!(
-        SceneSnapshot::from_value(&scene).unwrap().circles[0].id,
-        "c1"
-    );
+    assert_eq!(scene_snapshot(&scene).unwrap().circles[0].id, "c1");
 }
 
 #[test]
@@ -525,7 +554,7 @@ fn table_missing_column_is_rejected() {
         ("circles", table(vec![record(vec![("id", s("c1"))])])),
         ("lines", tuple(vec![])),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -548,7 +577,7 @@ fn table_unknown_column_is_rejected() {
         ("circles", table(vec![bad])),
         ("lines", tuple(vec![])),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -565,7 +594,7 @@ fn table_column_length_mismatch_is_rejected() {
         ("circles", LegacyValue::Table(Ref::new(table))),
         ("lines", tuple(vec![])),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -587,7 +616,7 @@ fn table_error_identifies_row_and_column() {
         ("circles", table(vec![bad])),
         ("lines", tuple(vec![])),
     ]);
-    let err = format!("{:?}", SceneSnapshot::from_value(&scene).unwrap_err());
+    let err = format!("{:?}", scene_snapshot(&scene).unwrap_err());
     assert!(err.contains("row 1"));
     assert!(err.contains("x"));
 }
@@ -612,7 +641,7 @@ fn tuple_unknown_field_is_rejected() {
         ("circles", tuple(vec![bad])),
         ("lines", tuple(vec![])),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -624,7 +653,7 @@ fn empty_element_id_is_rejected() {
         ("circles", tuple(vec![circle("")])),
         ("lines", tuple(vec![])),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -636,7 +665,7 @@ fn non_finite_scene_number_is_rejected() {
         ("circles", tuple(vec![])),
         ("lines", tuple(vec![])),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -662,7 +691,7 @@ fn invalid_line_cap_is_rejected() {
         ("circles", tuple(vec![])),
         ("lines", tuple(vec![bad])),
     ]);
-    assert!(SceneSnapshot::from_value(&scene).is_err());
+    assert!(scene_snapshot(&scene).is_err());
 }
 
 #[test]
@@ -781,8 +810,11 @@ fn points_use_column_major_screen_coordinates_ids_palette_and_radii() {
     settings.height = 80;
     settings.point_radius = 2;
     settings.first_point_radius = 7;
-    let scene =
-        scene_snapshot_from_points(&points(2, 2, vec![60.0, 30.0, 10.0, 80.0]), &settings).unwrap();
+    let scene = scene_snapshot_from_points(
+        &canonical(points(2, 2, vec![60.0, 30.0, 10.0, 80.0])),
+        &settings,
+    )
+    .unwrap();
     assert_eq!(scene.circles.len(), 2);
     assert_eq!(scene.circles[0].id, "body-0");
     assert_eq!(scene.circles[0].x, 60.0);
@@ -829,7 +861,7 @@ fn latest_scene_replaces_older_scene() {
             context_name: "view".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
-            value: empty_scene(),
+            value: canonical(empty_scene()),
         },
     )
     .unwrap();
@@ -848,7 +880,7 @@ fn latest_scene_replaces_older_scene() {
             context_name: "view".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
-            value: newer,
+            value: canonical(newer),
         },
     )
     .unwrap();
@@ -866,7 +898,7 @@ fn scene_prepare_write_does_not_render_before_delivery() {
             context_name: "view".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
-            value: empty_scene(),
+            value: canonical(empty_scene()),
         })
         .unwrap();
 
@@ -911,13 +943,13 @@ fn native_scene_instances_are_isolated() {
             context_name: "view".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
-            value: record(vec![
+            value: canonical(record(vec![
                 ("width", f(100.0)),
                 ("height", f(50.0)),
                 ("background", s("#000")),
                 ("circles", tuple(vec![])),
                 ("lines", tuple(vec![])),
-            ]),
+            ])),
         },
     )
     .unwrap();
@@ -929,13 +961,13 @@ fn native_scene_instances_are_isolated() {
             context_name: "view".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
-            value: record(vec![
+            value: canonical(record(vec![
                 ("width", f(200.0)),
                 ("height", f(50.0)),
                 ("background", s("#000")),
                 ("circles", tuple(vec![])),
                 ("lines", tuple(vec![])),
-            ]),
+            ])),
         },
     )
     .unwrap();
@@ -997,17 +1029,15 @@ last-pulse = pulse
     assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
     runtime.drain_host_inputs(8).unwrap();
 
-    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
-    else {
-        panic!("scene pointer toggle must remain f64")
-    };
-    assert_eq!(*enabled.borrow(), 0.0);
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        0.0
+    );
 
-    let LegacyValue::F64(pressed) = runtime.root_symbol_value("pressed").unwrap().into_value()
-    else {
-        panic!("scene pointer pressed state must remain f64")
-    };
-    assert_eq!(*pressed.borrow(), 0.0);
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pressed").unwrap()),
+        0.0
+    );
 
     // A second activation drains before its release. The release remains in
     // the same gesture group and cannot replay the already-consumed pulse.
@@ -1017,11 +1047,10 @@ last-pulse = pulse
     assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
     runtime.drain_host_inputs(8).unwrap();
 
-    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
-    else {
-        panic!("scene pointer toggle must remain f64")
-    };
-    assert_eq!(*enabled.borrow(), 1.0);
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        1.0
+    );
 
     registry
         .submit_pointer("view", -0.75, 0.5, false, 0.03)
@@ -1029,26 +1058,22 @@ last-pulse = pulse
     assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
     runtime.drain_host_inputs(8).unwrap();
 
-    let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
-        panic!("scene pointer pulse must remain f64")
-    };
-    assert_eq!(*pulse.borrow(), 2.0);
-    let LegacyValue::F64(pressed) = runtime.root_symbol_value("pressed").unwrap().into_value()
-    else {
-        panic!("scene pointer pressed state must remain f64")
-    };
-    assert_eq!(*pressed.borrow(), 0.0);
-    let LegacyValue::MatrixF64(position) =
-        runtime.root_symbol_value("position").unwrap().into_value()
-    else {
-        panic!("scene pointer position must remain an f64 matrix")
-    };
-    assert_eq!(position.as_vec(), [-0.75, 0.5]);
-    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
-    else {
-        panic!("scene pointer toggle must remain f64")
-    };
-    assert_eq!(*enabled.borrow(), 1.0);
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pulse").unwrap()),
+        2.0
+    );
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pressed").unwrap()),
+        0.0
+    );
+    assert_eq!(
+        snapshot_f64_matrix(runtime.root_symbol_value("position").unwrap()),
+        [-0.75, 0.5]
+    );
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        1.0
+    );
 
     // Two complete clicks may already be queued when one drain begins. Each
     // gesture is still a distinct resident turn even though its own down/up
@@ -1062,33 +1087,29 @@ last-pulse = pulse
     assert_eq!(runtime.pending_host_input_count().unwrap(), 4);
     assert_eq!(runtime.drain_host_inputs(8).unwrap().len(), 2);
     assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
-    let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
-        panic!("scene pointer pulse must remain f64")
-    };
-    assert_eq!(*pulse.borrow(), 3.0);
-    let LegacyValue::MatrixF64(position) =
-        runtime.root_symbol_value("position").unwrap().into_value()
-    else {
-        panic!("scene pointer position must remain an f64 matrix")
-    };
-    assert_eq!(position.as_vec(), [0.5, 0.5]);
-    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
-    else {
-        panic!("scene pointer toggle must remain f64")
-    };
-    assert_eq!(*enabled.borrow(), 0.0);
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pulse").unwrap()),
+        3.0
+    );
+    assert_eq!(
+        snapshot_f64_matrix(runtime.root_symbol_value("position").unwrap()),
+        [0.5, 0.5]
+    );
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        0.0
+    );
     assert_eq!(runtime.drain_host_inputs(8).unwrap().len(), 2);
     assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
 
-    let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
-        panic!("scene pointer pulse must remain f64")
-    };
-    assert_eq!(*pulse.borrow(), 4.0);
-    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
-    else {
-        panic!("scene pointer toggle must remain f64")
-    };
-    assert_eq!(*enabled.borrow(), 1.0);
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pulse").unwrap()),
+        4.0
+    );
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        1.0
+    );
 }
 
 #[cfg(feature = "browser")]
@@ -1136,11 +1157,10 @@ last-pulse = pulse
         ))
         .unwrap();
     runtime.drain_host_inputs(1).unwrap();
-    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
-    else {
-        panic!("scene pointer toggle must remain f64")
-    };
-    assert_eq!(*enabled.borrow(), 1.0);
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        1.0
+    );
 
     runtime
         .ingress()
@@ -1150,24 +1170,23 @@ last-pulse = pulse
         ))
         .unwrap();
     runtime.drain_host_inputs(1).unwrap();
-    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
-    else {
-        panic!("scene pointer toggle must remain f64")
-    };
-    assert_eq!(*enabled.borrow(), 0.0);
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        0.0
+    );
 }
 
 #[test]
 fn scene_provider_deduplicates_identical_replacements() {
     let backend = RecordingSceneBackend::new();
     let mut provider = SceneResourceProvider::new("main", backend.clone());
-    let write = |value| RuntimeResourceWriteRequest {
+    let write = |value: LegacyValue| RuntimeResourceWriteRequest {
         base_uri: "scene://main/frame".to_string(),
         path: "replace".to_string(),
         context_name: "main".to_string(),
         operation: RuntimeCapabilityOperation::Write,
         intent: RuntimeResourceWriteIntent::Send,
-        value,
+        value: canonical(value),
     };
 
     deliver_write(&mut provider, write(empty_scene())).unwrap();
@@ -1195,7 +1214,7 @@ fn scene_provider_deduplicates_identical_replacements() {
             context_name: "main".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
-            value: empty_scene(),
+            value: canonical(empty_scene()),
         },
     )
     .unwrap();
@@ -1241,13 +1260,13 @@ impl MechErrorKind for TestSceneError {
 fn scene_provider_failed_replace_does_not_advance_dedup_state() {
     let backend = FailableSceneBackend::default();
     let mut provider = SceneResourceProvider::new("main", backend.clone());
-    let write = |value| RuntimeResourceWriteRequest {
+    let write = |value: LegacyValue| RuntimeResourceWriteRequest {
         base_uri: "scene://main/frame".to_string(),
         path: "replace".to_string(),
         context_name: "main".to_string(),
         operation: RuntimeCapabilityOperation::Write,
         intent: RuntimeResourceWriteIntent::Send,
-        value,
+        value: canonical(value),
     };
     backend.fail_next();
     assert!(deliver_write(&mut provider, write(empty_scene())).is_err());

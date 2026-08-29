@@ -15,8 +15,7 @@ use mech_compute::{
     ComputeSession, ComputeValue, TensorLayout,
 };
 use mech_core::{
-    ComputePlacement, LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration,
-    Ref,
+    ComputePlacement, MResult, MechError, MechErrorKind, OperationContractDeclaration, Ref, Value,
 };
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
@@ -245,8 +244,7 @@ impl RuntimeHostFactory for ComputeHostFactory {
                     .sampled_outputs
                     .iter()
                     .filter(|(name, _)| self.retained_outputs.contains(name.as_str()))
-                    .map(|(name, value)| Ok((name.clone(), value.try_deep_snapshot()?)))
-                    .collect::<MResult<BTreeMap<_, _>>>()?,
+                    .map(|(name, value)| (name.clone(), value.clone())),
             );
         }
         let state = Arc::new(Mutex::new(ComputeHostState {
@@ -337,7 +335,7 @@ pub struct ComputeHostResumeState {
     dispatch_ms: f64,
     fault_count: f64,
     last_fault: String,
-    sampled_outputs: BTreeMap<String, LegacyValue>,
+    sampled_outputs: BTreeMap<String, Value>,
     last_submitted_turn: Option<u128>,
 }
 
@@ -414,8 +412,8 @@ impl ComputeHostStateSnapshotHandle {
             .filter(|(name, _)| {
                 retained_outputs.is_none_or(|outputs| outputs.contains(name.as_str()))
             })
-            .map(|(name, value)| Ok((name.clone(), value.try_deep_snapshot()?)))
-            .collect::<MResult<_>>()?;
+            .map(|(name, value)| (name.clone(), value.clone()))
+            .collect();
         Ok(Some(ComputeHostResumeState {
             turns: *state.turns.borrow(),
             dispatch_ms: *state.dispatch_ms.borrow(),
@@ -434,7 +432,7 @@ struct ComputeHostState {
     dispatch_ms: Ref<f64>,
     fault_count: Ref<f64>,
     last_fault: Ref<String>,
-    sampled_outputs: BTreeMap<String, LegacyValue>,
+    sampled_outputs: BTreeMap<String, Value>,
     sample_subscriptions: BTreeSet<String>,
     phase: ComputeHostPhase,
     session: Box<dyn ComputeSession>,
@@ -719,7 +717,7 @@ impl ComputeResourceProvider {
             .flatten()
     }
 
-    fn telemetry_value(&self, path: &str, planning: bool) -> MResult<LegacyValue> {
+    fn telemetry_value(&self, path: &str, planning: bool) -> MResult<Value> {
         let mut state = self.state.lock().map_err(|_| {
             compute_host_error("ComputeHostRead", "compute host state lock is poisoned")
         })?;
@@ -733,7 +731,7 @@ impl ComputeResourceProvider {
                 let initial = initial_sampled_output(&state.program, port)?;
                 state.sampled_outputs.insert(port.name.to_string(), initial);
             }
-            return state
+            let value = state
                 .sampled_outputs
                 .get(port.name.as_ref())
                 .ok_or_else(|| {
@@ -742,15 +740,16 @@ impl ComputeResourceProvider {
                         format!("sampled output `{}` was not initialized", port.name),
                     )
                 })?
-                .try_deep_snapshot();
+                .clone();
+            return Ok(value);
         }
         if planning {
             return match path {
                 "backend" | "last-fault" => {
-                    RuntimeHostInputValue::String(String::new()).into_mech_value()
+                    RuntimeHostInputValue::String(String::new()).into_value()
                 }
                 "turns" | "dispatch-ms" | "fault-count" => {
-                    RuntimeHostInputValue::F64(0.0).into_mech_value()
+                    RuntimeHostInputValue::F64(0.0).into_value()
                 }
                 other => Err(compute_host_error(
                     "ComputeHostRead",
@@ -759,16 +758,12 @@ impl ComputeResourceProvider {
             };
         }
         match path {
-            "backend" => RuntimeHostInputValue::String(state.backend.clone()).into_mech_value(),
-            "turns" => RuntimeHostInputValue::F64(*state.turns.borrow()).into_mech_value(),
-            "dispatch-ms" => {
-                RuntimeHostInputValue::F64(*state.dispatch_ms.borrow()).into_mech_value()
-            }
-            "fault-count" => {
-                RuntimeHostInputValue::F64(*state.fault_count.borrow()).into_mech_value()
-            }
+            "backend" => RuntimeHostInputValue::String(state.backend.clone()).into_value(),
+            "turns" => RuntimeHostInputValue::F64(*state.turns.borrow()).into_value(),
+            "dispatch-ms" => RuntimeHostInputValue::F64(*state.dispatch_ms.borrow()).into_value(),
+            "fault-count" => RuntimeHostInputValue::F64(*state.fault_count.borrow()).into_value(),
             "last-fault" => {
-                RuntimeHostInputValue::String(state.last_fault.borrow().clone()).into_mech_value()
+                RuntimeHostInputValue::String(state.last_fault.borrow().clone()).into_value()
             }
             other => Err(compute_host_error(
                 "ComputeHostRead",
@@ -799,12 +794,12 @@ impl RuntimeResourceProvider for ComputeResourceProvider {
             .then_some(mech_runtime::compute_effect_contract())
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.validate_base_uri(&request.base_uri, "ComputeHostRead")?;
         self.telemetry_value(&request.path, true)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.validate_base_uri(&request.base_uri, "ComputeHostRead")?;
         self.telemetry_value(&request.path, false)
     }
@@ -841,7 +836,7 @@ impl RuntimeResourceProvider for ComputeResourceProvider {
             intent: request.intent,
         })?;
         if let Some(port) = self.declared_input(&request.path) {
-            compute_input_update(&self.program, port, request.value.try_deep_snapshot()?)?;
+            compute_input_update(&self.program, port, &request.value)?;
         } else {
             compute_turn_token(&request.value)?;
         }
@@ -860,8 +855,7 @@ impl RuntimeResourceProvider for ComputeResourceProvider {
             intent: request.intent,
         })?;
         if let Some(port) = self.declared_input(&request.path) {
-            let update =
-                compute_input_update(&self.program, port, request.value.try_deep_snapshot()?)?;
+            let update = compute_input_update(&self.program, port, &request.value)?;
             return Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
                 ComputeInputEffect {
                     resource: request.base_uri,
@@ -1149,7 +1143,7 @@ fn telemetry_updates_from_values(
     resource: &str,
     values: ComputeTelemetryValues<'_>,
     sample_subscriptions: &BTreeSet<String>,
-    sampled_outputs: &BTreeMap<String, LegacyValue>,
+    sampled_outputs: &BTreeMap<String, Value>,
 ) -> MResult<Vec<RuntimeHostInputUpdate>> {
     let ComputeTelemetryValues {
         backend,
@@ -1190,7 +1184,7 @@ fn telemetry_updates_from_values(
         })?;
         updates.push(RuntimeHostInputUpdate {
             source: RuntimeHostInputSource::new(resource, format!("sample/{name}"))?,
-            value: RuntimeHostInputValue::from_numeric_mech_value(value)?,
+            value: RuntimeHostInputValue::from_numeric_value(value)?,
         });
     }
     Ok(updates)
@@ -1376,9 +1370,9 @@ fn configured_compute_settings(settings: &ConfigValue) -> MResult<ConfiguredComp
 fn compute_input_update(
     program: &ComputeProgram,
     port: &ComputePort,
-    value: LegacyValue,
+    value: &Value,
 ) -> MResult<ComputeInputUpdate> {
-    let detached = RuntimeHostInputValue::from_numeric_mech_value(&value)?;
+    let detached = RuntimeHostInputValue::from_numeric_value(value)?;
     let value = match detached {
         RuntimeHostInputValue::F32(value) => ComputeValue::ScalarF32(value),
         RuntimeHostInputValue::F64(value) => {
@@ -1390,7 +1384,7 @@ fn compute_input_update(
             values,
         } => ComputeValue::TensorF32 {
             dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
-            layout: TensorLayout::ColumnMajor,
+            layout: TensorLayout::RowMajor,
             values: Arc::from(values),
         },
         RuntimeHostInputValue::F64Matrix {
@@ -1399,7 +1393,7 @@ fn compute_input_update(
             values,
         } => ComputeValue::TensorF32 {
             dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
-            layout: TensorLayout::ColumnMajor,
+            layout: TensorLayout::RowMajor,
             values: values
                 .into_iter()
                 .map(|value| narrow_f64_input(port.name.as_ref(), value))
@@ -1430,8 +1424,8 @@ fn compute_input_update(
     Ok(update)
 }
 
-fn compute_turn_token(value: &LegacyValue) -> MResult<ComputeTurnToken> {
-    let token = RuntimeHostInputValue::from_numeric_mech_value(value)?;
+fn compute_turn_token(value: &Value) -> MResult<ComputeTurnToken> {
+    let token = RuntimeHostInputValue::from_numeric_value(value)?;
     canonical_turn_token(&token)
 }
 
@@ -1454,7 +1448,7 @@ fn compute_value_elements(value: &ComputeValue) -> u64 {
 fn initial_sampled_outputs(
     program: &ComputeProgram,
     retained_outputs: &BTreeSet<String>,
-) -> MResult<BTreeMap<String, LegacyValue>> {
+) -> MResult<BTreeMap<String, Value>> {
     program
         .interface()
         .outputs
@@ -1469,7 +1463,7 @@ fn initial_sampled_outputs(
         .collect()
 }
 
-fn initial_sampled_output(program: &ComputeProgram, port: &ComputePort) -> MResult<LegacyValue> {
+fn initial_sampled_output(program: &ComputeProgram, port: &ComputePort) -> MResult<Value> {
     let value = program
         .fixed_shape_storage()
         .and_then(|storage| storage.states.iter().find(|state| state.slot == port.slot))
@@ -1502,7 +1496,7 @@ fn initial_sampled_output(program: &ComputeProgram, port: &ComputePort) -> MResu
     }
 }
 
-fn zero_sample_value(port: &ComputePort) -> MResult<LegacyValue> {
+fn zero_sample_value(port: &ComputePort) -> MResult<Value> {
     let elements = port.elements().map_err(|error| {
         compute_host_error(
             "ComputeHostConfiguration",
@@ -1529,7 +1523,7 @@ fn zero_sample_value(port: &ComputePort) -> MResult<LegacyValue> {
 fn materialize_sampled_outputs(
     state: &ComputeHostState,
     snapshot: &ComputeOutputSnapshot,
-) -> MResult<BTreeMap<String, LegacyValue>> {
+) -> MResult<BTreeMap<String, Value>> {
     let ports = state
         .program
         .interface()
@@ -1554,7 +1548,7 @@ fn materialize_sampled_outputs(
     Ok(sampled)
 }
 
-fn sampled_output_value(port: &ComputePort, value: ComputeValue) -> MResult<LegacyValue> {
+fn sampled_output_value(port: &ComputePort, value: ComputeValue) -> MResult<Value> {
     let inner_elements = port.elements().map_err(|error| {
         compute_host_error(
             "ComputeHostRead",
@@ -1623,11 +1617,7 @@ fn sampled_output_value(port: &ComputePort, value: ComputeValue) -> MResult<Lega
         [rows, columns] => RuntimeHostInputValue::F64Matrix {
             rows: *rows as usize,
             columns: *columns as usize,
-            values: row_major_sample_to_column_major_f64(
-                *rows as usize,
-                *columns as usize,
-                &row_major,
-            ),
+            values: row_major,
         },
         dimensions => {
             return Err(compute_host_error(
@@ -1640,7 +1630,7 @@ fn sampled_output_value(port: &ComputePort, value: ComputeValue) -> MResult<Lega
             ));
         }
     };
-    detached.into_mech_value()
+    detached.into_value()
 }
 
 fn column_major_sample_to_row_major(dimensions: &[u64], values: &[f32]) -> MResult<Vec<f32>> {
@@ -1659,16 +1649,6 @@ fn column_major_sample_to_row_major(dimensions: &[u64], values: &[f32]) -> MResu
         }
     }
     Ok(row_major)
-}
-
-fn row_major_sample_to_column_major_f64(rows: usize, columns: usize, values: &[f64]) -> Vec<f64> {
-    let mut column_major = vec![0.0; values.len()];
-    for row in 0..rows {
-        for column in 0..columns {
-            column_major[row + column * rows] = values[row * columns + column];
-        }
-    }
-    column_major
 }
 
 #[derive(Clone, Debug)]
@@ -1977,7 +1957,7 @@ mod tests {
                 columns: 3,
                 values,
             }
-            .into_mech_value()
+            .into_value()
             .unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
         }
@@ -1997,7 +1977,7 @@ mod tests {
             path: "turn".to_owned(),
             context_name: "particles".to_owned(),
             operation: RuntimeCapabilityOperation::Write,
-            value: value.into_mech_value().unwrap(),
+            value: value.into_value().unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
         }
     }
@@ -2053,11 +2033,11 @@ mod tests {
         let valid = RuntimeHostInputValue::F32Matrix {
             rows: 2,
             columns: 3,
-            values: vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0],
+            values: vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
         }
-        .into_mech_value()
+        .into_value()
         .unwrap();
-        let update = compute_input_update(&program, port, valid).unwrap();
+        let update = compute_input_update(&program, port, &valid).unwrap();
         let ComputeValue::TensorF32 { layout, values, .. } = update.value else {
             panic!("matrix became a scalar")
         };
@@ -2069,9 +2049,9 @@ mod tests {
             columns: 2,
             values: vec![0.0; 6],
         }
-        .into_mech_value()
+        .into_value()
         .unwrap();
-        assert!(compute_input_update(&program, port, wrong_shape).is_err());
+        assert!(compute_input_update(&program, port, &wrong_shape).is_err());
     }
 
     #[test]
@@ -2081,11 +2061,11 @@ mod tests {
         let value = RuntimeHostInputValue::F64Matrix {
             rows: 2,
             columns: 3,
-            values: vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0],
+            values: vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
         }
-        .into_mech_value()
+        .into_value()
         .unwrap();
-        let update = compute_input_update(&program, port, value).unwrap();
+        let update = compute_input_update(&program, port, &value).unwrap();
         let ComputeValue::TensorF32 { layout, values, .. } = update.value else {
             panic!("f64 matrix became a scalar")
         };
@@ -2097,37 +2077,39 @@ mod tests {
             columns: 3,
             values: vec![f64::MAX; 6],
         }
-        .into_mech_value()
+        .into_value()
         .unwrap();
-        let error = compute_input_update(&program, port, overflow).unwrap_err();
+        let error = compute_input_update(&program, port, &overflow).unwrap_err();
         assert!(error.display_message().contains("outside the f32 range"));
     }
 
     #[test]
-    fn sampled_batch_returns_lane_zero_as_a_resident_f64_matrix() {
+    fn sampled_batch_returns_nonsquare_lane_zero_in_canonical_row_major_order() {
         let port = ComputePort {
             id: mech_compute::ComputePortId::new(1),
             name: "matrix".into(),
             slot: CellSlotId::new(1),
             schema: SchemaId::new(1),
             element: mech_compute::ComputeElementType::F32,
-            dimensions: vec![2, 2].into_boxed_slice(),
+            dimensions: vec![2, 3].into_boxed_slice(),
         };
         let sampled = sampled_output_value(
             &port,
             ComputeValue::TensorF32 {
-                dimensions: vec![2, 2, 2].into_boxed_slice(),
+                dimensions: vec![2, 2, 3].into_boxed_slice(),
                 layout: TensorLayout::RowMajor,
-                values: Arc::from([1.0, 2.0, 3.0, 4.0, 10.0, 20.0, 30.0, 40.0]),
+                values: Arc::from([
+                    1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0,
+                ]),
             },
         )
         .unwrap();
         assert_eq!(
-            RuntimeHostInputValue::from_numeric_mech_value(&sampled).unwrap(),
+            RuntimeHostInputValue::from_numeric_value(&sampled).unwrap(),
             RuntimeHostInputValue::F64Matrix {
                 rows: 2,
-                columns: 2,
-                values: vec![1.0, 3.0, 2.0, 4.0],
+                columns: 3,
+                values: vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
             },
         );
     }
@@ -2182,7 +2164,7 @@ mod tests {
 
     #[test]
     fn compatible_factory_preserves_current_sample_for_retained_output_contract() {
-        let current = RuntimeHostInputValue::F32(42.0).into_mech_value().unwrap();
+        let current = RuntimeHostInputValue::F32(42.0).into_value().unwrap();
         let resume = ComputeHostResumeState {
             turns: 120.0,
             dispatch_ms: 3.25,
@@ -2215,12 +2197,12 @@ mod tests {
         let resumed = snapshot.snapshot().unwrap().unwrap();
 
         assert_eq!(
-            RuntimeHostInputValue::from_numeric_mech_value(&observed).unwrap(),
+            RuntimeHostInputValue::from_numeric_value(&observed).unwrap(),
             RuntimeHostInputValue::F32(42.0),
             "a newly demanded candidate output must read the current generation",
         );
         assert_eq!(
-            RuntimeHostInputValue::from_numeric_mech_value(
+            RuntimeHostInputValue::from_numeric_value(
                 resumed.sampled_outputs.get("result").unwrap()
             )
             .unwrap(),
@@ -2230,7 +2212,7 @@ mod tests {
 
     #[test]
     fn report_only_factory_does_not_materialize_or_migrate_declared_outputs() {
-        let stale = RuntimeHostInputValue::F32(42.0).into_mech_value().unwrap();
+        let stale = RuntimeHostInputValue::F32(42.0).into_value().unwrap();
         let resume = ComputeHostResumeState {
             turns: 120.0,
             dispatch_ms: 3.25,
@@ -2294,7 +2276,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            RuntimeHostInputValue::from_numeric_mech_value(&observed).unwrap(),
+            RuntimeHostInputValue::from_numeric_value(&observed).unwrap(),
             RuntimeHostInputValue::F64(0.0),
         );
         let resumed = snapshot.snapshot().unwrap().unwrap();
@@ -2452,7 +2434,7 @@ mod tests {
         runtime
             .write_resource_with_context(
                 &mut context,
-                input_write(vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0]),
+                input_write(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
             )
             .unwrap();
         runtime

@@ -240,7 +240,7 @@ fn enforce_production_resident_target_shape(targets: &[PathBuf]) -> MResult<()> 
 fn print_value(value: &RuntimeValueSnapshot) {
     println!("{}", value.kind());
     #[cfg(feature = "pretty_print")]
-    println!("{}", value.to_value().pretty_print());
+    println!("{}", value.format_canonical_inline());
     #[cfg(not(feature = "pretty_print"))]
     println!("{:#?}", value);
 }

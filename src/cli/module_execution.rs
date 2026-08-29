@@ -192,7 +192,7 @@ fn actor_planning_call(
         .iter()
         .map(RuntimeValueSnapshot::to_value)
         .collect::<Vec<_>>();
-    RuntimeValueSnapshot::try_capture(&state.plan(name, &values)?)
+    RuntimeValueSnapshot::from_value(state.plan(name, &values)?)
 }
 
 #[cfg(feature = "build")]

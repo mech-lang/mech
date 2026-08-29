@@ -9,8 +9,8 @@ use std::sync::{
 
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
-    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
-    MechErrorKind, OperationContractDeclaration, Ref,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult, MechError, MechErrorKind,
+    OperationContractDeclaration, SchemaBody, Value, ValueData,
 };
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostManifestConfig, MaterializedHostInterface,
@@ -290,7 +290,7 @@ struct TestLiveResourceProvider {
 }
 
 impl TestLiveResourceProvider {
-    fn planned_value(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn planned_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if request.base_uri != TEST_LIVE_BASE_URI
             || request.path != TEST_LIVE_PATH
             || request.context_name != TEST_LIVE_CONTEXT
@@ -303,7 +303,7 @@ impl TestLiveResourceProvider {
                 ),
             ));
         }
-        Ok(LegacyValue::F64(Ref::new(0.0)))
+        RuntimeHostInputValue::F64(0.0).into_value()
     }
 }
 
@@ -330,11 +330,11 @@ impl RuntimeResourceProvider for TestLiveResourceProvider {
         (intent == RuntimeResourceWriteIntent::Send).then_some(&TEST_LIVE_OUTPUT_CONTRACT)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.planned_value(request)
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.planned_value(request)
     }
 
@@ -382,39 +382,36 @@ impl RuntimeResourceProvider for TestLiveResourceProvider {
     }
 }
 
-fn observe_value(value: &LegacyValue) -> ObservedResourceValue {
-    match value {
-        LegacyValue::MutableReference(value) => observe_value(&value.borrow()),
-        LegacyValue::Typed(value, _) => observe_value(value),
-        LegacyValue::F64(value) => ObservedResourceValue::F64(*value.borrow()),
-        LegacyValue::Tuple(value) => ObservedResourceValue::Tuple(
-            value
-                .borrow()
-                .elements
+fn observe_value(value: &Value) -> ObservedResourceValue {
+    let schema = value
+        .schemas()
+        .and_then(|schemas| schemas.entry(value.schema()).cloned());
+    match schema {
+        Some(schema) => observe_data(value.data(), schema.schema().body()),
+        None => ObservedResourceValue::Other(format!("{:?}", value.data())),
+    }
+}
+
+fn observe_data(value: &ValueData, schema: &SchemaBody) -> ObservedResourceValue {
+    match (value, schema) {
+        (ValueData::F64(value), SchemaBody::FloatingPoint(_)) => {
+            ObservedResourceValue::F64(value.to_f64())
+        }
+        (ValueData::Tuple(values), SchemaBody::Tuple(schemas)) => ObservedResourceValue::Tuple(
+            values
                 .iter()
-                .map(|value| observe_value(value))
+                .zip(schemas.iter())
+                .map(|(value, schema)| observe_data(value, schema))
                 .collect(),
         ),
-        LegacyValue::Record(value) => {
-            let value = value.borrow();
-            ObservedResourceValue::Record(
-                value
-                    .data
-                    .iter()
-                    .map(|(id, field)| {
-                        (
-                            value
-                                .field_names
-                                .get(id)
-                                .cloned()
-                                .unwrap_or_else(|| format!("{id}")),
-                            observe_value(field),
-                        )
-                    })
-                    .collect(),
-            )
-        }
-        other => ObservedResourceValue::Other(format!("{other}")),
+        (ValueData::Record(value), SchemaBody::Record(fields)) => ObservedResourceValue::Record(
+            fields
+                .iter()
+                .zip(value.fields())
+                .map(|(field, value)| (field.name.clone(), observe_data(value, &field.schema)))
+                .collect(),
+        ),
+        _ => ObservedResourceValue::Other(format!("{value:?}")),
     }
 }
 

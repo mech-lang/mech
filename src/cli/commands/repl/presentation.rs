@@ -345,7 +345,7 @@ fn table_row(cells: &[String], widths: &[usize]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{LegacyValue, matrix::Matrix};
+    use mech_core::ValueCell;
 
     #[test]
     fn table_renderer_keeps_columns_aligned_without_box_drawing() {
@@ -386,12 +386,15 @@ mod tests {
 
     #[test]
     fn value_payloads_use_canonical_text_for_primary_and_plain_consumers() {
-        let snapshot = RuntimeValueSnapshot::try_from(LegacyValue::MatrixString(Matrix::from_vec(
-            vec!["a\"b".to_string(), "c\\d\nnext".to_string()],
-            1,
-            2,
-        )))
-        .unwrap();
+        let cells = [
+            ValueCell::from_exact("a\"b".to_string()).unwrap(),
+            ValueCell::from_exact("c\\d\nnext".to_string()).unwrap(),
+        ];
+        let canonical = ValueCell::dynamic_matrix_from_cells(1, 2, &cells)
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        let snapshot = RuntimeValueSnapshot::try_from(canonical).unwrap();
         let OutputContent::Value(value) = value(&snapshot).unwrap() else {
             panic!("expected value content");
         };

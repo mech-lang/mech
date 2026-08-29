@@ -17,10 +17,10 @@ use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
     EncodedConstant, ExecutionHostFunctionRequest, FunctionArgs, FunctionArgumentRole,
     FunctionCatalog, FunctionCatalogBuilder, FunctionRuntimeType, FunctionValueRepresentation,
-    LegacyValue, MResult, MatrixStorage, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+    MResult, MatrixStorage, MechFunction, MechFunctionCompiler, MechFunctionFactory,
     MechFunctionImpl, NativeFunctionLinkage, Ref, Register, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, ToValue,
-    hash_str, write_bytecode,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, hash_str,
+    write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use sha2::{Digest, Sha256};
@@ -87,7 +87,7 @@ impl RuntimeResourceProvider for PlanningCliResourceProvider {
             .collect()
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         unreachable!("native planning does not execute resource access")
     }
 
@@ -511,7 +511,7 @@ fn unknown_runtime_ids_fail_before_generation() {
 
 #[derive(Debug)]
 struct PlanningFunction {
-    output: Ref<f64>,
+    _output: Ref<f64>,
 }
 
 impl MechFunctionImpl for PlanningFunction {
@@ -519,16 +519,8 @@ impl MechFunctionImpl for PlanningFunction {
         Ok(())
     }
 
-    fn out(&self) -> LegacyValue {
-        self.output.to_value()
-    }
-
     fn to_string(&self) -> String {
         "PlanningFunction".into()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -545,7 +537,7 @@ impl MechFunctionFactory for PlanningFunction {
     fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match arguments {
             FunctionArgs::Nullary(output) => Ok(Box::new(PlanningFunction {
-                output: output.try_function_ref(FunctionArgumentRole::Output)?,
+                _output: output.try_function_ref(FunctionArgumentRole::Output)?,
             })),
             _ => unreachable!(),
         }

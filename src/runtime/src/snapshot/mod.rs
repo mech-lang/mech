@@ -5,7 +5,7 @@ use std::fmt::{Debug, Display, Formatter};
 use mech_core::snapshot::{
     Complex32Bits, Complex64Bits, F32Bits, F64Bits, Rational64Value, SequenceView, ValueDataKind,
 };
-use mech_core::{MResult, MechError, SchemaId, SchemaKey, Value, ValueCell, ValueData};
+use mech_core::{MResult, MechError, SchemaBody, SchemaId, SchemaKey, Value, ValueCell, ValueData};
 
 use crate::CapabilityId;
 
@@ -87,10 +87,15 @@ impl RuntimeValueSnapshot {
     /// traversal budget as textual REPL output and inline document values.
     #[cfg(feature = "pretty_print")]
     pub fn format_repl_html(&self, max_elements: usize) -> String {
-        format!(
-            "<span class='mech-value'>{}</span>",
-            escape_html(&self.format_repl_inline(max_elements))
-        )
+        let bounded = self.format_repl_inline(max_elements);
+        if bounded != self.format_canonical_inline() {
+            format!(
+                "<pre class='mech-value-preview mech-value-elided'>{}</pre>",
+                escape_html(&bounded)
+            )
+        } else {
+            format!("<span class='mech-value'>{}</span>", escape_html(&bounded))
+        }
     }
 
     pub fn to_value(&self) -> Value {
@@ -159,9 +164,20 @@ impl Display for RuntimeValueSnapshot {
 
 fn format_value_inline(value: &Value, max_elements: usize) -> String {
     let mut remaining = max_elements;
+    let matrix_shape = value.schemas().and_then(|schemas| {
+        let SchemaBody::Matrix { dimensions, .. } = schemas.get(value.schema())?.body() else {
+            return None;
+        };
+        dimensions
+            .iter()
+            .map(|dimension| value.shape().resolve_dimension(dimension).ok())
+            .collect::<Option<Vec<_>>>()
+    });
     format_data(
         value.data(),
-        value.shape().parameter_values(),
+        matrix_shape
+            .as_deref()
+            .unwrap_or_else(|| value.shape().parameter_values()),
         &mut remaining,
     )
 }

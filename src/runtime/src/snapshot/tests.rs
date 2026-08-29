@@ -1,7 +1,8 @@
 use super::*;
 use mech_core::snapshot::{OptionDraft, SnapshotValidationContext};
 use mech_core::{
-    FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder, ValueDataDraft, ValueDraft,
+    DimensionExpr, FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder, ValueDataDraft,
+    ValueDraft,
 };
 
 fn canonical(schema: SchemaBody, data: ValueDataDraft) -> Value {
@@ -78,4 +79,31 @@ fn runtime_value_snapshot_formats_option_without_legacy_materialization() {
     let snapshot = RuntimeValueSnapshot::from_value(value).unwrap();
 
     assert_eq!(snapshot.format_canonical_inline(), "some(true)");
+}
+
+#[test]
+fn runtime_value_snapshot_formats_static_matrix_orientation_from_its_schema() {
+    let matrix = |rows, columns| {
+        RuntimeValueSnapshot::from_value(canonical(
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![
+                    DimensionExpr::Constant(rows),
+                    DimensionExpr::Constant(columns),
+                ]
+                .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(
+                [3.0, 7.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        ))
+        .unwrap()
+    };
+
+    assert_eq!(matrix(1, 2).format_canonical_inline(), "[3 7]");
+    assert_eq!(matrix(2, 1).format_canonical_inline(), "[3; 7]");
 }

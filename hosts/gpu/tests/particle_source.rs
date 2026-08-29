@@ -5,8 +5,8 @@ use mech_compute::{
     ComputeOutputSelection, ComputePlatform, ComputeValue, TensorLayout,
 };
 use mech_core::{
-    Body, ComputePlacement, LegacyValue, MechCode, ParsedProgram, Program,
-    ResolvedOperationContract, Section, SectionElement,
+    Body, ComputePlacement, MechCode, ParsedProgram, Program, ResolvedOperationContract, Section,
+    SectionElement, ValueData,
 };
 use mech_engine::{SlotRole, decode_program_artifact_sections, encode_program_artifact_sections};
 use mech_gpu::{
@@ -320,7 +320,7 @@ fn ordinary_compute_host_dispatches_the_compiler_product_after_commit() {
             path: "turn".to_owned(),
             context_name: "particles".to_owned(),
             operation: RuntimeCapabilityOperation::Write,
-            value: LegacyValue::from(1.0_f32),
+            value: RuntimeHostInputValue::F32(1.0).into_value().unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
         })
         .unwrap();
@@ -336,10 +336,10 @@ fn ordinary_compute_host_dispatches_the_compiler_product_after_commit() {
             context_name: "particles".to_owned(),
         })
         .unwrap();
-    let LegacyValue::F64(turns) = turns else {
+    let ValueData::F64(turns) = turns.data() else {
         panic!("turn telemetry must be f64")
     };
-    assert_eq!(*turns.borrow(), 1.0);
+    assert_eq!(turns.to_f64(), 1.0);
 }
 
 #[test]

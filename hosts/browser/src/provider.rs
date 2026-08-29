@@ -4,8 +4,8 @@ use crate::{
 };
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
-    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
-    MechErrorKind, OperationContractDeclaration, Ref,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult, MechError, MechErrorKind,
+    OperationContractDeclaration, Value, ValueCell, ValueData,
 };
 use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 
@@ -174,13 +174,13 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
         ]]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         let path = self.validate_read(&request.base_uri, request.path)?;
         let entry = self
             .authority
             .dom_entry_for_path(&path)
             .expect("validated browser DOM manifest entry");
-        Ok(LegacyValue::String(Ref::new(
+        ValueCell::from_exact(
             self.backend
                 .lock()
                 .map_err(|_| {
@@ -190,12 +190,13 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
                     )
                 })?
                 .read_dom_string(entry, &path)?,
-        )))
+        )?
+        .snapshot()
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.validate_read(&request.base_uri, request.path)?;
-        Ok(LegacyValue::String(Ref::new(String::new())))
+        ValueCell::from_exact(String::new())?.snapshot()
     }
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -251,13 +252,13 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
                     "no configured DOM manifest entry for path",
                 )
             })?;
-        let LegacyValue::String(value) = request.value else {
+        let ValueData::String(value) = request.value.data() else {
             return Err(browser_resource_provider_error(
                 "browser/dom",
                 "browser DOM assignments require a scalar string payload",
             ));
         };
-        let value = value.borrow().as_str().to_string();
+        let value = value.to_string();
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
             BrowserDomWriteEffect {
                 backend: self.backend.clone(),
@@ -277,7 +278,7 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
             operation: request.operation,
             intent: request.intent,
         })?;
-        if !matches!(request.value, LegacyValue::String(_)) {
+        if !matches!(request.value.data(), ValueData::String(_)) {
             return Err(browser_resource_provider_error(
                 "browser/dom",
                 "browser DOM assignments require a scalar string payload",

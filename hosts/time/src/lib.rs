@@ -57,7 +57,7 @@ pub(crate) fn time_error(name: &'static str, message: impl Into<String>) -> Mech
 mod tests {
     use std::collections::BTreeMap;
 
-    use mech_core::LegacyValue;
+    use mech_core::ValueData;
     use mech_runtime::{
         ConfigValue, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeResourceProvider,
         RuntimeResourceReadRequest,
@@ -115,7 +115,7 @@ mod tests {
                     context_name: "clock".to_string(),
                 })
                 .unwrap();
-            assert!(matches!(value, LegacyValue::F64(_)));
+            assert!(matches!(value.data(), ValueData::F64(_)));
         }
     }
 

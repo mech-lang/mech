@@ -5160,16 +5160,6 @@ mod browser_tests {
         mech_core::nodes::compress_and_encode(&tree).unwrap()
     }
 
-    fn assert_resident_rejection<T>(result: Result<T, JsValue>, expected: &str) {
-        let error = match result {
-            Ok(_) => panic!("expected resident production admission to reject the program"),
-            Err(error) => error,
-        };
-        let message = error.as_string().unwrap_or_else(|| format!("{error:?}"));
-        assert!(message.contains("ResidentRouteFailure"), "{message}");
-        assert!(message.contains(expected), "{message}");
-    }
-
     #[cfg(feature = "served_project_authority")]
     fn served_document_authority() -> BrowserRuntimeInjectionConfig {
         BrowserRuntimeInjectionConfig {
@@ -5384,9 +5374,11 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn wasm_inline_values_use_html_escaped_canonical_mech_strings() {
-        let value = mech_core::LegacyValue::String(mech_core::Ref::new(
-            "a\"b\\c\nα\u{2028}line\u{2029}paragraph".to_string(),
-        ));
+        let value =
+            mech_core::ValueCell::from_exact("a\"b\\c\nα\u{2028}line\u{2029}paragraph".to_string())
+                .unwrap()
+                .snapshot()
+                .unwrap();
         let snapshot = mech_runtime::RuntimeValueSnapshot::try_from(value).unwrap();
         let rendered = rendered_value(snapshot, 500).unwrap();
         assert_eq!(
@@ -5828,7 +5820,7 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn generic_timer_table_scene_is_excluded_from_the_resident_browser_product() {
+    fn generic_timer_table_scene_is_supported_by_the_resident_browser_product() {
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
         let canvas = document.create_element("canvas").unwrap();
@@ -5845,10 +5837,8 @@ mod browser_tests {
             )),
         )
         .unwrap();
-        assert_resident_rejection(
-            WasmProject::from_sources(config, sources.into()),
-            "SemanticUnsupported",
-        );
+        let project = WasmProject::from_sources(config, sources.into());
+        assert!(project.is_ok());
         canvas.remove();
     }
 }

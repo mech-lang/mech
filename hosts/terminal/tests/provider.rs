@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
 use mech_core::{
-    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, LegacyValue,
-    MResult, MechError, MechErrorKind, ObservationContract, ObservationReplayPolicy, Ref,
+    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, MResult,
+    MechError, MechErrorKind, ObservationContract, ObservationReplayPolicy, Value, ValueData,
 };
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    value_empty, value_string,
 };
 use mech_terminal::{CliBackend, CliResourceProvider};
 
@@ -55,8 +56,15 @@ impl MechErrorKind for FakeCliBackendError {
     }
 }
 
-fn str_value(text: &str) -> LegacyValue {
-    LegacyValue::String(Ref::new(text.to_string()))
+fn str_value(text: &str) -> Value {
+    value_string(text)
+}
+
+fn assert_string(value: &Value, expected: &str) {
+    let ValueData::String(actual) = value.data() else {
+        panic!("expected a canonical string")
+    };
+    assert_eq!(actual.as_ref(), expected);
 }
 
 fn execute_write(
@@ -83,7 +91,7 @@ fn env_read_returns_fake_value_and_missing_errors() {
             context_name: "env".to_string(),
         })
         .unwrap();
-    assert_eq!(value, str_value("/tmp/home"));
+    assert_string(&value, "/tmp/home");
     assert!(
         provider
             .read(RuntimeResourceReadRequest {
@@ -110,7 +118,7 @@ fn env_plan_read_returns_an_empty_string_without_touching_the_backend() {
         })
         .unwrap();
 
-    assert_eq!(value, str_value(""));
+    assert_string(&value, "");
 }
 
 #[test]
@@ -336,9 +344,7 @@ fn stdout_planning_accepts_only_scalar_strings_without_output() {
     };
 
     provider.plan_write(request(str_value("planned"))).unwrap();
-    let error = provider
-        .plan_write(request(LegacyValue::Empty))
-        .unwrap_err();
+    let error = provider.plan_write(request(value_empty())).unwrap_err();
 
     assert!(
         error
