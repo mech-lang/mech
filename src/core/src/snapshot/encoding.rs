@@ -55,6 +55,29 @@ impl SnapshotByteSink for Sha256SnapshotSink {
 }
 
 impl Value {
+    /// Encodes this immutable value without including any process-local cell
+    /// identity. The schema key and shape precede the canonical payload so the
+    /// bytes are suitable for public save/export boundaries.
+    pub fn canonical_snapshot_bytes(
+        &self,
+        schemas: &SchemaTable,
+    ) -> Result<Box<[u8]>, SnapshotValueError> {
+        let schema = self.validate_against(schemas)?;
+        let shape = self.shape().canonical_bytes();
+        let mut payload = VecSnapshotSink::new();
+        encode_data(schema.body(), self.data(), &mut payload);
+        let payload = payload.finish();
+
+        let mut sink = VecSnapshotSink::new();
+        sink.write(b"mech-snapshot-v1\0");
+        sink.write(self.schema_key().as_bytes());
+        write_u64(&mut sink, shape.len() as u64);
+        sink.write(&shape);
+        write_u64(&mut sink, payload.len() as u64);
+        sink.write(&payload);
+        Ok(sink.finish())
+    }
+
     pub fn canonical_payload_bytes(
         &self,
         schemas: &SchemaTable,
@@ -294,4 +317,68 @@ fn write_u64(sink: &mut dyn SnapshotByteSink, value: u64) {
 fn write_utf8(sink: &mut dyn SnapshotByteSink, value: &str) {
     write_u64(sink, value.len() as u64);
     sink.write(value.as_bytes());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::snapshot::SnapshotValidationContext;
+    use crate::{SchemaDraft, SchemaTableBuilder, ValueCell, ValueDataDraft, ValueDraft};
+    use std::rc::Rc;
+
+    fn bool_value(value: bool) -> (Value, SchemaTable) {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Bool,
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let id = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: id,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Bool(value),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        (value, schemas)
+    }
+
+    #[test]
+    fn canonical_snapshot_bytes_include_schema_shape_and_data_but_not_cell_identity() {
+        let (value, schemas) = bool_value(true);
+        let first = ValueCell::from_value(value.clone(), Rc::new(schemas.clone())).unwrap();
+        let second = ValueCell::from_value(value, Rc::new(schemas.clone())).unwrap();
+        assert!(!first.same_cell(&second));
+
+        let first = first
+            .snapshot()
+            .unwrap()
+            .canonical_snapshot_bytes(&schemas)
+            .unwrap();
+        let second = second
+            .snapshot()
+            .unwrap()
+            .canonical_snapshot_bytes(&schemas)
+            .unwrap();
+        assert_eq!(first, second);
+        let prefix = b"mech-snapshot-v1\0";
+        assert_eq!(&first[..prefix.len()], prefix);
+        assert_eq!(
+            &first[prefix.len()..prefix.len() + 32],
+            bool_value(true).0.schema_key().as_bytes()
+        );
+
+        let (different, different_schemas) = bool_value(false);
+        assert_ne!(
+            first,
+            different
+                .canonical_snapshot_bytes(&different_schemas)
+                .unwrap()
+        );
+    }
 }

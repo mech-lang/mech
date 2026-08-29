@@ -5,7 +5,7 @@ use super::super::{
 #[cfg(feature = "set")]
 use super::support::set_output;
 use super::support::{TestFunction, scalar};
-use crate::{LegacyValue, Ref};
+use crate::{LegacyPlanRegistration, LegacyReactivePlanRegistration, LegacyValue, Ref};
 
 #[cfg(feature = "f64")]
 #[test]
@@ -202,7 +202,7 @@ fn register_defaults_arguments_to_reactive() {
 
 #[cfg(all(feature = "set", feature = "f64"))]
 #[test]
-fn register_defaults_dependency_scope_to_recursive() {
+fn canonical_registration_tracks_the_aggregate_cell_not_legacy_member_cells() {
     let (set, outer, first, second) = set_output();
     let mut plan = ReactivePlan::new();
 
@@ -213,24 +213,14 @@ fn register_defaults_dependency_scope_to_recursive() {
     let node = plan.node(node_id).unwrap();
     assert_eq!(
         node.inputs,
-        vec![
-            ReactiveDependency {
-                cell: outer,
-                kind: ReactiveDependencyKind::Reactive
-            },
-            ReactiveDependency {
-                cell: first,
-                kind: ReactiveDependencyKind::Reactive
-            },
-            ReactiveDependency {
-                cell: second,
-                kind: ReactiveDependencyKind::Reactive
-            },
-        ],
+        vec![ReactiveDependency {
+            cell: outer,
+            kind: ReactiveDependencyKind::Reactive
+        }],
     );
     assert_eq!(plan.reactive_consumers_for(outer), &[node_id]);
-    assert_eq!(plan.reactive_consumers_for(first), &[node_id]);
-    assert_eq!(plan.reactive_consumers_for(second), &[node_id]);
+    assert!(plan.reactive_consumers_for(first).is_empty());
+    assert!(plan.reactive_consumers_for(second).is_empty());
     assert!(plan.sampled_consumers.is_empty());
 }
 

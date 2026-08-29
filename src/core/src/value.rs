@@ -844,9 +844,9 @@ impl Eq for LegacyValue {}
 /// This is not a durable cell identity and must not be persisted as transaction
 /// history. Durable history requires a stable logical cell ID that is
 /// independent of the current [`Ref`] backing representation.
-pub struct ReactiveCellId(u64);
+pub struct CanonicalCellId(u64);
 
-impl ReactiveCellId {
+impl CanonicalCellId {
     pub fn new(id: u64) -> Self {
         Self(id)
     }
@@ -855,6 +855,9 @@ impl ReactiveCellId {
         self.0
     }
 }
+
+/// Compatibility name for the scheduler's process-local canonical cell ID.
+pub type ReactiveCellId = CanonicalCellId;
 
 impl fmt::Display for LegacyValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -1026,41 +1029,41 @@ impl LegacyValue {
             #[cfg(feature = "tuple")]
             LegacyValue::Tuple(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "matrix")]
-            LegacyValue::MatrixIndex(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixIndex(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            LegacyValue::MatrixBool(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixBool(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            LegacyValue::MatrixU8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU8(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            LegacyValue::MatrixU16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU16(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            LegacyValue::MatrixU32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU32(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            LegacyValue::MatrixU64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU64(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            LegacyValue::MatrixU128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU128(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            LegacyValue::MatrixI8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI8(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            LegacyValue::MatrixI16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI16(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            LegacyValue::MatrixI32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI32(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            LegacyValue::MatrixI64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI64(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            LegacyValue::MatrixI128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI128(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            LegacyValue::MatrixF32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixF32(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            LegacyValue::MatrixF64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixF64(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "string"))]
-            LegacyValue::MatrixString(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixString(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            LegacyValue::MatrixR64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixR64(v) => vec![v.reactive_cell_id()],
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            LegacyValue::MatrixC64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixC64(v) => vec![v.reactive_cell_id()],
             #[cfg(feature = "matrix")]
-            LegacyValue::MatrixValue(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixValue(v) => vec![v.reactive_cell_id()],
             LegacyValue::MutableReference(v) => vec![ReactiveCellId::new(v.id())],
             LegacyValue::Typed(value, _) => value.reactive_root_cell_ids(),
             LegacyValue::Id(_)
@@ -1256,7 +1259,7 @@ impl LegacyValue {
                 if Self::push_reactive_cell_id(ids, seen, v.id()) {
                     let table_brrw = v.borrow();
                     for (_, column) in table_brrw.data.values() {
-                        if Self::push_reactive_cell_id(ids, seen, column.addr() as u64) {
+                        if Self::push_reactive_cell_id(ids, seen, column.reactive_cell_id().get()) {
                             for value in column.as_vec().iter() {
                                 value.collect_reactive_cell_ids(ids, seen);
                             }
@@ -1275,75 +1278,75 @@ impl LegacyValue {
             }
             #[cfg(feature = "matrix")]
             LegacyValue::MatrixIndex(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "bool"))]
             LegacyValue::MatrixBool(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "u8"))]
             LegacyValue::MatrixU8(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "u16"))]
             LegacyValue::MatrixU16(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "u32"))]
             LegacyValue::MatrixU32(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "u64"))]
             LegacyValue::MatrixU64(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "u128"))]
             LegacyValue::MatrixU128(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "i8"))]
             LegacyValue::MatrixI8(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "i16"))]
             LegacyValue::MatrixI16(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "i32"))]
             LegacyValue::MatrixI32(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "i64"))]
             LegacyValue::MatrixI64(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "i128"))]
             LegacyValue::MatrixI128(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "f32"))]
             LegacyValue::MatrixF32(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "f64"))]
             LegacyValue::MatrixF64(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "string"))]
             LegacyValue::MatrixString(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "rational"))]
             LegacyValue::MatrixR64(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(all(feature = "matrix", feature = "complex"))]
             LegacyValue::MatrixC64(v) => {
-                Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
+                Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get());
             }
             #[cfg(feature = "matrix")]
             LegacyValue::MatrixValue(v) => {
-                if Self::push_reactive_cell_id(ids, seen, v.addr() as u64) {
+                if Self::push_reactive_cell_id(ids, seen, v.reactive_cell_id().get()) {
                     for value in v.as_vec().iter() {
                         value.collect_reactive_cell_ids(ids, seen);
                     }
@@ -5634,8 +5637,8 @@ mod reactive_cell_tests {
             2,
             1,
         );
-        let first_column_id = first_column.addr() as u64;
-        let second_column_id = second_column.addr() as u64;
+        let first_column_id = first_column.reactive_cell_id().get();
+        let second_column_id = second_column.reactive_cell_id().get();
         let mut data = IndexMap::new();
         data.insert(hash_str("first"), (ValueKind::F64, first_column));
         data.insert(hash_str("second"), (ValueKind::F64, second_column));
@@ -5795,6 +5798,9 @@ mod reactive_cell_tests {
 }
 
 // Errors
+
+impl crate::ConstElem for LegacyValue {}
+impl crate::ConstElem for ValueKind {}
 
 #[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKindError;

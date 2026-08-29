@@ -65,7 +65,7 @@ baselib = ["bool", "string",
     ]
 
 semantic-compiler = ["program"]
-compiler = ["semantic-compiler"]
+compiler = ["semantic-compiler", "functions"]
 program = ["crc32fast", "byteorder"]
 native-plan = ["functions"]
 native-link = []

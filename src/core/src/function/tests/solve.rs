@@ -9,15 +9,15 @@ use super::support::reg;
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
-    FunctionDefine, GenericError, LegacyValue, MResult, MechError, Ref, ToValue, hash_str,
-    internal_pattern_value_identifier,
+    FunctionDefine, GenericError, LegacyReactivePlanRegistration, LegacyValue, MResult, MechError,
+    Ref, ToValue, hash_str, internal_pattern_value_identifier, legacy_function_output,
 };
 use std::{cell::RefCell, rc::Rc};
 
 #[cfg(feature = "f64")]
 struct SchedulerFunction {
     label: &'static str,
-    output: LegacyValue,
+    output: crate::ValueCell,
     kind: ReactiveNodeKind,
     status: ReactiveSolveStatus,
     count: Rc<RefCell<usize>>,
@@ -43,18 +43,14 @@ impl MechFunctionImpl for SchedulerFunction {
             Ok(self.status)
         }
     }
-    fn out(&self) -> LegacyValue {
-        self.output.clone()
-    }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         self.kind
     }
+    fn reactive_output_value_cells(&self) -> Vec<crate::ValueCell> {
+        vec![self.output.clone()]
+    }
     fn to_string(&self) -> String {
         self.label.into()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "f64", feature = "semantic-compiler"))]
@@ -78,7 +74,7 @@ fn scheduler_node(
     let count = Rc::new(RefCell::new(0));
     let function = SchedulerFunction {
         label,
-        output: output.clone(),
+        output: crate::value_cell_from_legacy_function_value(output.clone()),
         kind,
         status,
         count: count.clone(),
@@ -129,16 +125,12 @@ impl MechFunctionImpl for FalliblePlanStep {
         Ok(())
     }
 
-    fn out(&self) -> LegacyValue {
-        self.output.to_value()
+    fn primary_output_state_port(&self) -> Option<crate::FunctionStatePort<'_>> {
+        Some(crate::FunctionStatePort::from_ref(&self.output))
     }
 
     fn to_string(&self) -> String {
         self.label.into()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -207,15 +199,11 @@ impl MechFunctionImpl for Comb {
         *self.sink.borrow_mut() = *self.source.borrow() + self.add;
         Ok(ReactiveSolveStatus::Changed)
     }
-    fn out(&self) -> LegacyValue {
-        self.sink.to_value()
+    fn primary_output_state_port(&self) -> Option<crate::FunctionStatePort<'_>> {
+        Some(crate::FunctionStatePort::from_ref(&self.sink))
     }
     fn to_string(&self) -> String {
         "test combinational".into()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(feature = "semantic-compiler")]
@@ -662,12 +650,8 @@ fn reactive_turn_propagates_register_outputs_after_commit() {
 #[test]
 fn reactive_turn_defers_post_commit_registers_until_next_turn() {
     let (mut p, input, a, middle, b, ra, rb, _, ca, cb) = chain();
-    let final_value = p
-        .nodes
-        .last()
+    let final_value = legacy_function_output(p.nodes.last().unwrap().function.as_ref())
         .unwrap()
-        .function
-        .out()
         .as_f64()
         .unwrap()
         .clone();

@@ -11,6 +11,17 @@ use alloc::{boxed::Box, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, vec::Vec};
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SetValueRelation {
+    Disjoint,
+    Equal,
+    NotEqual,
+    ProperSubset,
+    ProperSuperset,
+    Subset,
+    Superset,
+}
+
 impl Value {
     pub fn snapshot_eq(
         &self,
@@ -98,6 +109,296 @@ impl Value {
         let right = normalized_key_data(self_schema.body(), other.data().clone())?;
         compare_key_data(self_schema.body(), &left, &right)
     }
+
+    pub fn set_contains(
+        &self,
+        self_schemas: &SchemaTable,
+        candidate: &Value,
+        candidate_schemas: &SchemaTable,
+    ) -> Result<bool, SnapshotValueError> {
+        let (element, elements, candidate) =
+            self.validated_set_candidate(self_schemas, candidate, candidate_schemas)?;
+        for existing in elements {
+            if compare_key_data(element, existing.data(), &candidate)? == Ordering::Equal {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    pub fn set_elements_after_insert(
+        &self,
+        self_schemas: &SchemaTable,
+        candidate: &Value,
+        candidate_schemas: &SchemaTable,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        let (element, elements, candidate) =
+            self.validated_set_candidate(self_schemas, candidate, candidate_schemas)?;
+        let mut next = elements
+            .iter()
+            .map(|value| value.data().clone())
+            .collect::<Vec<_>>();
+        let mut contains = false;
+        for existing in elements {
+            if compare_key_data(element, existing.data(), &candidate)? == Ordering::Equal {
+                contains = true;
+                break;
+            }
+        }
+        if !contains {
+            next.push(candidate);
+        }
+        Ok(next.into_boxed_slice())
+    }
+
+    pub fn set_elements_after_remove(
+        &self,
+        self_schemas: &SchemaTable,
+        candidate: &Value,
+        candidate_schemas: &SchemaTable,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        let (element, elements, candidate) =
+            self.validated_set_candidate(self_schemas, candidate, candidate_schemas)?;
+        let mut next = Vec::with_capacity(elements.len());
+        for existing in elements {
+            if compare_key_data(element, existing.data(), &candidate)? != Ordering::Equal {
+                next.push(existing.data().clone());
+            }
+        }
+        Ok(next.into_boxed_slice())
+    }
+
+    pub fn set_union_elements(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Union)
+    }
+
+    pub fn set_intersection_elements(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Intersection)
+    }
+
+    pub fn set_difference_elements(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Difference)
+    }
+
+    pub fn set_symmetric_difference_elements(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::SymmetricDifference,
+        )
+    }
+
+    pub fn set_relation(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        relation: SetValueRelation,
+    ) -> Result<bool, SnapshotValueError> {
+        let (element, left, right) = self.validated_set_pair(self_schemas, other, other_schemas)?;
+        let subset = set_is_subset(element, left, right)?;
+        let superset = set_is_subset(element, right, left)?;
+        Ok(match relation {
+            SetValueRelation::Disjoint => set_is_disjoint(element, left, right)?,
+            SetValueRelation::Equal => subset && superset,
+            SetValueRelation::NotEqual => !(subset && superset),
+            SetValueRelation::ProperSubset => subset && left.len() < right.len(),
+            SetValueRelation::ProperSuperset => superset && left.len() > right.len(),
+            SetValueRelation::Subset => subset,
+            SetValueRelation::Superset => superset,
+        })
+    }
+
+    fn merge_set_elements(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        merge: SetMerge,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        let (element, left, right) = self.validated_set_pair(self_schemas, other, other_schemas)?;
+        let mut next = Vec::with_capacity(left.len().saturating_add(right.len()));
+        let (mut left_index, mut right_index) = (0, 0);
+        while left_index < left.len() && right_index < right.len() {
+            match compare_key_data(element, left[left_index].data(), right[right_index].data())? {
+                Ordering::Less => {
+                    if matches!(
+                        merge,
+                        SetMerge::Union | SetMerge::Difference | SetMerge::SymmetricDifference
+                    ) {
+                        next.push(left[left_index].data().clone());
+                    }
+                    left_index += 1;
+                }
+                Ordering::Equal => {
+                    if matches!(merge, SetMerge::Union | SetMerge::Intersection) {
+                        next.push(left[left_index].data().clone());
+                    }
+                    left_index += 1;
+                    right_index += 1;
+                }
+                Ordering::Greater => {
+                    if matches!(merge, SetMerge::Union | SetMerge::SymmetricDifference) {
+                        next.push(right[right_index].data().clone());
+                    }
+                    right_index += 1;
+                }
+            }
+        }
+        if matches!(
+            merge,
+            SetMerge::Union | SetMerge::Difference | SetMerge::SymmetricDifference
+        ) {
+            next.extend(left[left_index..].iter().map(|value| value.data().clone()));
+        }
+        if matches!(merge, SetMerge::Union | SetMerge::SymmetricDifference) {
+            next.extend(
+                right[right_index..]
+                    .iter()
+                    .map(|value| value.data().clone()),
+            );
+        }
+        Ok(next.into_boxed_slice())
+    }
+
+    fn validated_set_pair<'a>(
+        &'a self,
+        self_schemas: &'a SchemaTable,
+        other: &'a Value,
+        other_schemas: &'a SchemaTable,
+    ) -> Result<
+        (
+            &'a SchemaBody,
+            &'a [CanonicalKeyValue],
+            &'a [CanonicalKeyValue],
+        ),
+        SnapshotValueError,
+    > {
+        let self_schema = self.validate_against(self_schemas)?;
+        let other_schema = other.validate_against(other_schemas)?;
+        let SchemaBody::Set {
+            element: self_element,
+            ..
+        } = self_schema.body()
+        else {
+            return Err(SnapshotValueError::SnapshotDataSchemaMismatch {
+                path: SnapshotPath::root(),
+                expected: super::SchemaDataKind::Set,
+                actual: self.data().kind(),
+            });
+        };
+        let SchemaBody::Set {
+            element: other_element,
+            ..
+        } = other_schema.body()
+        else {
+            return Err(SnapshotValueError::SnapshotDataSchemaMismatch {
+                path: SnapshotPath::root(),
+                expected: super::SchemaDataKind::Set,
+                actual: other.data().kind(),
+            });
+        };
+        if self_element != other_element {
+            return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
+                key: other.schema_key(),
+            });
+        }
+        let (ValueData::Set(left), ValueData::Set(right)) = (self.data(), other.data()) else {
+            unreachable!("validated set schemas have set data")
+        };
+        Ok((self_element, left.elements(), right.elements()))
+    }
+
+    fn validated_set_candidate<'a>(
+        &'a self,
+        self_schemas: &'a SchemaTable,
+        candidate: &Value,
+        candidate_schemas: &SchemaTable,
+    ) -> Result<(&'a SchemaBody, &'a [CanonicalKeyValue], ValueData), SnapshotValueError> {
+        let schema = self.validate_against(self_schemas)?;
+        let SchemaBody::Set { element, .. } = schema.body() else {
+            return Err(SnapshotValueError::SnapshotDataSchemaMismatch {
+                path: SnapshotPath::root(),
+                expected: super::SchemaDataKind::Set,
+                actual: self.data().kind(),
+            });
+        };
+        let ValueData::Set(set) = self.data() else {
+            unreachable!("validated set schema has set data")
+        };
+        let candidate_schema = candidate.validate_against(candidate_schemas)?;
+        if candidate_schema.body() != element.as_ref() {
+            return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
+                key: candidate.schema_key(),
+            });
+        }
+        let candidate = normalized_key_data(element, candidate.data().clone())?;
+        Ok((element, set.elements(), candidate))
+    }
+}
+
+#[derive(Clone, Copy)]
+enum SetMerge {
+    Union,
+    Intersection,
+    Difference,
+    SymmetricDifference,
+}
+
+fn set_is_subset(
+    element: &SchemaBody,
+    left: &[CanonicalKeyValue],
+    right: &[CanonicalKeyValue],
+) -> Result<bool, SnapshotValueError> {
+    for candidate in left {
+        let mut present = false;
+        for value in right {
+            if compare_key_data(element, candidate.data(), value.data())? == Ordering::Equal {
+                present = true;
+                break;
+            }
+        }
+        if !present {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+fn set_is_disjoint(
+    element: &SchemaBody,
+    left: &[CanonicalKeyValue],
+    right: &[CanonicalKeyValue],
+) -> Result<bool, SnapshotValueError> {
+    for candidate in left {
+        for value in right {
+            if compare_key_data(element, candidate.data(), value.data())? == Ordering::Equal {
+                return Ok(false);
+            }
+        }
+    }
+    Ok(true)
 }
 
 fn is_nominal_schema(body: &SchemaBody) -> bool {
@@ -160,6 +461,20 @@ pub(super) fn normalized_key_data(
                 .collect::<Result<Vec<_>, _>>()?
                 .into_boxed_slice();
             ValueData::Record(value)
+        }
+        (SchemaBody::Set { element, .. }, ValueData::Set(mut value)) => {
+            value.elements = value
+                .elements
+                .into_vec()
+                .into_iter()
+                .map(|value| {
+                    Ok(CanonicalKeyValue {
+                        data: normalized_key_data(element, value.data)?,
+                    })
+                })
+                .collect::<Result<Vec<_>, SnapshotValueError>>()?
+                .into_boxed_slice();
+            ValueData::Set(value)
         }
         (_, data) => data,
     })
@@ -278,6 +593,16 @@ pub(super) fn compare_key_data(
         (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => {
             let schemas = fields.iter().map(|field| &field.schema).collect::<Vec<_>>();
             lexicographic_refs(&schemas, left.fields(), right.fields())?
+        }
+        (SchemaBody::Set { element, .. }, ValueData::Set(left), ValueData::Set(right)) => {
+            let mut order = Ordering::Equal;
+            for (left, right) in left.elements.iter().zip(right.elements.iter()) {
+                order = compare_key_data(element, left.data(), right.data())?;
+                if order != Ordering::Equal {
+                    break;
+                }
+            }
+            order.then_with(|| left.elements.len().cmp(&right.elements.len()))
         }
         _ => unreachable!("validated key data changed representation"),
     };
@@ -583,13 +908,10 @@ pub(super) fn schema_is_keyable(schema: &SchemaBody) -> bool {
             }
             true
         }
-        SchemaBody::Dynamic
-        | SchemaBody::Complex(_)
-        | SchemaBody::Matrix { .. }
-        | SchemaBody::Table { .. }
-        | SchemaBody::Set { .. }
-        | SchemaBody::Map { .. }
-        | SchemaBody::ReifiedType => false,
+        SchemaBody::Dynamic | SchemaBody::Complex(_) => false,
+        SchemaBody::Matrix { element, .. } => schema_is_keyable(element),
+        SchemaBody::Set { element, .. } => schema_is_keyable(element),
+        SchemaBody::Table { .. } | SchemaBody::Map { .. } | SchemaBody::ReifiedType => false,
     }
 }
 

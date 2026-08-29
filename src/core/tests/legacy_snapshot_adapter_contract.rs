@@ -17,9 +17,10 @@ use mech_core::{
     LegacyMaterializationContext, LegacyNominalResolution, LegacyReferencePolicy,
     LegacyResolvedExtent, LegacySemanticContext, LegacySnapshotContext, LegacySnapshotError,
     NamedKindPathResolver, NominalKey, NominalKind, Ref, SchemaBody, SchemaDraft, SchemaField,
-    SchemaId, SchemaTable, SchemaTableBuilder, SemanticModelError, ToMatrix, legacy_from_snapshot,
-    snapshot_from_legacy,
+    SchemaId, SchemaTable, SchemaTableBuilder, SemanticModelError, legacy_from_snapshot,
+    matrix::Matrix, snapshot_from_legacy,
 };
+use nalgebra::DMatrix;
 
 #[derive(Default)]
 struct SemanticContext;
@@ -72,6 +73,10 @@ impl LegacyMaterializationContext for SemanticContext {
 
 fn schema_table(body: SchemaBody) -> (SchemaTable, SchemaId) {
     schema_table_with_dimensions(body, Box::new([]))
+}
+
+fn legacy_matrix(elements: Vec<LegacyValue>, rows: usize, columns: usize) -> Matrix<LegacyValue> {
+    Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, columns, elements)))
 }
 
 fn schema_table_with_dimensions(
@@ -549,7 +554,7 @@ fn matrix_value_is_schema_directed_homogeneous_and_logical_ordered() {
         dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)].into_boxed_slice(),
     };
     let (schemas, schema) = schema_table(body);
-    let matrix = <LegacyValue as ToMatrix>::to_matrixd(
+    let matrix = legacy_matrix(
         vec![
             LegacyValue::Bool(Ref::new(true)),
             LegacyValue::Bool(Ref::new(true)),
@@ -572,7 +577,7 @@ fn matrix_value_is_schema_directed_homogeneous_and_logical_ordered() {
         &[1, 0, 1, 0]
     );
 
-    let heterogeneous = <LegacyValue as ToMatrix>::to_matrixd(
+    let heterogeneous = legacy_matrix(
         vec![
             LegacyValue::Bool(Ref::new(true)),
             LegacyValue::F64(Ref::new(1.0)),
@@ -598,7 +603,7 @@ fn matrix_value_is_schema_directed_homogeneous_and_logical_ordered() {
 
 #[test]
 fn composite_matrix_mismatches_use_the_bounded_heterogeneous_error() {
-    let tuple_matrix = <LegacyValue as ToMatrix>::to_matrixd(
+    let tuple_matrix = legacy_matrix(
         vec![LegacyValue::Tuple(Ref::new(
             mech_core::MechTuple::from_vec(vec![LegacyValue::F64(Ref::new(1.0))]),
         ))],
@@ -623,7 +628,7 @@ fn composite_matrix_mismatches_use_the_bounded_heterogeneous_error() {
     #[cfg(feature = "record")]
     {
         let field_id = mech_core::hash_str("x");
-        let record_matrix = <LegacyValue as ToMatrix>::to_matrixd(
+        let record_matrix = legacy_matrix(
             vec![LegacyValue::Record(Ref::new(
                 mech_core::MechRecord::from_parts(
                     1,

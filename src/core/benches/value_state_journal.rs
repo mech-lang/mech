@@ -1,7 +1,7 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use mech_core::{
-    CommittedValueStateDelta, LegacyValue, MechMap, MechRecord, MechSet, Ref, ToMatrix,
-    ValueStateJournal,
+    CanonicalStateJournal, CommittedValueStateDelta, LegacyValue, MechMap, MechRecord, MechSet,
+    Ref, ToMatrix,
 };
 use std::hint::black_box;
 
@@ -15,8 +15,8 @@ fn scalar_roots(count: usize) -> Vec<LegacyValue> {
         .collect()
 }
 
-fn capture_roots(roots: &[LegacyValue]) -> ValueStateJournal {
-    let mut journal = ValueStateJournal::new();
+fn capture_roots(roots: &[LegacyValue]) -> CanonicalStateJournal {
+    let mut journal = CanonicalStateJournal::new();
     for root in roots {
         journal.capture_value(root).unwrap();
     }
@@ -32,7 +32,7 @@ fn mutate_scalars(roots: &[LegacyValue]) {
     }
 }
 
-fn captured_mutated_scalars(count: usize) -> ValueStateJournal {
+fn captured_mutated_scalars(count: usize) -> CanonicalStateJournal {
     let roots = scalar_roots(count);
     let journal = capture_roots(&roots);
     mutate_scalars(&roots);
@@ -79,7 +79,7 @@ fn scalar_map_root(count: usize) -> (LegacyValue, Vec<Ref<f64>>) {
     )
 }
 
-fn hashed_set_journal() -> ValueStateJournal {
+fn hashed_set_journal() -> CanonicalStateJournal {
     let (root, cells) = scalar_set_root(HASHED_COLLECTION_SIZE);
     let journal = capture_roots(&[root]);
     *cells[HASHED_COLLECTION_SIZE / 2].borrow_mut() = 10_000.0;
@@ -92,7 +92,7 @@ fn hashed_set_delta() -> CommittedValueStateDelta {
     journal.into_delta().unwrap()
 }
 
-fn hashed_map_journal() -> ValueStateJournal {
+fn hashed_map_journal() -> CanonicalStateJournal {
     let (root, cells) = scalar_map_root(HASHED_COLLECTION_SIZE);
     let journal = capture_roots(&[root]);
     *cells[HASHED_COLLECTION_SIZE / 2].borrow_mut() = 10_000.0;
@@ -136,7 +136,7 @@ fn nested_value_matrix() -> LegacyValue {
     ))
 }
 
-fn topology_journal() -> ValueStateJournal {
+fn topology_journal() -> CanonicalStateJournal {
     let removed = Ref::new(1.0);
     let retained = Ref::new(2.0);
     let added = Ref::new(3.0);
@@ -144,7 +144,7 @@ fn topology_journal() -> ValueStateJournal {
         ("removed", LegacyValue::F64(removed)),
         ("retained", LegacyValue::F64(retained.clone())),
     ]));
-    let mut journal = ValueStateJournal::new();
+    let mut journal = CanonicalStateJournal::new();
     journal
         .capture_value(&LegacyValue::Record(record.clone()))
         .unwrap();
@@ -186,7 +186,7 @@ fn capture_scalars(c: &mut Criterion) {
         };
         group.bench_with_input(BenchmarkId::new("capture", count), &count, |b, _| {
             b.iter_batched(
-                ValueStateJournal::new,
+                CanonicalStateJournal::new,
                 |mut journal| {
                     for root in black_box(&roots) {
                         journal.capture_value(root).unwrap();
@@ -278,7 +278,7 @@ fn hashed_collection_group(
     c: &mut Criterion,
     name: &str,
     root: LegacyValue,
-    journal_factory: fn() -> ValueStateJournal,
+    journal_factory: fn() -> CanonicalStateJournal,
     delta_factory: fn() -> CommittedValueStateDelta,
 ) {
     let expected_cells = 1 + HASHED_COLLECTION_SIZE;
@@ -291,7 +291,7 @@ fn hashed_collection_group(
 
     group.bench_function("capture", |b| {
         b.iter_batched(
-            ValueStateJournal::new,
+            CanonicalStateJournal::new,
             |mut journal| {
                 journal.capture_value(black_box(&root)).unwrap();
                 black_box(journal)
@@ -376,7 +376,7 @@ fn capture_graphs(c: &mut Criterion) {
     let mut group = c.benchmark_group("value_state_journal/capture_graphs");
     group.bench_function("nested_record_shared", |b| {
         b.iter_batched(
-            ValueStateJournal::new,
+            CanonicalStateJournal::new,
             |mut journal| {
                 journal.capture_value(black_box(&nested_record)).unwrap();
                 black_box(journal)
@@ -388,7 +388,7 @@ fn capture_graphs(c: &mut Criterion) {
     group.throughput(Throughput::Elements(100 * 100));
     group.bench_function("dynamic_f64_matrix_100x100", |b| {
         b.iter_batched(
-            ValueStateJournal::new,
+            CanonicalStateJournal::new,
             |mut journal| {
                 journal.capture_value(black_box(&matrix_f64)).unwrap();
                 black_box(journal)
@@ -402,7 +402,7 @@ fn capture_graphs(c: &mut Criterion) {
     ));
     group.bench_function("matrix_value_32x32", |b| {
         b.iter_batched(
-            ValueStateJournal::new,
+            CanonicalStateJournal::new,
             |mut journal| {
                 journal.capture_value(black_box(&matrix_value)).unwrap();
                 black_box(journal)

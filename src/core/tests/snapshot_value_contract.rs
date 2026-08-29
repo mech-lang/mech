@@ -151,7 +151,7 @@ fn every_schema_body_family_finalizes_to_immutable_data() {
                     schema: SchemaBody::Bool,
                 }]
                 .into_boxed_slice(),
-                rows: DimensionExpr::Constant(1),
+                rows: DimensionExpr::Constant(1).into(),
             },
             ValueDataDraft::Table(
                 vec![TableColumnDraft {
@@ -164,7 +164,7 @@ fn every_schema_body_family_finalizes_to_immutable_data() {
         (
             SchemaBody::Set {
                 element: Box::new(SchemaBody::Bool),
-                cardinality: DimensionExpr::Constant(1),
+                cardinality: DimensionExpr::Constant(1).into(),
             },
             ValueDataDraft::Set(vec![ValueDataDraft::Bool(true)].into_boxed_slice()),
         ),
@@ -172,7 +172,7 @@ fn every_schema_body_family_finalizes_to_immutable_data() {
             SchemaBody::Map {
                 key: Box::new(SchemaBody::Bool),
                 value: Box::new(SchemaBody::String),
-                cardinality: DimensionExpr::Constant(1),
+                cardinality: DimensionExpr::Constant(1).into(),
             },
             ValueDataDraft::Map(
                 vec![MapEntryDraft {
@@ -322,7 +322,7 @@ fn malformed_aggregate_option_enum_and_map_forms_are_structured() {
         SchemaBody::Map {
             key: Box::new(SchemaBody::Bool),
             value: Box::new(SchemaBody::Bool),
-            cardinality: DimensionExpr::Constant(1),
+            cardinality: DimensionExpr::Constant(1).into(),
         },
         ValueDataDraft::Map(
             vec![MapEntryDraft {
@@ -385,7 +385,7 @@ fn values_refuse_foreign_schema_tables_before_payload_interpretation() {
 fn resident_tokens_are_canonical_and_payload_sensitive() {
     let schema = SchemaBody::Set {
         element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-        cardinality: DimensionExpr::Constant(2),
+        cardinality: DimensionExpr::Constant(2).into(),
     };
     let set = |values: [f64; 2]| {
         finalize(

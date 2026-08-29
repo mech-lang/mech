@@ -1,3 +1,5 @@
+//! Compatibility encoding from the retired universal value model.
+
 use super::*;
 #[cfg(feature = "matrix")]
 use crate::structures::Matrix;
@@ -417,53 +419,57 @@ fn unsupported_value_kind(kind: ValueKind, reason: &'static str) -> MResult<u32>
 }
 
 #[cfg(feature = "semantic-compiler")]
-fn semantic_kind_from_value_kind(kind: &ValueKind) -> MResult<crate::kind::Kind> {
-    use crate::kind::Kind;
+fn semantic_kind_from_value_kind(kind: &ValueKind) -> MResult<crate::BytecodeKind> {
+    use crate::BytecodeKind;
 
     Ok(match kind {
-        ValueKind::Any => Kind::Any,
-        ValueKind::None => Kind::None,
-        ValueKind::Empty => Kind::Empty,
-        ValueKind::Id => Kind::Id,
-        ValueKind::Index => Kind::Index,
-        ValueKind::Atom(id, name) => Kind::Atom(*id, name.clone()),
-        ValueKind::Enum(id, name) => Kind::Enum(*id, name.clone()),
-        ValueKind::Map(key, value) => Kind::Map(
+        ValueKind::Any => BytecodeKind::Any,
+        ValueKind::None => BytecodeKind::None,
+        ValueKind::Empty => BytecodeKind::Empty,
+        ValueKind::Id => BytecodeKind::Id,
+        ValueKind::Index => BytecodeKind::Index,
+        ValueKind::Atom(id, name) => BytecodeKind::Atom(*id, name.clone()),
+        ValueKind::Enum(id, name) => BytecodeKind::Enum(*id, name.clone()),
+        ValueKind::Map(key, value) => BytecodeKind::Map(
             Box::new(semantic_kind_from_value_kind(key)?),
             Box::new(semantic_kind_from_value_kind(value)?),
         ),
-        ValueKind::Matrix(element, dimensions) => Kind::Matrix(
+        ValueKind::Matrix(element, dimensions) => BytecodeKind::Matrix(
             Box::new(semantic_kind_from_value_kind(element)?),
             dimensions.clone(),
         ),
-        ValueKind::Option(inner) => Kind::Option(Box::new(semantic_kind_from_value_kind(inner)?)),
-        ValueKind::Record(fields) => Kind::Record(
+        ValueKind::Option(inner) => {
+            BytecodeKind::Option(Box::new(semantic_kind_from_value_kind(inner)?))
+        }
+        ValueKind::Record(fields) => BytecodeKind::Record(
             fields
                 .iter()
                 .map(|(name, ty)| Ok((name.clone(), semantic_kind_from_value_kind(ty)?)))
                 .collect::<MResult<_>>()?,
         ),
         ValueKind::Reference(inner) => {
-            Kind::Reference(Box::new(semantic_kind_from_value_kind(inner)?))
+            BytecodeKind::Reference(Box::new(semantic_kind_from_value_kind(inner)?))
         }
         ValueKind::Set(element, max_len) => {
-            Kind::Set(Box::new(semantic_kind_from_value_kind(element)?), *max_len)
+            BytecodeKind::Set(Box::new(semantic_kind_from_value_kind(element)?), *max_len)
         }
-        ValueKind::Table(columns, primary_key) => Kind::Table(
+        ValueKind::Table(columns, primary_key) => BytecodeKind::Table(
             columns
                 .iter()
                 .map(|(name, ty)| Ok((name.clone(), semantic_kind_from_value_kind(ty)?)))
                 .collect::<MResult<_>>()?,
             *primary_key,
         ),
-        ValueKind::Tuple(types) => Kind::Tuple(
+        ValueKind::Tuple(types) => BytecodeKind::Tuple(
             types
                 .iter()
                 .map(semantic_kind_from_value_kind)
                 .collect::<MResult<_>>()?,
         ),
-        ValueKind::Kind(inner) => Kind::Kind(Box::new(semantic_kind_from_value_kind(inner)?)),
-        scalar => Kind::Scalar(hash_str(&scalar.to_string())),
+        ValueKind::Kind(inner) => {
+            BytecodeKind::Kind(Box::new(semantic_kind_from_value_kind(inner)?))
+        }
+        scalar => BytecodeKind::Scalar(hash_str(&scalar.to_string())),
     })
 }
 
@@ -476,7 +482,7 @@ pub trait CompileConst {
 }
 
 #[cfg(all(feature = "semantic-compiler", feature = "matrix"))]
-pub(super) fn compile_kind_constant(
+pub(crate) fn compile_kind_constant(
     kind: &ValueKind,
     ctx: &mut dyn BytecodeCompilerContext,
 ) -> MResult<u32> {
@@ -1432,7 +1438,7 @@ fn wrap_annotated_constant(
 }
 
 #[cfg(feature = "semantic-compiler")]
-pub(super) fn compile_annotated_constant(
+pub(crate) fn compile_annotated_constant(
     value: &LegacyValue,
     annotations: &[ValueKind],
     context: &mut dyn BytecodeCompilerContext,

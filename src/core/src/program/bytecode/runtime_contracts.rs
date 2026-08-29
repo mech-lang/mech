@@ -4,9 +4,9 @@ use alloc::{format, string::String, vec, vec::Vec};
 use std::{format, string::String, vec, vec::Vec};
 
 use crate::{
-    ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, FunctionArgs,
-    FunctionCatalog, FunctionMatrixElement, FunctionValueRepresentation, LegacyValue, MResult,
-    MechError, MechErrorKind, ResourceIntent, RuntimeFunctionId,
+    ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest,
+    FunctionCatalog, FunctionInvocation, FunctionValueRepresentation, MResult, MechError,
+    MechErrorKind, ResourceIntent, RuntimeFunctionId, Value, ValueCell, ValueData,
 };
 
 use super::{BytecodeInstruction, ParsedProgram};
@@ -70,12 +70,8 @@ fn violation_with_source(
     .with_source(source)
 }
 
-fn detached_resource_read_output(instruction: usize, value: LegacyValue) -> MResult<LegacyValue> {
-    let value = value
-        .try_deep_snapshot()
-        .map_err(|error| violation_with_source(instruction, None, None, error))?;
-
-    if matches!(value, LegacyValue::Empty) {
+fn detached_resource_read_output(instruction: usize, value: Value) -> MResult<Value> {
+    if matches!(value.data(), ValueData::Tuple(values) if values.is_empty()) {
         return Err(violation(
             instruction,
             None,
@@ -92,8 +88,8 @@ fn detached_resource_read_output(instruction: usize, value: LegacyValue) -> MRes
 pub struct BytecodeHostCallContract<'a> {
     pub instruction: u32,
     pub request: &'a ExecutionHostFunctionRequest,
-    pub output_seed: &'a LegacyValue,
-    pub arguments: &'a [LegacyValue],
+    pub output_seed: &'a Value,
+    pub arguments: &'a [Value],
 }
 
 pub struct BytecodeResourceReadContract<'a> {
@@ -104,15 +100,12 @@ pub struct BytecodeResourceReadContract<'a> {
 pub struct BytecodeResourceWriteContract<'a> {
     pub instruction: u32,
     pub request: &'a ExecutionResourceRequest,
-    pub output_seed: &'a LegacyValue,
-    pub source: &'a LegacyValue,
+    pub output_seed: &'a Value,
+    pub source: &'a Value,
 }
 
 pub trait BytecodeExternalContractResolver {
-    fn validate_host_call(
-        &mut self,
-        contract: BytecodeHostCallContract<'_>,
-    ) -> MResult<LegacyValue>;
+    fn validate_host_call(&mut self, contract: BytecodeHostCallContract<'_>) -> MResult<Value>;
 
     /// Returns a detached concrete representative of the provider-owned first
     /// value for runtime-contract planning. The representative is ephemeral
@@ -121,7 +114,7 @@ pub trait BytecodeExternalContractResolver {
     fn validate_resource_read(
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
-    ) -> MResult<LegacyValue>;
+    ) -> MResult<Value>;
 
     fn validate_resource_write(
         &mut self,
@@ -132,17 +125,14 @@ pub trait BytecodeExternalContractResolver {
 pub struct StructuralExternalContractResolver;
 
 impl BytecodeExternalContractResolver for StructuralExternalContractResolver {
-    fn validate_host_call(
-        &mut self,
-        contract: BytecodeHostCallContract<'_>,
-    ) -> MResult<LegacyValue> {
+    fn validate_host_call(&mut self, contract: BytecodeHostCallContract<'_>) -> MResult<Value> {
         Ok(contract.output_seed.clone())
     }
 
     fn validate_resource_read(
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<Value> {
         Err(violation(
             contract.instruction as usize,
             None,
@@ -158,7 +148,7 @@ impl BytecodeExternalContractResolver for StructuralExternalContractResolver {
         &mut self,
         contract: BytecodeResourceWriteContract<'_>,
     ) -> MResult<()> {
-        if contract.output_seed == &LegacyValue::Empty {
+        if matches!(contract.output_seed.data(), ValueData::Tuple(values) if values.is_empty()) {
             return Ok(());
         }
         Err(violation(
@@ -167,7 +157,7 @@ impl BytecodeExternalContractResolver for StructuralExternalContractResolver {
             None,
             format!(
                 "resource write/send destination must have an Empty seed, found {:?}",
-                contract.output_seed.kind(),
+                contract.output_seed.data().kind(),
             ),
         ))
     }
@@ -194,14 +184,14 @@ impl MechErrorKind for StableValueUpdateContractViolation {
 }
 
 fn stable_update_violation(
-    current: &LegacyValue,
-    incoming: &LegacyValue,
+    current: FunctionValueRepresentation,
+    incoming: FunctionValueRepresentation,
     reason: impl Into<String>,
 ) -> MechError {
     MechError::new(
         StableValueUpdateContractViolation {
-            current: FunctionValueRepresentation::from_value(current),
-            incoming: FunctionValueRepresentation::from_value(incoming),
+            current,
+            incoming,
             reason: reason.into(),
         },
         None,
@@ -209,169 +199,29 @@ fn stable_update_violation(
     .with_compiler_loc()
 }
 
-fn composite_schema_matches(current: &LegacyValue, incoming: &LegacyValue) -> bool {
-    match (current, incoming) {
-        #[cfg(feature = "record")]
-        (LegacyValue::Record(current), LegacyValue::Record(incoming)) => {
-            current.borrow().kind() == incoming.borrow().kind()
-        }
-        #[cfg(feature = "map")]
-        (LegacyValue::Map(current), LegacyValue::Map(incoming)) => {
-            let current = current.borrow();
-            let incoming = incoming.borrow();
-            current.key_kind == incoming.key_kind
-                && current.value_kind == incoming.value_kind
-                && current.num_elements == incoming.num_elements
-                && current.map.len() == incoming.map.len()
-                && current.map.keys().all(|key| incoming.map.contains_key(key))
-        }
-        #[cfg(feature = "set")]
-        (LegacyValue::Set(current), LegacyValue::Set(incoming)) => {
-            let current = current.borrow();
-            let incoming = incoming.borrow();
-            current.kind == incoming.kind && current.max_elements == incoming.max_elements
-        }
-        #[cfg(feature = "table")]
-        (LegacyValue::Table(current), LegacyValue::Table(incoming)) => {
-            let current = current.borrow();
-            let incoming = incoming.borrow();
-            current.rows == incoming.rows
-                && current.cols == incoming.cols
-                && current.data.len() == incoming.data.len()
-                && current.data.iter().zip(incoming.data.iter()).all(
-                    |((current_id, (current_kind, _)), (incoming_id, (incoming_kind, _)))| {
-                        current_id == incoming_id
-                            && current_kind == incoming_kind
-                            && current.col_names.get(current_id)
-                                == incoming.col_names.get(incoming_id)
-                    },
-                )
-        }
-        #[cfg(feature = "tuple")]
-        (LegacyValue::Tuple(current), LegacyValue::Tuple(incoming)) => {
-            current.borrow().kind() == incoming.borrow().kind()
-        }
-        _ => false,
-    }
-}
-
-pub fn validate_stable_value_update(current: &LegacyValue, incoming: &LegacyValue) -> MResult<()> {
-    if let (
-        LegacyValue::Typed(current_inner, current_annotation),
-        LegacyValue::Typed(incoming_inner, incoming_annotation),
-    ) = (current, incoming)
-    {
-        if current_annotation != incoming_annotation {
-            return Err(stable_update_violation(
-                current,
-                incoming,
-                "typed annotations differ",
-            ));
-        }
-        return validate_stable_value_update(current_inner, incoming_inner);
-    }
-    if matches!(current, LegacyValue::Typed(_, _)) || matches!(incoming, LegacyValue::Typed(_, _)) {
-        return Err(stable_update_violation(
-            current,
-            incoming,
-            "typed values are not implicitly unwrapped",
-        ));
-    }
-    if matches!(current, LegacyValue::MutableReference(_))
-        || matches!(incoming, LegacyValue::MutableReference(_))
-    {
-        return Err(stable_update_violation(
-            current,
-            incoming,
-            "mutable references are not implicitly unwrapped",
-        ));
-    }
-    if matches!(
-        (current, incoming),
-        (LegacyValue::Empty, LegacyValue::Empty)
-    ) {
-        return Ok(());
-    }
-    if matches!(current, LegacyValue::IndexAll) || matches!(incoming, LegacyValue::IndexAll) {
-        return Err(stable_update_violation(
-            current,
-            incoming,
-            "IndexAll is a selector and has no stable scalar backing",
-        ));
-    }
-
-    let current_representation = FunctionValueRepresentation::from_value(current);
-    let incoming_representation = FunctionValueRepresentation::from_value(incoming);
+pub fn validate_stable_value_update(current: &Value, incoming: &Value) -> MResult<()> {
+    let current_representation = ValueCell::from_snapshot(current.clone())?.representation();
+    let incoming_representation = ValueCell::from_snapshot(incoming.clone())?.representation();
     if current_representation != incoming_representation {
         return Err(stable_update_violation(
-            current,
-            incoming,
-            "the exact value backing, matrix element type, or matrix storage differs",
+            current_representation,
+            incoming_representation,
+            "the canonical runtime representation differs",
         ));
     }
-
-    if matches!(
-        current_representation,
-        FunctionValueRepresentation::Matrix { .. }
-    ) && current.shape() != incoming.shape()
-    {
+    if current.schema_key() != incoming.schema_key() {
         return Err(stable_update_violation(
-            current,
-            incoming,
-            format!(
-                "matrix dimensions differ: current is {:?}, incoming is {:?}",
-                current.shape(),
-                incoming.shape(),
-            ),
+            current_representation,
+            incoming_representation,
+            "the canonical semantic schema differs",
         ));
     }
-
-    match current_representation {
-        FunctionValueRepresentation::Record
-        | FunctionValueRepresentation::Map
-        | FunctionValueRepresentation::Set
-        | FunctionValueRepresentation::Table
-        | FunctionValueRepresentation::Tuple => {
-            if !composite_schema_matches(current, incoming) {
-                return Err(stable_update_violation(
-                    current,
-                    incoming,
-                    "the composite semantic schema differs",
-                ));
-            }
-        }
-        FunctionValueRepresentation::Empty => {
-            return Err(stable_update_violation(
-                current,
-                incoming,
-                "only bare Empty values share the stable empty backing",
-            ));
-        }
-        FunctionValueRepresentation::Id | FunctionValueRepresentation::Kind => {
-            return Err(stable_update_violation(
-                current,
-                incoming,
-                "the immediate value has no stable mutable backing",
-            ));
-        }
-        FunctionValueRepresentation::Matrix {
-            element: FunctionMatrixElement::Value,
-            ..
-        } => {
-            return Err(stable_update_violation(
-                current,
-                incoming,
-                "heterogeneous value matrices have no stable whole-value assignment",
-            ));
-        }
-        FunctionValueRepresentation::AnyValue | FunctionValueRepresentation::MutableValueCell => {
-            return Err(stable_update_violation(
-                current,
-                incoming,
-                "the outer value representation is not stable-updateable",
-            ));
-        }
-        _ => {}
+    if current.shape() != incoming.shape() {
+        return Err(stable_update_violation(
+            current_representation,
+            incoming_representation,
+            "the canonical shape differs",
+        ));
     }
     Ok(())
 }
@@ -397,11 +247,14 @@ impl ParsedProgram {
         let constants = self
             .decode_constants()
             .map_err(|error| violation_with_source(0, None, None, error))?;
-        let mut registers = vec![None::<LegacyValue>; self.header.register_count as usize];
+        let constant_cells = self
+            .decode_constant_cells()
+            .map_err(|error| violation_with_source(0, None, None, error))?;
+        let mut registers = vec![None::<ValueCell>; self.header.register_count as usize];
 
         for (instruction_index, instruction) in self.instructions.iter().enumerate() {
             if let BytecodeInstruction::ConstLoad { dst, constant } = instruction {
-                let value = constants
+                let value = constant_cells
                     .get(*constant as usize)
                     .ok_or_else(|| {
                         violation(
@@ -411,8 +264,7 @@ impl ParsedProgram {
                             format!("constant {constant} is out of range"),
                         )
                     })?
-                    .try_deep_snapshot()
-                    .map_err(|error| violation_with_source(instruction_index, None, None, error))?;
+                    .clone();
                 let destination = registers.get_mut(*dst as usize).ok_or_else(|| {
                     violation(
                         instruction_index,
@@ -445,7 +297,6 @@ impl ParsedProgram {
                         registers
                             .get(*child as usize)
                             .and_then(Option::as_ref)
-                            .cloned()
                             .ok_or_else(|| {
                                 violation(
                                     instruction_index,
@@ -453,16 +304,23 @@ impl ParsedProgram {
                                     None,
                                     format!("composite child register {child} has no seed"),
                                 )
+                            })?
+                            .snapshot()
+                            .map_err(|error| {
+                                violation_with_source(instruction_index, None, None, error)
                             })
                     })
                     .collect::<MResult<Vec<_>>>()?;
-                let value = crate::rebuild_bytecode_composite(template, children)
+                let value = crate::rebuild_canonical_bytecode_composite(template, children)
                     .map_err(|error| violation_with_source(instruction_index, None, None, error))?;
-                registers[*dst as usize] = Some(value);
+                registers[*dst as usize] =
+                    Some(ValueCell::from_snapshot(value).map_err(|error| {
+                        violation_with_source(instruction_index, None, None, error)
+                    })?);
                 continue;
             }
 
-            let register = |index: u32| -> MResult<LegacyValue> {
+            let register = |index: u32| -> MResult<ValueCell> {
                 registers
                     .get(index as usize)
                     .and_then(Option::as_ref)
@@ -485,7 +343,7 @@ impl ParsedProgram {
                         catalog,
                         instruction_index,
                         *function,
-                        FunctionArgs::Nullary(register(*dst)?),
+                        FunctionInvocation::nullary(register(*dst)?),
                     )?;
                 }
                 BytecodeInstruction::RuntimeUnary { function, dst, src } => {
@@ -493,7 +351,7 @@ impl ParsedProgram {
                         catalog,
                         instruction_index,
                         *function,
-                        FunctionArgs::Unary(register(*dst)?, register(*src)?),
+                        FunctionInvocation::unary(register(*dst)?, register(*src)?),
                     )?;
                 }
                 BytecodeInstruction::RuntimeBinary {
@@ -506,7 +364,11 @@ impl ParsedProgram {
                         catalog,
                         instruction_index,
                         *function,
-                        FunctionArgs::Binary(register(*dst)?, register(*lhs)?, register(*rhs)?),
+                        FunctionInvocation::binary(
+                            register(*dst)?,
+                            register(*lhs)?,
+                            register(*rhs)?,
+                        ),
                     )?;
                 }
                 BytecodeInstruction::RuntimeTernary {
@@ -520,7 +382,7 @@ impl ParsedProgram {
                         catalog,
                         instruction_index,
                         *function,
-                        FunctionArgs::Ternary(
+                        FunctionInvocation::ternary(
                             register(*dst)?,
                             register(*a)?,
                             register(*b)?,
@@ -540,7 +402,7 @@ impl ParsedProgram {
                         catalog,
                         instruction_index,
                         *function,
-                        FunctionArgs::Quaternary(
+                        FunctionInvocation::quaternary(
                             register(*dst)?,
                             register(*a)?,
                             register(*b)?,
@@ -562,7 +424,7 @@ impl ParsedProgram {
                         catalog,
                         instruction_index,
                         *function,
-                        FunctionArgs::Variadic(register(*dst)?, arguments),
+                        FunctionInvocation::variadic(register(*dst)?, arguments.into_boxed_slice()),
                     )?;
                 }
                 BytecodeInstruction::HostCall {
@@ -583,10 +445,16 @@ impl ParsedProgram {
                             ));
                         }
                     };
-                    let output_seed = register(*dst)?;
+                    let output_seed = register(*dst)?.snapshot().map_err(|error| {
+                        violation_with_source(instruction_index, None, None, error)
+                    })?;
                     let arguments = arguments
                         .iter()
-                        .map(|argument| register(*argument))
+                        .map(|argument| {
+                            register(*argument)?.snapshot().map_err(|error| {
+                                violation_with_source(instruction_index, None, None, error)
+                            })
+                        })
                         .collect::<MResult<Vec<_>>>()?;
                     let planned = resolver.validate_host_call(BytecodeHostCallContract {
                         instruction: u32::try_from(instruction_index).unwrap_or(u32::MAX),
@@ -597,7 +465,10 @@ impl ParsedProgram {
                     validate_stable_value_update(&output_seed, &planned).map_err(|error| {
                         violation_with_source(instruction_index, None, None, error)
                     })?;
-                    registers[*dst as usize] = Some(planned);
+                    registers[*dst as usize] =
+                        Some(ValueCell::from_snapshot(planned).map_err(|error| {
+                            violation_with_source(instruction_index, None, None, error)
+                        })?);
                 }
                 BytecodeInstruction::ResourceRead { requirement, dst } => {
                     let request = self.resource_requirement(
@@ -628,7 +499,15 @@ impl ParsedProgram {
                             instruction: u32::try_from(instruction_index).unwrap_or(u32::MAX),
                             request,
                         })?;
-                    *destination = Some(detached_resource_read_output(instruction_index, planned)?);
+                    *destination = Some(
+                        ValueCell::from_snapshot(detached_resource_read_output(
+                            instruction_index,
+                            planned,
+                        )?)
+                        .map_err(|error| {
+                            violation_with_source(instruction_index, None, None, error)
+                        })?,
+                    );
                 }
                 BytecodeInstruction::ResourceWrite {
                     requirement,
@@ -640,8 +519,12 @@ impl ParsedProgram {
                         *requirement,
                         ResourceIntent::Assign,
                     )?;
-                    let output_seed = register(*dst)?;
-                    let source = register(*src)?;
+                    let output_seed = register(*dst)?.snapshot().map_err(|error| {
+                        violation_with_source(instruction_index, None, None, error)
+                    })?;
+                    let source = register(*src)?.snapshot().map_err(|error| {
+                        violation_with_source(instruction_index, None, None, error)
+                    })?;
                     resolver.validate_resource_write(BytecodeResourceWriteContract {
                         instruction: u32::try_from(instruction_index).unwrap_or(u32::MAX),
                         request,
@@ -659,8 +542,12 @@ impl ParsedProgram {
                         *requirement,
                         ResourceIntent::Send,
                     )?;
-                    let output_seed = register(*dst)?;
-                    let source = register(*src)?;
+                    let output_seed = register(*dst)?.snapshot().map_err(|error| {
+                        violation_with_source(instruction_index, None, None, error)
+                    })?;
+                    let source = register(*src)?.snapshot().map_err(|error| {
+                        violation_with_source(instruction_index, None, None, error)
+                    })?;
                     resolver.validate_resource_write(BytecodeResourceWriteContract {
                         instruction: u32::try_from(instruction_index).unwrap_or(u32::MAX),
                         request,
@@ -681,7 +568,7 @@ impl ParsedProgram {
         catalog: &FunctionCatalog,
         instruction: usize,
         function: u64,
-        args: FunctionArgs,
+        invocation: FunctionInvocation,
     ) -> MResult<()> {
         let id = RuntimeFunctionId::from_raw(function);
         let entry = catalog.runtime_entry(id).ok_or_else(|| {
@@ -692,7 +579,7 @@ impl ParsedProgram {
                 "runtime function is absent from the trusted catalog",
             )
         })?;
-        entry.validate_args(&args).map_err(|error| {
+        entry.validate_invocation(&invocation).map_err(|error| {
             violation_with_source(instruction, Some(function), Some(entry.name.clone()), error)
         })
     }
@@ -728,9 +615,9 @@ mod tests {
     use crate::FunctionValueRepresentation;
     use crate::{
         ApplicationRequirement, BytecodeProgram, EncodedConstant, ExecutionHostFunctionRequest,
-        ExecutionResourceRequest, FunctionArgumentRole, FunctionCatalogBuilder,
-        FunctionRuntimeType, MechFunction, MechFunctionFactory, MechFunctionImpl, Ref,
-        ResourceDelivery, RuntimeFunctionSignature, RuntimeType, ToValue, write_bytecode,
+        ExecutionResourceRequest, FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder,
+        FunctionRuntimeType, LegacyValue, MechFunction, MechFunctionFactory, MechFunctionImpl, Ref,
+        ResourceDelivery, RuntimeFunctionSignature, RuntimeType, write_bytecode,
     };
     #[cfg(feature = "semantic-compiler")]
     use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
@@ -764,6 +651,14 @@ mod tests {
                 )),
             }
         }
+
+        fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+            let (out, lhs, rhs) = invocation.expect_binary()?;
+            let out = out.try_ref::<f64>()?;
+            let _: Ref<f64> = lhs.try_ref()?;
+            let _: Ref<f64> = rhs.try_ref()?;
+            Ok(Box::new(Self { out }))
+        }
     }
 
     impl MechFunctionImpl for ExactF64Binary {
@@ -771,16 +666,12 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            self.out.to_value()
+        fn primary_output_state_port(&self) -> Option<crate::FunctionStatePort<'_>> {
+            Some(crate::FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
             "ExactF64Binary".into()
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
         }
     }
 
@@ -878,13 +769,13 @@ mod tests {
     }
 
     struct RecordingReadResolver {
-        output: LegacyValue,
+        output: Value,
         calls: usize,
         requests: Vec<ExecutionResourceRequest>,
     }
 
     impl RecordingReadResolver {
-        fn new(output: LegacyValue) -> Self {
+        fn new(output: Value) -> Self {
             Self {
                 output,
                 calls: 0,
@@ -894,17 +785,14 @@ mod tests {
     }
 
     impl BytecodeExternalContractResolver for RecordingReadResolver {
-        fn validate_host_call(
-            &mut self,
-            contract: BytecodeHostCallContract<'_>,
-        ) -> MResult<LegacyValue> {
+        fn validate_host_call(&mut self, contract: BytecodeHostCallContract<'_>) -> MResult<Value> {
             Ok(contract.output_seed.clone())
         }
 
         fn validate_resource_read(
             &mut self,
             contract: BytecodeResourceReadContract<'_>,
-        ) -> MResult<LegacyValue> {
+        ) -> MResult<Value> {
             let BytecodeResourceReadContract {
                 instruction: _,
                 request,
@@ -920,6 +808,21 @@ mod tests {
         ) -> MResult<()> {
             Ok(())
         }
+    }
+
+    fn canonical(value: LegacyValue) -> Value {
+        value.to_canonical_value().unwrap()
+    }
+
+    fn canonical_empty() -> Value {
+        crate::decode_encoded_constants(&[EncodedConstant {
+            runtime_type: RuntimeType::Empty,
+            alignment: 1,
+            bytes: Vec::new(),
+        }])
+        .unwrap()
+        .pop()
+        .unwrap()
     }
 
     fn assert_contract_violation(program: &ParsedProgram, expected: &str) {
@@ -1322,7 +1225,7 @@ mod tests {
 
     #[cfg(all(feature = "matrix2", feature = "matrixd"))]
     #[test]
-    fn stable_updates_require_exact_matrix_storage() {
+    fn canonical_stable_updates_do_not_depend_on_matrix_storage() {
         use crate::structures::matrix::Matrix as ValueMatrix;
         use nalgebra::{DMatrix, Matrix2};
 
@@ -1330,9 +1233,7 @@ mod tests {
         let dynamic =
             LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
 
-        let error = validate_stable_value_update(&fixed, &dynamic).unwrap_err();
-        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
-        assert!(error.kind_message().contains("matrix storage differs"));
+        validate_stable_value_update(&canonical(fixed), &canonical(dynamic)).unwrap();
     }
 
     #[cfg(feature = "matrixd")]
@@ -1344,48 +1245,36 @@ mod tests {
         let current = LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(2, 3))));
         let incoming = LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(5, 7))));
 
-        let error = validate_stable_value_update(&current, &incoming).unwrap_err();
+        let error =
+            validate_stable_value_update(&canonical(current), &canonical(incoming)).unwrap_err();
         assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
-        assert!(error.kind_message().contains("matrix dimensions differ"));
-    }
-
-    #[cfg(all(feature = "map", any(feature = "string", feature = "variable_define")))]
-    #[test]
-    fn stable_updates_reject_map_key_topology_changes() {
-        let map = |key: &str| {
-            LegacyValue::Map(Ref::new(crate::MechMap::from_typed_vec(
-                crate::ValueKind::String,
-                crate::ValueKind::F64,
-                1,
-                vec![(
-                    LegacyValue::String(Ref::new(key.to_owned())),
-                    LegacyValue::F64(Ref::new(1.0)),
-                )],
-            )))
-        };
-
-        let error = validate_stable_value_update(&map("before"), &map("after")).unwrap_err();
-        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
-        assert!(error.kind_message().contains("composite semantic schema"));
+        assert!(error.kind_message().contains("canonical"));
     }
 
     #[test]
-    fn stable_updates_do_not_implicitly_unwrap_typed_values() {
+    fn canonical_stable_updates_allow_payload_changes() {
+        validate_stable_value_update(
+            &canonical(LegacyValue::F64(Ref::new(1.0))),
+            &canonical(LegacyValue::F64(Ref::new(2.0))),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn canonical_stable_updates_have_no_typed_wrapper_layer() {
         let typed = LegacyValue::Typed(
             Box::new(LegacyValue::F64(Ref::new(1.0))),
             crate::ValueKind::F64,
         );
         let untyped = LegacyValue::F64(Ref::new(2.0));
 
-        let error = validate_stable_value_update(&typed, &untyped).unwrap_err();
-        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
-        assert!(error.kind_message().contains("not implicitly unwrapped"));
+        validate_stable_value_update(&canonical(typed), &canonical(untyped)).unwrap();
     }
 
     #[test]
     fn unseeded_resource_read_is_planned_from_external_resolver() {
         let (program, _) = unseeded_resource_read_program();
-        let mut resolver = RecordingReadResolver::new(LegacyValue::F64(Ref::new(42.0)));
+        let mut resolver = RecordingReadResolver::new(canonical(LegacyValue::F64(Ref::new(42.0))));
 
         program
             .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)
@@ -1398,7 +1287,7 @@ mod tests {
     #[test]
     fn resource_read_resolver_cannot_return_empty() {
         let (program, _) = unseeded_resource_read_program();
-        let mut resolver = RecordingReadResolver::new(LegacyValue::Empty);
+        let mut resolver = RecordingReadResolver::new(canonical_empty());
 
         let error = program
             .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)
@@ -1426,7 +1315,7 @@ mod tests {
                 .contains("requires an external contract resolver")
         );
 
-        let mut resolver = RecordingReadResolver::new(LegacyValue::F64(Ref::new(42.0)));
+        let mut resolver = RecordingReadResolver::new(canonical(LegacyValue::F64(Ref::new(42.0))));
         program
             .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)
             .unwrap();
@@ -1435,8 +1324,8 @@ mod tests {
     #[test]
     fn resource_read_planning_is_payload_independent() {
         let (program, original_bytes) = unseeded_resource_read_program();
-        let mut first = RecordingReadResolver::new(LegacyValue::F64(Ref::new(1.0)));
-        let mut second = RecordingReadResolver::new(LegacyValue::F64(Ref::new(91.0)));
+        let mut first = RecordingReadResolver::new(canonical(LegacyValue::F64(Ref::new(1.0))));
+        let mut second = RecordingReadResolver::new(canonical(LegacyValue::F64(Ref::new(91.0))));
 
         program
             .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut first)
@@ -1481,27 +1370,17 @@ mod tests {
 
     #[cfg(feature = "matrix")]
     #[test]
-    fn resource_read_resolver_result_must_be_stable_updateable() {
+    fn legacy_resource_result_must_be_canonically_snapshotable() {
         use crate::structures::matrix::Matrix as ValueMatrix;
         use nalgebra::DVector;
 
         let unstable =
             LegacyValue::MatrixValue(ValueMatrix::DVector(Ref::new(DVector::from_vec(vec![
                 LegacyValue::F64(Ref::new(1.0)),
+                LegacyValue::Bool(Ref::new(true)),
             ]))));
-        let (program, _) = unseeded_resource_read_program();
-        let mut resolver = RecordingReadResolver::new(unstable);
-
-        let error = program
-            .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)
-            .unwrap_err();
-
-        assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
-        assert!(
-            error
-                .full_chain_message()
-                .contains("heterogeneous value matrices have no stable whole-value assignment")
-        );
+        let error = unstable.to_canonical_value().unwrap_err();
+        assert_eq!(error.kind_name(), "LegacySnapshotError");
     }
 
     #[cfg(all(feature = "matrix2", feature = "matrixd"))]
@@ -1512,7 +1391,7 @@ mod tests {
 
         #[derive(Debug)]
         struct PlanningMatrixBinary {
-            output: LegacyValue,
+            _output: LegacyValue,
         }
 
         impl MechFunctionFactory for PlanningMatrixBinary {
@@ -1532,7 +1411,13 @@ mod tests {
                         None,
                     ));
                 };
-                Ok(Box::new(Self { output }))
+                Ok(Box::new(Self { _output: output }))
+            }
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (output, _, _) = invocation.expect_binary()?;
+                let output = crate::LegacyValue::from_canonical_value(&output.value().snapshot()?)?;
+                Ok(Box::new(Self { _output: output }))
             }
         }
 
@@ -1541,16 +1426,8 @@ mod tests {
                 Ok(())
             }
 
-            fn out(&self) -> LegacyValue {
-                self.output.clone()
-            }
-
             fn to_string(&self) -> String {
                 "PlanningMatrixBinary".into()
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
 
@@ -1607,16 +1484,16 @@ mod tests {
             .unwrap();
         let catalog = catalog.build().unwrap();
 
-        let mut matching = RecordingReadResolver::new(LegacyValue::MatrixF64(
+        let mut matching = RecordingReadResolver::new(canonical(LegacyValue::MatrixF64(
             ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(2, 1))),
-        ));
+        )));
         program
             .validate_runtime_contracts_with(&catalog, &mut matching)
             .unwrap();
 
-        let mut incompatible = RecordingReadResolver::new(LegacyValue::MatrixF64(
+        let mut incompatible = RecordingReadResolver::new(canonical(LegacyValue::MatrixF64(
             ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(3, 1))),
-        ));
+        )));
         let error = program
             .validate_runtime_contracts_with(&catalog, &mut incompatible)
             .unwrap_err();
@@ -1627,7 +1504,6 @@ mod tests {
     #[cfg(all(feature = "matrix2", feature = "matrixd"))]
     #[test]
     fn rejects_fixed_and_dynamic_matrix_storage_mismatch() {
-        use crate::structures::matrix::Matrix as ValueMatrix;
         use nalgebra::Matrix2;
 
         #[derive(Debug)]
@@ -1654,19 +1530,24 @@ mod tests {
                     _ => unreachable!(),
                 }
             }
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let out = out.try_ref::<Matrix2<f64>>()?;
+                let _: Ref<Matrix2<f64>> = lhs.try_ref()?;
+                let _: Ref<Matrix2<f64>> = rhs.try_ref()?;
+                Ok(Box::new(Self { out }))
+            }
         }
         impl MechFunctionImpl for ExactMatrix2Binary {
             fn solve_result(&self) -> MResult<()> {
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                LegacyValue::MatrixF64(ValueMatrix::Matrix2(self.out.clone()))
+            fn primary_output_state_port(&self) -> Option<crate::FunctionStatePort<'_>> {
+                Some(crate::FunctionStatePort::from_ref(&self.out))
             }
             fn to_string(&self) -> String {
                 "ExactMatrix2Binary".into()
-            }
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]

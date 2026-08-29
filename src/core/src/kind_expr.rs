@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, collections::BTreeSet, string::String, vec::Vec};
+use alloc::{borrow::ToOwned, boxed::Box, collections::BTreeSet, string::String, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, collections::BTreeSet, string::String, vec::Vec};
 
@@ -59,6 +59,35 @@ pub struct KindField {
 
 pub trait NamedKindPathResolver {
     fn canonical_path(&self, id: KindId) -> Option<&CanonicalNominalPath>;
+}
+
+/// Resolves the frozen legacy scalar identifier through the authoritative
+/// built-in semantic kind registry. Wire codecs and compatibility adapters
+/// share this registry rather than inventing context-specific nominal paths.
+pub fn builtin_scalar_named_kind(
+    legacy_id: u64,
+) -> Result<(KindId, CanonicalNominalPath), SemanticModelError> {
+    const NAMES: &[&str] = &[
+        "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64", "c64",
+        "r64", "string", "bool",
+    ];
+    let Some((index, name)) = NAMES
+        .iter()
+        .copied()
+        .enumerate()
+        .find(|(_, name)| crate::hash_str(name) == legacy_id)
+    else {
+        return Err(SemanticModelError::LegacyNamedKindUnresolved { legacy_id });
+    };
+    Ok((
+        KindId::new(index as u32),
+        CanonicalNominalPath::new([
+            "mech".to_owned(),
+            "builtin".to_owned(),
+            "scalar".to_owned(),
+            name.to_owned(),
+        ])?,
+    ))
 }
 
 pub fn canonical_closed_kind_bytes(

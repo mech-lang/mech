@@ -1,4 +1,4 @@
-use crate::{MResult, MechError, MechErrorKind, ValueKind};
+use crate::{MResult, MechError, MechErrorKind};
 
 #[cfg(feature = "no_std")]
 use alloc::string::String;
@@ -87,7 +87,7 @@ impl MechErrorKind for BytecodeUnreferencedRequirement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BytecodeConstantUnsupported {
     pub runtime_type: RuntimeType,
-    pub source_value_kind: ValueKind,
+    pub source_value: String,
     pub reason: String,
 }
 
@@ -121,20 +121,20 @@ impl MechErrorKind for BytecodeConstantUnsupported {
     fn message(&self) -> String {
         format!(
             "bytecode v1 does not support constant {:?} from {:?}: {}",
-            self.runtime_type, self.source_value_kind, self.reason,
+            self.runtime_type, self.source_value, self.reason,
         )
     }
 }
 
-pub fn unsupported_constant(
+pub fn unsupported_constant<T: core::fmt::Debug>(
     runtime_type: RuntimeType,
-    source_value_kind: ValueKind,
+    source_value: T,
     reason: impl Into<String>,
 ) -> MechError {
     MechError::new(
         BytecodeConstantUnsupported {
             runtime_type,
-            source_value_kind,
+            source_value: format!("{source_value:?}"),
             reason: reason.into(),
         },
         None,

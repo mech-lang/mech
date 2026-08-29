@@ -12,8 +12,6 @@ use std::string::String;
 #[cfg(feature = "matrix")]
 use core::fmt::Debug;
 
-use crate::{LegacyValue, ValueKind};
-
 /// Identifies values supported as scalar or aggregate runtime elements.
 ///
 /// This is a capability marker, not a serialization contract. Keeping it
@@ -50,9 +48,6 @@ impl ConstElem for crate::C64 {}
 
 impl ConstElem for String {}
 impl ConstElem for usize {}
-impl ConstElem for LegacyValue {}
-impl ConstElem for ValueKind {}
-
 macro_rules! impl_const_elem_matrix {
     ($feature:literal, $matrix_type:ty) => {
         #[cfg(feature = $feature)]

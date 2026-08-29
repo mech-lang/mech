@@ -1,4 +1,5 @@
 pub mod api;
+#[path = "../../legacy_adapter/compiler_constants.rs"]
 mod constants;
 mod construction;
 pub mod context;

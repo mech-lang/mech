@@ -1,0 +1,29 @@
+//! Compatibility-only mutable aggregate representations.
+
+#[cfg(feature = "enum")]
+pub mod enums;
+#[cfg(feature = "map")]
+pub mod map;
+#[cfg(feature = "matrix")]
+mod matrix;
+#[cfg(feature = "record")]
+pub mod record;
+#[cfg(feature = "set")]
+pub mod set;
+#[cfg(feature = "table")]
+pub mod table;
+#[cfg(feature = "tuple")]
+pub mod tuple;
+
+#[cfg(feature = "enum")]
+pub use self::enums::*;
+#[cfg(feature = "map")]
+pub use self::map::*;
+#[cfg(feature = "record")]
+pub use self::record::*;
+#[cfg(feature = "set")]
+pub use self::set::*;
+#[cfg(feature = "table")]
+pub use self::table::*;
+#[cfg(feature = "tuple")]
+pub use self::tuple::*;

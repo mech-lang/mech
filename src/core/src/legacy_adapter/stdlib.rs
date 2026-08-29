@@ -12,12 +12,14 @@ pub use crate::*;
 #[macro_export]
 macro_rules! compile_register_brrw {
     ($reg:expr, $ctx:ident) => {{
-        let addr = $reg.addr();
-        let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+        let identity =
+            $crate::BytecodeRegisterIdentity::Cell($reg.reactive_cell_id().get() as usize);
+        let (reg, needs_initialization) =
+            $ctx.register_for_identity_with_initialization_status(&identity);
         if needs_initialization {
             let borrow = $reg.borrow();
             let const_id = borrow.compile_const($ctx)?;
-            $ctx.record_register_constant_kind(reg, const_id)?;
+            $ctx.record_register_constant_schema(reg, const_id)?;
             $ctx.emit_const_load(reg, const_id);
         }
         reg
@@ -28,11 +30,13 @@ macro_rules! compile_register_brrw {
 #[macro_export]
 macro_rules! compile_register {
     ($reg:expr, $ctx:ident) => {{
-        let addr = $reg.addr();
-        let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+        let identity =
+            $crate::BytecodeRegisterIdentity::Cell($reg.reactive_cell_id().get() as usize);
+        let (reg, needs_initialization) =
+            $ctx.register_for_identity_with_initialization_status(&identity);
         if needs_initialization {
             let const_id = $reg.compile_const($ctx)?;
-            $ctx.record_register_constant_kind(reg, const_id)?;
+            $ctx.record_register_constant_schema(reg, const_id)?;
             $ctx.emit_const_load(reg, const_id);
         }
         reg
@@ -43,11 +47,13 @@ macro_rules! compile_register {
 #[macro_export]
 macro_rules! compile_register_mat {
     ($reg:expr, $ctx:ident) => {{
-        let addr = $reg.addr();
-        let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+        let identity =
+            $crate::BytecodeRegisterIdentity::Cell($reg.reactive_cell_id().get() as usize);
+        let (reg, needs_initialization) =
+            $ctx.register_for_identity_with_initialization_status(&identity);
         if needs_initialization {
             let const_id = $reg.compile_const_mat($ctx)?;
-            $ctx.record_register_constant_kind(reg, const_id)?;
+            $ctx.record_register_constant_schema(reg, const_id)?;
             $ctx.emit_const_load(reg, const_id);
         }
         reg
@@ -58,11 +64,13 @@ macro_rules! compile_register_mat {
 #[macro_export]
 macro_rules! compile_register_initial {
     ($reg:expr, $initial:expr, $ctx:ident) => {{
-        let addr = $reg.addr();
-        let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+        let identity =
+            $crate::BytecodeRegisterIdentity::Cell($reg.reactive_cell_id().get() as usize);
+        let (reg, needs_initialization) =
+            $ctx.register_for_identity_with_initialization_status(&identity);
         if needs_initialization {
             let const_id = $initial.compile_const($ctx)?;
-            $ctx.record_register_constant_kind(reg, const_id)?;
+            $ctx.record_register_constant_schema(reg, const_id)?;
             $ctx.emit_const_load(reg, const_id);
         }
         reg
@@ -294,15 +302,8 @@ macro_rules! impl_binop {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
@@ -367,9 +368,6 @@ macro_rules! impl_unop {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
-            }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 let contract: Option<&'static OperationContractDeclaration> = None;
                 $(let contract = Some($semantic_contract(
@@ -379,10 +377,6 @@ macro_rules! impl_unop {
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {

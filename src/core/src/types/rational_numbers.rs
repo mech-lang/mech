@@ -204,9 +204,3 @@ impl ToUsize for R64 {
         self.0.to_integer() as usize
     }
 }
-
-impl ToValue for R64 {
-    fn to_value(&self) -> LegacyValue {
-        LegacyValue::R64(Ref::new(*self))
-    }
-}

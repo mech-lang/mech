@@ -1,7 +1,8 @@
 use self::LegacySnapshotError::*;
-#[cfg(any(feature = "atom", feature = "enum"))]
-use super::LegacyNominalResolution;
-use super::{LegacySemanticContext, kind_expr_from_legacy, schema_from_legacy_value_kind};
+use super::{
+    LegacyExtentSite, LegacyNominalResolution, LegacyResolvedExtent, LegacySemanticContext,
+    kind_expr_from_legacy, schema_from_legacy_value_kind,
+};
 use crate::legacy_value::{LegacyValue, ValueKind};
 #[cfg(feature = "complex")]
 use crate::snapshot::Complex64Bits;
@@ -23,9 +24,10 @@ use crate::snapshot::{
     SnapshotValueError, Value, ValueData, ValueDataDraft, ValueDraft,
 };
 use crate::{
-    DimensionExpr, DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin,
-    FloatWidth, IntegerWidth, NominalKey, NominalKind, Schema, SchemaBody, SchemaDraft, SchemaId,
-    SchemaKey, SchemaTable, SemanticModelError,
+    CardinalitySpec, DimensionEnvironmentBuilder, DimensionExpr, DimensionParameterDeclaration,
+    DimensionParameterId, DimensionParameterOrigin, FloatWidth, IntegerWidth, KindId, MechError,
+    MechErrorKind, NominalKey, NominalKind, Schema, SchemaBody, SchemaDraft, SchemaId, SchemaKey,
+    SchemaTable, SemanticModelError,
 };
 
 #[cfg(all(
@@ -39,6 +41,7 @@ use crate::{
 use alloc::vec;
 #[cfg(feature = "no_std")]
 use alloc::{
+    borrow::ToOwned,
     boxed::Box,
     collections::BTreeSet,
     string::{String, ToString},
@@ -132,6 +135,73 @@ impl From<SemanticModelError> for LegacySnapshotError {
 impl From<SnapshotValueError> for LegacySnapshotError {
     fn from(error: SnapshotValueError) -> Self {
         Self::Snapshot(error)
+    }
+}
+
+impl MechErrorKind for LegacySnapshotError {
+    fn name(&self) -> &str {
+        "LegacySnapshotError"
+    }
+
+    fn message(&self) -> String {
+        format!("Legacy snapshot conversion failed: {self:?}")
+    }
+}
+
+impl From<LegacySnapshotError> for MechError {
+    fn from(error: LegacySnapshotError) -> Self {
+        MechError::new(error, None).with_compiler_loc()
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct InferredLegacySemanticContext;
+
+impl LegacySemanticContext for InferredLegacySemanticContext {
+    fn resolve_named_kind(&mut self, legacy_id: u64) -> Result<KindId, SemanticModelError> {
+        crate::builtin_scalar_named_kind(legacy_id).map(|(id, _)| id)
+    }
+
+    fn resolve_nominal(
+        &mut self,
+        nominal_kind: NominalKind,
+        legacy_id: u64,
+        legacy_name: &str,
+    ) -> Result<LegacyNominalResolution, SemanticModelError> {
+        Err(SemanticModelError::LegacyNominalUnresolved {
+            kind: nominal_kind,
+            legacy_id,
+            legacy_name: legacy_name.to_owned(),
+        })
+    }
+
+    fn resolve_unspecified_extent(
+        &mut self,
+        site: &LegacyExtentSite,
+        _dimensions: &mut DimensionEnvironmentBuilder,
+    ) -> Result<LegacyResolvedExtent, SemanticModelError> {
+        match site.role {
+            super::LegacyExtentRole::TableRows
+            | super::LegacyExtentRole::SetCardinality
+            | super::LegacyExtentRole::MapCardinality => {
+                Ok(LegacyResolvedExtent::DynamicCardinality { upper_bound: None })
+            }
+            super::LegacyExtentRole::MatrixDimensions => {
+                Err(SemanticModelError::LegacyExtentUnresolved { site: site.clone() })
+            }
+        }
+    }
+}
+
+pub(crate) struct InferredLegacyMaterializationContext;
+
+impl LegacyMaterializationContext for InferredLegacyMaterializationContext {
+    fn resolve_nominal(
+        &mut self,
+        _kind: NominalKind,
+        _key: NominalKey,
+    ) -> Result<(u64, String), LegacySnapshotError> {
+        Err(LegacySnapshotError::UnsupportedLegacyMaterialization)
     }
 }
 
@@ -429,7 +499,7 @@ fn empty_draft(
         return Ok(ValueDataDraft::Record(Box::new([])));
     }
     if let SchemaBody::Table { columns, rows } = target
-        && evaluate_dimension(rows, shape_values)? == 0
+        && cardinality_allows_empty(rows, shape_values)?
     {
         return Ok(ValueDataDraft::Table(
             columns
@@ -443,12 +513,12 @@ fn empty_draft(
         ));
     }
     if let SchemaBody::Set { cardinality, .. } = target
-        && evaluate_dimension(cardinality, shape_values)? == 0
+        && cardinality_allows_empty(cardinality, shape_values)?
     {
         return Ok(ValueDataDraft::Set(Box::new([])));
     }
     if let SchemaBody::Map { cardinality, .. } = target
-        && evaluate_dimension(cardinality, shape_values)? == 0
+        && cardinality_allows_empty(cardinality, shape_values)?
     {
         return Ok(ValueDataDraft::Map(Box::new([])));
     }
@@ -859,6 +929,14 @@ fn draft_from_legacy_body(
                         path: crate::snapshot::SnapshotPath::root(),
                     }
                 })?;
+                if values.rows() != value.rows || values.cols() != 1 {
+                    return Err(SnapshotValueError::AggregateArityMismatchV1 {
+                        path: crate::snapshot::SnapshotPath::root(),
+                        expected: value.rows as u64,
+                        actual: values.rows() as u64,
+                    }
+                    .into());
+                }
                 let mut column_values = Vec::with_capacity(value.rows);
                 for row in 1..=value.rows {
                     column_values.push(draft_from_legacy_body(
@@ -1444,10 +1522,7 @@ fn legacy_from_data(
                     unreachable!("the outer pattern already validated set data")
                 };
                 let kind = value_kind_from_schema(element, shape_values, context)?;
-                let max_elements = Some(checked_usize(evaluate_dimension(
-                    cardinality,
-                    shape_values,
-                )?)?);
+                let max_elements = legacy_cardinality_limit(cardinality, shape_values)?;
                 let mut set = indexmap::set::IndexSet::with_capacity(value.elements().len());
                 for element_value in value.elements() {
                     set.insert(legacy_from_data(
@@ -1596,7 +1671,7 @@ fn legacy_matrix_from_snapshot(
             )?);
         }
         let column_major = column_major(row_major, rows, columns);
-        let matrix = <LegacyValue as crate::ToMatrix>::to_matrixd(column_major, rows, columns);
+        let matrix = crate::matrix::Matrix::from_vec(column_major, rows, columns);
         Ok(LegacyValue::MatrixValue(matrix))
     }
 }
@@ -1604,7 +1679,7 @@ fn legacy_matrix_from_snapshot(
 #[cfg(all(feature = "table", feature = "matrix", feature = "matrixd"))]
 fn legacy_table_from_snapshot(
     columns: &[crate::SchemaField],
-    rows: &DimensionExpr,
+    rows: &CardinalitySpec,
     value: &crate::snapshot::TableValue,
     shape_values: &[u64],
     schemas: &SchemaTable,
@@ -1616,7 +1691,11 @@ fn legacy_table_from_snapshot(
     });
     #[cfg(all(feature = "table", feature = "matrix", feature = "matrixd"))]
     {
-        let rows = checked_usize(evaluate_dimension(rows, shape_values)?)?;
+        let actual_rows = value.column(0).map_or(0, |column| column.len());
+        let rows = match rows {
+            CardinalitySpec::Exact(rows) => checked_usize(evaluate_dimension(rows, shape_values)?)?,
+            CardinalitySpec::Dynamic { .. } => actual_rows,
+        };
         let mut legacy_columns = Vec::with_capacity(columns.len());
         let mut names = Vec::with_capacity(columns.len());
         for (index, column) in columns.iter().enumerate() {
@@ -1631,7 +1710,7 @@ fn legacy_table_from_snapshot(
                 )?);
             }
             let id = crate::hash_str(&column.name);
-            let matrix = <LegacyValue as crate::ToMatrix>::to_matrixd(legacy_values, rows, 1);
+            let matrix = crate::matrix::Matrix::from_vec(legacy_values, rows, 1);
             legacy_columns.push((
                 id,
                 value_kind_from_schema(&column.schema, shape_values, context)?,
@@ -1770,17 +1849,19 @@ fn value_kind_from_schema(
                     ))
                 })
                 .collect::<Result<Vec<_>, LegacySnapshotError>>()?,
-            checked_usize(evaluate_dimension(rows, shape_values)?)?,
+            match rows {
+                CardinalitySpec::Exact(rows) => {
+                    checked_usize(evaluate_dimension(rows, shape_values)?)?
+                }
+                CardinalitySpec::Dynamic { .. } => 0,
+            },
         ),
         SchemaBody::Set {
             element,
             cardinality,
         } => ValueKind::Set(
             Box::new(value_kind_from_schema(element, shape_values, context)?),
-            Some(checked_usize(evaluate_dimension(
-                cardinality,
-                shape_values,
-            )?)?),
+            legacy_cardinality_limit(cardinality, shape_values)?,
         ),
         SchemaBody::Map { key, value, .. } => ValueKind::Map(
             Box::new(value_kind_from_schema(key, shape_values, context)?),
@@ -1857,4 +1938,30 @@ fn evaluate_dimension(
                 })?
         }
     })
+}
+
+fn cardinality_allows_empty(
+    cardinality: &crate::CardinalitySpec,
+    shape_values: &[u64],
+) -> Result<bool, LegacySnapshotError> {
+    Ok(match cardinality {
+        crate::CardinalitySpec::Exact(value) => evaluate_dimension(value, shape_values)? == 0,
+        crate::CardinalitySpec::Dynamic { .. } => true,
+    })
+}
+
+fn legacy_cardinality_limit(
+    cardinality: &crate::CardinalitySpec,
+    shape_values: &[u64],
+) -> Result<Option<usize>, LegacySnapshotError> {
+    match cardinality {
+        crate::CardinalitySpec::Exact(value)
+        | crate::CardinalitySpec::Dynamic {
+            upper_bound: Some(value),
+        } => Ok(Some(checked_usize(evaluate_dimension(
+            value,
+            shape_values,
+        )?)?)),
+        crate::CardinalitySpec::Dynamic { upper_bound: None } => Ok(None),
+    }
 }

@@ -988,14 +988,14 @@ fn official_v1_layout_is_deterministic_and_round_trips() {
     assert_eq!(parsed.sections.len(), BYTECODE_SECTION_COUNT);
 
     let decoded = parsed.decode_constants().unwrap();
-    assert!(matches!(decoded[0], crate::LegacyValue::Empty));
-    assert!(matches!(&decoded[1], crate::LegacyValue::Bool(value) if *value.borrow()));
+    assert!(matches!(decoded[0].data(), crate::ValueData::Tuple(values) if values.is_empty()));
+    assert!(matches!(decoded[1].data(), crate::ValueData::Bool(true)));
     assert!(
-        matches!(&decoded[2], crate::LegacyValue::String(value) if value.borrow().as_str() == "bytecode-v1")
+        matches!(decoded[2].data(), crate::ValueData::String(value) if value.as_ref() == "bytecode-v1")
     );
-    assert!(matches!(&decoded[3], crate::LegacyValue::Index(value) if *value.borrow() == 42));
+    assert!(matches!(decoded[3].data(), crate::ValueData::Index(42)));
     assert!(
-        matches!(&decoded[4], crate::LegacyValue::F64(value) if value.borrow().to_bits() == (-0.0_f64).to_bits())
+        matches!(decoded[4].data(), crate::ValueData::F64(value) if value.bits() == (-0.0_f64).to_bits())
     );
 }
 
@@ -1167,28 +1167,33 @@ fn every_canonical_scalar_encoding_round_trips_exactly() {
 
     let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
     let values = parsed.decode_constants().unwrap();
-    assert!(matches!(&values[0], crate::LegacyValue::U8(value) if *value.borrow() == u8::MAX));
-    assert!(matches!(&values[4], crate::LegacyValue::U128(value) if *value.borrow() == u128::MAX));
-    assert!(matches!(&values[5], crate::LegacyValue::I8(value) if *value.borrow() == i8::MIN));
-    assert!(matches!(&values[9], crate::LegacyValue::I128(value) if *value.borrow() == i128::MIN));
+    assert!(matches!(values[0].data(), crate::ValueData::U8(u8::MAX)));
+    assert!(matches!(
+        values[4].data(),
+        crate::ValueData::U128(u128::MAX)
+    ));
+    assert!(matches!(values[5].data(), crate::ValueData::I8(i8::MIN)));
+    assert!(matches!(
+        values[9].data(),
+        crate::ValueData::I128(i128::MIN)
+    ));
+    assert!(matches!(values[10].data(), crate::ValueData::F32(value) if value.bits() == f32_bits));
+    assert!(matches!(values[11].data(), crate::ValueData::F64(value) if value.bits() == f64_bits));
     assert!(
-        matches!(&values[10], crate::LegacyValue::F32(value) if value.borrow().to_bits() == f32_bits)
+        matches!(values[12].data(), crate::ValueData::Complex64(value)
+        if value.real().bits() == c64_real_bits && value.imaginary().bits() == c64_imaginary_bits)
     );
     assert!(
-        matches!(&values[11], crate::LegacyValue::F64(value) if value.borrow().to_bits() == f64_bits)
+        matches!(values[13].data(), crate::ValueData::Rational64(value)
+        if value.numerator() == -3 && value.denominator() == 7)
     );
-    assert!(matches!(&values[12], crate::LegacyValue::C64(value)
-        if value.borrow().0.re.to_bits() == c64_real_bits
-        && value.borrow().0.im.to_bits() == c64_imaginary_bits));
-    assert!(matches!(&values[13], crate::LegacyValue::R64(value)
-        if *value.borrow().numer() == -3 && *value.borrow().denom() == 7));
     assert!(
-        matches!(&values[14], crate::LegacyValue::String(value) if value.borrow().as_str() == "bytecode-v1 🦀")
+        matches!(values[14].data(), crate::ValueData::String(value) if value.as_ref() == "bytecode-v1 🦀")
     );
-    assert!(matches!(&values[15], crate::LegacyValue::Bool(value) if *value.borrow()));
-    assert!(matches!(&values[16], crate::LegacyValue::Id(42)));
-    assert!(matches!(&values[17], crate::LegacyValue::Index(value) if *value.borrow() == 7));
-    assert!(matches!(&values[18], crate::LegacyValue::Empty));
+    assert!(matches!(values[15].data(), crate::ValueData::Bool(true)));
+    assert!(matches!(values[16].data(), crate::ValueData::Id(42)));
+    assert!(matches!(values[17].data(), crate::ValueData::Index(7)));
+    assert!(matches!(values[18].data(), crate::ValueData::Tuple(value) if value.is_empty()));
 }
 
 #[test]
@@ -1349,23 +1354,11 @@ fn every_matrix_element_codec_round_trips_a_dynamic_matrix() {
     let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
     let values = parsed.decode_constants().unwrap();
     assert_eq!(values.len(), 17);
-    assert!(matches!(&values[0], crate::LegacyValue::MatrixIndex(_)));
-    assert!(matches!(&values[1], crate::LegacyValue::MatrixBool(_)));
-    assert!(matches!(&values[2], crate::LegacyValue::MatrixU8(_)));
-    assert!(matches!(&values[3], crate::LegacyValue::MatrixU16(_)));
-    assert!(matches!(&values[4], crate::LegacyValue::MatrixU32(_)));
-    assert!(matches!(&values[5], crate::LegacyValue::MatrixU64(_)));
-    assert!(matches!(&values[6], crate::LegacyValue::MatrixU128(_)));
-    assert!(matches!(&values[7], crate::LegacyValue::MatrixI8(_)));
-    assert!(matches!(&values[8], crate::LegacyValue::MatrixI16(_)));
-    assert!(matches!(&values[9], crate::LegacyValue::MatrixI32(_)));
-    assert!(matches!(&values[10], crate::LegacyValue::MatrixI64(_)));
-    assert!(matches!(&values[11], crate::LegacyValue::MatrixI128(_)));
-    assert!(matches!(&values[12], crate::LegacyValue::MatrixF32(_)));
-    assert!(matches!(&values[13], crate::LegacyValue::MatrixF64(_)));
-    assert!(matches!(&values[14], crate::LegacyValue::MatrixC64(_)));
-    assert!(matches!(&values[15], crate::LegacyValue::MatrixR64(_)));
-    assert!(matches!(&values[16], crate::LegacyValue::MatrixString(_)));
+    assert!(
+        values
+            .iter()
+            .all(|value| matches!(value.data(), crate::ValueData::Matrix(_)))
+    );
 }
 
 #[test]
@@ -1397,21 +1390,6 @@ fn every_composite_constant_codec_round_trips() {
     let mut present_option = vec![1];
     append_child_payload(&mut present_option, &[8]);
 
-    let enum_name = "status";
-    let variant_name = "ready";
-    let enum_id = crate::hash_str(enum_name);
-    let variant_id = crate::hash_str(variant_name);
-    let inline_u8 = types::canonical_runtime_type_key(&RuntimeType::U8).unwrap();
-    let mut enumeration = 1_u32.to_le_bytes().to_vec();
-    enumeration.extend_from_slice(&variant_id.to_le_bytes());
-    enumeration.extend_from_slice(&(variant_name.len() as u32).to_le_bytes());
-    enumeration.extend_from_slice(variant_name.as_bytes());
-    enumeration.push(1);
-    append_child_payload(&mut enumeration, &inline_u8);
-    append_child_payload(&mut enumeration, &[10]);
-
-    let atom_name = "alpha";
-    let atom_id = crate::hash_str(atom_name);
     let constants = vec![
         EncodedConstant {
             runtime_type: RuntimeType::Tuple(vec![RuntimeType::U8, RuntimeType::String]),
@@ -1469,23 +1447,7 @@ fn every_composite_constant_codec_round_trips() {
             bytes: present_option,
         },
         EncodedConstant {
-            runtime_type: RuntimeType::Atom {
-                id: atom_id,
-                name: atom_name.to_owned(),
-            },
-            alignment: 1,
-            bytes: Vec::new(),
-        },
-        EncodedConstant {
-            runtime_type: RuntimeType::Enum {
-                id: enum_id,
-                name: enum_name.to_owned(),
-            },
-            alignment: 4,
-            bytes: enumeration,
-        },
-        EncodedConstant {
-            runtime_type: RuntimeType::Kind(crate::kind::Kind::Scalar(crate::hash_str("u8"))),
+            runtime_type: RuntimeType::Kind(crate::BytecodeKind::Scalar(crate::hash_str("u8"))),
             alignment: 1,
             bytes: Vec::new(),
         },
@@ -1503,38 +1465,58 @@ fn every_composite_constant_codec_round_trips() {
 
     let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
     let values = parsed.decode_constants().unwrap();
-    assert_eq!(values.len(), 13);
-    assert!(matches!(&values[0], crate::LegacyValue::Tuple(_)));
-    assert!(matches!(&values[1], crate::LegacyValue::Record(_)));
-    assert!(matches!(&values[2], crate::LegacyValue::Map(_)));
-    assert!(matches!(&values[3], crate::LegacyValue::Set(_)));
-    assert!(matches!(&values[4], crate::LegacyValue::Table(_)));
+    assert_eq!(values.len(), 11);
+    assert!(matches!(values[0].data(), crate::ValueData::Tuple(_)));
+    assert!(matches!(values[1].data(), crate::ValueData::Record(_)));
+    assert!(matches!(values[2].data(), crate::ValueData::Map(_)));
+    assert!(matches!(values[3].data(), crate::ValueData::Set(_)));
+    assert!(matches!(values[4].data(), crate::ValueData::Table(_)));
+    assert!(matches!(values[5].data(), crate::ValueData::U8(_)));
+    assert!(matches!(values[6].data(), crate::ValueData::Option(None)));
     assert!(matches!(
-        &values[5],
-        crate::LegacyValue::MutableReference(_)
+        values[7].data(),
+        crate::ValueData::Option(Some(_))
     ));
-    assert!(matches!(
-        &values[6],
-        crate::LegacyValue::EmptyKind(crate::ValueKind::Option(_))
-    ));
-    assert!(matches!(
-        &values[7],
-        crate::LegacyValue::Typed(_, crate::ValueKind::Option(_))
-    ));
-    assert!(matches!(&values[8], crate::LegacyValue::Atom(_)));
-    assert!(matches!(&values[9], crate::LegacyValue::Enum(_)));
-    assert!(matches!(
-        &values[10],
-        crate::LegacyValue::Kind(crate::ValueKind::U8)
-    ));
-    assert!(matches!(
-        &values[11],
-        crate::LegacyValue::EmptyKind(crate::ValueKind::Any)
-    ));
-    assert!(matches!(
-        &values[12],
-        crate::LegacyValue::EmptyKind(crate::ValueKind::None)
-    ));
+    assert!(
+        values[8..]
+            .iter()
+            .all(|value| matches!(value.data(), crate::ValueData::Type(_)))
+    );
+}
+
+#[test]
+fn nominal_constants_require_authoritative_semantic_schemas() {
+    let atom_name = "alpha";
+    let atom = EncodedConstant {
+        runtime_type: RuntimeType::Atom {
+            id: hash_str(atom_name),
+            name: atom_name.to_owned(),
+        },
+        alignment: 1,
+        bytes: Vec::new(),
+    };
+    let error = write_bytecode(&program(vec![atom])).unwrap_err();
+    assert!(
+        error
+            .kind_message()
+            .contains("authoritative semantic nominal resolver")
+    );
+
+    let enum_name = "status";
+    let enumeration = EncodedConstant {
+        runtime_type: RuntimeType::Enum {
+            id: hash_str(enum_name),
+            name: enum_name.to_owned(),
+        },
+        alignment: 4,
+        bytes: 0_u32.to_le_bytes().to_vec(),
+    };
+    let error = write_bytecode(&program(vec![enumeration])).unwrap_err();
+    assert!(
+        error
+            .kind_message()
+            .contains("authoritative complete enum schema")
+    );
 }
 
 #[test]
@@ -1937,33 +1919,6 @@ fn rejects_inline_composite_type_counts_before_allocation() {
             error.kind_message(),
         );
     }
-
-    let enum_name = "bounded-inline-type";
-    let variant_name = "payload";
-    let mut malicious_type = (RuntimeTypeTag::Record as u16).to_le_bytes().to_vec();
-    malicious_type.extend_from_slice(&u32::MAX.to_le_bytes());
-    let mut enumeration = 1_u32.to_le_bytes().to_vec();
-    enumeration.extend_from_slice(&hash_str(variant_name).to_le_bytes());
-    enumeration.extend_from_slice(&(variant_name.len() as u32).to_le_bytes());
-    enumeration.extend_from_slice(variant_name.as_bytes());
-    enumeration.push(1);
-    append_child_payload(&mut enumeration, &malicious_type);
-    append_child_payload(&mut enumeration, &[]);
-    let error = write_bytecode(&program(vec![EncodedConstant {
-        runtime_type: RuntimeType::Enum {
-            id: hash_str(enum_name),
-            name: enum_name.to_owned(),
-        },
-        alignment: 4,
-        bytes: enumeration,
-    }]))
-    .unwrap_err();
-    assert_eq!(error.kind_name(), "BytecodeValidation");
-    assert!(
-        error
-            .kind_message()
-            .contains("canonical record field count exceeds the remaining payload")
-    );
 }
 
 #[test]
@@ -2051,46 +2006,20 @@ fn rejects_duplicate_map_and_set_payloads_and_invalid_enum_identity() {
     );
 
     let enum_name = "status";
-    let variant_name = "ready";
-    let mut enumeration = 1_u32.to_le_bytes().to_vec();
-    enumeration.extend_from_slice(&hash_str(variant_name).to_le_bytes());
-    enumeration.extend_from_slice(&(variant_name.len() as u32).to_le_bytes());
-    enumeration.extend_from_slice(variant_name.as_bytes());
-    enumeration.push(0);
-    let mut enumeration = write_bytecode(&program(vec![EncodedConstant {
+    let error = write_bytecode(&program(vec![EncodedConstant {
         runtime_type: RuntimeType::Enum {
             id: hash_str(enum_name),
             name: enum_name.to_owned(),
         },
         alignment: 4,
-        bytes: enumeration,
+        bytes: 0_u32.to_le_bytes().to_vec(),
     }]))
-    .unwrap();
-    let enum_offset = constant_payload_offset(&enumeration, 0);
-    enumeration[enum_offset + 20] ^= 1;
-    refresh_crc(&mut enumeration);
-    assert_decode_reason(
-        &enumeration,
-        "enum variant name does not match its stable ID",
+    .unwrap_err();
+    assert!(
+        error
+            .kind_message()
+            .contains("authoritative complete enum schema")
     );
-
-    let mut empty_variant = 1_u32.to_le_bytes().to_vec();
-    empty_variant.extend_from_slice(&hash_str("").to_le_bytes());
-    empty_variant.extend_from_slice(&0_u32.to_le_bytes());
-    empty_variant.push(0);
-    let constant_entry = constant_entry_offset(&enumeration, 0);
-    write_u64(
-        &mut enumeration,
-        constant_entry + 16,
-        empty_variant.len() as u64,
-    );
-    replace_section_contents(
-        &mut enumeration,
-        BytecodeSectionKind::ConstantBlob as usize - 1,
-        &empty_variant,
-        0,
-    );
-    assert_validation_reason(&enumeration, "enum variant name must not be empty");
 }
 
 #[test]
@@ -2241,21 +2170,19 @@ fn composite_pack_round_trips_and_reconstructs_from_child_registers() {
         .unwrap();
 
     let constants = parsed.decode_constants().unwrap();
-    let rebuilt = rebuild_bytecode_composite(
+    assert!(canonical_bytecode_composite_children(&constants[2]).is_some());
+    let rebuilt = rebuild_canonical_bytecode_composite(
         &constants[2],
         vec![constants[0].clone(), constants[1].clone()],
     )
     .unwrap();
-    let crate::LegacyValue::Tuple(tuple) = rebuilt else {
+    let crate::ValueData::Tuple(tuple) = rebuilt.data() else {
         panic!("CompositePack must reconstruct the tuple template");
     };
-    assert_eq!(
-        tuple.borrow().elements,
-        vec![
-            Box::new(crate::LegacyValue::U8(crate::Ref::new(7))),
-            Box::new(crate::LegacyValue::U8(crate::Ref::new(9))),
-        ],
-    );
+    assert!(matches!(
+        tuple.as_ref(),
+        [crate::ValueData::U8(7), crate::ValueData::U8(9)]
+    ));
 }
 
 #[test]
@@ -2395,7 +2322,7 @@ fn composite_pack_rejects_invalid_templates_arities_and_register_flow() {
                 dictionary: BTreeMap::new(),
                 requirements: Vec::new(),
             },
-            "expected U8 from the template schema",
+            "SnapshotDataSchemaMismatch",
         ),
         (
             BytecodeProgram {
@@ -2418,7 +2345,7 @@ fn composite_pack_rejects_invalid_templates_arities_and_register_flow() {
                 dictionary: BTreeMap::new(),
                 requirements: Vec::new(),
             },
-            "not structurally lowerable",
+            "AggregateArityMismatch",
         ),
         (
             BytecodeProgram {
@@ -2441,7 +2368,7 @@ fn composite_pack_rejects_invalid_templates_arities_and_register_flow() {
                 dictionary: BTreeMap::new(),
                 requirements: Vec::new(),
             },
-            "expects 1 children",
+            "AggregateArityMismatch",
         ),
         (
             BytecodeProgram {
@@ -3000,38 +2927,27 @@ fn rejects_crc_valid_unused_named_runtime_types_with_mismatched_ids() {
 
 #[test]
 fn rejects_crc_valid_named_ids_nested_in_semantic_kinds() {
-    for (name, category, nested) in [
-        (
-            "nested-atom",
-            "kind atom",
-            crate::kind::Kind::Option(Box::new(crate::kind::Kind::Atom(
-                hash_str("nested-atom"),
-                "nested-atom".to_owned(),
-            ))),
-        ),
-        (
-            "nested-enum",
-            "kind enum",
-            crate::kind::Kind::Option(Box::new(crate::kind::Kind::Enum(
-                hash_str("nested-enum"),
-                "nested-enum".to_owned(),
-            ))),
-        ),
+    for nested in [
+        crate::BytecodeKind::Option(Box::new(crate::BytecodeKind::Atom(
+            hash_str("nested-atom"),
+            "nested-atom".to_owned(),
+        ))),
+        crate::BytecodeKind::Option(Box::new(crate::BytecodeKind::Enum(
+            hash_str("nested-enum"),
+            "nested-enum".to_owned(),
+        ))),
     ] {
-        let expected = hash_str(name);
-        let supplied = expected ^ 1;
-        let mut bytes = write_bytecode(&program(vec![EncodedConstant {
+        let error = write_bytecode(&program(vec![EncodedConstant {
             runtime_type: RuntimeType::Kind(nested),
             alignment: 1,
             bytes: Vec::new(),
         }]))
-        .unwrap();
-        let kind_entry = type_entry_with_tag(&bytes, RuntimeTypeTag::Kind);
-        // RuntimeType::Kind payload: Option tag, Atom/Enum tag, then the named ID.
-        write_u64(&mut bytes, kind_entry + 10, supplied);
-        refresh_crc(&mut bytes);
-
-        assert_named_id_validation(&bytes, category, supplied, expected, name);
+        .unwrap_err();
+        assert!(
+            error
+                .kind_message()
+                .contains("authoritative semantic nominal resolver")
+        );
     }
 }
 
@@ -3055,7 +2971,7 @@ fn rejects_table_primary_keys_that_the_runtime_cannot_represent() {
     );
 
     let empty_kind_table = EncodedConstant {
-        runtime_type: RuntimeType::Kind(crate::kind::Kind::Table(Vec::new(), 0)),
+        runtime_type: RuntimeType::Kind(crate::BytecodeKind::Table(Vec::new(), 0)),
         alignment: 1,
         bytes: Vec::new(),
     };
@@ -3139,7 +3055,7 @@ fn rejects_table_row_counts_before_allocation_or_unbounded_iteration() {
 #[test]
 fn rejects_noncanonical_scalar_ids_nested_in_semantic_kinds() {
     let mut bytes = write_bytecode(&program(vec![EncodedConstant {
-        runtime_type: RuntimeType::Kind(crate::kind::Kind::Scalar(hash_str("u8"))),
+        runtime_type: RuntimeType::Kind(crate::BytecodeKind::Scalar(hash_str("u8"))),
         alignment: 1,
         bytes: Vec::new(),
     }]))
@@ -3314,7 +3230,7 @@ mod compiler_tests {
         assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
         let detail = error.kind_as::<BytecodeConstantUnsupported>().unwrap();
         assert_eq!(detail.runtime_type, RuntimeType::Bool);
-        assert_eq!(detail.source_value_kind, ValueKind::F64);
+        assert_eq!(detail.source_value, "F64");
         assert!(detail.reason.contains("does not match"));
     }
 
@@ -3678,10 +3594,13 @@ mod compiler_tests {
     }
 
     fn decode_one(constant: &EncodedConstant) -> LegacyValue {
-        let parsed =
+        let _parsed =
             ParsedProgram::from_bytes(&write_bytecode(&program(vec![constant.clone()])).unwrap())
                 .unwrap();
-        parsed.decode_constants().unwrap().pop().unwrap()
+        super::super::constants::decode_encoded_legacy_constants_for_adapter(&[constant.clone()])
+            .unwrap()
+            .pop()
+            .unwrap()
     }
 
     fn table_type(runtime_type: &RuntimeType) -> (&[(String, RuntimeType)], u32) {

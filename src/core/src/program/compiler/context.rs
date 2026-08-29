@@ -8,10 +8,9 @@ use crate::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
     CompiledMatrixLiteral, ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction,
-    InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
-    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ParsedProgram, Register,
-    ShapeRule, ValueCell, ValueKind, compare_application_requirements, compile_value_register,
-    hash_str, value_kind_from_runtime_type, write_bytecode,
+    InputPortLayout, InputPortPolicy, MResult, MechError, OperationContractDeclaration,
+    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueCell,
+    compare_application_requirements, hash_str, write_bytecode,
 };
 
 static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -104,9 +103,11 @@ pub struct CompiledBytecode {
     pub instruction_operations: Vec<Option<String>>,
     /// Dense source-plan node identity, parallel to `program.instructions`.
     pub instruction_source_nodes: Vec<Option<u32>>,
-    /// Dense and parallel to the register space. `None` is permitted only for
-    /// registers that never participate in semantic artifact data.
-    pub register_kinds: Vec<Option<ValueKind>>,
+    /// Canonical schema authority for registers owned by canonical cells.
+    /// Dense and parallel to the register space.
+    pub register_schemas: Vec<Option<crate::SchemaBody>>,
+    /// Compiler-control absence registers, kept distinct from canonical unit.
+    pub absent_registers: BTreeSet<Register>,
     /// Exact current cardinality for map/set registers. Dense and parallel to
     /// the register space; other register families carry `None`.
     pub register_collection_cardinalities: Vec<Option<usize>>,
@@ -142,10 +143,10 @@ impl PartialOrd for CanonicalRequirement {
 #[derive(Debug)]
 pub struct CompileCtx {
     reg_map: HashMap<BytecodeRegisterIdentity, Register>,
-    retained_value_cell_identities: BTreeMap<usize, BytecodeRegisterIdentity>,
     symbols: BTreeMap<u64, Register>,
     symbol_ptrs: BTreeMap<u64, usize>,
     retained_symbol_cells: BTreeMap<String, ValueCell>,
+    retained_value_cells: BTreeMap<usize, ValueCell>,
     dictionary: BTreeMap<u64, String>,
     runtime_function_names: BTreeMap<u64, String>,
     mutable_symbols: BTreeSet<u64>,
@@ -157,12 +158,12 @@ pub struct CompileCtx {
     instruction_contracts: Vec<Option<&'static OperationContractDeclaration>>,
     instruction_operations: Vec<Option<String>>,
     instruction_source_nodes: Vec<Option<u32>>,
-    register_kinds: BTreeMap<Register, ValueKind>,
+    register_schemas: BTreeMap<Register, crate::SchemaBody>,
+    absent_registers: BTreeSet<Register>,
     register_collection_cardinalities: BTreeMap<Register, usize>,
     register_state_initializers: BTreeMap<Register, u32>,
     matrix_literals: BTreeMap<Register, CompiledMatrixLiteral>,
     runtime_produced_registers: BTreeSet<Register>,
-    next_register_kind_override: Option<ValueKind>,
     symbol_definitions: Vec<CompiledSymbolDefinition>,
     current_node_kind: Option<CompiledNodeKind>,
     current_node_contract: Option<&'static OperationContractDeclaration>,
@@ -178,10 +179,10 @@ impl Default for CompileCtx {
     fn default() -> Self {
         Self {
             reg_map: HashMap::new(),
-            retained_value_cell_identities: BTreeMap::new(),
             symbols: BTreeMap::new(),
             symbol_ptrs: BTreeMap::new(),
             retained_symbol_cells: BTreeMap::new(),
+            retained_value_cells: BTreeMap::new(),
             dictionary: BTreeMap::new(),
             runtime_function_names: BTreeMap::new(),
             mutable_symbols: BTreeSet::new(),
@@ -193,12 +194,12 @@ impl Default for CompileCtx {
             instruction_contracts: Vec::new(),
             instruction_operations: Vec::new(),
             instruction_source_nodes: Vec::new(),
-            register_kinds: BTreeMap::new(),
+            register_schemas: BTreeMap::new(),
+            absent_registers: BTreeSet::new(),
             register_collection_cardinalities: BTreeMap::new(),
             register_state_initializers: BTreeMap::new(),
             matrix_literals: BTreeMap::new(),
             runtime_produced_registers: BTreeSet::new(),
-            next_register_kind_override: None,
             symbol_definitions: Vec::new(),
             current_node_kind: None,
             current_node_contract: None,
@@ -238,109 +239,27 @@ impl CompileCtx {
         Ok(())
     }
 
-    /// Retains the relationship between an explicit outer cell and the legacy
-    /// value identity still used by downstream compiler ABI consumers.
+    /// Retains a canonical compiler-owned cell. The cell's opaque storage
+    /// identity is already the complete bytecode register identity; no
+    /// payload inspection or compatibility projection is required.
     pub fn retain_compiler_value_cell(&mut self, cell: &ValueCell) -> MResult<()> {
-        let address = cell.legacy_ref().addr();
-        let value = cell.try_borrow().map_err(|_| {
-            MechError::new(
-                crate::ValueCellCompilerBorrowConflict {
-                    phase: "compiler value-cell retention",
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-        let identity = crate::bytecode_register_identity(&value, address);
-        if let Some(existing) = self.retained_value_cell_identities.get(&address) {
-            if existing != &identity {
-                return invalid("retained compiler value cell changed identity before compilation");
+        let identity = cell.compiler_identity();
+        if let Some(existing) = self.retained_value_cells.get(&identity) {
+            if !existing.same_cell(cell) {
+                return invalid(
+                    "canonical compiler cell identity was recycled during one compilation",
+                );
             }
             return Ok(());
         }
-        self.retained_value_cell_identities
-            .insert(address, identity);
+        self.retained_value_cells.insert(identity, cell.clone());
         Ok(())
     }
 
-    /// Associates retained symbols that enter planning as host/compiler inputs
-    /// with the legacy value registers already used by compiled plan nodes.
-    /// Source declarations are associated directly by `define_symbol`.
+    /// Retained symbols are associated directly when their canonical
+    /// declaration is defined. This compatibility-named hook remains a no-op
+    /// until all downstream callers are updated together.
     pub fn associate_retained_symbol_cells_with_existing_value_registers(&mut self) -> MResult<()> {
-        let retained = self
-            .retained_symbol_cells
-            .values()
-            .cloned()
-            .collect::<Vec<_>>();
-        for cell in retained {
-            let address = cell.legacy_ref().addr();
-            let outer_identity = BytecodeRegisterIdentity::Cell(address);
-            if self.reg_map.contains_key(&outer_identity) {
-                continue;
-            }
-            let value = cell.try_borrow().map_err(|_| {
-                MechError::new(
-                    crate::ValueCellCompilerBorrowConflict {
-                        phase: "compiler symbol cell association",
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })?;
-            let value_identity = crate::bytecode_register_identity(&value, address);
-            if let Some(register) = self.reg_map.get(&value_identity).copied() {
-                self.reg_map.insert(outer_identity, register);
-            }
-        }
-        Ok(())
-    }
-
-    /// Resolve an interpreted value to the register that carries its identity.
-    ///
-    /// Planned outputs reuse their producer register. A final value that was
-    /// not part of the plan (for example, a trailing literal) is materialized
-    /// exactly once so `Return` still represents the source block's result.
-    pub fn resolve_value_register(&mut self, value: &LegacyValue) -> MResult<Register> {
-        let fallback = std::ptr::from_ref(value).addr();
-        let register = compile_value_register(value, fallback, self)?;
-        let kind = value.kind();
-        self.record_register_kind_exact(register, kind)?;
-        Ok(register)
-    }
-
-    fn record_register_kind_exact(&mut self, register: Register, kind: ValueKind) -> MResult<()> {
-        if let Some(existing) = self.register_kinds.get(&register).cloned() {
-            if existing != kind {
-                match (&existing, &kind) {
-                    (existing, ValueKind::Reference(incoming)) if existing == incoming.as_ref() => {
-                        self.register_kinds.insert(register, kind);
-                    }
-                    (ValueKind::Reference(existing), incoming) if existing.as_ref() == incoming => {
-                    }
-                    (
-                        ValueKind::Table(existing_columns, existing_rows),
-                        ValueKind::Table(incoming_columns, incoming_rows),
-                    ) if existing_columns == incoming_columns
-                        && (*existing_rows == 0 || *incoming_rows == 0) =>
-                    {
-                        // A zero row count is the source compiler's dynamic
-                        // table shape. Once planning materializes the final
-                        // output, retain the concrete row count on the same
-                        // producer register.
-                        if *incoming_rows != 0 {
-                            self.register_kinds.insert(register, kind);
-                        }
-                    }
-                    _ => {
-                        return invalid(format!(
-                            "register {register} has existing ValueKind {existing:?}, incoming ValueKind {kind:?}",
-                        ));
-                    }
-                }
-            }
-        } else {
-            self.register_kinds.insert(register, kind);
-        }
         Ok(())
     }
 
@@ -590,16 +509,18 @@ impl CompileCtx {
         let mut instruction_source_nodes = self.instruction_source_nodes.clone();
         instruction_source_nodes.push(None);
 
-        let mut register_kinds = vec![None; self.next_register as usize];
-        for (register, kind) in &self.register_kinds {
-            let target = register_kinds.get_mut(*register as usize).ok_or_else(|| {
-                invalid::<()>(format!(
-                    "recorded register kind {register} is outside register count {}",
-                    self.next_register,
-                ))
-                .unwrap_err()
-            })?;
-            *target = Some(kind.clone());
+        let mut register_schemas = vec![None; self.next_register as usize];
+        for (register, schema) in &self.register_schemas {
+            let target = register_schemas
+                .get_mut(*register as usize)
+                .ok_or_else(|| {
+                    invalid::<()>(format!(
+                        "recorded register schema {register} is outside register count {}",
+                        self.next_register,
+                    ))
+                    .unwrap_err()
+                })?;
+            *target = Some(schema.clone());
         }
         let mut register_collection_cardinalities = vec![None; self.next_register as usize];
         for (register, cardinality) in &self.register_collection_cardinalities {
@@ -652,7 +573,8 @@ impl CompileCtx {
             instruction_contracts,
             instruction_operations,
             instruction_source_nodes,
-            register_kinds,
+            register_schemas,
+            absent_registers: self.absent_registers.clone(),
             register_collection_cardinalities,
             register_state_initializers,
             matrix_literals: self.matrix_literals.clone(),
@@ -717,12 +639,6 @@ impl CompileCtx {
             self.associate_retained_symbol_cell(name, register)?;
         }
 
-        if let Some(kind) = self.register_kinds.get(&register).cloned()
-            && !matches!(kind, ValueKind::Reference(_))
-        {
-            self.register_kinds
-                .insert(register, ValueKind::Reference(Box::new(kind)));
-        }
         let ordinal = u32::try_from(self.symbol_definitions.len())
             .map_err(|_| invalid::<()>("symbol definition ordinal exceeds u32").unwrap_err())?;
         self.symbol_definitions.push(CompiledSymbolDefinition {
@@ -740,7 +656,7 @@ impl CompileCtx {
         let Some(cell) = self.retained_symbol_cells.get(name) else {
             return Ok(());
         };
-        let address = cell.legacy_ref().addr();
+        let address = cell.compiler_identity();
         let identity = BytecodeRegisterIdentity::Cell(address);
         if let Some(existing) = self.reg_map.get(&identity) {
             if *existing != register {
@@ -788,19 +704,11 @@ impl BytecodeCompilerContext for CompileCtx {
 
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool) {
         let outer_identity = BytecodeRegisterIdentity::Cell(pointer);
-        if let Some(&register) = self.reg_map.get(&outer_identity) {
-            return (register, false);
-        }
-        if let Some(value_identity) = self.retained_value_cell_identities.get(&pointer).cloned() {
-            if let Some(&register) = self.reg_map.get(&value_identity) {
-                self.reg_map.insert(outer_identity, register);
-                return (register, false);
-            }
-            let (register, initialize) = self.register_for_identity(outer_identity);
-            self.reg_map.insert(value_identity, register);
-            return (register, initialize);
-        }
         self.register_for_identity(outer_identity)
+    }
+
+    fn retain_canonical_cell(&mut self, cell: &ValueCell) -> MResult<()> {
+        self.retain_compiler_value_cell(cell)
     }
 
     fn register_for_identity_with_initialization_status(
@@ -810,9 +718,31 @@ impl BytecodeCompilerContext for CompileCtx {
         self.register_for_identity(identity.clone())
     }
 
-    fn record_register_kind(&mut self, register: Register, kind: ValueKind) -> MResult<()> {
-        let kind = self.next_register_kind_override.take().unwrap_or(kind);
-        self.record_register_kind_exact(register, kind)
+    fn record_register_schema(
+        &mut self,
+        register: Register,
+        schema: crate::SchemaBody,
+    ) -> MResult<()> {
+        if let Some(existing) = self.register_schemas.get(&register) {
+            if existing != &schema {
+                return invalid(format!(
+                    "register {register} has conflicting canonical schemas {existing:?} and {schema:?}",
+                ));
+            }
+        } else {
+            self.register_schemas.insert(register, schema);
+        }
+        Ok(())
+    }
+
+    fn record_absent_register(&mut self, register: Register) -> MResult<()> {
+        if self.register_schemas.contains_key(&register) {
+            return invalid(format!(
+                "register {register} cannot be both canonical and source-absent",
+            ));
+        }
+        self.absent_registers.insert(register);
+        Ok(())
     }
 
     fn record_register_constant_metadata(
@@ -844,22 +774,20 @@ impl BytecodeCompilerContext for CompileCtx {
         Ok(())
     }
 
-    fn override_next_register_kind(&mut self, kind: ValueKind) -> MResult<()> {
-        if self.next_register_kind_override.is_none() {
-            self.next_register_kind_override = Some(kind);
-        }
-        Ok(())
-    }
-
-    fn record_register_constant_kind(&mut self, register: Register, constant: u32) -> MResult<()> {
+    fn record_register_constant_schema(
+        &mut self,
+        register: Register,
+        constant: u32,
+    ) -> MResult<()> {
         let encoded = self
             .pending_constants
             .get(constant as usize)
             .ok_or_else(|| {
                 invalid::<()>(format!("constant index {constant} is out of range")).unwrap_err()
             })?;
-        let kind = value_kind_from_runtime_type(&encoded.runtime_type)?;
-        self.record_register_kind_exact(register, kind)?;
+        let schema =
+            crate::program::bytecode::constants::runtime_schema_body(&encoded.runtime_type)?;
+        self.record_register_schema(register, schema)?;
         self.record_register_constant_metadata(register, constant)
     }
 
@@ -987,11 +915,12 @@ impl BytecodeCompilerContext for CompileCtx {
     }
 
     fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32> {
-        if let Some(index) = self
-            .pending_constants
-            .iter()
-            .position(|candidate| candidate == &constant)
-        {
+        if let Some(index) = self.pending_constants.iter().position(|candidate| {
+            candidate.runtime_type == constant.runtime_type && candidate.bytes == constant.bytes
+        }) {
+            self.pending_constants[index].alignment = self.pending_constants[index]
+                .alignment
+                .max(constant.alignment);
             return u32::try_from(index)
                 .map_err(|_| invalid::<()>("constant index exceeds u32").unwrap_err());
         }
@@ -1360,9 +1289,30 @@ mod tests {
     use crate::{
         AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExecutionHostFunctionRequest,
         ExecutionResourceRequest, ExternalInteraction, InputPortLayout, InputPortPolicy,
-        OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ResourceDelivery,
-        ResourceIntent, RuntimeType, ShapeRule,
+        LegacyValue, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
+        ResourceDelivery, ResourceIntent, RuntimeType, SchemaBody, SchemaDraft, ShapeRule,
+        compile_value_register,
     };
+
+    trait LegacyCompileContextTestExt {
+        fn resolve_value_register(&mut self, value: &LegacyValue) -> MResult<Register>;
+    }
+
+    impl LegacyCompileContextTestExt for CompileCtx {
+        fn resolve_value_register(&mut self, value: &LegacyValue) -> MResult<Register> {
+            compile_value_register(value, std::ptr::from_ref(value).addr(), self)
+        }
+    }
+
+    fn schema_key(body: SchemaBody) -> crate::SchemaKey {
+        SchemaDraft {
+            dimension_parameters: Vec::new().into_boxed_slice(),
+            body,
+        }
+        .finalize()
+        .unwrap()
+        .key()
+    }
 
     fn f64_constant(value: f64) -> EncodedConstant {
         EncodedConstant {
@@ -1613,7 +1563,7 @@ mod tests {
     }
 
     #[test]
-    fn value_cell_composites_keep_outer_and_child_identities() {
+    fn canonical_value_cell_composites_compile_as_owned_immutable_data() {
         let scalar = crate::Ref::new(7.0);
         let child = LegacyValue::F64(scalar.clone());
         let cell = crate::ValueCell::new(LegacyValue::Tuple(crate::Ref::new(
@@ -1628,62 +1578,12 @@ mod tests {
         let compiled = context.finish_program(outer_register).unwrap();
 
         assert_ne!(outer_register, child_register);
-        assert!(
-            compiled
-                .program
-                .instructions
-                .iter()
-                .any(|instruction| matches!(
-                    instruction,
-                    BytecodeInstruction::CompositePack { dst, children, .. }
-                        if *dst == outer_register
-                            && children == &[child_register, child_register]
-                ))
-        );
-    }
-
-    #[test]
-    fn annotated_value_cell_views_preserve_annotations_and_cell_identity() {
-        let cell = crate::ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
-        let option_f64 = crate::ValueKind::Option(Box::new(crate::ValueKind::F64));
-        let nested_option = crate::ValueKind::Option(Box::new(option_f64.clone()));
-        let mut context = CompileCtx::new();
-
-        let cell_register = crate::compile_value_cell_register(&cell, &mut context).unwrap();
-        let f64_view = crate::compile_annotated_value_cell_register(
-            &cell,
-            core::slice::from_ref(&option_f64),
-            &mut context,
-        )
-        .unwrap();
-        let f64_view_again = crate::compile_annotated_value_cell_register(
-            &cell,
-            core::slice::from_ref(&option_f64),
-            &mut context,
-        )
-        .unwrap();
-        let nested_view = crate::compile_annotated_value_cell_register(
-            &cell,
-            &[nested_option, option_f64],
-            &mut context,
-        )
-        .unwrap();
-        let compiled = context.finish_program(f64_view).unwrap();
-
-        assert_eq!(f64_view, f64_view_again);
-        assert_ne!(f64_view, cell_register);
-        assert_ne!(f64_view, nested_view);
-        assert!(
-            compiled
-                .program
-                .instructions
-                .iter()
-                .any(|instruction| matches!(
-                    instruction,
-                    BytecodeInstruction::CompositePack { dst, children, .. }
-                        if *dst == f64_view && children == &[cell_register]
-                ))
-        );
+        assert!(compiled.program.instructions.iter().any(|instruction| {
+            matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == outer_register)
+        }));
+        assert!(!compiled.program.instructions.iter().any(|instruction| {
+            matches!(instruction, BytecodeInstruction::CompositePack { dst, .. } if *dst == outer_register)
+        }));
     }
 
     #[test]
@@ -1805,11 +1705,15 @@ mod tests {
         let inner = Box::new(BytecodeRegisterIdentity::Cell(scalar.id() as usize));
         let option_f64 = BytecodeRegisterIdentity::Typed {
             inner: inner.clone(),
-            annotation: crate::ValueKind::Option(Box::new(crate::ValueKind::F64)),
+            annotation: schema_key(SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(
+                crate::FloatWidth::W64,
+            )))),
         };
         let option_u64 = BytecodeRegisterIdentity::Typed {
             inner,
-            annotation: crate::ValueKind::Option(Box::new(crate::ValueKind::U64)),
+            annotation: schema_key(SchemaBody::Option(Box::new(SchemaBody::UnsignedInteger(
+                crate::IntegerWidth::W64,
+            )))),
         };
         let mut context = CompileCtx::new();
 
@@ -1856,15 +1760,15 @@ mod tests {
     }
 
     #[test]
-    fn conflicting_register_kinds_report_both_exact_kinds() {
+    fn conflicting_register_schemas_report_both_exact_schemas() {
         let mut context = CompileCtx::new();
         let register = allocate_registers(&mut context, 1)[0];
         context
-            .record_register_kind(register, ValueKind::F64)
+            .record_register_schema(register, SchemaBody::FloatingPoint(crate::FloatWidth::W64))
             .unwrap();
 
         let error = context
-            .record_register_kind(register, ValueKind::Bool)
+            .record_register_schema(register, SchemaBody::Bool)
             .unwrap_err();
         let message = format!("{error:?}");
 
@@ -1872,8 +1776,8 @@ mod tests {
             message.contains(&format!("register {register}")),
             "{message}"
         );
-        assert!(message.contains("existing ValueKind F64"), "{message}");
-        assert!(message.contains("incoming ValueKind Bool"), "{message}");
+        assert!(message.contains("FloatingPoint(W64)"), "{message}");
+        assert!(message.contains("Bool"), "{message}");
     }
 
     #[test]
@@ -1997,6 +1901,27 @@ mod tests {
     }
 
     #[test]
+    fn constant_interning_merges_alignment_for_identical_type_and_payload() {
+        let mut context = CompileCtx::new();
+        let register = allocate_registers(&mut context, 1)[0];
+        let mut weakly_aligned = f64_constant(3.0);
+        weakly_aligned.alignment = 1;
+        let mut strongly_aligned = weakly_aligned.clone();
+        strongly_aligned.alignment = 16;
+
+        let first = context.intern_constant(weakly_aligned).unwrap();
+        let duplicate = context.intern_constant(strongly_aligned).unwrap();
+        assert_eq!(first, duplicate);
+        assert_eq!(context.pending_constants.len(), 1);
+        assert_eq!(context.pending_constants[0].alignment, 16);
+
+        context.emit_const_load(register, first);
+        let compiled = context.finish_program(register).unwrap();
+        assert_eq!(compiled.program.constants.len(), 1);
+        assert_eq!(compiled.program.constants[0].alignment, 16);
+    }
+
+    #[test]
     fn finish_orders_constants_by_first_instruction_reference() {
         let mut context = CompileCtx::new();
         let registers = allocate_registers(&mut context, 2);
@@ -2053,7 +1978,7 @@ mod tests {
             .unwrap();
         let register = context.register_for_ptr_with_initialization_status(17).0;
         context
-            .record_register_kind(register, ValueKind::F64)
+            .record_register_schema(register, SchemaBody::FloatingPoint(crate::FloatWidth::W64))
             .unwrap();
         context
             .define_symbol(17, register, "answer", false)
@@ -2062,37 +1987,6 @@ mod tests {
         let resolved = crate::compile_value_cell_register(&cell, &mut context).unwrap();
 
         assert_eq!(resolved, register);
-        assert_eq!(context.next_register, 1);
-    }
-
-    #[test]
-    fn retained_input_cells_reuse_existing_legacy_value_registers() {
-        let cell = ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
-        let legacy = LegacyValue::MutableReference(cell.legacy_ref());
-        let mut context = CompileCtx::new();
-        context.retain_compiler_symbol_cell("input", &cell).unwrap();
-        let legacy_register = context.resolve_value_register(&legacy).unwrap();
-
-        context
-            .associate_retained_symbol_cells_with_existing_value_registers()
-            .unwrap();
-        let cell_register = crate::compile_value_cell_register(&cell, &mut context).unwrap();
-
-        assert_eq!(cell_register, legacy_register);
-        assert_eq!(context.next_register, 1);
-    }
-
-    #[test]
-    fn retained_producer_cells_share_their_register_with_legacy_consumers() {
-        let cell = ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
-        let legacy_value = cell.borrow().clone();
-        let mut context = CompileCtx::new();
-        context.retain_compiler_value_cell(&cell).unwrap();
-
-        let cell_register = crate::compile_value_cell_register(&cell, &mut context).unwrap();
-        let legacy_register = context.resolve_value_register(&legacy_value).unwrap();
-
-        assert_eq!(cell_register, legacy_register);
         assert_eq!(context.next_register, 1);
     }
 

@@ -1,4 +1,4 @@
-//! Canonical fixed-width and UTF-8 scalar decoding for bytecode-v1 constants.
+//! Compatibility-only fixed-width and UTF-8 scalar decoding for bytecode-v1 constants.
 
 use crate::{LegacyValue, MResult, Ref};
 

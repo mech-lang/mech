@@ -8,6 +8,7 @@ use std::cell::RefCell;
 
 #[cfg(feature = "no_std")]
 use alloc::rc::Rc;
+use core::sync::atomic::{AtomicU64, Ordering};
 #[cfg(not(feature = "no_std"))]
 use std::rc::Rc;
 
@@ -33,7 +34,13 @@ pub use self::rational_numbers::*;
 /// Callers use this API rather than depending on the current backing store so
 /// the representation can change without leaking into checkpoint or runtime
 /// coordination code.
-pub struct Ref<T>(Rc<RefCell<T>>);
+pub struct Ref<T>(Rc<RefCell<T>>, CanonicalCellId);
+
+static NEXT_CANONICAL_CELL_ID: AtomicU64 = AtomicU64::new(1);
+
+pub(crate) fn next_canonical_cell_id() -> CanonicalCellId {
+    CanonicalCellId::new(NEXT_CANONICAL_CELL_ID.fetch_add(1, Ordering::Relaxed))
+}
 
 impl<T: Debug> Debug for Ref<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -44,7 +51,7 @@ impl<T: Debug> Debug for Ref<T> {
 
 impl<T> Clone for Ref<T> {
     fn clone(&self) -> Self {
-        Ref(self.0.clone())
+        Ref(self.0.clone(), self.1)
     }
 }
 
@@ -55,7 +62,7 @@ use std::cell;
 
 impl<T> Ref<T> {
     pub fn new(item: T) -> Self {
-        Ref(Rc::new(RefCell::new(item)))
+        Ref(Rc::new(RefCell::new(item)), next_canonical_cell_id())
     }
     pub fn as_ptr(&self) -> *const T {
         self.0.as_ptr()
@@ -82,7 +89,10 @@ impl<T> Ref<T> {
         Rc::as_ptr(&self.0) as *const () as usize
     }
     pub fn id(&self) -> u64 {
-        Rc::as_ptr(&self.0) as *const () as u64
+        self.1.get()
+    }
+    pub fn reactive_cell_id(&self) -> CanonicalCellId {
+        self.1
     }
 }
 
@@ -92,8 +102,6 @@ impl<T: PartialEq> PartialEq for Ref<T> {
     }
 }
 impl<T: PartialEq> Eq for Ref<T> {}
-
-pub type MutableReference = Ref<LegacyValue>;
 
 pub type MResult<T> = Result<T, MechError>;
 

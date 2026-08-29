@@ -100,7 +100,8 @@ impl SymbolTable {
         self.symbols.contains_key(&key)
     }
 
-    pub fn insert(&mut self, key: u64, value: LegacyValue, mutable: bool) -> ValueCell {
+    #[cfg(test)]
+    fn insert(&mut self, key: u64, value: LegacyValue, mutable: bool) -> ValueCell {
         self.insert_cell(key, ValueCell::new(value), mutable)
     }
 

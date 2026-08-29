@@ -6,6 +6,57 @@ use core::fmt::Debug;
 use crate::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 
 impl LegacyValue {
+    /// Infers a closed canonical schema and snapshots this compatibility value.
+    pub fn to_canonical_value(&self) -> MResult<crate::Value> {
+        let mut semantic = crate::legacy_adapter::value::InferredLegacySemanticContext;
+        self.to_canonical_value_with_context(&mut semantic)
+    }
+
+    /// Canonicalizes this compatibility value using the caller's authoritative
+    /// semantic resolver for every nominal identity and enum declaration.
+    pub fn to_canonical_value_with_context(
+        &self,
+        semantic: &mut dyn crate::LegacySemanticContext,
+    ) -> MResult<crate::Value> {
+        // Validate the entire identity-bearing compatibility graph before kind
+        // inference. Legacy `kind()` follows mutable references transparently
+        // and therefore cannot itself be the cycle boundary.
+        let value = self.try_deep_snapshot()?;
+        let schema = crate::schema_from_legacy_value_kind(&value.kind(), semantic)?;
+        let mut builder = crate::SchemaTableBuilder::new();
+        let handle = builder.insert(schema)?;
+        let build = builder.finish()?;
+        let schema = build.resolve(handle)?;
+        let schemas = build.table;
+        let validation = crate::snapshot::SnapshotValidationContext::new(&schemas);
+        let mut context = crate::LegacySnapshotContext::new(
+            semantic,
+            crate::LegacyEmptyPolicy::ResolveOptionAbsence,
+            crate::LegacyReferencePolicy::SnapshotCurrentValue,
+        );
+        crate::snapshot_from_legacy(&value, schema, Box::new([]), &validation, &mut context)
+            .map_err(Into::into)
+    }
+
+    /// Materializes a detached compatibility value from a canonical value.
+    pub fn from_canonical_value(value: &crate::Value) -> MResult<Self> {
+        let mut context = crate::legacy_adapter::value::InferredLegacyMaterializationContext;
+        Self::from_canonical_value_with_context(value, &mut context)
+    }
+
+    /// Materializes a compatibility value with the caller's authoritative
+    /// nominal dictionary. The convenience adapter deliberately rejects
+    /// nominal values instead of fabricating identifiers or names.
+    pub fn from_canonical_value_with_context(
+        value: &crate::Value,
+        context: &mut dyn crate::LegacyMaterializationContext,
+    ) -> MResult<Self> {
+        let schemas = value
+            .schemas()
+            .ok_or(crate::LegacySnapshotError::UnsupportedLegacyMaterialization)?;
+        crate::legacy_from_snapshot(value, &schemas, context).map_err(Into::into)
+    }
+
     /// Returns an exact legacy kind literal without formatting or reparsing.
     pub fn legacy_kind_literal(&self) -> Option<&crate::ValueKind> {
         match self {
@@ -15,7 +66,11 @@ impl LegacyValue {
     }
 
     pub fn is_legacy_empty(&self) -> bool {
-        matches!(self, LegacyValue::Empty)
+        core::mem::discriminant(self) == core::mem::discriminant(&Self::legacy_absent_control())
+    }
+
+    pub(crate) fn legacy_absent_control() -> Self {
+        LegacyValue::Empty
     }
 
     pub fn legacy_empty_kind(&self) -> Option<&crate::ValueKind> {
@@ -26,7 +81,11 @@ impl LegacyValue {
     }
 
     pub fn is_legacy_index_all(&self) -> bool {
-        matches!(self, LegacyValue::IndexAll)
+        core::mem::discriminant(self) == core::mem::discriminant(&Self::legacy_matrix_all_control())
+    }
+
+    pub(crate) fn legacy_matrix_all_control() -> Self {
+        LegacyValue::IndexAll
     }
 
     /// Returns the exact compatibility cell stored by an outer legacy mutable

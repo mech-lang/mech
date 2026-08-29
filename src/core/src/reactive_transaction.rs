@@ -1,6 +1,6 @@
 use crate::{
-    FunctionInstance, LegacyValue, MResult, MechError, MechErrorKind, MechFunction, ValueCell,
-    ValueStateJournal,
+    CanonicalStateJournal, FunctionInstance, MResult, MechError, MechErrorKind, MechFunction,
+    ValueCell,
 };
 use std::cell::Cell;
 
@@ -8,19 +8,15 @@ use std::cell::Cell;
 ///
 /// This journal deliberately contains only before-state. It is consumed by
 /// higher-level rollback coordinators and never becomes durable history.
-pub(crate) struct ReactiveTurnJournal {
-    values: ValueStateJournal,
+pub(crate) struct CanonicalTurnJournal {
+    values: CanonicalStateJournal,
 }
 
-impl ReactiveTurnJournal {
+impl CanonicalTurnJournal {
     pub(crate) fn new() -> Self {
         Self {
-            values: ValueStateJournal::new(),
+            values: CanonicalStateJournal::new(),
         }
-    }
-
-    pub(crate) fn capture_value(&mut self, value: &LegacyValue) -> MResult<()> {
-        self.values.capture_value(value)
     }
 
     pub(crate) fn capture_value_cell(&mut self, value: &ValueCell) -> MResult<()> {
@@ -28,21 +24,28 @@ impl ReactiveTurnJournal {
     }
 
     pub(crate) fn capture_function_state(&mut self, function: &dyn MechFunction) -> MResult<()> {
-        if let Some(ports) = function.transaction_state_ports()? {
-            for port in ports {
-                port.capture_into(&mut self.values)?;
-            }
-            return Ok(());
-        }
+        function.capture_retained_state(&mut self.values)
+    }
 
-        let mut values = function.transaction_state_values()?;
-        if values.is_empty() {
-            values.push(function.out());
-        }
-        for value in values {
-            self.values.capture_value(&value)?;
-        }
-        Ok(())
+    pub(crate) fn capture_legacy_function_state(
+        &mut self,
+        function: &dyn MechFunction,
+    ) -> MResult<()> {
+        function
+            .primary_output_state_port()
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::TransactionStateUnsupportedError {
+                        function: function.to_string(),
+                        reason: "legacy reactive nodes must expose an exact primary state port"
+                            .into(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?
+            .capture_into(&mut self.values)?;
+        self.capture_function_state(function)
     }
 
     pub(crate) fn capture_function_instance(&mut self, instance: &FunctionInstance) -> MResult<()> {
@@ -70,7 +73,7 @@ impl ReactiveTurnJournal {
     }
 }
 
-impl Default for ReactiveTurnJournal {
+impl Default for CanonicalTurnJournal {
     fn default() -> Self {
         Self::new()
     }
@@ -83,15 +86,11 @@ impl Default for ReactiveTurnJournal {
 /// capability only inside [`with_reactive_journal_participant`], which restores
 /// captured values if the operation exits without explicit finalization.
 pub struct ReactiveJournalParticipant<'journal> {
-    journal: &'journal mut ReactiveTurnJournal,
+    journal: &'journal mut CanonicalTurnJournal,
     finalization: &'journal Cell<ReactiveJournalFinalizationState>,
 }
 
 impl ReactiveJournalParticipant<'_> {
-    pub fn capture_value(&mut self, value: &LegacyValue) -> MResult<()> {
-        self.journal.capture_value(value)
-    }
-
     pub fn capture_value_cell(&mut self, value: &ValueCell) -> MResult<()> {
         self.journal.capture_value_cell(value)
     }
@@ -127,7 +126,7 @@ impl ReactiveJournalParticipant<'_> {
         self.journal.is_empty()
     }
 
-    pub(crate) fn journal_mut(&mut self) -> &mut ReactiveTurnJournal {
+    pub(crate) fn journal_mut(&mut self) -> &mut CanonicalTurnJournal {
         self.journal
     }
 }
@@ -187,7 +186,7 @@ impl MechErrorKind for ReactiveJournalAutomaticRollbackFailed {
 pub fn with_reactive_journal_participant<T>(
     operation: impl FnOnce(ReactiveJournalParticipant<'_>) -> MResult<T>,
 ) -> MResult<T> {
-    let mut journal = ReactiveTurnJournal::new();
+    let mut journal = CanonicalTurnJournal::new();
     let finalization = Cell::new(ReactiveJournalFinalizationState::Pending);
     let participant = ReactiveJournalParticipant {
         journal: &mut journal,
@@ -231,13 +230,25 @@ mod tests {
         )
     }
 
+    fn index_cell(value: usize) -> ValueCell {
+        ValueCell::from_exact(value).unwrap()
+    }
+
+    fn replace_index(cell: &ValueCell, value: usize) {
+        *cell.try_ref::<usize>().unwrap().borrow_mut() = value;
+    }
+
+    fn read_index(cell: &ValueCell) -> usize {
+        *cell.try_ref::<usize>().unwrap().borrow()
+    }
+
     #[test]
     fn reactive_journal_pending_error_restores_and_returns_original_error() {
-        let value = Ref::new(1usize);
+        let value = index_cell(1);
 
         let error = with_reactive_journal_participant::<()>(|mut participant| {
-            participant.capture_value(&LegacyValue::Index(value.clone()))?;
-            *value.borrow_mut() = 2;
+            participant.capture_value_cell(&value)?;
+            replace_index(&value, 2);
             Err(deliberate_journal_error("deliberate pending journal error"))
         })
         .unwrap_err();
@@ -248,46 +259,46 @@ mod tests {
                 .kind_message()
                 .contains("deliberate pending journal error"),
         );
-        assert_eq!(*value.borrow(), 1);
+        assert_eq!(read_index(&value), 1);
     }
 
     #[test]
     fn reactive_journal_pending_success_restores_and_reports_missing_finalization() {
-        let value = Ref::new(1usize);
+        let value = index_cell(1);
 
         let error = with_reactive_journal_participant(|mut participant| {
-            participant.capture_value(&LegacyValue::Index(value.clone()))?;
-            *value.borrow_mut() = 2;
+            participant.capture_value_cell(&value)?;
+            replace_index(&value, 2);
             Ok(())
         })
         .unwrap_err();
 
         assert_eq!(error.kind_name(), "ReactiveJournalFinalizationMissing",);
-        assert_eq!(*value.borrow(), 1);
+        assert_eq!(read_index(&value), 1);
     }
 
     #[test]
     fn reactive_journal_explicit_commit_retains_mutation() {
-        let value = Ref::new(1usize);
+        let value = index_cell(1);
 
         with_reactive_journal_participant(|mut participant| {
-            participant.capture_value(&LegacyValue::Index(value.clone()))?;
-            *value.borrow_mut() = 2;
+            participant.capture_value_cell(&value)?;
+            replace_index(&value, 2);
             participant.commit();
             Ok(())
         })
         .unwrap();
 
-        assert_eq!(*value.borrow(), 2);
+        assert_eq!(read_index(&value), 2);
     }
 
     #[test]
     fn reactive_journal_commit_with_error_retains_mutation_and_error() {
-        let value = Ref::new(1usize);
+        let value = index_cell(1);
 
         let error = with_reactive_journal_participant::<()>(|mut participant| {
-            participant.capture_value(&LegacyValue::Index(value.clone()))?;
-            *value.borrow_mut() = 2;
+            participant.capture_value_cell(&value)?;
+            replace_index(&value, 2);
             participant.commit();
             Err(deliberate_journal_error(
                 "deliberate committed journal error",
@@ -301,16 +312,16 @@ mod tests {
                 .kind_message()
                 .contains("deliberate committed journal error"),
         );
-        assert_eq!(*value.borrow(), 2);
+        assert_eq!(read_index(&value), 2);
     }
 
     #[test]
     fn reactive_journal_explicit_rollback_restores_and_returns_original_error() {
-        let value = Ref::new(1usize);
+        let value = index_cell(1);
 
         let error = with_reactive_journal_participant::<()>(|mut participant| {
-            participant.capture_value(&LegacyValue::Index(value.clone()))?;
-            *value.borrow_mut() = 2;
+            participant.capture_value_cell(&value)?;
+            replace_index(&value, 2);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Err(deliberate_journal_error(
@@ -325,7 +336,7 @@ mod tests {
                 .kind_message()
                 .contains("deliberate rolled-back journal error"),
         );
-        assert_eq!(*value.borrow(), 1);
+        assert_eq!(read_index(&value), 1);
     }
 
     #[test]
@@ -376,11 +387,11 @@ mod tests {
             Ok(ReactiveSolveStatus::Changed)
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Index(self.output.clone())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.output))
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
             self.events
                 .borrow_mut()
                 .push(format!("capture {}", self.name));
@@ -393,10 +404,7 @@ mod tests {
                     None,
                 ));
             }
-            Ok(vec![
-                LegacyValue::Index(self.output.clone()),
-                LegacyValue::Index(self.retained.clone()),
-            ])
+            Ok(Some(vec![FunctionStatePort::from_ref(&self.retained)]))
         }
 
         fn reactive_dependency_kinds(
@@ -450,8 +458,6 @@ mod tests {
         output: Ref<usize>,
         retained: Ref<usize>,
         mode: TypedStateMode,
-        out_calls: Rc<Cell<usize>>,
-        legacy_state_calls: Rc<Cell<usize>>,
         solve_calls: Rc<Cell<usize>>,
     }
 
@@ -474,9 +480,8 @@ mod tests {
         fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
             match self.mode {
                 TypedStateMode::State => {
-                    let output = FunctionStatePort::from_ref(&self.output);
                     let retained = FunctionStatePort::from_ref(&self.retained);
-                    Ok(Some(vec![output, retained, retained]))
+                    Ok(Some(vec![retained, retained]))
                 }
                 TypedStateMode::Empty => Ok(Some(Vec::new())),
                 TypedStateMode::Error => Err(MechError::new(
@@ -487,22 +492,6 @@ mod tests {
                     None,
                 )),
             }
-        }
-
-        fn out(&self) -> LegacyValue {
-            self.out_calls.set(self.out_calls.get() + 1);
-            LegacyValue::Index(self.output.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            self.legacy_state_calls
-                .set(self.legacy_state_calls.get() + 1);
-            Err(MechError::new(
-                GenericError {
-                    msg: "legacy typed-state fallback was invoked".into(),
-                },
-                None,
-            ))
         }
 
         fn to_string(&self) -> String {
@@ -517,28 +506,15 @@ mod tests {
         }
     }
 
-    fn typed_journal_function(
-        mode: TypedStateMode,
-    ) -> (
-        TypedJournalFunction,
-        Rc<Cell<usize>>,
-        Rc<Cell<usize>>,
-        Rc<Cell<usize>>,
-    ) {
-        let out_calls = Rc::new(Cell::new(0));
-        let legacy_state_calls = Rc::new(Cell::new(0));
+    fn typed_journal_function(mode: TypedStateMode) -> (TypedJournalFunction, Rc<Cell<usize>>) {
         let solve_calls = Rc::new(Cell::new(0));
         (
             TypedJournalFunction {
                 output: Ref::new(1),
                 retained: Ref::new(2),
                 mode,
-                out_calls: out_calls.clone(),
-                legacy_state_calls: legacy_state_calls.clone(),
                 solve_calls: solve_calls.clone(),
             },
-            out_calls,
-            legacy_state_calls,
             solve_calls,
         )
     }
@@ -575,18 +551,15 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Index(self.sink.clone())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.sink))
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
             self.events
                 .borrow_mut()
                 .push(format!("capture {}", self.name));
-            Ok(vec![
-                LegacyValue::Index(self.sink.clone()),
-                LegacyValue::Index(self.retained.clone()),
-            ])
+            Ok(Some(vec![FunctionStatePort::from_ref(&self.retained)]))
         }
 
         fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -634,8 +607,8 @@ mod tests {
         plan.register(
             Box::new(journal_function(
                 "scheduled",
-                Ref::new(0),
-                Ref::new(0),
+                Ref::new(1),
+                Ref::new(1),
                 events.clone(),
             )),
             &[LegacyValue::Index(scheduled_input.clone())],
@@ -644,15 +617,15 @@ mod tests {
         plan.register(
             Box::new(journal_function(
                 "unrelated",
-                Ref::new(0),
-                Ref::new(0),
+                Ref::new(1),
+                Ref::new(1),
                 events.clone(),
             )),
             &[LegacyValue::Index(unrelated_input)],
         )
         .unwrap();
 
-        let mut journal = ReactiveTurnJournal::new();
+        let mut journal = CanonicalTurnJournal::new();
         plan.solve_dirty_cells_with_journal(
             &LegacyValue::Index(scheduled_input).reactive_root_cell_ids(),
             &mut journal,
@@ -669,13 +642,13 @@ mod tests {
     fn reactive_transaction_sampled_only_consumer_is_not_captured() {
         let input = Ref::new(1usize);
         let events = Rc::new(RefCell::new(Vec::new()));
-        let mut function = journal_function("sampled", Ref::new(0), Ref::new(0), events.clone());
+        let mut function = journal_function("sampled", Ref::new(1), Ref::new(1), events.clone());
         function.sampled = true;
         let mut plan = ReactivePlan::new();
         plan.register(Box::new(function), &[LegacyValue::Index(input.clone())])
             .unwrap();
 
-        let mut journal = ReactiveTurnJournal::new();
+        let mut journal = CanonicalTurnJournal::new();
         let outcome = plan
             .solve_dirty_cells_with_journal(
                 &LegacyValue::Index(input).reactive_root_cell_ids(),
@@ -706,7 +679,7 @@ mod tests {
         )
         .unwrap();
 
-        let mut journal = ReactiveTurnJournal::new();
+        let mut journal = CanonicalTurnJournal::new();
         plan.solve_dirty_cells_with_journal(
             &LegacyValue::Index(input).reactive_root_cell_ids(),
             &mut journal,
@@ -723,7 +696,7 @@ mod tests {
         let input = Ref::new(1usize);
         let events = Rc::new(RefCell::new(Vec::new()));
         let mut function =
-            journal_function("unsupported", Ref::new(0), Ref::new(0), events.clone());
+            journal_function("unsupported", Ref::new(1), Ref::new(1), events.clone());
         function.capture_error = true;
         let mut plan = ReactivePlan::new();
         plan.register(Box::new(function), &[LegacyValue::Index(input.clone())])
@@ -732,7 +705,7 @@ mod tests {
         let error = plan
             .solve_dirty_cells_with_journal(
                 &LegacyValue::Index(input).reactive_root_cell_ids(),
-                &mut ReactiveTurnJournal::new(),
+                &mut CanonicalTurnJournal::new(),
             )
             .unwrap_err();
 
@@ -742,34 +715,13 @@ mod tests {
 
     #[test]
     fn reactive_transaction_deduplicates_shared_cells() {
-        let shared = Ref::new(1usize);
-        let mut journal = ReactiveTurnJournal::new();
+        let shared = index_cell(1);
+        let mut journal = CanonicalTurnJournal::new();
 
-        journal
-            .capture_value(&LegacyValue::Index(shared.clone()))
-            .unwrap();
-        journal.capture_value(&LegacyValue::Index(shared)).unwrap();
+        journal.capture_value_cell(&shared).unwrap();
+        journal.capture_value_cell(&shared).unwrap();
 
         assert_eq!(journal.cell_count(), 1);
-    }
-
-    #[test]
-    fn reactive_transaction_restores_nested_cell_identity() {
-        let inner = Ref::new(3usize);
-        let outer = ValueCell::new(LegacyValue::Index(inner.clone()));
-        let mut journal = ReactiveTurnJournal::new();
-        journal.capture_value_cell(&outer).unwrap();
-        *inner.borrow_mut() = 9;
-        *outer.borrow_mut() = LegacyValue::Index(Ref::new(10));
-
-        journal.restore_before().unwrap();
-
-        let restored = outer.borrow();
-        let LegacyValue::Index(restored_inner) = &*restored else {
-            panic!("expected restored nested index")
-        };
-        assert!(restored_inner.same_handle(&inner));
-        assert_eq!(*restored_inner.borrow(), 3);
     }
 
     #[test]
@@ -782,7 +734,7 @@ mod tests {
             retained.clone(),
             Rc::new(RefCell::new(Vec::new())),
         );
-        let mut journal = ReactiveTurnJournal::new();
+        let mut journal = CanonicalTurnJournal::new();
         journal.capture_function_state(&function).unwrap();
         *retained.borrow_mut() = 99;
 
@@ -793,41 +745,34 @@ mod tests {
 
     #[test]
     fn reactive_transaction_prefers_typed_ports_restores_hidden_state_and_deduplicates() {
-        let (function, out_calls, legacy_state_calls, _) =
-            typed_journal_function(TypedStateMode::State);
+        let (function, _) = typed_journal_function(TypedStateMode::State);
         let output = function.output.clone();
         let retained = function.retained.clone();
-        let mut journal = ReactiveTurnJournal::new();
+        let mut journal = CanonicalTurnJournal::new();
 
         journal.capture_function_state(&function).unwrap();
-        assert_eq!(journal.cell_count(), 2);
+        assert_eq!(journal.cell_count(), 1);
         *output.borrow_mut() = 11;
         *retained.borrow_mut() = 22;
         journal.restore_before().unwrap();
 
-        assert_eq!((*output.borrow(), *retained.borrow()), (1, 2));
-        assert_eq!(out_calls.get(), 0);
-        assert_eq!(legacy_state_calls.get(), 0);
+        assert_eq!((*output.borrow(), *retained.borrow()), (11, 2));
     }
 
     #[test]
     fn empty_typed_state_is_authoritative_without_out_fallback() {
-        let (function, out_calls, legacy_state_calls, _) =
-            typed_journal_function(TypedStateMode::Empty);
-        let mut journal = ReactiveTurnJournal::new();
+        let (function, _) = typed_journal_function(TypedStateMode::Empty);
+        let mut journal = CanonicalTurnJournal::new();
 
         journal.capture_function_state(&function).unwrap();
 
         assert!(journal.is_empty());
-        assert_eq!(out_calls.get(), 0);
-        assert_eq!(legacy_state_calls.get(), 0);
     }
 
     #[test]
     fn typed_state_error_prevents_solve_without_compatibility_fallback() {
         let input = Ref::new(1usize);
-        let (function, _out_calls, legacy_state_calls, solve_calls) =
-            typed_journal_function(TypedStateMode::Error);
+        let (function, solve_calls) = typed_journal_function(TypedStateMode::Error);
         let mut plan = ReactivePlan::new();
         plan.register(Box::new(function), &[LegacyValue::Index(input.clone())])
             .unwrap();
@@ -835,18 +780,17 @@ mod tests {
         let error = plan
             .solve_dirty_cells_with_journal(
                 &LegacyValue::Index(input).reactive_root_cell_ids(),
-                &mut ReactiveTurnJournal::new(),
+                &mut CanonicalTurnJournal::new(),
             )
             .unwrap_err();
 
         assert_eq!(error.kind_name(), "TransactionStateUnsupported");
-        assert_eq!(legacy_state_calls.get(), 0);
         assert_eq!(solve_calls.get(), 0);
     }
 
     #[test]
-    fn typed_and_legacy_function_state_coexist_in_one_journal() {
-        let (typed, _, _, _) = typed_journal_function(TypedStateMode::State);
+    fn typed_and_legacy_retained_state_coexist_in_one_journal() {
+        let (typed, _) = typed_journal_function(TypedStateMode::State);
         let typed_output = typed.output.clone();
         let legacy_output = Ref::new(3usize);
         let legacy_retained = Ref::new(4usize);
@@ -856,7 +800,7 @@ mod tests {
             legacy_retained.clone(),
             Rc::new(RefCell::new(Vec::new())),
         );
-        let mut journal = ReactiveTurnJournal::new();
+        let mut journal = CanonicalTurnJournal::new();
 
         journal.capture_function_state(&typed).unwrap();
         journal.capture_function_state(&legacy).unwrap();
@@ -865,14 +809,16 @@ mod tests {
         *legacy_retained.borrow_mut() = 40;
         journal.restore_before().unwrap();
 
-        assert_eq!(*typed_output.borrow(), 1);
-        assert_eq!((*legacy_output.borrow(), *legacy_retained.borrow()), (3, 4));
+        assert_eq!(*typed_output.borrow(), 10);
+        assert_eq!(
+            (*legacy_output.borrow(), *legacy_retained.borrow()),
+            (30, 4)
+        );
     }
 
     #[test]
     fn canonical_function_instance_state_uses_the_reactive_participant() {
-        let (function, out_calls, legacy_state_calls, _) =
-            typed_journal_function(TypedStateMode::State);
+        let (function, _) = typed_journal_function(TypedStateMode::State);
         let output = function.output.clone();
         let retained = function.retained.clone();
         let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
@@ -891,21 +837,19 @@ mod tests {
         .unwrap();
 
         assert_eq!((*output.borrow(), *retained.borrow()), (1, 2));
-        assert_eq!(out_calls.get(), 0);
-        assert_eq!(legacy_state_calls.get(), 0);
     }
 
     #[test]
     fn reactive_transaction_preserves_unsupported_state_error() {
         let mut function = journal_function(
             "unsupported",
-            Ref::new(0),
-            Ref::new(0),
+            Ref::new(1),
+            Ref::new(1),
             Rc::new(RefCell::new(Vec::new())),
         );
         function.capture_error = true;
 
-        let error = ReactiveTurnJournal::new()
+        let error = CanonicalTurnJournal::new()
             .capture_function_state(&function)
             .unwrap_err();
 
@@ -944,8 +888,8 @@ mod tests {
             &mut plan,
             "a",
             Ref::new(1),
-            Ref::new(0),
-            Ref::new(0),
+            Ref::new(1),
+            Ref::new(1),
             events.clone(),
             false,
         );
@@ -953,15 +897,15 @@ mod tests {
             &mut plan,
             "b",
             Ref::new(2),
-            Ref::new(0),
-            Ref::new(0),
+            Ref::new(1),
+            Ref::new(1),
             events.clone(),
             false,
         );
 
         plan.commit_pending_registers_with_journal(
             &[second, first],
-            &mut ReactiveTurnJournal::new(),
+            &mut CanonicalTurnJournal::new(),
         )
         .unwrap();
 
@@ -981,7 +925,7 @@ mod tests {
             &mut plan,
             "a",
             Ref::new(1),
-            Ref::new(0),
+            Ref::new(1),
             first_state.clone(),
             events,
             false,
@@ -990,12 +934,12 @@ mod tests {
             &mut plan,
             "b",
             Ref::new(2),
-            Ref::new(0),
+            Ref::new(1),
             second_state.clone(),
             Rc::new(RefCell::new(Vec::new())),
             true,
         );
-        let mut journal = ReactiveTurnJournal::new();
+        let mut journal = CanonicalTurnJournal::new();
 
         plan.commit_pending_registers_with_journal(&[first, second], &mut journal)
             .unwrap_err();
@@ -1015,7 +959,7 @@ mod tests {
                 name: "register",
                 source: source.clone(),
                 sink: sink.clone(),
-                retained: Ref::new(0),
+                retained: Ref::new(1),
                 events: register_events,
                 fail_stage: false,
             }),
@@ -1024,14 +968,14 @@ mod tests {
         .unwrap();
         let mut failing = journal_function(
             "downstream",
-            Ref::new(0),
-            Ref::new(0),
+            Ref::new(1),
+            Ref::new(1),
             Rc::new(RefCell::new(Vec::new())),
         );
         failing.solve_error = true;
         plan.register(Box::new(failing), &[LegacyValue::Index(sink.clone())])
             .unwrap();
-        let mut journal = ReactiveTurnJournal::new();
+        let mut journal = CanonicalTurnJournal::new();
 
         plan.advance_reactive_turn_with_journal(
             &mut ReactiveTurnState::default(),
@@ -1052,14 +996,14 @@ mod tests {
         plan.register(
             Box::new(journal_function(
                 "success",
-                Ref::new(0),
-                Ref::new(0),
+                Ref::new(1),
+                Ref::new(1),
                 Rc::new(RefCell::new(Vec::new())),
             )),
             &[LegacyValue::Index(input.clone())],
         )
         .unwrap();
-        let mut journal = ReactiveTurnJournal::new();
+        let mut journal = CanonicalTurnJournal::new();
 
         plan.solve_dirty_cells_with_journal(
             &LegacyValue::Index(input).reactive_root_cell_ids(),

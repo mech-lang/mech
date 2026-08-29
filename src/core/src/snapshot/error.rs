@@ -63,6 +63,43 @@ pub enum ValueDataKind {
     ReifiedType,
 }
 
+impl core::fmt::Display for ValueDataKind {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter.write_str(match self {
+            Self::Dynamic => "dynamic",
+            Self::U8 => "u8",
+            Self::U16 => "u16",
+            Self::U32 => "u32",
+            Self::U64 => "u64",
+            Self::U128 => "u128",
+            Self::I8 => "i8",
+            Self::I16 => "i16",
+            Self::I32 => "i32",
+            Self::I64 => "i64",
+            Self::I128 => "i128",
+            Self::F32 => "f32",
+            Self::F64 => "f64",
+            Self::Complex32 => "c32",
+            Self::Complex64 => "c64",
+            Self::Rational64 => "r64",
+            Self::Bool => "bool",
+            Self::String => "string",
+            Self::Id => "id",
+            Self::Index => "index",
+            Self::Atom => "atom",
+            Self::Enum => "enum",
+            Self::Option => "option",
+            Self::Tuple => "tuple",
+            Self::Record => "record",
+            Self::Matrix => "matrix",
+            Self::Table => "table",
+            Self::Set => "set",
+            Self::Map => "map",
+            Self::ReifiedType => "type",
+        })
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SnapshotPath {
     segments: Box<[SnapshotPathSegment]>,

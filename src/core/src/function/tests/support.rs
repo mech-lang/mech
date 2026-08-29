@@ -9,13 +9,14 @@ use crate::MechSet;
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
-    GenericError, LegacyValue, MResult, MechError, ReactiveCellId, Ref, ToValue, ValueKind,
+    GenericError, LegacyReactivePlanRegistration, LegacyValue, MResult, MechError, ReactiveCellId,
+    Ref, ToValue, ValueCell, ValueKind,
 };
 use std::{cell::RefCell, rc::Rc};
 
 pub(super) struct TestFunction {
     name: &'static str,
-    output: LegacyValue,
+    output: ValueCell,
     dependency_kinds: Option<Vec<ReactiveDependencyKind>>,
     dependency_scopes: Option<Vec<ReactiveDependencyScope>>,
     node_kind: ReactiveNodeKind,
@@ -26,7 +27,7 @@ impl TestFunction {
     pub(super) fn new(name: &'static str) -> Self {
         Self {
             name,
-            output: LegacyValue::Empty,
+            output: ValueCell::unit(),
             dependency_kinds: None,
             dependency_scopes: None,
             node_kind: ReactiveNodeKind::Combinational,
@@ -38,7 +39,7 @@ impl TestFunction {
     pub(super) fn with_output(name: &'static str, output: LegacyValue) -> Self {
         Self {
             name,
-            output,
+            output: crate::value_cell_from_legacy_function_value(output),
             dependency_kinds: None,
             dependency_scopes: None,
             node_kind: ReactiveNodeKind::Combinational,
@@ -78,10 +79,6 @@ impl MechFunctionImpl for TestFunction {
         Ok(())
     }
 
-    fn out(&self) -> LegacyValue {
-        self.output.clone()
-    }
-
     fn reactive_dependency_kinds(
         &self,
         _argument_count: usize,
@@ -100,15 +97,15 @@ impl MechFunctionImpl for TestFunction {
         self.node_kind
     }
 
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
     fn to_string(&self) -> String {
         if let Some(calls) = &self.description_calls {
             *calls.borrow_mut() += 1;
         }
         self.name.to_string()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -182,11 +179,11 @@ impl MechFunctionImpl for TestRegister {
         *self.solve.borrow_mut() += 1;
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.sink.to_value()
-    }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         ReactiveNodeKind::Register
+    }
+    fn primary_output_state_port(&self) -> Option<crate::FunctionStatePort<'_>> {
+        Some(crate::FunctionStatePort::from_ref(&self.sink))
     }
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
         *self.stage.borrow_mut() += 1;
@@ -207,10 +204,6 @@ impl MechFunctionImpl for TestRegister {
     }
     fn to_string(&self) -> String {
         "test register".into()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 #[cfg(all(feature = "semantic-compiler", feature = "f64"))]

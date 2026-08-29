@@ -109,7 +109,7 @@ impl Complex64Bits {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Rational64Value {
     numerator: i64,
     denominator: u64,
@@ -147,7 +147,7 @@ const fn gcd(mut left: u64, mut right: u64) -> u64 {
     left
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum ValueData {
     Dynamic(DynamicValue),
     U8(u8),
@@ -235,7 +235,7 @@ impl DynamicValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct EnumValue {
     pub(super) ordinal: u32,
     pub(super) payload: Option<Box<ValueData>>,
@@ -251,7 +251,7 @@ impl EnumValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct RecordValue {
     /// Stored in schema field order.
     pub(super) fields: Box<[ValueData]>,
@@ -263,7 +263,7 @@ impl RecordValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct MatrixValue {
     /// Canonical snapshot payload in row-major order. Materializers translate
     /// this representation when an executor uses another physical layout,
@@ -319,7 +319,7 @@ impl MatrixValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct TableValue {
     /// Stored in schema column order.
     pub(super) columns: Box<[SequenceStorage]>,
@@ -339,7 +339,7 @@ impl TableValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct SetValue {
     /// Canonical key order.
     pub(super) elements: Box<[CanonicalKeyValue]>,
@@ -351,7 +351,7 @@ impl SetValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct MapValue {
     /// Canonical key order.
     pub(super) entries: Box<[MapEntryValue]>,
@@ -363,7 +363,7 @@ impl MapValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct MapEntryValue {
     pub(super) key: CanonicalKeyValue,
     pub(super) value: ValueData,
@@ -379,7 +379,7 @@ impl MapEntryValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct CanonicalKeyValue {
     pub(super) data: ValueData,
 }
@@ -390,13 +390,13 @@ impl CanonicalKeyValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum ReifiedType {
     Kind(ReifiedKind),
     Schema(SchemaKey),
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct ReifiedKind {
     canonical_bytes: Box<[u8]>,
 }
@@ -463,6 +463,22 @@ impl ReifiedKind {
 
     pub fn canonical_bytes(&self) -> &[u8] {
         &self.canonical_bytes
+    }
+
+    /// Decodes this validated semantic value into its closed kind expression,
+    /// dimension environment, and authoritative nominal paths.
+    pub fn decoded_closed_kind(
+        &self,
+    ) -> Result<
+        (
+            KindExpr,
+            Box<[DimensionParameterDeclaration]>,
+            BTreeMap<KindId, CanonicalNominalPath>,
+        ),
+        SnapshotValueError,
+    > {
+        let (kind, dimensions, named) = decode_canonical_reified_kind(&self.canonical_bytes)?;
+        Ok((kind, dimensions, named.paths))
     }
 
     /// Reconstructs a reified kind from its bytecode-v1 semantic material.

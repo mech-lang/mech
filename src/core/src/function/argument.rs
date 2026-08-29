@@ -10,13 +10,19 @@ use std::string::{String, ToString};
 
 use core::{any::type_name, fmt};
 
+#[cfg(test)]
+use crate::FunctionArgs;
+use crate::FunctionMatrixStoragePattern;
 #[cfg(feature = "matrix")]
-use crate::structures::Matrix;
+use crate::structures::{CopyMat, Matrix};
+#[cfg(feature = "semantic-compiler")]
+use crate::{BytecodeCompilerContext, Register};
 use crate::{
-    FunctionArgs, FunctionMatrixStoragePattern, FunctionRuntimeType, FunctionSignatureViolation,
-    FunctionValueRepresentation, IncorrectNumberOfArguments, LegacyValue, MResult, MechError,
-    MechErrorKind, ReactiveCellId, Ref, RuntimeFunctionContract, RuntimeFunctionInputs,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaId, ShapeInstance, Value, ValueCell,
+    FunctionArgumentRole, FunctionMatrixRepresentation, FunctionRuntimeType,
+    FunctionSignatureViolation, FunctionValueRepresentation, IncorrectNumberOfArguments, MResult,
+    MechError, MechErrorKind, ReactiveCellId, Ref, RuntimeFunctionContract, RuntimeFunctionInputs,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaBody, SchemaId, ShapeInstance, Value,
+    ValueCell, ValueData, ValueDataDraft,
 };
 
 mod function_port_backing {
@@ -25,9 +31,22 @@ mod function_port_backing {
 
 /// An exact runtime backing type that may be extracted through a function port.
 ///
-/// This sealed marker deliberately excludes [`LegacyValue`], [`crate::ValueCell`],
-/// and reference wrappers around either type. Universal legacy values remain
-/// available only through the legacy factory boundary.
+/// This sealed marker deliberately excludes universal values, [`crate::ValueCell`],
+/// legacy aggregate wrappers, and reference wrappers around those types.
+/// Compatibility values remain available only through the explicit adapter
+/// boundary.
+///
+/// ```compile_fail
+/// use mech_core::{FunctionPortBacking, MechSet};
+/// fn require<T: FunctionPortBacking>() {}
+/// require::<MechSet>();
+/// ```
+///
+/// ```compile_fail
+/// use mech_core::{matrix::Matrix, FunctionPortBacking};
+/// fn require<T: FunctionPortBacking>() {}
+/// require::<Matrix<f64>>();
+/// ```
 pub trait FunctionPortBacking:
     function_port_backing::Sealed + FunctionRuntimeType + 'static
 {
@@ -68,30 +87,6 @@ impl function_port_backing::Sealed for crate::C64 {}
 #[cfg(feature = "rational")]
 impl function_port_backing::Sealed for crate::R64 {}
 
-#[cfg(feature = "atom")]
-impl function_port_backing::Sealed for crate::MechAtom {}
-
-#[cfg(feature = "enum")]
-impl function_port_backing::Sealed for crate::MechEnum {}
-
-#[cfg(feature = "record")]
-impl function_port_backing::Sealed for crate::MechRecord {}
-
-#[cfg(feature = "map")]
-impl function_port_backing::Sealed for crate::MechMap {}
-
-#[cfg(feature = "set")]
-impl function_port_backing::Sealed for crate::MechSet {}
-
-#[cfg(feature = "table")]
-impl function_port_backing::Sealed for crate::MechTable {}
-
-#[cfg(feature = "tuple")]
-impl function_port_backing::Sealed for crate::MechTuple {}
-
-#[cfg(feature = "matrix")]
-impl<T: FunctionPortBacking> function_port_backing::Sealed for Matrix<T> {}
-
 macro_rules! exact_matrix_function_port_backing {
     ($type:ident, $feature:literal) => {
         #[cfg(feature = $feature)]
@@ -120,7 +115,6 @@ pub struct FunctionInvocation {
     layout: FunctionInvocationLayout,
     output: ValueCell,
     inputs: Box<[ValueCell]>,
-    compatibility_args: Option<FunctionArgs>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -238,22 +232,7 @@ impl FunctionInvocation {
             layout,
             output,
             inputs,
-            compatibility_args: None,
         })
-    }
-
-    pub(crate) fn from_legacy_cells(
-        layout: FunctionInvocationLayout,
-        output: ValueCell,
-        inputs: Box<[ValueCell]>,
-        args: FunctionArgs,
-    ) -> Self {
-        Self {
-            layout,
-            output,
-            inputs,
-            compatibility_args: Some(args),
-        }
     }
 
     pub fn input_count(&self) -> usize {
@@ -368,16 +347,8 @@ impl FunctionInvocation {
         }
         Self {
             layout: FunctionInvocationLayout::Variadic,
-            compatibility_args: self
-                .compatibility_args
-                .map(|args| args.normalize_for_signature(signature)),
             ..self
         }
-    }
-
-    pub(crate) fn into_legacy_args(self) -> FunctionArgs {
-        self.compatibility_args
-            .expect("legacy factory bridge requires compatibility arguments")
     }
 
     fn layout_error(&self, expected: usize) -> MechError {
@@ -444,9 +415,19 @@ impl FunctionInvocation {
                 }
             }
         }
-        if let Some(args) = &self.compatibility_args {
-            (contract.validate_shapes)(args)?;
-        }
+        let output = canonical_matrix_descriptor(&self.output)?;
+        let inputs = self
+            .inputs
+            .iter()
+            .map(canonical_matrix_descriptor)
+            .collect::<MResult<Vec<_>>>()?;
+        crate::function::contract::validate_canonical_shapes(
+            contract,
+            &self.output,
+            &self.inputs,
+            output,
+            &inputs,
+        )?;
         Ok(())
     }
 
@@ -457,6 +438,39 @@ impl FunctionInvocation {
     pub fn input_cells(&self) -> &[ValueCell] {
         &self.inputs
     }
+}
+
+pub(crate) fn canonical_matrix_descriptor(
+    cell: &ValueCell,
+) -> MResult<Option<FunctionMatrixDescriptor>> {
+    let FunctionValueRepresentation::Matrix { storage, .. } = cell.representation() else {
+        return Ok(None);
+    };
+    let schemas = cell.schema_table();
+    let Some(schema) = schemas.entry(cell.schema()) else {
+        return Ok(None);
+    };
+    let crate::SchemaBody::Matrix { dimensions, .. } = schema.schema().body() else {
+        return Ok(None);
+    };
+    let [rows, cols] = dimensions.as_ref() else {
+        return Ok(None);
+    };
+    let rows = usize::try_from(cell.shape().resolve_dimension(rows)?).map_err(|_| {
+        crate::function_shape_contract_violation("matrix", "row count exceeds usize")
+    })?;
+    let cols = usize::try_from(cell.shape().resolve_dimension(cols)?).map_err(|_| {
+        crate::function_shape_contract_violation("matrix", "column count exceeds usize")
+    })?;
+    let representation = match storage {
+        FunctionMatrixStoragePattern::Exact(representation) => representation,
+        FunctionMatrixStoragePattern::AnyStorage => FunctionMatrixRepresentation::MatrixD,
+    };
+    Ok(Some(FunctionMatrixDescriptor {
+        representation,
+        rows,
+        cols,
+    }))
 }
 
 fn expected_signature_input_count(
@@ -523,7 +537,10 @@ fn function_argument_type_mismatch<T>(cell: &ValueCell, role: FunctionArgumentRo
 }
 
 #[cfg(feature = "matrix")]
-fn matrix_from_cell<T>(cell: &ValueCell, role: FunctionArgumentRole) -> MResult<Matrix<T>>
+pub(crate) fn matrix_from_cell<T>(
+    cell: &ValueCell,
+    role: FunctionArgumentRole,
+) -> MResult<Matrix<T>>
 where
     T: FunctionPortBacking + Clone,
 {
@@ -534,6 +551,10 @@ where
     else {
         return Err(function_matrix_type_mismatch::<T>(cell, role));
     };
+    #[allow(
+        unreachable_patterns,
+        reason = "the fallback is reachable only in narrow matrix feature profiles"
+    )]
     let matrix = match storage {
         #[cfg(feature = "matrix1")]
         FunctionMatrixRepresentation::Matrix1 => Matrix::Matrix1(
@@ -610,6 +631,7 @@ where
             cell.try_ref::<crate::DMatrix<T>>()
                 .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
         ),
+        _ => return Err(function_matrix_type_mismatch::<T>(cell, role)),
     };
     Ok(matrix)
 }
@@ -645,15 +667,10 @@ impl FunctionInputPort<'_> {
     /// Extracts the exact typed input backing without exposing legacy values.
     ///
     /// ```compile_fail
-    /// use mech_core::{FunctionArgs, FunctionInvocation, LegacyValue, Ref};
-    ///
-    /// let legacy_cell = Ref::new(LegacyValue::Empty);
-    /// let invocation = FunctionInvocation::from(FunctionArgs::Unary(
-    ///     LegacyValue::Empty,
-    ///     LegacyValue::MutableReference(legacy_cell),
-    /// ));
-    /// let (_, input) = invocation.expect_unary().unwrap();
-    /// let _: Ref<LegacyValue> = input.try_ref::<LegacyValue>().unwrap();
+    /// use mech_core::FunctionPortBacking;
+    /// struct Unsupported;
+    /// fn require<T: FunctionPortBacking>() {}
+    /// require::<Unsupported>();
     /// ```
     pub fn try_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
         self.invocation.inputs[self.index]
@@ -669,15 +686,10 @@ impl FunctionInputPort<'_> {
     /// Extracts the exact typed matrix input wrapper without exposing legacy values.
     ///
     /// ```compile_fail
-    /// use mech_core::matrix::Matrix;
-    /// use mech_core::{FunctionArgs, FunctionInvocation, LegacyValue};
-    ///
-    /// let invocation = FunctionInvocation::from(FunctionArgs::Unary(
-    ///     LegacyValue::Empty,
-    ///     LegacyValue::Empty,
-    /// ));
-    /// let (_, input) = invocation.expect_unary().unwrap();
-    /// let _: Matrix<LegacyValue> = input.try_matrix::<LegacyValue>().unwrap();
+    /// use mech_core::FunctionPortBacking;
+    /// struct Unsupported;
+    /// fn require<T: FunctionPortBacking>() {}
+    /// require::<Unsupported>();
     /// ```
     #[cfg(feature = "matrix")]
     pub fn try_matrix<T>(self) -> MResult<Matrix<T>>
@@ -688,6 +700,24 @@ impl FunctionInputPort<'_> {
             &self.invocation.inputs[self.index],
             FunctionArgumentRole::Input(self.index),
         )
+    }
+
+    /// Extracts an exact typed matrix as the private copy-kernel interface.
+    ///
+    /// This retains the original typed matrix handles and never exposes a
+    /// universal value or performs a canonical-to-legacy conversion.
+    #[cfg(feature = "matrix")]
+    pub fn try_copyable_matrix<T>(self) -> MResult<Box<dyn CopyMat<T>>>
+    where
+        T: FunctionPortBacking + Clone,
+        #[cfg(feature = "semantic-compiler")]
+        T: crate::CompileConst
+            + crate::ConstElem
+            + crate::AsValueKind
+            + core::fmt::Debug
+            + PartialEq,
+    {
+        Ok(self.try_matrix::<T>()?.get_copyable_matrix())
     }
 
     pub fn value(self) -> FunctionValueInput {
@@ -710,14 +740,10 @@ impl FunctionOutputPort<'_> {
     /// Extracts the exact typed output backing without exposing legacy values.
     ///
     /// ```compile_fail
-    /// use mech_core::{FunctionArgs, FunctionInvocation, LegacyValue, Ref};
-    ///
-    /// let legacy_cell = Ref::new(LegacyValue::Empty);
-    /// let invocation = FunctionInvocation::from(FunctionArgs::Nullary(
-    ///     LegacyValue::MutableReference(legacy_cell),
-    /// ));
-    /// let output = invocation.expect_nullary().unwrap();
-    /// let _: Ref<LegacyValue> = output.try_ref::<LegacyValue>().unwrap();
+    /// use mech_core::FunctionPortBacking;
+    /// struct Unsupported;
+    /// fn require<T: FunctionPortBacking>() {}
+    /// require::<Unsupported>();
     /// ```
     pub fn try_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
         self.invocation.output.try_ref::<T>().map_err(|_| {
@@ -746,6 +772,11 @@ pub struct FunctionValueOutput {
 }
 
 impl FunctionValueInput {
+    /// Returns the canonical input cell retained by this invocation value.
+    pub const fn cell(&self) -> &ValueCell {
+        &self.cell
+    }
+
     pub fn snapshot(&self) -> MResult<Value> {
         self.cell.snapshot()
     }
@@ -754,12 +785,80 @@ impl FunctionValueInput {
         self.cell.schema()
     }
 
-    pub const fn shape(&self) -> &ShapeInstance {
-        self.cell.shape()
+    pub const fn schema_key(&self) -> crate::SchemaKey {
+        self.cell.schema_key()
+    }
+
+    pub fn shape(&self) -> ShapeInstance {
+        self.cell.shape().clone()
+    }
+
+    pub fn representation(&self) -> FunctionValueRepresentation {
+        self.cell.representation()
+    }
+
+    pub fn snapshot_eq(&self, other: &Self) -> MResult<bool> {
+        self.cell.snapshot_eq(&other.cell)
+    }
+
+    pub fn set_contains(&self, candidate: &Self) -> MResult<bool> {
+        let SchemaBody::Set { element, .. } = self.cell.closed_schema_body()? else {
+            return self.cell.set_contains(&candidate.cell);
+        };
+        if candidate.cell.closed_schema_body()? != *element {
+            return Ok(false);
+        }
+        self.cell.set_contains(&candidate.cell)
+    }
+
+    pub fn set_elements(&self) -> MResult<Box<[ValueData]>> {
+        self.cell.set_elements()
+    }
+
+    pub fn set_element_drafts(&self) -> MResult<Box<[ValueDataDraft]>> {
+        self.cell.set_element_drafts()
+    }
+
+    pub fn set_elements_after_insert(&self, candidate: &Self) -> MResult<Box<[ValueData]>> {
+        self.cell.set_elements_after_insert(&candidate.cell)
+    }
+
+    pub fn set_elements_after_remove(&self, candidate: &Self) -> MResult<Box<[ValueData]>> {
+        self.cell.set_elements_after_remove(&candidate.cell)
+    }
+
+    pub fn set_union_elements(&self, other: &Self) -> MResult<Box<[ValueData]>> {
+        self.cell.set_union_elements(&other.cell)
+    }
+
+    pub fn set_intersection_elements(&self, other: &Self) -> MResult<Box<[ValueData]>> {
+        self.cell.set_intersection_elements(&other.cell)
+    }
+
+    pub fn set_difference_elements(&self, other: &Self) -> MResult<Box<[ValueData]>> {
+        self.cell.set_difference_elements(&other.cell)
+    }
+
+    pub fn set_symmetric_difference_elements(&self, other: &Self) -> MResult<Box<[ValueData]>> {
+        self.cell.set_symmetric_difference_elements(&other.cell)
+    }
+
+    pub fn set_relation(&self, other: &Self, relation: crate::SetValueRelation) -> MResult<bool> {
+        self.cell.set_relation(&other.cell, relation)
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_register(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        crate::compile_value_cell_register(&self.cell, context)
     }
 }
 
 impl FunctionValueOutput {
+    /// Returns the canonical output cell retained by this invocation value.
+    pub const fn cell(&self) -> &ValueCell {
+        &self.cell
+    }
+
     pub fn snapshot(&self) -> MResult<Value> {
         self.cell.snapshot()
     }
@@ -768,12 +867,68 @@ impl FunctionValueOutput {
         self.cell.replace(value)
     }
 
+    pub fn replace_set(&self, elements: Box<[ValueData]>) -> MResult<()> {
+        let next = self.cell.rebuild_set(elements)?;
+        self.cell.replace(&next)
+    }
+
+    pub fn replace_set_drafts(&self, elements: Box<[ValueDataDraft]>) -> MResult<()> {
+        let next = self.cell.rebuild_set_drafts(elements)?;
+        self.cell.replace(&next)
+    }
+
+    pub fn replace_matrix_drafts(
+        &self,
+        dimensions: Box<[u64]>,
+        elements: Box<[ValueDataDraft]>,
+    ) -> MResult<()> {
+        let next = self.cell.rebuild_matrix_drafts(dimensions, elements)?;
+        self.cell.replace(&next)
+    }
+
     pub const fn schema(&self) -> SchemaId {
         self.cell.schema()
     }
 
-    pub const fn shape(&self) -> &ShapeInstance {
-        self.cell.shape()
+    pub const fn schema_key(&self) -> crate::SchemaKey {
+        self.cell.schema_key()
+    }
+
+    pub fn shape(&self) -> ShapeInstance {
+        self.cell.shape().clone()
+    }
+
+    pub fn representation(&self) -> FunctionValueRepresentation {
+        self.cell.representation()
+    }
+
+    pub fn state_port(&self) -> crate::FunctionStatePort<'_> {
+        crate::FunctionStatePort::from_cell(&self.cell)
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_register(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        crate::compile_value_cell_register(&self.cell, context)
+    }
+}
+
+impl fmt::Debug for FunctionValueInput {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("FunctionValueInput")
+            .field("schema_key", &self.cell.schema_key())
+            .field("shape", &self.cell.shape())
+            .finish()
+    }
+}
+
+impl fmt::Debug for FunctionValueOutput {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("FunctionValueOutput")
+            .field("schema_key", &self.cell.schema_key())
+            .field("shape", &self.cell.shape())
+            .finish()
     }
 }
 
@@ -816,37 +971,11 @@ impl fmt::Debug for FunctionInputPorts<'_> {
     }
 }
 
-/// Identifies the argument whose exact runtime representation was rejected.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FunctionArgumentRole {
-    Output,
-    Input(usize),
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FunctionArgumentTypeMismatch {
     pub role: FunctionArgumentRole,
     pub expected: String,
     pub found: String,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum FunctionMatrixRepresentation {
-    Matrix1,
-    Matrix2,
-    Matrix3,
-    Matrix4,
-    Matrix2x3,
-    Matrix3x2,
-    RowVector2,
-    RowVector3,
-    RowVector4,
-    Vector2,
-    Vector3,
-    Vector4,
-    RowVectorD,
-    VectorD,
-    MatrixD,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -895,7 +1024,7 @@ impl MechErrorKind for FunctionArgumentAliasViolation {
 }
 
 #[cfg(feature = "matrix")]
-fn matrix_descriptor<T>(matrix: &Matrix<T>) -> FunctionMatrixDescriptor
+pub(crate) fn matrix_descriptor<T>(matrix: &Matrix<T>) -> FunctionMatrixDescriptor
 where
     T: core::fmt::Debug + Clone + PartialEq + 'static,
 {
@@ -938,66 +1067,6 @@ where
     }
 }
 
-impl LegacyValue {
-    pub fn function_matrix_descriptor(
-        &self,
-        role: FunctionArgumentRole,
-    ) -> MResult<Option<FunctionMatrixDescriptor>> {
-        let descriptor = match self {
-            #[cfg(feature = "matrix")]
-            LegacyValue::MatrixIndex(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "bool"))]
-            LegacyValue::MatrixBool(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "u8"))]
-            LegacyValue::MatrixU8(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "u16"))]
-            LegacyValue::MatrixU16(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "u32"))]
-            LegacyValue::MatrixU32(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "u64"))]
-            LegacyValue::MatrixU64(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "u128"))]
-            LegacyValue::MatrixU128(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "i8"))]
-            LegacyValue::MatrixI8(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "i16"))]
-            LegacyValue::MatrixI16(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "i32"))]
-            LegacyValue::MatrixI32(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "i64"))]
-            LegacyValue::MatrixI64(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "i128"))]
-            LegacyValue::MatrixI128(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "f32"))]
-            LegacyValue::MatrixF32(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "f64"))]
-            LegacyValue::MatrixF64(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "string"))]
-            LegacyValue::MatrixString(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "rational"))]
-            LegacyValue::MatrixR64(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(all(feature = "matrix", feature = "complex"))]
-            LegacyValue::MatrixC64(matrix) => Some(matrix_descriptor(matrix)),
-            #[cfg(feature = "matrix")]
-            LegacyValue::MatrixValue(matrix) => Some(matrix_descriptor(matrix)),
-            LegacyValue::Typed(_, _) | LegacyValue::MutableReference(_) => {
-                return Err(MechError::new(
-                    FunctionArgumentTypeMismatch {
-                        role,
-                        expected: "an unwrapped scalar, nonmatrix, or exact matrix backing"
-                            .to_string(),
-                        found: self.exact_runtime_representation_name(),
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-            _ => None,
-        };
-        Ok(descriptor)
-    }
-}
-
 impl MechErrorKind for FunctionArgumentTypeMismatch {
     fn name(&self) -> &str {
         "FunctionArgumentTypeMismatch"
@@ -1011,35 +1080,10 @@ impl MechErrorKind for FunctionArgumentTypeMismatch {
     }
 }
 
-/// Extracts only an exact `Ref<T>` backing representation.
-///
-/// This deliberately performs no scalar conversion, matrix reshaping, or
-/// unwrapping of `Typed` and `MutableReference` values.
-pub fn require_function_ref<T: 'static>(
-    value: &LegacyValue,
-    role: FunctionArgumentRole,
-) -> MResult<Ref<T>> {
-    value
-        .exact_ref_any()
-        .and_then(|backing| backing.downcast_ref::<Ref<T>>())
-        .cloned()
-        .ok_or_else(|| {
-            MechError::new(
-                FunctionArgumentTypeMismatch {
-                    role,
-                    expected: type_name::<Ref<T>>().to_string(),
-                    found: value.exact_runtime_representation_name(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ToValue;
+    use crate::{LegacyValue, ToValue, require_function_ref};
 
     #[cfg(feature = "f64")]
     fn scalar(value: f64) -> (Ref<f64>, LegacyValue) {
@@ -1074,17 +1118,17 @@ mod tests {
         assert!(first_port.try_ref::<f64>().unwrap().same_handle(&first));
         assert!(second_port.try_ref::<f64>().unwrap().same_handle(&second));
         assert_eq!(first_port.value().schema(), first_cell.schema());
-        assert_eq!(first_port.value().shape(), first_cell.shape());
-        assert_eq!(
-            first_port.value().snapshot().unwrap(),
-            first_cell.snapshot().unwrap()
-        );
+        assert_eq!(first_port.value().shape(), first_cell.shape().clone());
+        assert!(matches!(
+            first_port.value().snapshot().unwrap().data(),
+            ValueData::F64(value) if value.to_f64() == 1.0
+        ));
 
         let replacement = second_cell.snapshot().unwrap();
         output_port.value().replace(&replacement).unwrap();
         assert_eq!(*output.borrow(), 2.0);
         assert_eq!(output_port.value().schema(), output_cell.schema());
-        assert_eq!(output_port.value().shape(), output_cell.shape());
+        assert_eq!(output_port.value().shape(), output_cell.shape().clone());
 
         let nullary = FunctionInvocation::nullary(output_cell.clone());
         assert!(

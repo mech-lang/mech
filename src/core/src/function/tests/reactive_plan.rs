@@ -2,7 +2,7 @@ use super::super::{Plan, ReactiveNodeKind, ReactivePlan};
 use super::support::TestFunction;
 #[cfg(all(feature = "set", feature = "f64"))]
 use super::support::set_output;
-use crate::{LegacyValue, ReactiveCellId, Ref};
+use crate::{LegacyReactivePlanRegistration, LegacyValue, ReactiveCellId, Ref};
 use std::{cell::RefCell, rc::Rc};
 
 #[test]

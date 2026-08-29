@@ -10,7 +10,7 @@ use super::support::TestFunction;
 use super::support::reg;
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{LegacyValue, MResult, ReactiveCellId, Ref, ToValue};
+use crate::{LegacyReactivePlanRegistration, LegacyValue, MResult, ReactiveCellId, Ref, ToValue};
 
 struct RetainedZstFunction;
 
@@ -18,15 +18,8 @@ impl MechFunctionImpl for RetainedZstFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Empty
-    }
     fn to_string(&self) -> String {
         "retained-zst".into()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 

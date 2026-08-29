@@ -150,7 +150,7 @@ fn all_thirty_two_value_kind_variants_map_or_error_explicitly() {
     let mut context = FakeContext::default();
     for (index, kind) in kinds.iter().enumerate() {
         let result = schema_from_legacy_value_kind(kind, &mut context);
-        if matches!(index, 18 | 19 | 20 | 28) {
+        if matches!(index, 18 | 20 | 28) {
             assert!(matches!(
                 result,
                 Err(SemanticModelError::NonInstantiableLegacyValueKind { .. })
@@ -244,8 +244,14 @@ fn enum_variants_come_from_context_and_ambiguous_value_kinds_are_structured_erro
         ["First", "Second"]
     );
 
+    assert_eq!(
+        schema_from_legacy_value_kind(&ValueKind::Any, &mut context)
+            .unwrap()
+            .body(),
+        &SchemaBody::Dynamic,
+    );
+
     for (kind, expected) in [
-        (ValueKind::Any, LegacyValueKindTag::Any),
         (ValueKind::None, LegacyValueKindTag::None),
         (ValueKind::Empty, LegacyValueKindTag::Empty),
         (

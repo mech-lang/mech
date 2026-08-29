@@ -1,12 +1,34 @@
 //! Explicit boundary adapters from the current mutable value model.
 
+#[cfg(feature = "semantic-compiler")]
+mod bytecode;
+#[cfg(feature = "program")]
+mod bytecode_aggregates;
+#[cfg(feature = "semantic-compiler")]
+mod compiler;
+#[cfg(feature = "functions")]
 mod function;
 mod kind;
-mod value;
+pub mod structures;
+pub(crate) mod value;
 
+#[cfg(all(test, feature = "f64", feature = "tuple"))]
+#[path = "../state_journal/tests/hashed_cycles.rs"]
+mod cycle_tests;
+
+#[cfg(feature = "semantic-compiler")]
+pub use self::bytecode::*;
+#[cfg(feature = "program")]
+pub use self::bytecode_aggregates::*;
+#[cfg(feature = "semantic-compiler")]
+pub use self::compiler::*;
+#[cfg(feature = "functions")]
 pub use self::function::*;
 pub use self::kind::*;
 pub use self::value::*;
+
+/// Compatibility alias for the retired universal mutable-reference backing.
+pub type MutableReference = crate::Ref<crate::LegacyValue>;
 
 use crate::{
     DimensionEnvironmentBuilder, DimensionExpr, DimensionParameterDeclaration, EnumVariantSchema,
@@ -52,6 +74,7 @@ pub enum LegacyNominalResolution {
 pub enum LegacyResolvedExtent {
     Dimensions(Box<[DimensionExpr]>),
     Cardinality(DimensionExpr),
+    DynamicCardinality { upper_bound: Option<DimensionExpr> },
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

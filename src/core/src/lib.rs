@@ -104,6 +104,8 @@ pub mod error;
 pub mod execution;
 #[cfg(feature = "functions")]
 pub mod function;
+#[path = "function/signature.rs"]
+mod function_signature;
 pub mod kind;
 pub mod nodes;
 #[cfg(feature = "functions")]
@@ -119,6 +121,7 @@ pub mod structures;
 // deletes this file.
 #[path = "value.rs"]
 pub mod legacy_value;
+#[path = "legacy_adapter/value_snapshot.rs"]
 mod value_snapshot;
 pub use self::value_snapshot::{
     ValueSnapshotBorrowConflict, ValueSnapshotCollectionCollision, ValueSnapshotCycleUnsupported,
@@ -128,6 +131,7 @@ pub use self::value_snapshot::{
 pub mod mika;
 pub mod program;
 pub mod read_source;
+#[path = "legacy_adapter/stdlib.rs"]
 pub mod stdlib;
 pub mod types;
 
@@ -137,6 +141,8 @@ pub use self::error::*;
 pub use self::execution::*;
 #[cfg(feature = "functions")]
 pub use self::function::*;
+#[cfg(not(feature = "functions"))]
+pub use self::function_signature::*;
 pub use self::legacy_value::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
@@ -149,8 +155,8 @@ pub use self::schema::*;
 pub use self::semantic_error::*;
 pub use self::semantic_identity::*;
 pub use self::snapshot::{
-    ConstantHandle, ConstantStore, ConstantStoreBuilder, SnapshotValueError, Value, ValueData,
-    ValueDataDraft, ValueDraft,
+    ConstantHandle, ConstantStore, ConstantStoreBuilder, SetValueRelation, SnapshotValueError,
+    Value, ValueData, ValueDataDraft, ValueDraft,
 };
 pub use self::state_journal::*;
 pub use self::stdlib::*;

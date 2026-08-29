@@ -125,13 +125,10 @@ pub(super) fn is_body_keyable(body: &SchemaBody) -> bool {
         SchemaBody::Option(element) => is_body_keyable(element),
         SchemaBody::Tuple(elements) => elements.iter().all(is_body_keyable),
         SchemaBody::Record(fields) => fields.iter().all(|field| is_body_keyable(&field.schema)),
-        SchemaBody::Dynamic
-        | SchemaBody::Complex(_)
-        | SchemaBody::Matrix { .. }
-        | SchemaBody::Table { .. }
-        | SchemaBody::Set { .. }
-        | SchemaBody::Map { .. }
-        | SchemaBody::ReifiedType => false,
+        SchemaBody::Dynamic | SchemaBody::Complex(_) => false,
+        SchemaBody::Matrix { element, .. } => is_body_keyable(element),
+        SchemaBody::Set { element, .. } => is_body_keyable(element),
+        SchemaBody::Table { .. } | SchemaBody::Map { .. } | SchemaBody::ReifiedType => false,
     }
 }
 
@@ -165,14 +162,14 @@ pub(super) fn collect_body_dimension_references(
         }
         SchemaBody::Table { columns, rows } => {
             collect_field_dimension_references(columns, references);
-            collect_dimension_references(rows, references);
+            collect_cardinality_references(rows, references);
         }
         SchemaBody::Set {
             element,
             cardinality,
         } => {
             collect_body_dimension_references(element, references);
-            collect_dimension_references(cardinality, references);
+            collect_cardinality_references(cardinality, references);
         }
         SchemaBody::Map {
             key,
@@ -181,7 +178,7 @@ pub(super) fn collect_body_dimension_references(
         } => {
             collect_body_dimension_references(key, references);
             collect_body_dimension_references(value, references);
-            collect_dimension_references(cardinality, references);
+            collect_cardinality_references(cardinality, references);
         }
         SchemaBody::Dynamic
         | SchemaBody::Bool
@@ -264,14 +261,14 @@ fn rewrite_body_dimensions(
         },
         SchemaBody::Table { columns, rows } => SchemaBody::Table {
             columns: rewrite_fields(columns, old_to_new)?,
-            rows: rewrite_dimension_references(rows, old_to_new)?,
+            rows: rewrite_cardinality_references(rows, old_to_new)?,
         },
         SchemaBody::Set {
             element,
             cardinality,
         } => SchemaBody::Set {
             element: Box::new(rewrite_body_dimensions(element, old_to_new)?),
-            cardinality: rewrite_dimension_references(cardinality, old_to_new)?,
+            cardinality: rewrite_cardinality_references(cardinality, old_to_new)?,
         },
         SchemaBody::Map {
             key,
@@ -280,7 +277,7 @@ fn rewrite_body_dimensions(
         } => SchemaBody::Map {
             key: Box::new(rewrite_body_dimensions(key, old_to_new)?),
             value: Box::new(rewrite_body_dimensions(value, old_to_new)?),
-            cardinality: rewrite_dimension_references(cardinality, old_to_new)?,
+            cardinality: rewrite_cardinality_references(cardinality, old_to_new)?,
         },
         SchemaBody::ReifiedType => SchemaBody::ReifiedType,
     })
@@ -352,14 +349,14 @@ fn normalize_body_dimensions(
         },
         SchemaBody::Table { columns, rows } => SchemaBody::Table {
             columns: normalize_fields(columns, parameter_count)?,
-            rows: normalize_dimension(&rows, parameter_count)?,
+            rows: normalize_cardinality(rows, parameter_count)?,
         },
         SchemaBody::Set {
             element,
             cardinality,
         } => SchemaBody::Set {
             element: Box::new(normalize_body_dimensions(*element, parameter_count)?),
-            cardinality: normalize_dimension(&cardinality, parameter_count)?,
+            cardinality: normalize_cardinality(cardinality, parameter_count)?,
         },
         SchemaBody::Map {
             key,
@@ -368,9 +365,56 @@ fn normalize_body_dimensions(
         } => SchemaBody::Map {
             key: Box::new(normalize_body_dimensions(*key, parameter_count)?),
             value: Box::new(normalize_body_dimensions(*value, parameter_count)?),
-            cardinality: normalize_dimension(&cardinality, parameter_count)?,
+            cardinality: normalize_cardinality(cardinality, parameter_count)?,
         },
         other => other,
+    })
+}
+
+fn collect_cardinality_references(
+    cardinality: &crate::CardinalitySpec,
+    references: &mut Vec<crate::DimensionParameterId>,
+) {
+    match cardinality {
+        crate::CardinalitySpec::Exact(value)
+        | crate::CardinalitySpec::Dynamic {
+            upper_bound: Some(value),
+        } => collect_dimension_references(value, references),
+        crate::CardinalitySpec::Dynamic { upper_bound: None } => {}
+    }
+}
+
+fn rewrite_cardinality_references(
+    cardinality: &crate::CardinalitySpec,
+    old_to_new: &[Option<crate::DimensionParameterId>],
+) -> Result<crate::CardinalitySpec, SemanticModelError> {
+    Ok(match cardinality {
+        crate::CardinalitySpec::Exact(value) => {
+            crate::CardinalitySpec::Exact(rewrite_dimension_references(value, old_to_new)?)
+        }
+        crate::CardinalitySpec::Dynamic { upper_bound } => crate::CardinalitySpec::Dynamic {
+            upper_bound: upper_bound
+                .as_ref()
+                .map(|value| rewrite_dimension_references(value, old_to_new))
+                .transpose()?,
+        },
+    })
+}
+
+fn normalize_cardinality(
+    cardinality: crate::CardinalitySpec,
+    parameter_count: usize,
+) -> Result<crate::CardinalitySpec, SemanticModelError> {
+    Ok(match cardinality {
+        crate::CardinalitySpec::Exact(value) => {
+            crate::CardinalitySpec::Exact(normalize_dimension(&value, parameter_count)?)
+        }
+        crate::CardinalitySpec::Dynamic { upper_bound } => crate::CardinalitySpec::Dynamic {
+            upper_bound: upper_bound
+                .as_ref()
+                .map(|value| normalize_dimension(value, parameter_count))
+                .transpose()?,
+        },
     })
 }
 

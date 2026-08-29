@@ -4,10 +4,12 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, FunctionInstance, FunctionInvocation, GuardFunctionSafety, LegacyValue, MResult,
-    MechError, MechErrorKind, MechFunction, MechFunctionFactory, OperationContractDeclaration,
-    ResidentKernelFactory, ResidentKernelFactoryEntry, ResidentOperationKey,
-    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, hash_str,
+    FunctionArgs, FunctionInstance, FunctionInvocation, FunctionSpecializer, GuardFunctionSafety,
+    MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
+    OperationContractDeclaration, ResidentKernelFactory, ResidentKernelFactoryEntry,
+    ResidentOperationKey, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy, SpecializationContext, SpecializationInvocation, SpecializedFunction,
+    hash_str,
 };
 
 #[cfg(test)]
@@ -99,8 +101,14 @@ impl NativeFunctionLinkage {
     }
 }
 
-pub trait FunctionSpecializer: Send + Sync {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>>;
+/// Production source specialization over canonical cells and explicit source
+/// control inputs.
+pub trait CanonicalFunctionSpecializer: Send + Sync {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction>;
 
     fn guard_safety(&self) -> GuardFunctionSafety {
         GuardFunctionSafety::Unsupported
@@ -236,7 +244,7 @@ impl RuntimeFunctionEntry {
 pub struct FunctionSpecializerEntry {
     pub operation: OperationId,
     pub canonical_name: String,
-    pub specializer: Arc<dyn FunctionSpecializer>,
+    pub specializer: Arc<dyn CanonicalFunctionSpecializer>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -825,6 +833,20 @@ impl FunctionCatalogBuilder {
         self.insert_specializer_entry(FunctionSpecializerEntry {
             operation,
             canonical_name,
+            specializer: crate::legacy_adapter::canonical_function_specializer(specializer),
+        })
+    }
+
+    pub fn insert_canonical_specializer(
+        &mut self,
+        canonical_name: impl Into<String>,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
+    ) -> MResult<OperationId> {
+        let canonical_name = canonical_name.into();
+        let operation = OperationId::from_name(&canonical_name);
+        self.insert_specializer_entry(FunctionSpecializerEntry {
+            operation,
+            canonical_name,
             specializer,
         })
     }
@@ -833,6 +855,20 @@ impl FunctionCatalogBuilder {
         &mut self,
         canonical_name: impl Into<String>,
         specializer: Arc<dyn FunctionSpecializer>,
+    ) -> MResult<OperationId> {
+        let canonical_name = canonical_name.into();
+        let operation = OperationId::from_name(&canonical_name);
+        self.insert_intrinsic_specializer_entry(FunctionSpecializerEntry {
+            operation,
+            canonical_name,
+            specializer: crate::legacy_adapter::canonical_function_specializer(specializer),
+        })
+    }
+
+    pub fn insert_canonical_intrinsic_specializer(
+        &mut self,
+        canonical_name: impl Into<String>,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
@@ -1441,6 +1477,7 @@ fn validate_export(export: &FunctionExport) -> MResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::LegacyValue;
     use core::sync::atomic::{AtomicUsize, Ordering};
 
     fn test_runtime_contract() -> RuntimeFunctionContract {
@@ -1492,14 +1529,6 @@ mod tests {
     impl crate::MechFunctionImpl for CatalogTestFunction {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
-        }
-
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Empty
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(Vec::new())
         }
 
         fn to_string(&self) -> String {
@@ -1626,6 +1655,10 @@ mod tests {
         Arc::new(TestSpecializer)
     }
 
+    fn canonical_test_specializer() -> Arc<dyn CanonicalFunctionSpecializer> {
+        crate::legacy_adapter::canonical_function_specializer(test_specializer())
+    }
+
     fn export(
         canonical_name: &str,
         module: Option<&str>,
@@ -1743,7 +1776,7 @@ mod tests {
             .insert_specializer_entry(FunctionSpecializerEntry {
                 operation,
                 canonical_name: String::from("first"),
-                specializer: test_specializer(),
+                specializer: canonical_test_specializer(),
             })
             .unwrap();
 
@@ -1751,7 +1784,7 @@ mod tests {
             .insert_specializer_entry(FunctionSpecializerEntry {
                 operation,
                 canonical_name: String::from("second"),
-                specializer: test_specializer(),
+                specializer: canonical_test_specializer(),
             })
             .unwrap_err();
 
@@ -1884,8 +1917,8 @@ mod tests {
         let invocation_function = entry
             .instantiate_invocation(FunctionArgs::Nullary(LegacyValue::Empty).into())
             .unwrap();
-        assert!(matches!(legacy_function.out(), LegacyValue::Empty));
-        assert!(matches!(invocation_function.out(), LegacyValue::Empty));
+        drop(legacy_function);
+        drop(invocation_function);
         entry
             .validate_args(&FunctionArgs::Nullary(LegacyValue::Empty))
             .unwrap();
@@ -1937,7 +1970,7 @@ mod tests {
     }
 
     #[test]
-    fn legacy_only_factory_uses_the_default_invocation_bridge() {
+    fn legacy_only_factory_cannot_receive_a_canonical_invocation() {
         LEGACY_ONLY_CALLS.store(0, Ordering::SeqCst);
         let mut builder = FunctionCatalogBuilder::new();
         builder
@@ -1951,16 +1984,31 @@ mod tests {
             .runtime_entry(RuntimeFunctionId::from_name("LegacyOnlyFactory"))
             .unwrap();
 
-        let legacy = entry
+        let legacy_error = entry
             .instantiate(FunctionArgs::Nullary(LegacyValue::Empty))
-            .unwrap();
-        let invocation = entry
+            .err()
+            .expect("legacy-only factory must reject canonical invocation");
+        let invocation_error = entry
             .instantiate_invocation(FunctionArgs::Nullary(LegacyValue::Empty).into())
-            .unwrap();
+            .err()
+            .expect("legacy-only factory must reject canonical invocation");
 
-        assert!(matches!(legacy.out(), LegacyValue::Empty));
-        assert!(matches!(invocation.out(), LegacyValue::Empty));
-        assert_eq!(LEGACY_ONLY_CALLS.load(Ordering::SeqCst), 2);
+        assert_eq!(legacy_error.kind_name(), "RuntimeFunctionContractViolation");
+        assert_eq!(
+            invocation_error.kind_name(),
+            "RuntimeFunctionContractViolation"
+        );
+        assert!(
+            legacy_error
+                .kind_message()
+                .contains("CanonicalFunctionInvocationUnsupported")
+        );
+        assert!(
+            invocation_error
+                .kind_message()
+                .contains("CanonicalFunctionInvocationUnsupported")
+        );
+        assert_eq!(LEGACY_ONLY_CALLS.load(Ordering::SeqCst), 0);
     }
 
     #[test]
@@ -1985,7 +2033,11 @@ mod tests {
             RuntimeFunctionId::from_name("RejectingFactory")
         );
         assert_eq!(violation.name, "RejectingFactory");
-        assert!(violation.reason.contains("IncorrectNumberOfArguments"));
+        assert!(
+            violation
+                .reason
+                .contains("CanonicalFunctionInvocationUnsupported")
+        );
     }
 
     #[test]

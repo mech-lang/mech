@@ -2,13 +2,17 @@ pub mod argument;
 pub mod catalog;
 pub mod contract;
 pub mod resident;
-pub mod signature;
+pub mod signature {
+    pub use crate::function_signature::*;
+}
+pub mod specialization;
 pub mod state;
 pub use argument::*;
 pub use catalog::*;
 pub use contract::*;
 pub use resident::*;
 pub use signature::*;
+pub use specialization::*;
 pub use state::*;
 
 use crate::legacy_value::*;
@@ -26,8 +30,6 @@ use tabled::{
     builder::Builder,
     settings::{Alignment, Panel, Style},
 };
-
-pub(crate) type FunctionReactiveCell = ReactiveCellId;
 
 // Functions ------------------------------------------------------------------
 
@@ -168,204 +170,60 @@ impl MechErrorKind for UserFunctionIdCollision {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum FunctionArgs {
-    Nullary(LegacyValue),
-    Unary(LegacyValue, LegacyValue),
-    Binary(LegacyValue, LegacyValue, LegacyValue),
-    Ternary(LegacyValue, LegacyValue, LegacyValue, LegacyValue),
-    Quaternary(
-        LegacyValue,
-        LegacyValue,
-        LegacyValue,
-        LegacyValue,
-        LegacyValue,
-    ),
-    Variadic(LegacyValue, Vec<LegacyValue>),
-}
-
-impl FunctionArgs {
-    pub(crate) fn normalize_for_signature(self, signature: RuntimeFunctionSignature) -> Self {
-        if !matches!(signature.inputs, RuntimeFunctionInputs::Variadic { .. }) {
-            return self;
-        }
-        match self {
-            FunctionArgs::Nullary(output) => FunctionArgs::Variadic(output, Vec::new()),
-            FunctionArgs::Unary(output, a) => FunctionArgs::Variadic(output, vec![a]),
-            FunctionArgs::Binary(output, a, b) => FunctionArgs::Variadic(output, vec![a, b]),
-            FunctionArgs::Ternary(output, a, b, c) => FunctionArgs::Variadic(output, vec![a, b, c]),
-            FunctionArgs::Quaternary(output, a, b, c, d) => {
-                FunctionArgs::Variadic(output, vec![a, b, c, d])
-            }
-            args @ FunctionArgs::Variadic(_, _) => args,
-        }
-    }
-
-    pub fn output_value(&self) -> &LegacyValue {
-        match self {
-            FunctionArgs::Nullary(output)
-            | FunctionArgs::Unary(output, _)
-            | FunctionArgs::Binary(output, _, _)
-            | FunctionArgs::Ternary(output, _, _, _)
-            | FunctionArgs::Quaternary(output, _, _, _, _)
-            | FunctionArgs::Variadic(output, _) => output,
-        }
-    }
-
-    pub fn input_value(&self, index: usize) -> Option<&LegacyValue> {
-        match (self, index) {
-            (FunctionArgs::Unary(_, a), 0) => Some(a),
-            (FunctionArgs::Binary(_, a, _), 0) => Some(a),
-            (FunctionArgs::Binary(_, _, b), 1) => Some(b),
-            (FunctionArgs::Ternary(_, a, _, _), 0) => Some(a),
-            (FunctionArgs::Ternary(_, _, b, _), 1) => Some(b),
-            (FunctionArgs::Ternary(_, _, _, c), 2) => Some(c),
-            (FunctionArgs::Quaternary(_, a, _, _, _), 0) => Some(a),
-            (FunctionArgs::Quaternary(_, _, b, _, _), 1) => Some(b),
-            (FunctionArgs::Quaternary(_, _, _, c, _), 2) => Some(c),
-            (FunctionArgs::Quaternary(_, _, _, _, d), 3) => Some(d),
-            (FunctionArgs::Variadic(_, arguments), index) => arguments.get(index),
-            _ => None,
-        }
-    }
-
-    pub fn input_count(&self) -> usize {
-        self.len()
-    }
-
-    pub fn validate_contract(&self, contract: RuntimeFunctionContract) -> MResult<()> {
-        if contract.output_alias == RuntimeOutputAliasPolicy::DisallowInputAlias {
-            let output_roots = self.output_value().reactive_root_cell_ids();
-            for index in 0..self.input_count() {
-                let Some(input) = self.input_value(index) else {
-                    continue;
-                };
-                for cell in input.reactive_root_cell_ids() {
-                    if output_roots.contains(&cell) {
-                        return Err(MechError::new(
-                            FunctionArgumentAliasViolation { input: index, cell },
-                            None,
-                        )
-                        .with_compiler_loc());
-                    }
-                }
-            }
-        }
-        (contract.validate_shapes)(self)
-    }
-
-    pub fn validate_signature(&self, signature: RuntimeFunctionSignature) -> MResult<()> {
-        let arity_kind_matches = matches!(
-            (self, signature.inputs),
-            (FunctionArgs::Nullary(_), RuntimeFunctionInputs::Nullary)
-                | (FunctionArgs::Unary(_, _), RuntimeFunctionInputs::Unary(_))
-                | (
-                    FunctionArgs::Binary(_, _, _),
-                    RuntimeFunctionInputs::Binary(_, _)
-                )
-                | (
-                    FunctionArgs::Ternary(_, _, _, _),
-                    RuntimeFunctionInputs::Ternary(_, _, _)
-                )
-                | (
-                    FunctionArgs::Quaternary(_, _, _, _, _),
-                    RuntimeFunctionInputs::Quaternary(_, _, _, _)
-                )
-                | (
-                    FunctionArgs::Variadic(_, _),
-                    RuntimeFunctionInputs::Variadic { .. }
-                )
-        );
-        let expected_inputs: Vec<FunctionValueRepresentation> = match signature.inputs {
-            RuntimeFunctionInputs::Nullary => Vec::new(),
-            RuntimeFunctionInputs::Unary(argument) => vec![argument],
-            RuntimeFunctionInputs::Binary(lhs, rhs) => vec![lhs, rhs],
-            RuntimeFunctionInputs::Ternary(first, second, third) => {
-                vec![first, second, third]
-            }
-            RuntimeFunctionInputs::Quaternary(first, second, third, fourth) => {
-                vec![first, second, third, fourth]
-            }
-            RuntimeFunctionInputs::Variadic { element } => vec![element; self.input_count()],
-        };
-
-        if !arity_kind_matches || expected_inputs.len() != self.input_count() {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: expected_inputs.len(),
-                    found: self.input_count(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-
-        let found_output = FunctionValueRepresentation::from_value(self.output_value());
-        if !signature.output.matches(found_output) {
-            return Err(signature_violation(
-                FunctionArgumentRole::Output,
-                signature.output,
-                self.output_value(),
-            ));
-        }
-
-        for (index, expected) in expected_inputs.into_iter().enumerate() {
-            let input = self.input_value(index).expect("validated function arity");
-            let found = FunctionValueRepresentation::from_value(input);
-            if !expected.matches(found) {
-                return Err(signature_violation(
-                    FunctionArgumentRole::Input(index),
-                    expected,
-                    input,
-                ));
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn len(&self) -> usize {
-        match self {
-            FunctionArgs::Nullary(_) => 0,
-            FunctionArgs::Unary(_, _) => 1,
-            FunctionArgs::Binary(_, _, _) => 2,
-            FunctionArgs::Ternary(_, _, _, _) => 3,
-            FunctionArgs::Quaternary(_, _, _, _, _) => 4,
-            FunctionArgs::Variadic(_, args) => args.len(),
-        }
-    }
-
-    pub fn input_values(&self) -> Vec<LegacyValue> {
-        match self {
-            FunctionArgs::Nullary(_) => Vec::new(),
-
-            FunctionArgs::Unary(_, a) => vec![a.clone()],
-
-            FunctionArgs::Binary(_, a, b) => vec![a.clone(), b.clone()],
-
-            FunctionArgs::Ternary(_, a, b, c) => vec![a.clone(), b.clone(), c.clone()],
-
-            FunctionArgs::Quaternary(_, a, b, c, d) => {
-                vec![a.clone(), b.clone(), c.clone(), d.clone()]
-            }
-
-            FunctionArgs::Variadic(_, arguments) => arguments.clone(),
-        }
-    }
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FunctionOutputSchemaRule {
+    Declared,
+    DynamicSetLikeInput(usize),
+    DynamicSetCartesianProduct,
+    DynamicSetPowerset,
 }
 
 pub trait MechFunctionFactory {
     const SIGNATURE: RuntimeFunctionSignature;
+    const OUTPUT_SCHEMA_RULE: FunctionOutputSchemaRule = FunctionOutputSchemaRule::Declared;
 
     /// Constructs a runtime function from its authoritative argument contract.
     ///
     /// Implementations must be deterministic and side-effect-free, safely
     /// reject arbitrary incompatible [`FunctionArgs`], validate every exact
     /// backing extraction, and must not execute or solve the function.
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>
+    where
+        Self: Sized,
+    {
+        crate::legacy_adapter::construct_compatibility_function::<Self>(args)
+    }
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        Self::new(invocation.into_legacy_args())
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>>
+    where
+        Self: Sized,
+    {
+        let _ = invocation;
+        Err(MechError::new(
+            CanonicalFunctionInvocationUnsupported {
+                factory: core::any::type_name::<Self>(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CanonicalFunctionInvocationUnsupported {
+    pub factory: &'static str,
+}
+
+impl MechErrorKind for CanonicalFunctionInvocationUnsupported {
+    fn name(&self) -> &str {
+        "CanonicalFunctionInvocationUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "function factory `{}` has no canonical invocation constructor",
+            self.factory,
+        )
     }
 }
 
@@ -419,28 +277,35 @@ pub trait MechFunctionImpl {
     }
     /// Returns the authoritative typed list of reactive output cells.
     ///
-    /// `None` means unmigrated and directs callers to the legacy fallback.
-    /// `Some(ports)` is authoritative, including `Some(Vec::new())`, which
-    /// declares that the function has no reactive output state.
+    /// `None` declares that the function has no additional reactive output
+    /// state beyond the canonical invocation output. `Some(ports)` is
+    /// authoritative, including `Some(Vec::new())`.
     fn reactive_output_state_ports(&self) -> Option<Vec<FunctionStatePort<'_>>> {
         self.primary_output_state_port().map(|output| vec![output])
     }
     /// Returns the authoritative typed list of transaction checkpoint cells.
     ///
-    /// `None` means unmigrated and directs callers to the legacy fallback.
-    /// `Some(ports)` is authoritative, including `Some(Vec::new())`, which
-    /// declares that the function has no retained transaction state.
+    /// `None` declares that the function has no retained transaction state.
+    /// `Some(ports)` is authoritative, including `Some(Vec::new())`.
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(None)
     }
     fn retained_state_ports(&self) -> MResult<Vec<FunctionStatePort<'_>>> {
         Ok(self.transaction_state_ports()?.unwrap_or_default())
     }
-    /// Returns the function output through the legacy universal-value bridge.
-    ///
-    /// This compatibility API remains required until every function family has
-    /// migrated to typed state ports.
-    fn out(&self) -> LegacyValue;
+    fn capture_retained_state(&self, journal: &mut FunctionCheckpoint) -> MResult<()> {
+        for state in self.retained_state_ports()? {
+            state.capture_into(journal)?;
+        }
+        Ok(())
+    }
+    /// Returns canonical output cells retained by the implementation in
+    /// addition to the invocation output. This is the value-preserving
+    /// counterpart to [`Self::reactive_output_state_ports`]; it never creates
+    /// a legacy projection.
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        Vec::new()
+    }
     fn reactive_dependency_kinds(
         &self,
         _argument_count: usize,
@@ -453,43 +318,21 @@ pub trait MechFunctionImpl {
     ) -> Option<Vec<ReactiveDependencyScope>> {
         None
     }
-    /// Returns reactive outputs through the legacy universal-value bridge.
-    ///
-    /// This compatibility API remains available for unmigrated functions.
-    fn reactive_output_values(&self) -> Vec<LegacyValue> {
-        vec![self.out()]
-    }
-    /// Returns every legacy `Value`-backed cell that contains retained mutable
-    /// state owned by this function.
-    ///
-    /// Reactive outputs cover the common case. Functions with hidden retained
-    /// cells must return those cells, while functions whose retained state
-    /// cannot be represented by `Value` must return
-    /// [`TransactionStateUnsupportedError`].
-    ///
-    /// The function implementation itself owns this checkpoint contract.
-    /// Callers must not infer checkpoint support from [`Self::to_string`],
-    /// [`Debug`] output, type names, module names, or other display metadata. A
-    /// function that requires participation from a higher-level transaction
-    /// coordinator must return [`TransactionStateUnsupportedError`] directly.
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>>;
     fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
         let mut cells = Vec::new();
 
         if let Some(outputs) = self.reactive_output_state_ports() {
             for output in outputs {
-                for cell in output.reactive_cell_ids() {
-                    if !cells.contains(&cell) {
-                        cells.push(cell);
-                    }
+                let cell = output.logical_cell_id();
+                if !cells.contains(&cell) {
+                    cells.push(cell);
                 }
             }
         } else {
-            for output in self.reactive_output_values() {
-                for cell in output.reactive_root_cell_ids() {
-                    if !cells.contains(&cell) {
-                        cells.push(cell);
-                    }
+            for output in self.reactive_output_value_cells() {
+                let cell = output.reactive_cell_id();
+                if !cells.contains(&cell) {
+                    cells.push(cell);
                 }
             }
         }
@@ -554,6 +397,45 @@ impl<T: 'static> ReactiveRegisterCommit for ReactiveRegisterWrite<T> {
             output_cells: _,
         } = *self;
         *sink.borrow_mut() = next;
+    }
+}
+
+/// A prevalidated canonical-cell replacement staged at a register boundary.
+///
+/// The replacement snapshot is fully schema/shape validated before the commit
+/// object is returned. Commit therefore changes only the existing cell's
+/// payload and preserves its reactive identity.
+pub struct ReactiveValueCellWrite {
+    sink: ValueCell,
+    next: Value,
+    output_cells: Vec<ReactiveCellId>,
+}
+
+impl ReactiveValueCellWrite {
+    pub fn new(sink: ValueCell, next: Value) -> MResult<Self> {
+        sink.preflight_replace()?;
+        let validation = sink.detached_clone()?;
+        validation.replace(&next)?;
+        let output_cells = vec![sink.reactive_cell_id()];
+        Ok(Self {
+            sink,
+            next,
+            output_cells,
+        })
+    }
+}
+
+impl reactive_register_sealed::Sealed for ReactiveValueCellWrite {}
+
+impl ReactiveRegisterCommit for ReactiveValueCellWrite {
+    fn output_cells(&self) -> &[ReactiveCellId] {
+        &self.output_cells
+    }
+
+    fn commit(self: Box<Self>) {
+        self.sink
+            .replace(&self.next)
+            .expect("canonical register replacement was prevalidated");
     }
 }
 
@@ -679,18 +561,56 @@ impl FunctionInstance {
         self.invocation.input_cells()
     }
 
-    pub fn implementation(&self) -> &dyn MechFunction {
+    pub fn implementation(&self) -> &(dyn MechFunction + 'static) {
         self.implementation.as_ref()
     }
 
-    pub fn capture_state(&self, journal: &mut ValueStateJournal) -> MResult<()> {
-        journal.capture_value_cell(self.output())?;
-        for state in self.implementation.retained_state_ports()? {
-            if !state.matches_cell(self.output()) {
-                state.capture_into(journal)?;
+    pub(crate) fn implementation_mut(&mut self) -> &mut (dyn MechFunction + 'static) {
+        self.implementation.as_mut()
+    }
+
+    pub fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
+        let mut cells = vec![self.output().reactive_cell_id()];
+        if let Some(outputs) = self.implementation.reactive_output_state_ports() {
+            for output in outputs {
+                let cell = output.logical_cell_id();
+                if !cells.contains(&cell) {
+                    cells.push(cell);
+                }
+            }
+        } else {
+            for output in self.implementation.reactive_output_value_cells() {
+                let cell = output.reactive_cell_id();
+                if !cells.contains(&cell) {
+                    cells.push(cell);
+                }
             }
         }
+        cells
+    }
+
+    pub fn reactive_input_cell_ids(&self) -> Vec<ReactiveCellId> {
+        self.inputs()
+            .iter()
+            .map(ValueCell::reactive_cell_id)
+            .collect()
+    }
+
+    pub fn capture_state(&self, journal: &mut FunctionCheckpoint) -> MResult<()> {
+        journal.capture_value_cell(self.output())?;
+        self.implementation.capture_retained_state(journal)?;
         Ok(())
+    }
+
+    pub fn with_semantic_operation(self, operation: impl Into<Box<str>>) -> Self {
+        let Self {
+            implementation,
+            invocation,
+        } = self;
+        Self::new(
+            with_semantic_operation(operation, implementation),
+            invocation,
+        )
     }
 
     pub(crate) fn into_implementation(self) -> Box<dyn MechFunction> {
@@ -707,6 +627,39 @@ mod canonical_function_instance_tests {
         hidden: Ref<f64>,
     }
 
+    struct OutputOnlyFunction;
+
+    impl MechFunctionImpl for OutputOnlyFunction {
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
+
+        fn to_string(&self) -> String {
+            "OutputOnlyFunction".into()
+        }
+    }
+
+    struct RepeatedOutputFunction {
+        output: Ref<f64>,
+    }
+
+    impl MechFunctionImpl for RepeatedOutputFunction {
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
+
+        fn retained_state_ports(&self) -> MResult<Vec<FunctionStatePort<'_>>> {
+            Ok(vec![
+                FunctionStatePort::from_ref(&self.output),
+                FunctionStatePort::from_ref(&self.output),
+            ])
+        }
+
+        fn to_string(&self) -> String {
+            "RepeatedOutputFunction".into()
+        }
+    }
+
     impl MechFunctionImpl for CanonicalStateFunction {
         fn solve_result(&self) -> MResult<()> {
             *self.output.borrow_mut() += 1.0;
@@ -715,18 +668,7 @@ mod canonical_function_instance_tests {
         }
 
         fn retained_state_ports(&self) -> MResult<Vec<FunctionStatePort<'_>>> {
-            Ok(vec![
-                FunctionStatePort::from_ref(&self.output),
-                FunctionStatePort::from_ref(&self.hidden),
-            ])
-        }
-
-        fn out(&self) -> LegacyValue {
-            panic!("canonical function instances must not query legacy output")
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            panic!("canonical function instances must not query legacy transaction state")
+            Ok(vec![FunctionStatePort::from_ref(&self.hidden)])
         }
 
         fn to_string(&self) -> String {
@@ -739,6 +681,45 @@ mod canonical_function_instance_tests {
         fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             unreachable!("test function is never compiled")
         }
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    impl MechFunctionCompiler for OutputOnlyFunction {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            unreachable!("test function is never compiled")
+        }
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    impl MechFunctionCompiler for RepeatedOutputFunction {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            unreachable!("test function is never compiled")
+        }
+    }
+
+    #[test]
+    fn bound_instances_capture_visible_output_once_even_when_retained_ports_repeat_it() {
+        let output = Ref::new(1.0_f64);
+        let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
+
+        let output_only = FunctionInstance::new(
+            Box::new(OutputOnlyFunction),
+            FunctionInvocation::nullary(output_cell.clone()),
+        );
+        let mut journal = FunctionCheckpoint::new();
+        output_only.capture_state(&mut journal).unwrap();
+        assert_eq!(journal.cell_count(), 1);
+
+        let repeated = FunctionInstance::new(
+            with_semantic_operation(
+                "test/repeated-output",
+                Box::new(RepeatedOutputFunction { output }),
+            ),
+            FunctionInvocation::nullary(output_cell),
+        );
+        let mut journal = FunctionCheckpoint::new();
+        repeated.capture_state(&mut journal).unwrap();
+        assert_eq!(journal.cell_count(), 1);
     }
 
     #[test]
@@ -754,7 +735,7 @@ mod canonical_function_instance_tests {
             }),
             invocation,
         );
-        let mut journal = ValueStateJournal::new();
+        let mut journal = FunctionCheckpoint::new();
 
         assert!(instance.output().same_cell(&output_cell));
         instance.capture_state(&mut journal).unwrap();
@@ -763,6 +744,37 @@ mod canonical_function_instance_tests {
         assert_eq!((*output.borrow(), *hidden.borrow()), (2.0, 11.0));
         journal.restore_before().unwrap();
         assert_eq!((*output.borrow(), *hidden.borrow()), (1.0, 10.0));
+    }
+
+    #[test]
+    fn reactive_plans_retain_bound_instances_and_index_their_canonical_cells() {
+        let output = Ref::new(1.0_f64);
+        let hidden = Ref::new(10.0_f64);
+        let input = Ref::new(4.0_f64);
+        let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
+        let input_cell = ValueCell::from_inferred_ref(input, None).unwrap();
+        let invocation = FunctionInvocation::unary(output_cell.clone(), input_cell.clone());
+        let instance = FunctionInstance::new(
+            Box::new(CanonicalStateFunction { output, hidden }),
+            invocation,
+        );
+        let plan = Plan::new();
+
+        let node_id = plan.register_instance(instance).unwrap();
+        let plan = plan.borrow();
+        let node = plan.node(node_id).unwrap();
+        let retained = node.function.instance().unwrap();
+
+        assert!(retained.output().same_cell(&output_cell));
+        assert!(retained.inputs()[0].same_cell(&input_cell));
+        assert_eq!(node.outputs, vec![output_cell.reactive_cell_id()]);
+        assert_eq!(
+            node.inputs,
+            vec![ReactiveDependency {
+                cell: input_cell.reactive_cell_id(),
+                kind: ReactiveDependencyKind::Reactive,
+            }],
+        );
     }
 }
 
@@ -833,8 +845,12 @@ impl MechFunctionImpl for SemanticMechFunction {
         self.function.transaction_state_ports()
     }
 
-    fn out(&self) -> LegacyValue {
-        self.function.out()
+    fn capture_retained_state(&self, journal: &mut FunctionCheckpoint) -> MResult<()> {
+        self.function.capture_retained_state(journal)
+    }
+
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        self.function.reactive_output_value_cells()
     }
 
     fn reactive_dependency_kinds(
@@ -849,14 +865,6 @@ impl MechFunctionImpl for SemanticMechFunction {
         argument_count: usize,
     ) -> Option<Vec<ReactiveDependencyScope>> {
         self.function.reactive_dependency_scopes(argument_count)
-    }
-
-    fn reactive_output_values(&self) -> Vec<LegacyValue> {
-        self.function.reactive_output_values()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        self.function.transaction_state_values()
     }
 
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -1007,7 +1015,7 @@ impl FunctionDefinition {
             code,
             input: IndexMap::new(),
             output: IndexMap::new(),
-            out: ValueCell::new(LegacyValue::Empty),
+            out: ValueCell::unit(),
             symbols: Ref::new(SymbolTable::new()),
             plan: Plan::new(),
         }
@@ -1037,12 +1045,11 @@ impl MechFunctionImpl for UserFunction {
         self.fxn.solve_result()?;
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.fxn.out.borrow().clone()
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(&self.fxn.out))
     }
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let mut values = vec![LegacyValue::MutableReference(self.fxn.out.legacy_ref())];
-        let mut seen_cells = vec![self.fxn.out.clone()];
+    fn capture_retained_state(&self, journal: &mut FunctionCheckpoint) -> MResult<()> {
+        let mut seen_cells: Vec<ValueCell> = Vec::new();
         let symbols = self.fxn.symbols.try_borrow().map_err(|_| {
             MechError::new(
                 TransactionStateBorrowConflictError {
@@ -1058,14 +1065,15 @@ impl MechFunctionImpl for UserFunction {
             .values()
             .chain(symbols.mutable_variables.values())
         {
-            if !seen_cells.iter().any(|seen| seen.same_cell(value)) {
+            if !value.same_cell(&self.fxn.out)
+                && !seen_cells.iter().any(|seen| seen.same_cell(value))
+            {
                 seen_cells.push(value.clone());
-                values.push(LegacyValue::MutableReference(value.legacy_ref()));
+                journal.capture_value_cell(value)?;
             }
         }
         drop(symbols);
-        values.extend(self.fxn.plan.transaction_state_values()?);
-        Ok(values)
+        self.fxn.plan.capture_transaction_state(journal)
     }
     fn to_string(&self) -> String {
         format!("UserFxn::{:?}", self.fxn.name)
@@ -1125,7 +1133,7 @@ pub struct PatternActivationGuardRegistration {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PatternActivationCaptureRegistration {
     pub id: u64,
-    pub kind: ValueKind,
+    pub schema: SchemaBody,
     pub cell: ReactiveCellId,
 }
 
@@ -1199,21 +1207,54 @@ pub struct ReactiveDependency {
     pub kind: ReactiveDependencyKind,
 }
 
+enum ReactivePlanFunctionStorage {
+    Legacy(Box<dyn MechFunction>),
+    Bound(FunctionInstance),
+}
+
 pub struct ReactivePlanFunction {
-    function: Box<dyn MechFunction>,
+    storage: ReactivePlanFunctionStorage,
     identity: Rc<()>,
 }
 
 impl ReactivePlanFunction {
     fn new(function: Box<dyn MechFunction>) -> Self {
         Self {
-            function,
+            storage: ReactivePlanFunctionStorage::Legacy(function),
             identity: Rc::new(()),
         }
     }
 
-    pub fn as_ref(&self) -> &dyn MechFunction {
-        self.function.as_ref()
+    fn new_instance(instance: FunctionInstance) -> Self {
+        Self {
+            storage: ReactivePlanFunctionStorage::Bound(instance),
+            identity: Rc::new(()),
+        }
+    }
+
+    pub fn as_ref(&self) -> &(dyn MechFunction + 'static) {
+        match &self.storage {
+            ReactivePlanFunctionStorage::Legacy(function) => function.as_ref(),
+            ReactivePlanFunctionStorage::Bound(instance) => instance.implementation(),
+        }
+    }
+
+    pub fn instance(&self) -> Option<&FunctionInstance> {
+        match &self.storage {
+            ReactivePlanFunctionStorage::Legacy(_) => None,
+            ReactivePlanFunctionStorage::Bound(instance) => Some(instance),
+        }
+    }
+
+    fn capture_reactive_state(&self, journal: &mut CanonicalTurnJournal) -> MResult<()> {
+        match &self.storage {
+            ReactivePlanFunctionStorage::Legacy(function) => {
+                journal.capture_legacy_function_state(function.as_ref())
+            }
+            ReactivePlanFunctionStorage::Bound(instance) => {
+                journal.capture_function_instance(instance)
+            }
+        }
     }
 }
 
@@ -1221,13 +1262,16 @@ impl core::ops::Deref for ReactivePlanFunction {
     type Target = dyn MechFunction;
 
     fn deref(&self) -> &Self::Target {
-        self.function.as_ref()
+        self.as_ref()
     }
 }
 
 impl core::ops::DerefMut for ReactivePlanFunction {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.function.as_mut()
+        match &mut self.storage {
+            ReactivePlanFunctionStorage::Legacy(function) => function.as_mut(),
+            ReactivePlanFunctionStorage::Bound(instance) => instance.implementation_mut(),
+        }
     }
 }
 
@@ -1793,16 +1837,31 @@ impl ReactivePlan {
         self.nodes.iter_mut().map(|node| &mut node.function)
     }
 
-    pub fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let mut values = Vec::new();
+    pub fn capture_transaction_state(&self, journal: &mut FunctionCheckpoint) -> MResult<()> {
         for node in &self.nodes {
-            let mut function_values = node.function.transaction_state_values()?;
-            if function_values.is_empty() {
-                function_values.push(node.function.out());
+            match &node.function.storage {
+                ReactivePlanFunctionStorage::Legacy(function) => {
+                    function
+                        .primary_output_state_port()
+                        .ok_or_else(|| {
+                            MechError::new(
+                                TransactionStateUnsupportedError {
+                                    function: function.to_string(),
+                                    reason:
+                                        "legacy plan nodes must expose an exact primary state port"
+                                            .into(),
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()
+                        })?
+                        .capture_into(journal)?;
+                    function.capture_retained_state(journal)?;
+                }
+                ReactivePlanFunctionStorage::Bound(instance) => instance.capture_state(journal)?,
             }
-            values.extend(function_values);
         }
-        Ok(values)
+        Ok(())
     }
 
     pub fn last(&self) -> Option<&ReactivePlanFunction> {
@@ -1831,29 +1890,22 @@ impl ReactivePlan {
         node_id
     }
 
-    pub fn register(
+    pub fn register_instance_with_activation(
         &mut self,
-        function: Box<dyn MechFunction>,
-        arguments: &[LegacyValue],
-    ) -> MResult<ReactiveNodeId> {
-        self.register_with_activation(function, arguments, None)
-    }
-
-    pub fn register_with_activation(
-        &mut self,
-        function: Box<dyn MechFunction>,
-        arguments: &[LegacyValue],
+        instance: FunctionInstance,
         activation: Option<&ActivationRegistrationScope>,
     ) -> MResult<ReactiveNodeId> {
         let node_id = self.nodes.len();
         let plan_index = node_id;
-        let dependency_kinds = match function.reactive_dependency_kinds(arguments.len()) {
+        let argument_count = instance.inputs().len();
+        let function = instance.implementation();
+        let dependency_kinds = match function.reactive_dependency_kinds(argument_count) {
             Some(kinds) => {
-                if kinds.len() != arguments.len() {
+                if kinds.len() != argument_count {
                     return Err(MechError::new(
                         ReactiveDependencyArityMismatchError {
                             function: function.to_string(),
-                            expected: arguments.len(),
+                            expected: argument_count,
                             found: kinds.len(),
                         },
                         None,
@@ -1861,16 +1913,16 @@ impl ReactivePlan {
                 }
                 kinds
             }
-            None => vec![ReactiveDependencyKind::Reactive; arguments.len()],
+            None => vec![ReactiveDependencyKind::Reactive; argument_count],
         };
 
-        let dependency_scopes = match function.reactive_dependency_scopes(arguments.len()) {
+        let dependency_scopes = match function.reactive_dependency_scopes(argument_count) {
             Some(scopes) => {
-                if scopes.len() != arguments.len() {
+                if scopes.len() != argument_count {
                     return Err(MechError::new(
                         ReactiveDependencyScopeArityMismatchError {
                             function: function.to_string(),
-                            expected: arguments.len(),
+                            expected: argument_count,
                             found: scopes.len(),
                         },
                         None,
@@ -1878,11 +1930,11 @@ impl ReactivePlan {
                 }
                 scopes
             }
-            None => vec![ReactiveDependencyScope::Recursive; arguments.len()],
+            None => vec![ReactiveDependencyScope::Recursive; argument_count],
         };
 
         let node_kind = function.reactive_node_kind();
-        let outputs = function.reactive_output_cell_ids();
+        let outputs = instance.reactive_output_cell_ids();
         let mut inputs = Vec::<ReactiveDependency>::new();
 
         if node_kind == ReactiveNodeKind::Register {
@@ -1894,15 +1946,16 @@ impl ReactivePlan {
             }
         }
 
-        for ((argument, kind), scope) in arguments
+        for ((cell, kind), scope) in instance
+            .inputs()
             .iter()
             .zip(dependency_kinds.iter())
             .zip(dependency_scopes.iter())
         {
             let cells = match scope {
-                ReactiveDependencyScope::Recursive => argument.reactive_cell_ids(),
-                ReactiveDependencyScope::Logical => argument.logical_reactive_cell_ids(),
-                ReactiveDependencyScope::Root => argument.reactive_root_cell_ids(),
+                ReactiveDependencyScope::Recursive
+                | ReactiveDependencyScope::Logical
+                | ReactiveDependencyScope::Root => vec![cell.reactive_cell_id()],
                 ReactiveDependencyScope::None => Vec::new(),
             };
 
@@ -1954,11 +2007,10 @@ impl ReactivePlan {
             inputs,
             outputs,
             kind: node_kind,
-            function: ReactivePlanFunction::new(function),
+            function: ReactivePlanFunction::new_instance(instance),
         };
 
         self.nodes.push(node);
-
         for dependency in &self.nodes[node_id].inputs {
             let consumers = match dependency.kind {
                 ReactiveDependencyKind::Reactive => {
@@ -1968,12 +2020,10 @@ impl ReactivePlan {
                     self.sampled_consumers.entry(dependency.cell).or_default()
                 }
             };
-
             if !consumers.contains(&node_id) {
                 consumers.push(node_id);
             }
         }
-
         Ok(node_id)
     }
 
@@ -2083,7 +2133,7 @@ impl ReactivePlan {
     pub(crate) fn solve_dirty_cells_with_journal(
         &mut self,
         dirty_cells: &[ReactiveCellId],
-        journal: &mut ReactiveTurnJournal,
+        journal: &mut CanonicalTurnJournal,
     ) -> MResult<ReactivePlanSolveOutcome> {
         let mut services = NoMechExecutionServices;
         self.solve_dirty_cells_with_journal_and_services(dirty_cells, journal, &mut services)
@@ -2092,7 +2142,7 @@ impl ReactivePlan {
     pub(crate) fn solve_dirty_cells_with_journal_and_services(
         &mut self,
         dirty_cells: &[ReactiveCellId],
-        journal: &mut ReactiveTurnJournal,
+        journal: &mut CanonicalTurnJournal,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactivePlanSolveOutcome> {
         let mut outcome = ReactivePlanSolveOutcome::default();
@@ -2109,7 +2159,7 @@ impl ReactivePlan {
         &mut self,
         dirty_cells: &[ReactiveCellId],
         outcome: &mut ReactivePlanSolveOutcome,
-        journal: &mut ReactiveTurnJournal,
+        journal: &mut CanonicalTurnJournal,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<()> {
         self.solve_dirty_cells_into_impl(dirty_cells, outcome, Some(journal), services)
@@ -2119,7 +2169,7 @@ impl ReactivePlan {
         &mut self,
         dirty_cells: &[ReactiveCellId],
         outcome: &mut ReactivePlanSolveOutcome,
-        mut journal: Option<&mut ReactiveTurnJournal>,
+        mut journal: Option<&mut CanonicalTurnJournal>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<()> {
         let dirty_cells = dirty_cells.iter().copied().collect::<HashSet<_>>();
@@ -2145,7 +2195,7 @@ impl ReactivePlan {
             }
 
             if let Some(journal) = journal.as_deref_mut() {
-                journal.capture_function_state(node.function.as_ref())?;
+                node.function.capture_reactive_state(journal)?;
             }
             let status = node.function.solve_reactive_with(services)?;
             outcome.executed_nodes.push(node.id);
@@ -2177,7 +2227,7 @@ impl ReactivePlan {
     pub(crate) fn commit_pending_registers_with_journal(
         &mut self,
         pending_nodes: &[ReactiveNodeId],
-        journal: &mut ReactiveTurnJournal,
+        journal: &mut CanonicalTurnJournal,
     ) -> MResult<ReactiveRegisterCommitOutcome> {
         self.commit_pending_registers_impl(pending_nodes, Some(journal))
     }
@@ -2185,7 +2235,7 @@ impl ReactivePlan {
     fn commit_pending_registers_impl(
         &mut self,
         pending_nodes: &[ReactiveNodeId],
-        mut journal: Option<&mut ReactiveTurnJournal>,
+        mut journal: Option<&mut CanonicalTurnJournal>,
     ) -> MResult<ReactiveRegisterCommitOutcome> {
         let mut unique = HashSet::new();
         let mut ordered = BTreeSet::new();
@@ -2227,7 +2277,9 @@ impl ReactivePlan {
 
         if let Some(journal) = journal.as_deref_mut() {
             for (_, node_id) in &ordered {
-                journal.capture_function_state(self.nodes[*node_id].function.as_ref())?;
+                self.nodes[*node_id]
+                    .function
+                    .capture_reactive_state(journal)?;
             }
         }
 
@@ -2320,7 +2372,7 @@ impl ReactivePlan {
         &mut self,
         state: &mut ReactiveTurnState,
         dirty_cells: &[ReactiveCellId],
-        journal: &mut ReactiveTurnJournal,
+        journal: &mut CanonicalTurnJournal,
     ) -> MResult<ReactiveTurnOutcome> {
         let mut services = NoMechExecutionServices;
         self.advance_reactive_turn_with_journal_and_services(
@@ -2335,7 +2387,7 @@ impl ReactivePlan {
         &mut self,
         state: &mut ReactiveTurnState,
         dirty_cells: &[ReactiveCellId],
-        journal: &mut ReactiveTurnJournal,
+        journal: &mut CanonicalTurnJournal,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {
         let before_commit =
@@ -2508,12 +2560,8 @@ impl Plan {
         Ok(())
     }
 
-    pub fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let reactive = self
-            .0
-            .try_borrow()
-            .map_err(|_| Self::checkpoint_borrow_conflict("transaction-state", "reactive graph"))?;
-        reactive.transaction_state_values()
+    pub fn capture_transaction_state(&self, journal: &mut FunctionCheckpoint) -> MResult<()> {
+        self.0.borrow().capture_transaction_state(journal)
     }
 
     pub fn activation_registration_depth(&self) -> usize {
@@ -2560,14 +2608,10 @@ impl Plan {
         self.1.borrow_mut().pop();
         self.0.borrow_mut().activation_sampled_cells.pop();
     }
-    pub fn register_function(
-        &self,
-        function: Box<dyn MechFunction>,
-        arguments: &[LegacyValue],
-    ) -> MResult<ReactiveNodeId> {
+    pub fn register_instance(&self, instance: FunctionInstance) -> MResult<ReactiveNodeId> {
         let scope = self.1.borrow().last().cloned();
-        let kind = function.reactive_node_kind();
-        let outputs = function.reactive_output_cell_ids();
+        let kind = instance.implementation().reactive_node_kind();
+        let outputs = instance.reactive_output_cell_ids();
         let sampled_cells = self
             .0
             .borrow()
@@ -2575,10 +2619,10 @@ impl Plan {
             .last()
             .cloned()
             .unwrap_or_default();
-        let node =
-            self.0
-                .borrow_mut()
-                .register_with_activation(function, arguments, scope.as_ref())?;
+        let node = self
+            .0
+            .borrow_mut()
+            .register_instance_with_activation(instance, scope.as_ref())?;
         if scope.is_some() && kind == ReactiveNodeKind::Combinational {
             if let Some(active) = self.1.borrow_mut().last_mut() {
                 for cell in outputs {
@@ -2739,125 +2783,6 @@ impl PrettyPrint for Plan {
 #[cfg(test)]
 #[path = "tests/mod.rs"]
 mod tests;
-
-#[derive(Debug, Clone)]
-pub struct UnhandledFunctionArgumentKind1 {
-    pub arg: ValueKind,
-    pub fxn_name: String,
-}
-impl MechErrorKind for UnhandledFunctionArgumentKind1 {
-    fn name(&self) -> &str {
-        "UnhandledFunctionArgumentKind1"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Unhandled function argument kind for function '{}': arg = {:?}",
-            self.fxn_name, self.arg
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct UnhandledFunctionArgumentKind2 {
-    pub arg: (ValueKind, ValueKind),
-    pub fxn_name: String,
-}
-impl MechErrorKind for UnhandledFunctionArgumentKind2 {
-    fn name(&self) -> &str {
-        "UnhandledFunctionArgumentKind2"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Unhandled function argument kinds for function '{}': arg = {:?}",
-            self.fxn_name, self.arg
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct UnhandledFunctionArgumentKind3 {
-    pub arg: (ValueKind, ValueKind, ValueKind),
-    pub fxn_name: String,
-}
-impl MechErrorKind for UnhandledFunctionArgumentKind3 {
-    fn name(&self) -> &str {
-        "UnhandledFunctionArgumentKind3"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Unhandled function argument kinds for function '{}': arg = {:?}",
-            self.fxn_name, self.arg
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct UnhandledFunctionArgumentKind4 {
-    pub arg: (ValueKind, ValueKind, ValueKind, ValueKind),
-    pub fxn_name: String,
-}
-impl MechErrorKind for UnhandledFunctionArgumentKind4 {
-    fn name(&self) -> &str {
-        "UnhandledFunctionArgumentKind4"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Unhandled function argument kinds for function '{}': arg = {:?}",
-            self.fxn_name, self.arg
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct UnhandledFunctionArgumentKindVarg {
-    pub arg: Vec<ValueKind>,
-    pub fxn_name: String,
-}
-impl MechErrorKind for UnhandledFunctionArgumentKindVarg {
-    fn name(&self) -> &str {
-        "UnhandledFunctionArgumentKindVarg"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Unhandled function argument kinds for function '{}': arg = {:?}",
-            self.fxn_name, self.arg
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct UnhandledFunctionArgumentIxes {
-    pub arg: (ValueKind, Vec<ValueKind>, ValueKind),
-    pub fxn_name: String,
-}
-impl MechErrorKind for UnhandledFunctionArgumentIxes {
-    fn name(&self) -> &str {
-        "UnhandledFunctionArgumentIxes"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Unhandled function argument kinds for function '{}': arg = {:?}",
-            self.fxn_name, self.arg
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct UnhandledFunctionArgumentIxesMono {
-    pub arg: (ValueKind, Vec<ValueKind>),
-    pub fxn_name: String,
-}
-impl MechErrorKind for UnhandledFunctionArgumentIxesMono {
-    fn name(&self) -> &str {
-        "UnhandledFunctionArgumentIxesMono"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Unhandled function argument kinds for function '{}': arg = {:?}",
-            self.fxn_name, self.arg
-        )
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct IncorrectNumberOfArguments {

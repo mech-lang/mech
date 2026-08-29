@@ -157,9 +157,3 @@ impl ToUsize for C64 {
         self.0.norm() as usize
     }
 }
-
-impl ToValue for C64 {
-    fn to_value(&self) -> LegacyValue {
-        LegacyValue::C64(Ref::new(*self))
-    }
-}

@@ -8,9 +8,9 @@ use crate::kind::Kind;
 use crate::kind_expr::{validate_kind_structure, visit_kind_dimensions};
 use crate::legacy_value::ValueKind;
 use crate::{
-    DimensionEnvironmentBuilder, DimensionExpr, DimensionParameterDeclaration, FloatWidth,
-    IntegerWidth, KindExpr, KindField, NominalKind, Schema, SchemaBody, SchemaDraft, SchemaField,
-    SemanticModelError,
+    CardinalitySpec, DimensionEnvironmentBuilder, DimensionExpr, DimensionParameterDeclaration,
+    FloatWidth, IntegerWidth, KindExpr, KindField, NominalKind, Schema, SchemaBody, SchemaDraft,
+    SchemaField, SemanticModelError,
 };
 
 #[cfg(feature = "no_std")]
@@ -310,7 +310,7 @@ fn schema_body_from_legacy(
             let value = with_path(path, LegacyTypePathSegment::MapValue, |path| {
                 schema_body_from_legacy(value, context, dimensions, path)
             })?;
-            let cardinality = require_cardinality(
+            let cardinality = require_schema_cardinality(
                 context,
                 dimensions,
                 LegacyTypeSource::ValueKind,
@@ -340,7 +340,7 @@ fn schema_body_from_legacy(
                 path,
             )?;
             let rows = if *rows == 0 {
-                require_cardinality(
+                require_schema_cardinality(
                     context,
                     dimensions,
                     LegacyTypeSource::ValueKind,
@@ -348,7 +348,7 @@ fn schema_body_from_legacy(
                     LegacyExtentRole::TableRows,
                 )?
             } else {
-                DimensionExpr::Constant(checked_extent(*rows)?)
+                CardinalitySpec::Exact(DimensionExpr::Constant(checked_extent(*rows)?))
             };
             SchemaBody::Table { columns, rows }
         }
@@ -371,8 +371,10 @@ fn schema_body_from_legacy(
                 schema_body_from_legacy(element, context, dimensions, path)
             })?;
             let cardinality = match size {
-                Some(size) => DimensionExpr::Constant(checked_extent(*size)?),
-                None => require_cardinality(
+                Some(size) => {
+                    CardinalitySpec::Exact(DimensionExpr::Constant(checked_extent(*size)?))
+                }
+                None => require_schema_cardinality(
                     context,
                     dimensions,
                     LegacyTypeSource::ValueKind,
@@ -429,7 +431,9 @@ fn require_dimensions(
     };
     match context.resolve_unspecified_extent(&site, dimensions)? {
         LegacyResolvedExtent::Dimensions(values) if !values.is_empty() => Ok(values),
-        LegacyResolvedExtent::Dimensions(_) | LegacyResolvedExtent::Cardinality(_) => {
+        LegacyResolvedExtent::Dimensions(_)
+        | LegacyResolvedExtent::Cardinality(_)
+        | LegacyResolvedExtent::DynamicCardinality { .. } => {
             Err(SemanticModelError::LegacyExtentResolutionKindMismatch)
         }
     }
@@ -449,6 +453,29 @@ fn require_cardinality(
     };
     match context.resolve_unspecified_extent(&site, dimensions)? {
         LegacyResolvedExtent::Cardinality(value) => Ok(value),
+        LegacyResolvedExtent::Dimensions(_) | LegacyResolvedExtent::DynamicCardinality { .. } => {
+            Err(SemanticModelError::LegacyExtentResolutionKindMismatch)
+        }
+    }
+}
+
+fn require_schema_cardinality(
+    context: &mut dyn LegacySemanticContext,
+    dimensions: &mut DimensionEnvironmentBuilder,
+    source: LegacyTypeSource,
+    path: &[LegacyTypePathSegment],
+    role: LegacyExtentRole,
+) -> Result<CardinalitySpec, SemanticModelError> {
+    let site = LegacyExtentSite {
+        source,
+        path: path.to_vec().into_boxed_slice(),
+        role,
+    };
+    match context.resolve_unspecified_extent(&site, dimensions)? {
+        LegacyResolvedExtent::Cardinality(value) => Ok(CardinalitySpec::Exact(value)),
+        LegacyResolvedExtent::DynamicCardinality { upper_bound } => {
+            Ok(CardinalitySpec::Dynamic { upper_bound })
+        }
         LegacyResolvedExtent::Dimensions(_) => {
             Err(SemanticModelError::LegacyExtentResolutionKindMismatch)
         }

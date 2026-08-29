@@ -11,7 +11,7 @@ use std::fs;
 #[cfg(not(feature = "no_std"))]
 use std::path::Path;
 
-use crate::{LegacyValue, MResult, MechError, hash_str};
+use crate::{MResult, MechError, Value, ValueCell, hash_str};
 
 use super::*;
 
@@ -39,8 +39,14 @@ impl ParsedProgram {
         parse_program(bytes, &limits)
     }
 
-    pub fn decode_constants(&self) -> MResult<Vec<LegacyValue>> {
+    pub fn decode_constants(&self) -> MResult<Vec<Value>> {
         decode_constants(&self.types, &self.constants, &self.constant_blob)
+    }
+
+    /// Decodes constants into canonical mutable cells while retaining exact
+    /// scalar and matrix storage declared by bytecode v1.
+    pub fn decode_constant_cells(&self) -> MResult<Vec<ValueCell>> {
+        constants::decode_constant_cells(&self.types, &self.constants, &self.constant_blob)
     }
 
     /// Returns every runtime type required to decode this program, including
@@ -327,7 +333,7 @@ fn validate_composite_packs(
         return Ok(());
     }
     let values = decode_constants(types, constants, blob)?;
-    let mut registers = vec![None::<LegacyValue>; register_count];
+    let mut registers = vec![None::<Value>; register_count];
     let mut dynamic = vec![false; register_count];
     for instruction in instructions {
         match instruction {
@@ -345,8 +351,9 @@ fn validate_composite_packs(
                     .map(|child| registers[*child as usize].clone())
                     .collect::<Option<Vec<_>>>();
                 if let Some(children) = static_children {
-                    registers[*dst as usize] =
-                        Some(crate::rebuild_bytecode_composite(template, children)?);
+                    registers[*dst as usize] = Some(crate::rebuild_canonical_bytecode_composite(
+                        template, children,
+                    )?);
                 } else {
                     for child in children {
                         if registers[*child as usize].is_none() && !dynamic[*child as usize] {
@@ -355,7 +362,7 @@ fn validate_composite_packs(
                             ));
                         }
                     }
-                    let template_children = crate::bytecode_composite_children(template)
+                    let template_children = crate::canonical_bytecode_composite_children(template)
                         .ok_or_else(|| {
                             invalid::<()>("CompositePack template is not a composite value")
                                 .unwrap_err()

@@ -1,5 +1,8 @@
 use crate::*;
 
+/// Compatibility lookup used only by the retired kind/value adapter.
+pub type KindTable = HashMap<u64, ValueKind>;
+
 // Kind -----------------------------------------------------------------------
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
