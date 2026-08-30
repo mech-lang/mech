@@ -1010,3 +1010,6 @@ impl_scalar_op_assign_module!(mul_assign, Mul, checked_mul_assign);
     not(any(feature = "matrix", feature = "source"))
 ))]
 impl_scalar_op_assign_module!(sub_assign, Sub, checked_sub_assign);
+
+#[cfg(test)]
+mod port_tests;

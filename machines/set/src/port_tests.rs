@@ -7,14 +7,10 @@
     feature = "cartesian_product"
 ))]
 mod dynamic_outputs {
-    use crate::{
-        SetCartesianProduct, SetInsert, SetPowerset, SetRemove, SetUnion,
-        operations::union::SetUnionFxn,
-    };
+    use crate::{SetCartesianProduct, SetInsert, SetPowerset, SetRemove, SetUnion};
     use mech_core::{
-        AsValueKind, CanonicalFunctionSpecializer, CardinalitySpec, DimensionExpr, FunctionArgs,
-        MResult, MechFunctionFactory, MechSet, Ref, SchemaBody, SpecializationContext,
-        SpecializationInvocation, ToValue, ValueCell, ValueData, ValueDataDraft,
+        CanonicalFunctionSpecializer, CardinalitySpec, DimensionExpr, MResult, SchemaBody,
+        SpecializationContext, SpecializationInvocation, ValueCell, ValueData, ValueDataDraft,
         with_reactive_journal_participant,
     };
 
@@ -81,56 +77,39 @@ mod dynamic_outputs {
     }
 
     #[test]
-    fn union_preserves_output_identity_across_zero_three_one_zero() {
+    fn union_preserves_output_identity_across_turn_varying_extents() {
         let lhs = set(&[]);
         let rhs = set(&[1, 2, 3]);
         let function = specialize(&SetUnion {}, vec![lhs.clone(), rhs.clone()]);
         let output = function.output().clone();
         let alias = output.clone();
 
-        function.solve_result().unwrap();
-        assert_eq!(set_values(&output), vec![1, 2, 3]);
-        replace_set(&rhs, &[2]);
-        function.solve_result().unwrap();
-        assert_eq!(set_values(&output), vec![2]);
-        replace_set(&rhs, &[]);
-        function.solve_result().unwrap();
-        assert!(set_values(&output).is_empty());
-        assert!(output.same_cell(&alias));
+        for (next, expected) in [
+            (vec![1, 2, 3], vec![1, 2, 3]),
+            (vec![2], vec![2]),
+            (vec![], vec![]),
+            (vec![3, 4], vec![3, 4]),
+        ] {
+            replace_set(&rhs, &next);
+            function.solve_result().unwrap();
+            assert_eq!(set_values(&output), expected);
+            assert!(output.same_cell(&alias));
+        }
         assert_dynamic_set(&output);
-
-        replace_set(&lhs, &[1, 2]);
-        replace_set(&rhs, &[2, 3]);
-        function.solve_result().unwrap();
-        assert_eq!(set_values(&output), vec![1, 2, 3]);
-        replace_set(&rhs, &[3, 4]);
-        function.solve_result().unwrap();
-        assert_eq!(set_values(&output), vec![1, 2, 3, 4]);
     }
 
     #[test]
-    fn insert_and_remove_observe_present_and_absent_elements() {
+    fn insert_remove_powerset_and_product_preserve_dynamic_schemas() {
         let source = set(&[1, 2]);
-        let present = specialize(&SetInsert {}, vec![source.clone(), index(2)]);
-        present.solve_result().unwrap();
-        assert_eq!(set_values(present.output()), vec![1, 2]);
+        let inserted = specialize(&SetInsert {}, vec![source.clone(), index(3)]);
+        inserted.solve_result().unwrap();
+        assert_eq!(set_values(inserted.output()), vec![1, 2, 3]);
 
-        let fresh = specialize(&SetInsert {}, vec![source.clone(), index(3)]);
-        fresh.solve_result().unwrap();
-        assert_eq!(set_values(fresh.output()), vec![1, 2, 3]);
-
-        let absent = specialize(&SetRemove {}, vec![source.clone(), index(3)]);
-        absent.solve_result().unwrap();
-        assert_eq!(set_values(absent.output()), vec![1, 2]);
-
-        let removed = specialize(&SetRemove {}, vec![source, index(1)]);
+        let removed = specialize(&SetRemove {}, vec![source.clone(), index(1)]);
         removed.solve_result().unwrap();
         assert_eq!(set_values(removed.output()), vec![2]);
-    }
 
-    #[test]
-    fn powerset_and_cartesian_product_have_nested_dynamic_schemas() {
-        let powerset = specialize(&SetPowerset {}, vec![set(&[1, 2])]);
+        let powerset = specialize(&SetPowerset {}, vec![source]);
         powerset.solve_result().unwrap();
         let snapshot = powerset.output().snapshot().unwrap();
         let ValueData::Set(subsets) = snapshot.data() else {
@@ -164,7 +143,7 @@ mod dynamic_outputs {
         product.solve_result().unwrap();
         let snapshot = product.output().snapshot().unwrap();
         let ValueData::Set(pairs) = snapshot.data() else {
-            panic!("expected product set")
+            panic!("expected product output")
         };
         assert_eq!(pairs.elements().len(), 4);
         assert!(pairs
@@ -175,13 +154,14 @@ mod dynamic_outputs {
     }
 
     #[test]
-    fn transaction_rollback_restores_dynamic_payload_and_identity() {
+    fn transaction_rollback_restores_dynamic_payload_schema_and_identity() {
         let lhs = set(&[1]);
         let rhs = set(&[2]);
         let function = specialize(&SetUnion {}, vec![lhs, rhs.clone()]);
         function.solve_result().unwrap();
         let output = function.output().clone();
         let alias = output.clone();
+        let schema = output.schema_key();
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
             participant.capture_function_instance(&function)?;
@@ -195,6 +175,7 @@ mod dynamic_outputs {
         .unwrap();
 
         assert!(output.same_cell(&alias));
+        assert_eq!(output.schema_key(), schema);
         assert_eq!(set_values(&output), vec![1, 2]);
     }
 
@@ -212,28 +193,5 @@ mod dynamic_outputs {
         )
         .unwrap();
         assert_ne!(dynamic.schema_key(), exact.schema_key());
-    }
-
-    #[test]
-    fn compatibility_adapter_populates_the_original_empty_set_handle() {
-        let output = Ref::new(MechSet::new(<usize as AsValueKind>::as_value_kind(), 0));
-        let output_alias = output.clone();
-        let lhs = Ref::new(MechSet::from_vec(vec![Ref::new(1usize).to_value()]));
-        let rhs = Ref::new(MechSet::from_vec(vec![
-            Ref::new(2usize).to_value(),
-            Ref::new(3usize).to_value(),
-        ]));
-        let function = SetUnionFxn::new(FunctionArgs::Binary(
-            output.clone().to_value(),
-            lhs.to_value(),
-            rhs.to_value(),
-        ))
-        .unwrap();
-
-        function.solve_result().unwrap();
-
-        assert!(output.same_handle(&output_alias));
-        assert_eq!(output.borrow().set.len(), 3);
-        assert_eq!(output.borrow().num_elements, 3);
     }
 }

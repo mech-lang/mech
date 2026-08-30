@@ -748,8 +748,8 @@ fn preserve_compiled_resource_send_operations(
 }
 
 /// Builds the executable compiler product before the C3 semantic artifact is
-/// finalized. Keeping this boundary separate makes the adapter's legacy input
-/// explicit without exposing it through `ProgramArtifact`.
+/// finalized. Keeping this boundary separate makes intermediate compiler
+/// metadata explicit without exposing it through `ProgramArtifact`.
 #[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 struct RetainedIntegrityMarkerMetadata {
     result: ValueCell,
@@ -1066,6 +1066,165 @@ mod tests {
     ))]
     use mech_core::{BytecodeInstruction, ParsedProgram, Register};
     use std::collections::BTreeMap;
+
+    #[cfg(all(
+        feature = "source",
+        feature = "functions",
+        feature = "program",
+        feature = "f64",
+        feature = "matrix",
+        feature = "compare_default",
+        feature = "invariant_define"
+    ))]
+    fn assert_ordinary_source_artifact_parity(
+        artifact_a: &ProgramArtifact,
+        artifact_b: &ProgramArtifact,
+    ) {
+        assert_eq!(artifact_a.contracts(), artifact_b.contracts());
+        assert_eq!(artifact_a.inputs(), artifact_b.inputs());
+        assert_eq!(artifact_a.slots(), artifact_b.slots());
+        assert_eq!(artifact_a.bindings(), artifact_b.bindings());
+        assert_eq!(artifact_a.outputs(), artifact_b.outputs());
+        assert_eq!(artifact_a.constraints(), artifact_b.constraints());
+        assert_eq!(artifact_a.schemas().len(), artifact_b.schemas().len());
+        assert_eq!(artifact_a.constants().len(), artifact_b.constants().len());
+        assert_eq!(artifact_a.nodes().len(), artifact_b.nodes().len());
+        assert_eq!(artifact_a.revision(), artifact_b.revision());
+    }
+
+    #[cfg(all(
+        feature = "source",
+        feature = "functions",
+        feature = "program",
+        feature = "f64",
+        feature = "matrix",
+        feature = "compare_default",
+        feature = "invariant_define"
+    ))]
+    #[test]
+    fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> MResult<()> {
+        for source in [
+            include_str!("../../tests/fixtures/program-artifact/scalar-alias.mec"),
+            include_str!("../../tests/fixtures/program-artifact/state-register.mec"),
+            include_str!("../../tests/fixtures/program-artifact/matrix-literal.mec"),
+            include_str!("../../tests/fixtures/program-artifact/comparison-output.mec"),
+            include_str!("../../tests/fixtures/program-artifact/integrity-constraint.mec"),
+        ] {
+            let mut program = test_mech_program(CompilerPlanningConfig::default());
+            program.plan_source_for_test(source)?;
+            let product = program.compile_program_product()?;
+            let artifact_a = product.artifact();
+            let parsed = ParsedProgram::from_bytes(product.bytecode())?;
+            let artifact_b = decode_program_artifact_sections(&parsed.artifact)
+                .expect("ordinary source bytecode-v1 artifact sections must decode");
+
+            assert_ordinary_source_artifact_parity(artifact_a, &artifact_b);
+            assert!(!artifact_a.schemas().is_empty());
+        }
+        Ok(())
+    }
+
+    #[cfg(all(
+        feature = "source",
+        feature = "functions",
+        feature = "program",
+        feature = "f64",
+        feature = "matrix",
+        feature = "compare_default",
+        feature = "invariant_define"
+    ))]
+    fn compile_source_artifact(source: &str) -> MResult<ProgramArtifact> {
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program.plan_source_for_test(source)?;
+        Ok(program.compile_program_product()?.into_parts().0)
+    }
+
+    #[cfg(all(
+        feature = "source",
+        feature = "functions",
+        feature = "program",
+        feature = "f64",
+        feature = "matrix",
+        feature = "compare_default",
+        feature = "invariant_define"
+    ))]
+    #[test]
+    fn source_composites_and_mutable_state_keep_exact_artifact_semantics() -> MResult<()> {
+        for source in [
+            "(1.0, 2.0)",
+            "first := 1.0\nsecond := 2.0\npair := (first, second)\npair",
+        ] {
+            let artifact = compile_source_artifact(source)?;
+            let composite = artifact
+                .nodes()
+                .iter()
+                .find(|node| {
+                    node.operation.module_path.as_ref() == ["core"]
+                        && node.operation.operation_name == "composite-pack"
+                })
+                .expect("source tuple must retain a reactive composite-pack node");
+            assert!(composite.input_bindings.len() >= 2);
+            assert_eq!(composite.output_bindings.len(), 1);
+            assert_eq!(artifact.outputs().len(), 1);
+        }
+
+        let matrix = compile_source_artifact(
+            "~state := [1.0 2.0; 3.0 4.0]\nreplacement := [0.0 0.0; 0.0 0.0]\nstate = replacement\nstate",
+        )?;
+        let state = matrix
+            .slots()
+            .iter()
+            .find(|slot| slot.role == SlotRole::State)
+            .expect("mutable matrix must retain a state slot");
+        let InitializerReference::Constant(initializer) = state
+            .initializer
+            .expect("mutable matrix state must retain its declaration initializer");
+        let ValueData::Matrix(initializer) = matrix.constants().get(initializer).unwrap().data()
+        else {
+            panic!("mutable matrix initializer must remain a matrix")
+        };
+        let mech_core::snapshot::SequenceView::F64(values) = initializer.elements() else {
+            panic!("mutable matrix initializer must retain f64 elements")
+        };
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_f64())
+                .collect::<Vec<_>>(),
+            vec![1.0, 2.0, 3.0, 4.0]
+        );
+
+        let equal =
+            compile_source_artifact("input := 1.0\n~state := 1.0\nstate = input\noutput := state")?;
+        let equal_state = equal
+            .slots()
+            .iter()
+            .find(|slot| slot.role == SlotRole::State)
+            .expect("equal constants must not erase the state role");
+        assert!(equal_state.initializer.is_some());
+        Ok(())
+    }
+
+    #[cfg(all(
+        feature = "source",
+        feature = "functions",
+        feature = "program",
+        feature = "f64",
+        feature = "matrix",
+        feature = "compare_default",
+        feature = "invariant_define"
+    ))]
+    #[test]
+    fn source_artifact_rejects_multiple_full_state_writers() -> MResult<()> {
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program.plan_source_for_test(
+            "~state := 1.0\nlimit := 2.0\nbefore := state < limit\nstate = limit\nstate = 3.0\nstate",
+        )?;
+        let error = program.compile_program_product().unwrap_err();
+        assert_eq!(error.kind_name(), "ProgramArtifactCompilationError");
+        assert!(error.kind_message().contains("InvalidStateWriterChain"));
+        Ok(())
+    }
 
     #[cfg(feature = "functions")]
     #[test]

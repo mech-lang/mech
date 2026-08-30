@@ -1,9 +1,8 @@
 use crate::{
-    ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, Interpreter, LegacyValue,
-    MResult, MechError, MechExecutionServices, ReactiveDependencyKind, Ref, ResourceDelivery,
-    ResourceIntent, Value, ValueCell, hash_str,
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, FunctionValueRepresentation,
+    GenericError, Interpreter, MResult, MechError, MechExecutionServices, ReactiveDependencyKind,
+    Ref, ResourceDelivery, ResourceIntent, Value, ValueCell, hash_str,
 };
-use mech_core::matrix::Matrix;
 use nalgebra::DVector;
 
 struct RecordingContextReadServices {
@@ -16,9 +15,9 @@ struct RecordingContextReadServices {
 }
 
 impl RecordingContextReadServices {
-    fn returning(result: LegacyValue) -> Self {
+    fn returning(result: ValueCell) -> Self {
         Self {
-            result: crate::value_cell_from_legacy_function_value(result),
+            result,
             fail_read: false,
             reads: Vec::new(),
             live_bindings: Vec::new(),
@@ -107,14 +106,12 @@ fn cell_f64(cell: &ValueCell) -> f64 {
     }
 }
 
-fn symbol_value(interpreter: &Interpreter, name: &str) -> LegacyValue {
-    let cell = interpreter
+fn symbol_value(interpreter: &Interpreter, name: &str) -> ValueCell {
+    interpreter
         .symbols()
         .borrow()
         .get(hash_str(name))
-        .unwrap_or_else(|| panic!("missing symbol {name}"));
-    mech_core::legacy_value_from_cell_compat(&cell)
-        .expect("test symbol must have a compatibility projection")
+        .unwrap_or_else(|| panic!("missing symbol {name}"))
 }
 
 fn external_read_node_count(interpreter: &Interpreter) -> usize {
@@ -173,7 +170,8 @@ fn variable_kind_cast_is_indexed() {
 
 #[test]
 fn general_context_read_uses_the_external_live_boundary() {
-    let mut services = RecordingContextReadServices::returning(LegacyValue::F64(Ref::new(42.0)));
+    let mut services =
+        RecordingContextReadServices::returning(ValueCell::from_exact(42.0).unwrap());
     let (interpreter, output) = interpret_with_context_services(
         "@input := test://provider/root\nvalue := @input/item",
         &mut services,
@@ -200,7 +198,8 @@ fn general_context_read_uses_the_external_live_boundary() {
 
 #[test]
 fn context_read_does_not_require_declared_capability() {
-    let mut services = RecordingContextReadServices::returning(LegacyValue::F64(Ref::new(42.0)));
+    let mut services =
+        RecordingContextReadServices::returning(ValueCell::from_exact(42.0).unwrap());
     let (_interpreter, output) = interpret_with_context_services(
         "@browser := browser://dom/\nvalue := @browser/body/content/input/_value",
         &mut services,
@@ -213,17 +212,28 @@ fn context_read_does_not_require_declared_capability() {
 
 #[test]
 fn frozen_ekf_context_read_has_exact_request() {
-    let frame = LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::from_vec(vec![
-        1.0, 2.0, 3.0, 4.0,
-    ]))));
+    let frame = ValueCell::from_exact_matrix_ref(
+        Ref::new(DVector::from_vec(vec![1.0, 2.0, 3.0, 4.0])),
+        4,
+        1,
+    )
+    .unwrap();
     let mut services = RecordingContextReadServices::returning(frame);
     let (_interpreter, output) = interpret_with_context_services(
         "@trace := gate-d://ekf/frame{:read(sample)}\nframe := @trace/sample",
         &mut services,
     );
     let output = output.unwrap().unwrap();
-    let output = mech_core::legacy_value_from_cell_compat(&output).unwrap();
-    assert_eq!(output.as_vecf64().unwrap().len(), 4);
+    assert_eq!(
+        output
+            .snapshot()
+            .unwrap()
+            .matrix_view()
+            .unwrap()
+            .elements()
+            .len(),
+        4
+    );
     assert_eq!(
         services.reads,
         vec![ExecutionResourceRequest {
@@ -240,7 +250,8 @@ fn frozen_ekf_context_read_has_exact_request() {
 
 #[test]
 fn repeated_context_read_reuses_one_live_binding() {
-    let mut services = RecordingContextReadServices::returning(LegacyValue::F64(Ref::new(42.0)));
+    let mut services =
+        RecordingContextReadServices::returning(ValueCell::from_exact(42.0).unwrap());
     let (interpreter, output) = interpret_with_context_services(
         "@input := test://provider/root\nfirst := @input/item\nsecond := @input/item",
         &mut services,
@@ -250,8 +261,8 @@ fn repeated_context_read_reuses_one_live_binding() {
     assert_eq!(services.live_bindings.len(), 1);
     assert_eq!(external_read_node_count(&interpreter), 1);
     assert_eq!(
-        symbol_value(&interpreter, "first").reactive_root_cell_ids(),
-        symbol_value(&interpreter, "second").reactive_root_cell_ids(),
+        symbol_value(&interpreter, "first").reactive_cell_id(),
+        symbol_value(&interpreter, "second").reactive_cell_id(),
     );
     let addressed = interpreter
         .symbols()
@@ -260,16 +271,15 @@ fn repeated_context_read_reuses_one_live_binding() {
         .expect("successful addressed read must cache its output cell");
     assert!(addressed.same_cell(&services.live_bindings[0].2));
     assert_eq!(
-        mech_core::legacy_value_from_cell_compat(&addressed)
-            .unwrap()
-            .reactive_root_cell_ids(),
-        symbol_value(&interpreter, "first").reactive_root_cell_ids(),
+        addressed.reactive_cell_id(),
+        symbol_value(&interpreter, "first").reactive_cell_id(),
     );
 }
 
 #[test]
 fn context_alias_read_uses_the_resolved_binding() {
-    let mut services = RecordingContextReadServices::returning(LegacyValue::F64(Ref::new(42.0)));
+    let mut services =
+        RecordingContextReadServices::returning(ValueCell::from_exact(42.0).unwrap());
     let (_interpreter, output) = interpret_with_context_services(
         "@root := test://provider/base\n@alias := @root\nvalue := @alias/item",
         &mut services,
@@ -282,7 +292,8 @@ fn context_alias_read_uses_the_resolved_binding() {
 
 #[test]
 fn missing_context_is_not_an_undefined_variable() {
-    let mut services = RecordingContextReadServices::returning(LegacyValue::F64(Ref::new(42.0)));
+    let mut services =
+        RecordingContextReadServices::returning(ValueCell::from_exact(42.0).unwrap());
     let (_interpreter, error) =
         interpret_with_context_services("value := @missing/item", &mut services);
     let error = error.unwrap_err();
@@ -298,7 +309,7 @@ fn missing_context_is_not_an_undefined_variable() {
     assert!(services.live_bindings.is_empty());
 
     let mut ordinary_services =
-        RecordingContextReadServices::returning(LegacyValue::F64(Ref::new(42.0)));
+        RecordingContextReadServices::returning(ValueCell::from_exact(42.0).unwrap());
     let (_interpreter, error) =
         interpret_with_context_services("value := missing", &mut ordinary_services);
     assert_eq!(error.unwrap_err().kind_name(), "UndefinedVariable");
@@ -327,7 +338,8 @@ fn failed_context_read_does_not_cache_or_register() {
 
 #[test]
 fn context_read_kind_annotation_uses_the_cached_cell() {
-    let mut services = RecordingContextReadServices::returning(LegacyValue::F64(Ref::new(42.0)));
+    let mut services =
+        RecordingContextReadServices::returning(ValueCell::from_exact(42.0).unwrap());
     let (interpreter, output) = interpret_with_context_services(
         "@input := test://provider/root\ntyped := @input/item<f64>\nraw := @input/item",
         &mut services,
@@ -335,7 +347,10 @@ fn context_read_kind_annotation_uses_the_cached_cell() {
     output.unwrap();
     assert_eq!(services.reads.len(), 1);
     assert_eq!(services.live_bindings.len(), 1);
-    assert!(symbol_value(&interpreter, "typed").as_f64().is_ok());
+    assert_eq!(
+        symbol_value(&interpreter, "typed").representation(),
+        FunctionValueRepresentation::F64
+    );
     assert!(
         interpreter
             .symbols()

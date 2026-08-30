@@ -1,16 +1,16 @@
 #[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
-    FunctionDefinition, MechFunctionImpl, ReactiveNodeId, ReactiveNodeKind, ReactivePlan,
-    ReactivePlanSolveOutcome, ReactiveRegisterCommitOutcome, ReactiveSolveStatus,
-    ReactiveTurnOutcome, ReactiveTurnState,
+    FunctionDefinition, FunctionInstance, FunctionInvocation, MechFunctionImpl, ReactiveNodeId,
+    ReactiveNodeKind, ReactivePlan, ReactivePlanSolveOutcome, ReactiveRegisterCommitOutcome,
+    ReactiveSolveStatus, ReactiveTurnOutcome, ReactiveTurnState,
 };
-use super::support::reg;
+use super::support::{f64_cell, reg};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
-    FunctionDefine, GenericError, LegacyReactivePlanRegistration, LegacyValue, MResult, MechError,
-    Ref, ToValue, hash_str, internal_pattern_value_identifier, legacy_function_output,
+    FunctionDefine, GenericError, MResult, MechError, Ref, ValueCell, hash_str,
+    internal_pattern_value_identifier,
 };
 use std::{cell::RefCell, rc::Rc};
 
@@ -64,17 +64,17 @@ impl MechFunctionCompiler for SchedulerFunction {
 fn scheduler_node(
     plan: &mut ReactivePlan,
     label: &'static str,
-    inputs: &[LegacyValue],
+    inputs: &[ValueCell],
     kind: ReactiveNodeKind,
     status: ReactiveSolveStatus,
     log: Rc<RefCell<Vec<&'static str>>>,
     error: bool,
-) -> (ReactiveNodeId, LegacyValue, Rc<RefCell<usize>>) {
-    let output = LegacyValue::F64(Ref::new(0.0));
+) -> (ReactiveNodeId, ValueCell, Rc<RefCell<usize>>) {
+    let output = ValueCell::from_exact(0.0).unwrap();
     let count = Rc::new(RefCell::new(0));
     let function = SchedulerFunction {
         label,
-        output: crate::value_cell_from_legacy_function_value(output.clone()),
+        output: output.clone(),
         kind,
         status,
         count: count.clone(),
@@ -82,14 +82,21 @@ fn scheduler_node(
         error,
     };
     (
-        plan.register(Box::new(function), inputs).unwrap(),
+        plan.register_instance_with_activation(
+            FunctionInstance::new(
+                Box::new(function),
+                FunctionInvocation::variadic(output.clone(), inputs.to_vec().into_boxed_slice()),
+            ),
+            None,
+        )
+        .unwrap(),
         output,
         count,
     )
 }
 #[cfg(feature = "f64")]
-fn scheduler_source() -> LegacyValue {
-    LegacyValue::F64(Ref::new(0.0))
+fn scheduler_source() -> ValueCell {
+    ValueCell::from_exact(0.0).unwrap()
 }
 
 struct Comb {
@@ -219,16 +226,21 @@ fn comb(
     fail: bool,
 ) -> (ReactiveNodeId, Rc<RefCell<usize>>) {
     let count = Rc::new(RefCell::new(0));
+    let source_cell = f64_cell(source.clone());
+    let sink_cell = f64_cell(sink.clone());
     let node = p
-        .register(
-            Box::new(Comb {
-                source: source.clone(),
-                sink,
-                add: 1.,
-                count: count.clone(),
-                fail,
-            }),
-            &[source.to_value()],
+        .register_instance_with_activation(
+            FunctionInstance::new(
+                Box::new(Comb {
+                    source: source.clone(),
+                    sink,
+                    add: 1.,
+                    count: count.clone(),
+                    fail,
+                }),
+                FunctionInvocation::unary(sink_cell, source_cell),
+            ),
+            None,
         )
         .unwrap();
     (node, count)
@@ -291,7 +303,7 @@ fn reactive_dirty_scheduler_runs_linear_chain() {
         l.clone(),
         false,
     );
-    let o = p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();
+    let o = p.solve_dirty_cells(&[d.reactive_cell_id()]).unwrap();
     assert_eq!(o.executed_nodes, vec![a, b, c]);
     assert_eq!(o.changed_nodes, vec![a, b, c]);
     assert!(o.unchanged_nodes.is_empty() && o.pending_register_nodes.is_empty());
@@ -324,7 +336,7 @@ fn reactive_dirty_scheduler_orders_independent_branches_by_plan_index() {
         false,
     );
     assert_eq!(
-        p.solve_dirty_cells(&[y.reactive_root_cell_ids()[0], x.reactive_root_cell_ids()[0]])
+        p.solve_dirty_cells(&[y.reactive_cell_id(), x.reactive_cell_id()])
             .unwrap()
             .executed_nodes,
         vec![a, b]
@@ -355,7 +367,7 @@ fn reactive_dirty_scheduler_skips_unrelated_nodes() {
         l,
         false,
     );
-    let o = p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();
+    let o = p.solve_dirty_cells(&[d.reactive_cell_id()]).unwrap();
     assert_eq!(*uc.borrow(), 0);
     assert!(!o.executed_nodes.contains(&u));
 }
@@ -375,7 +387,7 @@ fn reactive_dirty_scheduler_deduplicates_dirty_cells() {
         l,
         false,
     );
-    let cell = d.reactive_root_cell_ids()[0];
+    let cell = d.reactive_cell_id();
     p.solve_dirty_cells(&[cell, cell, cell]).unwrap();
     assert_eq!(*c.borrow(), 1);
 }
@@ -414,7 +426,7 @@ fn reactive_dirty_scheduler_executes_fan_in_consumer_once() {
         l,
         false,
     );
-    p.solve_dirty_cells(&[x.reactive_root_cell_ids()[0], y.reactive_root_cell_ids()[0]])
+    p.solve_dirty_cells(&[x.reactive_cell_id(), y.reactive_cell_id()])
         .unwrap();
     assert_eq!(*c.borrow(), 1);
 }
@@ -449,7 +461,7 @@ fn reactive_dirty_scheduler_stops_on_unchanged() {
         l,
         false,
     );
-    let o = p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();
+    let o = p.solve_dirty_cells(&[d.reactive_cell_id()]).unwrap();
     assert_eq!(*ac.borrow(), 1);
     assert_eq!(*bc.borrow(), 0);
     assert_eq!(o.unchanged_nodes, vec![a]);
@@ -472,10 +484,10 @@ fn reactive_dirty_scheduler_ignores_sampled_consumers() {
         false,
     );
     p.sampled_consumers
-        .entry(d.reactive_root_cell_ids()[0])
+        .entry(d.reactive_cell_id())
         .or_default()
         .push(n);
-    let o = p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();
+    let o = p.solve_dirty_cells(&[d.reactive_cell_id()]).unwrap();
     assert_eq!(*c.borrow(), 0);
     assert!(!o.pending_register_nodes.contains(&n));
 }
@@ -495,7 +507,7 @@ fn reactive_dirty_scheduler_reports_register_pending_without_execution() {
         l,
         false,
     );
-    let o = p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();
+    let o = p.solve_dirty_cells(&[d.reactive_cell_id()]).unwrap();
     assert_eq!(o.pending_register_nodes, vec![r]);
     assert_eq!(*c.borrow(), 0);
     assert!(o.executed_nodes.is_empty());
@@ -525,7 +537,7 @@ fn reactive_dirty_scheduler_stops_at_register_boundary() {
         l,
         false,
     );
-    let o = p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();
+    let o = p.solve_dirty_cells(&[d.reactive_cell_id()]).unwrap();
     assert_eq!(o.pending_register_nodes, vec![r]);
     assert_eq!(*rc.borrow(), 0);
     assert_eq!(*dc.borrow(), 0);
@@ -555,7 +567,7 @@ fn reactive_dirty_scheduler_dirty_register_output_runs_downstream_only() {
         l,
         false,
     );
-    let cell = ro.reactive_root_cell_ids()[0];
+    let cell = ro.reactive_cell_id();
     let o = p.solve_dirty_cells(&[cell]).unwrap();
     assert!(!o.pending_register_nodes.contains(&r));
     assert_eq!(*rc.borrow(), 0);
@@ -586,9 +598,7 @@ fn reactive_dirty_scheduler_stops_on_error() {
         l,
         false,
     );
-    let e = p
-        .solve_dirty_cells(&d.reactive_root_cell_ids())
-        .unwrap_err();
+    let e = p.solve_dirty_cells(&[d.reactive_cell_id()]).unwrap_err();
     assert!(e.kind_message().contains("A"));
     assert_eq!(*ac.borrow(), 1);
     assert_eq!(*bc.borrow(), 0);
@@ -627,7 +637,7 @@ fn reactive_turn_propagates_register_outputs_after_commit() {
     *input.borrow_mut() = 10.;
     let mut s = ReactiveTurnState::default();
     let o = p
-        .advance_reactive_turn(&mut s, &input.to_value().reactive_root_cell_ids())
+        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
         .unwrap();
     assert_eq!(o.before_commit.pending_register_nodes, vec![r]);
     assert_eq!(o.register_commit.staged_nodes, vec![r]);
@@ -650,15 +660,20 @@ fn reactive_turn_propagates_register_outputs_after_commit() {
 #[test]
 fn reactive_turn_defers_post_commit_registers_until_next_turn() {
     let (mut p, input, a, middle, b, ra, rb, _, ca, cb) = chain();
-    let final_value = legacy_function_output(p.nodes.last().unwrap().function.as_ref())
+    let final_value = p
+        .nodes
+        .last()
         .unwrap()
-        .as_f64()
+        .function
+        .instance()
         .unwrap()
-        .clone();
+        .output()
+        .try_ref::<f64>()
+        .unwrap();
     *input.borrow_mut() = 10.;
     let mut s = ReactiveTurnState::default();
     let first = p
-        .advance_reactive_turn(&mut s, &input.to_value().reactive_root_cell_ids())
+        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
         .unwrap();
     assert_eq!(first.register_commit.committed_nodes, vec![ra]);
     assert_eq!(first.after_commit.pending_register_nodes, vec![rb]);
@@ -684,7 +699,7 @@ fn reactive_turn_commits_each_register_layer_at_most_once() {
     let (mut p, input, _, _, _, ra, rb, _, ca, cb) = chain();
     *input.borrow_mut() = 10.;
     let mut s = ReactiveTurnState::default();
-    p.advance_reactive_turn(&mut s, &input.to_value().reactive_root_cell_ids())
+    p.advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
         .unwrap();
     assert_eq!((*ca.borrow(), *cb.borrow()), (1, 0));
     p.advance_reactive_turn(&mut s, &[]).unwrap();
@@ -702,7 +717,7 @@ fn reactive_turn_combines_carried_and_new_registers() {
         pending_register_nodes: vec![b],
     };
     let o = p
-        .advance_reactive_turn(&mut s, &input.to_value().reactive_root_cell_ids())
+        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
         .unwrap();
     assert_eq!(o.register_commit.staged_nodes, vec![a, b]);
     assert_eq!(o.register_commit.committed_nodes, vec![a, b]);
@@ -723,7 +738,7 @@ fn reactive_turn_combinational_only_has_empty_commit() {
     *input.borrow_mut() = 10.;
     let mut s = ReactiveTurnState::default();
     let o = p
-        .advance_reactive_turn(&mut s, &input.to_value().reactive_root_cell_ids())
+        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
         .unwrap();
     assert_eq!(o.before_commit.executed_nodes, vec![na, nb]);
     assert_eq!(o.register_commit, ReactiveRegisterCommitOutcome::default());
@@ -751,7 +766,7 @@ fn reactive_turn_commit_failure_skips_post_commit_propagation() {
     let (_, down) = comb(&mut p, sink.clone(), Ref::new(2.), false);
     let mut s = ReactiveTurnState::default();
     let e = p
-        .advance_reactive_turn(&mut s, &input.to_value().reactive_root_cell_ids())
+        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
         .unwrap_err();
     assert!(e.kind_message().contains("stage failure"));
     assert_eq!(
@@ -777,7 +792,7 @@ fn reactive_turn_post_commit_failure_does_not_requeue_committed_registers() {
     *input.borrow_mut() = 10.;
     let mut s = ReactiveTurnState::default();
     assert!(
-        p.advance_reactive_turn(&mut s, &input.to_value().reactive_root_cell_ids())
+        p.advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
             .is_err()
     );
     assert_eq!(
@@ -802,7 +817,7 @@ fn reactive_turn_post_commit_failure_preserves_deferred_registers() {
     *input.borrow_mut() = 10.;
     let mut state = ReactiveTurnState::default();
     let error = p
-        .advance_reactive_turn(&mut state, &input.to_value().reactive_root_cell_ids())
+        .advance_reactive_turn(&mut state, &[f64_cell(input.clone()).reactive_cell_id()])
         .unwrap_err();
 
     assert!(error.kind_message().contains("solve failure"));
@@ -836,7 +851,7 @@ fn reactive_turn_reuses_existing_plan() {
     let mut s = ReactiveTurnState::default();
     for value in [10., 20.] {
         *input.borrow_mut() = value;
-        p.advance_reactive_turn(&mut s, &input.to_value().reactive_root_cell_ids())
+        p.advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
             .unwrap();
         assert_eq!(p.len(), len);
         assert_eq!(p.nodes.iter().map(|n| n.id).collect::<Vec<_>>(), ids);
@@ -860,7 +875,7 @@ fn reactive_turn_pre_commit_failure_preserves_carried_registers() {
         pending_register_nodes: vec![carried],
     };
     let error = p
-        .advance_reactive_turn(&mut state, &input.to_value().reactive_root_cell_ids())
+        .advance_reactive_turn(&mut state, &[f64_cell(input.clone()).reactive_cell_id()])
         .unwrap_err();
     assert!(error.kind_message().contains("solve failure"));
     assert_eq!(

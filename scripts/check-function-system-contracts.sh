@@ -38,6 +38,11 @@ check_machines() {
 
 check_source() {
   bash "$repository_root/scripts/check-static-distribution-profiles.sh" full-source
+  cargo +nightly-2026-03-03 test --locked \
+    --manifest-path "$repository_root/src/stdlib/Cargo.toml" \
+    --no-default-features \
+    --features full_compiler,matrix2,vector2 \
+    --test specialization_contract
 }
 
 check_consumer() {
