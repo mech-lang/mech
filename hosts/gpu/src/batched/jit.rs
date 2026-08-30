@@ -286,32 +286,68 @@ impl NativeKernel {
                 atan2: atan2_ref,
             };
             let mut registers = vec![None; program.fixed_ir().register_count];
+            let input_instance_bases = program
+                .inputs
+                .iter()
+                .enumerate()
+                .map(|(index, input)| {
+                    instance_base(
+                        &mut builder,
+                        input_bases[index],
+                        instance,
+                        input.shape.elements(),
+                        pointer_type,
+                    )
+                })
+                .collect::<Vec<_>>();
             for (index, input) in program.inputs.iter().enumerate() {
                 let offset = program.register_offsets[&input.slot];
                 for component in 0..input.shape.elements() {
                     registers[offset + component] = Some(NativeRegister::F32(load_component(
                         &mut builder,
-                        input_bases[index],
-                        instance,
-                        input.shape.elements(),
+                        input_instance_bases[index],
                         component,
-                        pointer_type,
                     )));
                 }
             }
+            let state_instance_bases = program
+                .states
+                .iter()
+                .enumerate()
+                .map(|(index, state)| {
+                    instance_base(
+                        &mut builder,
+                        state_bases[index],
+                        instance,
+                        state.shape.elements(),
+                        pointer_type,
+                    )
+                })
+                .collect::<Vec<_>>();
             for (index, state) in program.states.iter().enumerate() {
                 let offset = program.register_offsets[&state.slot];
                 for component in 0..state.shape.elements() {
                     registers[offset + component] = Some(NativeRegister::F32(load_component(
                         &mut builder,
-                        state_bases[index],
-                        instance,
-                        state.shape.elements(),
+                        state_instance_bases[index],
                         component,
-                        pointer_type,
                     )));
                 }
             }
+            let next_state_instance_bases = program
+                .states
+                .iter()
+                .enumerate()
+                .map(|(index, state)| {
+                    instance_base(
+                        &mut builder,
+                        next_state_bases[index],
+                        instance,
+                        state.shape.elements(),
+                        pointer_type,
+                    )
+                })
+                .collect::<Vec<_>>();
             for instruction in &program.fixed_ir().instructions {
                 let value = lower_computation(
                     &mut builder,
@@ -335,11 +371,8 @@ impl NativeKernel {
                     let value = lower_numeric_operand(&mut builder, *source, &registers)?;
                     store_component(
                         &mut builder,
-                        next_state_bases[index],
-                        instance,
-                        state.shape.elements(),
+                        next_state_instance_bases[index],
                         component,
-                        pointer_type,
                         value,
                     );
                 }
@@ -638,47 +671,34 @@ fn call_math(
     builder.inst_results(call)[0]
 }
 
-fn load_component(
-    builder: &mut FunctionBuilder<'_>,
-    base: Value,
-    instance: Value,
-    elements: usize,
-    component: usize,
-    pointer_type: cranelift_codegen::ir::Type,
-) -> Value {
-    let address = component_address(builder, base, instance, elements, component, pointer_type);
+fn load_component(builder: &mut FunctionBuilder<'_>, base: Value, component: usize) -> Value {
+    let address = builder.ins().iadd_imm(
+        base,
+        i64::try_from(component).unwrap() * i64::from(types::F32.bytes()),
+    );
     builder
         .ins()
         .load(types::F32, MemFlags::trusted(), address, 0)
 }
 
-fn store_component(
-    builder: &mut FunctionBuilder<'_>,
-    base: Value,
-    instance: Value,
-    elements: usize,
-    component: usize,
-    pointer_type: cranelift_codegen::ir::Type,
-    value: Value,
-) {
-    let address = component_address(builder, base, instance, elements, component, pointer_type);
+fn store_component(builder: &mut FunctionBuilder<'_>, base: Value, component: usize, value: Value) {
+    let address = builder.ins().iadd_imm(
+        base,
+        i64::try_from(component).unwrap() * i64::from(types::F32.bytes()),
+    );
     builder.ins().store(MemFlags::trusted(), value, address, 0);
 }
 
-fn component_address(
+fn instance_base(
     builder: &mut FunctionBuilder<'_>,
     base: Value,
     instance: Value,
     elements: usize,
-    component: usize,
     pointer_type: cranelift_codegen::ir::Type,
 ) -> Value {
     let element = builder
         .ins()
         .imul_imm(instance, i64::try_from(elements).unwrap());
-    let element = builder
-        .ins()
-        .iadd_imm(element, i64::try_from(component).unwrap());
     let byte_offset = builder
         .ins()
         .imul_imm(element, i64::from(types::F32.bytes()));
