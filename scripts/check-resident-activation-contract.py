@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import copy
 import importlib.util
 import json
 import re
@@ -34,15 +33,6 @@ D0_ALLOWED_CHANGES = (
     "tests/architecture/value-system/current-inventory.json",
     "tests/architecture/resident-activation/",
 )
-D0_CURRENT_INVENTORY_BLOB = "5b5fd877143cba1d7945d850405a45975930e6f4"
-INVENTORY_PATH = "tests/architecture/value-system/current-inventory.json"
-D0_TEST_SOURCE = "src/engine/tests/resident_activation_contract.rs"
-D0_INVENTORY_TARGET = {
-    "kinds": ["test"],
-    "name": "resident_activation_contract",
-    "reachable_rust_files": [D0_TEST_SOURCE],
-    "root": D0_TEST_SOURCE,
-}
 EXPECTED_PUBLICATION_CONTRACT = {
     "store_count": 1,
     "writer_ordering": "Release",
@@ -180,69 +170,6 @@ def validate_boundary_policy(boundary: dict) -> list[str]:
     if boundary.get("publication_contract") != EXPECTED_PUBLICATION_CONTRACT:
         failures.append("D0 publication_contract differs from the exact reserve/execute/prepare/publish/append sequence")
     return failures
-
-
-def expected_inventory_after_d0(baseline: dict) -> dict:
-    expected = copy.deepcopy(baseline)
-    engine = next(
-        fixture
-        for fixture in expected["auxiliary_cargo_fixtures"]
-        if fixture["manifest"] == "src/engine/Cargo.toml"
-    )
-    engine["targets"].append(copy.deepcopy(D0_INVENTORY_TARGET))
-    engine["targets"].sort(key=lambda target: target["name"])
-    expected["enumerated_rust_files"].append(D0_TEST_SOURCE)
-    expected["enumerated_rust_files"].sort()
-    package_counts = {"mech": 912, "mech-engine": 143}
-    for package in expected["workspace_packages"]:
-        if package["name"] not in package_counts:
-            continue
-        baseline_count = package_counts[package["name"]]
-        if package["rust_file_count"] != baseline_count:
-            raise ValueError(
-                f"D0 inventory baseline for {package['name']} is {package['rust_file_count']}, expected {baseline_count}"
-            )
-        package["rust_file_count"] = baseline_count + 1
-    return expected
-
-
-def validate_inventory_documents(baseline: dict, current: dict) -> list[str]:
-    try:
-        expected = expected_inventory_after_d0(baseline)
-    except (KeyError, StopIteration, ValueError) as error:
-        return [f"unable to construct the frozen D0 inventory delta: {error}"]
-    if current == expected:
-        return []
-    return [
-        "current-inventory.json exceeds the frozen D0 delta: exactly one resident_activation_contract target, one enumerated Rust source, the mech 912→913 count, and the mech-engine 143→144 count are permitted; every legacy occurrence must remain unchanged"
-    ]
-
-
-def validate_inventory_delta(root: Path, base: str, current_commit: str = "HEAD") -> list[str]:
-    baseline_source = git_source(root, base, INVENTORY_PATH)
-    if not baseline_source:
-        return [f"unable to read {INVENTORY_PATH} at pinned D0 base {base}"]
-    try:
-        baseline = json.loads(baseline_source)
-        current = json.loads(git_source(root, current_commit, INVENTORY_PATH))
-    except (json.JSONDecodeError, OSError) as error:
-        return [f"unable to read D0 inventory documents: {error}"]
-    return validate_inventory_documents(baseline, current)
-
-
-def validate_inventory_blob_id(actual: str) -> list[str]:
-    if actual == D0_CURRENT_INVENTORY_BLOB:
-        return []
-    return [
-        f"current-inventory.json blob must remain {D0_CURRENT_INVENTORY_BLOB}; found {actual or 'unavailable'}"
-    ]
-
-
-def validate_inventory_blob(root: Path, commit: str = "HEAD") -> list[str]:
-    result = command(["git", "rev-parse", f"{commit}:{INVENTORY_PATH}"], root)
-    if result.returncode != 0:
-        return [result.stderr.strip() or "unable to hash current-inventory.json"]
-    return validate_inventory_blob_id(result.stdout.strip())
 
 
 def production_rust_sources(root: Path) -> dict[str, str]:
@@ -511,9 +438,6 @@ def run(root: Path = ROOT) -> list[str]:
         )
     except RuntimeError as error:
         failures.append(str(error))
-    failures.extend(validate_inventory_blob(root, D0_FINAL_COMMIT))
-    failures.extend(validate_inventory_delta(root, base, D0_FINAL_COMMIT))
-
     production = production_rust_sources_at_commit(root, D0_FINAL_COMMIT)
     failures.extend(validate_artifact_authority(production))
     current_resident = resident_sources(root)

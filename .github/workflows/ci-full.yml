@@ -66,12 +66,8 @@ jobs:
         run: cargo +nightly-2026-03-03 fetch --locked
       - name: Validate permanent architecture contracts
         run: |
-          python3 scripts/generate-value-system-inventory.py \
-            --git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \
-            --check-legacy-baseline
-          python3 scripts/generate-value-system-inventory.py --check --mode retirement
-          python3 scripts/check-value-system-contract.py --mode retirement
-          python3 scripts/check-production-legacy-closure.py
+          python3 scripts/check-value-system-contract.py
+          python3 scripts/check-no-retired-value-system.py
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
           python3 scripts/check-resident-activation-contract.py
@@ -86,8 +82,7 @@ jobs:
           python3 -B -m unittest \
             tests/ci/test_ci_full_contract.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
-            scripts/tests/test_generate_value_system_inventory.py \
-            scripts/tests/test_check_value_system_contract.py \
+            scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \

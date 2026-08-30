@@ -1,16 +1,13 @@
 {
   "schema_version": 1,
   "contract": "resident-activation",
-  "source_targets": "tests/architecture/value-system/frozen-semantic-targets-v1.json",
   "semantic_targets": [
     {
-      "id": "mutable-reference-runtime-storage",
+      "id": "cell-binding-runtime-storage",
       "applies_to": [
         {
-          "enum": "LegacyValue",
-          "variants": [
-            "MutableReference"
-          ]
+          "type": "CellBinding",
+          "role": "mutable-runtime-slot"
         }
       ],
       "semantic_category": "runtime-slot-state",
@@ -19,13 +16,11 @@
       "runtime_storage": "instance-arena"
     },
     {
-      "id": "uninitialized-storage",
+      "id": "uninitialized-slot-metadata",
       "applies_to": [
         {
-          "enum": "LegacyValue",
-          "variants": [
-            "Empty"
-          ]
+          "type": "SlotInitialization",
+          "variant": "Uninitialized"
         }
       ],
       "semantic_category": "runtime-slot-state",

@@ -1,3 +1,0 @@
-use mech_runtime::Runtime;
-
-pub struct InvalidSchemaDependency(Runtime);
