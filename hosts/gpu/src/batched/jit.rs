@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::{mem, sync::Arc};
 
 use cranelift_codegen::ir::{
@@ -21,7 +21,6 @@ type NativeTurn = unsafe extern "C" fn(
     input_pointers: *const *const f32,
     state_pointers: *const *const f32,
     next_state_pointers: *const *mut f32,
-    instances: usize,
 ) -> u64;
 
 struct NativeKernel {
@@ -114,7 +113,6 @@ impl BatchedJitCpuSession {
                     self.input_pointers.as_ptr(),
                     self.state_pointers.as_ptr(),
                     self.next_state_pointers.as_ptr(),
-                    self.program.instances as usize,
                 )
             };
             if let Some(fault) = self
@@ -199,7 +197,7 @@ impl NativeKernel {
 
         let pointer_type = module.target_config().pointer_type();
         let mut signature = module.make_signature();
-        for _ in 0..4 {
+        for _ in 0..3 {
             signature.params.push(AbiParam::new(pointer_type));
         }
         signature.returns.push(AbiParam::new(types::I64));
@@ -229,7 +227,6 @@ impl NativeKernel {
             let input_table = parameters[0];
             let state_table = parameters[1];
             let next_state_table = parameters[2];
-            let instances = parameters[3];
             let pointer_bytes = i32::try_from(pointer_type.bytes()).unwrap();
             let flags = MemFlags::trusted();
             let input_bases = (0..program.inputs.len())
@@ -262,14 +259,20 @@ impl NativeKernel {
                     )
                 })
                 .collect::<Vec<_>>();
+            let constant_values = collect_constant_bits(program)
+                .into_iter()
+                .map(|bits| (bits, builder.ins().f32const(f32::from_bits(bits))))
+                .collect::<BTreeMap<_, _>>();
             let zero = builder.ins().iconst(pointer_type, 0);
             builder.ins().jump(header, &[zero.into()]);
 
             builder.switch_to_block(header);
             let instance = builder.block_params(header)[0];
-            let has_instance = builder
-                .ins()
-                .icmp(IntCC::UnsignedLessThan, instance, instances);
+            let has_instance = builder.ins().icmp_imm(
+                IntCC::UnsignedLessThan,
+                instance,
+                i64::from(program.instances),
+            );
             builder.ins().brif(has_instance, body, &[], exit, &[]);
 
             builder.switch_to_block(body);
@@ -354,12 +357,18 @@ impl NativeKernel {
                     &instruction.computation,
                     &registers,
                     functions,
+                    &constant_values,
                 )?;
                 registers[instruction.output] = Some(value);
             }
             let mut constraint_code = builder.ins().iconst(types::I32, 0);
             for (index, constraint) in program.constraints.iter().enumerate() {
-                let condition = lower_predicate(&mut builder, &constraint.predicate, &registers)?;
+                let condition = lower_predicate(
+                    &mut builder,
+                    &constraint.predicate,
+                    &registers,
+                    &constant_values,
+                )?;
                 let code_is_empty = builder.ins().icmp_imm(IntCC::Equal, constraint_code, 0);
                 let failed = builder.ins().bnot(condition);
                 let record = builder.ins().band(code_is_empty, failed);
@@ -368,7 +377,8 @@ impl NativeKernel {
             }
             for (index, state) in program.states.iter().enumerate() {
                 for (component, source) in state.update.iter().enumerate() {
-                    let value = lower_numeric_operand(&mut builder, *source, &registers)?;
+                    let value =
+                        lower_numeric_operand(&mut builder, *source, &registers, &constant_values)?;
                     store_component(
                         &mut builder,
                         next_state_instance_bases[index],
@@ -417,7 +427,7 @@ impl NativeKernel {
         module.clear_context(&mut context);
         module.finalize_definitions().map_err(native_error)?;
         let code = module.get_finalized_function(function_id);
-        // SAFETY: `code` is the finalized entry point for the four-argument
+        // SAFETY: `code` is the finalized entry point for the three-argument
         // signature constructed above. The module remains owned by the kernel.
         let turn = unsafe { mem::transmute::<*const u8, NativeTurn>(code) };
         Ok(Self {
@@ -442,24 +452,97 @@ enum NativeRegister {
     Bool(Value),
 }
 
+fn collect_constant_operand(operand: ScalarOperand, constants: &mut BTreeSet<u32>) {
+    if let ScalarOperand::Constant(value) = operand {
+        constants.insert(value.to_bits());
+    }
+}
+
+fn collect_constant_computation(computation: &ScalarComputation, constants: &mut BTreeSet<u32>) {
+    match computation {
+        ScalarComputation::Copy(input)
+        | ScalarComputation::Negate(input)
+        | ScalarComputation::Absolute(input)
+        | ScalarComputation::IsFinite(input) => collect_constant_operand(*input, constants),
+        ScalarComputation::Compare { left, right, .. } => {
+            collect_constant_operand(*left, constants);
+            collect_constant_operand(*right, constants);
+        }
+        ScalarComputation::Logic { inputs, .. } | ScalarComputation::Elementwise { inputs, .. } => {
+            for input in inputs {
+                collect_constant_operand(*input, constants);
+            }
+        }
+        ScalarComputation::SumProducts(terms) => {
+            for (left, right) in terms {
+                collect_constant_operand(*left, constants);
+                collect_constant_operand(*right, constants);
+            }
+        }
+    }
+}
+
+fn collect_constant_predicate(predicate: &ScalarPredicate, constants: &mut BTreeSet<u32>) {
+    match predicate {
+        ScalarPredicate::Value(operand) | ScalarPredicate::IsFinite(operand) => {
+            collect_constant_operand(*operand, constants)
+        }
+        ScalarPredicate::AbsoluteDifferenceWithin {
+            left,
+            right,
+            tolerance,
+        } => {
+            collect_constant_operand(*left, constants);
+            collect_constant_operand(*right, constants);
+            collect_constant_operand(*tolerance, constants);
+        }
+        ScalarPredicate::Compare { left, right, .. } => {
+            collect_constant_operand(*left, constants);
+            collect_constant_operand(*right, constants);
+        }
+        ScalarPredicate::All(inputs) | ScalarPredicate::Logic { inputs, .. } => {
+            for input in inputs {
+                collect_constant_predicate(input, constants);
+            }
+        }
+    }
+}
+
+fn collect_constant_bits(program: &FixedShapeKernel) -> BTreeSet<u32> {
+    let mut constants = BTreeSet::from([0.0_f32.to_bits()]);
+    for instruction in &program.fixed_ir().instructions {
+        collect_constant_computation(&instruction.computation, &mut constants);
+    }
+    for constraint in &program.constraints {
+        collect_constant_predicate(&constraint.predicate, &mut constants);
+    }
+    for state in &program.states {
+        for source in &state.update {
+            collect_constant_operand(*source, &mut constants);
+        }
+    }
+    constants
+}
+
 fn lower_computation(
     builder: &mut FunctionBuilder<'_>,
     computation: &ScalarComputation,
     registers: &[Option<NativeRegister>],
     functions: MathFunctions,
+    constants: &BTreeMap<u32, Value>,
 ) -> Result<NativeRegister, BatchedExecutionError> {
     Ok(match computation {
-        ScalarComputation::Copy(input) => lower_operand(builder, *input, registers)?,
+        ScalarComputation::Copy(input) => lower_operand(builder, *input, registers, constants)?,
         ScalarComputation::Negate(input) => {
-            let value = lower_numeric_operand(builder, *input, registers)?;
+            let value = lower_numeric_operand(builder, *input, registers, constants)?;
             NativeRegister::F32(builder.ins().fneg(value))
         }
         ScalarComputation::Absolute(input) => {
-            let value = lower_numeric_operand(builder, *input, registers)?;
+            let value = lower_numeric_operand(builder, *input, registers, constants)?;
             NativeRegister::F32(builder.ins().fabs(value))
         }
         ScalarComputation::IsFinite(input) => {
-            let value = lower_numeric_operand(builder, *input, registers)?;
+            let value = lower_numeric_operand(builder, *input, registers, constants)?;
             NativeRegister::Bool(lower_is_finite(builder, value))
         }
         ScalarComputation::Compare {
@@ -467,8 +550,8 @@ fn lower_computation(
             left,
             right,
         } => {
-            let left = lower_numeric_operand(builder, *left, registers)?;
-            let right = lower_numeric_operand(builder, *right, registers)?;
+            let left = lower_numeric_operand(builder, *left, registers, constants)?;
+            let right = lower_numeric_operand(builder, *right, registers, constants)?;
             let condition = builder.ins().fcmp(
                 match operation {
                     ComparisonOperation::Equal => FloatCC::Equal,
@@ -484,11 +567,11 @@ fn lower_computation(
             NativeRegister::Bool(condition)
         }
         ScalarComputation::Logic { operation, inputs } => {
-            let left = lower_boolean_operand(builder, inputs[0], registers)?;
+            let left = lower_boolean_operand(builder, inputs[0], registers, constants)?;
             let condition = if *operation == LogicOperation::Not {
                 builder.ins().bnot(left)
             } else {
-                let right = lower_boolean_operand(builder, inputs[1], registers)?;
+                let right = lower_boolean_operand(builder, inputs[1], registers, constants)?;
                 match operation {
                     LogicOperation::And => builder.ins().band(left, right),
                     LogicOperation::Or => builder.ins().bor(left, right),
@@ -501,7 +584,7 @@ fn lower_computation(
         ScalarComputation::Elementwise { operation, inputs } => {
             let values = inputs
                 .iter()
-                .map(|input| lower_numeric_operand(builder, *input, registers))
+                .map(|input| lower_numeric_operand(builder, *input, registers, constants))
                 .collect::<Result<Vec<_>, _>>()?;
             NativeRegister::F32(match operation {
                 ElementwiseOperation::Binary(operation) => match operation {
@@ -525,14 +608,14 @@ fn lower_computation(
             // with fmul removes one instruction while preserving the checked
             // finite/tolerance-based publication contract.
             let Some((first_left, first_right)) = terms.first() else {
-                return Ok(NativeRegister::F32(builder.ins().f32const(0.0)));
+                return Ok(NativeRegister::F32(constants[&0.0f32.to_bits()]));
             };
-            let first_left = lower_numeric_operand(builder, *first_left, registers)?;
-            let first_right = lower_numeric_operand(builder, *first_right, registers)?;
+            let first_left = lower_numeric_operand(builder, *first_left, registers, constants)?;
+            let first_right = lower_numeric_operand(builder, *first_right, registers, constants)?;
             let mut sum = builder.ins().fmul(first_left, first_right);
             for (left, right) in terms.iter().skip(1) {
-                let left = lower_numeric_operand(builder, *left, registers)?;
-                let right = lower_numeric_operand(builder, *right, registers)?;
+                let left = lower_numeric_operand(builder, *left, registers, constants)?;
+                let right = lower_numeric_operand(builder, *right, registers, constants)?;
                 sum = builder.ins().fma(left, right, sum);
             }
             NativeRegister::F32(sum)
@@ -544,17 +627,20 @@ fn lower_predicate(
     builder: &mut FunctionBuilder<'_>,
     predicate: &ScalarPredicate,
     registers: &[Option<NativeRegister>],
+    constants: &BTreeMap<u32, Value>,
 ) -> Result<Value, BatchedExecutionError> {
     Ok(match predicate {
-        ScalarPredicate::Value(operand) => match lower_operand(builder, *operand, registers)? {
-            NativeRegister::Bool(value) => value,
-            NativeRegister::F32(value) => {
-                let zero = builder.ins().f32const(0.0);
-                builder.ins().fcmp(FloatCC::NotEqual, value, zero)
+        ScalarPredicate::Value(operand) => {
+            match lower_operand(builder, *operand, registers, constants)? {
+                NativeRegister::Bool(value) => value,
+                NativeRegister::F32(value) => {
+                    let zero = constants[&0.0f32.to_bits()];
+                    builder.ins().fcmp(FloatCC::NotEqual, value, zero)
+                }
             }
-        },
+        }
         ScalarPredicate::IsFinite(operand) => {
-            let value = lower_numeric_operand(builder, *operand, registers)?;
+            let value = lower_numeric_operand(builder, *operand, registers, constants)?;
             lower_is_finite(builder, value)
         }
         ScalarPredicate::AbsoluteDifferenceWithin {
@@ -562,9 +648,9 @@ fn lower_predicate(
             right,
             tolerance,
         } => {
-            let left = lower_numeric_operand(builder, *left, registers)?;
-            let right = lower_numeric_operand(builder, *right, registers)?;
-            let tolerance = lower_numeric_operand(builder, *tolerance, registers)?;
+            let left = lower_numeric_operand(builder, *left, registers, constants)?;
+            let right = lower_numeric_operand(builder, *right, registers, constants)?;
+            let tolerance = lower_numeric_operand(builder, *tolerance, registers, constants)?;
             let difference = builder.ins().fsub(left, right);
             let difference = builder.ins().fabs(difference);
             builder
@@ -576,8 +662,8 @@ fn lower_predicate(
             left,
             right,
         } => {
-            let left = lower_numeric_operand(builder, *left, registers)?;
-            let right = lower_numeric_operand(builder, *right, registers)?;
+            let left = lower_numeric_operand(builder, *left, registers, constants)?;
+            let right = lower_numeric_operand(builder, *right, registers, constants)?;
             builder.ins().fcmp(
                 match operation {
                     ComparisonOperation::Equal => FloatCC::Equal,
@@ -597,19 +683,20 @@ fn lower_predicate(
                 builder,
                 inputs.next().expect("flattened conjunction is non-empty"),
                 registers,
+                constants,
             )?;
             for input in inputs {
-                let next = lower_predicate(builder, input, registers)?;
+                let next = lower_predicate(builder, input, registers, constants)?;
                 condition = builder.ins().band(condition, next);
             }
             condition
         }
         ScalarPredicate::Logic { operation, inputs } => {
-            let left = lower_predicate(builder, &inputs[0], registers)?;
+            let left = lower_predicate(builder, &inputs[0], registers, constants)?;
             if *operation == LogicOperation::Not {
                 builder.ins().bnot(left)
             } else {
-                let right = lower_predicate(builder, &inputs[1], registers)?;
+                let right = lower_predicate(builder, &inputs[1], registers, constants)?;
                 match operation {
                     LogicOperation::And => builder.ins().band(left, right),
                     LogicOperation::Or => builder.ins().bor(left, right),
@@ -630,9 +717,10 @@ fn lower_is_finite(builder: &mut FunctionBuilder<'_>, value: Value) -> Value {
 }
 
 fn lower_operand(
-    builder: &mut FunctionBuilder<'_>,
+    _builder: &mut FunctionBuilder<'_>,
     operand: ScalarOperand,
     registers: &[Option<NativeRegister>],
+    constants: &BTreeMap<u32, Value>,
 ) -> Result<NativeRegister, BatchedExecutionError> {
     match operand {
         ScalarOperand::Register(register) => registers[register].ok_or_else(|| {
@@ -640,7 +728,13 @@ fn lower_operand(
                 "native lowering read register {register} before definition"
             ))
         }),
-        ScalarOperand::Constant(value) => Ok(NativeRegister::F32(builder.ins().f32const(value))),
+        ScalarOperand::Constant(value) => Ok(NativeRegister::F32(
+            constants.get(&value.to_bits()).copied().ok_or_else(|| {
+                BatchedExecutionError::Native(format!(
+                    "native lowering constant {value:?} was not hoisted"
+                ))
+            })?,
+        )),
     }
 }
 
@@ -648,8 +742,9 @@ fn lower_numeric_operand(
     builder: &mut FunctionBuilder<'_>,
     operand: ScalarOperand,
     registers: &[Option<NativeRegister>],
+    constants: &BTreeMap<u32, Value>,
 ) -> Result<Value, BatchedExecutionError> {
-    match lower_operand(builder, operand, registers)? {
+    match lower_operand(builder, operand, registers, constants)? {
         NativeRegister::F32(value) => Ok(value),
         NativeRegister::Bool(_) => Err(BatchedExecutionError::Native(
             "native numeric operation received a boolean operand".to_owned(),
@@ -661,8 +756,9 @@ fn lower_boolean_operand(
     builder: &mut FunctionBuilder<'_>,
     operand: ScalarOperand,
     registers: &[Option<NativeRegister>],
+    constants: &BTreeMap<u32, Value>,
 ) -> Result<Value, BatchedExecutionError> {
-    match lower_operand(builder, operand, registers)? {
+    match lower_operand(builder, operand, registers, constants)? {
         NativeRegister::Bool(value) => Ok(value),
         NativeRegister::F32(_) => Err(BatchedExecutionError::Native(
             "native boolean operation received a numeric operand".to_owned(),
