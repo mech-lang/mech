@@ -680,21 +680,19 @@ fn call_math(
 }
 
 fn load_component(builder: &mut FunctionBuilder<'_>, base: Value, component: usize) -> Value {
-    let address = builder.ins().iadd_imm(
-        base,
-        i64::try_from(component).unwrap() * i64::from(types::F32.bytes()),
-    );
+    let offset =
+        i32::try_from(component.checked_mul(types::F32.bytes() as usize).unwrap()).unwrap();
     builder
         .ins()
-        .load(types::F32, MemFlags::trusted(), address, 0)
+        .load(types::F32, MemFlags::trusted(), base, offset)
 }
 
 fn store_component(builder: &mut FunctionBuilder<'_>, base: Value, component: usize, value: Value) {
-    let address = builder.ins().iadd_imm(
-        base,
-        i64::try_from(component).unwrap() * i64::from(types::F32.bytes()),
-    );
-    builder.ins().store(MemFlags::trusted(), value, address, 0);
+    let offset =
+        i32::try_from(component.checked_mul(types::F32.bytes() as usize).unwrap()).unwrap();
+    builder
+        .ins()
+        .store(MemFlags::trusted(), value, base, offset);
 }
 
 fn instance_base(
