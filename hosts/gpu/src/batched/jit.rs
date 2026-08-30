@@ -521,8 +521,16 @@ fn lower_computation(
             })
         }
         ScalarComputation::SumProducts(terms) => {
-            let mut sum = builder.ins().f32const(0.0);
-            for (left, right) in terms {
+            // There is no accumulated addend for the first product. Starting
+            // with fmul removes one instruction while preserving the checked
+            // finite/tolerance-based publication contract.
+            let Some((first_left, first_right)) = terms.first() else {
+                return Ok(NativeRegister::F32(builder.ins().f32const(0.0)));
+            };
+            let first_left = lower_numeric_operand(builder, *first_left, registers)?;
+            let first_right = lower_numeric_operand(builder, *first_right, registers)?;
+            let mut sum = builder.ins().fmul(first_left, first_right);
+            for (left, right) in terms.iter().skip(1) {
                 let left = lower_numeric_operand(builder, *left, registers)?;
                 let right = lower_numeric_operand(builder, *right, registers)?;
                 sum = builder.ins().fma(left, right, sum);
