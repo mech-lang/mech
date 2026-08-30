@@ -39,31 +39,11 @@ this file.
   decision should be made as an ABI/API migration, after which the audited
   exception can expire.
 
-### `LegacyValue` execution-model cutover
+### Canonical value-system cutover
 
-- Locations: the type currently lives in `src/core/src/value.rs` (published as
-  `legacy_value`), with conversion boundaries in `src/core/src/legacy_adapter`.
-- Current dependency surface: `LegacyValue` appears in 336 Rust files with
-  10,199 references; its companion `ValueKind` appears in 88 files with 1,805
-  references. It is still the active representation for function arguments,
-  reactive cells, collections, engine evaluation, machine kernels, and runtime
-  host/resource boundaries.
-- Why it is named legacy: commit `4181cfc39` deliberately renamed the old
-  mutable runtime `Value` to `LegacyValue` when the immutable, schema-validated
-  snapshot `Value` was introduced. The accompanying comment says the physical
-  `value.rs` path remains stable during migration and is deleted at final
-  cutover. The name marks an active migration boundary; it does not mean the
-  type is currently dead.
-- Why it cannot be deleted in this cleanup: the newer snapshot `Value` is a
-  detached/durable representation, not yet a replacement for mutable reactive
-  execution values. Deleting or merely renaming `LegacyValue` would leave the
-  execution model without its shared-cell and matrix/collection behavior.
-- Narrower legacy surface: the adapter module has only two production consumers
-  outside core (`engine/artifact/compiler.rs` and
-  `runtime/program/external/value_adapter.rs`), but those are the current
-  compiler and external-publication cutover boundaries. Once both consume the
-  new value model directly, the adapter module and its contract tests can be
-  removed as one unit.
+Completed. The universal mutable value representation and its adapter directory
+were deleted after production execution moved to `Value` and `ValueCell`.
+Future warning cleanup must not reintroduce a compatibility shim.
 
 ### Legacy matrix NOT factory surface
 
