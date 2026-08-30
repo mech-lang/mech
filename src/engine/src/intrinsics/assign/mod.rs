@@ -166,11 +166,15 @@ macro_rules! impl_matrix_assign_runtime_name {
         #[cfg(feature = $feature)]
         impl<T> AssignRuntimeName for $shape<T>
         where
-            T: AsValueKind,
+            T: FunctionRuntimeType,
         {
             #[cfg(feature = "semantic-compiler")]
             fn assign_runtime_name() -> String {
-                format!("Assign<{}{}>", T::as_value_kind(), stringify!($shape))
+                format!(
+                    "Assign<{}{}>",
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    stringify!($shape)
+                )
             }
         }
     };
@@ -201,9 +205,8 @@ struct Assign<T> {
 impl<T> MechFunctionFactory for Assign<T>
 where
     T: Clone + Debug + Sync + Send + 'static,
-    Ref<T>: ToValue,
     #[cfg(feature = "semantic-compiler")]
-    T: ConstElem + AsValueKind,
+    T: ConstElem + FunctionRuntimeType,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     T: FunctionStateBacking,
@@ -223,7 +226,6 @@ where
 impl<T> MechFunctionImpl for Assign<T>
 where
     T: Clone + Debug + FunctionStateBacking + 'static,
-    Ref<T>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let source_ptr = self.source.as_ptr();
@@ -261,7 +263,7 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for Assign<T>
 where
-    T: CompileConst + ConstElem + AsValueKind + AssignRuntimeName,
+    T: CompileConst + ConstElem + FunctionRuntimeType + AssignRuntimeName,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = T::assign_runtime_name();
@@ -338,14 +340,6 @@ fn canonical_assignment_value(sink: &ValueCell, source: &ValueCell) -> MResult<V
         MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
     })?;
     sink.rebuild_data_draft(draft)
-}
-
-#[cfg(all(test, feature = "semantic-compiler"))]
-pub(crate) fn canonical_stable_value_update(
-    sink: ValueCell,
-    source: ValueCell,
-) -> Box<dyn MechFunction> {
-    Box::new(AssignCanonicalCell { sink, source })
 }
 
 #[cfg(feature = "semantic-compiler")]

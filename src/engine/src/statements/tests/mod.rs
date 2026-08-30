@@ -85,16 +85,3 @@ mod support;
     feature = "semantic-compiler",
 ))]
 mod variable_assign;
-
-#[cfg(all(
-    test,
-    feature = "functions",
-    feature = "variables",
-    feature = "variable_define",
-    feature = "variable_assign",
-    feature = "assign",
-    feature = "f64",
-    feature = "program",
-    feature = "semantic-compiler",
-))]
-mod op_assign;

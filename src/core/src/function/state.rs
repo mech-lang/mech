@@ -33,8 +33,8 @@ pub(crate) use function_state_sealed::Journal as FunctionCheckpoint;
 /// A runtime backing that can be exposed through an opaque state port.
 ///
 /// Normal ports admit only exact scalar and matrix backings whose payload can
-/// be checkpointed without traversing legacy aggregate graphs. Compatibility
-/// graph capture remains confined to `legacy_adapter`.
+/// be checkpointed without traversing aggregate graphs. Composite canonical
+/// cells are checkpointed through the canonical state journal instead.
 ///
 /// ```compile_fail
 /// use mech_core::FunctionStatePortBacking;
@@ -49,11 +49,6 @@ pub(crate) use function_state_sealed::Journal as FunctionCheckpoint;
 /// require_state_port_backing::<ValueCell>();
 /// ```
 ///
-/// ```compile_fail
-/// use mech_core::{FunctionStatePortBacking, MechSet};
-/// fn require_state_port_backing<T: FunctionStatePortBacking>() {}
-/// require_state_port_backing::<MechSet>();
-/// ```
 pub trait FunctionStatePortBacking:
     function_state_sealed::PortSealed + FunctionPortBacking + FunctionRuntimeType + 'static
 {
@@ -80,12 +75,6 @@ impl<T> FunctionStatePortBacking for T where
 /// use mech_core::{FunctionStateBacking, ValueCell};
 /// fn require_state_backing<T: FunctionStateBacking>() {}
 /// require_state_backing::<ValueCell>();
-/// ```
-///
-/// ```compile_fail
-/// use mech_core::{FunctionStateBacking, MechSet};
-/// fn require_state_backing<T: FunctionStateBacking>() {}
-/// require_state_backing::<MechSet>();
 /// ```
 ///
 /// ```compile_fail
@@ -218,7 +207,6 @@ exact_matrix_function_state_backing!(DVector, "vectord");
 exact_matrix_function_state_backing!(DMatrix, "matrixd");
 
 trait ErasedFunctionState {
-    fn as_any(&self) -> &dyn core::any::Any;
     fn representation(&self) -> FunctionValueRepresentation;
     fn logical_cell_id(&self) -> crate::CanonicalCellId;
     fn capture(&self, journal: &mut function_state_sealed::Journal) -> MResult<()>;
@@ -228,10 +216,6 @@ impl<T> ErasedFunctionState for Ref<T>
 where
     T: FunctionStatePortBacking,
 {
-    fn as_any(&self) -> &dyn core::any::Any {
-        self
-    }
-
     fn representation(&self) -> FunctionValueRepresentation {
         T::REPRESENTATION
     }
@@ -246,10 +230,6 @@ where
 }
 
 impl ErasedFunctionState for crate::ValueCell {
-    fn as_any(&self) -> &dyn core::any::Any {
-        self
-    }
-
     fn representation(&self) -> FunctionValueRepresentation {
         self.representation()
     }
@@ -266,7 +246,7 @@ impl ErasedFunctionState for crate::ValueCell {
 /// A borrowed, opaque capability over one typed function-owned state root.
 ///
 /// State ports reveal only the cell's declared representation. They do not
-/// expose its payload, typed reference, physical identity, or a legacy value.
+/// expose its payload, typed reference, or physical identity.
 #[derive(Clone, Copy)]
 pub struct FunctionStatePort<'a> {
     inner: &'a dyn ErasedFunctionState,
@@ -296,10 +276,6 @@ impl<'a> FunctionStatePort<'a> {
 
     pub(crate) fn capture_into(self, journal: &mut crate::CanonicalStateJournal) -> MResult<()> {
         self.inner.capture(journal)
-    }
-
-    pub(crate) fn backing_any(self) -> &'a dyn core::any::Any {
-        self.inner.as_any()
     }
 }
 
@@ -389,8 +365,7 @@ mod tests {
 
         assert_eq!(debug, "FunctionStatePort { representation: F64 }",);
         assert!(!debug.contains("1234.56789"));
-        assert!(!debug.contains("LegacyValue"));
-        assert!(!debug.contains("ReactiveCellId"));
+        assert!(!debug.contains("CanonicalCellId"));
         assert!(!debug.contains("0x"));
         assert!(!debug.contains('@'));
     }

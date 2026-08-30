@@ -1284,9 +1284,7 @@ mod tests {
         assert!(!engine.contains("mod runtime;"));
         assert!(hosted.contains("mod runtime;"));
         assert!(!engine.contains("pretty_print"));
-        assert!(!engine.contains("LegacyValue"));
         assert!(!engine.contains("into_value()"));
-        assert!(!hosted.contains("LegacyValue"));
         assert!(!hosted.contains("into_value()"));
     }
 

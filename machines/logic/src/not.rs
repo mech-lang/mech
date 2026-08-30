@@ -15,10 +15,9 @@ pub(crate) struct NotS<T> {
 }
 impl<T> MechFunctionFactory for NotS<T>
 where
-    T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + AsValueKind + Not<Output = T>,
+    T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + FunctionRuntimeType + Not<Output = T>,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
-    Ref<T>: ToValue,
     T: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
@@ -47,7 +46,6 @@ where
         + 'static
         + Not<Output = T>
         + FunctionStateBacking,
-    Ref<T>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
@@ -73,10 +71,10 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for NotS<T>
 where
-    T: CompileConst + ConstElem + AsValueKind,
+    T: CompileConst + ConstElem + FunctionRuntimeType,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("NotS<{}>", T::as_value_kind());
+        let name = format!("NotS<{}>", <T as FunctionRuntimeType>::REPRESENTATION);
         compile_unop!(name, self.out, self.arg, ctx);
     }
 }
@@ -90,15 +88,14 @@ pub struct NotV<T, MatA> {
 }
 impl<T, MatA> MechFunctionFactory for NotV<T, MatA>
 where
-    T: Debug + Clone + Sync + Send + 'static + AsValueKind + Not<Output = T>,
+    T: Debug + Clone + Sync + Send + 'static + FunctionRuntimeType + Not<Output = T>,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-    MatA: Debug + AsValueKind + 'static,
+    MatA: Debug + FunctionRuntimeType + 'static,
     #[cfg(feature = "semantic-compiler")]
     MatA: CompileConst + ConstElem,
-    Ref<MatA>: ToValue,
     MatA: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
@@ -118,8 +115,7 @@ where
 }
 impl<T, MatA> MechFunctionImpl for NotV<T, MatA>
 where
-    Ref<MatA>: ToValue,
-    T: Debug + Clone + Sync + Send + 'static + AsValueKind + Not<Output = T>,
+    T: Debug + Clone + Sync + Send + 'static + FunctionRuntimeType + Not<Output = T>,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
     MatA: Debug + FunctionStateBacking,
@@ -152,11 +148,11 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T, MatA> MechFunctionCompiler for NotV<T, MatA>
 where
-    T: CompileConst + ConstElem + AsValueKind,
-    MatA: CompileConst + ConstElem + AsValueKind,
+    T: CompileConst + ConstElem + FunctionRuntimeType,
+    MatA: CompileConst + ConstElem + FunctionRuntimeType,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("NotV<{}{}>", T::as_value_kind(), MatA::as_value_kind());
+        let name = format!("NotV<{}{}>", <T as FunctionRuntimeType>::REPRESENTATION, <MatA as FunctionRuntimeType>::REPRESENTATION);
         compile_unop!(name, self.out, self.arg, ctx);
     }
 }

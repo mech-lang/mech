@@ -462,6 +462,7 @@ fn canonical_key(ty: &RuntimeType, depth: usize) -> MResult<Vec<u8>> {
 }
 
 #[cfg(any(all(feature = "semantic-compiler", feature = "enum"), test))]
+#[cfg(test)]
 pub(crate) fn canonical_runtime_type_key(ty: &RuntimeType) -> MResult<Vec<u8>> {
     validate_runtime_type(ty, 0)?;
     canonical_key(ty, 0)

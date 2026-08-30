@@ -90,7 +90,6 @@ use nalgebra::Vector3;
 #[cfg(feature = "vector4")]
 use nalgebra::Vector4;
 
-use paste::paste;
 
 #[cfg(feature = "runtime")]
 pub mod catalog;
@@ -130,10 +129,9 @@ macro_rules! impl_string_binop {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: std::fmt::Debug + Clone + Sync + Send + 'static + AsValueKind + Concat,
+            T: std::fmt::Debug + Clone + Sync + Send + 'static + FunctionRuntimeType + Concat,
             #[cfg(feature = "semantic-compiler")]
-            T: ConstElem + CompileConst,
-            Ref<$out_type>: ToValue,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst,
             $arg1_type: FunctionPortBacking,
             $arg2_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
@@ -156,7 +154,8 @@ macro_rules! impl_string_binop {
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: std::fmt::Debug + Clone + Sync + Send + 'static + Concat,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -184,10 +183,10 @@ macro_rules! impl_string_binop {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: ConstElem + CompileConst + AsValueKind,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }

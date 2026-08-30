@@ -246,13 +246,20 @@ impl MechErrorKind for FunctionEnvironmentNameCollision {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{FunctionCatalogBuilder, FunctionSpecializer, LegacyValue, MechFunction};
+    use mech_core::{
+        CanonicalFunctionSpecializer, FunctionCatalogBuilder, SpecializationContext,
+        SpecializationInvocation, SpecializedFunction,
+    };
     use std::sync::Arc;
 
     struct TestSpecializer;
 
-    impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+    impl CanonicalFunctionSpecializer for TestSpecializer {
+        fn specialize_invocation(
+            &self,
+            _: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
             unreachable!("environment tests do not specialize functions")
         }
     }
@@ -275,11 +282,11 @@ mod tests {
     fn catalog_with_all_exposures() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_intrinsic_specializer("assign", Arc::new(TestSpecializer))
+            .insert_canonical_intrinsic_specializer("assign", Arc::new(TestSpecializer))
             .unwrap();
         for name in ["syntax/internal", "math/add", "stats/mean"] {
             builder
-                .insert_specializer(name, Arc::new(TestSpecializer))
+                .insert_canonical_specializer(name, Arc::new(TestSpecializer))
                 .unwrap();
         }
         builder

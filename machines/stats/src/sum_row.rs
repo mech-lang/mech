@@ -145,31 +145,23 @@ mod checked_sum_tests {
     feature = "matrixd",
     feature = "row_vectord"
 ))]
-mod invocation_port_tests {
+mod canonical_port_tests {
     use super::*;
 
-    fn unary_args<I, O>(out: &Ref<O>, arg: &Ref<I>) -> FunctionArgs
-    where
-        Ref<I>: ToValue,
-        Ref<O>: ToValue,
-    {
-        FunctionArgs::Unary(out.to_value(), arg.to_value())
-    }
-
     #[test]
-    fn fixed_and_dynamic_row_sums_preserve_factory_behavior_and_state() {
+    fn row_sum_preserves_exact_storage_identity_and_dynamic_state() {
         let fixed_arg = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
-        let legacy_out = Ref::new(RowVector2::zeros());
-        let invocation_out = Ref::new(RowVector2::zeros());
-        let legacy = StatsSumRowM2::<f64>::new(unary_args(&legacy_out, &fixed_arg)).unwrap();
-        let invocation = StatsSumRowM2::<f64>::new_invocation(
-            unary_args(&invocation_out, &fixed_arg).into(),
-        )
+        let fixed_out = Ref::new(RowVector2::zeros());
+        let fixed_alias = fixed_out.clone();
+        StatsSumRowM2::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 1, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(fixed_arg, 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
         .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), RowVector2::new(4.0, 6.0));
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+        assert!(fixed_out.same_handle(&fixed_alias));
+        assert_eq!(*fixed_out.borrow(), RowVector2::new(4.0, 6.0));
 
         let dynamic_arg = Ref::new(DMatrix::from_row_slice(
             2,
@@ -177,21 +169,19 @@ mod invocation_port_tests {
             &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
         ));
         let dynamic_out = Ref::new(RowDVector::zeros(3));
-        let dynamic = StatsSumRowMD::<f64>::new_invocation(
-            unary_args(&dynamic_out, &dynamic_arg).into(),
-        )
+        let output = ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 1, 3).unwrap();
+        let function = StatsSumRowMD::<f64>::new_invocation(FunctionInvocation::unary(
+            output.clone(),
+            ValueCell::from_exact_matrix_ref(dynamic_arg, 2, 3).unwrap(),
+        ))
         .unwrap();
-        dynamic.solve_result().unwrap();
+        function.solve_result().unwrap();
         assert_eq!(
-            *dynamic_out.borrow(),
-            RowDVector::from_vec(vec![5.0, 7.0, 9.0])
+            function.reactive_output_cell_ids(),
+            vec![output.reactive_cell_id()]
         );
-        assert_eq!(
-            dynamic.reactive_output_cell_ids(),
-            dynamic_out.to_value().reactive_root_cell_ids(),
-        );
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*dynamic)?;
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
             *dynamic_out.borrow_mut() = RowDVector::from_vec(vec![-1.0]);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -202,30 +192,5 @@ mod invocation_port_tests {
             *dynamic_out.borrow(),
             RowDVector::from_vec(vec![5.0, 7.0, 9.0])
         );
-    }
-}
-
-#[cfg(all(
-    test,
-    feature = "runtime",
-    feature = "f64",
-    feature = "vectord",
-    feature = "matrixd",
-    not(feature = "matrix1")
-))]
-mod dynamic_fallback_invocation_tests {
-    use super::*;
-
-    #[test]
-    fn dynamic_vector_row_sum_uses_matrix_fallback_without_matrix1() {
-        let arg = Ref::new(DVector::from_vec(vec![1.0_f64, 2.0, 3.0]));
-        let out = Ref::new(DMatrix::zeros(1, 1));
-        let function = StatsSumRowVDMD::<f64>::new_invocation(
-            FunctionArgs::Unary(out.to_value(), arg.to_value()).into(),
-        )
-        .unwrap();
-
-        function.solve_result().unwrap();
-        assert_eq!(*out.borrow(), DMatrix::from_element(1, 1, 6.0));
     }
 }

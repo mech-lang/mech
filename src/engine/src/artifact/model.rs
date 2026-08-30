@@ -3,8 +3,8 @@ use core::ops::Range;
 use mech_core::{
     AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
     ConstantId, ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction,
-    InputId, IntegrityConstraintId, LegacyOpaqueOperationContract, LegacySnapshotError, MechError,
-    NodeId, OperationContractDeclaration, OperationContractError, OperationContractId,
+    InputId, IntegrityConstraintId, LegacyOpaqueOperationContract, MechError, NodeId,
+    OperationContractDeclaration, OperationContractError, OperationContractId,
     OperationContractTable, OperationContractTableBuilder, OutputId, PortDirection,
     ProgramRevision, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaId,
     SchemaTable, SemanticModelError, SnapshotValueError, validate_declaration,
@@ -648,7 +648,6 @@ pub enum ArtifactBuildError {
     CombinationalCycle,
     Snapshot(SnapshotValueError),
     Semantic(SemanticModelError),
-    LegacySnapshot(LegacySnapshotError),
     CoreBytecode(MechError),
     OperationContract(OperationContractError),
     CompilerIr(CompilerIrError),
@@ -663,12 +662,6 @@ impl From<SnapshotValueError> for ArtifactBuildError {
 impl From<SemanticModelError> for ArtifactBuildError {
     fn from(error: SemanticModelError) -> Self {
         Self::Semantic(error)
-    }
-}
-
-impl From<LegacySnapshotError> for ArtifactBuildError {
-    fn from(error: LegacySnapshotError) -> Self {
-        Self::LegacySnapshot(error)
     }
 }
 

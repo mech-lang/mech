@@ -5,11 +5,6 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use mech_core::{
-    Dictionary, LegacyValue, MechEnum, MechTable, MechTuple, Ref, ValueKind, hash_str,
-    matrix::Matrix as ValueMatrix,
-};
-
 #[test]
 fn resident_repl_starts_without_arguments_and_with_the_compatibility_flag() {
     assert_repl_session(&[]);
@@ -27,91 +22,6 @@ fn resident_repl_multiplies_dynamic_f64_matrices() {
         !output.contains("ResidentRouteFailure"),
         "matrix multiplication failed resident routing: {output}"
     );
-}
-
-#[test]
-fn canonical_inline_string_values_round_trip_through_the_mech_parser() {
-    let string = LegacyValue::String(Ref::new(
-        "quote \" slash \\ line\nreturn\rtab\t α separators\u{2028}\u{2029} nul\0 control\u{1}"
-            .to_string(),
-    ));
-    let matrix = LegacyValue::MatrixString(ValueMatrix::DMatrix(Ref::new(
-        nalgebra::DMatrix::from_row_slice(1, 2, &["a\"b".to_string(), "c\\d\nα".to_string()]),
-    )));
-    let tuple = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![string.clone()])));
-    let column_id = hash_str("message");
-    let table = LegacyValue::Table(Ref::new(MechTable::from_parts(
-        2,
-        1,
-        vec![(
-            column_id,
-            ValueKind::String,
-            ValueMatrix::from_vec(
-                vec![
-                    LegacyValue::String(Ref::new("a\"b".to_string())),
-                    LegacyValue::String(Ref::new("c\\d\nα".to_string())),
-                ],
-                2,
-                1,
-            ),
-        )],
-        vec![(column_id, "message".to_string())],
-    )));
-    let nested_column_id = hash_str("nested");
-    let nested_table = LegacyValue::Table(Ref::new(MechTable::from_parts(
-        1,
-        1,
-        vec![(
-            nested_column_id,
-            table.kind(),
-            ValueMatrix::from_vec(vec![table.clone()], 1, 1),
-        )],
-        vec![(nested_column_id, "nested".to_string())],
-    )));
-    let enum_id = hash_str("status");
-    let ready_id = hash_str("status/ready");
-    let error_id = hash_str("status/error");
-    let mut names = Dictionary::new();
-    names.insert(enum_id, "status".to_string());
-    names.insert(ready_id, "status/ready".to_string());
-    names.insert(error_id, "status/error".to_string());
-    let names = Ref::new(names);
-    let active_enum = LegacyValue::Enum(Ref::new(MechEnum {
-        id: enum_id,
-        variants: vec![(error_id, Some(string.clone()))],
-        names: names.clone(),
-    }));
-    let enum_definition = LegacyValue::Enum(Ref::new(MechEnum {
-        id: enum_id,
-        variants: vec![
-            (ready_id, None),
-            (error_id, Some(LegacyValue::Kind(ValueKind::String))),
-        ],
-        names,
-    }));
-
-    for value in [
-        string,
-        matrix,
-        tuple,
-        table,
-        nested_table,
-        active_enum,
-        enum_definition,
-    ] {
-        let canonical = value.format_canonical_inline();
-        assert!(
-            !canonical.chars().any(|character| character.is_control()),
-            "canonical formatter leaked a control character: {canonical:?}"
-        );
-        assert!(
-            !canonical.contains(['\u{2028}', '\u{2029}']),
-            "canonical formatter leaked a Unicode line separator: {canonical:?}"
-        );
-        let source = format!("roundtrip := {canonical}");
-        mech_syntax::parse(&source)
-            .unwrap_or_else(|error| panic!("canonical value did not parse: {source:?}: {error:?}"));
-    }
 }
 
 #[test]

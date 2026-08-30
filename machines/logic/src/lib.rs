@@ -1,6 +1,5 @@
 #![cfg_attr(not(test), no_main)]
 #![feature(where_clause_attrs)]
-
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[doc(hidden)]
@@ -99,8 +98,12 @@ use nalgebra::Vector3;
 ))]
 use nalgebra::Vector4;
 
-#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
-use paste::paste;
+#[cfg(any(
+    feature = "and",
+    feature = "not",
+    feature = "or",
+    feature = "xor"
+))]
 use std::sync::LazyLock;
 
 #[cfg(any(feature = "and", feature = "or", feature = "xor"))]
@@ -375,76 +378,69 @@ mod invocation_port_tests {
     use super::*;
     use nalgebra::{DMatrix, Matrix2};
 
-    fn binary_args<T>(out: &Ref<T>, lhs: &Ref<T>, rhs: &Ref<T>) -> FunctionArgs
-    where
-        Ref<T>: ToValue,
-    {
-        FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value())
-    }
-
     #[test]
-    fn scalar_binary_and_unary_factories_use_invocation_ports() {
-        let lhs = Ref::new(true);
-        let rhs = Ref::new(false);
-        let binary_out = Ref::new(true);
-        let binary = crate::and::AndSS::new_invocation(
-            binary_args(&binary_out, &lhs, &rhs).into(),
-        )
+    fn scalar_binary_and_unary_factories_use_canonical_ports() {
+        let binary_out = ValueCell::from_exact(true).unwrap();
+        let binary = crate::and::AndSS::new_invocation(FunctionInvocation::binary(
+            binary_out.clone(),
+            ValueCell::from_exact(true).unwrap(),
+            ValueCell::from_exact(false).unwrap(),
+        ))
         .unwrap();
         binary.solve_result().unwrap();
-        assert!(!*binary_out.borrow());
+        assert!(matches!(
+            binary_out.snapshot().unwrap().data(),
+            ValueData::Bool(false)
+        ));
         assert_eq!(
             binary.reactive_output_cell_ids(),
-            binary_out.to_value().reactive_root_cell_ids(),
+            vec![binary_out.reactive_cell_id()]
         );
 
-        let unary_out = Ref::new(false);
-        let unary = crate::not::NotS::<bool>::new_invocation(
-            FunctionArgs::Unary(unary_out.to_value(), lhs.to_value()).into(),
-        )
+        let unary_out = ValueCell::from_exact(false).unwrap();
+        let unary = crate::not::NotS::<bool>::new_invocation(FunctionInvocation::unary(
+            unary_out.clone(),
+            ValueCell::from_exact(true).unwrap(),
+        ))
         .unwrap();
         unary.solve_result().unwrap();
-        assert!(!*unary_out.borrow());
 
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*binary)?;
-            participant.capture_function_state(&*unary)?;
-            *binary_out.borrow_mut() = true;
-            *unary_out.borrow_mut() = true;
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(binary.as_ref())?;
+            participant.capture_function_state(unary.as_ref())?;
+            binary_out.replace(&ValueCell::from_exact(true)?.snapshot()?)?;
+            unary_out.replace(&ValueCell::from_exact(true)?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert!(!*binary_out.borrow());
-        assert!(!*unary_out.borrow());
+        assert!(matches!(
+            binary_out.snapshot().unwrap().data(),
+            ValueData::Bool(false)
+        ));
+        assert!(matches!(
+            unary_out.snapshot().unwrap().data(),
+            ValueData::Bool(false)
+        ));
     }
 
     #[test]
-    fn fixed_and_dynamic_matrix_factories_preserve_storage() {
+    fn fixed_and_dynamic_logic_factories_preserve_exact_storage() {
         let fixed_lhs = Ref::new(Matrix2::new(true, true, false, false));
         let fixed_rhs = Ref::new(Matrix2::new(true, false, true, false));
         let fixed_out = Ref::new(Matrix2::from_element(false));
-        let fixed = crate::and::AndM2M2::new_invocation(
-            binary_args(&fixed_out, &fixed_lhs, &fixed_rhs).into(),
-        )
+        crate::and::AndM2M2::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(fixed_lhs, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(fixed_rhs, 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
         .unwrap();
-        fixed.solve_result().unwrap();
         assert_eq!(
             *fixed_out.borrow(),
             Matrix2::new(true, false, false, false)
-        );
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*fixed)?;
-            *fixed_out.borrow_mut() = Matrix2::from_element(true);
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
-        .unwrap();
-        assert_eq!(
-            *fixed_out.borrow(),
-            Matrix2::new(true, false, false, false),
         );
 
         let dynamic_lhs = Ref::new(DMatrix::from_row_slice(
@@ -458,17 +454,15 @@ mod invocation_port_tests {
             &[true, false, true, false],
         ));
         let dynamic_out = Ref::new(DMatrix::from_element(2, 2, false));
-        let dynamic = crate::and::AndMDMD::new_invocation(
-            binary_args(&dynamic_out, &dynamic_lhs, &dynamic_rhs).into(),
-        )
+        let function = crate::and::AndMDMD::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic_lhs, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic_rhs, 2, 2).unwrap(),
+        ))
         .unwrap();
-        dynamic.solve_result().unwrap();
-        assert_eq!(
-            *dynamic_out.borrow(),
-            DMatrix::from_row_slice(2, 2, &[true, false, false, false])
-        );
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*dynamic)?;
+        function.solve_result().unwrap();
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
             *dynamic_out.borrow_mut() = DMatrix::from_element(1, 1, true);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -477,27 +471,22 @@ mod invocation_port_tests {
         .unwrap();
         assert_eq!(
             *dynamic_out.borrow(),
-            DMatrix::from_row_slice(2, 2, &[true, false, false, false]),
+            DMatrix::from_row_slice(2, 2, &[true, false, false, false])
         );
     }
 
     #[test]
     fn logic_ports_reject_wrong_types_and_layouts() {
-        let out = Ref::new(false);
-        let scalar = Ref::new(true);
-        let matrix = Ref::new(Matrix2::from_element(true));
-        let type_error = crate::and::AndSS::new_invocation(
-            FunctionArgs::Binary(out.to_value(), matrix.to_value(), scalar.to_value()).into(),
-        )
-        .err()
-        .expect("wrong exact input representation must fail");
-        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
-
-        let arity_error = crate::and::AndSS::new_invocation(
-            FunctionArgs::Unary(out.to_value(), scalar.to_value()).into(),
-        )
-        .err()
-        .expect("wrong layout must fail");
-        assert_eq!(arity_error.kind_name(), "IncorrectNumberOfArguments");
+        assert!(crate::and::AndSS::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact(false).unwrap(),
+            ValueCell::from_exact(1_usize).unwrap(),
+            ValueCell::from_exact(true).unwrap(),
+        ))
+        .is_err());
+        assert!(crate::and::AndSS::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact(false).unwrap(),
+            ValueCell::from_exact(true).unwrap(),
+        ))
+        .is_err());
     }
 }

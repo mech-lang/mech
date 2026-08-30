@@ -16,10 +16,6 @@ impl MechFunctionFactory for ConvertSEnum {
         let out = invocation.expect_nullary()?.value();
         Ok(Box::new(Self { out }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "enum")]
 impl MechFunctionImpl for ConvertSEnum {
@@ -54,10 +50,6 @@ impl MechFunctionFactory for ConvertSEmpty {
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let out = invocation.expect_nullary()?.value();
         Ok(Box::new(Self { out }))
-    }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
     }
 }
 

@@ -94,11 +94,10 @@ macro_rules! impl_binop2 {
                 + RemAssign
                 + Zero
                 + One
-                + AsValueKind
+                + FunctionRuntimeType
                 + RuntimeCheckedRem,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst + ConstElem,
-            Ref<$out_type>: ToValue,
+            T: CanonicalMatrixElementBacking + CompileConst + ConstElem,
             $arg1_type: FunctionRuntimeType + FunctionPortBacking,
             $arg2_type: FunctionRuntimeType + FunctionPortBacking,
             $out_type: FunctionStateBacking,
@@ -143,7 +142,8 @@ macro_rules! impl_binop2 {
                 + Zero
                 + One
                 + RuntimeCheckedRem,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -171,10 +171,14 @@ macro_rules! impl_binop2 {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind + RuntimeCheckedRem,
+            T: CanonicalMatrixElementBacking
+                + CompileConst
+                + ConstElem
+                + FunctionRuntimeType
+                + RuntimeCheckedRem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }

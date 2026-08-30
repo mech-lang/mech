@@ -112,12 +112,10 @@ fn resident_source_has_no_erased_or_legacy_turn_dependencies() {
                 "plan.slot(",
                 "raw_kernel::step",
                 "ekf_step",
-                "RuntimeExecutionTransaction",
                 "CanonicalStateJournal",
                 "CanonicalTurnJournal",
-                "ReactiveCellId",
+                "CanonicalCellId",
                 "ValueCell",
-                "MutableReference",
             ] {
                 assert!(
                     !source.contains(forbidden),

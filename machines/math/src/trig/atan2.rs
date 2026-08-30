@@ -183,32 +183,42 @@ impl_two_arg_fxn!(Atan2F32, f32, f32, f32, atan2f_op);
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(Atan2F64, f64, f64, f64, atan2_op);
 
+impl_canonical_math_same_type_binop_specializer!(MathAtan2, Atan2, "math/atan2");
+
 #[cfg(all(test, feature = "runtime", feature = "f64"))]
-mod invocation_port_tests {
+mod canonical_port_tests {
     use super::*;
 
     #[test]
-    fn scalar_atan2_factory_uses_exact_invocation_ports() {
-        let lhs = Ref::new(1.0_f64);
-        let rhs = Ref::new(1.0_f64);
-        let out = Ref::new(0.0_f64);
-        let function = Atan2F64::new_invocation(
-            FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value()).into(),
-        )
+    fn scalar_atan2_uses_exact_ports_and_typed_state() {
+        let output = ValueCell::from_exact(0.0_f64).unwrap();
+        let alias = output.clone();
+        let function = Atan2F64::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            ValueCell::from_exact(1.0_f64).unwrap(),
+            ValueCell::from_exact(1.0_f64).unwrap(),
+        ))
         .unwrap();
-
         function.solve_result().unwrap();
-        assert!((*out.borrow() - core::f64::consts::FRAC_PI_4).abs() < f64::EPSILON);
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*function)?;
-            *out.borrow_mut() = 99.0;
+        let value = output.snapshot().unwrap();
+        let ValueData::F64(value) = value.data() else {
+            panic!("expected f64 atan2 output")
+        };
+        assert!((value.to_f64() - core::f64::consts::FRAC_PI_4).abs() < f64::EPSILON);
+        assert!(output.same_cell(&alias));
+
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            output.replace(&ValueCell::from_exact(99.0_f64)?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert!((*out.borrow() - core::f64::consts::FRAC_PI_4).abs() < f64::EPSILON);
+        let restored = output.snapshot().unwrap();
+        let ValueData::F64(restored) = restored.data() else {
+            panic!("expected restored f64 atan2 output")
+        };
+        assert!((restored.to_f64() - core::f64::consts::FRAC_PI_4).abs() < f64::EPSILON);
     }
 }
-
-impl_canonical_math_same_type_binop_specializer!(MathAtan2, Atan2, "math/atan2");

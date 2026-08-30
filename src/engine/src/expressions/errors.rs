@@ -168,3 +168,24 @@ impl MechErrorKind for InvalidGuardExpressionError {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{CannotConvertToTypeError, MechError};
+
+    #[test]
+    fn conversion_errors_preserve_the_core_public_type_identity() {
+        let error = MechError::new(
+            CannotConvertToTypeError {
+                target_type: "canonical-test-type",
+            },
+            None,
+        );
+
+        assert!(
+            error
+                .kind_as::<mech_core::CannotConvertToTypeError>()
+                .is_some()
+        );
+    }
+}

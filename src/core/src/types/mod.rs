@@ -1,4 +1,3 @@
-use crate::legacy_value::*;
 use crate::*;
 
 #[cfg(feature = "no_std")]

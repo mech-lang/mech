@@ -318,10 +318,6 @@ macro_rules! table_join_factory {
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 TableJoinFxn::from_invocation(invocation, JoinMode::$mode)
             }
-
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
     };
 }

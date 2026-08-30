@@ -484,8 +484,8 @@ impl ReifiedKind {
     /// Reconstructs a reified kind from its bytecode-v1 semantic material.
     ///
     /// The bytes are accepted only when they are a complete, structurally
-    /// canonical closed-kind encoding. This route deliberately does not
-    /// recreate a legacy `Kind` value.
+    /// canonical closed-kind encoding. This route reconstructs only the
+    /// canonical `KindExpr` representation.
     pub fn from_canonical_bytes(
         canonical_bytes: impl Into<Box<[u8]>>,
     ) -> Result<Self, SnapshotValueError> {

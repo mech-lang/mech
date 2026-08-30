@@ -2,14 +2,8 @@
 mod canonical;
 mod composite;
 pub(crate) mod inline_type;
-#[path = "../../../legacy_adapter/bytecode_kind.rs"]
-#[cfg(any(test, feature = "semantic-compiler"))]
-mod kind;
 mod limits;
 mod matrix;
-#[path = "../../../legacy_adapter/bytecode_scalar.rs"]
-#[cfg(any(test, feature = "semantic-compiler"))]
-mod scalar;
 
 #[cfg(feature = "semantic-compiler")]
 use crate::FunctionValueRepresentation;
@@ -128,6 +122,14 @@ pub(crate) fn encode_canonical_constant(
 }
 
 #[cfg(feature = "semantic-compiler")]
+pub(crate) fn encode_canonical_exact_backing(
+    value: &Value,
+    representation: FunctionValueRepresentation,
+) -> MResult<EncodedConstant> {
+    canonical::encode_exact_backing(value, representation)
+}
+
+#[cfg(feature = "semantic-compiler")]
 pub(crate) fn encode_canonical_composite_template(
     value: &Value,
     representation: FunctionValueRepresentation,
@@ -137,14 +139,6 @@ pub(crate) fn encode_canonical_composite_template(
 
 #[cfg(feature = "semantic-compiler")]
 pub(crate) use canonical::runtime_schema_body;
-
-#[cfg(any(test, feature = "semantic-compiler"))]
-#[path = "../../../legacy_adapter/bytecode_constants.rs"]
-mod legacy;
-#[cfg(any(test, feature = "semantic-compiler"))]
-pub(crate) use legacy::{
-    decode_encoded_legacy_constants_for_adapter, value_kind_from_runtime_type,
-};
 
 pub(crate) fn validate_constant_value_payload(ty: &RuntimeType, bytes: &[u8]) -> MResult<()> {
     canonical::validate_payload(ty, bytes)

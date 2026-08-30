@@ -91,15 +91,14 @@ where
         + 'static
         + Add<Output = T>
         + AddAssign
-        + AsValueKind
+        + FunctionRuntimeType
         + Zero
         + One
         + PartialEq
         + PartialOrd,
     T: StatsCheckedAdd,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst + ConstElem,
-    Ref<DMatrix<T>>: ToValue,
+    T: CanonicalMatrixElementBacking + CompileConst + ConstElem,
     RowDVector<T>: FunctionPortBacking,
     DMatrix<T>: FunctionStateBacking,
 {
@@ -132,7 +131,8 @@ where
         + PartialEq
         + PartialOrd,
     T: StatsCheckedAdd,
-    Ref<DMatrix<T>>: ToValue,
+    #[cfg(feature = "semantic-compiler")]
+    T: CanonicalMatrixElementBacking,
     DMatrix<T>: FunctionStateBacking,
 {
     fn solve_result(&self) -> MResult<()> {
@@ -159,10 +159,10 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for StatsSumColumnRD2<T>
 where
-    T: CompileConst + ConstElem + AsValueKind,
+    T: CanonicalMatrixElementBacking + CompileConst + ConstElem + FunctionRuntimeType,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!(StatsSumColumnRD2), T::as_value_kind());
+        let name = format!("{}<{}>", stringify!(StatsSumColumnRD2), <T as FunctionRuntimeType>::REPRESENTATION);
         compile_unop!(name, self.out, self.arg, ctx);
     }
 }
@@ -264,32 +264,23 @@ mod checked_sum_tests {
     feature = "matrixd",
     feature = "vectord"
 ))]
-mod invocation_port_tests {
+mod canonical_port_tests {
     use super::*;
 
-    fn unary_args<I, O>(out: &Ref<O>, arg: &Ref<I>) -> FunctionArgs
-    where
-        Ref<I>: ToValue,
-        Ref<O>: ToValue,
-    {
-        FunctionArgs::Unary(out.to_value(), arg.to_value())
-    }
-
     #[test]
-    fn fixed_and_dynamic_column_sums_preserve_factory_behavior_and_state() {
+    fn column_sum_preserves_exact_storage_identity_and_dynamic_state() {
         let fixed_arg = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
-        let legacy_out = Ref::new(Vector2::zeros());
-        let invocation_out = Ref::new(Vector2::zeros());
-        let legacy =
-            StatsSumColumnM2::<f64>::new(unary_args(&legacy_out, &fixed_arg)).unwrap();
-        let invocation = StatsSumColumnM2::<f64>::new_invocation(
-            unary_args(&invocation_out, &fixed_arg).into(),
-        )
+        let fixed_out = Ref::new(Vector2::zeros());
+        let fixed_alias = fixed_out.clone();
+        StatsSumColumnM2::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 2, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(fixed_arg, 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
         .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), Vector2::new(3.0, 7.0));
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+        assert!(fixed_out.same_handle(&fixed_alias));
+        assert_eq!(*fixed_out.borrow(), Vector2::new(3.0, 7.0));
 
         let dynamic_arg = Ref::new(DMatrix::from_row_slice(
             2,
@@ -297,18 +288,19 @@ mod invocation_port_tests {
             &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
         ));
         let dynamic_out = Ref::new(DVector::zeros(2));
-        let dynamic = StatsSumColumnMD::<f64>::new_invocation(
-            unary_args(&dynamic_out, &dynamic_arg).into(),
-        )
+        let output = ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 2, 1).unwrap();
+        let function = StatsSumColumnMD::<f64>::new_invocation(FunctionInvocation::unary(
+            output.clone(),
+            ValueCell::from_exact_matrix_ref(dynamic_arg, 2, 3).unwrap(),
+        ))
         .unwrap();
-        dynamic.solve_result().unwrap();
-        assert_eq!(*dynamic_out.borrow(), DVector::from_vec(vec![6.0, 15.0]));
+        function.solve_result().unwrap();
         assert_eq!(
-            dynamic.reactive_output_cell_ids(),
-            dynamic_out.to_value().reactive_root_cell_ids(),
+            function.reactive_output_cell_ids(),
+            vec![output.reactive_cell_id()]
         );
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*dynamic)?;
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
             *dynamic_out.borrow_mut() = DVector::from_vec(vec![-1.0, -2.0, -3.0]);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -319,61 +311,25 @@ mod invocation_port_tests {
     }
 
     #[test]
-    fn column_sum_rejects_wrong_exact_storage_and_reports_unary_arity() {
+    fn column_sum_rejects_wrong_exact_storage_and_binary_layout() {
         let out = Ref::new(Vector2::<f64>::zeros());
         let wrong_arg = Ref::new(DMatrix::<f64>::zeros(2, 2));
-        let type_error = StatsSumColumnM2::<f64>::new_invocation(
-            unary_args(&out, &wrong_arg).into(),
-        )
-        .err()
-        .expect("wrong exact statistics input must be rejected");
-        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
+        assert!(StatsSumColumnM2::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(wrong_arg, 2, 2).unwrap(),
+        ))
+        .is_err());
 
         let fixed_arg = Ref::new(Matrix2::<f64>::zeros());
-        let arity_error = StatsSumColumnM2::<f64>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), fixed_arg.to_value(), fixed_arg.to_value()).into(),
-        )
+        let input = ValueCell::from_exact_matrix_ref(fixed_arg, 2, 2).unwrap();
+        let error = StatsSumColumnM2::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out, 2, 1).unwrap(),
+            input.clone(),
+            input,
+        ))
         .err()
-        .expect("binary layout must be rejected for unary statistics functions");
-        let arity = arity_error.kind_as::<IncorrectNumberOfArguments>().unwrap();
-        assert_eq!(arity.expected, 1);
-        assert_eq!(arity.found, 2);
-    }
-}
-
-#[cfg(all(
-    test,
-    feature = "runtime",
-    feature = "f64",
-    feature = "row_vectord",
-    feature = "matrixd",
-    not(feature = "matrix1")
-))]
-mod direct_dynamic_invocation_tests {
-    use super::*;
-
-    #[test]
-    fn row_vector_column_sum_uses_direct_dynamic_factory_and_state_port() {
-        let arg = Ref::new(RowDVector::from_vec(vec![1.0_f64, 2.0, 3.0]));
-        let out = Ref::new(DMatrix::zeros(1, 1));
-        let function = StatsSumColumnRD2::<f64>::new_invocation(
-            FunctionArgs::Unary(out.to_value(), arg.to_value()).into(),
-        )
-        .unwrap();
-        function.solve_result().unwrap();
-        assert_eq!(*out.borrow(), DMatrix::from_element(1, 1, 6.0));
-        assert_eq!(
-            function.reactive_output_cell_ids(),
-            out.to_value().reactive_root_cell_ids(),
-        );
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*function)?;
-            *out.borrow_mut() = DMatrix::from_element(2, 2, -1.0);
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
-        .unwrap();
-        assert_eq!(*out.borrow(), DMatrix::from_element(1, 1, 6.0));
+        .expect("binary layout must be rejected");
+        let arity = error.kind_as::<IncorrectNumberOfArguments>().unwrap();
+        assert_eq!((arity.expected, arity.found), (1, 2));
     }
 }

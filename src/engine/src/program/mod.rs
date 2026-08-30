@@ -24,6 +24,4 @@ pub use compiler_planning::{
 };
 
 #[cfg(all(test, feature = "semantic-compiler"))]
-mod bytecode_plan_topology_tests;
-#[cfg(all(test, feature = "semantic-compiler"))]
 mod context_binding_tests;

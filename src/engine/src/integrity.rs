@@ -400,17 +400,6 @@ mod tests {
         program
     }
 
-    fn set_constraint_result(program: &CompilerPlanningProgram, name: &str, result: LegacyValue) {
-        program
-            .interpreter
-            .state
-            .borrow_mut()
-            .integrity_constraints
-            .get_mut(&hash_str(name))
-            .unwrap()
-            .result = ValueCell::new(result);
-    }
-
     #[test]
     fn scalar_constraint_results_are_classified_without_mutation() {
         let passing = program_with_constraint("safe! := true");
@@ -471,38 +460,6 @@ mod tests {
         assert_eq!(failures.evaluations.len(), 2);
         assert_eq!(failures.evaluations[0].name, "first!");
         assert_eq!(failures.evaluations[1].name, "second!");
-    }
-
-    #[test]
-    fn typed_and_mutable_reference_results_are_resolved() {
-        for (wrapped, passes) in [
-            (
-                LegacyValue::Typed(Box::new(LegacyValue::Bool(Ref::new(true))), ValueKind::Bool),
-                true,
-            ),
-            (
-                LegacyValue::Typed(
-                    Box::new(LegacyValue::Bool(Ref::new(false))),
-                    ValueKind::Bool,
-                ),
-                false,
-            ),
-            (
-                LegacyValue::MutableReference(Ref::new(LegacyValue::Bool(Ref::new(true)))),
-                true,
-            ),
-            (
-                LegacyValue::MutableReference(Ref::new(LegacyValue::Bool(Ref::new(false)))),
-                false,
-            ),
-        ] {
-            let program = program_with_constraint("wrapped! := true");
-            set_constraint_result(&program, "wrapped!", wrapped);
-            let report = program.integrity_constraint_report().unwrap();
-            assert_eq!(report.checked, 1);
-            assert_eq!(report.evaluations[0].passed, passes);
-            assert_eq!(report.violations.is_empty(), passes);
-        }
     }
 
     #[test]
@@ -615,8 +572,11 @@ mod tests {
             .unwrap()
             .result
             .clone();
-        let result = legacy_value_from_cell_compat(&result).unwrap();
-        let result = result.as_bool().unwrap();
+        let result = FunctionInvocation::nullary(result)
+            .expect_nullary()
+            .unwrap()
+            .try_ref::<bool>()
+            .unwrap();
         let _borrow = result.borrow_mut();
 
         let report = program.integrity_constraint_report().unwrap();
@@ -643,8 +603,11 @@ mod tests {
             .lhs
             .clone()
             .unwrap();
-        let lhs = legacy_value_from_cell_compat(&lhs).unwrap();
-        let lhs = lhs.as_f64().unwrap();
+        let lhs = FunctionInvocation::nullary(lhs)
+            .expect_nullary()
+            .unwrap()
+            .try_ref::<f64>()
+            .unwrap();
         let _borrow = lhs.borrow_mut();
 
         let report = program.integrity_constraint_report().unwrap();

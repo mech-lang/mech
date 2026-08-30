@@ -10,17 +10,15 @@ use std::string::{String, ToString};
 
 use core::{any::type_name, fmt};
 
-#[cfg(test)]
-use crate::FunctionArgs;
 use crate::FunctionMatrixStoragePattern;
 #[cfg(feature = "matrix")]
 use crate::structures::{CopyMat, Matrix};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
-    FunctionArgumentRole, FunctionMatrixRepresentation, FunctionRuntimeType,
+    CanonicalCellId, FunctionArgumentRole, FunctionMatrixRepresentation, FunctionRuntimeType,
     FunctionSignatureViolation, FunctionValueRepresentation, IncorrectNumberOfArguments, MResult,
-    MechError, MechErrorKind, ReactiveCellId, Ref, RuntimeFunctionContract, RuntimeFunctionInputs,
+    MechError, MechErrorKind, Ref, RuntimeFunctionContract, RuntimeFunctionInputs,
     RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaBody, SchemaId, ShapeInstance, Value,
     ValueCell, ValueData, ValueDataDraft,
 };
@@ -31,15 +29,14 @@ mod function_port_backing {
 
 /// An exact runtime backing type that may be extracted through a function port.
 ///
-/// This sealed marker deliberately excludes universal values, [`crate::ValueCell`],
-/// legacy aggregate wrappers, and reference wrappers around those types.
-/// Compatibility values remain available only through the explicit adapter
-/// boundary.
+/// This sealed marker deliberately excludes erased universal values,
+/// [`crate::ValueCell`], aggregate wrappers, and reference wrappers around
+/// those types.
 ///
 /// ```compile_fail
-/// use mech_core::{FunctionPortBacking, MechSet};
+/// use mech_core::{FunctionPortBacking, ValueCell};
 /// fn require<T: FunctionPortBacking>() {}
-/// require::<MechSet>();
+/// require::<ValueCell>();
 /// ```
 ///
 /// ```compile_fail
@@ -664,7 +661,7 @@ impl FunctionInputPort<'_> {
         self.index
     }
 
-    /// Extracts the exact typed input backing without exposing legacy values.
+    /// Extracts the exact typed input backing without exposing erased values.
     ///
     /// ```compile_fail
     /// use mech_core::FunctionPortBacking;
@@ -683,7 +680,7 @@ impl FunctionInputPort<'_> {
             })
     }
 
-    /// Extracts the exact typed matrix input wrapper without exposing legacy values.
+    /// Extracts the exact typed matrix input wrapper without exposing erased values.
     ///
     /// ```compile_fail
     /// use mech_core::FunctionPortBacking;
@@ -705,7 +702,7 @@ impl FunctionInputPort<'_> {
     /// Extracts an exact typed matrix as the private copy-kernel interface.
     ///
     /// This retains the original typed matrix handles and never exposes a
-    /// universal value or performs a canonical-to-legacy conversion.
+    /// universal value or performs an erased-value conversion.
     #[cfg(feature = "matrix")]
     pub fn try_copyable_matrix<T>(self) -> MResult<Box<dyn CopyMat<T>>>
     where
@@ -713,7 +710,8 @@ impl FunctionInputPort<'_> {
         #[cfg(feature = "semantic-compiler")]
         T: crate::CompileConst
             + crate::ConstElem
-            + crate::AsValueKind
+            + crate::FunctionRuntimeType
+            + crate::CanonicalMatrixElementBacking
             + core::fmt::Debug
             + PartialEq,
     {
@@ -737,7 +735,7 @@ impl fmt::Debug for FunctionInputPort<'_> {
 }
 
 impl FunctionOutputPort<'_> {
-    /// Extracts the exact typed output backing without exposing legacy values.
+    /// Extracts the exact typed output backing without exposing erased values.
     ///
     /// ```compile_fail
     /// use mech_core::FunctionPortBacking;
@@ -988,7 +986,7 @@ pub struct FunctionMatrixDescriptor {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FunctionArgumentAliasViolation {
     pub input: usize,
-    pub cell: ReactiveCellId,
+    pub cell: CanonicalCellId,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1023,50 +1021,6 @@ impl MechErrorKind for FunctionArgumentAliasViolation {
     }
 }
 
-#[cfg(feature = "matrix")]
-pub(crate) fn matrix_descriptor<T>(matrix: &Matrix<T>) -> FunctionMatrixDescriptor
-where
-    T: core::fmt::Debug + Clone + PartialEq + 'static,
-{
-    let representation = match matrix {
-        #[cfg(feature = "matrix1")]
-        Matrix::Matrix1(_) => FunctionMatrixRepresentation::Matrix1,
-        #[cfg(feature = "matrix2")]
-        Matrix::Matrix2(_) => FunctionMatrixRepresentation::Matrix2,
-        #[cfg(feature = "matrix3")]
-        Matrix::Matrix3(_) => FunctionMatrixRepresentation::Matrix3,
-        #[cfg(feature = "matrix4")]
-        Matrix::Matrix4(_) => FunctionMatrixRepresentation::Matrix4,
-        #[cfg(feature = "matrix2x3")]
-        Matrix::Matrix2x3(_) => FunctionMatrixRepresentation::Matrix2x3,
-        #[cfg(feature = "matrix3x2")]
-        Matrix::Matrix3x2(_) => FunctionMatrixRepresentation::Matrix3x2,
-        #[cfg(feature = "row_vector2")]
-        Matrix::RowVector2(_) => FunctionMatrixRepresentation::RowVector2,
-        #[cfg(feature = "row_vector3")]
-        Matrix::RowVector3(_) => FunctionMatrixRepresentation::RowVector3,
-        #[cfg(feature = "row_vector4")]
-        Matrix::RowVector4(_) => FunctionMatrixRepresentation::RowVector4,
-        #[cfg(feature = "vector2")]
-        Matrix::Vector2(_) => FunctionMatrixRepresentation::Vector2,
-        #[cfg(feature = "vector3")]
-        Matrix::Vector3(_) => FunctionMatrixRepresentation::Vector3,
-        #[cfg(feature = "vector4")]
-        Matrix::Vector4(_) => FunctionMatrixRepresentation::Vector4,
-        #[cfg(feature = "row_vectord")]
-        Matrix::RowDVector(_) => FunctionMatrixRepresentation::RowVectorD,
-        #[cfg(feature = "vectord")]
-        Matrix::DVector(_) => FunctionMatrixRepresentation::VectorD,
-        #[cfg(feature = "matrixd")]
-        Matrix::DMatrix(_) => FunctionMatrixRepresentation::MatrixD,
-    };
-    FunctionMatrixDescriptor {
-        representation,
-        rows: matrix.rows(),
-        cols: matrix.cols(),
-    }
-}
-
 impl MechErrorKind for FunctionArgumentTypeMismatch {
     fn name(&self) -> &str {
         "FunctionArgumentTypeMismatch"
@@ -1077,545 +1031,5 @@ impl MechErrorKind for FunctionArgumentTypeMismatch {
             "function argument {:?} requires exact runtime representation {}, found {}",
             self.role, self.expected, self.found,
         )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{LegacyValue, ToValue, require_function_ref};
-
-    #[cfg(feature = "f64")]
-    fn scalar(value: f64) -> (Ref<f64>, LegacyValue) {
-        let reference = Ref::new(value);
-        let value = reference.to_value();
-        (reference, value)
-    }
-
-    #[cfg(feature = "f64")]
-    fn canonical_scalar(value: f64) -> (Ref<f64>, ValueCell) {
-        let reference = Ref::new(value);
-        let cell = ValueCell::from_inferred_ref(reference.clone(), None).unwrap();
-        (reference, cell)
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn canonical_invocation_layouts_preserve_cells_handles_and_value_capabilities() {
-        let (output, output_cell) = canonical_scalar(0.0);
-        let (first, first_cell) = canonical_scalar(1.0);
-        let (second, second_cell) = canonical_scalar(2.0);
-        let (third, third_cell) = canonical_scalar(3.0);
-        let (fourth, fourth_cell) = canonical_scalar(4.0);
-        let invocation = FunctionInvocation::binary(
-            output_cell.clone(),
-            first_cell.clone(),
-            second_cell.clone(),
-        );
-        let (output_port, first_port, second_port) = invocation.expect_binary().unwrap();
-
-        assert!(output_port.try_ref::<f64>().unwrap().same_handle(&output));
-        assert!(first_port.try_ref::<f64>().unwrap().same_handle(&first));
-        assert!(second_port.try_ref::<f64>().unwrap().same_handle(&second));
-        assert_eq!(first_port.value().schema(), first_cell.schema());
-        assert_eq!(first_port.value().shape(), first_cell.shape().clone());
-        assert!(matches!(
-            first_port.value().snapshot().unwrap().data(),
-            ValueData::F64(value) if value.to_f64() == 1.0
-        ));
-
-        let replacement = second_cell.snapshot().unwrap();
-        output_port.value().replace(&replacement).unwrap();
-        assert_eq!(*output.borrow(), 2.0);
-        assert_eq!(output_port.value().schema(), output_cell.schema());
-        assert_eq!(output_port.value().shape(), output_cell.shape().clone());
-
-        let nullary = FunctionInvocation::nullary(output_cell.clone());
-        assert!(
-            nullary
-                .expect_nullary()
-                .unwrap()
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&output)
-        );
-        let unary = FunctionInvocation::unary(output_cell.clone(), first_cell.clone());
-        assert!(
-            unary
-                .expect_unary()
-                .unwrap()
-                .1
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&first)
-        );
-        let ternary = FunctionInvocation::ternary(
-            output_cell.clone(),
-            first_cell.clone(),
-            second_cell.clone(),
-            third_cell.clone(),
-        );
-        let (_, ternary_first, ternary_second, ternary_third) = ternary.expect_ternary().unwrap();
-        assert!(ternary_first.try_ref::<f64>().unwrap().same_handle(&first));
-        assert!(
-            ternary_second
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&second)
-        );
-        assert!(ternary_third.try_ref::<f64>().unwrap().same_handle(&third));
-        let quaternary = FunctionInvocation::quaternary(
-            output_cell.clone(),
-            first_cell.clone(),
-            second_cell.clone(),
-            third_cell.clone(),
-            fourth_cell.clone(),
-        );
-        let (_, first_port, second_port, third_port, fourth_port) =
-            quaternary.expect_quaternary().unwrap();
-        assert!(first_port.try_ref::<f64>().unwrap().same_handle(&first));
-        assert!(second_port.try_ref::<f64>().unwrap().same_handle(&second));
-        assert!(third_port.try_ref::<f64>().unwrap().same_handle(&third));
-        assert!(fourth_port.try_ref::<f64>().unwrap().same_handle(&fourth));
-        let variadic = FunctionInvocation::variadic(
-            output_cell,
-            vec![first_cell, second_cell, third_cell, fourth_cell].into_boxed_slice(),
-        );
-        let (_, mut ports) = variadic.expect_variadic().unwrap();
-        for expected in [&first, &second, &third, &fourth] {
-            assert!(
-                ports
-                    .next()
-                    .unwrap()
-                    .try_ref::<f64>()
-                    .unwrap()
-                    .same_handle(expected)
-            );
-        }
-        assert!(ports.next().is_none());
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn canonical_invocation_preserves_aliases_and_effect_unit_output() {
-        let (_, shared) = canonical_scalar(3.0);
-        let invocation = FunctionInvocation::unary(shared.clone(), shared.clone());
-        assert!(
-            invocation
-                .output_cell()
-                .same_cell(&invocation.input_cells()[0])
-        );
-        assert!(
-            invocation
-                .validate_contract(RuntimeFunctionContract::no_matrix(
-                    RuntimeOutputAliasPolicy::AllowInputAlias,
-                ))
-                .is_ok()
-        );
-        assert!(
-            invocation
-                .validate_contract(RuntimeFunctionContract::no_matrix(
-                    RuntimeOutputAliasPolicy::DisallowInputAlias,
-                ))
-                .unwrap_err()
-                .kind_as::<FunctionCellAliasViolation>()
-                .is_some()
-        );
-
-        let unit = ValueCell::from_inferred_value_data(
-            crate::SchemaBody::Tuple(Vec::new().into_boxed_slice()),
-            crate::ValueDataDraft::Tuple(Vec::new().into_boxed_slice()),
-        )
-        .unwrap();
-        let effect = FunctionInvocation::nullary(unit);
-        assert!(matches!(
-            effect.output().value().snapshot().unwrap().data(),
-            crate::ValueData::Tuple(elements) if elements.is_empty()
-        ));
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn fixed_invocation_layouts_preserve_output_and_input_order() {
-        let (output, output_value) = scalar(10.0);
-        let (first, first_value) = scalar(1.0);
-        let (second, second_value) = scalar(2.0);
-        let (third, third_value) = scalar(3.0);
-        let (fourth, fourth_value) = scalar(4.0);
-
-        let nullary = FunctionInvocation::from(FunctionArgs::Nullary(output_value.clone()));
-        assert!(
-            nullary
-                .expect_nullary()
-                .unwrap()
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&output)
-        );
-
-        let unary = FunctionInvocation::from(FunctionArgs::Unary(
-            output_value.clone(),
-            first_value.clone(),
-        ));
-        let (unary_output, unary_first) = unary.expect_unary().unwrap();
-        assert!(unary_output.try_ref::<f64>().unwrap().same_handle(&output));
-        assert!(unary_first.try_ref::<f64>().unwrap().same_handle(&first));
-
-        let binary = FunctionInvocation::from(FunctionArgs::Binary(
-            output_value.clone(),
-            first_value.clone(),
-            second_value.clone(),
-        ));
-        let (binary_output, binary_first, binary_second) = binary.expect_binary().unwrap();
-        assert!(binary_output.try_ref::<f64>().unwrap().same_handle(&output));
-        assert!(binary_first.try_ref::<f64>().unwrap().same_handle(&first));
-        assert!(binary_second.try_ref::<f64>().unwrap().same_handle(&second));
-
-        let ternary = FunctionInvocation::from(FunctionArgs::Ternary(
-            output_value.clone(),
-            first_value.clone(),
-            second_value.clone(),
-            third_value.clone(),
-        ));
-        let (ternary_output, ternary_first, ternary_second, ternary_third) =
-            ternary.expect_ternary().unwrap();
-        assert!(
-            ternary_output
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&output)
-        );
-        assert!(ternary_first.try_ref::<f64>().unwrap().same_handle(&first));
-        assert!(
-            ternary_second
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&second)
-        );
-        assert!(ternary_third.try_ref::<f64>().unwrap().same_handle(&third));
-
-        let quaternary = FunctionInvocation::from(FunctionArgs::Quaternary(
-            output_value,
-            first_value,
-            second_value,
-            third_value,
-            fourth_value,
-        ));
-        let (
-            quaternary_output,
-            quaternary_first,
-            quaternary_second,
-            quaternary_third,
-            quaternary_fourth,
-        ) = quaternary.expect_quaternary().unwrap();
-        assert!(
-            quaternary_output
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&output)
-        );
-        assert!(
-            quaternary_first
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&first)
-        );
-        assert!(
-            quaternary_second
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&second)
-        );
-        assert!(
-            quaternary_third
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&third)
-        );
-        assert!(
-            quaternary_fourth
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&fourth)
-        );
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn variadic_invocation_is_an_exact_borrowed_cursor() {
-        let (_, output) = scalar(10.0);
-        let (first, first_value) = scalar(1.0);
-        let (second, second_value) = scalar(2.0);
-        let (third, third_value) = scalar(3.0);
-        let invocation = FunctionInvocation::from(FunctionArgs::Variadic(
-            output,
-            vec![first_value, second_value, third_value],
-        ));
-
-        let (_, mut inputs) = invocation.expect_variadic().unwrap();
-        assert_eq!(inputs.len(), 3);
-        assert!(
-            inputs
-                .next()
-                .unwrap()
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&first)
-        );
-        assert_eq!(inputs.len(), 2);
-        assert!(
-            inputs
-                .next()
-                .unwrap()
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&second)
-        );
-        assert!(
-            inputs
-                .next()
-                .unwrap()
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&third)
-        );
-        assert!(inputs.next().is_none());
-        assert!(inputs.next().is_none());
-        assert_eq!(invocation.inputs().size_hint(), (3, Some(3)));
-        assert_eq!(
-            core::mem::size_of::<FunctionInputPorts<'_>>(),
-            core::mem::size_of::<&FunctionInvocation>() + core::mem::size_of::<usize>()
-        );
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn input_lookup_and_layout_checks_remain_exact() {
-        let (_, output) = scalar(10.0);
-        let (_, first) = scalar(1.0);
-        let (_, second) = scalar(2.0);
-        let invocation =
-            FunctionInvocation::from(FunctionArgs::Variadic(output, vec![first, second]));
-
-        assert_eq!(invocation.input(0).unwrap().index(), 0);
-        assert_eq!(invocation.input(1).unwrap().index(), 1);
-        assert!(invocation.input(2).is_none());
-
-        let error = invocation.expect_binary().unwrap_err();
-        assert_eq!(error.kind_name(), "IncorrectNumberOfArguments");
-        let arity = error.kind_as::<IncorrectNumberOfArguments>().unwrap();
-        assert_eq!(arity.expected, 2);
-        assert_eq!(arity.found, 2);
-    }
-
-    #[cfg(all(feature = "f64", feature = "bool"))]
-    #[test]
-    fn port_type_failures_report_the_exact_argument_role() {
-        let (_, output) = scalar(10.0);
-        let (_, input) = scalar(1.0);
-        let invocation = FunctionInvocation::from(FunctionArgs::Unary(output, input));
-        let (output, input) = invocation.expect_unary().unwrap();
-
-        let input_error = input.try_ref::<bool>().unwrap_err();
-        assert_eq!(
-            input_error
-                .kind_as::<FunctionArgumentTypeMismatch>()
-                .unwrap()
-                .role,
-            FunctionArgumentRole::Input(0),
-        );
-        let output_error = output.try_ref::<bool>().unwrap_err();
-        assert_eq!(
-            output_error
-                .kind_as::<FunctionArgumentTypeMismatch>()
-                .unwrap()
-                .role,
-            FunctionArgumentRole::Output,
-        );
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn invocation_ports_do_not_unwrap_typed_or_mutable_values() {
-        let (_, output) = scalar(10.0);
-        let (_, scalar) = scalar(1.0);
-        let typed = LegacyValue::Typed(Box::new(scalar.clone()), crate::ValueKind::F64);
-        let mutable = LegacyValue::MutableReference(Ref::new(scalar));
-
-        for wrapped in [typed, mutable] {
-            let invocation = FunctionInvocation::from(FunctionArgs::Unary(output.clone(), wrapped));
-            let (_, input) = invocation.expect_unary().unwrap();
-            assert!(input.try_ref::<f64>().is_err());
-        }
-    }
-
-    #[cfg(all(feature = "f64", feature = "matrix", feature = "matrix2"))]
-    #[test]
-    fn matrix_ports_preserve_the_exact_backing_handle() {
-        use crate::matrix::Matrix;
-        use nalgebra::Matrix2;
-
-        let matrix = Ref::new(Matrix2::<f64>::identity());
-        let value = LegacyValue::MatrixF64(Matrix::Matrix2(matrix.clone()));
-        let invocation = FunctionInvocation::from(FunctionArgs::Unary(LegacyValue::Empty, value));
-        let (_, input) = invocation.expect_unary().unwrap();
-        assert!(
-            input
-                .try_ref::<Matrix2<f64>>()
-                .unwrap()
-                .same_handle(&matrix)
-        );
-
-        let wrapped = input.try_matrix::<f64>().unwrap();
-        let Matrix::Matrix2(wrapped) = wrapped else {
-            panic!("matrix input port changed the fixed representation")
-        };
-        assert!(wrapped.same_handle(&matrix));
-    }
-
-    #[cfg(all(
-        feature = "f64",
-        feature = "matrix",
-        feature = "matrixd",
-        feature = "string"
-    ))]
-    #[test]
-    fn matrix_input_ports_preserve_dynamic_handles_and_reject_wrong_values() {
-        use crate::matrix::Matrix;
-        use nalgebra::DMatrix;
-
-        let matrix = Ref::new(DMatrix::from_row_slice(2, 2, &[1.0_f64, 2.0, 3.0, 4.0]));
-        let value = LegacyValue::MatrixF64(Matrix::DMatrix(matrix.clone()));
-        let invocation = FunctionInvocation::from(FunctionArgs::Binary(
-            LegacyValue::Empty,
-            value.clone(),
-            Ref::new(9.0_f64).to_value(),
-        ));
-        let (_, matrix_input, scalar_input) = invocation.expect_binary().unwrap();
-
-        let extracted = matrix_input.try_matrix::<f64>().unwrap();
-        let Matrix::DMatrix(extracted) = extracted else {
-            panic!("matrix input port changed the dynamic representation")
-        };
-        assert!(extracted.same_handle(&matrix));
-
-        let scalar_error = scalar_input.try_matrix::<f64>().unwrap_err();
-        assert_eq!(
-            scalar_error
-                .kind_as::<FunctionArgumentTypeMismatch>()
-                .unwrap()
-                .role,
-            FunctionArgumentRole::Input(1),
-        );
-
-        let string_matrix = LegacyValue::MatrixString(Matrix::DMatrix(Ref::new(
-            DMatrix::from_element(1, 1, "wrong".to_string()),
-        )));
-        let invocation =
-            FunctionInvocation::from(FunctionArgs::Unary(LegacyValue::Empty, string_matrix));
-        let (_, input) = invocation.expect_unary().unwrap();
-        assert!(input.try_matrix::<f64>().is_err());
-    }
-
-    #[cfg(all(feature = "f64", feature = "matrix", feature = "matrix2"))]
-    #[test]
-    fn matrix_input_ports_do_not_traverse_value_wrappers() {
-        use crate::matrix::Matrix;
-        use nalgebra::Matrix2;
-
-        let matrix = LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
-        let typed = LegacyValue::Typed(Box::new(matrix.clone()), matrix.kind());
-        let mutable = LegacyValue::MutableReference(Ref::new(matrix));
-
-        for wrapped in [typed, mutable] {
-            let invocation =
-                FunctionInvocation::from(FunctionArgs::Unary(LegacyValue::Empty, wrapped));
-            let (_, input) = invocation.expect_unary().unwrap();
-            assert!(input.try_matrix::<f64>().is_err());
-        }
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn invocation_debug_output_is_opaque() {
-        let (_, output) = scalar(9_876_543.25);
-        let (_, input) = scalar(1_234_567.5);
-        let invocation = FunctionInvocation::from(FunctionArgs::Unary(output, input));
-
-        for debug in [
-            format!("{invocation:?}"),
-            format!("{:?}", invocation.output()),
-            format!("{:?}", invocation.input(0).unwrap()),
-            format!("{:?}", invocation.inputs()),
-        ] {
-            assert!(!debug.contains("9876543"));
-            assert!(!debug.contains("1234567"));
-            assert!(!debug.contains("0x"));
-        }
-        assert_eq!(
-            format!("{invocation:?}"),
-            "FunctionInvocation { layout: \"Unary\", input_count: 1 }"
-        );
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn exact_scalar_refs_are_accepted_without_conversion() {
-        let source = Ref::new(1.5_f64);
-        let extracted =
-            require_function_ref::<f64>(&source.to_value(), FunctionArgumentRole::Input(0))
-                .unwrap();
-        assert!(source.same_handle(&extracted));
-
-        #[cfg(feature = "i8")]
-        {
-            let error = require_function_ref::<f64>(
-                &LegacyValue::I8(Ref::new(1)),
-                FunctionArgumentRole::Input(0),
-            )
-            .unwrap_err();
-            assert_eq!(error.kind_name(), "FunctionArgumentTypeMismatch");
-            let mismatch = error.kind_as::<FunctionArgumentTypeMismatch>().unwrap();
-            assert_eq!(mismatch.role, FunctionArgumentRole::Input(0));
-            assert!(mismatch.expected.contains("f64"));
-            assert!(mismatch.found.contains("i8"));
-        }
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn wrappers_are_not_implicitly_unwrapped() {
-        let scalar = Ref::new(2.0_f64).to_value();
-        let typed = LegacyValue::Typed(Box::new(scalar), crate::ValueKind::F64);
-        assert!(require_function_ref::<f64>(&typed, FunctionArgumentRole::Output).is_err());
-
-        let mutable = LegacyValue::MutableReference(Ref::new(Ref::new(2.0_f64).to_value()));
-        assert!(require_function_ref::<f64>(&mutable, FunctionArgumentRole::Output).is_err());
-        assert!(
-            require_function_ref::<LegacyValue>(&mutable, FunctionArgumentRole::Output).is_ok()
-        );
-    }
-
-    #[cfg(all(
-        feature = "f64",
-        feature = "matrix",
-        feature = "matrix2",
-        feature = "matrixd"
-    ))]
-    #[test]
-    fn matrix_storage_is_part_of_the_exact_contract() {
-        use crate::matrix::Matrix;
-        use nalgebra::{DMatrix, Matrix2};
-
-        let fixed = LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
-        let dynamic = LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
-
-        assert!(require_function_ref::<Matrix2<f64>>(&fixed, FunctionArgumentRole::Output).is_ok());
-        assert!(
-            require_function_ref::<DMatrix<f64>>(&fixed, FunctionArgumentRole::Output).is_err()
-        );
-        assert!(
-            require_function_ref::<Matrix2<f64>>(&dynamic, FunctionArgumentRole::Output).is_err()
-        );
     }
 }

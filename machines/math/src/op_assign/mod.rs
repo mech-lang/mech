@@ -42,8 +42,6 @@ pub use self::mul_assign::*;
 #[cfg(feature = "sub_assign")]
 pub use self::sub_assign::*;
 
-#[cfg(test)]
-mod port_tests;
 
 pub trait RuntimeCheckedOpAssign: Copy {
     fn runtime_checked_add(self, rhs: Self) -> Option<Self>;
@@ -219,7 +217,6 @@ macro_rules! impl_op_assign_range_fxn_s {
         impl<T, R1: 'static, C1: 'static, S1: 'static, IxVec: 'static> MechFunctionFactory
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
             T: Copy
                 + Debug
                 + Clone
@@ -238,17 +235,17 @@ macro_rules! impl_op_assign_range_fxn_s {
                 + One
                 + PartialEq
                 + PartialOrd
-                + AsValueKind,
+                + FunctionRuntimeType,
             T: RuntimeCheckedOpAssign,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
-            IxVec: Debug + AsRef<[$ix]> + AsNaKind,
+            IxVec: Debug + AsRef<[$ix]>,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst + ConstElem,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: Debug,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             IxVec: FunctionPortBacking,
             T: FunctionPortBacking,
@@ -278,7 +275,6 @@ macro_rules! impl_op_assign_range_fxn_s {
         impl<T, R1, C1, S1, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
             T: Copy
                 + Debug
                 + Clone
@@ -332,17 +328,17 @@ macro_rules! impl_op_assign_range_fxn_s {
         impl<T, R1, C1, S1, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            IxVec: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType,
+            IxVec: CompileConst + ConstElem,
+            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R1, C1, S1>::as_na_kind(),
-                    IxVec::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>(),
+                    function_matrix_storage_name::<IxVec>()
                 );
                 compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
@@ -373,8 +369,6 @@ macro_rules! impl_op_assign_range_fxn_v {
         > MechFunctionFactory
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-            Ref<naMatrix<T, R2, C2, S2>>: ToValue,
             T: Copy
                 + Debug
                 + Clone
@@ -393,11 +387,11 @@ macro_rules! impl_op_assign_range_fxn_v {
                 + One
                 + PartialEq
                 + PartialOrd
-                + AsValueKind,
+                + FunctionRuntimeType,
             T: RuntimeCheckedOpAssign,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
-            IxVec: AsNaKind + Debug + AsRef<[$ix]>,
+            IxVec: Debug + AsRef<[$ix]>,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst + ConstElem,
             R1: Dim,
@@ -406,10 +400,10 @@ macro_rules! impl_op_assign_range_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: Debug,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
-            naMatrix<T, R2, C2, S2>: Debug + AsNaKind,
+            naMatrix<T, R2, C2, S2>: Debug,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             naMatrix<T, R2, C2, S2>: FunctionPortBacking,
             IxVec: FunctionPortBacking,
@@ -439,7 +433,6 @@ macro_rules! impl_op_assign_range_fxn_v {
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
             T: Copy
                 + Debug
                 + Clone
@@ -496,19 +489,19 @@ macro_rules! impl_op_assign_range_fxn_v {
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            IxVec: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType,
+            IxVec: CompileConst + ConstElem,
+            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+            naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R1, C1, S1>::as_na_kind(),
-                    naMatrix::<T, R2, C2, S2>::as_na_kind(),
-                    IxVec::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>(),
+                    function_matrix_storage_name::<naMatrix<T, R2, C2, S2>>(),
+                    function_matrix_storage_name::<IxVec>()
                 );
                 compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
@@ -717,11 +710,10 @@ macro_rules! impl_assign_scalar_scalar {
       where
         T: Debug + Clone + Sync + Send + 'static +
            $op_name<Output = T> + [<$op_name Assign>] +
-           PartialEq + PartialOrd + AsValueKind,
+           PartialEq + PartialOrd + FunctionRuntimeType,
         T: RuntimeCheckedOpAssign,
         #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
-        Ref<T>: ToValue,
         T: FunctionStateBacking,
       {
         const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
@@ -743,7 +735,6 @@ macro_rules! impl_assign_scalar_scalar {
            $op_name<Output = T> + [<$op_name Assign>] +
            PartialEq + PartialOrd,
         T: RuntimeCheckedOpAssign,
-        Ref<T>: ToValue,
         T: FunctionStateBacking,
       {
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -770,10 +761,10 @@ macro_rules! impl_assign_scalar_scalar {
       #[cfg(feature = "semantic-compiler")]
       impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T>
       where
-        T: CompileConst + ConstElem + AsValueKind,
+        T: CompileConst + ConstElem + FunctionRuntimeType,
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-          let name = format!("{}AssignSS<{}>", stringify!($op_name), T::as_value_kind());
+          let name = format!("{}AssignSS<{}>", stringify!($op_name), <T as FunctionRuntimeType>::REPRESENTATION);
           compile_unop!(name, self.sink, self.source, ctx );
         }
       }
@@ -793,19 +784,18 @@ macro_rules! impl_assign_vector_vector {
       }
       impl<T, MatA, MatB> MechFunctionFactory for [<$op_name AssignVV>]<T, MatA, MatB>
       where
-        Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
-        AsValueKind,
+        FunctionRuntimeType,
         T: RuntimeCheckedOpAssign,
         #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         for<'a> &'a MatB: IntoIterator<Item = &'a T>,
-        MatA: Debug + Clone + AsValueKind + 'static,
+        MatA: Debug + Clone + FunctionRuntimeType + 'static,
         #[cfg(feature = "semantic-compiler")]
         MatA: CompileConst + ConstElem,
-        MatB: Debug + AsValueKind + 'static,
+        MatB: Debug + FunctionRuntimeType + 'static,
         MatA: FunctionStateBacking,
         MatB: FunctionPortBacking,
         #[cfg(feature = "semantic-compiler")]
@@ -826,7 +816,6 @@ macro_rules! impl_assign_vector_vector {
       }
       impl<T, MatA, MatB> MechFunctionImpl for [<$op_name AssignVV>]<T, MatA, MatB>
       where
-        Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>],
         T: RuntimeCheckedOpAssign,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
@@ -871,12 +860,12 @@ macro_rules! impl_assign_vector_vector {
       #[cfg(feature = "semantic-compiler")]
       impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB>
       where
-        T: CompileConst + ConstElem + AsValueKind,
-        MatA: CompileConst + ConstElem + AsValueKind,
-        MatB: CompileConst + ConstElem + AsValueKind,
+        T: CompileConst + ConstElem + FunctionRuntimeType,
+        MatA: CompileConst + ConstElem + FunctionRuntimeType,
+        MatB: CompileConst + ConstElem + FunctionRuntimeType,
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-          let name = format!("{}AssignVV<{}>", stringify!($op_name), MatA::as_value_kind());
+          let name = format!("{}AssignVV<{}>", stringify!($op_name), <MatA as FunctionRuntimeType>::REPRESENTATION);
           compile_unop!(name, self.sink, self.source, ctx );
         }
       }
@@ -896,15 +885,14 @@ macro_rules! impl_assign_vector_scalar {
       }
       impl<T, MatA> MechFunctionFactory for [<$op_name AssignVS>]<T, MatA>
       where
-        Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
-        AsValueKind,
+        FunctionRuntimeType,
         T: RuntimeCheckedOpAssign,
         #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-        MatA: Debug + Clone + AsValueKind + 'static,
+        MatA: Debug + Clone + FunctionRuntimeType + 'static,
         MatA: FunctionStateBacking,
         T: FunctionPortBacking,
         #[cfg(feature = "semantic-compiler")]
@@ -926,7 +914,6 @@ macro_rules! impl_assign_vector_scalar {
       }
       impl<T, MatA> MechFunctionImpl for [<$op_name AssignVS>]<T, MatA>
       where
-        Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>],
         T: RuntimeCheckedOpAssign,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
@@ -965,11 +952,11 @@ macro_rules! impl_assign_vector_scalar {
       #[cfg(feature = "semantic-compiler")]
       impl<T, MatA> MechFunctionCompiler for [<$op_name AssignVS>]<T, MatA>
       where
-        T: CompileConst + ConstElem + AsValueKind,
-        MatA: CompileConst + ConstElem + AsValueKind,
+        T: CompileConst + ConstElem + FunctionRuntimeType,
+        MatA: CompileConst + ConstElem + FunctionRuntimeType,
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-          let name = format!("{}AssignVS<{}>", stringify!($op_name), MatA::as_value_kind());
+          let name = format!("{}AssignVS<{}>", stringify!($op_name), <MatA as FunctionRuntimeType>::REPRESENTATION);
           compile_unop!(name, self.sink, self.source, ctx );
         }
       }

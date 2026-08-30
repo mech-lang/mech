@@ -151,9 +151,3 @@ impl Neg for C64 {
         C64(-self.0)
     }
 }
-
-impl ToUsize for C64 {
-    fn to_usize(&self) -> usize {
-        self.0.norm() as usize
-    }
-}

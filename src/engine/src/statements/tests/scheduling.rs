@@ -1,5 +1,5 @@
 use crate::{
-    Interpreter, ReactiveCellId, ReactiveNodeId, ReactiveNodeKind, ValueCell, ValueData, hash_str,
+    CanonicalCellId, Interpreter, ReactiveNodeId, ReactiveNodeKind, ValueCell, ValueData, hash_str,
 };
 
 fn symbol(interpreter: &Interpreter, name: &str) -> ValueCell {
@@ -9,7 +9,7 @@ fn symbol(interpreter: &Interpreter, name: &str) -> ValueCell {
         .get(hash_str(name))
         .unwrap_or_else(|| panic!("missing symbol {name}"))
 }
-fn root_cell(interpreter: &Interpreter, name: &str) -> ReactiveCellId {
+fn root_cell(interpreter: &Interpreter, name: &str) -> CanonicalCellId {
     symbol(interpreter, name).reactive_cell_id()
 }
 fn set_f64(interpreter: &Interpreter, name: &str, value: f64) {
@@ -17,7 +17,7 @@ fn set_f64(interpreter: &Interpreter, name: &str, value: f64) {
         .replace(&ValueCell::from_exact(value).unwrap().snapshot().unwrap())
         .unwrap();
 }
-fn output_nodes(interpreter: &Interpreter, cell: ReactiveCellId) -> Vec<ReactiveNodeId> {
+fn output_nodes(interpreter: &Interpreter, cell: CanonicalCellId) -> Vec<ReactiveNodeId> {
     let plan = interpreter.plan();
     plan.borrow()
         .nodes
@@ -29,7 +29,7 @@ fn output_nodes(interpreter: &Interpreter, cell: ReactiveCellId) -> Vec<Reactive
 fn executed_outputs(
     interpreter: &Interpreter,
     executed: &[ReactiveNodeId],
-    cell: ReactiveCellId,
+    cell: CanonicalCellId,
 ) -> bool {
     let plan = interpreter.plan();
     let plan = plan.borrow();

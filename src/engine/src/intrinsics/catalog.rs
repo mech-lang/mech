@@ -24,14 +24,12 @@ use crate::literals::ConvertKind;
     feature = "matrix_vertcat"
 ))]
 use crate::*;
-#[cfg(feature = "matrix_comprehensions")]
-use mech_core::FunctionArgumentRole;
 #[cfg(any(
     feature = "invariant_define",
     feature = "matrix_comprehensions",
     feature = "set_comprehensions"
 ))]
-use mech_core::{FunctionArgs, function_shape_contract_violation};
+use mech_core::function_shape_contract_violation;
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(all(
     feature = "semantic-compiler",
@@ -93,17 +91,6 @@ where
 }
 
 #[cfg(feature = "matrix_comprehensions")]
-fn validate_matrix_comprehension(args: &FunctionArgs) -> MResult<()> {
-    let contract = "matrix_comprehension";
-    args.output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "output must be matrix-backed")
-        })?;
-    Ok(())
-}
-
-#[cfg(feature = "matrix_comprehensions")]
 fn validate_matrix_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) -> MResult<()> {
     match output.closed_schema_body()? {
         SchemaBody::Matrix { .. } => Ok(()),
@@ -115,11 +102,6 @@ fn validate_matrix_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) 
 }
 
 #[cfg(feature = "set_comprehensions")]
-fn validate_set_comprehension(_args: &FunctionArgs) -> MResult<()> {
-    Ok(())
-}
-
-#[cfg(feature = "set_comprehensions")]
 fn validate_set_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) -> MResult<()> {
     match output.closed_schema_body()? {
         SchemaBody::Set { .. } => Ok(()),
@@ -127,18 +109,6 @@ fn validate_set_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) -> 
             "set_comprehension",
             "output must be set-backed",
         )),
-    }
-}
-
-#[cfg(feature = "invariant_define")]
-fn validate_integrity_constraint_marker(args: &FunctionArgs) -> MResult<()> {
-    if args.input_count() == 6 {
-        Ok(())
-    } else {
-        Err(function_shape_contract_violation(
-            "integrity_constraint_marker",
-            format!("expected 6 metadata inputs, found {}", args.input_count()),
-        ))
     }
 }
 
@@ -298,10 +268,9 @@ mech_core::declare_native_runtime_factory! {
     installer: install_integrity_constraint_marker,
     name: "integrity/constraint",
     factory_type: crate::intrinsics::define::BytecodeIntegrityConstraintMarker,
-    contract: RuntimeFunctionContract::custom_with_canonical(
+    contract: RuntimeFunctionContract::canonical_custom(
         "integrity_constraint_marker",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_integrity_constraint_marker,
         validate_integrity_constraint_marker_canonical,
     ),
     package: "mech-engine", crate_name: "mech_engine",
@@ -315,10 +284,9 @@ mech_core::declare_native_runtime_factory! {
     installer: install_set_comprehension,
     name: "set/comprehension",
     factory_type: ValueSetComprehension,
-    contract: RuntimeFunctionContract::custom_with_canonical(
+    contract: RuntimeFunctionContract::canonical_custom(
         "set_comprehension",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_set_comprehension,
         validate_set_comprehension_canonical,
     ),
     package: "mech-engine", crate_name: "mech_engine",
@@ -332,10 +300,9 @@ mech_core::declare_native_runtime_factory! {
     installer: install_matrix_comprehension,
     name: "matrix/comprehension",
     factory_type: ValueMatrixComprehension,
-    contract: RuntimeFunctionContract::custom_with_canonical(
+    contract: RuntimeFunctionContract::canonical_custom(
         "matrix_comprehension",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_matrix_comprehension,
         validate_matrix_comprehension_canonical,
     ),
     package: "mech-engine", crate_name: "mech_engine",

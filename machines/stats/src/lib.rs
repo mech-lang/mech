@@ -170,15 +170,14 @@ macro_rules! impl_stats_unop {
                 + 'static
                 + Add<Output = T>
                 + AddAssign
-                + AsValueKind
+                + FunctionRuntimeType
                 + Zero
                 + One
                 + PartialEq
                 + PartialOrd,
             T: StatsCheckedAdd,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst + ConstElem,
-            Ref<$out_type>: ToValue,
+            T: CanonicalMatrixElementBacking + CompileConst + ConstElem,
             $arg_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
@@ -212,7 +211,8 @@ macro_rules! impl_stats_unop {
                 + PartialEq
                 + PartialOrd,
             T: StatsCheckedAdd,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -240,10 +240,10 @@ macro_rules! impl_stats_unop {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind,
+            T: CanonicalMatrixElementBacking + CompileConst + ConstElem + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_unop!(name, self.out, self.arg, ctx);
             }
         }

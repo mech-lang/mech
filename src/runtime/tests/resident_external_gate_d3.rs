@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use mech_core::{LegacyValue, MResult, MechError, ParsedProgram, ReactiveInstanceId};
+use mech_core::{MResult, MechError, ParsedProgram, ReactiveInstanceId};
 use mech_engine::__resident::{
     ActivationFacts, CapturedValueInput, ResidentActivationOptions, ResidentExternalAdmission,
     ResidentIntegrityMode, activate_external, activate_with_options,
@@ -18,7 +18,7 @@ use mech_runtime::runtime::program::external::test_provider::{
 use mech_runtime::{
     CapturedInputBatch, ExactRequirementAuthority, ResidentDurabilityPolicy,
     ResidentExternalCoordinator, ResidentExternalLimits, ResidentExternalTurnOutcome,
-    ResidentTurnRecord, RuntimeBuilder, RuntimeResourceRegistry, captured_value_from_legacy,
+    ResidentTurnRecord, RuntimeBuilder, RuntimeHostInputValue, RuntimeResourceRegistry,
     resident_effect_ids_hash, resident_idempotency_keys_hash,
 };
 use serde_json::json;
@@ -239,12 +239,7 @@ fn candidate_allocation_probe(
         .first()
         .expect("D3 effect fixture input")
         .clone();
-    let value = captured_value_from_legacy(
-        &LegacyValue::F64(mech_core::Ref::new(0.25)),
-        input.schema,
-        &input.shape,
-        artifact.schemas(),
-    )?;
+    let value = RuntimeHostInputValue::F64(0.25).into_value()?;
     let captured = [CapturedValueInput {
         slot: input.slot,
         value: &value,

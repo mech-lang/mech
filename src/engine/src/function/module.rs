@@ -1927,8 +1927,12 @@ mod static_catalog_module_tests {
 
     struct TestSpecializer;
 
-    impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+    impl CanonicalFunctionSpecializer for TestSpecializer {
+        fn specialize_invocation(
+            &self,
+            _: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
             unreachable!("module visibility tests do not specialize functions")
         }
     }
@@ -1941,7 +1945,7 @@ mod static_catalog_module_tests {
             ("stats/sum/column", "stats", "sum/column"),
         ] {
             let operation = builder
-                .insert_specializer(canonical_name, Arc::new(TestSpecializer))
+                .insert_canonical_specializer(canonical_name, Arc::new(TestSpecializer))
                 .unwrap();
             builder
                 .insert_export(FunctionExport {
@@ -2041,10 +2045,8 @@ mod static_catalog_module_tests {
         let mut entries = Vec::with_capacity(items.len());
         let mut exports = Vec::with_capacity(items.len());
         for item in items {
-            let entry = FunctionExtensionEntry::new(
-                format!("{module}/{item}"),
-                canonical_function_specializer(Arc::new(TestSpecializer)),
-            );
+            let entry =
+                FunctionExtensionEntry::new(format!("{module}/{item}"), Arc::new(TestSpecializer));
             exports.push(DynamicFunctionExport {
                 item: (*item).to_string(),
                 extension: entry.id,

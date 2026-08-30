@@ -1,7 +1,7 @@
 use crate::{
-    ActivationArm, ActivationArmBody, Expression, FunctionStatePort, Interpreter,
-    InterpreterExecution, MResult, MechError, MechFunctionImpl, ReactiveCellId,
-    ReactiveSolveStatus, SliceRef, Token, ValueCell,
+    ActivationArm, ActivationArmBody, CanonicalCellId, Expression, FunctionStatePort, Interpreter,
+    InterpreterExecution, MResult, MechError, MechFunctionImpl, ReactiveSolveStatus, SliceRef,
+    Token, ValueCell,
 };
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, GenericError, MechFunctionCompiler, Register};
@@ -17,7 +17,7 @@ pub(super) fn validate_patterned_register_write(
     target: &SliceRef,
     expression: &Expression,
     trigger_id: u64,
-    trigger_cells: &[ReactiveCellId],
+    trigger_cells: &[CanonicalCellId],
     interpreter: &Interpreter,
     tokens: Vec<Token>,
 ) -> MResult<()> {

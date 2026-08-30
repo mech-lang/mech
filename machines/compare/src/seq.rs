@@ -92,51 +92,6 @@ impl CanonicalFunctionSpecializer for CompareStrictEqual {
 }
 
 #[cfg(all(test, feature = "runtime", feature = "bool", feature = "sneq"))]
-mod state_port_tests {
-    use super::*;
-    use crate::StrictNotEqValue;
-
-    #[test]
-    fn strict_comparison_outputs_use_typed_identity_and_checkpoint_state() {
-        let equal_out = Ref::new(false);
-        let equal = StrictEqValue::new(FunctionArgs::Binary(
-            equal_out.to_value(),
-            LegacyValue::Index(Ref::new(1)),
-            LegacyValue::Index(Ref::new(1)),
-        ))
-        .unwrap();
-        equal.solve_result().unwrap();
-        assert_eq!(
-            equal.reactive_output_cell_ids(),
-            equal_out.to_value().reactive_root_cell_ids(),
-        );
-
-        let not_equal_out = Ref::new(false);
-        let not_equal = StrictNotEqValue::new(FunctionArgs::Binary(
-            not_equal_out.to_value(),
-            LegacyValue::Index(Ref::new(1)),
-            LegacyValue::Index(Ref::new(2)),
-        ))
-        .unwrap();
-        not_equal.solve_result().unwrap();
-
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(equal.as_ref())?;
-            participant.capture_function_state(not_equal.as_ref())?;
-            *equal_out.borrow_mut() = false;
-            *not_equal_out.borrow_mut() = false;
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
-        .unwrap();
-
-        assert!(*equal_out.borrow());
-        assert!(*not_equal_out.borrow());
-    }
-}
-
-#[cfg(all(test, feature = "runtime", feature = "bool", feature = "sneq"))]
 mod canonical_strict_equality_tests {
     use super::*;
     use crate::StrictNotEqValue;

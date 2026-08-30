@@ -20,7 +20,7 @@ pub enum BytecodeRegisterIdentity {
     Cell(usize),
     /// Compiler-control absence is a register value in its own right. It is
     /// distinct from canonical unit and from `Option(None)` and therefore
-    /// must not be reconstructed through the legacy empty-value adapter.
+    /// must not be reconstructed through an empty-value convention.
     Absent,
     Typed {
         inner: Box<BytecodeRegisterIdentity>,
@@ -64,7 +64,7 @@ pub trait BytecodeCompilerContext {
 
     /// Records the canonical schema carried by a register owned by a
     /// [`ValueCell`]. Artifact construction prefers this authority over the
-    /// lossy legacy kind sidecar.
+    /// lossy runtime-type sidecar.
     fn record_register_schema(
         &mut self,
         _register: Register,
@@ -287,7 +287,7 @@ pub fn compile_value_cell_initializer_register(
 ///
 /// The encoded value is used only as the structural template. Child registers
 /// remain the executable payload authority, preserving reactive topology
-/// without reconstructing a legacy aggregate.
+/// without reconstructing an erased aggregate.
 pub fn compile_value_cell_composite_register(
     cell: &ValueCell,
     children: &[ValueCell],
@@ -492,7 +492,7 @@ pub fn compile_runtime_produced_value_cell_register_with_seed(
         return compiler_invariant("runtime-produced register seed has the wrong schema");
     }
     let register = compile_runtime_produced_value_cell_register(cell, context)?;
-    let encoded = crate::encode_canonical_constant(seed, cell.representation())?;
+    let encoded = crate::encode_canonical_exact_backing(seed, cell.representation())?;
     let constant = context.intern_constant(encoded)?;
     context.record_register_constant_metadata(register, constant)?;
     context.emit_const_load(register, constant);
