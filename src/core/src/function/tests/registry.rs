@@ -1,13 +1,5 @@
-use super::super::{
-    FunctionArgs, FunctionDefinition, FunctionValueRepresentation, GuardFunctionSafety,
-    MechFunction, RuntimeFunctionSignature, UserFunctionTable,
-};
-#[cfg(feature = "f64")]
-use super::support::scalar;
-use crate::{
-    FunctionDefine, FunctionSpecializer, LegacyValue, MResult, hash_str,
-    internal_pattern_value_identifier,
-};
+use super::super::{FunctionDefinition, UserFunctionTable};
+use crate::{FunctionDefine, hash_str, internal_pattern_value_identifier};
 
 fn user_definition(name: &str) -> FunctionDefinition {
     FunctionDefinition::new(
@@ -21,78 +13,6 @@ fn user_definition(name: &str) -> FunctionDefinition {
             match_arms: Vec::new(),
         },
     )
-}
-
-struct DefaultTestSpecializer;
-
-impl FunctionSpecializer for DefaultTestSpecializer {
-    fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        unreachable!("safety metadata test must not specialize the function")
-    }
-}
-
-#[test]
-fn function_specializer_guard_safety_defaults_to_unsupported() {
-    let specializer = DefaultTestSpecializer;
-
-    assert_eq!(specializer.guard_safety(), GuardFunctionSafety::Unsupported);
-}
-
-#[cfg(feature = "f64")]
-#[test]
-fn function_args_returns_only_inputs() {
-    let (out, _) = scalar(0.0);
-    let (a, _) = scalar(1.0);
-    let (b, _) = scalar(2.0);
-    let (c, _) = scalar(3.0);
-    let (d, _) = scalar(4.0);
-
-    assert_eq!(
-        FunctionArgs::Nullary(out.clone()).input_values(),
-        Vec::<LegacyValue>::new()
-    );
-    assert_eq!(
-        FunctionArgs::Unary(out.clone(), a.clone()).input_values(),
-        vec![a.clone()]
-    );
-    assert_eq!(
-        FunctionArgs::Binary(out.clone(), a.clone(), b.clone()).input_values(),
-        vec![a.clone(), b.clone()],
-    );
-    assert_eq!(
-        FunctionArgs::Ternary(out.clone(), a.clone(), b.clone(), c.clone()).input_values(),
-        vec![a.clone(), b.clone(), c.clone()],
-    );
-    assert_eq!(
-        FunctionArgs::Quaternary(out.clone(), a.clone(), b.clone(), c.clone(), d.clone(),)
-            .input_values(),
-        vec![a.clone(), b.clone(), c.clone(), d.clone()],
-    );
-    assert_eq!(
-        FunctionArgs::Variadic(out, vec![a.clone(), b.clone(), c.clone(), d.clone()])
-            .input_values(),
-        vec![a, b, c, d],
-    );
-}
-
-#[cfg(feature = "f64")]
-#[test]
-fn variadic_signatures_normalize_bytecode_instruction_arities() {
-    let (out, _) = scalar(0.0);
-    let (a, _) = scalar(1.0);
-    let signature = RuntimeFunctionSignature::variadic(
-        FunctionValueRepresentation::F64,
-        FunctionValueRepresentation::F64,
-    );
-
-    assert!(matches!(
-        FunctionArgs::Nullary(out.clone()).normalize_for_signature(signature),
-        FunctionArgs::Variadic(_, arguments) if arguments.is_empty()
-    ));
-    assert!(matches!(
-        FunctionArgs::Unary(out, a).normalize_for_signature(signature),
-        FunctionArgs::Variadic(_, arguments) if arguments.len() == 1
-    ));
 }
 
 #[test]
@@ -133,7 +53,7 @@ fn user_function_table_rejects_a_distinct_name_at_one_forced_id() {
 }
 
 #[test]
-fn user_function_table_name_resolution_is_exact() {
+fn user_function_table_name_resolution_clear_and_length_are_exact() {
     let mut definitions = UserFunctionTable::default();
     definitions
         .insert_or_replace(user_definition("module/item"))

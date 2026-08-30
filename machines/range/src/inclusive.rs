@@ -182,12 +182,16 @@ mod tests {
     }
 
     #[test]
-    fn inclusive_range_revalidates_reactive_cardinality() {
+    fn inclusive_range_revalidates_extent_and_rolls_back_without_replacing_identity() {
         let to = ValueCell::from_exact(2_u128).unwrap();
         let out = Ref::new(DMatrix::from_element(1, 2, 0_u128));
+        let out_alias = out.clone();
+        let output = ValueCell::from_exact_matrix_ref(out.clone(), 1, 2).unwrap();
+        let output_alias = output.clone();
+        let schema = output.schema_key();
         let function = RangeInclusiveScalar::<u128, DMatrix<u128>>::new_invocation(
             FunctionInvocation::binary(
-                ValueCell::from_exact_matrix_ref(out.clone(), 1, 2).unwrap(),
+                output.clone(),
                 ValueCell::from_exact(1_u128).unwrap(),
                 to.clone(),
             ),
@@ -197,10 +201,23 @@ mod tests {
         function.solve_result().unwrap();
         assert_eq!(out.borrow().as_slice(), &[1, 2]);
 
-        to.replace(&ValueCell::from_exact(3_u128).unwrap().snapshot().unwrap())
-            .unwrap();
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().as_slice(), &[1, 2, 3]);
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            to.replace(&ValueCell::from_exact(3_u128).unwrap().snapshot().unwrap())?;
+            function.solve_result()?;
+            assert_eq!(out.borrow().as_slice(), &[1, 2, 3]);
+            assert_eq!(output.shape().parameter_values(), &[1, 3]);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+
+        assert!(out.same_handle(&out_alias));
+        assert!(output.same_cell(&output_alias));
+        assert_eq!(output.schema_key(), schema);
+        assert_eq!(output.shape().parameter_values(), &[1, 2]);
+        assert_eq!(out.borrow().as_slice(), &[1, 2]);
     }
 }
 #[cfg(feature = "semantic-compiler")]

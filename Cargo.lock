@@ -2877,6 +2877,7 @@ dependencies = [
  "mech-stats",
  "mech-string",
  "mech-syntax",
+ "nalgebra",
  "serde",
  "serde_json",
  "sha2 0.10.9",

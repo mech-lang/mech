@@ -386,3 +386,263 @@ pub(super) fn commit_proposed_captures(captures: &[ActivationPatternCapture]) ->
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{CardinalitySpec, ExtentSpec, MechFunctionImpl, SchemaField};
+    use mech_core::snapshot::{F64Bits, MapEntryDraft, NamedValueDraft, TableColumnDraft};
+
+    fn f64_draft(value: f64) -> ValueDataDraft {
+        ValueDataDraft::F64(F64Bits::from_f64(value))
+    }
+
+    fn assert_commit_preserves_identity(source: ValueCell) {
+        let destination = create_capture_slot_for_schema(&source.closed_schema_body().unwrap())
+            .expect("capture schema must have a canonical slot");
+        let alias = destination.clone();
+        commit_capture_slot(&destination, &source).unwrap();
+        assert!(destination.same_cell(&alias));
+        assert!(destination.snapshot_eq(&source).unwrap());
+    }
+
+    #[test]
+    fn canonical_capture_slots_cover_scalar_tuple_record_and_matrix_schemas() {
+        #[cfg(feature = "u8")]
+        assert_commit_preserves_identity(ValueCell::from_exact(42_u8).unwrap());
+        #[cfg(feature = "u16")]
+        assert_commit_preserves_identity(ValueCell::from_exact(42_u16).unwrap());
+        #[cfg(feature = "u32")]
+        assert_commit_preserves_identity(ValueCell::from_exact(42_u32).unwrap());
+        #[cfg(feature = "u64")]
+        assert_commit_preserves_identity(ValueCell::from_exact(42_u64).unwrap());
+        #[cfg(feature = "u128")]
+        assert_commit_preserves_identity(ValueCell::from_exact(42_u128).unwrap());
+        #[cfg(feature = "i8")]
+        assert_commit_preserves_identity(ValueCell::from_exact(-17_i8).unwrap());
+        #[cfg(feature = "i16")]
+        assert_commit_preserves_identity(ValueCell::from_exact(-17_i16).unwrap());
+        #[cfg(feature = "i32")]
+        assert_commit_preserves_identity(ValueCell::from_exact(-17_i32).unwrap());
+        #[cfg(feature = "i64")]
+        assert_commit_preserves_identity(ValueCell::from_exact(-17_i64).unwrap());
+        #[cfg(feature = "i128")]
+        assert_commit_preserves_identity(ValueCell::from_exact(-17_i128).unwrap());
+        #[cfg(feature = "f32")]
+        assert_commit_preserves_identity(ValueCell::from_exact(3.25_f32).unwrap());
+        #[cfg(feature = "f64")]
+        assert_commit_preserves_identity(ValueCell::from_exact(6.5_f64).unwrap());
+        #[cfg(feature = "c64")]
+        assert_commit_preserves_identity(ValueCell::from_exact(crate::C64::new(3.0, 4.0)).unwrap());
+        #[cfg(feature = "r64")]
+        assert_commit_preserves_identity(ValueCell::from_exact(crate::R64::new(3, 4)).unwrap());
+        #[cfg(feature = "bool")]
+        assert_commit_preserves_identity(ValueCell::from_exact(true).unwrap());
+        #[cfg(feature = "string")]
+        assert_commit_preserves_identity(ValueCell::from_exact("captured".to_string()).unwrap());
+        assert_commit_preserves_identity(ValueCell::from_exact(42_usize).unwrap());
+
+        #[cfg(all(feature = "f64", feature = "bool"))]
+        assert_commit_preserves_identity(
+            ValueCell::from_schema_data(
+                SchemaBody::Tuple(
+                    vec![SchemaBody::FloatingPoint(FloatWidth::W64), SchemaBody::Bool]
+                        .into_boxed_slice(),
+                ),
+                ValueDataDraft::Tuple(
+                    vec![f64_draft(3.0), ValueDataDraft::Bool(true)].into_boxed_slice(),
+                ),
+            )
+            .unwrap(),
+        );
+        #[cfg(feature = "f64")]
+        assert_commit_preserves_identity(
+            ValueCell::from_schema_data(
+                SchemaBody::Record(
+                    vec![SchemaField {
+                        name: "value".into(),
+                        schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    }]
+                    .into_boxed_slice(),
+                ),
+                ValueDataDraft::Record(
+                    vec![NamedValueDraft {
+                        name: "value".into(),
+                        value: f64_draft(9.0),
+                    }]
+                    .into_boxed_slice(),
+                ),
+            )
+            .unwrap(),
+        );
+        #[cfg(feature = "f64")]
+        assert_commit_preserves_identity(
+            ValueCell::dynamic_matrix(
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                vec![1, 3].into_boxed_slice(),
+                vec![f64_draft(1.0), f64_draft(2.0), f64_draft(3.0)].into_boxed_slice(),
+            )
+            .unwrap(),
+        );
+    }
+
+    #[cfg(feature = "string")]
+    #[test]
+    fn canonical_capture_slot_preserves_identity_across_repeated_updates() {
+        let destination = ValueCell::from_exact(String::new()).unwrap();
+        let alias = destination.clone();
+        for value in ["first", "second"] {
+            let source = ValueCell::from_exact(value.to_owned()).unwrap();
+            commit_capture_slot(&destination, &source).unwrap();
+            assert!(destination.same_cell(&alias));
+            assert!(destination.snapshot_eq(&source).unwrap());
+        }
+    }
+
+    #[test]
+    fn canonical_capture_slots_support_dynamic_set_map_and_table_extents() {
+        let f64_schema = SchemaBody::FloatingPoint(FloatWidth::W64);
+        assert_commit_preserves_identity(
+            ValueCell::from_schema_data(
+                SchemaBody::Set {
+                    element: Box::new(f64_schema.clone()),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+                ValueDataDraft::Set(vec![f64_draft(1.0), f64_draft(2.0)].into_boxed_slice()),
+            )
+            .unwrap(),
+        );
+        assert_commit_preserves_identity(
+            ValueCell::from_schema_data(
+                SchemaBody::Map {
+                    key: Box::new(SchemaBody::String),
+                    value: Box::new(f64_schema.clone()),
+                    cardinality: ExtentSpec::Dynamic { upper_bound: None },
+                },
+                ValueDataDraft::Map(
+                    vec![MapEntryDraft {
+                        items: vec![ValueDataDraft::String("x".into()), f64_draft(3.0)]
+                            .into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                ),
+            )
+            .unwrap(),
+        );
+        assert_commit_preserves_identity(
+            ValueCell::from_schema_data(
+                SchemaBody::Table {
+                    columns: vec![SchemaField {
+                        name: "x".into(),
+                        schema: f64_schema,
+                    }]
+                    .into_boxed_slice(),
+                    rows: ExtentSpec::Dynamic { upper_bound: None },
+                },
+                ValueDataDraft::Table(
+                    vec![TableColumnDraft {
+                        name: "x".into(),
+                        values: vec![f64_draft(4.0), f64_draft(5.0)].into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                ),
+            )
+            .unwrap(),
+        );
+    }
+
+    #[test]
+    fn capture_batch_preflight_is_atomic() {
+        let first = ActivationPatternCapture {
+            id: 1,
+            name: "first".into(),
+            schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+            proposed: ValueCell::from_exact(10.0_f64).unwrap(),
+            committed: ValueCell::from_exact(1.0_f64).unwrap(),
+        };
+        let second = ActivationPatternCapture {
+            id: 2,
+            name: "second".into(),
+            schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+            proposed: ValueCell::from_exact(true).unwrap(),
+            committed: ValueCell::from_exact(2.0_f64).unwrap(),
+        };
+        let error = commit_proposed_captures(&[first.clone(), second]).unwrap_err();
+
+        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        let snapshot = first.committed.snapshot().unwrap();
+        let mech_core::ValueData::F64(value) = snapshot.data() else {
+            panic!("expected retained f64 capture")
+        };
+        assert_eq!(value.to_f64(), 1.0);
+    }
+
+    #[test]
+    fn selected_and_unselected_capture_gates_commit_atomically() {
+        let valid = ActivationPatternCapture {
+            id: 1,
+            name: "valid".into(),
+            schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+            proposed: ValueCell::from_exact(10.0_f64).unwrap(),
+            committed: ValueCell::from_exact(1.0_f64).unwrap(),
+        };
+        let invalid = ActivationPatternCapture {
+            id: 2,
+            name: "invalid".into(),
+            schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+            proposed: ValueCell::from_exact(true).unwrap(),
+            committed: ValueCell::from_exact(2.0_f64).unwrap(),
+        };
+        let selected = selected_arm_state(0);
+        let pulse = generation().0;
+        let selected_gate = super::super::registers::Gate {
+            arm: 0,
+            selected: selected.clone(),
+            captures: vec![valid.clone(), invalid],
+            out: pulse.clone(),
+        };
+        let error = selected_gate.solve_reactive().unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        assert!(
+            valid
+                .committed
+                .snapshot_eq(&ValueCell::from_exact(1.0_f64).unwrap())
+                .unwrap()
+        );
+        assert!(
+            pulse
+                .snapshot_eq(&ValueCell::from_exact(1_usize).unwrap())
+                .unwrap()
+        );
+
+        let retained = ActivationPatternCapture {
+            id: 3,
+            name: "retained".into(),
+            schema: SchemaBody::String,
+            proposed: ValueCell::from_exact("proposed".to_owned()).unwrap(),
+            committed: ValueCell::from_exact("committed".to_owned()).unwrap(),
+        };
+        write_selected_arm(&selected, 1).unwrap();
+        let unselected_gate = super::super::registers::Gate {
+            arm: 0,
+            selected,
+            captures: vec![retained.clone()],
+            out: pulse.clone(),
+        };
+        assert_eq!(
+            unselected_gate.solve_reactive().unwrap(),
+            crate::ReactiveSolveStatus::Unchanged
+        );
+        assert!(
+            retained
+                .committed
+                .snapshot_eq(&ValueCell::from_exact("committed".to_owned()).unwrap())
+                .unwrap()
+        );
+        assert!(
+            pulse
+                .snapshot_eq(&ValueCell::from_exact(1_usize).unwrap())
+                .unwrap()
+        );
+    }
+}

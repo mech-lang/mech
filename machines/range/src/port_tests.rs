@@ -7,21 +7,21 @@
     feature = "inclusive_increment",
     feature = "exclusive_increment"
 ))]
-mod dynamic_ranges {
+mod canonical_ranges {
     use crate::{
         RangeExclusiveScalar, RangeIncrementExclusiveScalar, RangeIncrementInclusiveScalar,
         RangeInclusiveScalar,
     };
     use mech_core::{
-        EncodedConstant, FunctionArgs, FunctionInvocation, IncorrectNumberOfArguments,
-        LegacyValue, MechError, MechFunction, MechFunctionFactory, Ref, RuntimeType, ToValue,
-        legacy_values_from_encoded_bytecode_constants,
-        with_reactive_journal_participant,
+        FunctionInvocation, IncorrectNumberOfArguments, MResult, MechError, MechFunction,
+        MechFunctionFactory, Ref, ValueCell, with_reactive_journal_participant,
     };
     use nalgebra::{DMatrix, RowDVector};
 
-    fn output(len: usize) -> Ref<DMatrix<f64>> {
-        Ref::new(DMatrix::from_element(1, len, 0.0))
+    fn output(length: usize) -> (Ref<DMatrix<f64>>, ValueCell) {
+        let reference = Ref::new(DMatrix::from_element(1, length, 0.0));
+        let cell = ValueCell::from_exact_matrix_ref(reference.clone(), 1, length).unwrap();
+        (reference, cell)
     }
 
     fn factory_error(result: Result<Box<dyn MechFunction>, MechError>) -> MechError {
@@ -31,226 +31,113 @@ mod dynamic_ranges {
         }
     }
 
-    fn framed(payload: &[u8]) -> Vec<u8> {
-        let mut framed = (payload.len() as u32).to_le_bytes().to_vec();
-        framed.extend_from_slice(payload);
-        framed
-    }
+    #[test]
+    fn all_four_range_families_use_canonical_invocations() {
+        let (inclusive_out, inclusive_cell) = output(3);
+        let inclusive = RangeInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
+            FunctionInvocation::binary(
+                inclusive_cell,
+                ValueCell::from_exact(1.0).unwrap(),
+                ValueCell::from_exact(3.0).unwrap(),
+            ),
+        )
+        .unwrap();
+        inclusive.solve_result().unwrap();
+        assert_eq!(inclusive_out.borrow().as_slice(), &[1.0, 2.0, 3.0]);
 
-    fn decoded_scalar_wrapper(reference: bool) -> LegacyValue {
-        let payload = 1.0_f64.to_le_bytes();
-        let (runtime_type, bytes) = if reference {
-            (
-                RuntimeType::Reference(Box::new(RuntimeType::F64)),
-                framed(&payload),
+        let (exclusive_out, exclusive_cell) = output(3);
+        let exclusive = RangeExclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
+            FunctionInvocation::binary(
+                exclusive_cell,
+                ValueCell::from_exact(1.0).unwrap(),
+                ValueCell::from_exact(4.0).unwrap(),
+            ),
+        )
+        .unwrap();
+        exclusive.solve_result().unwrap();
+        assert_eq!(exclusive_out.borrow().as_slice(), &[1.0, 2.0, 3.0]);
+
+        let (inclusive_step_out, inclusive_step_cell) = output(3);
+        let inclusive_step =
+            RangeIncrementInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
+                FunctionInvocation::ternary(
+                    inclusive_step_cell,
+                    ValueCell::from_exact(1.0).unwrap(),
+                    ValueCell::from_exact(2.0).unwrap(),
+                    ValueCell::from_exact(5.0).unwrap(),
+                ),
             )
-        } else {
-            let mut bytes = vec![1];
-            bytes.extend(framed(&payload));
-            (RuntimeType::Option(Box::new(RuntimeType::F64)), bytes)
-        };
-        legacy_values_from_encoded_bytecode_constants(&[EncodedConstant {
-            runtime_type,
-            alignment: 8,
-            bytes,
-        }])
-        .unwrap()
-        .pop()
-        .unwrap()
-    }
+            .unwrap();
+        inclusive_step.solve_result().unwrap();
+        assert_eq!(inclusive_step_out.borrow().as_slice(), &[1.0, 3.0, 5.0]);
 
-    fn assert_supplied_output(function: &dyn MechFunction, out: &Ref<DMatrix<f64>>) {
-        assert_eq!(
-            function.reactive_output_cell_ids(),
-            out.to_value().reactive_root_cell_ids(),
-        );
+        let (exclusive_step_out, exclusive_step_cell) = output(3);
+        let exclusive_step =
+            RangeIncrementExclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
+                FunctionInvocation::ternary(
+                    exclusive_step_cell,
+                    ValueCell::from_exact(1.0).unwrap(),
+                    ValueCell::from_exact(2.0).unwrap(),
+                    ValueCell::from_exact(7.0).unwrap(),
+                ),
+            )
+            .unwrap();
+        exclusive_step.solve_result().unwrap();
+        assert_eq!(exclusive_step_out.borrow().as_slice(), &[1.0, 3.0, 5.0]);
     }
 
     #[test]
-    fn all_range_factories_match_the_legacy_adapters() {
-        let from = Ref::new(1.0_f64);
-        let to = Ref::new(3.0_f64);
-        let legacy_out = output(3);
-        let invocation_out = output(3);
-        let legacy = RangeInclusiveScalar::<f64, DMatrix<f64>>::new(FunctionArgs::Binary(
-            legacy_out.to_value(),
-            from.to_value(),
-            to.to_value(),
-        ))
-        .unwrap();
-        let invocation = RangeInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-            FunctionArgs::Binary(
-                invocation_out.to_value(),
-                from.to_value(),
-                to.to_value(),
-            )
-            .into(),
-        )
-        .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
-        assert_supplied_output(&*legacy, &legacy_out);
-        assert_supplied_output(&*invocation, &invocation_out);
-
-        let exclusive_to = Ref::new(4.0_f64);
-        let legacy_out = output(3);
-        let invocation_out = output(3);
-        let legacy = RangeExclusiveScalar::<f64, DMatrix<f64>>::new(FunctionArgs::Binary(
-            legacy_out.to_value(),
-            from.to_value(),
-            exclusive_to.to_value(),
-        ))
-        .unwrap();
-        let invocation = RangeExclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-            FunctionArgs::Binary(
-                invocation_out.to_value(),
-                from.to_value(),
-                exclusive_to.to_value(),
-            )
-            .into(),
-        )
-        .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
-        assert_supplied_output(&*legacy, &legacy_out);
-        assert_supplied_output(&*invocation, &invocation_out);
-
-        let step = Ref::new(2.0_f64);
-        let inclusive_to = Ref::new(5.0_f64);
-        let legacy_out = output(3);
-        let invocation_out = output(3);
-        let legacy =
-            RangeIncrementInclusiveScalar::<f64, DMatrix<f64>>::new(FunctionArgs::Ternary(
-                legacy_out.to_value(),
-                from.to_value(),
-                step.to_value(),
-                inclusive_to.to_value(),
-            ))
-            .unwrap();
-        let invocation = RangeIncrementInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-            FunctionArgs::Ternary(
-                invocation_out.to_value(),
-                from.to_value(),
-                step.to_value(),
-                inclusive_to.to_value(),
-            )
-            .into(),
-        )
-        .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
-        assert_supplied_output(&*legacy, &legacy_out);
-        assert_supplied_output(&*invocation, &invocation_out);
-
-        let exclusive_to = Ref::new(7.0_f64);
-        let legacy_out = output(3);
-        let invocation_out = output(3);
-        let legacy =
-            RangeIncrementExclusiveScalar::<f64, DMatrix<f64>>::new(FunctionArgs::Ternary(
-                legacy_out.to_value(),
-                from.to_value(),
-                step.to_value(),
-                exclusive_to.to_value(),
-            ))
-            .unwrap();
-        let invocation = RangeIncrementExclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-            FunctionArgs::Ternary(
-                invocation_out.to_value(),
-                from.to_value(),
-                step.to_value(),
-                exclusive_to.to_value(),
-            )
-            .into(),
-        )
-        .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
-        assert_supplied_output(&*legacy, &legacy_out);
-        assert_supplied_output(&*invocation, &invocation_out);
-    }
-
-    #[test]
-    fn range_ports_reject_wrong_types_storage_and_wrappers() {
-        let out = output(3);
-        let to = Ref::new(3.0_f64);
+    fn range_ports_reject_wrong_types_and_storage() {
+        let (_, output) = output(3);
         assert!(
             RangeInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-                FunctionArgs::Binary(
-                    out.to_value(),
-                    Ref::new(1_usize).to_value(),
-                    to.to_value(),
-                )
-                .into(),
+                FunctionInvocation::binary(
+                    output.clone(),
+                    ValueCell::from_exact(1_usize).unwrap(),
+                    ValueCell::from_exact(3.0).unwrap(),
+                ),
             )
             .is_err()
         );
 
-        let wrong_out = Ref::new(RowDVector::from_element(3, 0.0_f64));
+        let wrong = Ref::new(RowDVector::from_element(3, 0.0));
+        let wrong = ValueCell::from_exact_matrix_ref(wrong, 1, 3).unwrap();
         assert!(
             RangeInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-                FunctionArgs::Binary(
-                    wrong_out.to_value(),
-                    Ref::new(1.0_f64).to_value(),
-                    to.to_value(),
-                )
-                .into(),
+                FunctionInvocation::binary(
+                    wrong,
+                    ValueCell::from_exact(1.0).unwrap(),
+                    ValueCell::from_exact(3.0).unwrap(),
+                ),
             )
             .is_err()
         );
-
-        for wrapped in [decoded_scalar_wrapper(false), decoded_scalar_wrapper(true)] {
-            assert!(
-                RangeInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-                    FunctionArgs::Binary(out.to_value(), wrapped, to.to_value()).into(),
-                )
-                .is_err()
-            );
-        }
     }
 
     #[test]
-    fn range_layout_errors_report_the_correct_arities() {
-        let out = output(1);
-        let scalar = Ref::new(1.0_f64);
+    fn range_layout_errors_report_canonical_arities() {
+        let (_, output) = output(1);
+        let scalar = ValueCell::from_exact(1.0).unwrap();
         for error in [
             factory_error(RangeInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-                FunctionInvocation::from(FunctionArgs::Unary(
-                    out.to_value(),
-                    scalar.to_value(),
-                )),
+                FunctionInvocation::unary(output.clone(), scalar.clone()),
             )),
             factory_error(RangeExclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-                FunctionInvocation::from(FunctionArgs::Unary(
-                    out.to_value(),
-                    scalar.to_value(),
-                )),
+                FunctionInvocation::unary(output.clone(), scalar.clone()),
             )),
         ] {
             let arity = error.kind_as::<IncorrectNumberOfArguments>().unwrap();
             assert_eq!((arity.expected, arity.found), (2, 1));
         }
-
         for error in [
             factory_error(
                 RangeIncrementInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-                    FunctionInvocation::from(FunctionArgs::Binary(
-                        out.to_value(),
-                        scalar.to_value(),
-                        scalar.to_value(),
-                    )),
+                    FunctionInvocation::binary(output.clone(), scalar.clone(), scalar.clone()),
                 ),
             ),
             factory_error(
                 RangeIncrementExclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-                    FunctionInvocation::from(FunctionArgs::Binary(
-                        out.to_value(),
-                        scalar.to_value(),
-                        scalar.to_value(),
-                    )),
+                    FunctionInvocation::binary(output, scalar.clone(), scalar),
                 ),
             ),
         ] {
@@ -260,117 +147,37 @@ mod dynamic_ranges {
     }
 
     #[test]
-    fn binary_and_incremented_outputs_restore_exact_state() {
-        let binary_out = output(3);
-        let binary_alias = binary_out.clone();
-        let binary = RangeInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-            FunctionArgs::Binary(
-                binary_out.to_value(),
-                Ref::new(1.0_f64).to_value(),
-                Ref::new(3.0_f64).to_value(),
-            )
-            .into(),
+    fn stepped_range_checkpoint_restores_dynamic_extent_and_identity() {
+        let terminal = ValueCell::from_exact(5.0).unwrap();
+        let (output_ref, output_cell) = output(3);
+        let output_alias = output_cell.clone();
+        let reference_alias = output_ref.clone();
+        let schema = output_cell.schema_key();
+        let function = RangeIncrementInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
+            FunctionInvocation::ternary(
+                output_cell.clone(),
+                ValueCell::from_exact(1.0).unwrap(),
+                ValueCell::from_exact(2.0).unwrap(),
+                terminal.clone(),
+            ),
         )
         .unwrap();
-        let stepped_out = output(3);
-        let stepped_alias = stepped_out.clone();
-        let stepped = RangeIncrementInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-            FunctionArgs::Ternary(
-                stepped_out.to_value(),
-                Ref::new(1.0_f64).to_value(),
-                Ref::new(2.0_f64).to_value(),
-                Ref::new(5.0_f64).to_value(),
-            )
-            .into(),
-        )
-        .unwrap();
-        binary.solve_result().unwrap();
-        stepped.solve_result().unwrap();
-        let binary_before = binary_out.borrow().clone();
-        let stepped_before = stepped_out.borrow().clone();
-        assert_eq!(
-            binary.reactive_output_cell_ids(),
-            binary_out.to_value().reactive_root_cell_ids(),
-        );
-        assert_eq!(
-            stepped.reactive_output_cell_ids(),
-            stepped_out.to_value().reactive_root_cell_ids(),
-        );
+        function.solve_result().unwrap();
 
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*binary)?;
-            participant.capture_function_state(&*stepped)?;
-            *binary_out.borrow_mut() = DMatrix::from_element(2, 2, 99.0);
-            *stepped_out.borrow_mut() = DMatrix::from_element(2, 1, 88.0);
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            terminal.replace(&ValueCell::from_exact(7.0)?.snapshot()?)?;
+            function.solve_result()?;
+            assert_eq!(output_ref.borrow().as_slice(), &[1.0, 3.0, 5.0, 7.0]);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
 
-        assert!(binary_out.same_handle(&binary_alias));
-        assert!(stepped_out.same_handle(&stepped_alias));
-        assert_eq!(*binary_out.borrow(), binary_before);
-        assert_eq!(*stepped_out.borrow(), stepped_before);
-    }
-
-    #[test]
-    fn dynamic_range_extent_preserves_identity_and_prior_state_is_restorable() {
-        let to = Ref::new(3.0_f64);
-        let out = output(3);
-        let out_alias = out.clone();
-        let function = RangeInclusiveScalar::<f64, DMatrix<f64>>::new_invocation(
-            FunctionArgs::Binary(
-                out.to_value(),
-                Ref::new(1.0_f64).to_value(),
-                to.to_value(),
-            )
-            .into(),
-        )
-        .unwrap();
-        function.solve_result().unwrap();
-        let successful = out.borrow().clone();
-
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*function)?;
-            *to.borrow_mut() = 4.0;
-            function.solve_result().unwrap();
-            assert_eq!(out.borrow().as_slice(), &[1.0, 2.0, 3.0, 4.0]);
-            assert!(out.same_handle(&out_alias));
-            *out.borrow_mut() = DMatrix::from_element(2, 2, -1.0);
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
-        .unwrap();
-
-        assert!(out.same_handle(&out_alias));
-        assert_eq!(*out.borrow(), successful);
-    }
-}
-
-#[cfg(all(feature = "f64", feature = "row_vector2", feature = "inclusive"))]
-mod fixed_range {
-    use crate::RangeInclusiveScalar;
-    use mech_core::{FunctionArgs, MechFunctionFactory, Ref, ToValue};
-    use nalgebra::RowVector2;
-
-    #[test]
-    fn fixed_row_vector_output_retains_exact_representation_and_handle() {
-        let out: Ref<RowVector2<f64>> = Ref::new(RowVector2::zeros());
-        let alias = out.clone();
-        let function = RangeInclusiveScalar::<f64, RowVector2<f64>>::new_invocation(
-            FunctionArgs::Binary(
-                out.to_value(),
-                Ref::new(1.0_f64).to_value(),
-                Ref::new(2.0_f64).to_value(),
-            )
-            .into(),
-        )
-        .unwrap();
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().as_slice(), &[1.0, 2.0]);
-
-        assert!(alias.same_handle(&out));
+        assert!(output_ref.same_handle(&reference_alias));
+        assert!(output_cell.same_cell(&output_alias));
+        assert_eq!(output_cell.schema_key(), schema);
+        assert_eq!(output_ref.borrow().as_slice(), &[1.0, 3.0, 5.0]);
     }
 }

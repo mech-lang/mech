@@ -12,10 +12,6 @@ mod kind;
 pub mod structures;
 pub(crate) mod value;
 
-#[cfg(all(test, feature = "f64", feature = "tuple"))]
-#[path = "../state_journal/tests/hashed_cycles.rs"]
-mod cycle_tests;
-
 #[cfg(feature = "semantic-compiler")]
 pub use self::bytecode::*;
 #[cfg(feature = "program")]

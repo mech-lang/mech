@@ -3,19 +3,19 @@
 use mech_engine::*;
 
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BytecodeProgram,
-    CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder,
-    DeliveryMode, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
-    DimensionParameterId, DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy,
-    ExecutionResourceRequest, ExternalInteraction, FloatWidth, IdempotencyRequirement,
-    InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr, LegacyOpaqueOperationContract,
-    NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
-    OperationContractDeclaration, OperationContractId, OperationContractTable,
-    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, RegionPolicy,
-    ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, ResourceDelivery,
-    ResourceIntent, SchemaBody, SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder,
-    ShapeContractReference, ShapeRule, Value, ValueCell, ValueData, ValueDataDraft, ValueDraft,
-    compile_value_cell_matrix_literal_register,
+    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BytecodeInstruction,
+    BytecodeProgram, CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle,
+    ConstantStoreBuilder, DeliveryMode, DimensionExpr, DimensionLifetime,
+    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, EffectContract,
+    EffectDeliveryPolicy, EncodedConstant, ExecutionResourceRequest, ExternalInteraction,
+    FloatWidth, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr,
+    LegacyOpaqueOperationContract, NominalKey, NominalKind, ObservationContract,
+    ObservationReplayPolicy, OperationContractDeclaration, OperationContractId,
+    OperationContractTable, OperationContractTableBuilder, OutputConstruction, OutputPortPolicy,
+    RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort,
+    ResourceDelivery, ResourceIntent, RuntimeType, SchemaBody, SchemaDraft, SchemaField,
+    SchemaHandle, SchemaTableBuilder, ShapeContractReference, ShapeRule, Value, ValueCell,
+    ValueData, ValueDataDraft, ValueDraft, compile_value_cell_matrix_literal_register,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
         MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SequenceView,
@@ -1078,6 +1078,178 @@ fn compiled_generic_matrix(
     )
     .unwrap();
     context.finish_program(output).unwrap()
+}
+
+fn compiled_scalar_artifact_fixture(
+    first_type: RuntimeType,
+    first_schema: Option<SchemaBody>,
+) -> CompiledBytecode {
+    let first = match first_type {
+        RuntimeType::Empty => EncodedConstant {
+            runtime_type: RuntimeType::Empty,
+            alignment: 1,
+            bytes: Vec::new(),
+        },
+        RuntimeType::F64 => EncodedConstant {
+            runtime_type: RuntimeType::F64,
+            alignment: 8,
+            bytes: 1.0_f64.to_bits().to_le_bytes().to_vec(),
+        },
+        other => panic!("unsupported scalar artifact fixture type {other:?}"),
+    };
+    let mut absent_registers = BTreeSet::new();
+    if matches!(first.runtime_type, RuntimeType::Empty) {
+        absent_registers.insert(0);
+    }
+    CompiledBytecode {
+        program: BytecodeProgram {
+            register_count: 2,
+            constants: vec![
+                first,
+                EncodedConstant {
+                    runtime_type: RuntimeType::F64,
+                    alignment: 8,
+                    bytes: 0.0_f64.to_bits().to_le_bytes().to_vec(),
+                },
+            ],
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 1,
+                },
+                BytecodeInstruction::Return { src: 1 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        },
+        runtime_function_names: BTreeMap::new(),
+        instruction_roles: vec![None, None, None],
+        instruction_contracts: vec![None, None, None],
+        instruction_operations: vec![None, None, None],
+        instruction_source_nodes: vec![None, None, None],
+        register_schemas: vec![
+            first_schema,
+            Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        ],
+        absent_registers,
+        register_collection_cardinalities: vec![None, None],
+        register_state_initializers: vec![None, None],
+        matrix_literals: BTreeMap::new(),
+        symbol_definitions: Vec::new(),
+        return_register: 1,
+        integrity_constraints: Vec::new(),
+        compute_regions: Vec::new(),
+    }
+}
+
+fn compiled_assign_artifact_fixture(
+    first_type: RuntimeType,
+) -> (CompiledBytecode, FunctionCatalog) {
+    let first_schema = match first_type {
+        RuntimeType::Empty => None,
+        RuntimeType::F64 => Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        ref other => panic!("unsupported assignment fixture type {other:?}"),
+    };
+    let mut builder = FunctionCatalogBuilder::new();
+    install_intrinsic_runtime(&mut builder).unwrap();
+    let catalog = builder.build().unwrap();
+    let function = catalog
+        .runtime_entries()
+        .find(|entry| entry.name == "Assign<f64>")
+        .expect("the full compiler profile installs scalar assignment")
+        .id
+        .raw();
+    let mut compiled = compiled_scalar_artifact_fixture(first_type, first_schema);
+    compiled.program.instructions.insert(
+        2,
+        BytecodeInstruction::RuntimeUnary {
+            function,
+            dst: 1,
+            src: 0,
+        },
+    );
+    compiled.instruction_roles.insert(
+        2,
+        Some(CompiledInstructionRole::Node(
+            CompiledNodeKind::Combinational,
+        )),
+    );
+    compiled.instruction_contracts.insert(2, None);
+    compiled
+        .instruction_operations
+        .insert(2, Some("assign/value".to_owned()));
+    compiled.instruction_source_nodes.insert(2, Some(0));
+    (compiled, catalog)
+}
+
+#[test]
+fn malformed_compiled_scalar_metadata_fails_closed() {
+    let (mut missing_kind, catalog) = compiled_assign_artifact_fixture(RuntimeType::F64);
+    missing_kind.register_schemas[1] = None;
+    let missing_kind = compile_executable_program_artifact(&missing_kind, &catalog);
+    assert!(
+        matches!(
+            &missing_kind,
+            Err(ArtifactBuildError::MissingRegisterKind { register: 1, .. })
+        ),
+        "unexpected missing-kind result: {missing_kind:?}"
+    );
+
+    let (missing_source, catalog) = compiled_assign_artifact_fixture(RuntimeType::Empty);
+    let missing_source = compile_executable_program_artifact(&missing_source, &catalog);
+    assert!(
+        matches!(
+            &missing_source,
+            Err(ArtifactBuildError::MissingRegisterSource {
+                register: 0,
+                role: "input",
+                ..
+            })
+        ),
+        "unexpected missing-source result: {missing_source:?}"
+    );
+
+    let mut wrong_integrity_kind = compiled_scalar_artifact_fixture(
+        RuntimeType::F64,
+        Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+    );
+    wrong_integrity_kind.program.instructions.insert(
+        2,
+        BytecodeInstruction::RuntimeVariadic {
+            function: mech_core::hash_str("integrity/constraint"),
+            dst: 1,
+            arguments: vec![0],
+        },
+    );
+    wrong_integrity_kind
+        .instruction_roles
+        .insert(2, Some(CompiledInstructionRole::IntegrityMarker));
+    wrong_integrity_kind.instruction_contracts.insert(2, None);
+    wrong_integrity_kind.instruction_operations.insert(2, None);
+    wrong_integrity_kind
+        .instruction_source_nodes
+        .insert(2, None);
+    wrong_integrity_kind
+        .integrity_constraints
+        .push(CompiledIntegrityConstraint {
+            name: "constraint-0".to_owned(),
+            result_register: 0,
+        });
+    let wrong_integrity_kind =
+        compile_executable_program_artifact(&wrong_integrity_kind, &empty_function_catalog());
+    assert!(
+        matches!(
+            &wrong_integrity_kind,
+            Err(ArtifactBuildError::IntegrityConstraintSchemaMismatch { constraint: 0, .. })
+        ),
+        "unexpected integrity-kind result: {wrong_integrity_kind:?}"
+    );
 }
 
 #[test]

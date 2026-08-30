@@ -1,153 +1,80 @@
-use super::super::{Plan, ReactiveNodeKind, ReactivePlan};
-use super::support::TestFunction;
-#[cfg(all(feature = "set", feature = "f64"))]
-use super::support::set_output;
-use crate::{LegacyReactivePlanRegistration, LegacyValue, ReactiveCellId, Ref};
+use super::super::{FunctionInstance, FunctionInvocation, Plan, ReactiveNodeKind, ReactivePlan};
+use super::support::{TestFunction, index};
+use crate::{CanonicalCellId, ValueCell};
 use std::{cell::RefCell, rc::Rc};
 
+fn instance(function: TestFunction, output: ValueCell, inputs: Vec<ValueCell>) -> FunctionInstance {
+    FunctionInstance::new(
+        Box::new(function),
+        FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
+    )
+}
+
 #[test]
-fn reactive_plan_push_creates_one_node() {
+fn reactive_plan_push_preserves_order_and_single_ownership() {
     let mut plan = ReactivePlan::new();
     plan.push(Box::new(TestFunction::new("first")));
+    plan.push(Box::new(TestFunction::new("second")));
 
-    assert_eq!(plan.nodes.len(), 1);
+    assert_eq!(plan.nodes.len(), 2);
     assert_eq!(plan.nodes[0].id, 0);
-    assert_eq!(plan.nodes[0].plan_index, 0);
-}
-
-#[test]
-fn reactive_plan_preserves_insertion_order() {
-    let mut plan = ReactivePlan::new();
-    plan.push(Box::new(TestFunction::new("first")));
-    plan.push(Box::new(TestFunction::new("second")));
-
-    let names = plan
-        .iter()
-        .map(|function| function.to_string())
-        .collect::<Vec<_>>();
-    assert_eq!(names, vec!["first".to_string(), "second".to_string()]);
-    assert_eq!(plan[0].to_string(), "first");
-    assert_eq!(plan[1].to_string(), "second");
-}
-
-#[test]
-fn reactive_plan_node_is_only_function_owner() {
-    let mut plan = ReactivePlan::new();
-    plan.push(Box::new(TestFunction::new("first")));
-    plan.push(Box::new(TestFunction::new("second")));
-
+    assert_eq!(plan.nodes[1].plan_index, 1);
+    assert_eq!(
+        plan.iter()
+            .map(|function| function.to_string())
+            .collect::<Vec<_>>(),
+        vec!["first".to_string(), "second".to_string()]
+    );
     assert_eq!(plan.len(), plan.nodes.len());
+}
+
+#[test]
+fn canonical_instance_registration_records_output_identity_and_kind() {
+    let (output, identity) = index(42);
+    let function = TestFunction::with_output("register", output.clone())
+        .with_node_kind(ReactiveNodeKind::Register);
+    let mut plan = ReactivePlan::new();
+    let node = plan
+        .register_instance_with_activation(instance(function, output, Vec::new()), None)
+        .unwrap();
+
+    assert_eq!(plan.nodes[node].outputs, vec![identity]);
+    assert_eq!(plan.nodes[node].kind, ReactiveNodeKind::Register);
 }
 
 #[test]
 fn successful_registration_does_not_render_function_description() {
     let description_calls = Rc::new(RefCell::new(0));
+    let output = ValueCell::unit();
+    let function = TestFunction::with_output("description", output.clone())
+        .with_description_counter(description_calls.clone());
     let mut plan = ReactivePlan::new();
 
-    plan.register(
-        Box::new(
-            TestFunction::new("expensive-description")
-                .with_description_counter(description_calls.clone()),
-        ),
-        &[],
-    )
-    .unwrap();
+    plan.register_instance_with_activation(instance(function, output, Vec::new()), None)
+        .unwrap();
 
     assert_eq!(*description_calls.borrow(), 0);
-    assert_eq!(plan[0].to_string(), "expensive-description");
+    assert_eq!(plan[0].to_string(), "description");
     assert_eq!(*description_calls.borrow(), 1);
 }
 
-#[cfg(all(feature = "set", feature = "f64"))]
 #[test]
-fn reactive_plan_push_records_root_output_cells() {
-    let (output, outer, first, second) = set_output();
-    let mut plan = ReactivePlan::new();
-    plan.push(Box::new(TestFunction::with_output("set", output)));
-
-    assert_eq!(plan.nodes.len(), 1);
-    assert_eq!(plan.nodes[0].outputs, vec![outer]);
-    assert!(!plan.nodes[0].outputs.contains(&first));
-    assert!(!plan.nodes[0].outputs.contains(&second));
-}
-
-#[cfg(all(feature = "set", feature = "f64"))]
-#[test]
-fn reactive_plan_register_records_root_output_cells() {
-    let (output, outer, first, second) = set_output();
-    let mut plan = ReactivePlan::new();
-    let node_id = plan
-        .register(Box::new(TestFunction::with_output("set", output)), &[])
-        .unwrap();
-    let node = plan.node(node_id).unwrap();
-
-    assert_eq!(node.outputs, vec![outer]);
-    assert!(!node.outputs.contains(&first));
-    assert!(!node.outputs.contains(&second));
-}
-
-#[cfg(feature = "f64")]
-#[test]
-fn reactive_plan_records_output_cells() {
-    let output = Ref::new(42.0);
-    let mut plan = ReactivePlan::new();
-    plan.push(Box::new(TestFunction::with_output(
-        "output",
-        LegacyValue::F64(output.clone()),
-    )));
-
-    assert!(
-        plan.nodes[0]
-            .outputs
-            .contains(&ReactiveCellId::new(output.id()))
-    );
-}
-
-#[test]
-fn reactive_plan_clone_shares_storage() {
+fn cloned_plan_shares_storage_and_clear_removes_all_indexes() {
     let plan = Plan::new();
     let clone = plan.clone();
-
     plan.add_function(Box::new(TestFunction::new("shared")));
+    assert_eq!((plan.len(), clone.len()), (1, 1));
 
-    assert_eq!(plan.len(), 1);
-    assert_eq!(clone.len(), 1);
-}
-
-#[test]
-fn reactive_plan_clear_removes_nodes_and_indexes() {
-    let mut plan = ReactivePlan::new();
-    plan.push(Box::new(TestFunction::new("first")));
-    plan.reactive_consumers
-        .insert(ReactiveCellId::new(1), vec![0]);
-    plan.sampled_consumers
-        .insert(ReactiveCellId::new(2), vec![0]);
-
-    plan.clear();
-
-    assert!(plan.nodes.is_empty());
-    assert!(plan.reactive_consumers.is_empty());
-    assert!(plan.sampled_consumers.is_empty());
-}
-
-#[cfg(feature = "f64")]
-#[test]
-fn register_records_outputs_and_kind() {
-    let output = Ref::new(42.0);
-    let output_cell = ReactiveCellId::new(output.id());
-    let mut plan = ReactivePlan::new();
-
-    let node_id = plan
-        .register(
-            Box::new(
-                TestFunction::with_output("register", LegacyValue::F64(output))
-                    .with_node_kind(ReactiveNodeKind::Register),
-            ),
-            &[],
-        )
-        .unwrap();
-
-    let node = plan.node(node_id).unwrap();
-    assert_eq!(node.kind, ReactiveNodeKind::Register);
-    assert!(node.outputs.contains(&output_cell));
+    {
+        let mut plan = plan.borrow_mut();
+        plan.reactive_consumers
+            .insert(CanonicalCellId::new(1), vec![0]);
+        plan.sampled_consumers
+            .insert(CanonicalCellId::new(2), vec![0]);
+        plan.clear();
+        assert!(plan.nodes.is_empty());
+        assert!(plan.reactive_consumers.is_empty());
+        assert!(plan.sampled_consumers.is_empty());
+    }
+    assert_eq!(clone.len(), 0);
 }
