@@ -66,15 +66,6 @@
     },
     {
       "directive": "allow",
-      "expiry_condition": "Remove with the bytecode compatibility adapter in PR11.",
-      "lint": "dead_code",
-      "occurrences": 1,
-      "owner": "Legacy bytecode adapter",
-      "path": "src/core/src/legacy_adapter/bytecode_constants.rs",
-      "reason": "retained only for explicit legacy bytecode compatibility tests"
-    },
-    {
-      "directive": "allow",
       "expiry_condition": "Remove with the four-input compatibility factory or when it becomes unconditional.",
       "lint": "dead_code",
       "occurrences": 1,

@@ -201,9 +201,6 @@ def run(root: Path = ROOT) -> list[str]:
     sections = (root / "src/core/src/program/bytecode/section.rs").read_text()
     sections += (root / "src/core/src/program/bytecode/header.rs").read_text()
     test = (root / "src/engine/tests/program_artifact_contract.rs").read_text()
-    source_test = (
-        root / "src/engine/src/program/bytecode_plan_topology_tests.rs"
-    ).read_text()
     program = (root / "src/engine/src/program/compiler_planning.rs").read_text()
     encoding = (root / "src/engine/src/artifact/encoding.rs").read_text()
     snapshot_data = (root / "src/core/src/snapshot/data.rs").read_text()
@@ -241,13 +238,17 @@ def run(root: Path = ROOT) -> list[str]:
         "artifact_b.revision()",
         "comparison-output.mec",
         "integrity-constraint.mec",
-        "artifact.constraints()",
+        "artifact_a.constraints()",
+    ):
+        if required not in program:
+            failures.append(f"ordinary-source artifact proof is missing {required}")
+    for required in (
         "IntegrityConstraintSchemaMismatch",
         "MissingRegisterKind",
         "MissingRegisterSource",
     ):
-        if required not in source_test:
-            failures.append(f"ordinary-source artifact proof is missing {required}")
+        if required not in test:
+            failures.append(f"malformed artifact regression proof is missing {required}")
     if 'b"mech-program-v1\\0"' not in encoding:
         failures.append("ProgramRevision domain separator changed")
     changed = changed_protected_paths(

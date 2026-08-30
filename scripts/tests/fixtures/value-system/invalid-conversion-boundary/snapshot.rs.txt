@@ -1,3 +1,0 @@
-use crate::{Ref, ValRef};
-
-pub struct SnapshotProbe(Ref<u64>, ValRef);

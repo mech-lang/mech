@@ -1,3 +1,0 @@
-fn test_only(value: ValRef) {
-    let _ = value;
-}

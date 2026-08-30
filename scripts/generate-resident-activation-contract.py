@@ -19,7 +19,6 @@ WORKLOAD_PATH = CONTRACT_DIR / "ekf-workload-v1.json"
 WORKLOAD_SCHEMA_PATH = CONTRACT_DIR / "ekf-workload-v1-schema.json"
 ACTIVATION_CONTRACT_PATH = CONTRACT_DIR / "resident-activation-contract.json"
 ACTIVATION_CONTRACT_SCHEMA_PATH = CONTRACT_DIR / "resident-activation-contract-schema.json"
-FROZEN_TARGETS_PATH = ROOT / "tests/architecture/value-system/frozen-semantic-targets-v1.json"
 GATE_B_CONTRACT_PATH = ROOT / "benchmarks/runtime/gate-b/ekf-v1.json"
 GATE_B_TRACE_PATH = ROOT / "benchmarks/runtime/gate-b/ekf-input-v1.bin"
 
@@ -27,10 +26,27 @@ TRACE_SHA256 = "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b
 TRAJECTORY_SHA256 = "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758"
 EKF_SOURCE_SHA256 = "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec"
 EPISODE_LENGTH = 4096
-PERMANENT_TARGET_IDS = (
-    "mutable-reference-runtime-storage",
-    "uninitialized-storage",
+PERMANENT_TARGETS = (
+    {
+        "id": "cell-binding-runtime-storage",
+        "applies_to": [{"type": "CellBinding", "role": "mutable-runtime-slot"}],
+        "semantic_category": "runtime-slot-state",
+        "representation": "CellBinding",
+        "key_semantics": "not-keyable",
+        "runtime_storage": "instance-arena",
+    },
+    {
+        "id": "uninitialized-slot-metadata",
+        "applies_to": [
+            {"type": "SlotInitialization", "variant": "Uninitialized"}
+        ],
+        "semantic_category": "runtime-slot-state",
+        "representation": "SlotInitialization::Uninitialized",
+        "key_semantics": "not-keyable",
+        "runtime_storage": "instance-arena-metadata",
+    },
 )
+PERMANENT_TARGET_IDS = tuple(target["id"] for target in PERMANENT_TARGETS)
 
 EXPECTED_OPERATIONS = [
     {"ordinal": 0, "role": "resident-kernel", "operation": "ekf/trigonometric-state", "input_schemas": ["3x1"], "output_schema": "2x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
@@ -226,26 +242,11 @@ def json_schema_errors(value, schema, root_schema=None, path: str = "$") -> list
 
 
 def build_resident_activation_contract(root: Path = ROOT):
-    """Build the permanent structural owner contract from the frozen target set."""
-    frozen = read_json(root / FROZEN_TARGETS_PATH.relative_to(ROOT))
-    copied_fields = (
-        "id",
-        "applies_to",
-        "semantic_category",
-        "representation",
-        "key_semantics",
-        "runtime_storage",
-    )
-    targets = [
-        {field: target[field] for field in copied_fields}
-        for target in sorted(frozen["targets"], key=lambda row: row["id"])
-        if target["id"] in PERMANENT_TARGET_IDS
-    ]
+    """Build the permanent structural owner contract from canonical rules."""
     return {
         "schema_version": 1,
         "contract": "resident-activation",
-        "source_targets": "tests/architecture/value-system/frozen-semantic-targets-v1.json",
-        "semantic_targets": targets,
+        "semantic_targets": list(PERMANENT_TARGETS),
         "activation_owners": [
             {
                 "path": "src/engine/src/artifact/model.rs",
