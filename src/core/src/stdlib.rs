@@ -2024,7 +2024,7 @@ macro_rules! export_native_binop_runtime_factories {
 #[macro_export]
 macro_rules! __mech_install_binop_runtime_factory {
     ($builder:expr, $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal) => {
-        paste! {
+        $crate::paste::paste! {
             $builder.insert_runtime_factory::<[<$lib $suffix>]<$scalar>>(
                 concat!(
                     stringify!($lib),
@@ -2252,7 +2252,7 @@ macro_rules! __mech_elementwise_unop_contract {
 #[macro_export]
 macro_rules! __mech_install_unop_runtime_factory {
     ($builder:expr, $lib:ident, $scalar:ident, $suffix:ident) => {
-        paste! {
+        $crate::paste::paste! {
             $builder.insert_runtime_factory::<[<$lib $scalar:camel $suffix>]>(
                 stringify!([<$lib $scalar:camel $suffix>]),
                 $crate::__mech_elementwise_unop_contract!($suffix),
@@ -2365,7 +2365,7 @@ macro_rules! install_typed_runtime_factories {
 #[macro_export]
 macro_rules! impl_fxns {
   ($lib:ident, $in:ident, $out:ident, $op:ident) => {
-    paste!{
+    $crate::paste::paste! {
       // Scalar
       $op!([<$lib SS>], $in, $in, $out, [<$lib:lower _op>]);
       // Scalar Matrix
