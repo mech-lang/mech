@@ -1060,10 +1060,18 @@ impl BatchedSimdCpuSession {
                     let destination = self.next_state.get_mut(&state.slot).unwrap();
                     for (component, source) in state.update.iter().enumerate() {
                         let lanes = evaluate_operand_simd(*source, &self.registers).to_array();
-                        for (lane, value) in lanes.into_iter().enumerate() {
-                            let instance = first_instance + lane;
-                            if instance < instances {
-                                destination[instance * elements + component] = value;
+                        if first_instance + SIMD_LANES <= instances {
+                            let base = first_instance * elements + component;
+                            destination[base] = lanes[0];
+                            destination[base + elements] = lanes[1];
+                            destination[base + elements * 2] = lanes[2];
+                            destination[base + elements * 3] = lanes[3];
+                        } else {
+                            for (lane, value) in lanes.into_iter().enumerate() {
+                                let instance = first_instance + lane;
+                                if instance < instances {
+                                    destination[instance * elements + component] = value;
+                                }
                             }
                         }
                     }
@@ -1098,6 +1106,15 @@ fn gather_simd(
     elements: usize,
     component: usize,
 ) -> f32x4 {
+    if first_instance + SIMD_LANES <= instances {
+        let base = first_instance * elements + component;
+        return f32x4::new([
+            values[base],
+            values[base + elements],
+            values[base + elements * 2],
+            values[base + elements * 3],
+        ]);
+    }
     let mut lanes = [0.0; SIMD_LANES];
     for (lane, value) in lanes.iter_mut().enumerate() {
         let instance = first_instance + lane;
