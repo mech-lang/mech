@@ -131,7 +131,6 @@ pub use self::value_snapshot::{
 pub mod mika;
 pub mod program;
 pub mod read_source;
-#[path = "legacy_adapter/stdlib.rs"]
 pub mod stdlib;
 pub mod types;
 
