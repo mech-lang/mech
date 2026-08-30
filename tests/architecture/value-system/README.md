@@ -1,5 +1,8 @@
 # Value-system architecture contracts
 
+The final deletion-to-replacement disposition for mixed and compatibility-only
+test suites is recorded in [final-cutover-test-map.md](final-cutover-test-map.md).
+
 ## Canonical runtime boundary
 
 `Value` is immutable canonical data. Its validated `ValueData`, schema key,

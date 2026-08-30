@@ -32,8 +32,8 @@ python3 scripts/check-d1-contract.py --contract-only
 
 The D1 generator executes the source- and bytecode-derived artifacts in five
 fresh processes and pins deterministic projections. The checker fails closed
-on opaque or unclassified nodes, duplicate artifact authority, legacy resident
-dependencies, pointer-derived identity, per-turn semantic lookup, missing
+on opaque or unclassified nodes, duplicate artifact authority, forbidden
+resident dependencies, pointer-derived identity, per-turn semantic lookup, missing
 permanent owners, obsolete executor owners, production routing, or stale evidence.
 
 The publication boundary freezes the complete `reserve → begin → execute →
@@ -46,14 +46,7 @@ separate `integrity/assert` declaration reads that Boolean and has zero outputs.
 `ekf/candidate-finite` consumes both corrected state and symmetrized covariance,
 preserving Gate B finiteness coverage without changing artifact lowering.
 
-The frozen ancestry proof admits exactly the `resident_activation_contract`
-compilation unit rooted at and reaching only
-`src/engine/tests/resident_activation_contract.rs`, one addition of that path
-to the Rust-file inventory, and the `mech` 912→913 plus `mech-engine` 143→144
-file-count changes. All other inventory content, including every legacy
-occurrence and count, remains byte-for-byte fixed by blob
-`5b5fd877143cba1d7945d850405a45975930e6f4`.
-
-The permanent contract retains the exact semantic target identities while
-leaving historical migration status and incidental source locations to archived
-design history.
+The frozen D0 ancestry proof remains in `d0-boundary.json` as historical audit
+evidence. The permanent generated contract is self-contained: it names the
+canonical cell-binding and uninitialized-slot rules directly and has no
+dependency on the retired value-system inventory.

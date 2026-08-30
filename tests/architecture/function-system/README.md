@@ -1,51 +1,13 @@
-# Function-system compatibility fixtures
+# Function-system architecture contracts
 
-These fixtures were captured from `v0.4-beta` at the PR0 base commit:
+The committed source cases and runtime-factory surfaces preserve operation
+names, IDs, ownership, signatures, and distribution behavior after removal of
+the retired universal value compatibility layer.
 
-```text
-f7768e0c6bbde69d27410be6d1ecacbd08c238c5
-```
-
-From the repository root, regenerate the deterministic JSON snapshots with:
-
-```bash
-cargo +nightly-2026-03-03 run \
-  --manifest-path tests/fixtures/function-system-baseline/Cargo.toml \
-  -- \
-  --write tests/architecture/function-system
-```
-
-Validate the committed JSON without modifying it:
-
-```bash
-cargo +nightly-2026-03-03 run \
-  --manifest-path tests/fixtures/function-system-baseline/Cargo.toml \
-  -- \
-  --check tests/architecture/function-system
-```
-
-The additive runtime-factory surface uses the standard linked profile with
-dynamic matrix shapes only. Generate and validate it separately so the
-fixture's Matrix2/Vector2 specialization cases cannot enlarge the runtime
-surface:
-
-```bash
-cargo +nightly-2026-03-03 run \
-  --manifest-path tests/fixtures/function-system-baseline/Cargo.toml \
-  --no-default-features \
-  -- \
-  --write-runtime tests/architecture/function-system
-
-cargo +nightly-2026-03-03 run \
-  --manifest-path tests/fixtures/function-system-baseline/Cargo.toml \
-  --no-default-features \
-  -- \
-  --check-runtime tests/architecture/function-system
-```
-
-Both runtime commands require exact factory name, ID, ownership, and
-function-pointer equality between every explicit catalog fragment and the
-composed standard catalog.
+The former fixture generator depended on the removed value and function
+adapters. It is intentionally gone. Permanent profile tests consume these
+documents directly and fail when a canonical catalog or source boundary
+changes unexpectedly.
 
 Run the complete native compatibility contract, including all standalone
 standard machines and distribution boundaries, with:

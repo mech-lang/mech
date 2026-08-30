@@ -1,10 +1,13 @@
-# Value execution legacy boundary
+# Value execution boundary
 
-`legacy-boundary.json` is a deletion-friendly inventory of legacy value and
-turn-coordination dependencies. Each approval names a repository-relative
+`legacy-boundary.json` retains the permanent shrink-only controls for deprecated
+turn-coordination and pointer-identity mechanisms that are independent of the
+removed universal value model. Each approval names a repository-relative
 production path, a stable containing scope, and the maximum number of literal
 occurrences allowed in that scope. Approved occurrences may disappear without
 updating the manifest; new paths, new scopes, and count growth fail the audit.
+The retired value types and bridge APIs themselves are globally prohibited by
+`scripts/check-no-retired-value-system.py`.
 
 Run the audit with:
 
