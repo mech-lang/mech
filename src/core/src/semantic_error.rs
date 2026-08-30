@@ -1,8 +1,8 @@
 //! Errors raised while constructing or canonicalizing semantic model values.
 
 use crate::{
-    DimensionOperator, DimensionParameterId, KindId, KindParameterId, LegacyExtentSite,
-    LegacyValueKindTag, MechError, MechErrorKind, NominalKind, SchemaKey,
+    DimensionOperator, DimensionParameterId, KindId, KindParameterId, MechError, MechErrorKind,
+    SchemaKey,
 };
 
 #[cfg(feature = "no_std")]
@@ -131,23 +131,8 @@ pub enum SemanticModelError {
     SchemaKeyCollision {
         key: SchemaKey,
     },
-    LegacyNamedKindUnresolved {
-        legacy_id: u64,
-    },
-    LegacyNominalUnresolved {
-        kind: NominalKind,
-        legacy_id: u64,
-        legacy_name: String,
-    },
-    LegacyExtentUnresolved {
-        site: LegacyExtentSite,
-    },
-    LegacyExtentOutOfRange {
-        value: u128,
-    },
-    LegacyExtentResolutionKindMismatch,
-    NonInstantiableLegacyValueKind {
-        kind: LegacyValueKindTag,
+    BuiltinScalarKindUnresolved {
+        scalar_id: u64,
     },
 }
 

@@ -44,8 +44,6 @@ use nalgebra::Vector3;
 #[cfg(feature = "vector4")]
 use nalgebra::Vector4;
 
-#[cfg(any(feature = "eq", feature = "gt", feature = "gte", feature = "lt", feature = "lte", feature = "max", feature = "min", feature = "neq"))]
-use paste::paste;
 use std::sync::LazyLock;
 
 static PURE_COMPARE_SCALAR_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -484,10 +482,9 @@ macro_rules! impl_compare_binop {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: std::fmt::Debug + Clone + 'static + AsValueKind + PartialEq + PartialOrd,
+            T: std::fmt::Debug + Clone + 'static + FunctionRuntimeType + PartialEq + PartialOrd,
             #[cfg(feature = "semantic-compiler")]
-            T: ConstElem + CompileConst,
-            Ref<$out_type>: ToValue,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst,
             $arg1_type: FunctionRuntimeType + FunctionPortBacking,
             $arg2_type: FunctionRuntimeType + FunctionPortBacking,
             $out_type: FunctionStateBacking,
@@ -512,7 +509,8 @@ macro_rules! impl_compare_binop {
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: std::fmt::Debug + Clone + 'static + PartialEq + PartialOrd,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -541,10 +539,10 @@ macro_rules! impl_compare_binop {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: ConstElem + CompileConst + AsValueKind,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }

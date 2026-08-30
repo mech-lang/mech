@@ -15,7 +15,6 @@ pub use signature::*;
 pub use specialization::*;
 pub use state::*;
 
-use crate::legacy_value::*;
 use crate::nodes::*;
 use crate::types::*;
 use crate::*;
@@ -182,18 +181,6 @@ pub trait MechFunctionFactory {
     const SIGNATURE: RuntimeFunctionSignature;
     const OUTPUT_SCHEMA_RULE: FunctionOutputSchemaRule = FunctionOutputSchemaRule::Declared;
 
-    /// Constructs a runtime function from its authoritative argument contract.
-    ///
-    /// Implementations must be deterministic and side-effect-free, safely
-    /// reject arbitrary incompatible [`FunctionArgs`], validate every exact
-    /// backing extraction, and must not execute or solve the function.
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>
-    where
-        Self: Sized,
-    {
-        crate::legacy_adapter::construct_compatibility_function::<Self>(args)
-    }
-
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>>
     where
         Self: Sized,
@@ -270,8 +257,9 @@ pub trait MechFunctionImpl {
     }
     /// Returns the primary output as an exact typed state port.
     ///
-    /// `None` means this function has not migrated and the legacy output API is
-    /// authoritative. `Some(port)` makes the typed port authoritative.
+    /// `None` means the canonical invocation output is authoritative and the
+    /// implementation retains no separate exact primary output. `Some(port)`
+    /// makes that exact typed port authoritative.
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         None
     }
@@ -301,8 +289,8 @@ pub trait MechFunctionImpl {
     }
     /// Returns canonical output cells retained by the implementation in
     /// addition to the invocation output. This is the value-preserving
-    /// counterpart to [`Self::reactive_output_state_ports`]; it never creates
-    /// a legacy projection.
+    /// counterpart to [`Self::reactive_output_state_ports`]; it never erases
+    /// the canonical cell binding.
     fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
         Vec::new()
     }
@@ -318,7 +306,7 @@ pub trait MechFunctionImpl {
     ) -> Option<Vec<ReactiveDependencyScope>> {
         None
     }
-    fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
+    fn reactive_output_cell_ids(&self) -> Vec<CanonicalCellId> {
         let mut cells = Vec::new();
 
         if let Some(outputs) = self.reactive_output_state_ports() {
@@ -364,18 +352,18 @@ pub(crate) mod reactive_register_sealed {
 }
 
 pub trait ReactiveRegisterCommit: reactive_register_sealed::Sealed {
-    fn output_cells(&self) -> &[ReactiveCellId];
+    fn output_cells(&self) -> &[CanonicalCellId];
     fn commit(self: Box<Self>);
 }
 
 pub struct ReactiveRegisterWrite<T> {
     sink: Ref<T>,
     next: T,
-    output_cells: Vec<ReactiveCellId>,
+    output_cells: Vec<CanonicalCellId>,
 }
 
 impl<T> ReactiveRegisterWrite<T> {
-    pub fn new(sink: Ref<T>, next: T, output_cells: Vec<ReactiveCellId>) -> Self {
+    pub fn new(sink: Ref<T>, next: T, output_cells: Vec<CanonicalCellId>) -> Self {
         Self {
             sink,
             next,
@@ -387,7 +375,7 @@ impl<T> ReactiveRegisterWrite<T> {
 impl<T> reactive_register_sealed::Sealed for ReactiveRegisterWrite<T> {}
 
 impl<T: 'static> ReactiveRegisterCommit for ReactiveRegisterWrite<T> {
-    fn output_cells(&self) -> &[ReactiveCellId] {
+    fn output_cells(&self) -> &[CanonicalCellId] {
         self.output_cells.as_slice()
     }
     fn commit(self: Box<Self>) {
@@ -408,7 +396,7 @@ impl<T: 'static> ReactiveRegisterCommit for ReactiveRegisterWrite<T> {
 pub struct ReactiveValueCellWrite {
     sink: ValueCell,
     next: Value,
-    output_cells: Vec<ReactiveCellId>,
+    output_cells: Vec<CanonicalCellId>,
 }
 
 impl ReactiveValueCellWrite {
@@ -428,7 +416,7 @@ impl ReactiveValueCellWrite {
 impl reactive_register_sealed::Sealed for ReactiveValueCellWrite {}
 
 impl ReactiveRegisterCommit for ReactiveValueCellWrite {
-    fn output_cells(&self) -> &[ReactiveCellId] {
+    fn output_cells(&self) -> &[CanonicalCellId] {
         &self.output_cells
     }
 
@@ -444,13 +432,13 @@ impl ReactiveRegisterCommit for ReactiveValueCellWrite {
 /// cell while still reporting the outer register cell as their owned output.
 pub struct ReactiveRegisterCommitBatch {
     commits: Vec<Box<dyn ReactiveRegisterCommit>>,
-    output_cells: Vec<ReactiveCellId>,
+    output_cells: Vec<CanonicalCellId>,
 }
 
 impl ReactiveRegisterCommitBatch {
     pub fn new(
         commits: Vec<Box<dyn ReactiveRegisterCommit>>,
-        output_cells: Vec<ReactiveCellId>,
+        output_cells: Vec<CanonicalCellId>,
     ) -> Self {
         Self {
             commits,
@@ -462,7 +450,7 @@ impl ReactiveRegisterCommitBatch {
 impl reactive_register_sealed::Sealed for ReactiveRegisterCommitBatch {}
 
 impl ReactiveRegisterCommit for ReactiveRegisterCommitBatch {
-    fn output_cells(&self) -> &[ReactiveCellId] {
+    fn output_cells(&self) -> &[CanonicalCellId] {
         self.output_cells.as_slice()
     }
 
@@ -474,16 +462,16 @@ impl ReactiveRegisterCommit for ReactiveRegisterCommitBatch {
 }
 
 pub struct ReactiveRegisterNoopCommit {
-    output_cells: Vec<ReactiveCellId>,
+    output_cells: Vec<CanonicalCellId>,
 }
 impl ReactiveRegisterNoopCommit {
-    pub fn new(output_cells: Vec<ReactiveCellId>) -> Self {
+    pub fn new(output_cells: Vec<CanonicalCellId>) -> Self {
         Self { output_cells }
     }
 }
 impl reactive_register_sealed::Sealed for ReactiveRegisterNoopCommit {}
 impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
-    fn output_cells(&self) -> &[ReactiveCellId] {
+    fn output_cells(&self) -> &[CanonicalCellId] {
         self.output_cells.as_slice()
     }
     fn commit(self: Box<Self>) {}
@@ -492,7 +480,7 @@ impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
 #[cfg(feature = "semantic-compiler")]
 pub trait MechFunctionCompiler {
     /// Returns explicit cells whose identity must remain associated with the
-    /// legacy values consumed by other compiler implementations in this plan.
+    /// values consumed by other compiler implementations in this plan.
     fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
         Vec::new()
     }
@@ -569,7 +557,7 @@ impl FunctionInstance {
         self.implementation.as_mut()
     }
 
-    pub fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
+    pub fn reactive_output_cell_ids(&self) -> Vec<CanonicalCellId> {
         let mut cells = vec![self.output().reactive_cell_id()];
         if let Some(outputs) = self.implementation.reactive_output_state_ports() {
             for output in outputs {
@@ -589,7 +577,7 @@ impl FunctionInstance {
         cells
     }
 
-    pub fn reactive_input_cell_ids(&self) -> Vec<ReactiveCellId> {
+    pub fn reactive_input_cell_ids(&self) -> Vec<CanonicalCellId> {
         self.inputs()
             .iter()
             .map(ValueCell::reactive_cell_id)
@@ -1111,7 +1099,7 @@ pub struct PatternActivationArmRegistration {
     pub finalizer_node: ReactiveNodeId,
     pub guard: Option<PatternActivationGuardRegistration>,
     pub gate_node: ReactiveNodeId,
-    pub pulse_cell: ReactiveCellId,
+    pub pulse_cell: CanonicalCellId,
     /// Half-open range of plan nodes registered for this arm's body.
     pub body_node_start: usize,
     pub body_node_end: usize,
@@ -1134,7 +1122,7 @@ pub struct PatternActivationGuardRegistration {
 pub struct PatternActivationCaptureRegistration {
     pub id: u64,
     pub schema: SchemaBody,
-    pub cell: ReactiveCellId,
+    pub cell: CanonicalCellId,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1175,7 +1163,7 @@ pub struct ReactivePlanSolveOutcome {
 pub struct ReactiveRegisterCommitOutcome {
     pub staged_nodes: Vec<ReactiveNodeId>,
     pub committed_nodes: Vec<ReactiveNodeId>,
-    pub dirty_cells: Vec<ReactiveCellId>,
+    pub dirty_cells: Vec<CanonicalCellId>,
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ReactiveTurnState {
@@ -1197,18 +1185,18 @@ pub struct ReactiveTurnOutcome {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ActivationRegistrationScope {
-    pub trigger_cells: Vec<ReactiveCellId>,
-    pub local_combinational_cells: Vec<ReactiveCellId>,
+    pub trigger_cells: Vec<CanonicalCellId>,
+    pub local_combinational_cells: Vec<CanonicalCellId>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReactiveDependency {
-    pub cell: ReactiveCellId,
+    pub cell: CanonicalCellId,
     pub kind: ReactiveDependencyKind,
 }
 
 enum ReactivePlanFunctionStorage {
-    Legacy(Box<dyn MechFunction>),
+    Direct(Box<dyn MechFunction>),
     Bound(FunctionInstance),
 }
 
@@ -1220,7 +1208,7 @@ pub struct ReactivePlanFunction {
 impl ReactivePlanFunction {
     fn new(function: Box<dyn MechFunction>) -> Self {
         Self {
-            storage: ReactivePlanFunctionStorage::Legacy(function),
+            storage: ReactivePlanFunctionStorage::Direct(function),
             identity: Rc::new(()),
         }
     }
@@ -1234,22 +1222,22 @@ impl ReactivePlanFunction {
 
     pub fn as_ref(&self) -> &(dyn MechFunction + 'static) {
         match &self.storage {
-            ReactivePlanFunctionStorage::Legacy(function) => function.as_ref(),
+            ReactivePlanFunctionStorage::Direct(function) => function.as_ref(),
             ReactivePlanFunctionStorage::Bound(instance) => instance.implementation(),
         }
     }
 
     pub fn instance(&self) -> Option<&FunctionInstance> {
         match &self.storage {
-            ReactivePlanFunctionStorage::Legacy(_) => None,
+            ReactivePlanFunctionStorage::Direct(_) => None,
             ReactivePlanFunctionStorage::Bound(instance) => Some(instance),
         }
     }
 
     fn capture_reactive_state(&self, journal: &mut CanonicalTurnJournal) -> MResult<()> {
         match &self.storage {
-            ReactivePlanFunctionStorage::Legacy(function) => {
-                journal.capture_legacy_function_state(function.as_ref())
+            ReactivePlanFunctionStorage::Direct(function) => {
+                journal.capture_primary_and_retained_function_state(function.as_ref())
             }
             ReactivePlanFunctionStorage::Bound(instance) => {
                 journal.capture_function_instance(instance)
@@ -1269,7 +1257,7 @@ impl core::ops::Deref for ReactivePlanFunction {
 impl core::ops::DerefMut for ReactivePlanFunction {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match &mut self.storage {
-            ReactivePlanFunctionStorage::Legacy(function) => function.as_mut(),
+            ReactivePlanFunctionStorage::Direct(function) => function.as_mut(),
             ReactivePlanFunctionStorage::Bound(instance) => instance.implementation_mut(),
         }
     }
@@ -1280,16 +1268,16 @@ pub struct ReactivePlanNode {
     pub plan_index: usize,
     pub function: ReactivePlanFunction,
     pub inputs: Vec<ReactiveDependency>,
-    pub outputs: Vec<ReactiveCellId>,
+    pub outputs: Vec<CanonicalCellId>,
     pub kind: ReactiveNodeKind,
 }
 
 pub struct ReactivePlan {
     pub nodes: Vec<ReactivePlanNode>,
-    pub reactive_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
-    pub sampled_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
+    pub reactive_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>>,
+    pub sampled_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>>,
     pattern_activation_registrations: Vec<PatternActivationRegistration>,
-    activation_sampled_cells: Vec<Vec<ReactiveCellId>>,
+    activation_sampled_cells: Vec<Vec<CanonicalCellId>>,
 }
 
 #[derive(Debug, Clone)]
@@ -1335,7 +1323,7 @@ impl MechErrorKind for ReactiveDependencyScopeArityMismatchError {
 #[derive(Debug, Clone)]
 pub struct ReactiveDependencyKindConflictError {
     pub function: String,
-    pub cell: ReactiveCellId,
+    pub cell: CanonicalCellId,
 }
 
 #[derive(Debug, Clone)]
@@ -1383,7 +1371,7 @@ impl MechErrorKind for ReactiveRegisterNodeKindError {
 }
 #[derive(Debug, Clone)]
 pub struct ReactiveRegisterOutputConflictError {
-    pub cell: ReactiveCellId,
+    pub cell: CanonicalCellId,
     pub first_node: ReactiveNodeId,
     pub second_node: ReactiveNodeId,
 }
@@ -1401,8 +1389,8 @@ impl MechErrorKind for ReactiveRegisterOutputConflictError {
 #[derive(Debug, Clone)]
 pub struct ReactiveRegisterStagedOutputMismatchError {
     pub node_id: ReactiveNodeId,
-    pub expected: Vec<ReactiveCellId>,
-    pub found: Vec<ReactiveCellId>,
+    pub expected: Vec<CanonicalCellId>,
+    pub found: Vec<CanonicalCellId>,
 }
 impl MechErrorKind for ReactiveRegisterStagedOutputMismatchError {
     fn name(&self) -> &str {
@@ -1434,7 +1422,7 @@ struct ReactivePlanNodeCheckpoint {
     id: ReactiveNodeId,
     plan_index: usize,
     inputs: Vec<ReactiveDependency>,
-    outputs: Vec<ReactiveCellId>,
+    outputs: Vec<CanonicalCellId>,
     kind: ReactiveNodeKind,
     function_identity: ReactiveFunctionIdentity,
 }
@@ -1443,7 +1431,7 @@ struct ReactivePlanNodeCheckpoint {
 pub struct ReactivePlanCheckpoint {
     nodes: Vec<ReactivePlanNodeCheckpoint>,
     pattern_activation_registrations: Vec<PatternActivationRegistration>,
-    activation_sampled_cells: Vec<Vec<ReactiveCellId>>,
+    activation_sampled_cells: Vec<Vec<CanonicalCellId>>,
 }
 
 impl ReactivePlanCheckpoint {
@@ -1652,8 +1640,8 @@ impl ReactivePlan {
             }
         }
 
-        let mut reactive_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>> = HashMap::new();
-        let mut sampled_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>> = HashMap::new();
+        let mut reactive_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> = HashMap::new();
+        let mut sampled_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> = HashMap::new();
         for node in &self.nodes {
             for dependency in &node.inputs {
                 let consumers = match dependency.kind {
@@ -1840,7 +1828,7 @@ impl ReactivePlan {
     pub fn capture_transaction_state(&self, journal: &mut FunctionCheckpoint) -> MResult<()> {
         for node in &self.nodes {
             match &node.function.storage {
-                ReactivePlanFunctionStorage::Legacy(function) => {
+                ReactivePlanFunctionStorage::Direct(function) => {
                     function
                         .primary_output_state_port()
                         .ok_or_else(|| {
@@ -1848,7 +1836,7 @@ impl ReactivePlan {
                                 TransactionStateUnsupportedError {
                                     function: function.to_string(),
                                     reason:
-                                        "legacy plan nodes must expose an exact primary state port"
+                                        "direct plan nodes must expose an exact primary state port"
                                             .into(),
                                 },
                                 None,
@@ -2044,7 +2032,7 @@ impl ReactivePlan {
     pub fn add_sampled_dependency(
         &mut self,
         node_id: ReactiveNodeId,
-        cell: ReactiveCellId,
+        cell: CanonicalCellId,
     ) -> bool {
         let Some(node) = self.nodes.get_mut(node_id) else {
             return false;
@@ -2069,12 +2057,12 @@ impl ReactivePlan {
     }
 
     /// Records a cell that schedules this node. This is also used to repair
-    /// legacy combinational expression nodes that were appended directly while
-    /// an activation-registration scope was active.
+    /// direct combinational expression nodes that were appended while an
+    /// activation-registration scope was active.
     pub fn add_reactive_dependency(
         &mut self,
         node_id: ReactiveNodeId,
-        cell: ReactiveCellId,
+        cell: CanonicalCellId,
     ) -> bool {
         let Some(node) = self.nodes.get_mut(node_id) else {
             return false;
@@ -2097,14 +2085,14 @@ impl ReactivePlan {
         true
     }
 
-    pub fn reactive_consumers_for(&self, cell: ReactiveCellId) -> &[ReactiveNodeId] {
+    pub fn reactive_consumers_for(&self, cell: CanonicalCellId) -> &[ReactiveNodeId] {
         self.reactive_consumers
             .get(&cell)
             .map(Vec::as_slice)
             .unwrap_or(&[])
     }
 
-    pub fn sampled_consumers_for(&self, cell: ReactiveCellId) -> &[ReactiveNodeId] {
+    pub fn sampled_consumers_for(&self, cell: CanonicalCellId) -> &[ReactiveNodeId] {
         self.sampled_consumers
             .get(&cell)
             .map(Vec::as_slice)
@@ -2113,7 +2101,7 @@ impl ReactivePlan {
 
     pub fn solve_dirty_cells(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
     ) -> MResult<ReactivePlanSolveOutcome> {
         let mut services = NoMechExecutionServices;
         self.solve_dirty_cells_with_services(dirty_cells, &mut services)
@@ -2121,7 +2109,7 @@ impl ReactivePlan {
 
     pub fn solve_dirty_cells_with_services(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactivePlanSolveOutcome> {
         let mut outcome = ReactivePlanSolveOutcome::default();
@@ -2129,19 +2117,9 @@ impl ReactivePlan {
         Ok(outcome)
     }
 
-    #[cfg(test)]
-    pub(crate) fn solve_dirty_cells_with_journal(
-        &mut self,
-        dirty_cells: &[ReactiveCellId],
-        journal: &mut CanonicalTurnJournal,
-    ) -> MResult<ReactivePlanSolveOutcome> {
-        let mut services = NoMechExecutionServices;
-        self.solve_dirty_cells_with_journal_and_services(dirty_cells, journal, &mut services)
-    }
-
     pub(crate) fn solve_dirty_cells_with_journal_and_services(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         journal: &mut CanonicalTurnJournal,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactivePlanSolveOutcome> {
@@ -2157,7 +2135,7 @@ impl ReactivePlan {
 
     fn solve_dirty_cells_into_with_journal_and_services(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         outcome: &mut ReactivePlanSolveOutcome,
         journal: &mut CanonicalTurnJournal,
         services: &mut dyn MechExecutionServices,
@@ -2167,7 +2145,7 @@ impl ReactivePlan {
 
     fn solve_dirty_cells_into_impl(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         outcome: &mut ReactivePlanSolveOutcome,
         mut journal: Option<&mut CanonicalTurnJournal>,
         services: &mut dyn MechExecutionServices,
@@ -2326,7 +2304,7 @@ impl ReactivePlan {
     pub fn advance_reactive_turn(
         &mut self,
         state: &mut ReactiveTurnState,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
     ) -> MResult<ReactiveTurnOutcome> {
         let mut services = NoMechExecutionServices;
         self.advance_reactive_turn_with_services(state, dirty_cells, &mut services)
@@ -2335,7 +2313,7 @@ impl ReactivePlan {
     pub fn advance_reactive_turn_with_services(
         &mut self,
         state: &mut ReactiveTurnState,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {
         let before_commit = self.solve_dirty_cells_with_services(dirty_cells, services)?;
@@ -2367,26 +2345,10 @@ impl ReactivePlan {
         })
     }
 
-    #[cfg(test)]
-    pub(crate) fn advance_reactive_turn_with_journal(
-        &mut self,
-        state: &mut ReactiveTurnState,
-        dirty_cells: &[ReactiveCellId],
-        journal: &mut CanonicalTurnJournal,
-    ) -> MResult<ReactiveTurnOutcome> {
-        let mut services = NoMechExecutionServices;
-        self.advance_reactive_turn_with_journal_and_services(
-            state,
-            dirty_cells,
-            journal,
-            &mut services,
-        )
-    }
-
     pub(crate) fn advance_reactive_turn_with_journal_and_services(
         &mut self,
         state: &mut ReactiveTurnState,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         journal: &mut CanonicalTurnJournal,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {
@@ -2587,13 +2549,13 @@ impl Plan {
     pub fn activation_registration_active(&self) -> bool {
         !self.1.borrow().is_empty()
     }
-    pub fn push_activation_registration_scope(&self, trigger_cells: Vec<ReactiveCellId>) {
+    pub fn push_activation_registration_scope(&self, trigger_cells: Vec<CanonicalCellId>) {
         self.push_activation_registration_scope_with_sampled_cells(trigger_cells, Vec::new());
     }
     pub fn push_activation_registration_scope_with_sampled_cells(
         &self,
-        trigger_cells: Vec<ReactiveCellId>,
-        sampled_cells: Vec<ReactiveCellId>,
+        trigger_cells: Vec<CanonicalCellId>,
+        sampled_cells: Vec<CanonicalCellId>,
     ) {
         self.1.borrow_mut().push(ActivationRegistrationScope {
             trigger_cells,
@@ -2639,13 +2601,13 @@ impl Plan {
 
     pub fn solve_dirty_cells(
         &self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
     ) -> MResult<ReactivePlanSolveOutcome> {
         self.0.borrow_mut().solve_dirty_cells(dirty_cells)
     }
     pub fn solve_dirty_cells_with_services(
         &self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactivePlanSolveOutcome> {
         self.0
@@ -2662,7 +2624,7 @@ impl Plan {
     pub fn advance_reactive_turn(
         &self,
         state: &mut ReactiveTurnState,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
     ) -> MResult<ReactiveTurnOutcome> {
         self.0
             .borrow_mut()
@@ -2671,7 +2633,7 @@ impl Plan {
     pub fn advance_reactive_turn_with_services(
         &self,
         state: &mut ReactiveTurnState,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {
         self.0
@@ -2681,7 +2643,7 @@ impl Plan {
     pub fn advance_reactive_turn_participating(
         &self,
         state: &mut ReactiveTurnState,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         participant: &mut ReactiveJournalParticipant<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {

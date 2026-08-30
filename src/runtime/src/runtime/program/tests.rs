@@ -5,12 +5,11 @@ use std::sync::{
 };
 use std::time::Duration;
 
-use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{
     AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
-    ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue,
-    MResult, OperationContractDeclaration, ParsedProgram, Ref, SchemaBody, Value, ValueCell,
-    ValueData, hash_str, snapshot::SequenceView,
+    ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
+    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData, hash_str,
+    snapshot::SequenceView,
 };
 use mech_engine::{
     __resident::ResidentStorageClass, ArtifactSource, BindingDeclaration, ProgramArtifactDraft,
@@ -43,12 +42,6 @@ fn runtime() -> crate::MechRuntime {
         .input_driver(ResidentTestInputDriver)
         .build()
         .unwrap()
-}
-
-fn canonical_fixture(value: &LegacyValue) -> Value {
-    value
-        .to_canonical_value()
-        .expect("legacy compatibility fixture is acyclic")
 }
 
 fn canonical_f64(value: &Value) -> f64 {
@@ -2074,7 +2067,7 @@ selected
 
 #[cfg(feature = "compiler_default")]
 fn assert_dynamic_scalar_selector_round_trip(
-    planned: LegacyValue,
+    planned: crate::RuntimeHostInputValue,
     source_packet: crate::RuntimeHostInputValue,
     bytecode_packet: crate::RuntimeHostInputValue,
 ) {
@@ -2102,7 +2095,7 @@ selected
         runtime
     };
 
-    let planned = canonical_fixture(&planned);
+    let planned = planned.into_value().unwrap();
     let planned_for_bytecode = planned.clone();
     let mut source = configured_runtime(planned);
     source
@@ -2152,7 +2145,7 @@ fn dynamic_matrix_selectors_preserve_every_supported_scalar_kind() {
     macro_rules! assert_kind {
         ($value:ident, $planned:expr, $source:expr, $bytecode:expr) => {
             assert_dynamic_scalar_selector_round_trip(
-                LegacyValue::$value(Ref::new($planned)),
+                crate::RuntimeHostInputValue::$value($planned),
                 crate::RuntimeHostInputValue::$value($source),
                 crate::RuntimeHostInputValue::$value($bytecode),
             );
@@ -2251,18 +2244,20 @@ selected
     ));
 }
 
-fn assert_typed_observation_round_trip(planned: LegacyValue, packet: crate::RuntimeHostInputValue) {
+fn assert_typed_observation_round_trip(
+    planned: crate::RuntimeHostInputValue,
+    packet: crate::RuntimeHostInputValue,
+) {
     const SOURCE: &str = r#"
 @typed := test://typed/value{:read(data)}
 @typed/data
 "#;
 
-    let planned_for_bytecode = canonical_fixture(&planned);
+    let planned = planned.into_value().unwrap();
+    let planned_for_bytecode = planned.clone();
     let mut source = runtime();
     source
-        .register_resource_provider(Box::new(TypedObservationProvider {
-            planned: canonical_fixture(&planned),
-        }))
+        .register_resource_provider(Box::new(TypedObservationProvider { planned }))
         .unwrap();
     let subject = source.runtime_context().unwrap().subject;
     source
@@ -2337,19 +2332,23 @@ fn assert_typed_observation_round_trip(planned: LegacyValue, packet: crate::Runt
 #[test]
 fn resident_observation_profile_covers_scalars_and_dense_matrices() {
     assert_typed_observation_round_trip(
-        LegacyValue::Bool(Ref::new(false)),
+        crate::RuntimeHostInputValue::Bool(false),
         crate::RuntimeHostInputValue::Bool(true),
     );
     assert_typed_observation_round_trip(
-        LegacyValue::Index(Ref::new(1)),
+        crate::RuntimeHostInputValue::Index(1),
         crate::RuntimeHostInputValue::Index(7),
     );
     assert_typed_observation_round_trip(
-        LegacyValue::F64(Ref::new(0.0)),
+        crate::RuntimeHostInputValue::F64(0.0),
         crate::RuntimeHostInputValue::F64(7.5),
     );
     assert_typed_observation_round_trip(
-        LegacyValue::MatrixBool(ValueMatrix::from_vec(vec![false; 4], 2, 2)),
+        crate::RuntimeHostInputValue::BoolMatrix {
+            rows: 2,
+            columns: 2,
+            values: vec![false; 4],
+        },
         crate::RuntimeHostInputValue::BoolMatrix {
             rows: 2,
             columns: 2,
@@ -2357,7 +2356,11 @@ fn resident_observation_profile_covers_scalars_and_dense_matrices() {
         },
     );
     assert_typed_observation_round_trip(
-        LegacyValue::MatrixIndex(ValueMatrix::from_vec(vec![1; 4], 2, 2)),
+        crate::RuntimeHostInputValue::IndexMatrix {
+            rows: 2,
+            columns: 2,
+            values: vec![1; 4],
+        },
         crate::RuntimeHostInputValue::IndexMatrix {
             rows: 2,
             columns: 2,
@@ -2365,7 +2368,11 @@ fn resident_observation_profile_covers_scalars_and_dense_matrices() {
         },
     );
     assert_typed_observation_round_trip(
-        LegacyValue::MatrixF64(ValueMatrix::from_vec(vec![0.0; 4], 2, 2)),
+        crate::RuntimeHostInputValue::F64Matrix {
+            rows: 2,
+            columns: 2,
+            values: vec![0.0; 4],
+        },
         crate::RuntimeHostInputValue::F64Matrix {
             rows: 2,
             columns: 2,

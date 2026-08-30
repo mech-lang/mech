@@ -59,16 +59,13 @@ where
         + Clone
         + Sync
         + Send
-        + AsValueKind
+        + FunctionRuntimeType
         + PartialOrd
         + 'static
         + One
         + Add<Output = T>,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
-    Ref<T>: ToValue,
-    Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-    naMatrix<T, R1, C1, S1>: AsNaKind,
     naMatrix<T, R1, C1, S1>: FunctionStateBacking,
     T: FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
@@ -105,9 +102,7 @@ where
 }
 impl<T, R1, C1, S1> MechFunctionImpl for RangeInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
-    Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: FunctionStateBacking,
-    Ref<T>: ToValue,
     T: Copy
         + CanonicalMatrixElementBacking
         + Scalar
@@ -223,14 +218,14 @@ mod tests {
 #[cfg(feature = "semantic-compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler for RangeInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
-    T: CompileConst + ConstElem + AsValueKind,
-    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+    T: CompileConst + ConstElem + FunctionRuntimeType,
+    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!(
             "RangeInclusiveScalar<{}{}>",
-            T::as_value_kind(),
-            naMatrix::<T, R1, C1, S1>::as_na_kind()
+            <T as FunctionRuntimeType>::REPRESENTATION,
+            function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>()
         );
         compile_binop!(name, self.out, self.from, self.to, ctx);
     }

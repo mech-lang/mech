@@ -61,11 +61,11 @@ pub trait NamedKindPathResolver {
     fn canonical_path(&self, id: KindId) -> Option<&CanonicalNominalPath>;
 }
 
-/// Resolves the frozen legacy scalar identifier through the authoritative
-/// built-in semantic kind registry. Wire codecs and compatibility adapters
-/// share this registry rather than inventing context-specific nominal paths.
+/// Resolves a frozen scalar identifier through the authoritative built-in
+/// semantic kind registry. Wire codecs and semantic consumers share this
+/// registry rather than inventing context-specific nominal paths.
 pub fn builtin_scalar_named_kind(
-    legacy_id: u64,
+    scalar_id: u64,
 ) -> Result<(KindId, CanonicalNominalPath), SemanticModelError> {
     const NAMES: &[&str] = &[
         "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64", "c64",
@@ -75,9 +75,9 @@ pub fn builtin_scalar_named_kind(
         .iter()
         .copied()
         .enumerate()
-        .find(|(_, name)| crate::hash_str(name) == legacy_id)
+        .find(|(_, name)| crate::hash_str(name) == scalar_id)
     else {
-        return Err(SemanticModelError::LegacyNamedKindUnresolved { legacy_id });
+        return Err(SemanticModelError::BuiltinScalarKindUnresolved { scalar_id });
     };
     Ok((
         KindId::new(index as u32),

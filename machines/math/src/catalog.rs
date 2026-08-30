@@ -44,8 +44,6 @@ use mech_core::{FunctionCatalogBuilder, MResult};
     feature = "tanh"
 ))]
 use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
-#[cfg(all(test, feature = "op_assign", feature = "matrix"))]
-use mech_core::{FunctionArgs, FunctionArgumentRole};
 #[cfg(all(feature = "op_assign", feature = "matrix"))]
 use mech_core::{
     DimensionExpr, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
@@ -111,47 +109,6 @@ use crate::logarithm::log2::*;
 use crate::logarithm::log10::*;
 #[cfg(feature = "op_assign")]
 use crate::op_assign::*;
-
-#[cfg(all(test, feature = "op_assign", feature = "matrix"))]
-fn validate_op_assign_slice(args: &FunctionArgs) -> MResult<()> {
-    let contract = "op_assign_slice";
-    let output = args
-        .output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "output must be matrix-backed")
-        })?;
-    let output_elements = output.rows.saturating_mul(output.cols);
-    for input_index in 0..args.input_count() {
-        let input_value = args
-            .input_value(input_index)
-            .expect("input index is bounded");
-        let validate_indices = |indices: Vec<usize>| -> MResult<()> {
-            for index in indices {
-                if index == 0 || index > output_elements {
-                    return Err(function_shape_contract_violation(
-                        contract,
-                        format!(
-                            "input {input_index} contains index {index}, expected 1..={output_elements}",
-                        ),
-                    ));
-                }
-            }
-            Ok(())
-        };
-        match input_value {
-            mech_core::LegacyValue::Index(index) => validate_indices(vec![*index.borrow()])?,
-            mech_core::LegacyValue::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
-            mech_core::LegacyValue::MutableReference(reference) => match &*reference.borrow() {
-                mech_core::LegacyValue::Index(index) => validate_indices(vec![*index.borrow()])?,
-                mech_core::LegacyValue::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
-                _ => {}
-            },
-            _ => {}
-        }
-    }
-    Ok(())
-}
 
 #[cfg(all(feature = "op_assign", feature = "matrix"))]
 fn validate_canonical_op_assign_slice(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
@@ -1911,42 +1868,6 @@ mod tests {
     use super::*;
     use mech_core::{FunctionCatalog, OperationId, RuntimeFunctionId};
     use std::collections::BTreeSet;
-
-    #[cfg(all(feature = "op_assign", feature = "u8", feature = "vectord"))]
-    #[test]
-    fn op_assign_contract_rejects_zero_and_out_of_range_index_payloads() {
-        for indices in [vec![0usize], vec![3usize]] {
-            let args = FunctionArgs::Binary(
-                mech_core::LegacyValue::MatrixU8(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
-                    DVector::from_vec(vec![1u8, 2]),
-                ))),
-                mech_core::LegacyValue::U8(mech_core::Ref::new(1)),
-                mech_core::LegacyValue::MatrixIndex(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
-                    DVector::from_vec(indices),
-                ))),
-            );
-            let error = validate_op_assign_slice(&args).unwrap_err();
-            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-        }
-    }
-
-    #[cfg(all(feature = "op_assign", feature = "u8", feature = "matrix"))]
-    #[test]
-    fn op_assign_contract_allows_one_source_row_per_repeated_destination_index() {
-        let args = FunctionArgs::Binary(
-            mech_core::LegacyValue::MatrixU8(mech_core::matrix::Matrix::DMatrix(
-                mech_core::Ref::new(DMatrix::zeros(2, 2)),
-            )),
-            mech_core::LegacyValue::MatrixU8(mech_core::matrix::Matrix::DMatrix(
-                mech_core::Ref::new(DMatrix::zeros(3, 2)),
-            )),
-            mech_core::LegacyValue::MatrixIndex(mech_core::matrix::Matrix::DVector(
-                mech_core::Ref::new(DVector::from_vec(vec![1usize, 2, 1])),
-            )),
-        );
-
-        validate_op_assign_slice(&args).unwrap();
-    }
 
     #[cfg(all(
         feature = "native-plan",

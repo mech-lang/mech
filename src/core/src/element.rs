@@ -80,15 +80,3 @@ impl<T> ConstElem for crate::structures::Matrix<T> where
     T: ConstElem + Debug + Clone + PartialEq + 'static
 {
 }
-
-#[cfg(feature = "enum")]
-impl ConstElem for crate::MechEnum {}
-
-#[cfg(feature = "table")]
-impl ConstElem for crate::MechTable {}
-
-#[cfg(feature = "set")]
-impl ConstElem for crate::MechSet {}
-
-#[cfg(feature = "tuple")]
-impl ConstElem for crate::MechTuple {}

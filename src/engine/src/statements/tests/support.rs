@@ -1,5 +1,5 @@
 use crate::{
-    Interpreter, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind,
+    CanonicalCellId, Interpreter, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind,
     ValueCell, ValueData, hash_str,
 };
 
@@ -11,13 +11,13 @@ pub(super) fn symbol(interpreter: &Interpreter, name: &str) -> ValueCell {
         .unwrap_or_else(|| panic!("missing symbol {name}"))
 }
 
-pub(super) fn root_cell(value: &ValueCell) -> ReactiveCellId {
+pub(super) fn root_cell(value: &ValueCell) -> CanonicalCellId {
     value.reactive_cell_id()
 }
 
 pub(super) fn register_node_id_for_output(
     interpreter: &Interpreter,
-    output_cell: ReactiveCellId,
+    output_cell: CanonicalCellId,
 ) -> ReactiveNodeId {
     let plan = interpreter.plan();
     let plan = plan.borrow();
@@ -90,7 +90,7 @@ pub(super) fn expected_distinct_assignment_shape() -> RegisterGraphShape {
     }
 }
 
-pub(super) fn cell(i: &Interpreter, n: &str) -> ReactiveCellId {
+pub(super) fn cell(i: &Interpreter, n: &str) -> CanonicalCellId {
     symbol(i, n).reactive_cell_id()
 }
 pub(super) fn value(i: &Interpreter, n: &str) -> f64 {
@@ -104,7 +104,7 @@ pub(super) fn set_value(i: &Interpreter, n: &str, v: f64) {
     let replacement = ValueCell::from_exact(v).unwrap().snapshot().unwrap();
     symbol(i, n).replace(&replacement).unwrap();
 }
-pub(super) fn register(i: &Interpreter, c: ReactiveCellId) -> ReactiveNodeId {
+pub(super) fn register(i: &Interpreter, c: CanonicalCellId) -> ReactiveNodeId {
     let p = i.plan();
     let p = p.borrow();
     let v = p

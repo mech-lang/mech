@@ -793,7 +793,7 @@ fn activation_trigger_cells(
     scope: &ActivationScope,
     var: &Var,
     p: &InterpreterExecution<'_>,
-) -> MResult<Vec<ReactiveCellId>> {
+) -> MResult<Vec<CanonicalCellId>> {
     let trigger = {
         let state = p.state.borrow();
         state.get_symbol(var.name.hash())
@@ -809,7 +809,7 @@ fn activation_trigger_cells(
     scope: &ActivationScope,
     _var: &Var,
     _p: &InterpreterExecution<'_>,
-) -> MResult<Vec<ReactiveCellId>> {
+) -> MResult<Vec<CanonicalCellId>> {
     Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens()))
 }
 
@@ -817,7 +817,7 @@ fn activation_trigger_cells(
 fn elaborate_activation_scope(
     scope: &ActivationScope,
     p: &InterpreterExecution<'_>,
-    trigger_cells: Vec<ReactiveCellId>,
+    trigger_cells: Vec<CanonicalCellId>,
 ) -> MResult<ValueCell> {
     match &scope.body {
         ActivationBody::Block(body) => {
@@ -877,7 +877,7 @@ fn elaborate_activation_scope(
 fn elaborate_activation_scope(
     scope: &ActivationScope,
     _p: &InterpreterExecution<'_>,
-    _trigger_cells: Vec<ReactiveCellId>,
+    _trigger_cells: Vec<CanonicalCellId>,
 ) -> MResult<ValueCell> {
     Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens()))
 }

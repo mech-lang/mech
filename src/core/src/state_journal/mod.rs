@@ -2,8 +2,10 @@
 
 use crate::*;
 
+#[cfg(all(feature = "no_std", feature = "functions"))]
+use alloc::boxed::Box;
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, vec::Vec};
+use alloc::vec::Vec;
 #[cfg(all(feature = "no_std", feature = "functions"))]
 use core::any::{Any, type_name};
 #[cfg(all(not(feature = "no_std"), feature = "functions"))]
@@ -77,16 +79,6 @@ trait ErasedValueStateEntry {
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn matches_ref(&self, target: &dyn Any) -> bool;
     fn matches_cell(&self, cell: &ValueCell) -> bool;
-}
-
-/// Compatibility-only state roots can provide a deep checkpoint without
-/// making their legacy backing type a normal function-state port.
-pub(crate) trait CustomValueStateEntry {
-    fn capture_after(&mut self) -> MResult<()>;
-    fn preflight_restore_before(&self) -> MResult<()>;
-    fn preflight_restore_after(&self) -> MResult<()>;
-    fn apply_restore_before(&self);
-    fn apply_restore_after(&self);
 }
 
 #[cfg(feature = "functions")]
@@ -207,7 +199,6 @@ pub struct CanonicalStateJournal {
     #[cfg(feature = "functions")]
     entries: Vec<Box<dyn ErasedValueStateEntry>>,
     canonical_entries: Vec<CanonicalValueCellStateEntry>,
-    custom_entries: Vec<Box<dyn CustomValueStateEntry>>,
     #[cfg(feature = "functions")]
     exact_roots: Vec<Box<dyn ErasedValueStateRoot>>,
     after_recorded: bool,
@@ -220,7 +211,6 @@ impl CanonicalStateJournal {
             #[cfg(feature = "functions")]
             entries: Vec::new(),
             canonical_entries: Vec::new(),
-            custom_entries: Vec::new(),
             #[cfg(feature = "functions")]
             exact_roots: Vec::new(),
             after_recorded: false,
@@ -273,16 +263,6 @@ impl CanonicalStateJournal {
         Ok(())
     }
 
-    #[cfg(feature = "set")]
-    pub(crate) fn capture_custom_entry(
-        &mut self,
-        entry: Box<dyn CustomValueStateEntry>,
-    ) -> MResult<()> {
-        self.ensure_open()?;
-        self.custom_entries.push(entry);
-        Ok(())
-    }
-
     pub fn restore_before(&self) -> MResult<()> {
         self.preflight_restore_before()?;
         self.apply_restore_before();
@@ -297,9 +277,6 @@ impl CanonicalStateJournal {
         for entry in &self.canonical_entries {
             entry.preflight_restore_before()?;
         }
-        for entry in &self.custom_entries {
-            entry.preflight_restore_before()?;
-        }
         Ok(())
     }
 
@@ -309,9 +286,6 @@ impl CanonicalStateJournal {
             entry.apply_restore_before();
         }
         for entry in &self.canonical_entries {
-            entry.apply_restore_before();
-        }
-        for entry in &self.custom_entries {
             entry.apply_restore_before();
         }
     }
@@ -334,9 +308,6 @@ impl CanonicalStateJournal {
         for entry in &mut self.canonical_entries {
             entry.after = Some(entry.target.snapshot()?);
         }
-        for entry in &mut self.custom_entries {
-            entry.capture_after()?;
-        }
         self.after_recorded = true;
         self.sealed = true;
         Ok(())
@@ -350,19 +321,18 @@ impl CanonicalStateJournal {
             #[cfg(feature = "functions")]
             entries: self.entries,
             canonical_entries: self.canonical_entries,
-            custom_entries: self.custom_entries,
         })
     }
 
     pub fn cell_count(&self) -> usize {
-        let count = self.canonical_entries.len() + self.custom_entries.len();
+        let count = self.canonical_entries.len();
         #[cfg(feature = "functions")]
         let count = count + self.entries.len();
         count
     }
 
     pub fn is_empty(&self) -> bool {
-        let empty = self.canonical_entries.is_empty() && self.custom_entries.is_empty();
+        let empty = self.canonical_entries.is_empty();
         #[cfg(feature = "functions")]
         let empty = empty && self.entries.is_empty();
         empty
@@ -459,7 +429,6 @@ pub struct CommittedValueStateDelta {
     #[cfg(feature = "functions")]
     entries: Vec<Box<dyn ErasedValueStateEntry>>,
     canonical_entries: Vec<CanonicalValueCellStateEntry>,
-    custom_entries: Vec<Box<dyn CustomValueStateEntry>>,
 }
 
 impl CommittedValueStateDelta {
@@ -471,17 +440,11 @@ impl CommittedValueStateDelta {
         for entry in &self.canonical_entries {
             entry.preflight_restore_before()?;
         }
-        for entry in &self.custom_entries {
-            entry.preflight_restore_before()?;
-        }
         #[cfg(feature = "functions")]
         for entry in &self.entries {
             entry.apply_restore_before();
         }
         for entry in &self.canonical_entries {
-            entry.apply_restore_before();
-        }
-        for entry in &self.custom_entries {
             entry.apply_restore_before();
         }
         Ok(())
@@ -495,9 +458,6 @@ impl CommittedValueStateDelta {
         for entry in &self.canonical_entries {
             entry.preflight_restore_after()?;
         }
-        for entry in &self.custom_entries {
-            entry.preflight_restore_after()?;
-        }
         #[cfg(feature = "functions")]
         for entry in &self.entries {
             entry.apply_restore_after();
@@ -505,14 +465,11 @@ impl CommittedValueStateDelta {
         for entry in &self.canonical_entries {
             entry.apply_restore_after();
         }
-        for entry in &self.custom_entries {
-            entry.apply_restore_after();
-        }
         Ok(())
     }
 
     pub fn cell_count(&self) -> usize {
-        let count = self.canonical_entries.len() + self.custom_entries.len();
+        let count = self.canonical_entries.len();
         #[cfg(feature = "functions")]
         let count = count + self.entries.len();
         count

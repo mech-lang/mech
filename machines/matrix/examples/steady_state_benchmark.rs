@@ -1,5 +1,7 @@
-use mech_core::matrix::Matrix as ValueMatrix;
-use mech_core::{MResult, MechFunction, ReactiveCellId, ReactivePlan, Ref, LegacyValue};
+use mech_core::{
+    FunctionInstance, FunctionInvocation, MResult, MechFunction, CanonicalCellId, ReactivePlan, Ref,
+    ValueCell,
+};
 use mech_matrix::{MatMulMDMD, MatrixSolveMDVD};
 use nalgebra::{DMatrix, DVector};
 use std::{
@@ -189,22 +191,26 @@ fn mech_kernel_solve(size: usize) -> MResult<()> {
     Ok(())
 }
 
-fn reactive_matmul_fixture(size: usize) -> (ReactivePlan, ReactiveCellId, Ref<DMatrix<f64>>) {
+fn reactive_matmul_fixture(size: usize) -> (ReactivePlan, CanonicalCellId, Ref<DMatrix<f64>>) {
     let (lhs, rhs) = multiply_inputs(size);
     let lhs = Ref::new(lhs);
     let rhs = Ref::new(rhs);
     let output = Ref::new(DMatrix::zeros(size, size));
-    let lhs_value = LegacyValue::MatrixF64(ValueMatrix::DMatrix(lhs.clone()));
-    let rhs_value = LegacyValue::MatrixF64(ValueMatrix::DMatrix(rhs.clone()));
-    let dirty = lhs_value.reactive_root_cell_ids()[0];
+    let lhs_cell = ValueCell::from_exact_matrix_ref(lhs.clone(), size, size).unwrap();
+    let rhs_cell = ValueCell::from_exact_matrix_ref(rhs.clone(), size, size).unwrap();
+    let output_cell = ValueCell::from_exact_matrix_ref(output.clone(), size, size).unwrap();
+    let dirty = lhs_cell.reactive_cell_id();
     let mut plan = ReactivePlan::new();
-    plan.register(
-        Box::new(MatMulMDMD::<f64> {
-            lhs,
-            rhs,
-            out: output.clone(),
-        }),
-        &[lhs_value, rhs_value],
+    plan.register_instance_with_activation(
+        FunctionInstance::new(
+            Box::new(MatMulMDMD::<f64> {
+                lhs,
+                rhs,
+                out: output.clone(),
+            }),
+            FunctionInvocation::binary(output_cell, lhs_cell, rhs_cell),
+        ),
+        None,
     )
     .unwrap();
     (plan, dirty, output)
@@ -214,7 +220,7 @@ fn reactive_solve_fixture(
     size: usize,
 ) -> (
     ReactivePlan,
-    ReactiveCellId,
+    CanonicalCellId,
     Ref<DVector<f64>>,
     DMatrix<f64>,
     DVector<f64>,
@@ -223,21 +229,26 @@ fn reactive_solve_fixture(
     let lhs = Ref::new(matrix.clone());
     let input = Ref::new(rhs.clone());
     let output = Ref::new(DVector::zeros(size));
-    let lhs_value = LegacyValue::MatrixF64(ValueMatrix::DMatrix(lhs.clone()));
-    let rhs_value = LegacyValue::MatrixF64(ValueMatrix::DVector(input.clone()));
+    let lhs_cell = ValueCell::from_exact_matrix_ref(lhs.clone(), size, size).unwrap();
+    let rhs_cell = ValueCell::from_exact_matrix_ref(input.clone(), size, 1).unwrap();
+    let output_cell = ValueCell::from_exact_matrix_ref(output.clone(), size, 1).unwrap();
+    let dirty = rhs_cell.reactive_cell_id();
     let mut plan = ReactivePlan::new();
-    plan.register(
-        Box::new(MatrixSolveMDVD::<f64> {
-            lhs,
-            rhs: input,
-            out: output.clone(),
-        }),
-        &[lhs_value, rhs_value.clone()],
+    plan.register_instance_with_activation(
+        FunctionInstance::new(
+            Box::new(MatrixSolveMDVD::<f64> {
+                lhs,
+                rhs: input,
+                out: output.clone(),
+            }),
+            FunctionInvocation::binary(output_cell, lhs_cell, rhs_cell),
+        ),
+        None,
     )
     .unwrap();
     (
         plan,
-        rhs_value.reactive_root_cell_ids()[0],
+        dirty,
         output,
         matrix,
         rhs,

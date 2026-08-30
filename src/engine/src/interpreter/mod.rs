@@ -1487,7 +1487,7 @@ impl Interpreter {
     #[cfg(feature = "functions")]
     pub fn advance_reactive_turn(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
     ) -> MResult<ReactiveTurnOutcome> {
         let mut services = NoMechExecutionServices;
         self.advance_reactive_turn_with_services(dirty_cells, &mut services)
@@ -1496,7 +1496,7 @@ impl Interpreter {
     #[cfg(feature = "functions")]
     pub fn advance_reactive_turn_with_services(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {
         let checkpoint = self.reactive_turn_checkpoint()?;
@@ -1523,7 +1523,7 @@ impl Interpreter {
     #[cfg(feature = "functions")]
     pub fn advance_reactive_turn_participating(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         participant: &mut ReactiveJournalParticipant<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {

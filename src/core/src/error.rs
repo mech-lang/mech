@@ -312,6 +312,25 @@ impl MechErrorKind for UndefinedKindError {
     }
 }
 
+/// A requested conversion cannot produce the named canonical target type.
+///
+/// This error remains core-owned so downstream callers can preserve its
+/// public type identity when inspecting [`MechError`] values.
+#[derive(Debug, Clone)]
+pub struct CannotConvertToTypeError {
+    pub target_type: &'static str,
+}
+
+impl MechErrorKind for CannotConvertToTypeError {
+    fn name(&self) -> &str {
+        "CannotConvertToType"
+    }
+
+    fn message(&self) -> String {
+        format!("Cannot convert to {}", self.target_type)
+    }
+}
+
 #[cfg(not(feature = "no_std"))]
 impl From<std::io::Error> for MechError {
     fn from(err: std::io::Error) -> Self {

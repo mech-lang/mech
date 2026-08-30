@@ -642,8 +642,8 @@ pub fn compile_executable_program_artifact(
 }
 
 /// Compiles a source product while publishing every explicitly requested root
-/// result. The legacy bytecode still has one return instruction, but bytecode
-/// v1's authoritative artifact sections retain all root outputs.
+/// result. The executable bytecode stream has one return instruction, while
+/// bytecode v1's authoritative artifact sections retain all root outputs.
 #[cfg(feature = "semantic-compiler")]
 pub fn compile_executable_program_artifact_with_outputs(
     compiled: &CompiledBytecode,

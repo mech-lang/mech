@@ -1,11 +1,11 @@
 use mech_core::{
-  ReactiveCellId, ReactiveRegisterCommit,
+  CanonicalCellId, ReactiveRegisterCommit,
 };
 
 struct ExternalRegisterCommit;
 
 impl ReactiveRegisterCommit for ExternalRegisterCommit {
-  fn output_cells(&self) -> &[ReactiveCellId] {
+  fn output_cells(&self) -> &[CanonicalCellId] {
     &[]
   }
 

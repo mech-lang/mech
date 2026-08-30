@@ -1,8 +1,8 @@
 use crate::patterns::PatternBindingSink;
 use crate::{
-    ActivationArm, ActivationScope, Interpreter, InterpreterExecution, MResult, MechError,
-    PatternActivationArmRegistration, PatternActivationCaptureRegistration,
-    PatternActivationGuardRegistration, PatternActivationRegistration, ReactiveCellId, ValueCell,
+    ActivationArm, ActivationScope, CanonicalCellId, Interpreter, InterpreterExecution, MResult,
+    MechError, PatternActivationArmRegistration, PatternActivationCaptureRegistration,
+    PatternActivationGuardRegistration, PatternActivationRegistration, ValueCell,
     match_compiled_pattern_with_values,
 };
 
@@ -16,7 +16,7 @@ use super::{
     validation::preflight_patterned_activation,
 };
 
-pub(crate) fn activation_scope_entry_cells(interpreter: &Interpreter) -> Vec<ReactiveCellId> {
+pub(crate) fn activation_scope_entry_cells(interpreter: &Interpreter) -> Vec<CanonicalCellId> {
     let symbols = interpreter.symbols();
     let symbols = symbols.borrow();
     let mut cells = Vec::new();
@@ -232,7 +232,7 @@ pub(crate) fn elaborate_patterned_activation(
     scope: &ActivationScope,
     arms: &[ActivationArm],
     trigger: ValueCell,
-    trigger_cells: Vec<ReactiveCellId>,
+    trigger_cells: Vec<CanonicalCellId>,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<ValueCell> {
     let preflight =

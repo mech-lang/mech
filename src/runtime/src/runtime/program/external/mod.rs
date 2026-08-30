@@ -11,20 +11,15 @@ mod receipt;
 pub mod test_provider;
 #[cfg(all(test, feature = "semantic-compiler"))]
 mod tests;
-#[cfg(test)]
-mod value_adapter_tests;
 
+#[cfg(feature = "resident-routing")]
+pub(crate) use admission::ResidentAdmissionProof;
 pub use authority::*;
 pub use coordinator::*;
 pub use input_facts::*;
 pub use outbox_delivery::*;
 pub use provider::*;
 pub use receipt::*;
-#[cfg(test)]
-pub use value_adapter_tests::*;
-
-#[cfg(feature = "resident-routing")]
-pub(crate) use admission::ResidentAdmissionProof;
 
 pub use crate::turn_record::{
     InputSequence, InputSequenceRange, LedgerSequence, TurnFailurePhase, TurnId,

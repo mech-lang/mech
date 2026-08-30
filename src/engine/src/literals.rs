@@ -114,15 +114,15 @@ fn canonical_kind_annotation(
             cardinality: DimensionExpr::Hole,
         },
         mech_core::nodes::Kind::Scalar(identifier) => {
-            let legacy_id = identifier.hash();
-            if let Ok((id, path)) = builtin_scalar_named_kind(legacy_id) {
+            let scalar_id = identifier.hash();
+            if let Ok((id, path)) = builtin_scalar_named_kind(scalar_id) {
                 named.0.insert(id, path);
                 KindExpr::Named(id)
-            } else if p.state.borrow().enums.contains_key(&legacy_id) {
+            } else if p.state.borrow().enums.contains_key(&scalar_id) {
                 let path = source_nominal_path(&identifier.to_string())?;
                 KindExpr::Enum(NominalKey::from_path(NominalKind::Enum, &path))
             } else {
-                return Err(SemanticModelError::LegacyNamedKindUnresolved { legacy_id }.into());
+                return Err(SemanticModelError::BuiltinScalarKindUnresolved { scalar_id }.into());
             }
         }
         mech_core::nodes::Kind::Matrix((element, dimensions)) => KindExpr::Matrix {

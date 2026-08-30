@@ -8,6 +8,7 @@ use crate::MechErrorKind;
 use crate::RuntimeType;
 #[cfg(feature = "matrix")]
 use crate::structures::Matrix as MechMatrix;
+use core::fmt;
 
 /// Identifies the argument whose exact runtime representation was rejected.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -98,6 +99,129 @@ pub enum FunctionValueRepresentation {
     Kind,
     MutableValueCell,
     AnyValue,
+}
+
+impl fmt::Display for FunctionMatrixElement {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Index => "ix",
+            Self::Bool => "bool",
+            Self::String => "string",
+            Self::U8 => "u8",
+            Self::U16 => "u16",
+            Self::U32 => "u32",
+            Self::U64 => "u64",
+            Self::U128 => "u128",
+            Self::I8 => "i8",
+            Self::I16 => "i16",
+            Self::I32 => "i32",
+            Self::I64 => "i64",
+            Self::I128 => "i128",
+            Self::F32 => "f32",
+            Self::F64 => "f64",
+            Self::C64 => "c64",
+            Self::R64 => "r64",
+            Self::Value => "*",
+        })
+    }
+}
+
+impl FunctionMatrixRepresentation {
+    const fn signature_shape(self) -> &'static str {
+        match self {
+            Self::Matrix1 => "1,1",
+            Self::Matrix2 => "2,2",
+            Self::Matrix3 => "3,3",
+            Self::Matrix4 => "4,4",
+            Self::Matrix2x3 => "2,3",
+            Self::Matrix3x2 => "3,2",
+            Self::RowVector2 => "1,2",
+            Self::RowVector3 => "1,3",
+            Self::RowVector4 => "1,4",
+            Self::Vector2 => "2,1",
+            Self::Vector3 => "3,1",
+            Self::Vector4 => "4,1",
+            Self::RowVectorD => "1,0",
+            Self::VectorD => "0,1",
+            Self::MatrixD => "0,0",
+        }
+    }
+
+    pub const fn runtime_name(self) -> &'static str {
+        match self {
+            Self::Matrix1 => "Matrix1",
+            Self::Matrix2 => "Matrix2",
+            Self::Matrix3 => "Matrix3",
+            Self::Matrix4 => "Matrix4",
+            Self::Matrix2x3 => "Matrix2x3",
+            Self::Matrix3x2 => "Matrix3x2",
+            Self::RowVector2 => "RowVector2",
+            Self::RowVector3 => "RowVector3",
+            Self::RowVector4 => "RowVector4",
+            Self::Vector2 => "Vector2",
+            Self::Vector3 => "Vector3",
+            Self::Vector4 => "Vector4",
+            Self::RowVectorD => "RowDVector",
+            Self::VectorD => "DVector",
+            Self::MatrixD => "DMatrix",
+        }
+    }
+}
+
+pub fn function_matrix_storage_name<T: FunctionRuntimeType>() -> &'static str {
+    let FunctionValueRepresentation::Matrix {
+        storage: FunctionMatrixStoragePattern::Exact(storage),
+        ..
+    } = T::REPRESENTATION
+    else {
+        panic!("exact matrix runtime factory requires exact matrix storage")
+    };
+    storage.runtime_name()
+}
+
+impl fmt::Display for FunctionValueRepresentation {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::U8 => formatter.write_str("u8"),
+            Self::U16 => formatter.write_str("u16"),
+            Self::U32 => formatter.write_str("u32"),
+            Self::U64 => formatter.write_str("u64"),
+            Self::U128 => formatter.write_str("u128"),
+            Self::I8 => formatter.write_str("i8"),
+            Self::I16 => formatter.write_str("i16"),
+            Self::I32 => formatter.write_str("i32"),
+            Self::I64 => formatter.write_str("i64"),
+            Self::I128 => formatter.write_str("i128"),
+            Self::F32 => formatter.write_str("f32"),
+            Self::F64 => formatter.write_str("f64"),
+            Self::C64 => formatter.write_str("c64"),
+            Self::R64 => formatter.write_str("r64"),
+            Self::String => formatter.write_str("string"),
+            Self::Bool => formatter.write_str("bool"),
+            Self::Id => formatter.write_str("id"),
+            Self::Index => formatter.write_str("ix"),
+            Self::Empty => formatter.write_str("_"),
+            Self::Matrix { element, storage } => match storage {
+                FunctionMatrixStoragePattern::Exact(representation) => {
+                    write!(
+                        formatter,
+                        "[{element}]:{}",
+                        representation.signature_shape()
+                    )
+                }
+                FunctionMatrixStoragePattern::AnyStorage => write!(formatter, "[{element}]"),
+            },
+            Self::Atom => formatter.write_str(":atom"),
+            Self::Enum => formatter.write_str(":enum"),
+            Self::Record => formatter.write_str("{record}"),
+            Self::Map => formatter.write_str("{map}"),
+            Self::Set => formatter.write_str("{set}"),
+            Self::Table => formatter.write_str("|table|"),
+            Self::Tuple => formatter.write_str("(tuple)"),
+            Self::Kind => formatter.write_str("<kind>"),
+            Self::MutableValueCell | Self::AnyValue => formatter.write_str("*"),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -272,36 +396,6 @@ impl FunctionRuntimeType for crate::Value {
 #[cfg(feature = "atom")]
 impl FunctionRuntimeType for crate::MechAtom {
     const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Atom;
-}
-
-#[cfg(feature = "enum")]
-impl FunctionRuntimeType for crate::MechEnum {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Enum;
-}
-
-#[cfg(feature = "record")]
-impl FunctionRuntimeType for crate::MechRecord {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Record;
-}
-
-#[cfg(feature = "map")]
-impl FunctionRuntimeType for crate::MechMap {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Map;
-}
-
-#[cfg(feature = "set")]
-impl FunctionRuntimeType for crate::MechSet {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Set;
-}
-
-#[cfg(feature = "table")]
-impl FunctionRuntimeType for crate::MechTable {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Table;
-}
-
-#[cfg(feature = "tuple")]
-impl FunctionRuntimeType for crate::MechTuple {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Tuple;
 }
 
 #[cfg(feature = "matrix")]

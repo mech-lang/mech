@@ -3,7 +3,6 @@ use mech_core::{FunctionCatalogBuilder, MResult};
 use mech_core::{FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
-
 #[cfg(all(feature = "source", feature = "n_choose_k"))]
 use crate::CombinatoricsNChooseK;
 
@@ -165,31 +164,5 @@ mod tests {
         assert_eq!(export.operation, operation);
         assert_eq!(export.exposure, FunctionExposure::ModuleOnly);
         assert_eq!(catalog.exports_for_operation(operation), [export.clone()]);
-    }
-}
-
-#[cfg(all(test, feature = "n_choose_k", feature = "f64"))]
-mod scalar_runtime_contract_tests {
-    use super::*;
-    use mech_core::{FunctionArgs, Ref, RuntimeFunctionId, LegacyValue};
-
-    #[test]
-    fn installed_f64_factory_rejects_non_finite_selection_before_instantiation() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-        let entry = catalog
-            .runtime_entry(RuntimeFunctionId::from_name("NChooseK<f64>"))
-            .unwrap();
-        let error = entry
-            .validate_args(&FunctionArgs::Binary(
-                LegacyValue::F64(Ref::new(0.0)),
-                LegacyValue::F64(Ref::new(10.0)),
-                LegacyValue::F64(Ref::new(f64::INFINITY)),
-            ))
-            .unwrap_err();
-
-        assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
-        assert!(error.kind_message().contains("finite"));
     }
 }

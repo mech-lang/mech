@@ -198,9 +198,3 @@ impl From<f64> for R64 {
         R64(Rational64::from_f64(f).unwrap())
     }
 }
-
-impl ToUsize for R64 {
-    fn to_usize(&self) -> usize {
-        self.0.to_integer() as usize
-    }
-}

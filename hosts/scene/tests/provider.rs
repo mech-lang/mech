@@ -2,9 +2,11 @@ use std::collections::BTreeMap;
 
 #[cfg(feature = "browser")]
 use mech_core::ValueData;
+use mech_core::snapshot::{F64Bits, TableColumnDraft};
 use mech_core::{
-    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, LegacyValue,
-    MResult, MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref, ToMatrix, Value,
+    CardinalitySpec, DimensionExpr, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    FloatWidth, IdempotencyRequirement, MResult, MechError, MechErrorKind, SchemaBody, Value,
+    ValueCell, ValueDataDraft,
 };
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
@@ -29,34 +31,36 @@ fn deliver_write(
     }
 }
 
-fn f(value: f64) -> LegacyValue {
-    LegacyValue::F64(Ref::new(value))
+fn f(value: f64) -> ValueCell {
+    ValueCell::from_exact(value).unwrap()
 }
-fn ix(value: usize) -> LegacyValue {
-    LegacyValue::Index(Ref::new(value))
+fn ix(value: usize) -> ValueCell {
+    ValueCell::from_exact(value).unwrap()
 }
-fn s(value: &str) -> LegacyValue {
-    LegacyValue::String(Ref::new(value.to_string()))
+fn s(value: &str) -> ValueCell {
+    ValueCell::from_exact(value.to_string()).unwrap()
 }
-fn b(value: bool) -> LegacyValue {
-    LegacyValue::Bool(Ref::new(value))
+fn b(value: bool) -> ValueCell {
+    ValueCell::from_exact(value).unwrap()
 }
-fn record(fields: Vec<(&str, LegacyValue)>) -> LegacyValue {
-    LegacyValue::Record(Ref::new(MechRecord::new(fields)))
+fn record(fields: Vec<(&str, ValueCell)>) -> ValueCell {
+    let fields = fields
+        .into_iter()
+        .map(|(name, value)| (name.to_string(), value))
+        .collect::<Vec<_>>();
+    ValueCell::record_from_cells(&fields).unwrap()
 }
-fn tuple(values: Vec<LegacyValue>) -> LegacyValue {
-    LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values)))
-}
-
-fn canonical(value: LegacyValue) -> Value {
-    value
-        .to_canonical_value()
-        .expect("test value must have a canonical schema")
+fn tuple(values: Vec<ValueCell>) -> ValueCell {
+    ValueCell::tuple_from_cells(&values).unwrap()
 }
 
-fn scene_snapshot(value: &LegacyValue) -> MResult<SceneSnapshot> {
+fn canonical(value: ValueCell) -> Value {
+    value.snapshot().expect("test value must be canonical")
+}
+
+fn scene_snapshot(value: &ValueCell) -> MResult<SceneSnapshot> {
     value
-        .to_canonical_value()
+        .snapshot()
         .and_then(|value| SceneSnapshot::from_value(&value))
 }
 
@@ -80,15 +84,50 @@ fn snapshot_f64_matrix(value: mech_runtime::RuntimeValueSnapshot) -> Vec<f64> {
     };
     values.iter().map(|value| value.to_f64()).collect()
 }
-fn table(records: Vec<LegacyValue>) -> LegacyValue {
-    let records: Vec<MechRecord> = records
-        .into_iter()
-        .map(|value| match value {
-            LegacyValue::Record(record) => record.borrow().clone(),
-            other => panic!("expected record, got {other:?}"),
+fn table(records: Vec<ValueCell>) -> ValueCell {
+    let first = records.first().expect("table fixture requires a row");
+    let SchemaBody::Record(fields) = first.closed_schema_body().unwrap() else {
+        panic!("table fixture row must be a record")
+    };
+    let mut columns = fields
+        .iter()
+        .map(|field| TableColumnDraft {
+            name: field.name.clone(),
+            values: Box::new([]),
         })
-        .collect();
-    LegacyValue::Table(Ref::new(MechTable::from_records(records).unwrap()))
+        .collect::<Vec<_>>();
+    let mut values = vec![Vec::with_capacity(records.len()); fields.len()];
+    for record in records {
+        let ValueDataDraft::Record(row) =
+            record.snapshot().unwrap().canonical_data_draft().unwrap()
+        else {
+            panic!("table fixture row must be a record")
+        };
+        assert_eq!(row.len(), fields.len());
+        for (index, field) in row.into_vec().into_iter().enumerate() {
+            assert_eq!(field.name, fields[index].name);
+            values[index].push(field.value);
+        }
+    }
+    for (column, values) in columns.iter_mut().zip(values) {
+        column.values = values.into_boxed_slice();
+    }
+    let rows = columns.first().map_or(0, |column| column.values.len());
+    ValueCell::from_schema_data(
+        SchemaBody::Table {
+            columns: fields,
+            rows: CardinalitySpec::Exact(DimensionExpr::Constant(rows as u64)),
+        },
+        ValueDataDraft::Table(columns.into_boxed_slice()),
+    )
+    .unwrap()
+}
+
+fn empty_table(record: ValueCell) -> ValueCell {
+    let SchemaBody::Record(fields) = record.closed_schema_body().unwrap() else {
+        panic!("table fixture row must be a record")
+    };
+    ValueCell::empty_dynamic_table(fields).unwrap()
 }
 
 fn settings(renderer: &str) -> ConfigValue {
@@ -103,7 +142,7 @@ fn settings(renderer: &str) -> ConfigValue {
     );
     ConfigValue::Map(map)
 }
-fn empty_scene() -> LegacyValue {
+fn empty_scene() -> ValueCell {
     record(vec![
         ("width", f(100.0)),
         ("height", f(50.0)),
@@ -112,10 +151,24 @@ fn empty_scene() -> LegacyValue {
         ("lines", tuple(vec![])),
     ])
 }
-fn points(rows: usize, columns: usize, values: Vec<f64>) -> LegacyValue {
-    LegacyValue::MatrixF64(ToMatrix::to_matrix(values, rows, columns))
+fn points(rows: usize, columns: usize, values: Vec<f64>) -> ValueCell {
+    let elements = (0..rows)
+        .flat_map(|row| {
+            let values = &values;
+            (0..columns).map(move |column| {
+                ValueDataDraft::F64(F64Bits::from_f64(values[column * rows + row]))
+            })
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    ValueCell::dynamic_rank_matrix(
+        SchemaBody::FloatingPoint(FloatWidth::W64),
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        elements,
+    )
+    .unwrap()
 }
-fn points_write(value: LegacyValue) -> RuntimeResourceWriteRequest {
+fn points_write(value: ValueCell) -> RuntimeResourceWriteRequest {
     RuntimeResourceWriteRequest {
         base_uri: "scene://view/frame".to_string(),
         path: "points".to_string(),
@@ -125,7 +178,7 @@ fn points_write(value: LegacyValue) -> RuntimeResourceWriteRequest {
         value: canonical(value),
     }
 }
-fn circle(id: &str) -> LegacyValue {
+fn circle(id: &str) -> ValueCell {
     record(vec![
         ("id", s(id)),
         ("x", f(1.0)),
@@ -137,7 +190,7 @@ fn circle(id: &str) -> LegacyValue {
         ("opacity", f(1.0)),
     ])
 }
-fn line(id: &str) -> LegacyValue {
+fn line(id: &str) -> ValueCell {
     record(vec![
         ("id", s(id)),
         ("x1", f(0.0)),
@@ -153,7 +206,7 @@ fn line(id: &str) -> LegacyValue {
         ("origin-y", f(0.0)),
     ])
 }
-fn text(id: &str) -> LegacyValue {
+fn text(id: &str) -> ValueCell {
     record(vec![
         ("id", s(id)),
         ("x", f(10.0)),
@@ -167,7 +220,7 @@ fn text(id: &str) -> LegacyValue {
         ("value", s("Scene label")),
     ])
 }
-fn point_set(id: &str) -> LegacyValue {
+fn point_set(id: &str) -> ValueCell {
     record(vec![
         ("id", s(id)),
         ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
@@ -179,7 +232,7 @@ fn point_set(id: &str) -> LegacyValue {
         ("opacity", f(1.0)),
     ])
 }
-fn line_strip(id: &str) -> LegacyValue {
+fn line_strip(id: &str) -> ValueCell {
     record(vec![
         ("id", s(id)),
         (
@@ -473,15 +526,11 @@ fn invalid_opacity() {
 
 #[test]
 fn valid_empty_circle_table() {
-    let base = match table(vec![circle("template")]) {
-        LegacyValue::Table(table) => table.borrow().empty_table(0),
-        _ => unreachable!(),
-    };
     let scene = record(vec![
         ("width", f(100.0)),
         ("height", f(50.0)),
         ("background", s("#000")),
-        ("circles", LegacyValue::Table(Ref::new(base))),
+        ("circles", empty_table(circle("template"))),
         ("lines", tuple(vec![])),
     ]);
     assert_eq!(scene_snapshot(&scene).unwrap().circles.len(), 0);
@@ -575,23 +624,6 @@ fn table_unknown_column_is_rejected() {
         ("height", f(50.0)),
         ("background", s("#000")),
         ("circles", table(vec![bad])),
-        ("lines", tuple(vec![])),
-    ]);
-    assert!(scene_snapshot(&scene).is_err());
-}
-
-#[test]
-fn table_column_length_mismatch_is_rejected() {
-    let mut table = match table(vec![circle("c1")]) {
-        LegacyValue::Table(table) => table.borrow().clone(),
-        _ => unreachable!(),
-    };
-    table.rows = 2;
-    let scene = record(vec![
-        ("width", f(100.0)),
-        ("height", f(50.0)),
-        ("background", s("#000")),
-        ("circles", LegacyValue::Table(Ref::new(table))),
         ("lines", tuple(vec![])),
     ]);
     assert!(scene_snapshot(&scene).is_err());
@@ -1180,7 +1212,7 @@ last-pulse = pulse
 fn scene_provider_deduplicates_identical_replacements() {
     let backend = RecordingSceneBackend::new();
     let mut provider = SceneResourceProvider::new("main", backend.clone());
-    let write = |value: LegacyValue| RuntimeResourceWriteRequest {
+    let write = |value: ValueCell| RuntimeResourceWriteRequest {
         base_uri: "scene://main/frame".to_string(),
         path: "replace".to_string(),
         context_name: "main".to_string(),
@@ -1260,7 +1292,7 @@ impl MechErrorKind for TestSceneError {
 fn scene_provider_failed_replace_does_not_advance_dedup_state() {
     let backend = FailableSceneBackend::default();
     let mut provider = SceneResourceProvider::new("main", backend.clone());
-    let write = |value: LegacyValue| RuntimeResourceWriteRequest {
+    let write = |value: ValueCell| RuntimeResourceWriteRequest {
         base_uri: "scene://main/frame".to_string(),
         path: "replace".to_string(),
         context_name: "main".to_string(),

@@ -68,7 +68,6 @@ macro_rules! impl_set_all_fxn_s {
         impl<T, R1, C1, S1: 'static, IxVec: 'static> MechFunctionFactory
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
             T: Scalar
                 + Clone
                 + Debug
@@ -76,17 +75,17 @@ macro_rules! impl_set_all_fxn_s {
                 + Send
                 + 'static
                 + ConstElem
-                + AsValueKind
+                + FunctionRuntimeType
                 + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionPortBacking,
+            T: CompileConst + CanonicalMatrixElementBacking,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
         {
@@ -96,9 +95,6 @@ macro_rules! impl_set_all_fxn_s {
                 IxVec::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2) = invocation.expect_binary()?;
                         let source: Ref<T> =
@@ -118,7 +114,6 @@ macro_rules! impl_set_all_fxn_s {
         impl<T, R1, C1, S1, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             IxVec: AsRef<[$ix]> + Debug,
@@ -153,17 +148,17 @@ macro_rules! impl_set_all_fxn_s {
         impl<T, R1, C1, S1, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            IxVec: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            IxVec: CompileConst + ConstElem,
+            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R1, C1, S1>::as_na_kind(),
-                    IxVec::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>(),
+                    function_matrix_storage_name::<IxVec>()
                 );
                 compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
@@ -215,7 +210,6 @@ macro_rules! impl_assign_fxn_s {
         }
         impl<T, R, C, S: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R, C, S>>
         where
-            Ref<naMatrix<T, R, C, S>>: ToValue,
             T: Scalar
                 + Clone
                 + Debug
@@ -223,14 +217,14 @@ macro_rules! impl_assign_fxn_s {
                 + Send
                 + 'static
                 + ConstElem
-                + AsValueKind
+                + FunctionRuntimeType
                 + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
+            T: CompileConst + CanonicalMatrixElementBacking,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + AsNaKind + FunctionStateBacking,
+            naMatrix<T, R, C, S>: ConstElem + FunctionStateBacking,
             $ix: FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
@@ -241,9 +235,6 @@ macro_rules! impl_assign_fxn_s {
                 <$ix as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2) = invocation.expect_binary()?;
                         let source: Ref<T> =
@@ -262,7 +253,6 @@ macro_rules! impl_assign_fxn_s {
         }
         impl<T, R, C, S> MechFunctionImpl for $struct_name<T, naMatrix<T, R, C, S>>
         where
-            Ref<naMatrix<T, R, C, S>>: ToValue,
             naMatrix<T, R, C, S>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             R: Dim,
@@ -295,15 +285,15 @@ macro_rules! impl_assign_fxn_s {
         #[cfg(feature = "semantic-compiler")]
         impl<T, R, C, S> MechFunctionCompiler for $struct_name<T, naMatrix<T, R, C, S>>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            naMatrix<T, R, C, S>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R, C, S>::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R, C, S>>()
                 );
                 compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
@@ -398,7 +388,6 @@ pub struct Set1DAS<T, Sink> {
 }
 impl<T, R, C, S> MechFunctionFactory for Set1DAS<T, naMatrix<T, R, C, S>>
 where
-    Ref<naMatrix<T, R, C, S>>: ToValue,
     T: Debug
         + Clone
         + Sync
@@ -406,14 +395,14 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
+    T: CompileConst + CanonicalMatrixElementBacking,
     R: Dim,
     C: Dim,
     S: StorageMut<T, R, C> + Debug + IsContiguous + 'static,
-    naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
+    naMatrix<T, R, C, S>: ConstElem + Debug + FunctionStateBacking,
     #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R, C, S>: CompileConst,
 {
@@ -422,9 +411,6 @@ where
         T::REPRESENTATION,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg1) = invocation.expect_unary()?;
         let source: Ref<T> = arg1.try_ref()?;
@@ -443,7 +429,6 @@ where
     R: Dim,
     C: Dim,
     S: StorageMut<T, R, C> + Debug + IsContiguous,
-    Ref<naMatrix<T, R, C, S>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
@@ -469,14 +454,14 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T, R, C, S> MechFunctionCompiler for Set1DAS<T, naMatrix<T, R, C, S>>
 where
-    T: CompileConst + ConstElem + AsValueKind,
-    naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
+    T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+    naMatrix<T, R, C, S>: CompileConst + ConstElem,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!(
             "Set1DAS<{}{}>",
-            T::as_value_kind(),
-            naMatrix::<T, R, C, S>::as_na_kind()
+            <T as FunctionRuntimeType>::REPRESENTATION,
+            function_matrix_storage_name::<naMatrix<T, R, C, S>>()
         );
         compile_unop!(name, self.sink, self.source, ctx);
     }
@@ -491,7 +476,6 @@ pub struct Assign2DSSS<T, MatA> {
 }
 impl<T, R1, C1, S1: 'static> MechFunctionFactory for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
 where
-    Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: FunctionStateBacking,
     T: Scalar
         + Clone
@@ -500,14 +484,14 @@ where
         + Send
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
+    T: CompileConst + CanonicalMatrixElementBacking,
     R1: Dim,
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
-    naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind + FunctionStateBacking,
+    naMatrix<T, R1, C1, S1>: ConstElem + FunctionStateBacking,
     #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst,
 {
@@ -518,9 +502,6 @@ where
         <usize as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
         let source: Ref<T> = arg1.try_ref()?;
@@ -537,7 +518,6 @@ where
 }
 impl<T, R1, C1, S1> MechFunctionImpl for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
 where
-    Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: FunctionStateBacking,
     T: Scalar + Clone + Debug + Sync + Send + 'static,
     R1: Dim,
@@ -570,14 +550,14 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
 where
-    T: CompileConst + ConstElem + AsValueKind,
-    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+    T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!(
             "Assign2DSSS<{}{}>",
-            T::as_value_kind(),
-            naMatrix::<T, R1, C1, S1>::as_na_kind()
+            <T as FunctionRuntimeType>::REPRESENTATION,
+            function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>()
         );
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
     }
@@ -613,8 +593,6 @@ macro_rules! impl_assign_scalar_fxn_v {
             MechFunctionFactory
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-            Ref<naMatrix<T, R2, C2, S2>>: ToValue,
             T: Debug
                 + Clone
                 + Sync
@@ -623,19 +601,19 @@ macro_rules! impl_assign_scalar_fxn_v {
                 + PartialEq
                 + PartialOrd
                 + ConstElem
-                + AsValueKind,
+                + FunctionRuntimeType,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
+            T: CompileConst + CanonicalMatrixElementBacking,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionPortBacking,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + FunctionPortBacking,
             $ix: FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
@@ -646,9 +624,6 @@ macro_rules! impl_assign_scalar_fxn_v {
                 <$ix as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2) = invocation.expect_binary()?;
                 let source: Ref<naMatrix<T, R2, C2, S2>> = arg1.try_ref()?;
@@ -665,7 +640,6 @@ macro_rules! impl_assign_scalar_fxn_v {
         impl<T, R1, C1, S1, R2, C2, S2> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
             R1: Dim,
@@ -698,17 +672,17 @@ macro_rules! impl_assign_scalar_fxn_v {
         impl<T, R1, C1, S1, R2, C2, S2> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+            naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R1, C1, S1>::as_na_kind(),
-                    naMatrix::<T, R2, C2, S2>::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>(),
+                    function_matrix_storage_name::<naMatrix<T, R2, C2, S2>>()
                 );
                 compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
@@ -791,7 +765,6 @@ macro_rules! impl_assign_range_scalar_fxn_s {
         impl<T, R, C, S: 'static, IxVec: 'static> MechFunctionFactory
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
-            Ref<naMatrix<T, R, C, S>>: ToValue,
             T: Scalar
                 + Clone
                 + Debug
@@ -799,17 +772,17 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                 + Send
                 + 'static
                 + ConstElem
-                + AsValueKind
+                + FunctionRuntimeType
                 + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionPortBacking,
+            T: CompileConst + CanonicalMatrixElementBacking,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
+            naMatrix<T, R, C, S>: ConstElem + Debug + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
@@ -820,9 +793,6 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                 <usize as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
                 let source: Ref<T> = arg1.try_ref()?;
@@ -839,7 +809,6 @@ macro_rules! impl_assign_range_scalar_fxn_s {
         }
         impl<T, R, C, S, IxVec> MechFunctionImpl for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
-            Ref<naMatrix<T, R, C, S>>: ToValue,
             naMatrix<T, R, C, S>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             IxVec: AsRef<[$ix]> + Debug,
@@ -871,17 +840,17 @@ macro_rules! impl_assign_range_scalar_fxn_s {
         impl<T, R, C, S, IxVec> MechFunctionCompiler
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            IxVec: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            IxVec: CompileConst + ConstElem,
+            naMatrix<T, R, C, S>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R, C, S>::as_na_kind(),
-                    IxVec::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R, C, S>>(),
+                    function_matrix_storage_name::<IxVec>()
                 );
                 compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
@@ -911,8 +880,6 @@ macro_rules! impl_assign_range_scalar_fxn_v {
         > MechFunctionFactory
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-            Ref<naMatrix<T, R2, C2, S2>>: ToValue,
             T: Debug
                 + Clone
                 + Sync
@@ -921,10 +888,10 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                 + PartialEq
                 + PartialOrd
                 + ConstElem
-                + AsValueKind,
+                + FunctionRuntimeType,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionPortBacking,
+            T: CompileConst + CanonicalMatrixElementBacking,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
@@ -933,10 +900,10 @@ macro_rules! impl_assign_range_scalar_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionPortBacking,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
@@ -947,9 +914,6 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                 <usize as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
                 let source: Ref<naMatrix<T, R2, C2, S2>> = arg1.try_ref()?;
@@ -967,7 +931,6 @@ macro_rules! impl_assign_range_scalar_fxn_v {
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
             IxVec: AsRef<[$ix]> + Debug,
@@ -1002,19 +965,19 @@ macro_rules! impl_assign_range_scalar_fxn_v {
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            IxVec: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            IxVec: CompileConst + ConstElem,
+            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+            naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R1, C1, S1>::as_na_kind(),
-                    naMatrix::<T, R2, C2, S2>::as_na_kind(),
-                    IxVec::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>(),
+                    function_matrix_storage_name::<naMatrix<T, R2, C2, S2>>(),
+                    function_matrix_storage_name::<IxVec>()
                 );
                 compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
@@ -1080,7 +1043,6 @@ macro_rules! impl_assign_scalar_range_fxn_s {
         impl<T, R, C, S: 'static, IxVec: 'static> MechFunctionFactory
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
-            Ref<naMatrix<T, R, C, S>>: ToValue,
             T: Scalar
                 + Clone
                 + Debug
@@ -1088,17 +1050,17 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                 + Send
                 + 'static
                 + ConstElem
-                + AsValueKind
+                + FunctionRuntimeType
                 + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionPortBacking,
+            T: CompileConst + CanonicalMatrixElementBacking,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
+            naMatrix<T, R, C, S>: ConstElem + Debug + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
@@ -1109,9 +1071,6 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                 IxVec::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
                 let source: Ref<T> = arg1.try_ref()?;
@@ -1128,7 +1087,6 @@ macro_rules! impl_assign_scalar_range_fxn_s {
         }
         impl<T, R, C, S, IxVec> MechFunctionImpl for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
-            Ref<naMatrix<T, R, C, S>>: ToValue,
             naMatrix<T, R, C, S>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             IxVec: AsRef<[$ix]> + Debug,
@@ -1160,17 +1118,17 @@ macro_rules! impl_assign_scalar_range_fxn_s {
         impl<T, R, C, S, IxVec> MechFunctionCompiler
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            IxVec: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            IxVec: CompileConst + ConstElem,
+            naMatrix<T, R, C, S>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R, C, S>::as_na_kind(),
-                    IxVec::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R, C, S>>(),
+                    function_matrix_storage_name::<IxVec>()
                 );
                 compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
@@ -1200,8 +1158,6 @@ macro_rules! impl_assign_scalar_range_fxn_v {
         > MechFunctionFactory
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-            Ref<naMatrix<T, R2, C2, S2>>: ToValue,
             T: Debug
                 + Clone
                 + Sync
@@ -1210,10 +1166,10 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                 + PartialEq
                 + PartialOrd
                 + ConstElem
-                + AsValueKind,
+                + FunctionRuntimeType,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionPortBacking,
+            T: CompileConst + CanonicalMatrixElementBacking,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
@@ -1222,10 +1178,10 @@ macro_rules! impl_assign_scalar_range_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionPortBacking,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
@@ -1236,9 +1192,6 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                 IxVec::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
                 let source: Ref<naMatrix<T, R2, C2, S2>> = arg1.try_ref()?;
@@ -1256,7 +1209,6 @@ macro_rules! impl_assign_scalar_range_fxn_v {
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            Ref<naMatrix<T, R1, C1, S1>>: ToValue,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
             IxVec: AsRef<[$ix]> + Debug,
@@ -1291,19 +1243,19 @@ macro_rules! impl_assign_scalar_range_fxn_v {
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            IxVec: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            IxVec: CompileConst + ConstElem,
+            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+            naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R1, C1, S1>::as_na_kind(),
-                    naMatrix::<T, R2, C2, S2>::as_na_kind(),
-                    IxVec::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>(),
+                    function_matrix_storage_name::<naMatrix<T, R2, C2, S2>>(),
+                    function_matrix_storage_name::<IxVec>()
                 );
                 compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
@@ -1438,7 +1390,6 @@ macro_rules! impl_assign_range_range_fxn_s {
         impl<T, R, C, S: 'static, IxVec1: 'static, IxVec2: 'static> MechFunctionFactory
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
         where
-            Ref<naMatrix<T, R, C, S>>: ToValue,
             T: Scalar
                 + Clone
                 + Debug
@@ -1446,20 +1397,20 @@ macro_rules! impl_assign_range_range_fxn_s {
                 + Send
                 + 'static
                 + ConstElem
-                + AsValueKind
+                + FunctionRuntimeType
                 + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            IxVec1: ConstElem + Debug + AsRef<[$ix1]> + AsNaKind + FunctionPortBacking,
+            T: CompileConst + CanonicalMatrixElementBacking,
+            IxVec1: ConstElem + Debug + AsRef<[$ix1]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec1: CompileConst,
-            IxVec2: ConstElem + Debug + AsRef<[$ix2]> + AsNaKind + FunctionPortBacking,
+            IxVec2: ConstElem + Debug + AsRef<[$ix2]> + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec2: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionStateBacking,
+            naMatrix<T, R, C, S>: ConstElem + Debug + FunctionStateBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
@@ -1470,9 +1421,6 @@ macro_rules! impl_assign_range_range_fxn_s {
                 IxVec2::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
                 let source: Ref<T> = arg1.try_ref()?;
@@ -1490,7 +1438,6 @@ macro_rules! impl_assign_range_range_fxn_s {
         impl<T, R, C, S, IxVec1, IxVec2> MechFunctionImpl
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
         where
-            Ref<naMatrix<T, R, C, S>>: ToValue,
             naMatrix<T, R, C, S>: FunctionStateBacking,
             T: Scalar + Clone + Debug + Sync + Send + 'static,
             IxVec1: AsRef<[$ix1]> + Debug,
@@ -1523,19 +1470,19 @@ macro_rules! impl_assign_range_range_fxn_s {
         impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
         where
-            T: CompileConst + ConstElem + AsValueKind,
-            IxVec1: CompileConst + ConstElem + AsNaKind,
-            IxVec2: CompileConst + ConstElem + AsNaKind,
-            naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            IxVec1: CompileConst + ConstElem,
+            IxVec2: CompileConst + ConstElem,
+            naMatrix<T, R, C, S>: CompileConst + ConstElem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}{}>",
                     stringify!($struct_name),
-                    T::as_value_kind(),
-                    naMatrix::<T, R, C, S>::as_na_kind(),
-                    IxVec1::as_na_kind(),
-                    IxVec2::as_na_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION,
+                    function_matrix_storage_name::<naMatrix<T, R, C, S>>(),
+                    function_matrix_storage_name::<IxVec1>(),
+                    function_matrix_storage_name::<IxVec2>()
                 );
                 compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }

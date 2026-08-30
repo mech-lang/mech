@@ -39,7 +39,7 @@ macro_rules! impl_binop_solve {
                 + PartialEq
                 + PartialOrd
                 + ComplexField
-                + AsValueKind
+                + FunctionRuntimeType
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -52,7 +52,8 @@ macro_rules! impl_binop_solve {
                 + One
                 + ConstElem
                 + CompileConst
-                + AsValueKind,
+                + CanonicalMatrixElementBacking
+                + FunctionRuntimeType,
             #[cfg(not(feature = "semantic-compiler"))]
             T: Copy
                 + Debug
@@ -64,7 +65,7 @@ macro_rules! impl_binop_solve {
                 + PartialEq
                 + PartialOrd
                 + ComplexField
-                + AsValueKind
+                + FunctionRuntimeType
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -75,7 +76,6 @@ macro_rules! impl_binop_solve {
                 + DivAssign
                 + Zero
                 + One,
-            Ref<$out_type>: ToValue,
             $arg1_type: FunctionPortBacking,
             $arg2_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
@@ -119,7 +119,8 @@ macro_rules! impl_binop_solve {
                 + DivAssign
                 + Zero
                 + One,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -142,10 +143,10 @@ macro_rules! impl_binop_solve {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: ConstElem + CompileConst + AsValueKind,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
@@ -183,43 +184,30 @@ impl_solve!(MatrixSolveMDMD, DMatrix<T>, DMatrix<T>, DMatrix<T>);
 impl_solve!(MatrixSolveM2M2x3, Matrix2<T>, Matrix2x3<T>, Matrix2x3<T>);
 
 #[cfg(all(test, feature = "f64", feature = "matrixd", feature = "vectord"))]
-mod tests {
+mod canonical_port_tests {
     use super::*;
 
-    fn binary_args<L, R, O>(out: &Ref<O>, lhs: &Ref<L>, rhs: &Ref<R>) -> FunctionArgs
-    where
-        Ref<L>: ToValue,
-        Ref<R>: ToValue,
-        Ref<O>: ToValue,
-    {
-        FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value())
-    }
-
     #[test]
-    fn vector_and_matrix_rhs_factories_use_invocation_ports() {
+    fn vector_and_matrix_rhs_use_exact_ports() {
         let lhs = Ref::new(DMatrix::from_row_slice(2, 2, &[4.0, 1.0, 2.0, 3.0]));
         let vector_rhs = Ref::new(DVector::from_vec(vec![9.0, 8.0]));
-        let legacy_out = Ref::new(DVector::<f64>::zeros(2));
-        let invocation_out = Ref::new(DVector::<f64>::zeros(2));
-        let legacy = MatrixSolveMDVD::<f64>::new(binary_args(
-            &legacy_out,
-            &lhs,
-            &vector_rhs,
+        let vector_out = Ref::new(DVector::<f64>::zeros(2));
+        MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(vector_out.clone(), 2, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(lhs.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(vector_rhs, 2, 1).unwrap(),
         ))
+        .unwrap()
+        .solve_result()
         .unwrap();
-        let invocation = MatrixSolveMDVD::<f64>::new_invocation(
-            binary_args(&invocation_out, &lhs, &vector_rhs).into(),
-        )
-        .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
 
         let matrix_rhs = Ref::new(DMatrix::<f64>::identity(2, 2));
         let matrix_out = Ref::new(DMatrix::<f64>::zeros(2, 2));
-        MatrixSolveMDMD::<f64>::new_invocation(
-            binary_args(&matrix_out, &lhs, &matrix_rhs).into(),
-        )
+        MatrixSolveMDMD::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(matrix_out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(lhs.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(matrix_rhs.clone(), 2, 2).unwrap(),
+        ))
         .unwrap()
         .solve_result()
         .unwrap();
@@ -228,44 +216,27 @@ mod tests {
     }
 
     #[test]
-    fn solve_invocation_rejects_wrong_rhs_representation_and_layout() {
-        let lhs = Ref::new(DMatrix::<f64>::identity(2, 2));
-        let wrong_rhs = Ref::new(DMatrix::<f64>::identity(2, 2));
-        let out = Ref::new(DVector::<f64>::zeros(2));
-        let type_error = MatrixSolveMDVD::<f64>::new_invocation(
-            binary_args(&out, &lhs, &wrong_rhs).into(),
-        )
-        .err()
-        .expect("wrong exact right-hand-side type must be rejected");
-        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
-
-        let arity_error = MatrixSolveMDVD::<f64>::new_invocation(
-            FunctionArgs::Unary(out.to_value(), lhs.to_value()).into(),
-        )
-        .err()
-        .expect("wrong solve invocation layout must be rejected");
-        assert_eq!(arity_error.kind_name(), "IncorrectNumberOfArguments");
-    }
-
-    #[test]
-    fn singular_matrix_is_a_structured_error_on_reactive_resolve() {
+    fn singular_resolve_is_atomic_and_checkpointed() {
         let lhs = Ref::new(DMatrix::identity(2, 2));
         let rhs = Ref::new(DVector::from_vec(vec![3.0, 4.0]));
         let out = Ref::new(DVector::from_element(2, -1.0));
-        let function = MatrixSolveMDVD {
-            lhs: lhs.clone(),
-            rhs,
-            out: out.clone(),
-        };
-
+        let alias = out.clone();
+        let function = MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(lhs.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(rhs, 2, 1).unwrap(),
+        ))
+        .unwrap();
         function.solve_result().unwrap();
         let previous = out.borrow().clone();
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&function)?;
-            *lhs.borrow_mut() = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 2.0, 4.0]);
 
-            let error = function.solve_result().unwrap_err();
-            assert_eq!(error.kind_name(), "MatrixSolveSingular");
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            *lhs.borrow_mut() = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 2.0, 4.0]);
+            assert_eq!(
+                function.solve_result().unwrap_err().kind_name(),
+                "MatrixSolveSingular"
+            );
             assert_eq!(*out.borrow(), previous);
             *out.borrow_mut() = DVector::from_vec(vec![99.0]);
             participant.preflight_restore_before()?;
@@ -273,46 +244,50 @@ mod tests {
             Ok(())
         })
         .unwrap();
+        assert!(out.same_handle(&alias));
         assert_eq!(*out.borrow(), previous);
     }
 
     #[test]
-    fn matrix_right_hand_side_is_solved_in_one_operation() {
-        let lhs = Ref::new(DMatrix::from_row_slice(2, 2, &[4.0, 1.0, 2.0, 3.0]));
-        let rhs = Ref::new(DMatrix::from_row_slice(
+    fn solve_rejects_wrong_rhs_representation_and_layout() {
+        let lhs = ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::<f64>::identity(2, 2)), 2, 2)
+            .unwrap();
+        let wrong_rhs = ValueCell::from_exact_matrix_ref(
+            Ref::new(DMatrix::<f64>::identity(2, 2)),
             2,
-            3,
-            &[9.0, 1.0, 5.0, 8.0, 7.0, 2.0],
-        ));
-        let out = Ref::new(DMatrix::zeros(2, 3));
-        let function = MatrixSolveMDMD {
-            lhs: lhs.clone(),
-            rhs: rhs.clone(),
-            out: out.clone(),
-        };
-
-        function.solve_result().unwrap();
-
-        let residual = lhs.borrow().clone() * out.borrow().clone() - rhs.borrow().clone();
-        assert!(residual.norm() < 1.0e-12);
+            2,
+        )
+        .unwrap();
+        let output = ValueCell::from_exact_matrix_ref(Ref::new(DVector::<f64>::zeros(2)), 2, 1)
+            .unwrap();
+        assert!(MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            lhs.clone(),
+            wrong_rhs,
+        ))
+        .is_err());
+        assert!(MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::unary(output, lhs))
+            .is_err());
     }
 }
 
 #[cfg(all(test, feature = "f64", feature = "matrix2", feature = "matrix2x3"))]
-mod fixed_invocation_port_tests {
+mod fixed_port_tests {
     use super::*;
 
     #[test]
-    fn fixed_matrix_rhs_uses_exact_invocation_ports() {
-        let lhs = Ref::new(Matrix2::<f64>::identity());
+    fn fixed_matrix_rhs_uses_exact_ports() {
         let rhs = Ref::new(Matrix2x3::new(1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0));
         let out = Ref::new(Matrix2x3::<f64>::zeros());
-        let function = MatrixSolveM2M2x3::<f64>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value()).into(),
-        )
+        MatrixSolveM2M2x3::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 3).unwrap(),
+            ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::identity()), 2, 2)
+                .unwrap(),
+            ValueCell::from_exact_matrix_ref(rhs.clone(), 2, 3).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
         .unwrap();
-
-        function.solve_result().unwrap();
         assert_eq!(*out.borrow(), *rhs.borrow());
     }
 }

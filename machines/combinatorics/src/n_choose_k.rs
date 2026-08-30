@@ -337,141 +337,6 @@ fn validate_n_choose_k_typed<T: NChooseKSelection>(n: T, k: T) -> MResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-fn scalar_integer_result_max(value: &LegacyValue) -> Option<u128> {
-    match value {
-        #[cfg(feature = "u8")]
-        LegacyValue::U8(_) => Some(u8::MAX.into()),
-        #[cfg(feature = "u16")]
-        LegacyValue::U16(_) => Some(u16::MAX.into()),
-        #[cfg(feature = "u32")]
-        LegacyValue::U32(_) => Some(u32::MAX.into()),
-        #[cfg(feature = "u64")]
-        LegacyValue::U64(_) => Some(u64::MAX.into()),
-        #[cfg(feature = "u128")]
-        LegacyValue::U128(_) => Some(u128::MAX),
-        #[cfg(feature = "i8")]
-        LegacyValue::I8(_) => Some(i8::MAX as u128),
-        #[cfg(feature = "i16")]
-        LegacyValue::I16(_) => Some(i16::MAX as u128),
-        #[cfg(feature = "i32")]
-        LegacyValue::I32(_) => Some(i32::MAX as u128),
-        #[cfg(feature = "i64")]
-        LegacyValue::I64(_) => Some(i64::MAX as u128),
-        #[cfg(feature = "i128")]
-        LegacyValue::I128(_) => Some(i128::MAX as u128),
-        #[cfg(feature = "rational")]
-        LegacyValue::R64(_) => Some(i64::MAX as u128),
-        _ => None,
-    }
-}
-
-#[cfg(test)]
-fn scalar_selection_count(value: &LegacyValue) -> Option<u128> {
-    match value {
-        #[cfg(feature = "u8")]
-        LegacyValue::U8(value) => Some(u128::from(*value.borrow())),
-        #[cfg(feature = "u16")]
-        LegacyValue::U16(value) => Some(u128::from(*value.borrow())),
-        #[cfg(feature = "u32")]
-        LegacyValue::U32(value) => Some(u128::from(*value.borrow())),
-        #[cfg(feature = "u64")]
-        LegacyValue::U64(value) => Some(u128::from(*value.borrow())),
-        #[cfg(feature = "u128")]
-        LegacyValue::U128(value) => Some(*value.borrow()),
-        #[cfg(feature = "i8")]
-        LegacyValue::I8(value) => u128::try_from(*value.borrow()).ok(),
-        #[cfg(feature = "i16")]
-        LegacyValue::I16(value) => u128::try_from(*value.borrow()).ok(),
-        #[cfg(feature = "i32")]
-        LegacyValue::I32(value) => u128::try_from(*value.borrow()).ok(),
-        #[cfg(feature = "i64")]
-        LegacyValue::I64(value) => u128::try_from(*value.borrow()).ok(),
-        #[cfg(feature = "i128")]
-        LegacyValue::I128(value) => u128::try_from(*value.borrow()).ok(),
-        #[cfg(feature = "f32")]
-        LegacyValue::F32(value) => {
-            let value = *value.borrow();
-            (value.is_finite() && value >= 0.0 && value.fract() == 0.0 && value <= u128::MAX as f32)
-                .then_some(value as u128)
-        }
-        #[cfg(feature = "f64")]
-        LegacyValue::F64(value) => {
-            let value = *value.borrow();
-            (value.is_finite() && value >= 0.0 && value.fract() == 0.0 && value <= u128::MAX as f64)
-                .then_some(value as u128)
-        }
-        #[cfg(feature = "r64")]
-        LegacyValue::R64(value) => {
-            let value = value.borrow();
-            (*value.denom() == 1)
-                .then(|| u128::try_from(*value.numer()).ok())
-                .flatten()
-        }
-        #[cfg(feature = "c64")]
-        LegacyValue::C64(value) => {
-            let value = value.borrow().0;
-            (value.re.is_finite()
-                && value.im.is_finite()
-                && value.im == 0.0
-                && value.re >= 0.0
-                && value.re.fract() == 0.0
-                && value.re <= u128::MAX as f64)
-                .then_some(value.re as u128)
-        }
-        _ => None,
-    }
-}
-
-#[cfg(test)]
-fn validate_n_choose_k_scalar_values(n: &LegacyValue, k: &LegacyValue) -> MResult<()> {
-    let contract = "n_choose_k_scalar";
-    let result_maximum = scalar_integer_result_max(n);
-    let n = scalar_selection_count(n).ok_or_else(|| {
-        function_shape_contract_violation(
-            contract,
-            "input 0 must be a finite, non-negative whole-number scalar",
-        )
-    })?;
-    let k = scalar_selection_count(k).ok_or_else(|| {
-        function_shape_contract_violation(
-            contract,
-            "input 1 must be a finite, non-negative whole-number scalar",
-        )
-    })?;
-    let steps = if k > n { 0 } else { k.min(n - k) };
-    if steps > crate::kernels::n_choose_k::MAX_SCALAR_STEPS {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!(
-                "selection requires {steps} kernel steps, exceeding the bytecode v1 limit of {}",
-                crate::kernels::n_choose_k::MAX_SCALAR_STEPS,
-            ),
-        ));
-    }
-    if let Some(maximum) = result_maximum
-        && checked_integer_n_choose_k(n, k).is_none_or(|result| result > maximum)
-    {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!("selection result exceeds the operand representation maximum {maximum}"),
-        ));
-    }
-    Ok(())
-}
-
-#[cfg(test)]
-pub(crate) fn validate_n_choose_k_scalar_contract(args: &FunctionArgs) -> MResult<()> {
-    let contract = "n_choose_k_scalar";
-    let n = args
-        .input_value(0)
-        .ok_or_else(|| function_shape_contract_violation(contract, "missing input 0"))?;
-    let k = args
-        .input_value(1)
-        .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?;
-    validate_n_choose_k_scalar_values(n, k)
-}
-
 fn canonical_scalar_selection(value: &ValueData) -> Option<(u128, Option<u128>)> {
     Some(match value {
         #[cfg(feature = "u8")]
@@ -601,79 +466,6 @@ fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
         result = result.checked_mul(n - k + divisor)? / divisor;
     }
     Some(result)
-}
-
-#[cfg(all(
-    test,
-    feature = "matrix",
-    feature = "matrixd",
-    feature = "i8"
-))]
-fn matrix_selection_size(value: &LegacyValue) -> Option<usize> {
-    match value {
-        LegacyValue::Index(value) => Some(*value.borrow()),
-        _ => usize::try_from(scalar_selection_count(value)?).ok(),
-    }
-}
-
-#[cfg(all(
-    test,
-    feature = "matrix",
-    feature = "matrixd",
-    feature = "i8"
-))]
-pub(crate) fn validate_n_choose_k_matrix_contract(args: &FunctionArgs) -> MResult<()> {
-    let contract = "n_choose_k_matrix";
-    let input = args
-        .input_value(0)
-        .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?
-        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "input 0 must be matrix-backed")
-        })?;
-    let output = args
-        .output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "output must be matrix-backed")
-        })?;
-    if output.representation != FunctionMatrixRepresentation::MatrixD {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!(
-                "output must use MatrixD storage, found {:?}",
-                output.representation,
-            ),
-        ));
-    }
-    let k = args
-        .input_value(1)
-        .and_then(matrix_selection_size)
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "input 1 must be a selection scalar")
-        })?;
-    let n = input.rows.checked_mul(input.cols).ok_or_else(|| {
-        function_shape_contract_violation(contract, "input element count overflowed usize")
-    })?;
-    if k == 0 || k > n {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!("selection size {k} is outside 1..={n}"),
-        ));
-    }
-    let combinations = checked_combination_count(n, k).ok_or_else(|| {
-        function_shape_contract_violation(contract, "combination count overflowed usize")
-    })?;
-    if output.rows != k || output.cols != combinations {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!(
-                "output is {}x{}, expected {k}x{combinations}",
-                output.rows, output.cols,
-            ),
-        ));
-    }
-    Ok(())
 }
 
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
@@ -870,14 +662,13 @@ where
         + Div<Output = T>
         + Zero
         + One
-        + AsValueKind
+        + FunctionRuntimeType
         + RuntimeNChooseK
         + NChooseKSelection
         + PartialEq
         + PartialOrd,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
-    Ref<T>: ToValue,
     T: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
@@ -911,7 +702,6 @@ where
         + NChooseKSelection
         + PartialEq
         + PartialOrd,
-    Ref<T>: ToValue,
     T: FunctionStateBacking,
 {
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -946,296 +736,13 @@ where
     }
 }
 
-#[cfg(all(test, feature = "f64"))]
-mod scalar_contract_tests {
-    use super::*;
-
-    fn framed(payload: &[u8]) -> Vec<u8> {
-        let mut framed = (payload.len() as u32).to_le_bytes().to_vec();
-        framed.extend_from_slice(payload);
-        framed
-    }
-
-    fn decoded_scalar_wrapper(reference: bool) -> LegacyValue {
-        let payload = 1.0_f64.to_le_bytes();
-        let (runtime_type, bytes) = if reference {
-            (
-                RuntimeType::Reference(Box::new(RuntimeType::F64)),
-                framed(&payload),
-            )
-        } else {
-            let mut bytes = vec![1];
-            bytes.extend(framed(&payload));
-            (RuntimeType::Option(Box::new(RuntimeType::F64)), bytes)
-        };
-        legacy_values_from_encoded_bytecode_constants(&[EncodedConstant {
-            runtime_type,
-            alignment: 8,
-            bytes,
-        }])
-        .unwrap()
-        .pop()
-        .unwrap()
-    }
-
-    fn factory_error(result: MResult<Box<dyn MechFunction>>) -> MechError {
-        match result {
-            Ok(_) => panic!("factory unexpectedly accepted invalid arguments"),
-            Err(error) => error,
-        }
-    }
-
-    fn args(n: f64, k: f64) -> FunctionArgs {
-        FunctionArgs::Binary(
-            LegacyValue::F64(Ref::new(0.0)),
-            LegacyValue::F64(Ref::new(n)),
-            LegacyValue::F64(Ref::new(k)),
-        )
-    }
-
-    #[test]
-    fn scalar_contract_rejects_non_finite_fractional_and_unbounded_selections() {
-        for (n, k) in [
-            (10.0, f64::INFINITY),
-            (f64::NAN, 1.0),
-            (10.0, 1.5),
-            (-1.0, 0.0),
-            (2_000_002.0, 1_000_001.0),
-            (1.0e100, 1.0e50),
-        ] {
-            let error = validate_n_choose_k_scalar_contract(&args(n, k)).unwrap_err();
-            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-        }
-        validate_n_choose_k_scalar_contract(&args(10.0, 2.0)).unwrap();
-        validate_n_choose_k_scalar_contract(&args(2.0, 10.0)).unwrap();
-    }
-
-    #[test]
-    fn scalar_runtime_revalidates_live_selection_values() {
-        let k = Ref::new(2.0);
-        let function = NChooseK {
-            n: Ref::new(10.0),
-            k: k.clone(),
-            out: Ref::new(0.0),
-        };
-        function.solve_result().unwrap();
-        *k.borrow_mut() = f64::INFINITY;
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-    }
-
-    #[test]
-    fn scalar_factory_ports_are_exact_and_restore_output_state() {
-        let n = Ref::new(5.0_f64);
-        let k = Ref::new(2.0_f64);
-        let legacy_out = Ref::new(0.0_f64);
-        let invocation_out = Ref::new(0.0_f64);
-        let invocation_alias = invocation_out.clone();
-        let legacy = NChooseK::<f64>::new(FunctionArgs::Binary(
-            legacy_out.to_value(),
-            n.to_value(),
-            k.to_value(),
-        ))
-        .unwrap();
-        let invocation = NChooseK::<f64>::new_invocation(
-            FunctionArgs::Binary(invocation_out.to_value(), n.to_value(), k.to_value()).into(),
-        )
-        .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
-        assert_eq!(*invocation_out.borrow(), 10.0);
-        assert_eq!(
-            invocation.reactive_output_cell_ids(),
-            invocation_out.to_value().reactive_root_cell_ids(),
-        );
-
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*invocation)?;
-            *invocation_out.borrow_mut() = 99.0;
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
-        .unwrap();
-        assert!(invocation_out.same_handle(&invocation_alias));
-        assert_eq!(*invocation_out.borrow(), 10.0);
-    }
-
-    #[test]
-    fn scalar_factory_ports_reject_wrong_layout_type_and_wrappers() {
-        let out = Ref::new(0.0_f64);
-        let n = Ref::new(5.0_f64);
-        let k = Ref::new(2.0_f64);
-
-        let layout = factory_error(NChooseK::<f64>::new_invocation(
-            FunctionArgs::Unary(out.to_value(), n.to_value()).into(),
-        ));
-        let arity = layout.kind_as::<IncorrectNumberOfArguments>().unwrap();
-        assert_eq!((arity.expected, arity.found), (2, 1));
-
-        assert!(
-            NChooseK::<f64>::new_invocation(
-                FunctionArgs::Binary(out.to_value(), Ref::new(5_usize).to_value(), k.to_value(),)
-                    .into(),
-            )
-            .is_err()
-        );
-        for wrapped in [decoded_scalar_wrapper(false), decoded_scalar_wrapper(true)] {
-            assert!(
-                NChooseK::<f64>::new_invocation(
-                    FunctionArgs::Binary(out.to_value(), wrapped, k.to_value()).into(),
-                )
-                .is_err()
-            );
-        }
-    }
-
-    #[test]
-    fn scalar_error_is_atomic_and_prior_state_remains_restorable() {
-        let n = Ref::new(10.0_f64);
-        let out = Ref::new(0.0_f64);
-        let function = NChooseK::<f64>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), n.to_value(), Ref::new(2.0_f64).to_value()).into(),
-        )
-        .unwrap();
-        function.solve_result().unwrap();
-        let successful = *out.borrow();
-
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*function)?;
-            *n.borrow_mut() = f64::NAN;
-            let error = function.solve_result().unwrap_err();
-            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-            assert_eq!(*out.borrow(), successful);
-            *out.borrow_mut() = -1.0;
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
-        .unwrap();
-        assert_eq!(*out.borrow(), successful);
-    }
-}
-
-#[cfg(all(test, feature = "u8"))]
-mod integer_scalar_tests {
-    use super::*;
-
-    #[test]
-    fn integer_n_choose_k_avoids_intermediate_overflow_and_retains_output_on_error() {
-        let n = Ref::new(20_u8);
-        let k = Ref::new(2_u8);
-        let out = Ref::new(17_u8);
-        let legacy_out = Ref::new(0_u8);
-        let legacy = NChooseK::<u8>::new(FunctionArgs::Binary(
-            legacy_out.to_value(),
-            n.to_value(),
-            k.to_value(),
-        ))
-        .unwrap();
-        let function = NChooseK::<u8>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), n.to_value(), k.to_value()).into(),
-        )
-        .unwrap();
-
-        legacy.solve_result().unwrap();
-        function.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *out.borrow());
-        assert_eq!(*out.borrow(), 190);
-
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*function)?;
-            *n.borrow_mut() = 30;
-            let error = function.solve_result().unwrap_err();
-            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-            assert_eq!(*out.borrow(), 190);
-            *out.borrow_mut() = 0;
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
-        .unwrap();
-        assert_eq!(*out.borrow(), 190);
-    }
-}
-
-#[cfg(all(test, feature = "i8"))]
-mod signed_scalar_port_tests {
-    use super::*;
-
-    #[test]
-    fn signed_integer_factories_are_equivalent() {
-        let legacy_out = Ref::new(0_i8);
-        let invocation_out = Ref::new(0_i8);
-        let args = |out: &Ref<i8>| {
-            FunctionArgs::Binary(
-                out.to_value(),
-                Ref::new(5_i8).to_value(),
-                Ref::new(2_i8).to_value(),
-            )
-        };
-        let legacy = NChooseK::<i8>::new(args(&legacy_out)).unwrap();
-        let invocation = NChooseK::<i8>::new_invocation(args(&invocation_out).into()).unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
-    }
-}
-
-#[cfg(all(test, feature = "rational"))]
-mod rational_scalar_port_tests {
-    use super::*;
-
-    #[test]
-    fn rational_factories_are_equivalent() {
-        let legacy_out = Ref::new(R64::default());
-        let invocation_out = Ref::new(R64::default());
-        let args = |out: &Ref<R64>| {
-            FunctionArgs::Binary(
-                out.to_value(),
-                Ref::new(R64::new(5, 1)).to_value(),
-                Ref::new(R64::new(2, 1)).to_value(),
-            )
-        };
-        let legacy = NChooseK::<R64>::new(args(&legacy_out)).unwrap();
-        let invocation = NChooseK::<R64>::new_invocation(args(&invocation_out).into()).unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
-    }
-}
-
-#[cfg(all(test, feature = "complex"))]
-mod complex_scalar_port_tests {
-    use super::*;
-
-    #[test]
-    fn complex_factories_are_equivalent() {
-        let legacy_out = Ref::new(C64::default());
-        let invocation_out = Ref::new(C64::default());
-        let args = |out: &Ref<C64>| {
-            FunctionArgs::Binary(
-                out.to_value(),
-                Ref::new(C64::new(5.0, 0.0)).to_value(),
-                Ref::new(C64::new(2.0, 0.0)).to_value(),
-            )
-        };
-        let legacy = NChooseK::<C64>::new(args(&legacy_out)).unwrap();
-        let invocation = NChooseK::<C64>::new_invocation(args(&invocation_out).into()).unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
-    }
-}
-
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for NChooseK<T>
 where
-    T: ConstElem + CompileConst + AsValueKind + RuntimeNChooseK,
+    T: ConstElem + CompileConst + FunctionRuntimeType + RuntimeNChooseK,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("NChooseK<{}>", T::as_value_kind());
+        let name = format!("NChooseK<{}>", <T as FunctionRuntimeType>::REPRESENTATION);
         compile_binop!(name, self.out, self.n, self.k, ctx);
     }
 }
@@ -1293,14 +800,12 @@ where
         + Div<Output = T>
         + Zero
         + One
-        + AsValueKind
+        + FunctionRuntimeType
         + NChooseKSelection
         + PartialEq
         + PartialOrd,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
-    Ref<T>: ToValue,
-    Ref<DMatrix<T>>: ToValue,
     T: FunctionPortBacking,
     Matrix<T>: FunctionRuntimeType,
     DMatrix<T>: FunctionRuntimeType + FunctionStateBacking,
@@ -1350,8 +855,6 @@ where
         + NChooseKSelection
         + PartialEq
         + PartialOrd,
-    Ref<T>: ToValue,
-    Ref<DMatrix<T>>: ToValue,
     DMatrix<T>: FunctionStateBacking,
 {
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -1390,296 +893,17 @@ where
 #[cfg(all(feature = "matrix", feature = "matrixd", feature = "semantic-compiler"))]
 impl<T> MechFunctionCompiler for NChooseKMatrix<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("NChooseKMatrix<{}>", T::as_value_kind());
+        let name = format!("NChooseKMatrix<{}>", <T as FunctionRuntimeType>::REPRESENTATION);
         let out = compile_register!(self.out, ctx);
-        let n = compile_register!(self.n, ctx);
+        let n = compile_register_mat!(self.n, ctx);
         let k = compile_register_brrw!(self.k, ctx);
         ctx.emit_binop(hash_str(&name), out, n, k);
         Ok(out)
     }
 }
-#[cfg(all(test, feature = "matrix", feature = "matrixd", feature = "f64"))]
-mod transaction_state_tests {
-    use super::*;
-
-    fn framed(payload: &[u8]) -> Vec<u8> {
-        let mut framed = (payload.len() as u32).to_le_bytes().to_vec();
-        framed.extend_from_slice(payload);
-        framed
-    }
-
-    fn decoded_matrix_wrapper(reference: bool) -> LegacyValue {
-        let mut payload = Vec::new();
-        payload.extend_from_slice(&2_u32.to_le_bytes());
-        payload.extend_from_slice(&1_u32.to_le_bytes());
-        payload.extend_from_slice(&1.0_f64.to_le_bytes());
-        payload.extend_from_slice(&2.0_f64.to_le_bytes());
-        let matrix_type = RuntimeType::Matrix {
-            element: Box::new(RuntimeType::F64),
-            storage: MatrixStorage::MatrixD,
-            rows: 2,
-            cols: 1,
-        };
-        let (runtime_type, bytes) = if reference {
-            (
-                RuntimeType::Reference(Box::new(matrix_type)),
-                framed(&payload),
-            )
-        } else {
-            let mut bytes = vec![1];
-            bytes.extend(framed(&payload));
-            (RuntimeType::Option(Box::new(matrix_type)), bytes)
-        };
-        legacy_values_from_encoded_bytecode_constants(&[EncodedConstant {
-            runtime_type,
-            alignment: 8,
-            bytes,
-        }])
-        .unwrap()
-        .pop()
-        .unwrap()
-    }
-
-    fn decoded_index_matrix() -> LegacyValue {
-        let mut bytes = Vec::new();
-        bytes.extend_from_slice(&2_u32.to_le_bytes());
-        bytes.extend_from_slice(&1_u32.to_le_bytes());
-        bytes.extend_from_slice(&1_u64.to_le_bytes());
-        bytes.extend_from_slice(&2_u64.to_le_bytes());
-        legacy_values_from_encoded_bytecode_constants(&[EncodedConstant {
-            runtime_type: RuntimeType::Matrix {
-                element: Box::new(RuntimeType::Index),
-                storage: MatrixStorage::MatrixD,
-                rows: 2,
-                cols: 1,
-            },
-            alignment: 8,
-            bytes,
-        }])
-        .unwrap()
-        .pop()
-        .unwrap()
-    }
-
-    fn factory_error(result: MResult<Box<dyn MechFunction>>) -> MechError {
-        match result {
-            Ok(_) => panic!("factory unexpectedly accepted invalid arguments"),
-            Err(error) => error,
-        }
-    }
-
-    #[test]
-    fn matrix_combinations_expose_value_backed_transaction_state() {
-        let n = f64::to_matrix(vec![1.0, 2.0], 2, 1);
-        let out = Ref::new(DMatrix::from_element(1, 1, 0.0));
-        let function = NChooseKMatrix::<f64>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), n.to_value(), Ref::new(1.0).to_value()).into(),
-        )
-        .unwrap();
-        assert_eq!(function.transaction_state_ports().unwrap().unwrap().len(), 1);
-        assert_eq!(
-            function.reactive_output_cell_ids(),
-            out.to_value().reactive_root_cell_ids()
-        );
-    }
-
-    #[test]
-    fn matrix_factory_ports_preserve_dynamic_input_handles_and_match_legacy_factory() {
-        let n_ref = Ref::new(DMatrix::from_vec(3, 1, vec![1.0, 2.0, 3.0]));
-        let n_alias = n_ref.clone();
-        let n = Matrix::DMatrix(n_ref.clone());
-        let k = Ref::new(2.0_f64);
-        let legacy_out = Ref::new(DMatrix::zeros(1, 1));
-        let invocation_out = Ref::new(DMatrix::zeros(1, 1));
-        let invocation_alias = invocation_out.clone();
-        let legacy = NChooseKMatrix::<f64>::new(FunctionArgs::Binary(
-            legacy_out.to_value(),
-            n.to_value(),
-            k.to_value(),
-        ))
-        .unwrap();
-        let invocation = NChooseKMatrix::<f64>::new_invocation(
-            FunctionArgs::Binary(invocation_out.to_value(), n.to_value(), k.to_value()).into(),
-        )
-        .unwrap();
-
-        n_ref.borrow_mut()[(0, 0)] = 4.0;
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-
-        assert!(n_ref.same_handle(&n_alias));
-        assert!(invocation_out.same_handle(&invocation_alias));
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
-        assert_eq!(invocation_out.borrow().shape(), (2, 3));
-        assert_eq!(
-            invocation_out.borrow().as_slice(),
-            &[4.0, 2.0, 4.0, 3.0, 2.0, 3.0]
-        );
-        assert_eq!(
-            invocation.reactive_output_cell_ids(),
-            invocation_out.to_value().reactive_root_cell_ids(),
-        );
-
-        let successful = invocation_out.borrow().clone();
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*invocation)?;
-            *invocation_out.borrow_mut() = DMatrix::from_element(2, 2, 99.0);
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
-        .unwrap();
-        assert!(invocation_out.same_handle(&invocation_alias));
-        assert_eq!(*invocation_out.borrow(), successful);
-    }
-
-    #[test]
-    fn matrix_factory_ports_reject_layout_scalar_element_type_and_wrappers() {
-        let out: Ref<DMatrix<f64>> = Ref::new(DMatrix::zeros(1, 1));
-        let k = Ref::new(1.0_f64);
-        let n = f64::to_matrixd(vec![1.0, 2.0], 2, 1);
-
-        let layout = factory_error(NChooseKMatrix::<f64>::new_invocation(
-            FunctionArgs::Unary(out.to_value(), n.to_value()).into(),
-        ));
-        let arity = layout.kind_as::<IncorrectNumberOfArguments>().unwrap();
-        assert_eq!((arity.expected, arity.found), (2, 1));
-
-        for wrong_input in [
-            Ref::new(1.0_f64).to_value(),
-            decoded_index_matrix(),
-            decoded_matrix_wrapper(false),
-            decoded_matrix_wrapper(true),
-        ] {
-            assert!(
-                NChooseKMatrix::<f64>::new_invocation(
-                    FunctionArgs::Binary(out.to_value(), wrong_input, k.to_value()).into(),
-                )
-                .is_err()
-            );
-        }
-    }
-
-    #[test]
-    fn matrix_combinations_reuse_one_output_root_across_shape_changes() {
-        let n = f64::to_matrix(vec![1.0, 2.0, 3.0], 3, 1);
-        let k = Ref::new(1.0);
-        let out = Ref::new(DMatrix::from_element(1, 1, 0.0));
-        let function = NChooseKMatrix::<f64>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), n.to_value(), k.to_value()).into(),
-        )
-        .unwrap();
-        let output_alias = out.clone();
-
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().shape(), (1, 3));
-        assert_eq!(out.borrow().as_slice(), &[1.0, 2.0, 3.0]);
-
-        *k.borrow_mut() = 2.0;
-        function.solve_result().unwrap();
-        assert!(out.same_handle(&output_alias));
-        assert_eq!(out.borrow().shape(), (2, 3));
-        assert_eq!(out.borrow().as_slice(), &[1.0, 2.0, 1.0, 3.0, 2.0, 3.0]);
-
-        *k.borrow_mut() = 3.0;
-        function.solve_result().unwrap();
-        assert!(out.same_handle(&output_alias));
-        assert_eq!(out.borrow().shape(), (3, 1));
-        assert_eq!(out.borrow().as_slice(), &[1.0, 2.0, 3.0]);
-    }
-
-    #[test]
-    fn invalid_matrix_selection_is_structured_and_retains_previous_output() {
-        let n = f64::to_matrix(vec![1.0, 2.0, 3.0], 3, 1);
-        let k = Ref::new(1.0);
-        let out = Ref::new(DMatrix::from_element(1, 1, 0.0));
-        let function = NChooseKMatrix::<f64>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), n.to_value(), k.to_value()).into(),
-        )
-        .unwrap();
-        function.solve_result().unwrap();
-        let expected = out.borrow().clone();
-        let out_alias = out.clone();
-
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*function)?;
-            for invalid in [0.0, 4.0] {
-                *k.borrow_mut() = invalid;
-                let error = function.solve_result().unwrap_err();
-                assert_eq!(error.kind_name(), "NChooseKMatrixSelectionInvalid");
-                assert_eq!(*out.borrow(), expected);
-            }
-            *out.borrow_mut() = DMatrix::from_element(2, 2, -1.0);
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
-        .unwrap();
-        assert!(out.same_handle(&out_alias));
-        assert_eq!(*out.borrow(), expected);
-    }
-}
-
-#[cfg(all(
-    test,
-    feature = "matrix",
-    feature = "matrix2",
-    feature = "matrixd",
-    feature = "f64"
-))]
-mod fixed_matrix_port_tests {
-    use super::*;
-    use nalgebra::Matrix2;
-
-    #[test]
-    fn fixed_matrix_input_retains_exact_representation_and_inner_handle() {
-        let n_ref = Ref::new(Matrix2::from_vec(vec![1.0, 2.0, 3.0, 4.0]));
-        let n_alias = n_ref.clone();
-        let n = Matrix::Matrix2(n_ref.clone());
-        let out: Ref<DMatrix<f64>> = Ref::new(DMatrix::zeros(1, 1));
-        let function = NChooseKMatrix::<f64>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), n.to_value(), Ref::new(1.0_f64).to_value()).into(),
-        )
-        .unwrap();
-
-        n_ref.borrow_mut()[(0, 0)] = 8.0;
-        function.solve_result().unwrap();
-
-        assert!(n_ref.same_handle(&n_alias));
-        assert_eq!(out.borrow().shape(), (1, 4));
-        assert_eq!(out.borrow().as_slice(), &[8.0, 2.0, 3.0, 4.0]);
-    }
-}
-
-#[cfg(all(test, feature = "matrix", feature = "matrixd", feature = "i8"))]
-mod signed_matrix_selection_tests {
-    use super::*;
-
-    #[test]
-    fn negative_matrix_selection_is_structured_during_planning_and_reactive_solves() {
-        let n = i8::to_matrix(vec![1, 2, 3], 3, 1);
-        let k = Ref::new(-1_i8);
-        let out = Ref::new(DMatrix::from_element(1, 1, 19_i8));
-        let args = FunctionArgs::Binary(out.to_value(), n.to_value(), k.to_value());
-
-        let planning_error = validate_n_choose_k_matrix_contract(&args).unwrap_err();
-        assert_eq!(planning_error.kind_name(), "FunctionShapeContractViolation");
-
-        let function = NChooseKMatrix::<i8>::new_invocation(args.clone().into()).unwrap();
-        *k.borrow_mut() = 1;
-        function.solve_result().unwrap();
-        let previous = out.borrow().clone();
-
-        *k.borrow_mut() = -1;
-        let runtime_error = function.solve_result().unwrap_err();
-        assert_eq!(runtime_error.kind_name(), "NChooseKMatrixSelectionInvalid");
-        assert_eq!(*out.borrow(), previous);
-    }
-}
-
 #[cfg(feature = "source")]
 fn specialize_n_choose_k_scalar<T>(
     n: &SpecializationInput,
@@ -1720,7 +944,7 @@ where
         + Div<Output = T>
         + Zero
         + One
-        + AsValueKind
+        + FunctionRuntimeType
         + NChooseKSelection
         + CanonicalMatrixElementBacking
         + FunctionPortBacking
@@ -1728,8 +952,6 @@ where
         + PartialOrd,
     #[cfg(feature = "semantic-compiler")]
     T: ConstElem + CompileConst,
-    Ref<T>: ToValue,
-    Ref<DMatrix<T>>: ToValue,
     Matrix<T>: FunctionRuntimeType,
     DMatrix<T>: FunctionRuntimeType + FunctionStateBacking,
 {
@@ -1837,5 +1059,113 @@ impl CanonicalFunctionSpecializer for CombinatoricsNChooseK {
             None,
         )
         .with_compiler_loc())
+    }
+}
+
+#[cfg(all(test, feature = "f64"))]
+mod canonical_scalar_tests {
+    use super::*;
+
+    fn f64_value(cell: &ValueCell) -> f64 {
+        let snapshot = cell.snapshot().unwrap();
+        let ValueData::F64(value) = snapshot.data() else {
+            panic!("expected f64 n-choose-k output")
+        };
+        value.to_f64()
+    }
+
+    #[test]
+    fn scalar_n_choose_k_uses_exact_ports_and_typed_rollback() {
+        let output = ValueCell::from_exact(0.0_f64).unwrap();
+        let alias = output.clone();
+        let selection = ValueCell::from_exact(2.0_f64).unwrap();
+        let function = NChooseK::<f64>::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            ValueCell::from_exact(5.0_f64).unwrap(),
+            selection.clone(),
+        ))
+        .unwrap();
+        function.solve_result().unwrap();
+        assert_eq!(f64_value(&output), 10.0);
+        assert!(output.same_cell(&alias));
+        assert_eq!(
+            function.reactive_output_cell_ids(),
+            vec![output.reactive_cell_id()]
+        );
+
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            selection.replace(&ValueCell::from_exact(1.5_f64)?.snapshot()?)?;
+            assert!(function.solve_result().is_err());
+            assert_eq!(f64_value(&output), 10.0);
+            output.replace(&ValueCell::from_exact(99.0_f64)?.snapshot()?)?;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(f64_value(&output), 10.0);
+
+        assert!(NChooseK::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact(0.0_f64).unwrap(),
+            ValueCell::from_exact(5.0_f64).unwrap(),
+            ValueCell::from_exact(2_usize).unwrap(),
+        ))
+        .is_err());
+        assert!(NChooseK::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact(0.0_f64).unwrap(),
+            ValueCell::from_exact(5.0_f64).unwrap(),
+        ))
+        .is_err());
+    }
+}
+
+#[cfg(all(test, feature = "f64", feature = "matrix2", feature = "matrixd"))]
+mod canonical_matrix_tests {
+    use super::*;
+    use nalgebra::Matrix2;
+
+    #[test]
+    fn matrix_n_choose_k_preserves_input_and_output_identity_across_extents() {
+        let input = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
+        let input_alias = input.clone();
+        let selection = ValueCell::from_exact(2.0_f64).unwrap();
+        let out = Ref::new(DMatrix::<f64>::zeros(2, 1));
+        let out_alias = out.clone();
+        let output = ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap();
+        let function = NChooseKMatrix::<f64>::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            ValueCell::from_exact_matrix_ref(input.clone(), 2, 2).unwrap(),
+            selection.clone(),
+        ))
+        .unwrap();
+        function.solve_result().unwrap();
+        assert!(input.same_handle(&input_alias));
+        assert!(out.same_handle(&out_alias));
+        assert_eq!(out.borrow().shape(), (2, 6));
+
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            selection.replace(&ValueCell::from_exact(3.0_f64)?.snapshot()?)?;
+            function.solve_result()?;
+            assert_eq!(out.borrow().shape(), (3, 4));
+            selection.replace(&ValueCell::from_exact(0.0_f64)?.snapshot()?)?;
+            assert!(function.solve_result().is_err());
+            assert_eq!(out.borrow().shape(), (3, 4));
+            *out.borrow_mut() = DMatrix::from_element(1, 1, 99.0);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert!(out.same_handle(&out_alias));
+        assert_eq!(out.borrow().shape(), (2, 6));
+
+        assert!(NChooseKMatrix::<f64>::new_invocation(FunctionInvocation::binary(
+            output,
+            ValueCell::from_exact(4.0_f64).unwrap(),
+            ValueCell::from_exact(2.0_f64).unwrap(),
+        ))
+        .is_err());
     }
 }

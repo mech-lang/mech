@@ -9,7 +9,7 @@ use crate::CompileCtx;
 ///
 /// Source values are always explicit canonical cells. Semantic wrappers are
 /// encoded in the cell schema rather than reconstructed as compiler-only
-/// legacy values.
+/// erased values.
 #[derive(Clone, Debug)]
 pub(super) enum CompilerValueSource {
     Cell(ValueCell),

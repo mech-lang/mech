@@ -100,11 +100,6 @@ impl SymbolTable {
         self.symbols.contains_key(&key)
     }
 
-    #[cfg(test)]
-    fn insert(&mut self, key: u64, value: LegacyValue, mutable: bool) -> ValueCell {
-        self.insert_cell(key, ValueCell::new(value), mutable)
-    }
-
     pub fn insert_cell(&mut self, key: u64, cell: ValueCell, mutable: bool) -> ValueCell {
         self.symbols.insert(key, cell.clone());
         if mutable {
@@ -116,75 +111,6 @@ impl SymbolTable {
     }
 }
 
-#[cfg(test)]
-mod snapshot_tests {
-    use super::*;
-
-    #[test]
-    fn symbol_table_cells_preserve_identity_and_mutability() {
-        let mut table = SymbolTable::new();
-        let outer = hash_str("outer");
-        let stored = table.insert(outer, LegacyValue::Index(Ref::new(1)), true);
-
-        assert!(stored.same_cell(&table.get(outer).unwrap()));
-        assert!(stored.same_cell(&table.get_mutable(outer).unwrap()));
-
-        let immutable = hash_str("immutable");
-        let immutable_cell = table.insert(immutable, LegacyValue::Index(Ref::new(2)), false);
-        assert!(immutable_cell.same_cell(&table.get(immutable).unwrap()));
-        assert!(table.get_mutable(immutable).is_none());
-    }
-
-    #[test]
-    fn replacing_equal_payloads_replaces_cell_identity() {
-        let mut table = SymbolTable::new();
-        let key = hash_str("value");
-        let first = table.insert(key, LegacyValue::Index(Ref::new(1)), false);
-        let second = ValueCell::new(LegacyValue::Index(Ref::new(1)));
-
-        let stored = table.insert_cell(key, second.clone(), false);
-        assert_eq!(*first.borrow(), *second.borrow());
-        assert!(!first.same_cell(&second));
-        assert!(stored.same_cell(&second));
-        assert!(table.get(key).unwrap().same_cell(&second));
-    }
-
-    #[test]
-    fn symbol_table_snapshot_restores_cells_and_dictionary_identity() {
-        let mut table = SymbolTable::new();
-        let outer = hash_str("outer");
-        let temporary = hash_str("temporary");
-        let outer_cell = table.insert(outer, LegacyValue::Index(Ref::new(1)), true);
-        table
-            .dictionary
-            .borrow_mut()
-            .insert(outer, "outer".to_string());
-        let original_dictionary = table.dictionary.clone();
-        let original_snapshot = table.snapshot();
-
-        table.insert(outer, LegacyValue::Index(Ref::new(2)), false);
-        table.insert(temporary, LegacyValue::Index(Ref::new(3)), false);
-        table
-            .dictionary
-            .borrow_mut()
-            .insert(outer, "changed".to_string());
-        table
-            .dictionary
-            .borrow_mut()
-            .insert(temporary, "temporary".to_string());
-        table.dictionary = Ref::new(Dictionary::new());
-        assert_ne!(table.snapshot(), original_snapshot);
-
-        table.restore(original_snapshot.clone());
-        assert_eq!(table.snapshot(), original_snapshot);
-        assert!(!table.contains(temporary));
-        assert!(table.get_mutable(outer).is_some());
-        assert!(table.get(outer).unwrap().same_cell(&outer_cell));
-        assert!(table.dictionary.same_handle(&original_dictionary));
-        assert_eq!(table.get_symbol_name_by_id(outer).as_deref(), Some("outer"));
-    }
-}
-
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for SymbolTable {
     fn pretty_print(&self) -> String {
@@ -192,13 +118,7 @@ impl PrettyPrint for SymbolTable {
         let dict_brrw = self.dictionary.borrow();
         for (k, v) in &self.symbols {
             let name = dict_brrw.get(k).unwrap_or(&"??".to_string()).clone();
-            let v_brrw = v.borrow();
-            builder.push_record(vec![format!(
-                "\n{} : {}\n{}\n",
-                name,
-                v_brrw.kind(),
-                v_brrw.pretty_print()
-            )])
+            builder.push_record(vec![format!("\n{}\n{:#?}\n", name, v,)])
         }
         if self.symbols.is_empty() {
             builder.push_record(vec!["".to_string()]);

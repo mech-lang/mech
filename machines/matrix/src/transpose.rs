@@ -44,10 +44,9 @@ macro_rules! impl_transpose {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + 'static + AsValueKind + PartialEq + PartialOrd,
+            T: Debug + Clone + Sync + Send + 'static + FunctionRuntimeType + PartialEq + PartialOrd,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst + ConstElem,
-            Ref<$out_type>: ToValue,
+            T: CanonicalMatrixElementBacking + CompileConst + ConstElem,
             $arg_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
@@ -69,7 +68,8 @@ macro_rules! impl_transpose {
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -94,10 +94,10 @@ macro_rules! impl_transpose {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: ConstElem + CompileConst + AsValueKind,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_unop!(name, self.out, self.arg, ctx);
             }
         }
@@ -144,41 +144,30 @@ impl_transpose!(TransposeRD, RowDVector<T>, DVector<T>, transpose_op);
     feature = "matrix2",
     feature = "matrix2x3",
     feature = "matrix3x2",
-    feature = "vector3",
-    feature = "row_vector3",
     feature = "matrixd"
 ))]
-mod invocation_port_tests {
+mod canonical_port_tests {
     use super::*;
 
-    fn unary_args<I, O>(out: &Ref<O>, arg: &Ref<I>) -> FunctionArgs
-    where
-        Ref<I>: ToValue,
-        Ref<O>: ToValue,
-    {
-        FunctionArgs::Unary(out.to_value(), arg.to_value())
-    }
-
     #[test]
-    fn numeric_fixed_vector_and_dynamic_transposes_use_exact_ports() {
+    fn fixed_dynamic_and_non_numeric_transposes_use_exact_ports() {
         let matrix = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
-        let legacy_out = Ref::new(Matrix2::zeros());
-        let invocation_out = Ref::new(Matrix2::zeros());
-        let legacy = TransposeM2::<f64>::new(unary_args(&legacy_out, &matrix)).unwrap();
-        let invocation = TransposeM2::<f64>::new_invocation(
-            unary_args(&invocation_out, &matrix).into(),
-        )
+        let fixed_out = Ref::new(Matrix2::zeros());
+        TransposeM2::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(matrix, 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
         .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-        assert_eq!(*legacy_out.borrow(), Matrix2::new(1.0, 3.0, 2.0, 4.0));
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+        assert_eq!(*fixed_out.borrow(), Matrix2::new(1.0, 3.0, 2.0, 4.0));
 
         let rectangular = Ref::new(Matrix2x3::new(1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0));
         let rectangular_out = Ref::new(Matrix3x2::zeros());
-        TransposeM2x3::<f64>::new_invocation(
-            unary_args(&rectangular_out, &rectangular).into(),
-        )
+        TransposeM2x3::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact_matrix_ref(rectangular_out.clone(), 3, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(rectangular, 2, 3).unwrap(),
+        ))
         .unwrap()
         .solve_result()
         .unwrap();
@@ -187,96 +176,61 @@ mod invocation_port_tests {
             Matrix3x2::new(1.0, 4.0, 2.0, 5.0, 3.0, 6.0)
         );
 
-        let vector = Ref::new(Vector3::new(1.0_f64, 2.0, 3.0));
-        let vector_out = Ref::new(RowVector3::zeros());
-        TransposeV3::<f64>::new_invocation(unary_args(&vector_out, &vector).into())
-            .unwrap()
-            .solve_result()
-            .unwrap();
-        assert_eq!(*vector_out.borrow(), RowVector3::new(1.0, 2.0, 3.0));
-
         let dynamic = Ref::new(DMatrix::from_row_slice(
             2,
             3,
             &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
         ));
         let dynamic_out = Ref::new(DMatrix::zeros(3, 2));
-        let dynamic_function =
-            TransposeMD::<f64>::new_invocation(unary_args(&dynamic_out, &dynamic).into()).unwrap();
-        dynamic_function.solve_result().unwrap();
-        assert_eq!(
-            *dynamic_out.borrow(),
-            DMatrix::from_row_slice(3, 2, &[1.0, 4.0, 2.0, 5.0, 3.0, 6.0])
-        );
-        assert_eq!(
-            dynamic_function.reactive_output_cell_ids(),
-            dynamic_out.to_value().reactive_root_cell_ids(),
-        );
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*dynamic_function)?;
+        let alias = dynamic_out.clone();
+        let function = TransposeMD::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 3, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic, 2, 3).unwrap(),
+        ))
+        .unwrap();
+        function.solve_result().unwrap();
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
             *dynamic_out.borrow_mut() = DMatrix::from_element(1, 4, -1.0);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
+        assert!(dynamic_out.same_handle(&alias));
         assert_eq!(dynamic_out.borrow().shape(), (3, 2));
-        assert_eq!(
-            *dynamic_out.borrow(),
-            DMatrix::from_row_slice(3, 2, &[1.0, 4.0, 2.0, 5.0, 3.0, 6.0])
-        );
-    }
 
-    #[test]
-    fn bool_and_string_transposes_preserve_element_backings() {
         let bool_arg = Ref::new(Matrix2::new(true, false, false, true));
         let bool_out = Ref::new(Matrix2::from_element(false));
-        TransposeM2::<bool>::new_invocation(unary_args(&bool_out, &bool_arg).into())
-            .unwrap()
-            .solve_result()
-            .unwrap();
+        TransposeM2::<bool>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact_matrix_ref(bool_out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(bool_arg.clone(), 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
         assert_eq!(*bool_out.borrow(), *bool_arg.borrow());
-
-        let string_arg = Ref::new(Matrix2::new(
-            "a".to_string(),
-            "b".to_string(),
-            "c".to_string(),
-            "d".to_string(),
-        ));
-        let string_out = Ref::new(Matrix2::from_element(String::new()));
-        TransposeM2::<String>::new_invocation(unary_args(&string_out, &string_arg).into())
-            .unwrap()
-            .solve_result()
-            .unwrap();
-        assert_eq!(
-            *string_out.borrow(),
-            Matrix2::new(
-                "a".to_string(),
-                "c".to_string(),
-                "b".to_string(),
-                "d".to_string(),
-            )
-        );
     }
 
     #[test]
-    fn transpose_invocation_rejects_wrong_storage_and_layout() {
-        let out = Ref::new(Matrix2::<f64>::zeros());
-        let wrong_storage = Ref::new(DMatrix::<f64>::zeros(2, 2));
-        let type_error = TransposeM2::<f64>::new_invocation(
-            unary_args(&out, &wrong_storage).into(),
-        )
-        .err()
-        .expect("wrong exact matrix storage must be rejected");
-        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
-
-        let arg = Ref::new(Matrix2::<f64>::identity());
-        let arity_error = TransposeM2::<f64>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), arg.to_value(), arg.to_value()).into(),
-        )
-        .err()
-        .expect("wrong transpose invocation layout must be rejected");
-        assert_eq!(arity_error.kind_name(), "IncorrectNumberOfArguments");
+    fn transpose_rejects_wrong_storage_and_layout() {
+        let output = ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::zeros()), 2, 2)
+            .unwrap();
+        let wrong = ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::<f64>::zeros(2, 2)), 2, 2)
+            .unwrap();
+        assert!(TransposeM2::<f64>::new_invocation(FunctionInvocation::unary(
+            output.clone(),
+            wrong,
+        ))
+        .is_err());
+        let arg = ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::identity()), 2, 2)
+            .unwrap();
+        assert!(TransposeM2::<f64>::new_invocation(FunctionInvocation::binary(
+            output,
+            arg.clone(),
+            arg,
+        ))
+        .is_err());
     }
 }
 

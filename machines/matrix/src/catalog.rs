@@ -4,8 +4,6 @@ use mech_core::C64;
 use mech_core::R64;
 #[cfg(all(feature = "dot", feature = "matrix"))]
 use mech_core::{SchemaBody, ValueCell, function_shape_contract_violation};
-#[cfg(all(test, feature = "dot", feature = "matrix"))]
-use mech_core::{FunctionArgs, FunctionArgumentRole};
 #[cfg(any(
     feature = "dot",
     feature = "matmul",
@@ -127,41 +125,6 @@ macro_rules! matrix_numeric_runtime_contract {
     (matmul, $factory:ident) => {
         RuntimeFunctionContract::matrix_product(RuntimeOutputAliasPolicy::DisallowInputAlias)
     };
-}
-
-#[cfg(all(test, feature = "dot", feature = "matrix"))]
-fn validate_dot_reduction(args: &FunctionArgs) -> MResult<()> {
-    let contract = "dot_reduction";
-    if args
-        .output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .is_some()
-    {
-        return Err(function_shape_contract_violation(
-            contract,
-            "dot output must be scalar",
-        ));
-    }
-    let lhs = args
-        .input_value(0)
-        .ok_or_else(|| function_shape_contract_violation(contract, "missing lhs"))?
-        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
-        .ok_or_else(|| function_shape_contract_violation(contract, "lhs must be matrix-backed"))?;
-    let rhs = args
-        .input_value(1)
-        .ok_or_else(|| function_shape_contract_violation(contract, "missing rhs"))?
-        .function_matrix_descriptor(FunctionArgumentRole::Input(1))?
-        .ok_or_else(|| function_shape_contract_violation(contract, "rhs must be matrix-backed"))?;
-    if lhs.rows != rhs.rows || lhs.cols != rhs.cols {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!(
-                "lhs is {}x{}, rhs is {}x{}",
-                lhs.rows, lhs.cols, rhs.rows, rhs.cols,
-            ),
-        ));
-    }
-    Ok(())
 }
 
 #[cfg(all(feature = "dot", feature = "matrix"))]

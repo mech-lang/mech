@@ -267,10 +267,6 @@ impl MechFunctionFactory for BytecodeIntegrityConstraintMarker {
             arguments: arguments.map(FunctionInputPort::value).collect(),
         }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 
 #[cfg(feature = "invariant_define")]
@@ -320,15 +316,21 @@ pub struct VariableDefineMatrix<T, MatA> {
 }
 impl<T, MatA> MechFunctionFactory for VariableDefineMatrix<T, MatA>
 where
-    T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + 'static
+        + ConstElem
+        + FunctionRuntimeType
+        + CanonicalMatrixElementBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
+    T: CompileConst + CanonicalMatrixElementBacking,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-    MatA: Debug + Clone + ConstElem + AsNaKind + FunctionStateBacking + 'static,
+    MatA: Debug + Clone + ConstElem + FunctionStateBacking + 'static,
     #[cfg(feature = "semantic-compiler")]
     MatA: CompileConst,
-    Ref<MatA>: ToValue,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         MatA::REPRESENTATION,
@@ -351,15 +353,17 @@ where
             _marker: PhantomData::default(),
         }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 impl<T, MatA> MechFunctionImpl for VariableDefineMatrix<T, MatA>
 where
-    Ref<MatA>: ToValue,
-    T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + 'static
+        + ConstElem
+        + FunctionRuntimeType
+        + CanonicalMatrixElementBacking,
     MatA: Debug,
 {
     fn solve_result(&self) -> MResult<()> {
@@ -372,8 +376,8 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T, MatA> MechFunctionCompiler for VariableDefineMatrix<T, MatA>
 where
-    T: CompileConst + ConstElem + AsValueKind,
-    MatA: CompileConst + ConstElem + AsNaKind,
+    T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+    MatA: CompileConst + ConstElem,
 {
     fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
         if *self.mutable.borrow() {
@@ -400,8 +404,8 @@ where
         )?;
         let name = format!(
             "VariableDefineMatrix<{}{}>",
-            T::as_value_kind(),
-            MatA::as_na_kind()
+            <T as FunctionRuntimeType>::REPRESENTATION,
+            function_matrix_storage_name::<MatA>()
         );
         let name_register = compile_register_brrw!(self.name, ctx);
         let mutable_register = compile_register_brrw!(self.mutable, ctx);
@@ -469,9 +473,6 @@ macro_rules! impl_variable_define_fxn {
               }))
             }
 
-          fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-              Self::new_invocation(args.into())
-            }
           }
           impl MechFunctionImpl for [<VariableDefine $kind:camel>] {
             fn solve_result(&self) -> MResult<()> {
@@ -538,65 +539,57 @@ macro_rules! impl_variable_define_fxn {
     feature = "enum"
 ))]
 macro_rules! impl_canonical_variable_define_fxn {
-    ($kind:tt) => {
-        paste! {
-            #[derive(Debug, Clone, Copy)]
-            pub struct [<VariableDefine $kind:camel>];
+    ($factory:ident, $representation:expr) => {
+        #[derive(Debug, Clone, Copy)]
+        pub struct $factory;
 
-            impl MechFunctionFactory for [<VariableDefine $kind:camel>] {
-                const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
-                    <$kind as FunctionRuntimeType>::REPRESENTATION,
-                    FunctionValueRepresentation::String,
-                    FunctionValueRepresentation::Bool,
-                );
+        impl MechFunctionFactory for $factory {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                $representation,
+                FunctionValueRepresentation::String,
+                FunctionValueRepresentation::Bool,
+            );
 
-                fn new_invocation(
-                    invocation: FunctionInvocation,
-                ) -> MResult<Box<dyn MechFunction>> {
-                    let (out, name, mutable) = invocation.expect_binary()?;
-                    let value = out.value();
-                    let name = name.value().snapshot()?;
-                    let mutable = mutable.value().snapshot()?;
-                    let ValueData::String(name) = name.data() else {
-                        return Err(MechError::new(
-                            FunctionArgumentTypeMismatch {
-                                role: FunctionArgumentRole::Input(0),
-                                expected: "String".to_owned(),
-                                found: format!("{:?}", name.data()),
-                            },
-                            None,
-                        )
-                        .with_compiler_loc());
-                    };
-                    let ValueData::Bool(mutable) = mutable.data() else {
-                        return Err(MechError::new(
-                            FunctionArgumentTypeMismatch {
-                                role: FunctionArgumentRole::Input(1),
-                                expected: "Bool".to_owned(),
-                                found: format!("{:?}", mutable.data()),
-                            },
-                            None,
-                        )
-                        .with_compiler_loc());
-                    };
-                    #[cfg(not(feature = "semantic-compiler"))]
-                    let _ = (name, mutable);
-                    Ok(Box::new(CanonicalVariableDefinition {
-                        #[cfg(feature = "semantic-compiler")]
-                        initial: value.snapshot()?,
-                        value: value.cell().clone(),
-                        #[cfg(feature = "semantic-compiler")]
-                        name: name.to_string(),
-                        #[cfg(feature = "semantic-compiler")]
-                        mutable: *mutable,
-                        #[cfg(feature = "semantic-compiler")]
-                        root_visible: true,
-                    }))
-                }
-
-                fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                    Self::new_invocation(args.into())
-                }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, name, mutable) = invocation.expect_binary()?;
+                let value = out.value();
+                let name = name.value().snapshot()?;
+                let mutable = mutable.value().snapshot()?;
+                let ValueData::String(name) = name.data() else {
+                    return Err(MechError::new(
+                        FunctionArgumentTypeMismatch {
+                            role: FunctionArgumentRole::Input(0),
+                            expected: "String".to_owned(),
+                            found: format!("{:?}", name.data()),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                };
+                let ValueData::Bool(mutable) = mutable.data() else {
+                    return Err(MechError::new(
+                        FunctionArgumentTypeMismatch {
+                            role: FunctionArgumentRole::Input(1),
+                            expected: "Bool".to_owned(),
+                            found: format!("{:?}", mutable.data()),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                };
+                #[cfg(not(feature = "semantic-compiler"))]
+                let _ = (name, mutable);
+                Ok(Box::new(CanonicalVariableDefinition {
+                    #[cfg(feature = "semantic-compiler")]
+                    initial: value.snapshot()?,
+                    value: value.cell().clone(),
+                    #[cfg(feature = "semantic-compiler")]
+                    name: name.to_string(),
+                    #[cfg(feature = "semantic-compiler")]
+                    mutable: *mutable,
+                    #[cfg(feature = "semantic-compiler")]
+                    root_visible: true,
+                }))
             }
         }
     };
@@ -653,19 +646,19 @@ impl_variable_define_fxn!(bool);
 #[cfg(feature = "string")]
 impl_variable_define_fxn!(String);
 #[cfg(feature = "table")]
-impl_canonical_variable_define_fxn!(MechTable);
+impl_canonical_variable_define_fxn!(VariableDefineTable, FunctionValueRepresentation::Table);
 #[cfg(feature = "set")]
-impl_canonical_variable_define_fxn!(MechSet);
+impl_canonical_variable_define_fxn!(VariableDefineSet, FunctionValueRepresentation::Set);
 #[cfg(feature = "tuple")]
-impl_canonical_variable_define_fxn!(MechTuple);
+impl_canonical_variable_define_fxn!(VariableDefineTuple, FunctionValueRepresentation::Tuple);
 #[cfg(feature = "record")]
-impl_canonical_variable_define_fxn!(MechRecord);
+impl_canonical_variable_define_fxn!(VariableDefineRecord, FunctionValueRepresentation::Record);
 #[cfg(feature = "map")]
-impl_canonical_variable_define_fxn!(MechMap);
+impl_canonical_variable_define_fxn!(VariableDefineMap, FunctionValueRepresentation::Map);
 #[cfg(feature = "atom")]
-impl_canonical_variable_define_fxn!(MechAtom);
+impl_canonical_variable_define_fxn!(VariableDefineAtom, FunctionValueRepresentation::Atom);
 #[cfg(feature = "enum")]
-impl_canonical_variable_define_fxn!(MechEnum);
+impl_canonical_variable_define_fxn!(VariableDefineEnum, FunctionValueRepresentation::Enum);
 
 macro_rules! declare_variable_define_scalar_native {
     ($feature:literal, $kind:ident) => {
@@ -704,13 +697,92 @@ declare_variable_define_scalar_native!("r64", R64);
 declare_variable_define_scalar_native!("c64", C64);
 declare_variable_define_scalar_native!("bool", bool);
 declare_variable_define_scalar_native!("string", String);
-declare_variable_define_scalar_native!("table", MechTable);
-declare_variable_define_scalar_native!("set", MechSet);
-declare_variable_define_scalar_native!("tuple", MechTuple);
-declare_variable_define_scalar_native!("record", MechRecord);
-declare_variable_define_scalar_native!("map", MechMap);
-declare_variable_define_scalar_native!("atom", MechAtom);
-declare_variable_define_scalar_native!("enum", MechEnum);
+
+macro_rules! declare_canonical_variable_define_native {
+    (
+        $feature:literal,
+        $token_prefix:ident,
+        $token:ident,
+        $installer_token:ident,
+        $factory:ident,
+        $runtime_name:literal
+    ) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "variable_define", feature = $feature),
+                registration: [<register_variable_define_ $token_prefix $token>],
+                installer: [<install_variable_define_ $installer_token>],
+                name: $runtime_name,
+                factory_type: $factory,
+                contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+                package: "mech-engine",
+                crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::install_variable_define_",
+                    stringify!($installer_token),
+                ),
+                extra_cargo_features: ["variable_define"],
+            }
+        }
+    };
+}
+
+declare_canonical_variable_define_native!(
+    "table",
+    mech_,
+    table,
+    mechtable,
+    VariableDefineTable,
+    "VariableDefineMechTable"
+);
+declare_canonical_variable_define_native!(
+    "set",
+    mech_,
+    set,
+    mechset,
+    VariableDefineSet,
+    "VariableDefineMechSet"
+);
+declare_canonical_variable_define_native!(
+    "tuple",
+    mech_,
+    tuple,
+    mechtuple,
+    VariableDefineTuple,
+    "VariableDefineMechTuple"
+);
+declare_canonical_variable_define_native!(
+    "record",
+    mech_,
+    record,
+    mechrecord,
+    VariableDefineRecord,
+    "VariableDefineMechRecord"
+);
+declare_canonical_variable_define_native!(
+    "map",
+    mech_,
+    map,
+    mechmap,
+    VariableDefineMap,
+    "VariableDefineMechMap"
+);
+declare_canonical_variable_define_native!(
+    "atom",
+    mech_,
+    atom,
+    mechatom,
+    VariableDefineAtom,
+    "VariableDefineMechAtom"
+);
+declare_canonical_variable_define_native!(
+    "enum",
+    mech_,
+    enum,
+    mechenum,
+    VariableDefineEnum,
+    "VariableDefineMechEnum"
+);
 
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
@@ -739,13 +811,20 @@ pub mod __mech_native {
     export_variable_define_scalar_native!("c64", C64);
     export_variable_define_scalar_native!("bool", bool);
     export_variable_define_scalar_native!("string", String);
-    export_variable_define_scalar_native!("table", MechTable);
-    export_variable_define_scalar_native!("set", MechSet);
-    export_variable_define_scalar_native!("tuple", MechTuple);
-    export_variable_define_scalar_native!("record", MechRecord);
-    export_variable_define_scalar_native!("map", MechMap);
-    export_variable_define_scalar_native!("atom", MechAtom);
-    export_variable_define_scalar_native!("enum", MechEnum);
+    #[cfg(all(feature = "variable_define", feature = "atom"))]
+    pub use super::install_variable_define_mechatom;
+    #[cfg(all(feature = "variable_define", feature = "enum"))]
+    pub use super::install_variable_define_mechenum;
+    #[cfg(all(feature = "variable_define", feature = "map"))]
+    pub use super::install_variable_define_mechmap;
+    #[cfg(all(feature = "variable_define", feature = "record"))]
+    pub use super::install_variable_define_mechrecord;
+    #[cfg(all(feature = "variable_define", feature = "set"))]
+    pub use super::install_variable_define_mechset;
+    #[cfg(all(feature = "variable_define", feature = "table"))]
+    pub use super::install_variable_define_mechtable;
+    #[cfg(all(feature = "variable_define", feature = "tuple"))]
+    pub use super::install_variable_define_mechtuple;
 }
 
 macro_rules! for_each_variable_define_matrix_shape {
@@ -940,10 +1019,6 @@ impl MechFunctionFactory for VariableDefineEmpty {
             root_visible: true,
         }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 
 mech_core::declare_native_runtime_factory! {
@@ -1123,19 +1198,19 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     install_kind!("string", String, String, "string");
 
     #[cfg(feature = "table")]
-    install_variable_define_scalar_runtime!(builder, MechTable);
+    register_variable_define_mech_table(builder)?;
     #[cfg(feature = "set")]
-    install_variable_define_scalar_runtime!(builder, MechSet);
+    register_variable_define_mech_set(builder)?;
     #[cfg(feature = "tuple")]
-    install_variable_define_scalar_runtime!(builder, MechTuple);
+    register_variable_define_mech_tuple(builder)?;
     #[cfg(feature = "record")]
-    install_variable_define_scalar_runtime!(builder, MechRecord);
+    register_variable_define_mech_record(builder)?;
     #[cfg(feature = "map")]
-    install_variable_define_scalar_runtime!(builder, MechMap);
+    register_variable_define_mech_map(builder)?;
     #[cfg(feature = "atom")]
-    install_variable_define_scalar_runtime!(builder, MechAtom);
+    register_variable_define_mech_atom(builder)?;
     #[cfg(feature = "enum")]
-    install_variable_define_scalar_runtime!(builder, MechEnum);
+    register_variable_define_mech_enum(builder)?;
 
     register_variable_define_empty(builder)?;
     Ok(())

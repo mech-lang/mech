@@ -174,11 +174,6 @@ declare_compare_binop_native_factories!(Min, "min");
 declare_compare_binop_native_factories!(NEQ, "neq");
 
 #[cfg(any(feature = "seq", feature = "sneq"))]
-fn validate_strict_comparison(_: &mech_core::FunctionArgs) -> MResult<()> {
-    Ok(())
-}
-
-#[cfg(any(feature = "seq", feature = "sneq"))]
 fn validate_strict_comparison_canonical(_: &ValueCell, _: &[ValueCell]) -> MResult<()> {
     Ok(())
 }
@@ -189,10 +184,9 @@ mech_core::declare_native_runtime_factory! {
     installer: install_strict_eq,
     name: "compare/seq",
     factory_type: crate::StrictEqValue,
-    contract: RuntimeFunctionContract::custom_with_canonical(
+    contract: RuntimeFunctionContract::canonical_custom(
         "strict_comparison",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_strict_comparison,
         validate_strict_comparison_canonical,
     ),
     package: "mech-compare",
@@ -207,10 +201,9 @@ mech_core::declare_native_runtime_factory! {
     installer: install_strict_not_eq,
     name: "compare/sneq",
     factory_type: crate::StrictNotEqValue,
-    contract: RuntimeFunctionContract::custom_with_canonical(
+    contract: RuntimeFunctionContract::canonical_custom(
         "strict_comparison",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_strict_comparison,
         validate_strict_comparison_canonical,
     ),
     package: "mech-compare",

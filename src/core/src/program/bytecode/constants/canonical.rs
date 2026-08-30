@@ -90,6 +90,18 @@ pub(super) fn encode_value(
 }
 
 #[cfg(feature = "semantic-compiler")]
+pub(super) fn encode_exact_backing(
+    value: &Value,
+    representation: FunctionValueRepresentation,
+) -> MResult<EncodedConstant> {
+    let mut encoded = encode_value(value, representation)?;
+    if let RuntimeType::Matrix { element, .. } = &encoded.runtime_type {
+        encoded.alignment = matrix_element_alignment(element);
+    }
+    Ok(encoded)
+}
+
+#[cfg(feature = "semantic-compiler")]
 pub(super) fn encode_composite_template(
     value: &Value,
     representation: FunctionValueRepresentation,
@@ -621,6 +633,23 @@ fn encode_matrix_sequence(
         bytes.extend_from_slice(&encoded.bytes);
     }
     Ok(())
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn matrix_element_alignment(element_type: &RuntimeType) -> u8 {
+    match element_type {
+        RuntimeType::Bool | RuntimeType::U8 | RuntimeType::I8 => 1,
+        RuntimeType::U16 | RuntimeType::I16 => 2,
+        RuntimeType::U32 | RuntimeType::I32 | RuntimeType::F32 | RuntimeType::String => 4,
+        RuntimeType::U64
+        | RuntimeType::I64
+        | RuntimeType::F64
+        | RuntimeType::C64
+        | RuntimeType::R64
+        | RuntimeType::Index => 8,
+        RuntimeType::U128 | RuntimeType::I128 => 16,
+        _ => 1,
+    }
 }
 
 struct BytecodeNamedKinds(BTreeMap<KindId, CanonicalNominalPath>);

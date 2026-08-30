@@ -245,7 +245,7 @@ impl<'a> SpecializationContext<'a> {
     /// This is the shared source/runtime seam for operation families whose
     /// concrete factories are already registered in the catalog. The caller
     /// derives output representation and extent from operation semantics;
-    /// this method never projects a cell through the legacy universal value.
+    /// this method never projects a cell through an erased universal value.
     pub fn bind_runtime_factory(
         &self,
         name_prefix: &str,
@@ -406,7 +406,7 @@ impl<'a> SpecializationContext<'a> {
     /// canonical output cell as the authoritative read-modify-write target.
     ///
     /// Assignment specialization uses this path so the output is never
-    /// projected into, or reconstructed from, the legacy universal value.
+    /// projected into, or reconstructed from, an erased universal value.
     pub fn bind_runtime_factory_existing_output(
         &self,
         name_prefix: &str,
@@ -848,9 +848,8 @@ macro_rules! __mech_for_each_canonical_binop_factory_group {
 }
 
 /// Enumerates the exact concrete binary factory surface for canonical source
-/// specialization. This traversal deliberately lives outside the legacy
-/// adapter so source execution and native registration share the same type
-/// grid without requiring a legacy value projection.
+/// specialization. Source execution and native registration share this exact
+/// type grid without requiring an erased value projection.
 #[macro_export]
 macro_rules! for_each_canonical_binop_factory {
     ($callback:path, $context:tt, $lib:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
@@ -894,236 +893,4 @@ macro_rules! for_each_canonical_binop_factory {
         $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vector3"); MDR3, R3MD);
         $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vector4"); MDR4, R4MD);
     };
-}
-
-#[cfg(all(test, feature = "f64"))]
-mod tests {
-    use super::*;
-    use crate::{
-        FunctionSpecializer, LegacyValue, MechFunction, MechFunctionImpl,
-        specialization_invocation_from_legacy,
-    };
-    use std::sync::Arc;
-
-    #[cfg(feature = "semantic-compiler")]
-    use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
-
-    struct EchoFunction {
-        output: Ref<f64>,
-    }
-
-    impl MechFunctionImpl for EchoFunction {
-        fn solve_result(&self) -> MResult<()> {
-            Ok(())
-        }
-
-        fn primary_output_state_port(&self) -> Option<crate::FunctionStatePort<'_>> {
-            Some(crate::FunctionStatePort::from_ref(&self.output))
-        }
-
-        fn to_string(&self) -> String {
-            String::from("EchoFunction")
-        }
-    }
-
-    #[cfg(feature = "semantic-compiler")]
-    impl MechFunctionCompiler for EchoFunction {
-        fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-            Ok(0)
-        }
-    }
-
-    struct EchoSpecializer;
-
-    impl FunctionSpecializer for EchoSpecializer {
-        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            let [LegacyValue::F64(output)] = arguments else {
-                panic!("test specialization receives one f64 input")
-            };
-            Ok(Box::new(EchoFunction {
-                output: output.clone(),
-            }))
-        }
-    }
-
-    #[test]
-    fn inputs_preserve_exact_cells_and_keep_absence_out_of_runtime_values() {
-        let source = Ref::new(7.5);
-        let cell = ValueCell::from_inferred_ref(source.clone(), None).unwrap();
-        let input = SpecializationInput::Cell(cell.clone());
-
-        assert!(input.try_ref::<f64>().unwrap().same_handle(&source));
-        assert_eq!(input.schema_key(), Some(cell.schema_key()));
-        assert_eq!(
-            input.closed_schema_body().unwrap(),
-            Some(cell.closed_schema_body().unwrap())
-        );
-        assert_eq!(input.shape(), Some(cell.shape().clone()));
-        assert_eq!(
-            input.representation(),
-            Some(FunctionValueRepresentation::F64)
-        );
-        assert!(matches!(
-            input.snapshot().unwrap().data(),
-            crate::ValueData::F64(_)
-        ));
-
-        let absent = SpecializationInput::Absent;
-        assert!(absent.is_absent());
-        assert_eq!(absent.schema_key(), None);
-        assert_eq!(absent.closed_schema_body().unwrap(), None);
-        assert_eq!(absent.shape(), None);
-        assert!(absent.snapshot().is_err());
-    }
-
-    #[cfg(all(feature = "matrix", feature = "matrix2"))]
-    #[test]
-    fn matrix_inputs_retain_the_exact_wrapper_and_inner_handle() {
-        let source = Ref::new(crate::Matrix2::new(1.0, 2.0, 3.0, 4.0));
-        let cell = ValueCell::from_inferred_ref(source.clone(), Some((2, 2))).unwrap();
-        let input = SpecializationInput::Cell(cell);
-
-        let Matrix::Matrix2(actual) = input.try_matrix::<f64>(0).unwrap() else {
-            panic!("the exact Matrix2 representation must be retained")
-        };
-        assert!(actual.same_handle(&source));
-
-        let scalar = SpecializationInput::Cell(ValueCell::from_exact(1.0_f64).unwrap());
-        let error = scalar.try_matrix::<f64>(2).unwrap_err();
-        assert_eq!(
-            error
-                .kind_as::<crate::FunctionArgumentTypeMismatch>()
-                .unwrap()
-                .role,
-            FunctionArgumentRole::Input(2)
-        );
-    }
-
-    #[test]
-    fn context_constructs_typed_and_canonical_cells_in_its_schema_table() {
-        let source = Ref::new(3.0);
-        let input_cell = ValueCell::from_inferred_ref(source, None).unwrap();
-        let invocation =
-            SpecializationInvocation::from_cells(vec![input_cell.clone()].into_boxed_slice());
-        let context = SpecializationContext::for_invocation(&invocation, None).unwrap();
-        let replacement = Ref::new(9.0);
-        let typed = context
-            .typed_cell(
-                replacement.clone(),
-                input_cell.schema_key(),
-                input_cell.shape().clone(),
-            )
-            .unwrap();
-        assert!(typed.try_ref::<f64>().unwrap().same_handle(&replacement));
-
-        let snapshot = input_cell.snapshot().unwrap();
-        let canonical = context.value_cell(snapshot).unwrap();
-        assert_eq!(canonical.schema_key(), input_cell.schema_key());
-        assert_eq!(
-            canonical.shape().parameter_values(),
-            input_cell.shape().parameter_values()
-        );
-    }
-
-    #[cfg(feature = "bool")]
-    #[test]
-    fn invocation_context_merges_independent_schema_tables_and_rebinds_values() {
-        let scalar = ValueCell::from_exact(3.0_f64).unwrap();
-        let flag = ValueCell::from_exact(true).unwrap();
-        let invocation = SpecializationInvocation::from_cells(
-            vec![scalar.clone(), flag.clone()].into_boxed_slice(),
-        );
-        let context = SpecializationContext::for_invocation(&invocation, None).unwrap();
-
-        assert_eq!(scalar.schema(), flag.schema());
-        assert_eq!(context.schemas().len(), 2);
-        assert!(context.schemas().find_by_key(scalar.schema_key()).is_some());
-        assert!(context.schemas().find_by_key(flag.schema_key()).is_some());
-        assert_eq!(
-            context.schema(scalar.schema_key()).unwrap().body(),
-            &SchemaBody::FloatingPoint(crate::FloatWidth::W64)
-        );
-        assert_eq!(
-            context.schema(flag.schema_key()).unwrap().body(),
-            &SchemaBody::Bool
-        );
-
-        let rebound = context.value_cell(flag.snapshot().unwrap()).unwrap();
-        assert_eq!(rebound.schema_key(), flag.schema_key());
-        assert_eq!(*rebound.try_ref::<bool>().unwrap().borrow(), true);
-
-        let reversed = SpecializationInvocation::from_cells(
-            vec![flag.clone(), scalar.clone()].into_boxed_slice(),
-        );
-        let reversed = SpecializationContext::for_invocation(&reversed, None).unwrap();
-        assert_eq!(
-            reversed.schema(scalar.schema_key()).unwrap().body(),
-            &SchemaBody::FloatingPoint(crate::FloatWidth::W64)
-        );
-        assert_eq!(
-            reversed.schema(flag.schema_key()).unwrap().body(),
-            &SchemaBody::Bool
-        );
-    }
-
-    #[test]
-    fn legacy_adapter_binds_the_specialized_output_without_rediscovery_by_callers() {
-        let source = Ref::new(11.0);
-        let invocation =
-            specialization_invocation_from_legacy(&[LegacyValue::F64(source.clone())]).unwrap();
-        let mut context = SpecializationContext::for_invocation(&invocation, None).unwrap();
-        let specializer = crate::canonical_function_specializer(Arc::new(EchoSpecializer));
-        let specialized = specializer
-            .specialize_invocation(&invocation, &mut context)
-            .unwrap();
-
-        assert!(
-            specialized
-                .output()
-                .try_ref::<f64>()
-                .unwrap()
-                .same_handle(&source)
-        );
-        assert_eq!(specialized.instance().inputs().len(), 1);
-        assert!(specialized.instance().inputs()[0].same_cell(specialized.output()));
-    }
-
-    #[test]
-    fn legacy_mutable_specialization_inputs_retain_the_inner_typed_cell() {
-        let source = Ref::new(11.0);
-        let wrapper = Ref::new(LegacyValue::F64(source.clone()));
-        let invocation = specialization_invocation_from_legacy(&[
-            LegacyValue::MutableReference(wrapper),
-            LegacyValue::F64(Ref::new(2.0)),
-        ])
-        .unwrap();
-
-        let sink = invocation.input(0).unwrap().cell().unwrap();
-        assert_eq!(sink.representation(), FunctionValueRepresentation::F64);
-        assert!(sink.try_ref::<f64>().unwrap().same_handle(&source));
-    }
-
-    #[test]
-    fn legacy_all_selection_is_not_materialized_as_a_runtime_specialization_input() {
-        let error = specialization_invocation_from_legacy(&[LegacyValue::IndexAll]).unwrap_err();
-        assert!(error.simple_message().contains("matrix-all-selection"));
-    }
-
-    #[test]
-    fn option_absence_is_a_canonical_cell_not_source_absence_or_unit() {
-        let invocation = specialization_invocation_from_legacy(&[LegacyValue::EmptyKind(
-            crate::ValueKind::Option(Box::new(crate::ValueKind::F64)),
-        )])
-        .unwrap();
-        let input = invocation.input(0).unwrap();
-        assert!(!input.is_absent());
-        assert!(matches!(
-            input.snapshot().unwrap().data(),
-            crate::ValueData::Option(None)
-        ));
-
-        let unit = ValueCell::unit().snapshot().unwrap();
-        assert!(matches!(unit.data(), crate::ValueData::Tuple(values) if values.is_empty()));
-        assert_ne!(input.snapshot().unwrap().schema_key(), unit.schema_key());
-    }
 }

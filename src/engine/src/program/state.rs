@@ -1,29 +1,4 @@
 use crate::*;
-#[cfg(all(test, feature = "assign", feature = "semantic-compiler"))]
-pub fn compile_stable_value_update(
-    sink: ValueCell,
-    source: LegacyValue,
-) -> MResult<Box<dyn MechFunction>> {
-    let current = sink.snapshot()?;
-    let source_value = source.to_canonical_value()?;
-    validate_stable_value_update(&current, &source_value)?;
-
-    let source = ValueCell::from_snapshot(source_value)?;
-    Ok(crate::intrinsics::assign::canonical_stable_value_update(
-        sink, source,
-    ))
-}
-#[cfg(all(test, feature = "assign", feature = "semantic-compiler"))]
-pub fn apply_stable_value_update(sink: ValueCell, source: LegacyValue) -> MResult<LegacyValue> {
-    let current = sink.snapshot()?;
-    let source_value = source.to_canonical_value()?;
-    validate_stable_value_update(&current, &source_value)?;
-    let source = ValueCell::from_snapshot(source_value)?;
-    let update = crate::intrinsics::assign::canonical_stable_value_update(sink.clone(), source);
-    update.solve_result()?;
-    Ok(sink.borrow().clone())
-}
-
 use core::ops::Range;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -32,7 +7,6 @@ pub struct ProgramComputeRegion {
     pub placement: ComputePlacement,
     pub plan_nodes: Range<usize>,
 }
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ComputeRegionNameConflictError {
     pub name: String,

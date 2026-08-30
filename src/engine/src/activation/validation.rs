@@ -1,9 +1,9 @@
 use crate::{
-    ActivationArm, ActivationArmBody, ActivationScope, CompiledPattern, ComprehensionQualifier,
-    DimensionExpr, Expression, Factor, FunctionDefinition, FunctionResolver, GuardFunctionSafety,
-    Interpreter, MResult, MechCode, MechError, MechErrorKind, Pattern, RangeExpression,
-    ReactiveCellId, ResolvedNamedFunction, SchemaBody, Slice, Statement, Structure, Subscript,
-    Token, ValueCell, compile_pattern,
+    ActivationArm, ActivationArmBody, ActivationScope, CanonicalCellId, CompiledPattern,
+    ComprehensionQualifier, DimensionExpr, Expression, Factor, FunctionDefinition,
+    FunctionResolver, GuardFunctionSafety, Interpreter, MResult, MechCode, MechError,
+    MechErrorKind, Pattern, RangeExpression, ResolvedNamedFunction, SchemaBody, Slice, Statement,
+    Structure, Subscript, Token, ValueCell, compile_pattern,
 };
 use std::collections::HashSet;
 
@@ -105,7 +105,7 @@ pub(super) fn preflight_patterned_activation(
     scope: &ActivationScope,
     arms: &[ActivationArm],
     trigger: &ValueCell,
-    trigger_cells: &[ReactiveCellId],
+    trigger_cells: &[CanonicalCellId],
     i: &Interpreter,
 ) -> MResult<PreflightPatternedActivation> {
     arms.last().ok_or_else(|| {
@@ -182,7 +182,7 @@ fn validation_error(kind: impl MechErrorKind + 'static, tokens: Vec<Token>) -> M
 pub(super) fn validate_patterned_arm_body(
     body: &ActivationArmBody,
     trigger_id: u64,
-    trigger_cells: &[ReactiveCellId],
+    trigger_cells: &[CanonicalCellId],
     interpreter: &Interpreter,
 ) -> MResult<()> {
     match body {
@@ -198,7 +198,7 @@ pub(super) fn validate_patterned_arm_body(
 fn validate_patterned_code(
     code: &MechCode,
     trigger_id: u64,
-    trigger_cells: &[ReactiveCellId],
+    trigger_cells: &[CanonicalCellId],
     interpreter: &Interpreter,
 ) -> MResult<()> {
     match code {
@@ -220,7 +220,7 @@ fn validate_patterned_code(
 fn validate_patterned_statement(
     statement: &Statement,
     trigger_id: u64,
-    trigger_cells: &[ReactiveCellId],
+    trigger_cells: &[CanonicalCellId],
     interpreter: &Interpreter,
 ) -> MResult<()> {
     match statement {

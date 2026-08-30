@@ -170,8 +170,9 @@ mod tests {
     #[cfg(feature = "semantic-compiler")]
     use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
     use mech_core::{
-        FunctionCatalogBuilder, FunctionDefine, FunctionExport, FunctionExposure,
-        FunctionSpecializer, LegacyValue, MechFunction, MechFunctionImpl,
+        CanonicalFunctionSpecializer, FunctionCatalogBuilder, FunctionDefine, FunctionExport,
+        FunctionExposure, FunctionInstance, FunctionInvocation, MechFunctionImpl,
+        SpecializationContext, SpecializationInvocation, SpecializedFunction, ValueCell,
         internal_pattern_value_identifier,
     };
     use std::sync::Arc;
@@ -201,16 +202,24 @@ mod tests {
 
     struct TestSpecializer(&'static str);
 
-    impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            Ok(Box::new(TestFunction(self.0)))
+    impl CanonicalFunctionSpecializer for TestSpecializer {
+        fn specialize_invocation(
+            &self,
+            _: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
+            let invocation = FunctionInvocation::nullary(ValueCell::unit());
+            Ok(SpecializedFunction::new(FunctionInstance::new(
+                Box::new(TestFunction(self.0)),
+                invocation,
+            )))
         }
     }
 
     fn test_catalog() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
         let operation = builder
-            .insert_specializer("math/add", Arc::new(TestSpecializer("catalog")))
+            .insert_canonical_specializer("math/add", Arc::new(TestSpecializer("catalog")))
             .unwrap();
         builder
             .insert_export(FunctionExport {
@@ -266,7 +275,7 @@ mod tests {
         extensions
             .insert_or_replace(FunctionExtensionEntry::new(
                 extension_name,
-                mech_core::canonical_function_specializer(Arc::new(TestSpecializer("extension"))),
+                Arc::new(TestSpecializer("extension")),
             ))
             .unwrap();
         environment
@@ -295,7 +304,7 @@ mod tests {
         extensions
             .insert_or_replace(FunctionExtensionEntry::new(
                 extension_name,
-                mech_core::canonical_function_specializer(Arc::new(TestSpecializer("extension"))),
+                Arc::new(TestSpecializer("extension")),
             ))
             .unwrap();
         environment
@@ -329,7 +338,7 @@ mod tests {
     fn disabled_catalog_operations_fail_before_specialization() {
         let mut builder = FunctionCatalogBuilder::new();
         let operation = builder
-            .insert_specializer("stats/mean", Arc::new(TestSpecializer("catalog")))
+            .insert_canonical_specializer("stats/mean", Arc::new(TestSpecializer("catalog")))
             .unwrap();
         builder
             .insert_export(FunctionExport {

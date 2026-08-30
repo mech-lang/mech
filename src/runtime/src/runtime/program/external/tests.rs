@@ -4,10 +4,10 @@ use mech_core::{
     AccessMode, ApplicationRequirement, ApplicationRequirementId, BindingId, CellSlotId,
     ChangeDetectionPolicy, DeclaredOperationContract, DeliveryMode, EffectContract,
     EffectDeliveryPolicy, ExecutionResourceRequest, ExternalInteraction, IdempotencyRequirement,
-    InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError, NodeId, ObservationContract,
+    InputPortLayout, InputPortPolicy, MResult, MechError, NodeId, ObservationContract,
     ObservationReplayPolicy, OperationContractDeclaration, OperationContractTableBuilder,
     OutputConstruction, OutputPortPolicy, ParsedProgram, ReactiveInstanceId, ResolvedInputPort,
-    ResolvedOperationContract, ResourceDelivery, ResourceIntent, ShapeRule, ToMatrix,
+    ResolvedOperationContract, ResourceDelivery, ResourceIntent, ShapeRule,
     TransactionalEffectProtocol, TransactionalExternalContract, Value, ValueCell,
     snapshot::{SequenceView, ValueData},
 };
@@ -1635,12 +1635,14 @@ fn safe_engine_api_cannot_publish_an_external_candidate() -> MResult<()> {
     let trace = Arc::new(Mutex::new(ProviderTrace::default()));
     let (artifact, mut instance, _providers) = fixture(trace, ProviderProtocol::AfterCommit)?;
     let input = instance.plan.inputs[0].clone();
-    let value = captured_value_from_legacy(
-        &LegacyValue::MatrixF64(ToMatrix::to_matrix(vec![0.2, 0.01, 5.0, -2.0], 4, 1)),
-        input.schema,
-        &input.shape,
-        artifact.schemas(),
-    )?;
+    let value = RuntimeHostInputValue::F64Matrix {
+        rows: 4,
+        columns: 1,
+        values: vec![0.2, 0.01, 5.0, -2.0],
+    }
+    .into_value()?
+    .rebind(input.schema, &input.shape, artifact.schemas())
+    .expect("canonical host input must rebind to the captured resident slot");
     let captured = [mech_engine::__resident::CapturedValueInput {
         slot: input.slot,
         value: &value,
@@ -1908,12 +1910,14 @@ fn shared_observations_capture_one_authoritative_provider_snapshot() -> MResult<
         batch.facts[1].value.resident_token()
     );
     let second = &batch.facts[1];
-    let divergent_value = captured_value_from_legacy(
-        &LegacyValue::MatrixF64(ToMatrix::to_matrix(vec![9.0, 0.01, 5.0, -2.0], 4, 1)),
-        second.value.schema(),
-        &second.shape,
-        artifact.schemas(),
-    )?;
+    let divergent_value = RuntimeHostInputValue::F64Matrix {
+        rows: 4,
+        columns: 1,
+        values: vec![9.0, 0.01, 5.0, -2.0],
+    }
+    .into_value()?
+    .rebind(second.value.schema(), &second.shape, artifact.schemas())
+    .expect("canonical host input must rebind to the duplicate observation schema");
     let divergent_second = CapturedInputFact::new(
         second.sequence,
         second.requirement,
@@ -2227,13 +2231,14 @@ fn provider_matrix_shape_and_row_major_order_are_preserved() -> MResult<()> {
         .iter()
         .find(|slot| slot.region.shape.rows == 2 && slot.region.shape.columns == 3)
         .expect("EKF 2x3 resident slot");
-    let legacy = LegacyValue::MatrixF64(ToMatrix::to_matrix(
-        vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-        2,
-        3,
-    ));
-    let canonical =
-        captured_value_from_legacy(&legacy, slot.schema, &slot.shape, artifact.schemas())?;
+    let canonical = RuntimeHostInputValue::F64Matrix {
+        rows: 2,
+        columns: 3,
+        values: vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+    }
+    .into_value()?
+    .rebind(slot.schema, &slot.shape, artifact.schemas())
+    .expect("canonical host input must rebind to the resident matrix slot");
     let ValueData::Matrix(matrix) = canonical.data() else {
         panic!("captured matrix representation")
     };
@@ -2245,7 +2250,7 @@ fn provider_matrix_shape_and_row_major_order_are_preserved() -> MResult<()> {
             .iter()
             .map(|value| value.to_f64())
             .collect::<Vec<_>>(),
-        [1.0, 3.0, 5.0, 2.0, 4.0, 6.0]
+        [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
     );
 
     let mismatch_trace = Arc::new(Mutex::new(ProviderTrace {

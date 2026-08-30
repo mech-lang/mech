@@ -1,5 +1,4 @@
 use crate::*;
-
 // Equal ---------------------------------------------------------------
 
 macro_rules! eq_scalar_lhs_op {
@@ -283,14 +282,6 @@ mod invocation_port_tests {
     use nalgebra::{DMatrix, Matrix2};
     use std::rc::Rc;
 
-    fn binary_args<T, O>(out: &Ref<O>, lhs: &Ref<T>, rhs: &Ref<T>) -> FunctionArgs
-    where
-        Ref<T>: ToValue,
-        Ref<O>: ToValue,
-    {
-        FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value())
-    }
-
     fn canonical_value(body: SchemaBody, data: ValueDataDraft) -> ValueCell {
         let schema = SchemaDraft {
             dimension_parameters: Box::new([]),
@@ -332,66 +323,61 @@ mod invocation_port_tests {
     }
 
     #[test]
-    fn scalar_legacy_and_invocation_entries_are_equivalent() {
-        let lhs = Ref::new(3.0_f64);
-        let rhs = Ref::new(3.0_f64);
-        let legacy_out = Ref::new(false);
-        let invocation_out = Ref::new(false);
-
-        let legacy = EQSS::<f64>::new(binary_args(&legacy_out, &lhs, &rhs)).unwrap();
-        let invocation = EQSS::<f64>::new_invocation(
-            binary_args(&invocation_out, &lhs, &rhs).into(),
-        )
+    fn scalar_comparison_uses_exact_ports_identity_and_state() {
+        let output = ValueCell::from_exact(false).unwrap();
+        let alias = output.clone();
+        let function = EQSS::<f64>::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            ValueCell::from_exact(3.0_f64).unwrap(),
+            ValueCell::from_exact(3.0_f64).unwrap(),
+        ))
         .unwrap();
-        legacy.solve_result().unwrap();
-        invocation.solve_result().unwrap();
-
-        assert!(*legacy_out.borrow());
-        assert_eq!(*legacy_out.borrow(), *invocation_out.borrow());
+        function.solve_result().unwrap();
+        assert!(matches!(output.snapshot().unwrap().data(), ValueData::Bool(true)));
+        assert!(output.same_cell(&alias));
         assert_eq!(
-            invocation.reactive_output_cell_ids(),
-            invocation_out.to_value().reactive_root_cell_ids(),
+            function.reactive_output_cell_ids(),
+            vec![output.reactive_cell_id()]
         );
 
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*invocation)?;
-            *invocation_out.borrow_mut() = false;
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            output.replace(&ValueCell::from_exact(false)?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert!(*invocation_out.borrow());
+        assert!(matches!(output.snapshot().unwrap().data(), ValueData::Bool(true)));
     }
 
     #[test]
-    fn fixed_and_dynamic_matrix_factories_use_exact_ports() {
+    fn fixed_and_dynamic_comparisons_preserve_exact_storage() {
         let lhs = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
         let rhs = Ref::new(Matrix2::new(1.0_f64, 0.0, 3.0, 5.0));
         let out = Ref::new(Matrix2::from_element(false));
-        let function = EQM2M2::<f64>::new_invocation(binary_args(&out, &lhs, &rhs).into()).unwrap();
-        function.solve_result().unwrap();
-        assert_eq!(*out.borrow(), Matrix2::new(true, false, true, false));
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*function)?;
-            *out.borrow_mut() = Matrix2::from_element(false);
-            participant.preflight_restore_before()?;
-            participant.apply_restore_before();
-            Ok(())
-        })
+        EQM2M2::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(lhs, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(rhs, 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
         .unwrap();
         assert_eq!(*out.borrow(), Matrix2::new(true, false, true, false));
 
         let dynamic_lhs = Ref::new(DMatrix::from_row_slice(1, 2, &[1.0_f64, 2.0]));
         let dynamic_rhs = Ref::new(DMatrix::from_row_slice(1, 2, &[1.0_f64, 0.0]));
         let dynamic_out = Ref::new(DMatrix::from_element(1, 2, false));
-        let dynamic = EQMDMD::<f64>::new_invocation(
-            binary_args(&dynamic_out, &dynamic_lhs, &dynamic_rhs).into(),
-        )
+        let function = EQMDMD::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 1, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic_lhs, 1, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic_rhs, 1, 2).unwrap(),
+        ))
         .unwrap();
-        dynamic.solve_result().unwrap();
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*dynamic)?;
+        function.solve_result().unwrap();
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
             *dynamic_out.borrow_mut() = DMatrix::from_element(2, 1, false);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -400,29 +386,23 @@ mod invocation_port_tests {
         .unwrap();
         assert_eq!(
             *dynamic_out.borrow(),
-            DMatrix::from_row_slice(1, 2, &[true, false]),
+            DMatrix::from_row_slice(1, 2, &[true, false])
         );
-
     }
 
     #[test]
-    fn comparison_ports_reject_wrong_types_and_layouts() {
-        let out = Ref::new(false);
-        let lhs = Ref::new(1.0_f64);
-        let rhs = Ref::new(1_i8);
-        let type_error = EQSS::<f64>::new_invocation(
-            FunctionArgs::Binary(out.to_value(), lhs.to_value(), rhs.to_value()).into(),
-        )
-        .err()
-        .expect("wrong exact input representation must fail");
-        assert_eq!(type_error.kind_name(), "FunctionArgumentTypeMismatch");
-
-        let arity_error = EQSS::<f64>::new_invocation(
-            FunctionArgs::Unary(out.to_value(), lhs.to_value()).into(),
-        )
-        .err()
-        .expect("wrong layout must fail");
-        assert_eq!(arity_error.kind_name(), "IncorrectNumberOfArguments");
+    fn comparison_rejects_wrong_exact_types_and_layouts() {
+        assert!(EQSS::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact(false).unwrap(),
+            ValueCell::from_exact(1.0_f64).unwrap(),
+            ValueCell::from_exact(1_usize).unwrap(),
+        ))
+        .is_err());
+        assert!(EQSS::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact(false).unwrap(),
+            ValueCell::from_exact(1.0_f64).unwrap(),
+        ))
+        .is_err());
     }
 
     #[test]

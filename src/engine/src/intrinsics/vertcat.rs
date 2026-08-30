@@ -57,12 +57,11 @@ macro_rules! vertcat_two_args {
                 + PartialEq
                 + 'static
                 + ConstElem
-                + AsValueKind
+                + FunctionRuntimeType
                 + FunctionRuntimeType
                 + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            Ref<$out<T>>: ToValue,
+            T: CompileConst + CanonicalMatrixElementBacking,
             $e0<T>: FunctionRuntimeType,
             $e1<T>: FunctionRuntimeType,
             $out<T>: FunctionRuntimeType,
@@ -80,15 +79,10 @@ macro_rules! vertcat_two_args {
                 let out: Ref<$out<T>> = out.try_ref()?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
-
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $fxn<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            Ref<$out<T>>: ToValue,
         {
             fn solve_result(&self) -> MResult<()> {
                 unsafe {
@@ -110,13 +104,13 @@ macro_rules! vertcat_two_args {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $fxn<T>
         where
-            T: ConstElem + CompileConst + AsValueKind,
+            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
                     "{}<{}{}{}{}>",
                     stringify!($fxn),
-                    T::as_value_kind(),
+                    <T as FunctionRuntimeType>::REPRESENTATION,
                     stringify!($out),
                     stringify!($e0),
                     stringify!($e1)
@@ -152,12 +146,11 @@ macro_rules! vertcat_three_args {
                 + PartialEq
                 + 'static
                 + ConstElem
-                + AsValueKind
+                + FunctionRuntimeType
                 + FunctionRuntimeType
                 + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            Ref<$out<T>>: ToValue,
+            T: CompileConst + CanonicalMatrixElementBacking,
             $e0<T>: FunctionRuntimeType,
             $e1<T>: FunctionRuntimeType,
             $e2<T>: FunctionRuntimeType,
@@ -178,15 +171,10 @@ macro_rules! vertcat_three_args {
                 let out: Ref<$out<T>> = out.try_ref()?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
-
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $fxn<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            Ref<$out<T>>: ToValue,
         {
             fn solve_result(&self) -> MResult<()> {
                 unsafe {
@@ -209,10 +197,14 @@ macro_rules! vertcat_three_args {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $fxn<T>
         where
-            T: ConstElem + CompileConst + AsValueKind + AsValueKind,
+            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($fxn),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
             }
         }
@@ -239,12 +231,11 @@ macro_rules! vertcat_four_args {
                 + PartialEq
                 + 'static
                 + ConstElem
-                + AsValueKind
+                + FunctionRuntimeType
                 + FunctionRuntimeType
                 + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            Ref<$out<T>>: ToValue,
+            T: CompileConst + CanonicalMatrixElementBacking,
             $e0<T>: FunctionRuntimeType,
             $e1<T>: FunctionRuntimeType,
             $e2<T>: FunctionRuntimeType,
@@ -274,15 +265,10 @@ macro_rules! vertcat_four_args {
                     out,
                 }))
             }
-
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $fxn<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            Ref<$out<T>>: ToValue,
         {
             fn solve_result(&self) -> MResult<()> {
                 unsafe {
@@ -306,10 +292,14 @@ macro_rules! vertcat_four_args {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $fxn<T>
         where
-            T: ConstElem + CompileConst + AsValueKind,
+            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($fxn),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
             }
         }
@@ -334,12 +324,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<DMatrix<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -354,16 +343,11 @@ where
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, out }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateTwoArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<DMatrix<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let offset = self.e0.copy_into_row_major(&self.out, 0);
@@ -382,7 +366,7 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateTwoArgs<T>
 where
-    T: ConstElem + CompileConst + AsValueKind + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0];
@@ -394,7 +378,7 @@ where
         ctx.emit_binop(
             hash_str(&format!(
                 "VerticalConcatenateTwoArgs<{}>",
-                T::as_value_kind()
+                <T as FunctionRuntimeType>::REPRESENTATION
             )),
             registers[0],
             registers[1],
@@ -424,12 +408,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<DMatrix<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
         <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -446,16 +429,11 @@ where
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, e2, out }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateThreeArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<DMatrix<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_row_major(&self.out, 0);
@@ -475,7 +453,7 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateThreeArgs<T>
 where
-    T: ConstElem + CompileConst + AsValueKind + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0, 0];
@@ -488,7 +466,7 @@ where
         ctx.emit_ternop(
             hash_str(&format!(
                 "VerticalConcatenateThreeArgs<{}>",
-                T::as_value_kind()
+                <T as FunctionRuntimeType>::REPRESENTATION
             )),
             registers[0],
             registers[1],
@@ -519,12 +497,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<DMatrix<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
         <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -549,16 +526,11 @@ where
             out,
         }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateFourArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<DMatrix<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_row_major(&self.out, 0);
@@ -579,7 +551,7 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateFourArgs<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0, 0, 0];
@@ -593,7 +565,7 @@ where
         ctx.emit_quadop(
             hash_str(&format!(
                 "VerticalConcatenateFourArgs<{}>",
-                T::as_value_kind()
+                <T as FunctionRuntimeType>::REPRESENTATION
             )),
             registers[0],
             registers[1],
@@ -622,12 +594,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<DMatrix<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
         <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -643,16 +614,11 @@ where
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, out }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateNArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<DMatrix<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let mut offset = 0;
@@ -673,7 +639,7 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateNArgs<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0];
@@ -685,7 +651,10 @@ where
             mat_regs.push(compile_register_mat!(e, ctx));
         }
         ctx.emit_varop(
-            hash_str(&format!("VerticalConcatenateNArgs<{}>", T::as_value_kind())),
+            hash_str(&format!(
+                "VerticalConcatenateNArgs<{}>",
+                <T as FunctionRuntimeType>::REPRESENTATION
+            )),
             registers[0],
             mat_regs,
         );
@@ -767,11 +736,10 @@ macro_rules! vertical_concatenate {
           impl<T> MechFunctionFactory for $name<T>
           where
             T: Debug + Clone + Sync + Send + PartialEq + 'static +
-            ConstElem + AsValueKind + FunctionRuntimeType
+            ConstElem + FunctionRuntimeType
             + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            Ref<[<$vec_size>]<T>>: ToValue,
+            T: CompileConst + CanonicalMatrixElementBacking,
             [<$vec_size>]<T>: FunctionRuntimeType,
           {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
@@ -794,14 +762,10 @@ macro_rules! vertical_concatenate {
 
             }
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
           }
           impl<T> MechFunctionImpl for $name<T>
           where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            Ref<[<$vec_size>]<T>>: ToValue
           {
             fn solve_result(&self) -> MResult<()> {
                 Ok(())
@@ -820,10 +784,10 @@ macro_rules! vertical_concatenate {
           #[cfg(feature = "semantic-compiler")]
           impl<T> MechFunctionCompiler for $name<T>
           where
-            T: ConstElem + CompileConst + AsValueKind + AsValueKind
+            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking
           {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-              let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
+              let name = format!("{}<{}>", stringify!($name), <T as FunctionRuntimeType>::REPRESENTATION);
               compile_unop!(name, self.out, self.out, ctx);
             }
           }
@@ -849,12 +813,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<DVector<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -869,16 +832,11 @@ where
         let out: Ref<DVector<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, out }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVD2<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<DVector<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let offset = self.e0.copy_into_v(&self.out, 0);
@@ -897,7 +855,7 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD2<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0];
@@ -908,7 +866,10 @@ where
         registers[2] = compile_register_mat!(self.e1, ctx);
 
         ctx.emit_binop(
-            hash_str(&format!("VerticalConcatenateVD2<{}>", T::as_value_kind())),
+            hash_str(&format!(
+                "VerticalConcatenateVD2<{}>",
+                <T as FunctionRuntimeType>::REPRESENTATION
+            )),
             registers[0],
             registers[1],
             registers[2],
@@ -937,12 +898,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<DVector<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
         <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -959,16 +919,11 @@ where
         let out: Ref<DVector<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, e2, out }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVD3<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<DVector<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_v(&self.out, 0);
@@ -988,7 +943,7 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0, 0];
@@ -999,7 +954,10 @@ where
         registers[3] = compile_register_mat!(self.e2, ctx);
 
         ctx.emit_ternop(
-            hash_str(&format!("VerticalConcatenateVD3<{}>", T::as_value_kind())),
+            hash_str(&format!(
+                "VerticalConcatenateVD3<{}>",
+                <T as FunctionRuntimeType>::REPRESENTATION
+            )),
             registers[0],
             registers[1],
             registers[2],
@@ -1029,12 +987,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<DVector<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
         <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -1059,16 +1016,11 @@ where
             out,
         }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVD4<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<DVector<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_v(&self.out, 0);
@@ -1089,7 +1041,7 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0, 0, 0];
@@ -1101,7 +1053,10 @@ where
         registers[4] = compile_register_mat!(self.e3, ctx);
 
         ctx.emit_quadop(
-            hash_str(&format!("VerticalConcatenateVD4<{}>", T::as_value_kind())),
+            hash_str(&format!(
+                "VerticalConcatenateVD4<{}>",
+                <T as FunctionRuntimeType>::REPRESENTATION
+            )),
             registers[0],
             registers[1],
             registers[2],
@@ -1130,12 +1085,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<DVector<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
         <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -1163,16 +1117,11 @@ where
             out,
         }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVDN<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<DVector<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
@@ -1198,7 +1147,7 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0];
@@ -1210,7 +1159,10 @@ where
             mat_regs.push(compile_register_mat!(e, ctx));
         }
         ctx.emit_varop(
-            hash_str(&format!("VerticalConcatenateVDN<{}>", T::as_value_kind())),
+            hash_str(&format!(
+                "VerticalConcatenateVDN<{}>",
+                <T as FunctionRuntimeType>::REPRESENTATION
+            )),
             registers[0],
             mat_regs,
         );
@@ -1238,12 +1190,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<Matrix1<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<Matrix1<T> as FunctionRuntimeType>::REPRESENTATION);
@@ -1261,16 +1212,11 @@ where
             out,
         }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "matrix1")]
 impl<T> MechFunctionImpl for VerticalConcatenateS1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<Matrix1<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
@@ -1292,10 +1238,13 @@ where
 #[cfg(all(feature = "matrix1", feature = "semantic-compiler"))]
 impl<T> MechFunctionCompiler for VerticalConcatenateS1<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("VerticalConcatenateS1<{}>", T::as_value_kind());
+        let name = format!(
+            "VerticalConcatenateS1<{}>",
+            <T as FunctionRuntimeType>::REPRESENTATION
+        );
         compile_nullop!(name, self.out, ctx);
     }
 }
@@ -1330,12 +1279,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<DVector<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<DVector<T> as FunctionRuntimeType>::REPRESENTATION);
@@ -1353,16 +1301,11 @@ where
             out,
         }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateSD<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<DVector<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
@@ -1379,10 +1322,13 @@ where
 #[cfg(all(feature = "vectord", feature = "semantic-compiler"))]
 impl<T> MechFunctionCompiler for VerticalConcatenateSD<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("VerticalConcatenateSD<{}>", T::as_value_kind());
+        let name = format!(
+            "VerticalConcatenateSD<{}>",
+            <T as FunctionRuntimeType>::REPRESENTATION
+        );
         compile_nullop!(name, self.out, ctx);
     }
 }
@@ -1607,12 +1553,11 @@ where
         + PartialEq
         + 'static
         + ConstElem
-        + AsValueKind
+        + FunctionRuntimeType
         + FunctionRuntimeType
         + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst,
-    Ref<Vector4<T>>: ToValue,
+    T: CompileConst + CanonicalMatrixElementBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
         <Vector4<T> as FunctionRuntimeType>::REPRESENTATION,
@@ -1637,16 +1582,11 @@ where
             out,
         }))
     }
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        Self::new_invocation(args.into())
-    }
 }
 #[cfg(all(feature = "matrix1", feature = "vector4"))]
 impl<T> MechFunctionImpl for VerticalConcatenateM1M1M1M1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
-    Ref<Vector4<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
@@ -1674,10 +1614,13 @@ where
 ))]
 impl<T> MechFunctionCompiler for VerticalConcatenateM1M1M1M1<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("VerticalConcatenateM1M1M1M1<{}>", T::as_value_kind());
+        let name = format!(
+            "VerticalConcatenateM1M1M1M1<{}>",
+            <T as FunctionRuntimeType>::REPRESENTATION
+        );
         compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }

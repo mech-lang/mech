@@ -9,7 +9,7 @@ use crate::{
     FunctionMatrixRepresentation, FunctionMatrixStoragePattern, FunctionRuntimeType,
     FunctionValueRepresentation, IntegerWidth, MResult, MechError, MechErrorKind, Ref, SchemaBody,
     SchemaId, SchemaKey, SchemaTable, ShapeInstance, SnapshotValueError, Value, ValueData,
-    ValueDataDraft, ValueDraft, legacy_value::CanonicalCellId,
+    ValueDataDraft, ValueDraft,
 };
 use core::{any::Any, any::type_name, cell, fmt};
 
@@ -23,6 +23,20 @@ use alloc::string::ToString;
 use alloc::{boxed::Box, rc::Rc, string::String, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, rc::Rc, string::String, vec::Vec};
+
+/// Stable logical identity of a canonical mutable cell.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CanonicalCellId(u64);
+
+impl CanonicalCellId {
+    pub const fn new(raw: u64) -> Self {
+        Self(raw)
+    }
+
+    pub const fn get(self) -> u64 {
+        self.0
+    }
+}
 
 mod canonical_cell_sealed {
     use super::*;
@@ -41,13 +55,17 @@ mod canonical_cell_sealed {
             let _ = schema;
             Self::REPRESENTATION
         }
+
+        fn matrix_extents(&self) -> Option<(usize, usize)> {
+            None
+        }
     }
 }
 
 /// An exact typed backing that can safely live behind a canonical value cell.
 ///
-/// This trait is sealed. In particular, the legacy universal value and legacy
-/// aggregate containers cannot be used as cell backings.
+/// This trait is sealed. Universal values and aggregate containers cannot be
+/// used as exact cell backings.
 pub trait CanonicalCellBacking:
     canonical_cell_sealed::Sealed + FunctionRuntimeType + Clone + 'static
 {
@@ -196,7 +214,8 @@ impl ValueCell {
     where
         T: CanonicalCellBacking,
     {
-        Self::from_inferred_ref(Ref::new(value), None)
+        let matrix_extents = canonical_cell_sealed::Sealed::matrix_extents(&value);
+        Self::from_inferred_ref(Ref::new(value), matrix_extents)
     }
 
     /// Constructs a standalone canonical matrix cell from an exact backing.
@@ -215,8 +234,8 @@ impl ValueCell {
     ///
     /// Source specialization uses the runtime factory signature as the
     /// authority for storage representation while the operation supplies the
-    /// resolved logical matrix dimensions. No legacy value or mutable legacy
-    /// handle is involved in output construction.
+    /// resolved logical matrix dimensions. No erased universal value or
+    /// mutable universal handle is involved in output construction.
     pub fn default_for_representation(
         representation: FunctionValueRepresentation,
         _matrix_dimensions: Option<(usize, usize)>,
@@ -933,21 +952,6 @@ impl ValueCell {
     #[cfg(feature = "functions")]
     pub(crate) fn schema_table(&self) -> Rc<SchemaTable> {
         self.binding.schemas.clone()
-    }
-
-    #[cfg(feature = "functions")]
-    pub(crate) fn with_schema_from(mut self, template: &Self) -> MResult<Self> {
-        let shape = template
-            .binding
-            .shape
-            .try_borrow()
-            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
-            .clone();
-        self.binding.schema = template.binding.schema;
-        self.binding.schema_key = template.binding.schema_key;
-        self.binding.shape = Rc::new(cell::RefCell::new(shape));
-        self.binding.schemas = template.binding.schemas.clone();
-        Ok(self)
     }
 
     pub fn representation(&self) -> FunctionValueRepresentation {
@@ -2508,6 +2512,10 @@ macro_rules! matrix_backing {
             fn replace_bound(&mut self, value: &Value) -> MResult<()> {
                 matrix_replace(self, value)
             }
+
+            fn matrix_extents(&self) -> Option<(usize, usize)> {
+                Some((self.nrows(), self.ncols()))
+            }
         }
     };
 }
@@ -2556,6 +2564,10 @@ macro_rules! dynamic_matrix_storage {
 
             fn replace_bound(&mut self, value: &Value) -> MResult<()> {
                 matrix_replace(self, value)
+            }
+
+            fn matrix_extents(&self) -> Option<(usize, usize)> {
+                Some((self.nrows(), self.ncols()))
             }
         }
     };
@@ -2995,30 +3007,6 @@ fn standalone_schema(body: SchemaBody) -> MResult<(SchemaId, ShapeInstance, Rc<S
     Ok((schema, shape, Rc::new(build.table)))
 }
 
-#[cfg(feature = "functions")]
-pub(crate) fn compatibility_unit_schema() -> (SchemaId, ShapeInstance, Rc<SchemaTable>) {
-    let schema = crate::SchemaDraft {
-        dimension_parameters: Vec::new().into_boxed_slice(),
-        body: SchemaBody::Tuple(Vec::new().into_boxed_slice()),
-    }
-    .finalize()
-    .expect("compatibility unit schema is valid");
-    let shape = schema
-        .instantiate_shape(Vec::new().into_boxed_slice())
-        .expect("compatibility unit shape is valid");
-    let mut builder = crate::SchemaTableBuilder::new();
-    let handle = builder
-        .insert(schema)
-        .expect("compatibility unit schema can be inserted");
-    let build = builder
-        .finish()
-        .expect("compatibility unit schema table is valid");
-    let schema = build
-        .resolve(handle)
-        .expect("compatibility unit schema handle resolves");
-    (schema, shape, Rc::new(build.table))
-}
-
 #[cfg(all(test, any(feature = "f64", feature = "u8", feature = "string")))]
 mod tests {
     use super::*;
@@ -3246,6 +3234,26 @@ mod tests {
         )
         .unwrap_err();
         assert_eq!(error.kind_name(), "ValueCellOutputConstructionUnsupported");
+    }
+
+    #[cfg(all(feature = "f64", feature = "functions", feature = "vectord"))]
+    #[test]
+    fn exact_matrix_values_infer_their_canonical_extents() {
+        let cell = ValueCell::from_exact(crate::DVector::from_vec(vec![1.0_f64, 2.0, 3.0]))
+            .expect("a dynamic vector provides its own matrix extents");
+
+        assert_eq!(
+            cell.representation(),
+            <crate::DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+        );
+        assert_eq!(
+            cell.try_ref::<crate::DVector<f64>>()
+                .unwrap()
+                .borrow()
+                .as_slice(),
+            &[1.0, 2.0, 3.0],
+        );
+        assert_eq!(cell.snapshot().unwrap().shape().parameter_values(), &[3, 1]);
     }
 
     #[cfg(feature = "f64")]

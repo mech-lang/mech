@@ -4,8 +4,8 @@ use super::super::registration::{
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{
-    FunctionInstance, FunctionInvocation, InitialSolvePolicy, MResult, MechError, MechErrorKind,
-    MechFunction, MechFunctionImpl, Plan, ReactiveCellId, ReactiveDependencyKind,
+    CanonicalCellId, FunctionInstance, FunctionInvocation, InitialSolvePolicy, MResult, MechError,
+    MechErrorKind, MechFunction, MechFunctionImpl, Plan, ReactiveDependencyKind,
     SpecializedFunction, ValueCell,
 };
 use std::sync::{
@@ -75,7 +75,7 @@ impl MechFunctionCompiler for IndexedExpressionTestFunction {
     }
 }
 
-fn scalar(value: f64) -> (ValueCell, ReactiveCellId) {
+fn scalar(value: f64) -> (ValueCell, CanonicalCellId) {
     let value = ValueCell::from_exact(value).unwrap();
     let cell = value.reactive_cell_id();
     (value, cell)

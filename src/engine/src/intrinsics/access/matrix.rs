@@ -614,107 +614,6 @@ mod matrix_access_contract_tests {
     }
 }
 
-// Access ---------------------------------------------------------------------
-
-#[macro_export]
-macro_rules! impl_access_fxn_new {
-    ($op:tt, $fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {{
-        let mut res: MResult<_> = Err(MechError::new(
-            GenericError {
-                msg: "No matching type found".to_string(),
-            },
-            None,
-        ));
-
-        #[cfg(feature = "row_vector2")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, RowVector2, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "row_vector3")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, RowVector3, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "row_vector4")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, RowVector4, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "vector2")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Vector2, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "vector3")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Vector3, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "vector4")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Vector4, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix1")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix1, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix2")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix2, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix3")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix3, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix4")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix4, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix2x3")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix2x3, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix3x2")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix3x2, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrixd")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, DMatrix, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "row_vectord")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, RowDVector, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "vectord")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string));
-        }
-
-        let &(ref source, ref ixes) = &$arg;
-        res.map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxesMono {
-                    arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()),
-                    fxn_name: stringify!($fxn_name).to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-    }};
-}
-
 macro_rules! access_1d {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe { *$out = (*$source).index(*$ix - 1).clone() }
@@ -904,12 +803,17 @@ macro_rules! impl_access_fxn {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + FunctionRuntimeType
+                + CanonicalMatrixElementBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            Ref<$arg_type>: ToValue,
-            Ref<$ix_type>: ToValue,
-            Ref<$out_type>: ToValue,
+            T: CompileConst + CanonicalMatrixElementBacking,
             $arg_type: FunctionPortBacking,
             $ix_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
@@ -932,17 +836,10 @@ macro_rules! impl_access_fxn {
                     invocation,
                 }))
             }
-
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            Ref<$arg_type>: ToValue,
-            Ref<$ix_type>: ToValue,
-            Ref<$out_type>: ToValue,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -971,10 +868,14 @@ macro_rules! impl_access_fxn {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_binop!(name, self.out, self.source, self.ixes, ctx);
             }
         }
@@ -992,11 +893,17 @@ macro_rules! impl_access_all_fxn {
 
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + FunctionRuntimeType
+                + CanonicalMatrixElementBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            Ref<$arg_type>: ToValue,
-            Ref<$out_type>: ToValue,
+            T: CompileConst + CanonicalMatrixElementBacking,
             $arg_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
@@ -1016,17 +923,11 @@ macro_rules! impl_access_all_fxn {
                     invocation,
                 }))
             }
-
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
 
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            Ref<$arg_type>: ToValue,
-            Ref<$out_type>: ToValue,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -1058,7 +959,7 @@ macro_rules! impl_access_all_fxn {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let out = compile_register_brrw!(self.out, ctx);
@@ -1072,7 +973,7 @@ macro_rules! impl_access_all_fxn {
                 let function = ctx.function_id(&format!(
                     "{}<{}>",
                     stringify!($struct_name),
-                    T::as_value_kind()
+                    <T as FunctionRuntimeType>::REPRESENTATION
                 ))?;
                 ctx.emit_binop(function, out, source, all);
                 Ok(out)
@@ -1093,13 +994,17 @@ macro_rules! impl_access_fxn2 {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + FunctionRuntimeType
+                + CanonicalMatrixElementBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            Ref<$arg_type>: ToValue,
-            Ref<$ix1_type>: ToValue,
-            Ref<$ix2_type>: ToValue,
-            Ref<$out_type>: ToValue,
+            T: CompileConst + CanonicalMatrixElementBacking,
             $arg_type: FunctionPortBacking,
             $ix1_type: FunctionPortBacking,
             $ix2_type: FunctionPortBacking,
@@ -1126,18 +1031,10 @@ macro_rules! impl_access_fxn2 {
                     invocation,
                 }))
             }
-
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                Self::new_invocation(args.into())
-            }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            Ref<$arg_type>: ToValue,
-            Ref<$ix1_type>: ToValue,
-            Ref<$ix2_type>: ToValue,
-            Ref<$out_type>: ToValue,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -1168,10 +1065,14 @@ macro_rules! impl_access_fxn2 {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_ternop!(name, self.out, self.source, self.ix1, self.ix2, ctx);
             }
         }

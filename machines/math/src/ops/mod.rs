@@ -340,7 +340,7 @@ macro_rules! impl_checked_arithmetic_binop {
                 + 'static
                 + PartialEq
                 + PartialOrd
-                + AsValueKind
+                + FunctionRuntimeType
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -353,8 +353,7 @@ macro_rules! impl_checked_arithmetic_binop {
                 + One
                 + RuntimeCheckedArithmetic,
             #[cfg(feature = "semantic-compiler")]
-            T: ConstElem + CompileConst,
-            Ref<$out_type>: ToValue,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst,
             $arg1_type: FunctionRuntimeType + FunctionPortBacking,
             $arg2_type: FunctionRuntimeType + FunctionPortBacking,
             $out_type: FunctionStateBacking,
@@ -399,7 +398,8 @@ macro_rules! impl_checked_arithmetic_binop {
                 + Zero
                 + One
                 + RuntimeCheckedArithmetic,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -430,10 +430,14 @@ macro_rules! impl_checked_arithmetic_binop {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: ConstElem + CompileConst + AsValueKind + RuntimeCheckedArithmetic,
+            T: CanonicalMatrixElementBacking
+                + ConstElem
+                + CompileConst
+                + FunctionRuntimeType
+                + RuntimeCheckedArithmetic,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }

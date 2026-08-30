@@ -105,7 +105,7 @@ pub trait RuntimeMatrixArithmetic:
     + 'static
     + PartialEq
     + PartialOrd
-    + AsValueKind
+    + FunctionRuntimeType
     + Add<Output = Self>
     + AddAssign
     + Sub<Output = Self>
@@ -336,8 +336,7 @@ macro_rules! impl_checked_matrix_binop {
         where
             T: RuntimeMatrixArithmetic,
             #[cfg(feature = "semantic-compiler")]
-            T: ConstElem + CompileConst,
-            Ref<$out_type>: ToValue,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst,
             $arg1_type: FunctionPortBacking,
             $arg2_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
@@ -363,7 +362,8 @@ macro_rules! impl_checked_matrix_binop {
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: RuntimeMatrixArithmetic,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -395,10 +395,10 @@ macro_rules! impl_checked_matrix_binop {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: RuntimeMatrixArithmetic + ConstElem + CompileConst,
+            T: CanonicalMatrixElementBacking + RuntimeMatrixArithmetic + ConstElem + CompileConst,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }

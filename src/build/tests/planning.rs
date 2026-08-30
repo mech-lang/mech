@@ -15,12 +15,11 @@ use mech_build::{
 use mech_build::{NativeHostLinkage, NativeTargetFamily};
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
-    EncodedConstant, ExecutionHostFunctionRequest, FunctionArgs, FunctionArgumentRole,
-    FunctionCatalog, FunctionCatalogBuilder, FunctionRuntimeType, FunctionValueRepresentation,
-    MResult, MatrixStorage, MechFunction, MechFunctionCompiler, MechFunctionFactory,
-    MechFunctionImpl, NativeFunctionLinkage, Ref, Register, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, hash_str,
-    write_bytecode,
+    EncodedConstant, ExecutionHostFunctionRequest, FunctionCatalog, FunctionCatalogBuilder,
+    FunctionInvocation, FunctionRuntimeType, FunctionValueRepresentation, MResult, MatrixStorage,
+    MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
+    NativeFunctionLinkage, Ref, Register, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, hash_str, write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use sha2::{Digest, Sha256};
@@ -534,16 +533,7 @@ impl MechFunctionFactory for PlanningFunction {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<f64 as FunctionRuntimeType>::REPRESENTATION);
 
-    fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match arguments {
-            FunctionArgs::Nullary(output) => Ok(Box::new(PlanningFunction {
-                _output: output.try_function_ref(FunctionArgumentRole::Output)?,
-            })),
-            _ => unreachable!(),
-        }
-    }
-
-    fn new_invocation(invocation: mech_core::FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let output = invocation.expect_nullary()?;
         Ok(Box::new(PlanningFunction {
             _output: output.try_ref()?,
@@ -612,7 +602,7 @@ fn malicious_matrix_relations_and_aliases_fail_without_materializing_a_project()
             FunctionValueRepresentation::AnyValue,
         );
 
-        fn new(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        fn new_invocation(_invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
             panic!("malformed matrix relations must fail before factory construction")
         }
     }

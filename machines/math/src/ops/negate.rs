@@ -20,10 +20,9 @@ where
         + RuntimeCheckedNeg
         + PartialEq
         + 'static
-        + AsValueKind,
+        + FunctionRuntimeType,
     #[cfg(feature = "semantic-compiler")]
     O: CompileConst + ConstElem,
-    Ref<O>: ToValue,
     O: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
@@ -52,7 +51,6 @@ where
         + RuntimeCheckedNeg
         + PartialEq
         + 'static,
-    Ref<O>: ToValue,
     O: FunctionStateBacking,
 {
     fn solve_result(&self) -> MResult<()> {
@@ -82,10 +80,10 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<O> MechFunctionCompiler for NegateV<O>
 where
-    O: CompileConst + ConstElem + AsValueKind + RuntimeCheckedNeg,
+    O: CompileConst + ConstElem + FunctionRuntimeType + RuntimeCheckedNeg,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("NegateV<{}>", O::as_value_kind());
+        let name = format!("NegateV<{}>", <O as FunctionRuntimeType>::REPRESENTATION);
         compile_unop!(name, self.out, self.arg, ctx);
     }
 }
@@ -108,10 +106,9 @@ where
         + RuntimeCheckedNeg
         + PartialEq
         + 'static
-        + AsValueKind,
+        + FunctionRuntimeType,
     #[cfg(feature = "semantic-compiler")]
     O: CompileConst + ConstElem,
-    Ref<O>: ToValue,
     O: FunctionStateBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
@@ -141,7 +138,6 @@ where
         + RuntimeCheckedNeg
         + PartialEq
         + 'static,
-    Ref<O>: ToValue,
     O: FunctionStateBacking,
 {
     fn solve_result(&self) -> MResult<()> {
@@ -171,58 +167,57 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<O> MechFunctionCompiler for NegateS<O>
 where
-    O: CompileConst + ConstElem + AsValueKind + RuntimeCheckedNeg,
+    O: CompileConst + ConstElem + FunctionRuntimeType + RuntimeCheckedNeg,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("NegateS<{}>", O::as_value_kind());
+        let name = format!("NegateS<{}>", <O as FunctionRuntimeType>::REPRESENTATION);
         compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
+impl_canonical_registered_math_unop_specializer!(MathNegate, "NegateS");
+
 #[cfg(all(test, feature = "i8"))]
-mod checked_arithmetic_tests {
+mod canonical_port_tests {
     use super::*;
 
+    fn i8_value(cell: &ValueCell) -> i8 {
+        let snapshot = cell.snapshot().unwrap();
+        let ValueData::I8(value) = snapshot.data() else {
+            panic!("expected i8 negate output")
+        };
+        *value
+    }
+
     #[test]
-    fn unary_scalar_factory_uses_exact_invocation_ports() {
-        let input = Ref::new(7_i8);
-        let output = Ref::new(0_i8);
-        let function = NegateS::<i8>::new_invocation(
-            FunctionArgs::Unary(output.to_value(), input.to_value()).into(),
-        )
+    fn negation_uses_exact_ports_and_rejects_overflow_atomically() {
+        let input = ValueCell::from_exact(7_i8).unwrap();
+        let output = ValueCell::from_exact(0_i8).unwrap();
+        let function = NegateS::<i8>::new_invocation(FunctionInvocation::unary(
+            output.clone(),
+            input.clone(),
+        ))
         .unwrap();
-
         function.solve_result().unwrap();
-        assert_eq!(*output.borrow(), -7);
+        assert_eq!(i8_value(&output), -7);
 
-        with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&*function)?;
-            *output.borrow_mut() = 99;
+        input
+            .replace(&ValueCell::from_exact(i8::MIN).unwrap().snapshot().unwrap())
+            .unwrap();
+        assert_eq!(
+            function.solve_result().unwrap_err().kind_name(),
+            "MathArithmeticOverflow"
+        );
+        assert_eq!(i8_value(&output), -7);
+
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            output.replace(&ValueCell::from_exact(99_i8)?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert_eq!(*output.borrow(), -7);
-    }
-
-    #[test]
-    fn integer_negation_rejects_reactive_overflow_and_retains_output() {
-        let arg = Ref::new(7_i8);
-        let out = Ref::new(17_i8);
-        let function = NegateS {
-            arg: arg.clone(),
-            out: out.clone(),
-            _marker: PhantomData,
-        };
-
-        function.solve_result().unwrap();
-        assert_eq!(*out.borrow(), -7);
-        *arg.borrow_mut() = i8::MIN;
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
-        assert_eq!(*out.borrow(), -7);
+        assert_eq!(i8_value(&output), -7);
     }
 }
-
-impl_canonical_registered_math_unop_specializer!(MathNegate, "NegateS");
