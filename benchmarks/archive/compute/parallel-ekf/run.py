@@ -132,11 +132,33 @@ def main() -> None:
                 str(HERE / "numpy_scalar.py"),
                 *common,
             ],
-            "Julia scalar outer loop": [
+            "Julia generic unchecked": [
                 required["julia"],
                 "--startup-file=no",
                 str(HERE / "julia_scalar.jl"),
                 *common,
+                "unchecked",
+            ],
+            "Julia generic checked": [
+                required["julia"],
+                "--startup-file=no",
+                str(HERE / "julia_scalar.jl"),
+                *common,
+                "checked",
+            ],
+            "Julia fixed-shape unchecked": [
+                required["julia"],
+                "--startup-file=no",
+                str(HERE / "julia_flat.jl"),
+                *common,
+                "unchecked",
+            ],
+            "Julia fixed-shape checked": [
+                required["julia"],
+                "--startup-file=no",
+                str(HERE / "julia_flat.jl"),
+                *common,
+                "checked",
             ],
             "LuaJIT scalar outer loop": [
                 required["luajit"],

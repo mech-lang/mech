@@ -1,6 +1,8 @@
 using LinearAlgebra
 
 BLAS.set_num_threads(1)
+const VALIDATE = length(ARGS) > 2 && lowercase(ARGS[3]) == "checked"
+const SYMMETRY_TOLERANCE = 0.0001f0
 
 mutable struct Scratch
     f::Matrix{Float32}; g::Matrix{Float32}; left::Matrix{Float32}
@@ -13,7 +15,18 @@ Scratch() = Scratch(zeros(Float32,3,3), zeros(Float32,3,2), zeros(Float32,3,3),
     zeros(Float32,3,3), zeros(Float32,3,3), zeros(Float32,3,3))
 const Q = Float32[0.01 0; 0 0.0025]
 
-Base.@noinline function step!(state, covariance, lane, velocity, angular_velocity, bearing, s)
+@inline function valid_candidate(x0::Float32, x1::Float32, x2::Float32, p::Matrix{Float32})
+    isfinite(x0) && isfinite(x1) && isfinite(x2) &&
+    isfinite(p[1,1]) && isfinite(p[2,1]) && isfinite(p[3,1]) &&
+    isfinite(p[1,2]) && isfinite(p[2,2]) && isfinite(p[3,2]) &&
+    isfinite(p[1,3]) && isfinite(p[2,3]) && isfinite(p[3,3]) &&
+    p[1,1] > 0.0f0 && p[2,2] > 0.0f0 && p[3,3] > 0.0f0 &&
+    abs(p[1,2] - p[2,1]) <= SYMMETRY_TOLERANCE &&
+    abs(p[1,3] - p[3,1]) <= SYMMETRY_TOLERANCE &&
+    abs(p[2,3] - p[3,2]) <= SYMMETRY_TOLERANCE
+end
+
+Base.@inline function step!(state, covariance, lane, velocity, angular_velocity, bearing, s)
     dt = 0.1f0
     st = state[3,lane]
     sin_theta, cos_theta = sincos(st)
@@ -41,21 +54,33 @@ Base.@noinline function step!(state, covariance, lane, velocity, angular_velocit
     end
     variance = h0*s.pht[1] + h1*s.pht[2] + h2*s.pht[3] + 0.25f0
     k0=s.pht[1]/variance; k1=s.pht[2]/variance; k2=s.pht[3]/variance
-    state[1,lane]=x0+k0*innovation; state[2,lane]=x1+k1*innovation; state[3,lane]=x2+k2*innovation
+    candidate_state = (x0+k0*innovation, x1+k1*innovation, x2+k2*innovation)
     k=(k0,k1,k2); h=(h0,h1,h2)
     for column in 1:3, row in 1:3
         s.a[row,column] = (row == column ? 1f0 : 0f0) - k[row]*h[column]
     end
     mul!(s.ap, s.a, s.predicted_p); mul!(s.corrected_p, s.ap, transpose(s.a))
     for column in 1:3, row in 1:3
-        covariance[row,column,lane] = s.corrected_p[row,column] + k[row]*k[column]*0.25f0
+        s.corrected_p[row,column] += k[row]*k[column]*0.25f0
     end
+    if VALIDATE && !valid_candidate(candidate_state[1], candidate_state[2], candidate_state[3], s.corrected_p)
+        return false
+    end
+    state[1,lane] = candidate_state[1]
+    state[2,lane] = candidate_state[2]
+    state[3,lane] = candidate_state[3]
+    for column in 1:3, row in 1:3
+        covariance[row,column,lane] = s.corrected_p[row,column]
+    end
+    true
 end
 
 function dispatch!(state,covariance,velocity,angular_velocity,bearing,turns,s)
+    faults = 0
     for _ in 1:turns, lane in eachindex(velocity)
-        step!(state,covariance,lane,velocity,angular_velocity,bearing,s)
+        faults += !step!(state,covariance,lane,velocity,angular_velocity,bearing,s)
     end
+    faults
 end
 
 instances = max(1, length(ARGS)>0 ? parse(Int,ARGS[1]) : 10000)
@@ -69,8 +94,10 @@ covariance = repeat(reshape(Float32[100,0,0,0,100,0,0,0,0.15],3,3,1),1,1,instanc
 s = Scratch(); dispatch!(state,covariance,velocity,angular_velocity,bearing,5,s)
 state .= reshape(Float32[55,25,0.4],3,1)
 covariance .= reshape(Float32[100,0,0,0,100,0,0,0,0.15],3,3,1)
-started = time_ns(); dispatch!(state,covariance,velocity,angular_velocity,bearing,turns,s)
+started = time_ns(); faults = dispatch!(state,covariance,velocity,angular_velocity,bearing,turns,s)
 elapsed = (time_ns()-started)/1e9
 println("lane: Julia scalar outer loop")
 println("instances: ",instances); println("turns: ",turns); println("elapsed_s: ",elapsed)
 println("throughput: ",instances*turns/elapsed); println("checksum: ",sum(Float64,state)+sum(Float64,covariance))
+println("validation: ", VALIDATE ? "checked" : "unchecked")
+println("faults: ", faults)

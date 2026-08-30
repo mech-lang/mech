@@ -22,7 +22,8 @@ git switch --track origin/codex/mech-program-gpu
 | Cranelift lowering/execution | `hosts/gpu/src/batched/jit.rs` |
 | Optimized Rust control | `hosts/gpu/examples/parallel_ekf_rust_scalar.rs` |
 | NumPy control | `benchmarks/archive/compute/parallel-ekf/numpy_scalar.py` |
-| Julia control | `benchmarks/archive/compute/parallel-ekf/julia_scalar.jl` |
+| Julia generic control | `benchmarks/archive/compute/parallel-ekf/julia_scalar.jl` |
+| Julia fixed-shape control | `benchmarks/archive/compute/parallel-ekf/julia_flat.jl` |
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -193,3 +194,43 @@ results should include this generated JSON rather than only the tables above.
 The runner compiles the checked-in Rust control directly with
 `rustc -C opt-level=3 -C target-cpu=native`, validates every scalar and JIT
 checksum, and prints both Markdown tables.
+
+## Julia inlining probe
+
+The Julia control in this checkout uses `Base.@inline` on `step!`.  This is a
+deliberate optimization hint for the scalar outer loop, not a change to the
+EKF equations or storage.  On the Apple M1, nine isolated 20-turn processes
+with 10,000 filters produced `3.091M` lane-turns/s median.  The same source
+with the annotation removed produced `2.875M`; the original `Base.@noinline`
+source produced `2.852M`.  A longer 100-turn corroboration produced `3.069M`,
+`2.820M`, and `2.800M`, respectively.  Checksums were identical across all
+variants and one-process startup wall time remained within `1.57--1.59s`.  The
+detailed commands and raw medians are in
+[`results/julia-inline-apple-m1-2026-08-30.md`](results/julia-inline-apple-m1-2026-08-30.md).
+
+The Julia comparison has four explicitly named modes. The generic source uses
+ordinary heap-backed `Matrix` values and `mul!`, which is the closest
+translation of the high-level Mech matrix expressions. The fixed-shape source
+uses flat `Float32` buffers and compile-time 3x3/3x2 products, matching the
+storage and operation shape of the optimized Rust control. Both sources accept
+`unchecked` or `checked` as a third argument. Checked mode evaluates the same
+finite-state, finite-covariance, positive-diagonal, and covariance-symmetry
+predicates as the Mech artifact before publishing a candidate; a failed
+candidate leaves the prior state unchanged and increments the fault count.
+The runner executes all four Julia rows, while the Rust row remains a raw
+unchecked control by design.
+
+In a five-process Apple M1 probe with 10,000 filters and 20 measured turns,
+the current medians were:
+
+| Julia implementation | Validation | Million lane-turns/s |
+| --- | --- | ---: |
+| Generic Matrix/`mul!` | unchecked | 3.09 |
+| Generic Matrix/`mul!` | checked | 3.08 |
+| Fixed-shape flat tuples | unchecked | 21.9 |
+| Fixed-shape flat tuples | checked | 19.0 |
+
+All four modes produced the same checksum within the existing `f32`
+tolerance. The fixed-shape checked result is the relevant comparison to a
+checked Mech numeric backend; the unchecked result isolates arithmetic and
+storage cost only.
