@@ -565,9 +565,11 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     );
     let outputs = program.run_cpu(&inputs).expect("CPU backend must run");
 
-    let expected_velocities = [-0.045, -0.0225, 0.045, 0.0225, -0.09, -0.18, 0.09, 0.18];
+    // Matrix values use the executor's canonical column-major flattening:
+    // the first four lanes are the first column, followed by the second.
+    let expected_velocities = [-0.045, 0.045, -0.09, 0.09, -0.0225, 0.0225, -0.18, 0.18];
     let expected_positions = [
-        0.9955, 0.49775, -0.9955, -0.49775, 1.991, 3.982, -1.991, -3.982,
+        0.9955, -0.9955, 1.991, -1.991, 0.49775, -0.49775, 3.982, -3.982,
     ];
     assert_close(&outputs["result.1"], &expected_velocities);
     assert_close(&outputs["result.0"], &expected_positions);
