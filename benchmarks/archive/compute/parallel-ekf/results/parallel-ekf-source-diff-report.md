@@ -4,16 +4,16 @@ This report measures source edits behind the benchmark variants. `Changed lines`
 
 ## Variant matrix
 
-| Language | Baseline source | Advanced source | Base -> advanced lines | Base -> advanced chars | Baseline vs Mech lines | Baseline vs Mech chars | Advanced vs Mech lines | Advanced vs Mech chars | Checked M/s | Unchecked M/s |
-| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Mech | `ekf-kernel.mec` | `ekf-kernel.mec` | 0 | 0 | 0 | 0 | 0 | 0 | 246.151 | 241.028 |
-| Rust | `parallel_ekf_rust_scalar.rs` | `parallel_ekf_rust_simd.rs` | 533 | 15990 | 256 | 8883 | 431 | 15278 | 25.642 | 22.237 |
-| Python | `numpy_scalar.py` | `numpy_scalar.py` | 0 | 0 | 168 | 8484 | 168 | 8484 | -- | 0.055 |
-| NumPy | `numpy_scalar.py` | `numpy_vectorized.py` | 145 | 6312 | 168 | 8484 | 205 | 9492 | 10.854 | 12.255 |
-| Julia | `julia_scalar.jl` | `julia_simd_intrinsics.jl` | 245 | 10636 | 155 | 7258 | 215 | 9487 | 31.311 | 32.842 |
-| LuaJIT | `luajit_scalar.lua` | `luajit_fast.lua` | 174 | 9238 | 116 | 4974 | 182 | 9573 | 1.277 | 15.977 |
-| Lua | `luajit_fast.lua` | `luajit_fast.lua` | 0 | 0 | 182 | 9573 | 182 | 9573 | 0.565 | 0.835 |
-| Taichi | `taichi_comparable.py` | `taichi_optimized.py` | 255 | 13096 | 333 | 14642 | 351 | 17149 | 168.798 | 217.297 |
+| Language | Baseline source | Baseline lines | Baseline chars | Advanced source | Advanced lines | Advanced chars | Changed lines | Changed chars | Baseline vs Mech lines/chars | Advanced vs Mech lines/chars | Checked M/s | Unchecked M/s |
+| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Mech | `ekf-kernel.mec` | 116 | 4,974 | `ekf-kernel.mec` | 116 | 4,974 | 0 | 0 | 0 / 0 | 0 / 0 | 246.151 | 241.028 |
+| Rust | `parallel_ekf_rust_scalar.rs` | 220 | 6,464 | `parallel_ekf_rust_simd.rs` | 411 | 12,058 | 533 | 15,990 | 256 / 8,883 | 431 / 15,278 | 25.642 | 22.237 |
+| Python | `numpy_scalar.py` | 93 | 4,150 | `numpy_scalar.py` | 93 | 4,150 | 0 | 0 | 168 / 8,484 | 168 / 8,484 | -- | 0.055 |
+| NumPy | `numpy_scalar.py` | 93 | 4,150 | `numpy_vectorized.py` | 173 | 6,731 | 145 | 6,312 | 168 / 8,484 | 205 / 9,492 | 10.854 | 12.255 |
+| Julia | `julia_scalar.jl` | 103 | 4,765 | `julia_simd_intrinsics.jl` | 217 | 8,549 | 245 | 10,636 | 155 / 7,258 | 215 / 9,487 | 31.311 | 32.842 |
+| LuaJIT | `luajit_scalar.lua` | 43 | 3,369 | `luajit_fast.lua` | 169 | 7,609 | 174 | 9,238 | 116 / 4,974 | 182 / 9,573 | 1.277 | 15.977 |
+| Lua | `luajit_fast.lua` | 169 | 7,609 | `luajit_fast.lua` | 169 | 7,609 | 0 | 0 | 182 / 9,573 | 182 / 9,573 | 0.565 | 0.835 |
+| Taichi | `taichi_comparable.py` | 307 | 11,996 | `taichi_optimized.py` | 318 | 14,346 | 255 | 13,096 | 333 / 14,642 | 351 / 17,149 | 168.798 | 217.297 |
 
 ## Interpretation
 

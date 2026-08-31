@@ -231,15 +231,15 @@ def markdown(report: dict) -> str:
         "",
         "## Variant matrix",
         "",
-        "| Language | Baseline source | Advanced source | Base -> advanced lines | Base -> advanced chars | Baseline vs Mech lines | Baseline vs Mech chars | Advanced vs Mech lines | Advanced vs Mech chars | Checked M/s | Unchecked M/s |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Language | Baseline source | Baseline lines | Baseline chars | Advanced source | Advanced lines | Advanced chars | Changed lines | Changed chars | Baseline vs Mech lines/chars | Advanced vs Mech lines/chars | Checked M/s | Unchecked M/s |",
+        "| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in report["rows"]:
         throughput = row["throughput_millions"]
         checked = "--" if throughput["checked"] is None else f"{throughput['checked']:.3f}"
         unchecked = "--" if throughput["unchecked"] is None else f"{throughput['unchecked']:.3f}"
         lines.append(
-            f"| {row['language']} | `{Path(row['baseline']).name}` | `{Path(row['advanced']).name}` | {row['baseline_to_advanced']['changed_line_slots']} | {row['baseline_to_advanced']['changed_chars']} | {row['baseline_to_base_mech']['changed_line_slots']} | {row['baseline_to_base_mech']['changed_chars']} | {row['advanced_to_base_mech']['changed_line_slots']} | {row['advanced_to_base_mech']['changed_chars']} | {checked} | {unchecked} |"
+            f"| {row['language']} | `{Path(row['baseline']).name}` | {row['baseline_lines']} | {row['baseline_chars']:,} | `{Path(row['advanced']).name}` | {row['advanced_lines']} | {row['advanced_chars']:,} | {row['baseline_to_advanced']['changed_line_slots']} | {row['baseline_to_advanced']['changed_chars']:,} | {row['baseline_to_base_mech']['changed_line_slots']} / {row['baseline_to_base_mech']['changed_chars']:,} | {row['advanced_to_base_mech']['changed_line_slots']} / {row['advanced_to_base_mech']['changed_chars']:,} | {checked} | {unchecked} |"
         )
     lines += ["", "## Interpretation", ""]
     for row in report["rows"]:
