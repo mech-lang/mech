@@ -3189,6 +3189,7 @@ fn generate_wgsl_with_turns(
 mod native {
     use std::{
         collections::{BTreeMap, BTreeSet},
+        env,
         sync::{Arc, mpsc},
         time::{Duration, Instant},
     };
@@ -3309,7 +3310,7 @@ mod native {
                 inputs,
             )
             .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
-            let instance = wgpu::Instance::default();
+            let instance = wgpu_instance_from_environment();
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
                     power_preference: wgpu::PowerPreference::HighPerformance,
@@ -3576,6 +3577,28 @@ mod native {
                 faults: BatchedFaultRecorder::default(),
             })
         }
+    }
+
+    fn wgpu_instance_from_environment() -> wgpu::Instance {
+        let backends = match env::var("MECH_WGPU_BACKEND")
+            .ok()
+            .map(|value| value.to_ascii_lowercase())
+            .as_deref()
+        {
+            None | Some("all") => wgpu::Backends::all(),
+            Some("metal") => wgpu::Backends::METAL,
+            Some("vulkan") => wgpu::Backends::VULKAN,
+            Some("dx12") => wgpu::Backends::DX12,
+            Some("gl") | Some("gles") => wgpu::Backends::GL,
+            Some("webgpu") => wgpu::Backends::BROWSER_WEBGPU,
+            Some(value) => panic!(
+                "unsupported MECH_WGPU_BACKEND={value:?}; use all, metal, vulkan, dx12, gl, or webgpu"
+            ),
+        };
+        wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends,
+            ..Default::default()
+        })
     }
 
     impl BatchedResidentGpuSession {

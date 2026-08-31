@@ -1,0 +1,66 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-08-31",
+  "platform": "Apple M1",
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples": 3,
+    "synchronization": "after every turn",
+    "mech_native_metal_backend": "direct Metal via Naga-generated MSL",
+    "mech_wgpu_backend": "WGPU Metal",
+    "taichi_gpu_backend": "native Metal",
+    "source": "same Taichi-comparable EKF recurrence and f32 constants",
+    "timed_region": "resident dispatch plus completion wait per turn; setup, compilation, allocation, warmup, and final readback excluded"
+  },
+  "rows": [
+    {
+      "label": "Mech native Metal, checked",
+      "runtime": "Mech",
+      "throughput_millions": 184.246,
+      "samples": [184.246, 171.024, 185.310],
+      "checksum": 133818337.958878681,
+      "maximum_error": 1.907e-4
+    },
+    {
+      "label": "Taichi native Metal, checked",
+      "runtime": "Taichi",
+      "throughput_millions": 176.036,
+      "samples": [180.357, 176.036, 153.731],
+      "checksum": 133818340.004379436,
+      "faults": 0
+    },
+    {
+      "label": "Mech WGPU over Metal, checked (transport control)",
+      "runtime": "Mech",
+      "throughput_millions": 165.149,
+      "samples": [165.149, 148.981, 180.045],
+      "checksum": 133818337.953992233,
+      "maximum_error": 5.341e-5
+    },
+    {
+      "label": "Mech native Metal, unchecked",
+      "runtime": "Mech",
+      "throughput_millions": 208.312,
+      "samples": [208.312, 195.459, 213.169],
+      "checksum": 133818337.958878681,
+      "maximum_error": 1.907e-4
+    },
+    {
+      "label": "Taichi native Metal, unchecked",
+      "runtime": "Taichi",
+      "throughput_millions": 234.247,
+      "samples": [197.275, 259.398, 234.247],
+      "checksum": 133818340.004379436,
+      "faults": 0
+    },
+    {
+      "label": "Mech WGPU over Metal, unchecked (transport control)",
+      "runtime": "Mech",
+      "throughput_millions": 156.671,
+      "samples": [163.174, 135.760, 156.671],
+      "checksum": 133818337.953992233,
+      "maximum_error": 5.341e-5
+    }
+  ]
+}

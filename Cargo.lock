@@ -2735,6 +2735,8 @@ dependencies = [
  "mech-runtime",
  "mech-stdlib",
  "mech-syntax",
+ "metal",
+ "naga",
  "pollster",
  "serde",
  "serde_json",

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1500" height="561" viewBox="0 0 1500 561">
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:15px} .value{font-size:14px;font-variant-numeric:tabular-nums}</style>
-<text x="52" y="43" font-size="27" font-weight="700">Matched EKF runtime throughput</text>
+<text x="52" y="43" font-size="27" font-weight="700">Matched hardware EKF runtime throughput</text>
 <text x="52" y="71" class="muted" font-size="15">Apple M1 | 500,000 resident filters x 40 turns | median of 3 isolated samples | synchronized after every turn</text>
 <line x1="430.0" y1="105" x2="430.0" y2="465" class="grid"/>
 <text x="430.0" y="489" text-anchor="middle" class="axis">0</text>
@@ -58,5 +58,5 @@
 <text x="414" y="443" text-anchor="end" class="label">Taichi Metal GPU, unchecked</text>
 <rect x="430" y="426" width="851.8" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
 <text x="1291.8" y="443" class="value">222.21</text>
-<text x="52" y="506" class="muted" font-size="12">Checked rows validate and publish only valid candidates; unchecked rows omit those checks. GPU rows use one host dispatch and synchronization per turn. Setup, compilation, allocation, and final readback are excluded.</text>
+<text x="52" y="506" class="muted" font-size="12">Checked rows validate and publish only valid candidates; unchecked rows omit those checks. Every GPU row submits and waits once per turn; setup, compilation, allocation, warmup, and final readback are excluded.</text>
 </svg>

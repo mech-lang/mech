@@ -37,6 +37,11 @@ def main() -> None:
     chart_width = width - left - right
     max_value = max(240.0, ((max(row["throughput_millions"] for row in rows) + 19.999) // 20) * 20)
     height = top + row_height * len(rows) + bottom
+    chart_title = (
+        "Backend-matched EKF runtime throughput"
+        if "mech_native_metal_backend" in configuration
+        else "Matched hardware EKF runtime throughput"
+    )
 
     def x(value: float) -> float:
         return left + chart_width * value / max_value
@@ -45,7 +50,7 @@ def main() -> None:
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:15px} .value{font-size:14px;font-variant-numeric:tabular-nums}</style>',
-        '<text x="52" y="43" font-size="27" font-weight="700">Matched EKF runtime throughput</text>',
+        f'<text x="52" y="43" font-size="27" font-weight="700">{chart_title}</text>',
         f'<text x="52" y="71" class="muted" font-size="15">Apple M1 | {configuration["instances"]:,} resident filters x {configuration["turns"]} turns | median of {configuration["samples"]} isolated samples | synchronized after every turn</text>',
     ]
     for tick in range(0, int(max_value) + 1, 20):
@@ -69,7 +74,11 @@ def main() -> None:
         lines.append(f'<rect x="{left}" y="{y + 7}" width="{bar_width:.1f}" height="24" rx="3" fill="{color}" opacity="0.9"/>')
         lines.append(f'<text x="{min(left + bar_width + 10, width - right + 12):.1f}" y="{y + 24}" class="value">{value:.2f}</text>')
 
-    lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">Checked rows validate and publish only valid candidates; unchecked rows omit those checks. GPU rows use one host dispatch and synchronization per turn. Setup, compilation, allocation, and final readback are excluded.</text>')
+    note = "Checked rows validate and publish only valid candidates; unchecked rows omit those checks. "
+    note += "Every GPU row submits and waits once per turn; setup, compilation, allocation, warmup, and final readback are excluded."
+    if "mech_native_metal_backend" in configuration:
+        note += " Native Metal rows use direct Metal command submission; WGPU-over-Metal rows are shown only as a transport control."
+    lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{esc(note)}</text>')
     lines.append('</svg>')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("\n".join(lines) + "\n", encoding="utf-8")

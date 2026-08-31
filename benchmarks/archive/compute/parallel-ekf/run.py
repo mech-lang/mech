@@ -93,6 +93,11 @@ def main() -> None:
         default=ROOT / "target/release/examples/parallel_ekf_benchmark",
     )
     parser.add_argument(
+        "--mech-native-metal",
+        action="store_true",
+        help="parse the direct macOS Metal rows (binary must be built with native-metal)",
+    )
+    parser.add_argument(
         "--rust-simd-binary",
         type=Path,
         help="use a prebuilt packed Rust SIMD control instead of compiling it",
@@ -449,6 +454,21 @@ def main() -> None:
                 for text in backend_mech_outputs
             ),
         }
+        if args.mech_native_metal:
+            backend["Mech native Metal, checked"] = statistics.median(
+                number(
+                    text,
+                    r"Mech native Metal checked one-turn throughput: ([0-9.]+) million",
+                )
+                for text in backend_mech_outputs
+            )
+            backend["Mech native Metal, unchecked"] = statistics.median(
+                number(
+                    text,
+                    r"Mech native Metal unchecked one-turn throughput: ([0-9.]+) million",
+                )
+                for text in backend_mech_outputs
+            )
         if args.taichi_python is not None:
             taichi_environment = environment.copy()
             taichi_environment["TAICHI_ARCH"] = args.taichi_arch
@@ -546,6 +566,7 @@ def main() -> None:
                     "backend_cpu_turns": args.backend_cpu_turns,
                     "backend_gpu_turns": args.backend_gpu_turns,
                     "taichi_arch": args.taichi_arch,
+                    "mech_native_metal": args.mech_native_metal,
                     "taichi_cpu_threads": args.taichi_cpu_threads,
                     "samples": args.samples,
                     "luajit_samples": args.luajit_samples,

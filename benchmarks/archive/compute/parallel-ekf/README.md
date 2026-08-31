@@ -20,6 +20,7 @@ git switch --track origin/codex/mech-program-gpu
 | Taichi-comparable Mech EKF | `hosts/gpu/fixtures/ekf-kernel-taichi-comparable.mec` |
 | Mech artifact benchmark harness | `hosts/gpu/examples/parallel_ekf_benchmark.rs` |
 | Generic scalar, SIMD, and WGPU lowering/execution | `hosts/gpu/src/batched.rs` |
+| macOS native Metal measurement backend | `hosts/gpu/src/metal.rs` |
 | Cranelift lowering/execution | `hosts/gpu/src/batched/jit.rs` |
 | Optimized Rust control | `hosts/gpu/examples/parallel_ekf_rust_scalar.rs` |
 | Rust packed-lane SIMD control | `hosts/gpu/examples/parallel_ekf_rust_simd.rs` |
@@ -35,6 +36,39 @@ git switch --track origin/codex/mech-program-gpu
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
+
+## Native Metal control
+
+The earlier GPU chart compared Taichi's native Metal backend with Mech's
+portable WGPU backend. WGPU selects Apple's Metal implementation on this
+machine, but it still adds a separate instance, pipeline, command-encoding,
+and synchronization path, so those rows must not be described as an API-level
+match.
+
+The corrected control is a macOS-only measurement backend behind the
+`native-metal` feature. It takes the same generated Mech WGSL, translates it to
+MSL with Naga once during preparation, and submits the resulting function
+through Metal's native command queue. The timed region is still resident,
+host-driven execution with one completion wait per turn. It does not call
+WGPU, and it does not replace the portable runtime backend for other targets.
+
+![Backend-matched Mech and Taichi EKF throughput](results/apple-m1-mech-taichi-native-metal-2026-08-31.svg)
+
+| Runtime/backend | Checked | Unchecked |
+| --- | ---: | ---: |
+| Mech native Metal (direct MSL) | 184.246M/s | 208.312M/s |
+| Taichi native Metal | 176.036M/s | 234.247M/s |
+| Mech WGPU over Metal (transport control) | 165.149M/s | 156.671M/s |
+
+These are medians of three isolated processes on the Apple M1 using 500,000
+resident filters and 40 synchronized turns. The native Metal Mech rows came
+from `parallel_ekf_benchmark` built with `native,jit,native-metal`; the Taichi
+rows came from `taichi_comparable.py` with `TAICHI_ARCH=metal`. The WGPU rows
+remain useful for measuring the portable command path, but are no longer used
+as the native-Metal comparison.
+
+Raw samples, checksums, and the direct-vs-WGPU distinction are recorded in
+`results/apple-m1-mech-taichi-native-metal-2026-08-31.json`.
 
 ## Taichi parity harness
 
@@ -104,7 +138,12 @@ parallel/vector lowering, while Mech's SIMD lane width is explicit. Use the
 worker count and synchronization policy in the result table whenever comparing
 the two.
 
-## Matched eight-worker CPU/GPU comparison
+## Prior hardware-level chart (transport not matched)
+
+The following chart is retained for historical context. Its Taichi Metal rows
+and Mech WGPU rows run on the same hardware and shader workload, but not
+through the same GPU API; use the native-Metal control above for an API-level
+comparison.
 
 The parallel SIMD-JIT entry point partitions complete four-lane groups across
 eight scoped workers. Workers join before the next turn begins, so this remains

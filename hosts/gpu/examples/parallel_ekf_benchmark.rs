@@ -334,6 +334,45 @@ fn main() {
     let (_, gpu_unchecked_checksum_state) = gpu_unchecked_checksum_session.read_state().unwrap();
     let gpu_unchecked_checksum = state_checksum(&gpu_unchecked_checksum_state);
 
+    #[cfg(feature = "native-metal")]
+    let native_expected = {
+        let mut reference = program.prepare_cpu(&inputs).unwrap();
+        reference.dispatch_turns(single_gpu_turns).unwrap();
+        reference.state().clone()
+    };
+
+    #[cfg(feature = "native-metal")]
+    let (metal_checked_per_turn, metal_checked_checksum, metal_checked_error) = {
+        let mut warmup = program.prepare_native_metal(&inputs).unwrap();
+        warmup.dispatch_turns(5).unwrap();
+        let mut session = program.prepare_native_metal(&inputs).unwrap();
+        let started = Instant::now();
+        for _ in 0..single_gpu_turns {
+            session.dispatch_turns(1).unwrap();
+        }
+        let per_turn = started.elapsed() / single_gpu_turns;
+        let state = session.read_state().unwrap();
+        let checksum = state_checksum(&state);
+        let error = maximum_error(&native_expected, &state);
+        (per_turn, checksum, error)
+    };
+
+    #[cfg(feature = "native-metal")]
+    let (metal_unchecked_per_turn, metal_unchecked_checksum, metal_unchecked_error) = {
+        let mut warmup = unchecked_program.prepare_native_metal(&inputs).unwrap();
+        warmup.dispatch_turns(5).unwrap();
+        let mut session = unchecked_program.prepare_native_metal(&inputs).unwrap();
+        let started = Instant::now();
+        for _ in 0..single_gpu_turns {
+            session.dispatch_turns(1).unwrap();
+        }
+        let per_turn = started.elapsed() / single_gpu_turns;
+        let state = session.read_state().unwrap();
+        let checksum = state_checksum(&state);
+        let error = maximum_error(&native_expected, &state);
+        (per_turn, checksum, error)
+    };
+
     println!("EKF instances: {instances}");
     println!("batch extent authority: Mech input arrays");
     println!("source artifact nodes: {}", artifact.nodes().len());
@@ -514,6 +553,17 @@ fn main() {
         "GPU unchecked one-submit throughput: {:.3} million EKF-turns/s",
         throughput(instances, unchecked_repeated)
     );
+    #[cfg(feature = "native-metal")]
+    {
+        println!(
+            "Mech native Metal checked one-turn throughput: {:.3} million EKF-turns/s",
+            throughput(instances, metal_checked_per_turn)
+        );
+        println!(
+            "Mech native Metal unchecked one-turn throughput: {:.3} million EKF-turns/s",
+            throughput(instances, metal_unchecked_per_turn)
+        );
+    }
     println!(
         "resident GPU unchecked prepare: {:.3} ms",
         millis(unchecked_prepare)
@@ -544,6 +594,13 @@ fn main() {
     );
     println!("Mech GPU checked checksum: {gpu_checksum:.9}");
     println!("Mech GPU unchecked checksum: {gpu_unchecked_checksum:.9}");
+    #[cfg(feature = "native-metal")]
+    {
+        println!("Mech native Metal checked checksum: {metal_checked_checksum:.9}");
+        println!("Mech native Metal unchecked checksum: {metal_unchecked_checksum:.9}");
+        println!("maximum CPU/native Metal checked absolute error: {metal_checked_error:.3e}");
+        println!("maximum CPU/native Metal unchecked absolute error: {metal_unchecked_error:.3e}");
+    }
 }
 
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
