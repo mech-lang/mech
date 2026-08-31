@@ -1157,6 +1157,39 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
     }
 }
 
+#[cfg(feature = "jit")]
+#[test]
+fn simd_jit_matches_scalar_and_retains_state_on_fault() {
+    let (program, inputs) = source_program(8);
+    let mut scalar = program.prepare_jit_cpu(&inputs).unwrap();
+    scalar.dispatch_turns(3).unwrap();
+
+    let mut simd = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    simd.dispatch_turns(3).unwrap();
+    for (slot, expected) in scalar.state() {
+        assert_close(expected, &simd.state()[slot], 1.0e-4);
+    }
+
+    let mut invalid_inputs = inputs;
+    invalid_inputs
+        .get_mut("bearing")
+        .unwrap()
+        .iter_mut()
+        .for_each(|value| *value = f32::NAN);
+    let mut checked = program.prepare_jit_simd_cpu(&invalid_inputs).unwrap();
+    let published = checked.state().clone();
+    assert!(matches!(
+        checked.dispatch_turns(1).unwrap_err(),
+        BatchedExecutionError::Integrity(_)
+    ));
+    assert_eq!(checked.state(), &published);
+    assert_eq!(checked.fault_count(), 1);
+    assert_eq!(
+        checked.last_fault().unwrap().constraint_name.as_ref(),
+        "finite-candidate!"
+    );
+}
+
 #[cfg(feature = "native")]
 #[test]
 fn source_driven_broadcast_matches_the_native_gpu() {

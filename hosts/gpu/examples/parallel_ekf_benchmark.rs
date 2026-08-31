@@ -120,11 +120,65 @@ fn main() {
     jit_unchecked_fast.dispatch_turns(cpu_turns).unwrap();
     let jit_unchecked_fast_per_turn = jit_unchecked_fast_started.elapsed() / cpu_turns;
     let jit_unchecked_fast_checksum = state_checksum(jit_unchecked_fast.state());
+
+    let mut jit_simd_validation = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    jit_simd_validation
+        .dispatch_turns(validation_turns)
+        .unwrap();
+    let jit_simd_max_error = maximum_error(&expected, jit_simd_validation.state());
+    assert!(
+        jit_simd_max_error <= 1.0e-4,
+        "SIMD JIT result differs from scalar CPU lowering by {jit_simd_max_error}"
+    );
+
+    let mut jit_simd_warmup = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    jit_simd_warmup.dispatch_turns(5).unwrap();
+    let mut jit_simd = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    let jit_simd_started = Instant::now();
+    jit_simd.dispatch_turns(cpu_turns).unwrap();
+    let jit_simd_per_turn = jit_simd_started.elapsed() / cpu_turns;
+    let jit_simd_checksum = state_checksum(jit_simd.state());
+
+    let mut jit_simd_checked_fast_warmup =
+        program.prepare_jit_simd_cpu_checked_fast(&inputs).unwrap();
+    jit_simd_checked_fast_warmup.dispatch_turns(5).unwrap();
+    let mut jit_simd_checked_fast = program.prepare_jit_simd_cpu_checked_fast(&inputs).unwrap();
+    let jit_simd_checked_fast_started = Instant::now();
+    jit_simd_checked_fast.dispatch_turns(cpu_turns).unwrap();
+    let jit_simd_checked_fast_per_turn = jit_simd_checked_fast_started.elapsed() / cpu_turns;
+    let jit_simd_checked_fast_checksum = state_checksum(jit_simd_checked_fast.state());
+
+    let mut jit_simd_unchecked_warmup = program.prepare_jit_simd_cpu_unchecked(&inputs).unwrap();
+    jit_simd_unchecked_warmup.dispatch_turns(5).unwrap();
+    let mut jit_simd_unchecked = program.prepare_jit_simd_cpu_unchecked(&inputs).unwrap();
+    let jit_simd_unchecked_started = Instant::now();
+    jit_simd_unchecked.dispatch_turns(cpu_turns).unwrap();
+    let jit_simd_unchecked_per_turn = jit_simd_unchecked_started.elapsed() / cpu_turns;
+    let jit_simd_unchecked_checksum = state_checksum(jit_simd_unchecked.state());
+
+    let mut jit_simd_unchecked_fast_warmup = program
+        .prepare_jit_simd_cpu_unchecked_fast(&inputs)
+        .unwrap();
+    jit_simd_unchecked_fast_warmup.dispatch_turns(5).unwrap();
+    let mut jit_simd_unchecked_fast = program
+        .prepare_jit_simd_cpu_unchecked_fast(&inputs)
+        .unwrap();
+    let jit_simd_unchecked_fast_started = Instant::now();
+    jit_simd_unchecked_fast.dispatch_turns(cpu_turns).unwrap();
+    let jit_simd_unchecked_fast_per_turn = jit_simd_unchecked_fast_started.elapsed() / cpu_turns;
+    let jit_simd_unchecked_fast_checksum = state_checksum(jit_simd_unchecked_fast.state());
+
     let jit_validation_overhead =
         (jit_per_turn.as_secs_f64() / jit_unchecked_per_turn.as_secs_f64() - 1.0) * 100.0;
     let jit_checked_fast_validation_overhead =
         (jit_checked_fast_per_turn.as_secs_f64() / jit_unchecked_fast_per_turn.as_secs_f64() - 1.0)
             * 100.0;
+    let jit_simd_validation_overhead =
+        (jit_simd_per_turn.as_secs_f64() / jit_simd_unchecked_per_turn.as_secs_f64() - 1.0) * 100.0;
+    let jit_simd_checked_fast_validation_overhead = (jit_simd_checked_fast_per_turn.as_secs_f64()
+        / jit_simd_unchecked_fast_per_turn.as_secs_f64()
+        - 1.0)
+        * 100.0;
 
     let prepare_started = Instant::now();
     let mut gpu = program.prepare_resident(&inputs).unwrap();
@@ -184,6 +238,22 @@ fn main() {
         millis(jit_unchecked_fast_per_turn)
     );
     println!(
+        "Mech Cranelift SIMD-JIT CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_simd_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT checked fast CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_simd_checked_fast_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT unchecked CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_simd_unchecked_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT unchecked fast CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_simd_unchecked_fast_per_turn)
+    );
+    println!(
         "resident GPU, one submission per turn: {:.3} ms/turn ({single_gpu_turns} turns)",
         millis(single_per_turn)
     );
@@ -215,9 +285,29 @@ fn main() {
         "Mech Cranelift JIT unchecked fast throughput: {:.3} million EKF-turns/s",
         throughput(instances, jit_unchecked_fast_per_turn)
     );
+    println!(
+        "Mech Cranelift SIMD-JIT throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_simd_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT checked fast throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_simd_checked_fast_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT unchecked throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_simd_unchecked_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT unchecked fast throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_simd_unchecked_fast_per_turn)
+    );
     println!("JIT integrity validation time overhead: {jit_validation_overhead:.2}%");
     println!(
         "JIT checked-fast validation time overhead: {jit_checked_fast_validation_overhead:.2}%"
+    );
+    println!("SIMD-JIT integrity validation time overhead: {jit_simd_validation_overhead:.2}%");
+    println!(
+        "SIMD-JIT checked-fast validation time overhead: {jit_simd_checked_fast_validation_overhead:.2}%"
     );
     println!(
         "GPU single-submit throughput: {:.3} million EKF-turns/s",
@@ -237,6 +327,12 @@ fn main() {
     println!("Mech Cranelift JIT checked fast checksum: {jit_checked_fast_checksum:.9}");
     println!("Mech Cranelift JIT unchecked checksum: {jit_unchecked_checksum:.9}");
     println!("Mech Cranelift JIT unchecked fast checksum: {jit_unchecked_fast_checksum:.9}");
+    println!("Mech Cranelift SIMD-JIT checksum: {jit_simd_checksum:.9}");
+    println!("Mech Cranelift SIMD-JIT checked fast checksum: {jit_simd_checked_fast_checksum:.9}");
+    println!("Mech Cranelift SIMD-JIT unchecked checksum: {jit_simd_unchecked_checksum:.9}");
+    println!(
+        "Mech Cranelift SIMD-JIT unchecked fast checksum: {jit_simd_unchecked_fast_checksum:.9}"
+    );
 }
 
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
