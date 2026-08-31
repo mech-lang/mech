@@ -160,6 +160,20 @@ def main() -> None:
                 *common,
                 "checked",
             ],
+            "Julia fixed-shape SIMD unchecked": [
+                required["julia"],
+                "--startup-file=no",
+                str(HERE / "julia_simd.jl"),
+                *common,
+                "unchecked",
+            ],
+            "Julia fixed-shape SIMD checked": [
+                required["julia"],
+                "--startup-file=no",
+                str(HERE / "julia_simd.jl"),
+                *common,
+                "checked",
+            ],
             "LuaJIT scalar outer loop": [
                 required["luajit"],
                 str(HERE / "luajit_scalar.lua"),

@@ -14,7 +14,7 @@ use mech_core::CellSlotId;
 use super::{
     BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, BinaryOperation,
     ComparisonOperation, ElementwiseOperation, FixedShapeKernel, LogicOperation, ScalarComputation,
-    ScalarOperand, ScalarPredicate, UnaryOperation,
+    ScalarInstruction, ScalarOperand, ScalarPredicate, UnaryOperation,
 };
 
 type NativeTurn = unsafe extern "C" fn(
@@ -451,6 +451,7 @@ impl NativeKernel {
         jit_builder
             .symbol("mech_jit_sinf", mech_jit_sinf as *const u8)
             .symbol("mech_jit_cosf", mech_jit_cosf as *const u8)
+            .symbol("mech_jit_sincos_pack", mech_jit_sincos_pack as *const u8)
             .symbol("mech_jit_sqrtf", mech_jit_sqrtf as *const u8)
             .symbol("mech_jit_ceilf", mech_jit_ceilf as *const u8)
             .symbol("mech_jit_atan2f", mech_jit_atan2f as *const u8);
@@ -474,6 +475,14 @@ impl NativeKernel {
             .map_err(native_error)?;
         let cos_id = module
             .declare_function("mech_jit_cosf", Linkage::Import, &unary_signature)
+            .map_err(native_error)?;
+        let sincos_id = module
+            .declare_function("mech_jit_sincos_pack", Linkage::Import, &{
+                let mut signature = module.make_signature();
+                signature.params.push(AbiParam::new(types::F32));
+                signature.returns.push(AbiParam::new(types::I64));
+                signature
+            })
             .map_err(native_error)?;
         let sqrt_id = module
             .declare_function("mech_jit_sqrtf", Linkage::Import, &unary_signature)
@@ -625,12 +634,14 @@ impl NativeKernel {
             builder.switch_to_block(body);
             let sin_ref = module.declare_func_in_func(sin_id, builder.func);
             let cos_ref = module.declare_func_in_func(cos_id, builder.func);
+            let sincos_ref = module.declare_func_in_func(sincos_id, builder.func);
             let sqrt_ref = module.declare_func_in_func(sqrt_id, builder.func);
             let ceil_ref = module.declare_func_in_func(ceil_id, builder.func);
             let atan2_ref = module.declare_func_in_func(atan2_id, builder.func);
             let functions = MathFunctions {
                 sin: sin_ref,
                 cos: cos_ref,
+                sincos: sincos_ref,
                 sqrt: sqrt_ref,
                 ceil: ceil_ref,
                 atan2: atan2_ref,
@@ -693,7 +704,26 @@ impl NativeKernel {
                 })
                 .collect::<Vec<_>>();
             debug_assert_eq!(loop_base_index, header_params.len());
-            for instruction in &program.fixed_ir().instructions {
+            let instructions = &program.fixed_ir().instructions;
+            let mut paired_outputs = BTreeSet::new();
+            for (instruction_index, instruction) in instructions.iter().enumerate() {
+                if paired_outputs.remove(&instruction.output) {
+                    continue;
+                }
+                if let Some((partner_index, current_is_sin, operand)) =
+                    find_sincos_partner(instructions, instruction_index, &instruction.computation)
+                {
+                    let operand =
+                        lower_numeric_operand(&mut builder, operand, &registers, &constant_values)?;
+                    let (sin, cos) = call_sincos(&mut builder, functions.sincos, operand);
+                    let current = if current_is_sin { sin } else { cos };
+                    let partner = if current_is_sin { cos } else { sin };
+                    registers[instruction.output] = Some(NativeRegister::F32(current));
+                    registers[instructions[partner_index].output] =
+                        Some(NativeRegister::F32(partner));
+                    paired_outputs.insert(instructions[partner_index].output);
+                    continue;
+                }
                 let value = lower_computation(
                     &mut builder,
                     &instruction.computation,
@@ -807,6 +837,7 @@ impl NativeSimdKernel {
         jit_builder
             .symbol("mech_jit_sinf", mech_jit_sinf as *const u8)
             .symbol("mech_jit_cosf", mech_jit_cosf as *const u8)
+            .symbol("mech_jit_sincos_pack", mech_jit_sincos_pack as *const u8)
             .symbol("mech_jit_sqrtf", mech_jit_sqrtf as *const u8)
             .symbol("mech_jit_ceilf", mech_jit_ceilf as *const u8)
             .symbol("mech_jit_atan2f", mech_jit_atan2f as *const u8);
@@ -830,6 +861,14 @@ impl NativeSimdKernel {
             .map_err(native_error)?;
         let cos_id = module
             .declare_function("mech_jit_cosf", Linkage::Import, &unary_signature)
+            .map_err(native_error)?;
+        let sincos_id = module
+            .declare_function("mech_jit_sincos_pack", Linkage::Import, &{
+                let mut signature = module.make_signature();
+                signature.params.push(AbiParam::new(types::F32));
+                signature.returns.push(AbiParam::new(types::I64));
+                signature
+            })
             .map_err(native_error)?;
         let sqrt_id = module
             .declare_function("mech_jit_sqrtf", Linkage::Import, &unary_signature)
@@ -1000,12 +1039,14 @@ impl NativeSimdKernel {
             builder.switch_to_block(body);
             let sin_ref = module.declare_func_in_func(sin_id, builder.func);
             let cos_ref = module.declare_func_in_func(cos_id, builder.func);
+            let sincos_ref = module.declare_func_in_func(sincos_id, builder.func);
             let sqrt_ref = module.declare_func_in_func(sqrt_id, builder.func);
             let ceil_ref = module.declare_func_in_func(ceil_id, builder.func);
             let atan2_ref = module.declare_func_in_func(atan2_id, builder.func);
             let functions = MathFunctions {
                 sin: sin_ref,
                 cos: cos_ref,
+                sincos: sincos_ref,
                 sqrt: sqrt_ref,
                 ceil: ceil_ref,
                 atan2: atan2_ref,
@@ -1071,7 +1112,25 @@ impl NativeSimdKernel {
                 })
                 .collect::<Vec<_>>();
             debug_assert_eq!(loop_base_index, header_params.len());
-            for instruction in &program.fixed_ir().instructions {
+            let instructions = &program.fixed_ir().instructions;
+            let mut paired_outputs = BTreeSet::new();
+            for (instruction_index, instruction) in instructions.iter().enumerate() {
+                if paired_outputs.remove(&instruction.output) {
+                    continue;
+                }
+                if let Some((partner_index, current_is_sin, operand)) =
+                    find_sincos_partner(instructions, instruction_index, &instruction.computation)
+                {
+                    let value = lower_simd_numeric_operand(operand, &registers, &constant_values)?;
+                    let (sin, cos) = call_simd_sincos(&mut builder, functions.sincos, value);
+                    let current = if current_is_sin { sin } else { cos };
+                    let partner = if current_is_sin { cos } else { sin };
+                    registers[instruction.output] = Some(NativeSimdRegister::F32(current));
+                    registers[instructions[partner_index].output] =
+                        Some(NativeSimdRegister::F32(partner));
+                    paired_outputs.insert(instructions[partner_index].output);
+                    continue;
+                }
                 let value = lower_simd_computation(
                     &mut builder,
                     &instruction.computation,
@@ -1193,6 +1252,7 @@ impl NativeSimdKernel {
 struct MathFunctions {
     sin: cranelift_codegen::ir::FuncRef,
     cos: cranelift_codegen::ir::FuncRef,
+    sincos: cranelift_codegen::ir::FuncRef,
     sqrt: cranelift_codegen::ir::FuncRef,
     ceil: cranelift_codegen::ir::FuncRef,
     atan2: cranelift_codegen::ir::FuncRef,
@@ -1280,6 +1340,61 @@ fn collect_constant_bits(program: &FixedShapeKernel) -> BTreeSet<u32> {
         }
     }
     constants
+}
+
+fn unary_math_operand(
+    computation: &ScalarComputation,
+    operation: UnaryOperation,
+) -> Option<ScalarOperand> {
+    match computation {
+        ScalarComputation::Elementwise {
+            operation: ElementwiseOperation::Unary(candidate),
+            inputs,
+        } if *candidate == operation => inputs.first().copied(),
+        _ => None,
+    }
+}
+
+fn same_scalar_operand(left: ScalarOperand, right: ScalarOperand) -> bool {
+    match (left, right) {
+        (ScalarOperand::Register(left), ScalarOperand::Register(right)) => left == right,
+        (ScalarOperand::Constant(left), ScalarOperand::Constant(right)) => {
+            left.to_bits() == right.to_bits()
+        }
+        _ => false,
+    }
+}
+
+fn find_sincos_partner(
+    instructions: &[ScalarInstruction],
+    instruction_index: usize,
+    computation: &ScalarComputation,
+) -> Option<(usize, bool, ScalarOperand)> {
+    let (operation, operand) =
+        if let Some(operand) = unary_math_operand(computation, UnaryOperation::Sin) {
+            (UnaryOperation::Sin, operand)
+        } else if let Some(operand) = unary_math_operand(computation, UnaryOperation::Cos) {
+            (UnaryOperation::Cos, operand)
+        } else {
+            return None;
+        };
+    let partner_operation = match operation {
+        UnaryOperation::Sin => UnaryOperation::Cos,
+        UnaryOperation::Cos => UnaryOperation::Sin,
+        _ => unreachable!(),
+    };
+    instructions
+        .iter()
+        .enumerate()
+        .skip(instruction_index + 1)
+        .find_map(|(candidate_index, candidate)| {
+            let candidate_operand = unary_math_operand(&candidate.computation, partner_operation)?;
+            same_scalar_operand(operand, candidate_operand).then_some((
+                candidate_index,
+                operation == UnaryOperation::Sin,
+                operand,
+            ))
+        })
 }
 
 fn lower_computation(
@@ -1382,9 +1497,9 @@ fn lower_sum_products(
         }
         let value = match sum {
             None => {
-                if skip_zero_terms && is_one_operand(*left) {
+                if is_one_operand(*left) {
                     lower_numeric_operand(builder, *right, registers, constants)?
-                } else if skip_zero_terms && is_one_operand(*right) {
+                } else if is_one_operand(*right) {
                     lower_numeric_operand(builder, *left, registers, constants)?
                 } else {
                     let left = lower_numeric_operand(builder, *left, registers, constants)?;
@@ -1392,11 +1507,11 @@ fn lower_sum_products(
                     builder.ins().fmul(left, right)
                 }
             }
-            Some(sum) if skip_zero_terms && is_one_operand(*left) => {
+            Some(sum) if is_one_operand(*left) => {
                 let right = lower_numeric_operand(builder, *right, registers, constants)?;
                 builder.ins().fadd(sum, right)
             }
-            Some(sum) if skip_zero_terms && is_one_operand(*right) => {
+            Some(sum) if is_one_operand(*right) => {
                 let left = lower_numeric_operand(builder, *left, registers, constants)?;
                 builder.ins().fadd(sum, left)
             }
@@ -1514,9 +1629,9 @@ fn lower_simd_sum_products(
         }
         let value = match sum {
             None => {
-                if skip_zero_terms && is_one_operand(*left) {
+                if is_one_operand(*left) {
                     lower_simd_numeric_operand(*right, registers, constants)?
-                } else if skip_zero_terms && is_one_operand(*right) {
+                } else if is_one_operand(*right) {
                     lower_simd_numeric_operand(*left, registers, constants)?
                 } else {
                     let left = lower_simd_numeric_operand(*left, registers, constants)?;
@@ -1524,11 +1639,11 @@ fn lower_simd_sum_products(
                     builder.ins().fmul(left, right)
                 }
             }
-            Some(sum) if skip_zero_terms && is_one_operand(*left) => {
+            Some(sum) if is_one_operand(*left) => {
                 let right = lower_simd_numeric_operand(*right, registers, constants)?;
                 builder.ins().fadd(sum, right)
             }
-            Some(sum) if skip_zero_terms && is_one_operand(*right) => {
+            Some(sum) if is_one_operand(*right) => {
                 let left = lower_simd_numeric_operand(*left, registers, constants)?;
                 builder.ins().fadd(sum, left)
             }
@@ -1926,6 +2041,38 @@ fn call_math(
     builder.inst_results(call)[0]
 }
 
+fn call_sincos(
+    builder: &mut FunctionBuilder<'_>,
+    function: cranelift_codegen::ir::FuncRef,
+    value: Value,
+) -> (Value, Value) {
+    let call = builder.ins().call(function, &[value]);
+    let packed = builder.inst_results(call)[0];
+    let sin_bits = builder.ins().ireduce(types::I32, packed);
+    let cos_packed = builder.ins().ushr_imm(packed, 32);
+    let cos_bits = builder.ins().ireduce(types::I32, cos_packed);
+    let sin = builder.ins().bitcast(types::F32, MemFlags::new(), sin_bits);
+    let cos = builder.ins().bitcast(types::F32, MemFlags::new(), cos_bits);
+    (sin, cos)
+}
+
+fn call_simd_sincos(
+    builder: &mut FunctionBuilder<'_>,
+    function: cranelift_codegen::ir::FuncRef,
+    value: Value,
+) -> (Value, Value) {
+    let zero = builder.ins().f32const(0.0);
+    let mut sin_values = builder.ins().splat(types::F32X4, zero);
+    let mut cos_values = builder.ins().splat(types::F32X4, zero);
+    for lane in 0..SIMD_JIT_LANES {
+        let scalar = builder.ins().extractlane(value, lane as u8);
+        let (sin, cos) = call_sincos(builder, function, scalar);
+        sin_values = builder.ins().insertlane(sin_values, sin, lane as u8);
+        cos_values = builder.ins().insertlane(cos_values, cos, lane as u8);
+    }
+    (sin_values, cos_values)
+}
+
 fn load_component(builder: &mut FunctionBuilder<'_>, base: Value, component: usize) -> Value {
     let offset =
         i32::try_from(component.checked_mul(types::F32.bytes() as usize).unwrap()).unwrap();
@@ -1952,6 +2099,13 @@ extern "C" fn mech_jit_sinf(value: f32) -> f32 {
 
 extern "C" fn mech_jit_cosf(value: f32) -> f32 {
     value.cos()
+}
+
+/// Return both transcendental results in one ABI call. The low and high
+/// halves contain the raw f32 bit patterns for sin(value) and cos(value).
+extern "C" fn mech_jit_sincos_pack(value: f32) -> u64 {
+    let (sin, cos) = value.sin_cos();
+    u64::from(sin.to_bits()) | (u64::from(cos.to_bits()) << 32)
 }
 
 extern "C" fn mech_jit_sqrtf(value: f32) -> f32 {

@@ -24,6 +24,7 @@ git switch --track origin/codex/mech-program-gpu
 | NumPy control | `benchmarks/archive/compute/parallel-ekf/numpy_scalar.py` |
 | Julia generic control | `benchmarks/archive/compute/parallel-ekf/julia_scalar.jl` |
 | Julia fixed-shape control | `benchmarks/archive/compute/parallel-ekf/julia_flat.jl` |
+| Julia packed-lane control | `benchmarks/archive/compute/parallel-ekf/julia_simd.jl` |
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -234,3 +235,31 @@ All four modes produced the same checksum within the existing `f32`
 tolerance. The fixed-shape checked result is the relevant comparison to a
 checked Mech numeric backend; the unchecked result isolates arithmetic and
 storage cost only.
+
+## Julia packed-lane comparison
+
+`julia_simd.jl` gives Julia the same four-filter physical execution shape as
+Mech's SIMD-JIT lane. It stores each state and covariance component as a
+`StaticArrays.SVector{4,Float32}`, advances four independent filters per outer
+iteration, uses Julia's `sincos` pair, and keeps the same checked-mode
+finite/positive-diagonal/symmetry predicates. A fully valid group takes a
+branch-only publication path; per-lane `ifelse` rollback is materialized only
+when a lane fails. This is a fair packed-lane Julia comparison, while the
+generic and fixed-shape sequential rows remain available to show the cost of
+the language/runtime shape itself.
+
+On this Apple M1 checkout with 100,000 filters and 100 measured turns (after
+the script's five-turn warmup), the direct runs were:
+
+| Julia implementation | Validation | Million lane-turns/s |
+| --- | --- | ---: |
+| Fixed-shape flat tuples | unchecked | 22.69 |
+| Fixed-shape flat tuples | checked | 19.57 |
+| Fixed-shape packed `SVector{4}` | unchecked | 37.72 |
+| Fixed-shape packed `SVector{4}` | checked | 29.83 |
+
+The packed source produced the same `26,697,851.679688` checksum as the flat
+source (within `f32` accumulation rounding). The checked packed result is
+therefore close to Mech's checked SIMD-JIT result on this run, rather than an
+unchecked Julia-only advantage. `StaticArrays` is already an installed Julia
+dependency; no optional SIMD package is required.
