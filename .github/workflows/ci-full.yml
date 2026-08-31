@@ -70,6 +70,7 @@ jobs:
           python3 scripts/check-no-retired-value-system.py
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
+          python3 scripts/check-r1-compatibility-closure.py
           python3 scripts/check-resident-activation-contract.py
           python3 scripts/check-compiler-planning-quarantine.py
           python3 scripts/generate-d1-contract.py --check
@@ -83,6 +84,7 @@ jobs:
             tests/ci/test_ci_full_contract.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_no_retired_value_system.py \
+            scripts/tests/test_check_r1_compatibility_closure.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \
@@ -820,6 +822,9 @@ jobs:
 
       - name: Check reduced core feature boundaries
         run: |
+          cargo check --locked \
+            --no-default-features \
+            --features no_std
           cargo check -p mech-core \
             --no-default-features \
             --features no_std

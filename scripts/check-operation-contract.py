@@ -181,21 +181,18 @@ def validate_representatives_at(
     return errors
 
 
-def validate_opaque_policy(validation: str, fixture: str) -> list[str]:
+def validate_canonical_contract_policy(compiler: str, fixture: str) -> list[str]:
     errors: list[str] = []
-    for marker in (
-        "IntegrityConstraintContractInvalid",
-        "ResolvedOperationContract::LegacyOpaque",
-        "ExternalInteraction::Pure",
-    ):
-        if marker not in validation:
-            errors.append(f"integrity-constraint contract enforcement lost {marker}")
+    if "MissingOperationContract" not in compiler:
+        errors.append("canonical contract enforcement lost MissingOperationContract")
+    if re.search(r"declaration\s*\.\s*as_ref\(\)", compiler) is None:
+        errors.append("canonical contract enforcement lost declaration.as_ref()")
     test = named_block(
         fixture,
         "fn",
         "synthetic_ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids",
     ) or ""
-    for marker in ("ResolvedOperationContract::LegacyOpaque", ".count()", "0"):
+    for marker in ("ResolvedOperationContract::Declared", ".all("):
         if marker not in test:
             errors.append(f"synthetic fully-declared artifact proof lost {marker}")
     return errors
@@ -241,8 +238,8 @@ def run(root: Path = ROOT) -> list[str]:
             root, C4_FINAL_COMMIT, manifest["representative_declarations"]
         )
     )
-    errors.extend(validate_opaque_policy(
-        read(root, "src/engine/src/artifact/validation.rs"),
+    errors.extend(validate_canonical_contract_policy(
+        read(root, "src/engine/src/artifact/compiler.rs"),
         read(root, "src/engine/tests/program_artifact_contract.rs"),
     ))
     changed = changed_protected_paths(
