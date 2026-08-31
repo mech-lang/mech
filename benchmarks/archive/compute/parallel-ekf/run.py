@@ -174,6 +174,20 @@ def main() -> None:
                 *common,
                 "checked",
             ],
+            "Julia SIMD.jl intrinsics unchecked": [
+                required["julia"],
+                "--startup-file=no",
+                str(HERE / "julia_simd_intrinsics.jl"),
+                *common,
+                "unchecked",
+            ],
+            "Julia SIMD.jl intrinsics checked": [
+                required["julia"],
+                "--startup-file=no",
+                str(HERE / "julia_simd_intrinsics.jl"),
+                *common,
+                "checked",
+            ],
             "LuaJIT scalar outer loop": [
                 required["luajit"],
                 str(HERE / "luajit_scalar.lua"),

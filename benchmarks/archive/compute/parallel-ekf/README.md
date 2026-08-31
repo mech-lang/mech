@@ -25,6 +25,7 @@ git switch --track origin/codex/mech-program-gpu
 | Julia generic control | `benchmarks/archive/compute/parallel-ekf/julia_scalar.jl` |
 | Julia fixed-shape control | `benchmarks/archive/compute/parallel-ekf/julia_flat.jl` |
 | Julia packed-lane control | `benchmarks/archive/compute/parallel-ekf/julia_simd.jl` |
+| Julia SIMD intrinsics control | `benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl` |
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -209,7 +210,8 @@ variants and one-process startup wall time remained within `1.57--1.59s`.  The
 detailed commands and raw medians are in
 [`results/julia-inline-apple-m1-2026-08-30.md`](results/julia-inline-apple-m1-2026-08-30.md).
 
-The Julia comparison has four explicitly named modes. The generic source uses
+The Julia comparison has four sequential modes plus two packed-lane
+implementations. The generic source uses
 ordinary heap-backed `Matrix` values and `mul!`, which is the closest
 translation of the high-level Mech matrix expressions. The fixed-shape source
 uses flat `Float32` buffers and compile-time 3x3/3x2 products, matching the
@@ -218,7 +220,7 @@ storage and operation shape of the optimized Rust control. Both sources accept
 finite-state, finite-covariance, positive-diagonal, and covariance-symmetry
 predicates as the Mech artifact before publishing a candidate; a failed
 candidate leaves the prior state unchanged and increments the fault count.
-The runner executes all four Julia rows, while the Rust row remains a raw
+The runner executes all eight Julia rows, while the Rust row remains a raw
 unchecked control by design.
 
 In a five-process Apple M1 probe with 10,000 filters and 20 measured turns,
@@ -257,9 +259,13 @@ the script's five-turn warmup), the direct runs were:
 | Fixed-shape flat tuples | checked | 19.57 |
 | Fixed-shape packed `SVector{4}` | unchecked | 37.72 |
 | Fixed-shape packed `SVector{4}` | checked | 29.83 |
+| Packed `SIMD.jl Vec{4,Float32}` | unchecked | 34.55 |
+| Packed `SIMD.jl Vec{4,Float32}` | checked | 32.88 |
 
 The packed source produced the same `26,697,851.679688` checksum as the flat
 source (within `f32` accumulation rounding). The checked packed result is
 therefore close to Mech's checked SIMD-JIT result on this run, rather than an
-unchecked Julia-only advantage. `StaticArrays` is already an installed Julia
-dependency; no optional SIMD package is required.
+unchecked Julia-only advantage. The `StaticArrays` source needs `StaticArrays`;
+the intrinsic source needs `SIMD.jl` (tested with SIMD.jl 3.7.2). Both are
+ordinary Julia packages and must be installed in the Julia environment used by
+the runner.
