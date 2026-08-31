@@ -35,7 +35,7 @@ for lane = 0, instances - 1 do
 end
 
 local function finite(value)
-  return value == value and abs(value) <= finite_limit
+  return value == value and value <= finite_limit and value >= -finite_limit
 end
 
 local function step(lane)
