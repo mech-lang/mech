@@ -333,6 +333,18 @@ fn compile_comparison_predicate(
     right: ScalarOperand,
     producers: &BTreeMap<usize, &ScalarComputation>,
 ) -> ScalarPredicate {
+    // `abs(x) <= f32::MAX` is the source-level spelling used by older Mech
+    // programs for a finite-value constraint. Lower it to the dedicated
+    // predicate so native backends share one finite-value representation with
+    // the scalar planner instead of treating this as an arbitrary comparison.
+    if operation == ComparisonOperation::LessEqual
+        && let ScalarOperand::Register(absolute_register) = left
+        && let Some(ScalarComputation::Absolute(input)) = producers.get(&absolute_register).copied()
+        && let ScalarOperand::Constant(limit) = right
+        && limit.to_bits() == f32::MAX.to_bits()
+    {
+        return ScalarPredicate::IsFinite(*input);
+    }
     if operation == ComparisonOperation::LessEqual
         && let ScalarOperand::Register(absolute_register) = left
         && let Some(ScalarComputation::Absolute(ScalarOperand::Register(difference_register))) =

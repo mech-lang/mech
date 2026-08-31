@@ -26,7 +26,7 @@ type NativeTurn = unsafe extern "C" fn(
 const SIMD_JIT_LANES: usize = 4;
 type NativeSimdTurn = unsafe extern "C" fn(
     input_pointers: *const *const f32,
-    state_pointers: *const *const f32,
+    state_pointers: *const *mut f32,
     next_state_pointers: *const *mut f32,
 ) -> u64;
 
@@ -56,21 +56,24 @@ pub struct BatchedJitCpuSession {
 }
 
 /// Native JIT session that evaluates four independent instances in one
-/// Cranelift vector body.  The math intrinsics remain scalar calls for now;
-/// arithmetic, comparisons, loads, and stores are vectorized.  This keeps the
-/// exact scalar math contract while providing a measured path for lane
-/// batching before vector math is introduced.
+/// Cranelift vector body. State and input buffers use a group-major layout so
+/// each matrix component is loaded and stored as one contiguous f32x4 value;
+/// the public state view is materialized back to Mech's instance-major layout
+/// only when read.
 pub struct BatchedJitSimdCpuSession {
     program: Arc<FixedShapeKernel>,
     kernel: NativeSimdKernel,
     checked: bool,
     fast_math: bool,
     inputs: BTreeMap<CellSlotId, Vec<f32>>,
+    packed_inputs: BTreeMap<CellSlotId, Vec<f32>>,
     input_broadcast: Vec<bool>,
     state: BTreeMap<CellSlotId, Vec<f32>>,
-    next_state: BTreeMap<CellSlotId, Vec<f32>>,
+    packed_state: BTreeMap<CellSlotId, Vec<f32>>,
+    packed_next_state: BTreeMap<CellSlotId, Vec<f32>>,
+    logical_state_dirty: bool,
     input_pointers: Vec<*const f32>,
-    state_pointers: Vec<*const f32>,
+    state_pointers: Vec<*mut f32>,
     next_state_pointers: Vec<*mut f32>,
     faults: BatchedFaultRecorder,
 }
@@ -220,15 +223,36 @@ impl FixedShapeKernel {
             .collect::<Vec<_>>();
         let inputs = self.expand_inputs(provided_inputs)?;
         let state = self.initial_state();
-        let next_state = state
+        let packed_inputs: BTreeMap<CellSlotId, Vec<f32>> = self
+            .inputs
             .iter()
-            .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
+            .enumerate()
+            .map(|(_index, input)| {
+                let values = &inputs[&input.slot];
+                let packed = pack_simd_instances(values, input.shape.elements());
+                (input.slot, packed)
+            })
+            .collect();
+        let packed_state = self
+            .states
+            .iter()
+            .map(|descriptor| {
+                (
+                    descriptor.slot,
+                    pack_simd_instances(&state[&descriptor.slot], descriptor.shape.elements()),
+                )
+            })
+            .collect();
+        let packed_next_state = self
+            .states
+            .iter()
+            .map(|descriptor| (descriptor.slot, vec![0.0; state[&descriptor.slot].len()]))
             .collect();
         let kernel = NativeSimdKernel::compile(self, checked, &input_broadcast, fast_math)?;
         let input_pointers = self
             .inputs
             .iter()
-            .map(|input| inputs[&input.slot].as_ptr())
+            .map(|input| packed_inputs[&input.slot].as_ptr())
             .collect();
         let mut session = BatchedJitSimdCpuSession {
             program: Arc::new(self.clone()),
@@ -236,9 +260,12 @@ impl FixedShapeKernel {
             checked,
             fast_math,
             inputs,
+            packed_inputs,
             input_broadcast,
             state,
-            next_state,
+            packed_state,
+            packed_next_state,
+            logical_state_dirty: false,
             input_pointers,
             state_pointers: Vec::with_capacity(self.states.len()),
             next_state_pointers: Vec::with_capacity(self.states.len()),
@@ -366,11 +393,22 @@ impl BatchedJitSimdCpuSession {
                 recompile = true;
             }
         }
+        self.packed_inputs = self
+            .program
+            .inputs
+            .iter()
+            .enumerate()
+            .map(|(_index, input)| {
+                let values = &self.inputs[&input.slot];
+                let packed = pack_simd_instances(values, input.shape.elements());
+                (input.slot, packed)
+            })
+            .collect();
         self.input_pointers = self
             .program
             .inputs
             .iter()
-            .map(|input| self.inputs[&input.slot].as_ptr())
+            .map(|input| self.packed_inputs[&input.slot].as_ptr())
             .collect();
         if recompile {
             self.kernel = NativeSimdKernel::compile(
@@ -389,9 +427,8 @@ impl BatchedJitSimdCpuSession {
         }
         for _ in 0..turns {
             let attempted_turn = self.faults.next_turn();
-            self.refresh_state_pointers();
             // SAFETY: the generated function uses the exact ABI below. Its
-            // vector loads gather four scalar instances at fixed strides, and
+            // vector loads read four contiguous lanes at fixed strides, and
             // all buffers remain live for the duration of the call.
             let packed_fault = unsafe {
                 (self.kernel.turn)(
@@ -406,12 +443,24 @@ impl BatchedJitSimdCpuSession {
             {
                 return Err(self.faults.record(fault));
             }
-            mem::swap(&mut self.state, &mut self.next_state);
+            mem::swap(&mut self.state_pointers, &mut self.next_state_pointers);
+            mem::swap(&mut self.packed_state, &mut self.packed_next_state);
+            self.logical_state_dirty = true;
         }
         Ok(())
     }
 
-    pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+    pub fn state(&mut self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        if self.logical_state_dirty {
+            for descriptor in &self.program.states {
+                unpack_simd_instances(
+                    &self.packed_state[&descriptor.slot],
+                    self.state.get_mut(&descriptor.slot).unwrap(),
+                    descriptor.shape.elements(),
+                );
+            }
+            self.logical_state_dirty = false;
+        }
         &self.state
     }
 
@@ -431,9 +480,14 @@ impl BatchedJitSimdCpuSession {
         self.state_pointers.clear();
         self.next_state_pointers.clear();
         for state in &self.program.states {
-            self.state_pointers.push(self.state[&state.slot].as_ptr());
-            self.next_state_pointers
-                .push(self.next_state.get_mut(&state.slot).unwrap().as_mut_ptr());
+            self.state_pointers
+                .push(self.packed_state.get_mut(&state.slot).unwrap().as_mut_ptr());
+            self.next_state_pointers.push(
+                self.packed_next_state
+                    .get_mut(&state.slot)
+                    .unwrap()
+                    .as_mut_ptr(),
+            );
         }
     }
 }
@@ -879,7 +933,6 @@ impl NativeSimdKernel {
         let atan2_id = module
             .declare_function("mech_jit_atan2f", Linkage::Import, &binary_signature)
             .map_err(native_error)?;
-
         let pointer_type = module.target_config().pointer_type();
         let mut signature = module.make_signature();
         for _ in 0..3 {
@@ -940,8 +993,11 @@ impl NativeSimdKernel {
                     input_broadcast[index].then(|| {
                         (0..input.shape.elements())
                             .map(|component| {
-                                let scalar =
-                                    load_component(&mut builder, input_bases[index], component);
+                                let scalar = load_packed_scalar_component(
+                                    &mut builder,
+                                    input_bases[index],
+                                    component,
+                                );
                                 builder.ins().splat(types::F32X4, scalar)
                             })
                             .collect::<Vec<_>>()
@@ -1792,17 +1848,34 @@ fn lower_simd_boolean_operand(
     }
 }
 
-fn lower_simd_is_finite(builder: &mut FunctionBuilder<'_>, value: Value) -> Value {
-    // Cranelift's scalar bitwise-immediate operations do not accept vector
-    // values.  |x| <= f32::MAX is equivalent to the scalar finite check for
-    // f32: NaN fails the ordered comparison and both infinities exceed the
-    // bound.
-    let absolute = builder.ins().fabs(value);
-    let maximum = builder.ins().f32const(f32::MAX);
-    let maximum = builder.ins().splat(types::F32X4, maximum);
-    builder
-        .ins()
-        .fcmp(FloatCC::LessThanOrEqual, absolute, maximum)
+fn pack_simd_instances(values: &[f32], elements: usize) -> Vec<f32> {
+    let instances = values.len() / elements;
+    let mut packed = vec![0.0; values.len()];
+    for group in (0..instances).step_by(SIMD_JIT_LANES) {
+        for component in 0..elements {
+            for lane in 0..SIMD_JIT_LANES {
+                packed[(group / SIMD_JIT_LANES) * elements * SIMD_JIT_LANES
+                    + component * SIMD_JIT_LANES
+                    + lane] = values[(group + lane) * elements + component];
+            }
+        }
+    }
+    packed
+}
+
+fn unpack_simd_instances(packed: &[f32], values: &mut [f32], elements: usize) {
+    let instances = values.len() / elements;
+    for group in (0..instances).step_by(SIMD_JIT_LANES) {
+        for component in 0..elements {
+            for lane in 0..SIMD_JIT_LANES {
+                let packed_index = (group / SIMD_JIT_LANES) * elements * SIMD_JIT_LANES
+                    + component * SIMD_JIT_LANES
+                    + lane;
+                let value_index = (group + lane) * elements + component;
+                values[value_index] = packed[packed_index];
+            }
+        }
+    }
 }
 
 fn call_simd_unary_math(
@@ -1818,6 +1891,17 @@ fn call_simd_unary_math(
         result = builder.ins().insertlane(result, scalar, lane as u8);
     }
     result
+}
+
+fn lower_simd_is_finite(builder: &mut FunctionBuilder<'_>, value: Value) -> Value {
+    // Ordered comparison against the largest finite f32 rejects both NaNs and
+    // infinities while remaining entirely in the generated SIMD body.
+    let absolute = builder.ins().fabs(value);
+    let maximum = builder.ins().f32const(f32::MAX);
+    let maximum = builder.ins().splat(types::F32X4, maximum);
+    builder
+        .ins()
+        .fcmp(FloatCC::LessThanOrEqual, absolute, maximum)
 }
 
 fn call_simd_binary_math(
@@ -1840,45 +1924,55 @@ fn call_simd_binary_math(
 fn load_simd_component(
     builder: &mut FunctionBuilder<'_>,
     base: Value,
-    elements: usize,
+    _elements: usize,
     component: usize,
 ) -> Value {
-    let stride = i32::try_from(elements.checked_mul(types::F32.bytes() as usize).unwrap()).unwrap();
-    let mut values = [builder.ins().f32const(0.0); SIMD_JIT_LANES];
-    for (lane, value) in values.iter_mut().enumerate() {
-        let lane_base = if lane == 0 {
-            base
-        } else {
-            builder
-                .ins()
-                .iadd_imm(base, i64::from(stride) * lane as i64)
-        };
-        *value = load_component(builder, lane_base, component);
-    }
-    let mut vector = builder.ins().splat(types::F32X4, values[0]);
-    for (lane, value) in values.into_iter().enumerate().skip(1) {
-        vector = builder.ins().insertlane(vector, value, lane as u8);
-    }
-    vector
+    let offset = i32::try_from(
+        component
+            .checked_mul(SIMD_JIT_LANES)
+            .and_then(|offset| offset.checked_mul(types::F32.bytes() as usize))
+            .unwrap(),
+    )
+    .unwrap();
+    builder
+        .ins()
+        .load(types::F32X4, MemFlags::trusted(), base, offset)
+}
+
+fn load_packed_scalar_component(
+    builder: &mut FunctionBuilder<'_>,
+    base: Value,
+    component: usize,
+) -> Value {
+    let offset = i32::try_from(
+        component
+            .checked_mul(SIMD_JIT_LANES)
+            .and_then(|offset| offset.checked_mul(types::F32.bytes() as usize))
+            .unwrap(),
+    )
+    .unwrap();
+    builder
+        .ins()
+        .load(types::F32, MemFlags::trusted(), base, offset)
 }
 
 fn store_simd_component(
     builder: &mut FunctionBuilder<'_>,
     base: Value,
-    elements: usize,
+    _elements: usize,
     component: usize,
     value: Value,
 ) {
-    let stride = i64::try_from(elements.checked_mul(types::F32.bytes() as usize).unwrap()).unwrap();
-    for lane in 0..SIMD_JIT_LANES {
-        let lane_base = if lane == 0 {
-            base
-        } else {
-            builder.ins().iadd_imm(base, stride * lane as i64)
-        };
-        let scalar = builder.ins().extractlane(value, lane as u8);
-        store_component(builder, lane_base, component, scalar);
-    }
+    let offset = i32::try_from(
+        component
+            .checked_mul(SIMD_JIT_LANES)
+            .and_then(|offset| offset.checked_mul(types::F32.bytes() as usize))
+            .unwrap(),
+    )
+    .unwrap();
+    builder
+        .ins()
+        .store(MemFlags::trusted(), value, base, offset);
 }
 
 fn is_zero_operand(operand: ScalarOperand) -> bool {
@@ -2062,15 +2156,15 @@ fn call_simd_sincos(
     value: Value,
 ) -> (Value, Value) {
     let zero = builder.ins().f32const(0.0);
-    let mut sin_values = builder.ins().splat(types::F32X4, zero);
-    let mut cos_values = builder.ins().splat(types::F32X4, zero);
+    let mut sin = builder.ins().splat(types::F32X4, zero);
+    let mut cos = builder.ins().splat(types::F32X4, zero);
     for lane in 0..SIMD_JIT_LANES {
         let scalar = builder.ins().extractlane(value, lane as u8);
-        let (sin, cos) = call_sincos(builder, function, scalar);
-        sin_values = builder.ins().insertlane(sin_values, sin, lane as u8);
-        cos_values = builder.ins().insertlane(cos_values, cos, lane as u8);
+        let (lane_sin, lane_cos) = call_sincos(builder, function, scalar);
+        sin = builder.ins().insertlane(sin, lane_sin, lane as u8);
+        cos = builder.ins().insertlane(cos, lane_cos, lane as u8);
     }
-    (sin_values, cos_values)
+    (sin, cos)
 }
 
 fn load_component(builder: &mut FunctionBuilder<'_>, base: Value, component: usize) -> Value {
