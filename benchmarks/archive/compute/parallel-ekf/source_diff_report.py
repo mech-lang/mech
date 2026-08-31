@@ -315,7 +315,7 @@ def throughput_variants(cross: dict, native: dict, taichi: dict, lua: dict, mini
 
     result: dict[str, dict[str, dict[str, float | None]]] = {
         "Mech": {
-            "baseline": pair(m("Mech", "scalar"), None),
+            "baseline": pair(m("Mech scalar", ""), m("Mech scalar", "unchecked")),
             "advanced": pair(native_rows["Mech native Metal, checked"]["throughput_millions"], native_rows["Mech native Metal, unchecked"]["throughput_millions"]),
         },
         "Rust": {

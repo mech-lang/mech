@@ -1,96 +1,842 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="964" viewBox="0 0 1500 964">
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1088" viewBox="0 0 1500 1088">
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="52" y="42" font-size="26" font-weight="700">Parallel EKF steady-state throughput</text>
 <text x="52" y="68" class="muted" font-size="15">Apple M1 | backend: 100,000 filters x 5 turns; language: 10,000 filters x 20 turns | median of 3 isolated process samples | million EKF turns per second</text>
-<line x1="430.0" y1="102" x2="430.0" y2="868" class="grid"/>
-<text x="430.0" y="892" text-anchor="middle" class="axis">0</text>
-<line x1="588.3" y1="102" x2="588.3" y2="868" class="grid"/>
-<text x="588.3" y="892" text-anchor="middle" class="axis">10</text>
-<line x1="746.7" y1="102" x2="746.7" y2="868" class="grid"/>
-<text x="746.7" y="892" text-anchor="middle" class="axis">20</text>
-<line x1="905.0" y1="102" x2="905.0" y2="868" class="grid"/>
-<text x="905.0" y="892" text-anchor="middle" class="axis">30</text>
-<line x1="1063.3" y1="102" x2="1063.3" y2="868" class="grid"/>
-<text x="1063.3" y="892" text-anchor="middle" class="axis">40</text>
-<line x1="1221.7" y1="102" x2="1221.7" y2="868" class="grid"/>
-<text x="1221.7" y="892" text-anchor="middle" class="axis">50</text>
-<line x1="1380.0" y1="102" x2="1380.0" y2="868" class="grid"/>
-<text x="1380.0" y="892" text-anchor="middle" class="axis">60</text>
-<text x="905.0" y="936" text-anchor="middle" class="muted" font-size="14">million EKF turns/s</text>
-<line x1="782.1" y1="95" x2="782.1" y2="868" stroke="#f3a847" stroke-width="2" stroke-dasharray="7 6"/>
-<text x="790.1" y="91" fill="#f3a847" font-size="13">Rust packed-SIMD unchecked reference: 22.24</text>
+<line x1="430.0" y1="102" x2="430.0" y2="992" class="grid"/>
+<text x="430.0" y="1016" text-anchor="middle" class="axis">0</text>
+<line x1="432.5" y1="102" x2="432.5" y2="992" class="grid"/>
+<text x="432.5" y="1016" text-anchor="middle" class="axis">10</text>
+<line x1="435.1" y1="102" x2="435.1" y2="992" class="grid"/>
+<text x="435.1" y="1016" text-anchor="middle" class="axis">20</text>
+<line x1="437.6" y1="102" x2="437.6" y2="992" class="grid"/>
+<text x="437.6" y="1016" text-anchor="middle" class="axis">30</text>
+<line x1="440.2" y1="102" x2="440.2" y2="992" class="grid"/>
+<text x="440.2" y="1016" text-anchor="middle" class="axis">40</text>
+<line x1="442.7" y1="102" x2="442.7" y2="992" class="grid"/>
+<text x="442.7" y="1016" text-anchor="middle" class="axis">50</text>
+<line x1="445.3" y1="102" x2="445.3" y2="992" class="grid"/>
+<text x="445.3" y="1016" text-anchor="middle" class="axis">60</text>
+<line x1="447.8" y1="102" x2="447.8" y2="992" class="grid"/>
+<text x="447.8" y="1016" text-anchor="middle" class="axis">70</text>
+<line x1="450.4" y1="102" x2="450.4" y2="992" class="grid"/>
+<text x="450.4" y="1016" text-anchor="middle" class="axis">80</text>
+<line x1="452.9" y1="102" x2="452.9" y2="992" class="grid"/>
+<text x="452.9" y="1016" text-anchor="middle" class="axis">90</text>
+<line x1="455.5" y1="102" x2="455.5" y2="992" class="grid"/>
+<text x="455.5" y="1016" text-anchor="middle" class="axis">100</text>
+<line x1="458.0" y1="102" x2="458.0" y2="992" class="grid"/>
+<text x="458.0" y="1016" text-anchor="middle" class="axis">110</text>
+<line x1="460.6" y1="102" x2="460.6" y2="992" class="grid"/>
+<text x="460.6" y="1016" text-anchor="middle" class="axis">120</text>
+<line x1="463.1" y1="102" x2="463.1" y2="992" class="grid"/>
+<text x="463.1" y="1016" text-anchor="middle" class="axis">130</text>
+<line x1="465.7" y1="102" x2="465.7" y2="992" class="grid"/>
+<text x="465.7" y="1016" text-anchor="middle" class="axis">140</text>
+<line x1="468.2" y1="102" x2="468.2" y2="992" class="grid"/>
+<text x="468.2" y="1016" text-anchor="middle" class="axis">150</text>
+<line x1="470.8" y1="102" x2="470.8" y2="992" class="grid"/>
+<text x="470.8" y="1016" text-anchor="middle" class="axis">160</text>
+<line x1="473.3" y1="102" x2="473.3" y2="992" class="grid"/>
+<text x="473.3" y="1016" text-anchor="middle" class="axis">170</text>
+<line x1="475.8" y1="102" x2="475.8" y2="992" class="grid"/>
+<text x="475.8" y="1016" text-anchor="middle" class="axis">180</text>
+<line x1="478.4" y1="102" x2="478.4" y2="992" class="grid"/>
+<text x="478.4" y="1016" text-anchor="middle" class="axis">190</text>
+<line x1="480.9" y1="102" x2="480.9" y2="992" class="grid"/>
+<text x="480.9" y="1016" text-anchor="middle" class="axis">200</text>
+<line x1="483.5" y1="102" x2="483.5" y2="992" class="grid"/>
+<text x="483.5" y="1016" text-anchor="middle" class="axis">210</text>
+<line x1="486.0" y1="102" x2="486.0" y2="992" class="grid"/>
+<text x="486.0" y="1016" text-anchor="middle" class="axis">220</text>
+<line x1="488.6" y1="102" x2="488.6" y2="992" class="grid"/>
+<text x="488.6" y="1016" text-anchor="middle" class="axis">230</text>
+<line x1="491.1" y1="102" x2="491.1" y2="992" class="grid"/>
+<text x="491.1" y="1016" text-anchor="middle" class="axis">240</text>
+<line x1="493.7" y1="102" x2="493.7" y2="992" class="grid"/>
+<text x="493.7" y="1016" text-anchor="middle" class="axis">250</text>
+<line x1="496.2" y1="102" x2="496.2" y2="992" class="grid"/>
+<text x="496.2" y="1016" text-anchor="middle" class="axis">260</text>
+<line x1="498.8" y1="102" x2="498.8" y2="992" class="grid"/>
+<text x="498.8" y="1016" text-anchor="middle" class="axis">270</text>
+<line x1="501.3" y1="102" x2="501.3" y2="992" class="grid"/>
+<text x="501.3" y="1016" text-anchor="middle" class="axis">280</text>
+<line x1="503.9" y1="102" x2="503.9" y2="992" class="grid"/>
+<text x="503.9" y="1016" text-anchor="middle" class="axis">290</text>
+<line x1="506.4" y1="102" x2="506.4" y2="992" class="grid"/>
+<text x="506.4" y="1016" text-anchor="middle" class="axis">300</text>
+<line x1="509.0" y1="102" x2="509.0" y2="992" class="grid"/>
+<text x="509.0" y="1016" text-anchor="middle" class="axis">310</text>
+<line x1="511.5" y1="102" x2="511.5" y2="992" class="grid"/>
+<text x="511.5" y="1016" text-anchor="middle" class="axis">320</text>
+<line x1="514.0" y1="102" x2="514.0" y2="992" class="grid"/>
+<text x="514.0" y="1016" text-anchor="middle" class="axis">330</text>
+<line x1="516.6" y1="102" x2="516.6" y2="992" class="grid"/>
+<text x="516.6" y="1016" text-anchor="middle" class="axis">340</text>
+<line x1="519.1" y1="102" x2="519.1" y2="992" class="grid"/>
+<text x="519.1" y="1016" text-anchor="middle" class="axis">350</text>
+<line x1="521.7" y1="102" x2="521.7" y2="992" class="grid"/>
+<text x="521.7" y="1016" text-anchor="middle" class="axis">360</text>
+<line x1="524.2" y1="102" x2="524.2" y2="992" class="grid"/>
+<text x="524.2" y="1016" text-anchor="middle" class="axis">370</text>
+<line x1="526.8" y1="102" x2="526.8" y2="992" class="grid"/>
+<text x="526.8" y="1016" text-anchor="middle" class="axis">380</text>
+<line x1="529.3" y1="102" x2="529.3" y2="992" class="grid"/>
+<text x="529.3" y="1016" text-anchor="middle" class="axis">390</text>
+<line x1="531.9" y1="102" x2="531.9" y2="992" class="grid"/>
+<text x="531.9" y="1016" text-anchor="middle" class="axis">400</text>
+<line x1="534.4" y1="102" x2="534.4" y2="992" class="grid"/>
+<text x="534.4" y="1016" text-anchor="middle" class="axis">410</text>
+<line x1="537.0" y1="102" x2="537.0" y2="992" class="grid"/>
+<text x="537.0" y="1016" text-anchor="middle" class="axis">420</text>
+<line x1="539.5" y1="102" x2="539.5" y2="992" class="grid"/>
+<text x="539.5" y="1016" text-anchor="middle" class="axis">430</text>
+<line x1="542.1" y1="102" x2="542.1" y2="992" class="grid"/>
+<text x="542.1" y="1016" text-anchor="middle" class="axis">440</text>
+<line x1="544.6" y1="102" x2="544.6" y2="992" class="grid"/>
+<text x="544.6" y="1016" text-anchor="middle" class="axis">450</text>
+<line x1="547.2" y1="102" x2="547.2" y2="992" class="grid"/>
+<text x="547.2" y="1016" text-anchor="middle" class="axis">460</text>
+<line x1="549.7" y1="102" x2="549.7" y2="992" class="grid"/>
+<text x="549.7" y="1016" text-anchor="middle" class="axis">470</text>
+<line x1="552.3" y1="102" x2="552.3" y2="992" class="grid"/>
+<text x="552.3" y="1016" text-anchor="middle" class="axis">480</text>
+<line x1="554.8" y1="102" x2="554.8" y2="992" class="grid"/>
+<text x="554.8" y="1016" text-anchor="middle" class="axis">490</text>
+<line x1="557.3" y1="102" x2="557.3" y2="992" class="grid"/>
+<text x="557.3" y="1016" text-anchor="middle" class="axis">500</text>
+<line x1="559.9" y1="102" x2="559.9" y2="992" class="grid"/>
+<text x="559.9" y="1016" text-anchor="middle" class="axis">510</text>
+<line x1="562.4" y1="102" x2="562.4" y2="992" class="grid"/>
+<text x="562.4" y="1016" text-anchor="middle" class="axis">520</text>
+<line x1="565.0" y1="102" x2="565.0" y2="992" class="grid"/>
+<text x="565.0" y="1016" text-anchor="middle" class="axis">530</text>
+<line x1="567.5" y1="102" x2="567.5" y2="992" class="grid"/>
+<text x="567.5" y="1016" text-anchor="middle" class="axis">540</text>
+<line x1="570.1" y1="102" x2="570.1" y2="992" class="grid"/>
+<text x="570.1" y="1016" text-anchor="middle" class="axis">550</text>
+<line x1="572.6" y1="102" x2="572.6" y2="992" class="grid"/>
+<text x="572.6" y="1016" text-anchor="middle" class="axis">560</text>
+<line x1="575.2" y1="102" x2="575.2" y2="992" class="grid"/>
+<text x="575.2" y="1016" text-anchor="middle" class="axis">570</text>
+<line x1="577.7" y1="102" x2="577.7" y2="992" class="grid"/>
+<text x="577.7" y="1016" text-anchor="middle" class="axis">580</text>
+<line x1="580.3" y1="102" x2="580.3" y2="992" class="grid"/>
+<text x="580.3" y="1016" text-anchor="middle" class="axis">590</text>
+<line x1="582.8" y1="102" x2="582.8" y2="992" class="grid"/>
+<text x="582.8" y="1016" text-anchor="middle" class="axis">600</text>
+<line x1="585.4" y1="102" x2="585.4" y2="992" class="grid"/>
+<text x="585.4" y="1016" text-anchor="middle" class="axis">610</text>
+<line x1="587.9" y1="102" x2="587.9" y2="992" class="grid"/>
+<text x="587.9" y="1016" text-anchor="middle" class="axis">620</text>
+<line x1="590.5" y1="102" x2="590.5" y2="992" class="grid"/>
+<text x="590.5" y="1016" text-anchor="middle" class="axis">630</text>
+<line x1="593.0" y1="102" x2="593.0" y2="992" class="grid"/>
+<text x="593.0" y="1016" text-anchor="middle" class="axis">640</text>
+<line x1="595.5" y1="102" x2="595.5" y2="992" class="grid"/>
+<text x="595.5" y="1016" text-anchor="middle" class="axis">650</text>
+<line x1="598.1" y1="102" x2="598.1" y2="992" class="grid"/>
+<text x="598.1" y="1016" text-anchor="middle" class="axis">660</text>
+<line x1="600.6" y1="102" x2="600.6" y2="992" class="grid"/>
+<text x="600.6" y="1016" text-anchor="middle" class="axis">670</text>
+<line x1="603.2" y1="102" x2="603.2" y2="992" class="grid"/>
+<text x="603.2" y="1016" text-anchor="middle" class="axis">680</text>
+<line x1="605.7" y1="102" x2="605.7" y2="992" class="grid"/>
+<text x="605.7" y="1016" text-anchor="middle" class="axis">690</text>
+<line x1="608.3" y1="102" x2="608.3" y2="992" class="grid"/>
+<text x="608.3" y="1016" text-anchor="middle" class="axis">700</text>
+<line x1="610.8" y1="102" x2="610.8" y2="992" class="grid"/>
+<text x="610.8" y="1016" text-anchor="middle" class="axis">710</text>
+<line x1="613.4" y1="102" x2="613.4" y2="992" class="grid"/>
+<text x="613.4" y="1016" text-anchor="middle" class="axis">720</text>
+<line x1="615.9" y1="102" x2="615.9" y2="992" class="grid"/>
+<text x="615.9" y="1016" text-anchor="middle" class="axis">730</text>
+<line x1="618.5" y1="102" x2="618.5" y2="992" class="grid"/>
+<text x="618.5" y="1016" text-anchor="middle" class="axis">740</text>
+<line x1="621.0" y1="102" x2="621.0" y2="992" class="grid"/>
+<text x="621.0" y="1016" text-anchor="middle" class="axis">750</text>
+<line x1="623.6" y1="102" x2="623.6" y2="992" class="grid"/>
+<text x="623.6" y="1016" text-anchor="middle" class="axis">760</text>
+<line x1="626.1" y1="102" x2="626.1" y2="992" class="grid"/>
+<text x="626.1" y="1016" text-anchor="middle" class="axis">770</text>
+<line x1="628.7" y1="102" x2="628.7" y2="992" class="grid"/>
+<text x="628.7" y="1016" text-anchor="middle" class="axis">780</text>
+<line x1="631.2" y1="102" x2="631.2" y2="992" class="grid"/>
+<text x="631.2" y="1016" text-anchor="middle" class="axis">790</text>
+<line x1="633.8" y1="102" x2="633.8" y2="992" class="grid"/>
+<text x="633.8" y="1016" text-anchor="middle" class="axis">800</text>
+<line x1="636.3" y1="102" x2="636.3" y2="992" class="grid"/>
+<text x="636.3" y="1016" text-anchor="middle" class="axis">810</text>
+<line x1="638.8" y1="102" x2="638.8" y2="992" class="grid"/>
+<text x="638.8" y="1016" text-anchor="middle" class="axis">820</text>
+<line x1="641.4" y1="102" x2="641.4" y2="992" class="grid"/>
+<text x="641.4" y="1016" text-anchor="middle" class="axis">830</text>
+<line x1="643.9" y1="102" x2="643.9" y2="992" class="grid"/>
+<text x="643.9" y="1016" text-anchor="middle" class="axis">840</text>
+<line x1="646.5" y1="102" x2="646.5" y2="992" class="grid"/>
+<text x="646.5" y="1016" text-anchor="middle" class="axis">850</text>
+<line x1="649.0" y1="102" x2="649.0" y2="992" class="grid"/>
+<text x="649.0" y="1016" text-anchor="middle" class="axis">860</text>
+<line x1="651.6" y1="102" x2="651.6" y2="992" class="grid"/>
+<text x="651.6" y="1016" text-anchor="middle" class="axis">870</text>
+<line x1="654.1" y1="102" x2="654.1" y2="992" class="grid"/>
+<text x="654.1" y="1016" text-anchor="middle" class="axis">880</text>
+<line x1="656.7" y1="102" x2="656.7" y2="992" class="grid"/>
+<text x="656.7" y="1016" text-anchor="middle" class="axis">890</text>
+<line x1="659.2" y1="102" x2="659.2" y2="992" class="grid"/>
+<text x="659.2" y="1016" text-anchor="middle" class="axis">900</text>
+<line x1="661.8" y1="102" x2="661.8" y2="992" class="grid"/>
+<text x="661.8" y="1016" text-anchor="middle" class="axis">910</text>
+<line x1="664.3" y1="102" x2="664.3" y2="992" class="grid"/>
+<text x="664.3" y="1016" text-anchor="middle" class="axis">920</text>
+<line x1="666.9" y1="102" x2="666.9" y2="992" class="grid"/>
+<text x="666.9" y="1016" text-anchor="middle" class="axis">930</text>
+<line x1="669.4" y1="102" x2="669.4" y2="992" class="grid"/>
+<text x="669.4" y="1016" text-anchor="middle" class="axis">940</text>
+<line x1="672.0" y1="102" x2="672.0" y2="992" class="grid"/>
+<text x="672.0" y="1016" text-anchor="middle" class="axis">950</text>
+<line x1="674.5" y1="102" x2="674.5" y2="992" class="grid"/>
+<text x="674.5" y="1016" text-anchor="middle" class="axis">960</text>
+<line x1="677.1" y1="102" x2="677.1" y2="992" class="grid"/>
+<text x="677.1" y="1016" text-anchor="middle" class="axis">970</text>
+<line x1="679.6" y1="102" x2="679.6" y2="992" class="grid"/>
+<text x="679.6" y="1016" text-anchor="middle" class="axis">980</text>
+<line x1="682.1" y1="102" x2="682.1" y2="992" class="grid"/>
+<text x="682.1" y="1016" text-anchor="middle" class="axis">990</text>
+<line x1="684.7" y1="102" x2="684.7" y2="992" class="grid"/>
+<text x="684.7" y="1016" text-anchor="middle" class="axis">1000</text>
+<line x1="687.2" y1="102" x2="687.2" y2="992" class="grid"/>
+<text x="687.2" y="1016" text-anchor="middle" class="axis">1010</text>
+<line x1="689.8" y1="102" x2="689.8" y2="992" class="grid"/>
+<text x="689.8" y="1016" text-anchor="middle" class="axis">1020</text>
+<line x1="692.3" y1="102" x2="692.3" y2="992" class="grid"/>
+<text x="692.3" y="1016" text-anchor="middle" class="axis">1030</text>
+<line x1="694.9" y1="102" x2="694.9" y2="992" class="grid"/>
+<text x="694.9" y="1016" text-anchor="middle" class="axis">1040</text>
+<line x1="697.4" y1="102" x2="697.4" y2="992" class="grid"/>
+<text x="697.4" y="1016" text-anchor="middle" class="axis">1050</text>
+<line x1="700.0" y1="102" x2="700.0" y2="992" class="grid"/>
+<text x="700.0" y="1016" text-anchor="middle" class="axis">1060</text>
+<line x1="702.5" y1="102" x2="702.5" y2="992" class="grid"/>
+<text x="702.5" y="1016" text-anchor="middle" class="axis">1070</text>
+<line x1="705.1" y1="102" x2="705.1" y2="992" class="grid"/>
+<text x="705.1" y="1016" text-anchor="middle" class="axis">1080</text>
+<line x1="707.6" y1="102" x2="707.6" y2="992" class="grid"/>
+<text x="707.6" y="1016" text-anchor="middle" class="axis">1090</text>
+<line x1="710.2" y1="102" x2="710.2" y2="992" class="grid"/>
+<text x="710.2" y="1016" text-anchor="middle" class="axis">1100</text>
+<line x1="712.7" y1="102" x2="712.7" y2="992" class="grid"/>
+<text x="712.7" y="1016" text-anchor="middle" class="axis">1110</text>
+<line x1="715.3" y1="102" x2="715.3" y2="992" class="grid"/>
+<text x="715.3" y="1016" text-anchor="middle" class="axis">1120</text>
+<line x1="717.8" y1="102" x2="717.8" y2="992" class="grid"/>
+<text x="717.8" y="1016" text-anchor="middle" class="axis">1130</text>
+<line x1="720.3" y1="102" x2="720.3" y2="992" class="grid"/>
+<text x="720.3" y="1016" text-anchor="middle" class="axis">1140</text>
+<line x1="722.9" y1="102" x2="722.9" y2="992" class="grid"/>
+<text x="722.9" y="1016" text-anchor="middle" class="axis">1150</text>
+<line x1="725.4" y1="102" x2="725.4" y2="992" class="grid"/>
+<text x="725.4" y="1016" text-anchor="middle" class="axis">1160</text>
+<line x1="728.0" y1="102" x2="728.0" y2="992" class="grid"/>
+<text x="728.0" y="1016" text-anchor="middle" class="axis">1170</text>
+<line x1="730.5" y1="102" x2="730.5" y2="992" class="grid"/>
+<text x="730.5" y="1016" text-anchor="middle" class="axis">1180</text>
+<line x1="733.1" y1="102" x2="733.1" y2="992" class="grid"/>
+<text x="733.1" y="1016" text-anchor="middle" class="axis">1190</text>
+<line x1="735.6" y1="102" x2="735.6" y2="992" class="grid"/>
+<text x="735.6" y="1016" text-anchor="middle" class="axis">1200</text>
+<line x1="738.2" y1="102" x2="738.2" y2="992" class="grid"/>
+<text x="738.2" y="1016" text-anchor="middle" class="axis">1210</text>
+<line x1="740.7" y1="102" x2="740.7" y2="992" class="grid"/>
+<text x="740.7" y="1016" text-anchor="middle" class="axis">1220</text>
+<line x1="743.3" y1="102" x2="743.3" y2="992" class="grid"/>
+<text x="743.3" y="1016" text-anchor="middle" class="axis">1230</text>
+<line x1="745.8" y1="102" x2="745.8" y2="992" class="grid"/>
+<text x="745.8" y="1016" text-anchor="middle" class="axis">1240</text>
+<line x1="748.4" y1="102" x2="748.4" y2="992" class="grid"/>
+<text x="748.4" y="1016" text-anchor="middle" class="axis">1250</text>
+<line x1="750.9" y1="102" x2="750.9" y2="992" class="grid"/>
+<text x="750.9" y="1016" text-anchor="middle" class="axis">1260</text>
+<line x1="753.5" y1="102" x2="753.5" y2="992" class="grid"/>
+<text x="753.5" y="1016" text-anchor="middle" class="axis">1270</text>
+<line x1="756.0" y1="102" x2="756.0" y2="992" class="grid"/>
+<text x="756.0" y="1016" text-anchor="middle" class="axis">1280</text>
+<line x1="758.6" y1="102" x2="758.6" y2="992" class="grid"/>
+<text x="758.6" y="1016" text-anchor="middle" class="axis">1290</text>
+<line x1="761.1" y1="102" x2="761.1" y2="992" class="grid"/>
+<text x="761.1" y="1016" text-anchor="middle" class="axis">1300</text>
+<line x1="763.6" y1="102" x2="763.6" y2="992" class="grid"/>
+<text x="763.6" y="1016" text-anchor="middle" class="axis">1310</text>
+<line x1="766.2" y1="102" x2="766.2" y2="992" class="grid"/>
+<text x="766.2" y="1016" text-anchor="middle" class="axis">1320</text>
+<line x1="768.7" y1="102" x2="768.7" y2="992" class="grid"/>
+<text x="768.7" y="1016" text-anchor="middle" class="axis">1330</text>
+<line x1="771.3" y1="102" x2="771.3" y2="992" class="grid"/>
+<text x="771.3" y="1016" text-anchor="middle" class="axis">1340</text>
+<line x1="773.8" y1="102" x2="773.8" y2="992" class="grid"/>
+<text x="773.8" y="1016" text-anchor="middle" class="axis">1350</text>
+<line x1="776.4" y1="102" x2="776.4" y2="992" class="grid"/>
+<text x="776.4" y="1016" text-anchor="middle" class="axis">1360</text>
+<line x1="778.9" y1="102" x2="778.9" y2="992" class="grid"/>
+<text x="778.9" y="1016" text-anchor="middle" class="axis">1370</text>
+<line x1="781.5" y1="102" x2="781.5" y2="992" class="grid"/>
+<text x="781.5" y="1016" text-anchor="middle" class="axis">1380</text>
+<line x1="784.0" y1="102" x2="784.0" y2="992" class="grid"/>
+<text x="784.0" y="1016" text-anchor="middle" class="axis">1390</text>
+<line x1="786.6" y1="102" x2="786.6" y2="992" class="grid"/>
+<text x="786.6" y="1016" text-anchor="middle" class="axis">1400</text>
+<line x1="789.1" y1="102" x2="789.1" y2="992" class="grid"/>
+<text x="789.1" y="1016" text-anchor="middle" class="axis">1410</text>
+<line x1="791.7" y1="102" x2="791.7" y2="992" class="grid"/>
+<text x="791.7" y="1016" text-anchor="middle" class="axis">1420</text>
+<line x1="794.2" y1="102" x2="794.2" y2="992" class="grid"/>
+<text x="794.2" y="1016" text-anchor="middle" class="axis">1430</text>
+<line x1="796.8" y1="102" x2="796.8" y2="992" class="grid"/>
+<text x="796.8" y="1016" text-anchor="middle" class="axis">1440</text>
+<line x1="799.3" y1="102" x2="799.3" y2="992" class="grid"/>
+<text x="799.3" y="1016" text-anchor="middle" class="axis">1450</text>
+<line x1="801.8" y1="102" x2="801.8" y2="992" class="grid"/>
+<text x="801.8" y="1016" text-anchor="middle" class="axis">1460</text>
+<line x1="804.4" y1="102" x2="804.4" y2="992" class="grid"/>
+<text x="804.4" y="1016" text-anchor="middle" class="axis">1470</text>
+<line x1="806.9" y1="102" x2="806.9" y2="992" class="grid"/>
+<text x="806.9" y="1016" text-anchor="middle" class="axis">1480</text>
+<line x1="809.5" y1="102" x2="809.5" y2="992" class="grid"/>
+<text x="809.5" y="1016" text-anchor="middle" class="axis">1490</text>
+<line x1="812.0" y1="102" x2="812.0" y2="992" class="grid"/>
+<text x="812.0" y="1016" text-anchor="middle" class="axis">1500</text>
+<line x1="814.6" y1="102" x2="814.6" y2="992" class="grid"/>
+<text x="814.6" y="1016" text-anchor="middle" class="axis">1510</text>
+<line x1="817.1" y1="102" x2="817.1" y2="992" class="grid"/>
+<text x="817.1" y="1016" text-anchor="middle" class="axis">1520</text>
+<line x1="819.7" y1="102" x2="819.7" y2="992" class="grid"/>
+<text x="819.7" y="1016" text-anchor="middle" class="axis">1530</text>
+<line x1="822.2" y1="102" x2="822.2" y2="992" class="grid"/>
+<text x="822.2" y="1016" text-anchor="middle" class="axis">1540</text>
+<line x1="824.8" y1="102" x2="824.8" y2="992" class="grid"/>
+<text x="824.8" y="1016" text-anchor="middle" class="axis">1550</text>
+<line x1="827.3" y1="102" x2="827.3" y2="992" class="grid"/>
+<text x="827.3" y="1016" text-anchor="middle" class="axis">1560</text>
+<line x1="829.9" y1="102" x2="829.9" y2="992" class="grid"/>
+<text x="829.9" y="1016" text-anchor="middle" class="axis">1570</text>
+<line x1="832.4" y1="102" x2="832.4" y2="992" class="grid"/>
+<text x="832.4" y="1016" text-anchor="middle" class="axis">1580</text>
+<line x1="835.0" y1="102" x2="835.0" y2="992" class="grid"/>
+<text x="835.0" y="1016" text-anchor="middle" class="axis">1590</text>
+<line x1="837.5" y1="102" x2="837.5" y2="992" class="grid"/>
+<text x="837.5" y="1016" text-anchor="middle" class="axis">1600</text>
+<line x1="840.1" y1="102" x2="840.1" y2="992" class="grid"/>
+<text x="840.1" y="1016" text-anchor="middle" class="axis">1610</text>
+<line x1="842.6" y1="102" x2="842.6" y2="992" class="grid"/>
+<text x="842.6" y="1016" text-anchor="middle" class="axis">1620</text>
+<line x1="845.1" y1="102" x2="845.1" y2="992" class="grid"/>
+<text x="845.1" y="1016" text-anchor="middle" class="axis">1630</text>
+<line x1="847.7" y1="102" x2="847.7" y2="992" class="grid"/>
+<text x="847.7" y="1016" text-anchor="middle" class="axis">1640</text>
+<line x1="850.2" y1="102" x2="850.2" y2="992" class="grid"/>
+<text x="850.2" y="1016" text-anchor="middle" class="axis">1650</text>
+<line x1="852.8" y1="102" x2="852.8" y2="992" class="grid"/>
+<text x="852.8" y="1016" text-anchor="middle" class="axis">1660</text>
+<line x1="855.3" y1="102" x2="855.3" y2="992" class="grid"/>
+<text x="855.3" y="1016" text-anchor="middle" class="axis">1670</text>
+<line x1="857.9" y1="102" x2="857.9" y2="992" class="grid"/>
+<text x="857.9" y="1016" text-anchor="middle" class="axis">1680</text>
+<line x1="860.4" y1="102" x2="860.4" y2="992" class="grid"/>
+<text x="860.4" y="1016" text-anchor="middle" class="axis">1690</text>
+<line x1="863.0" y1="102" x2="863.0" y2="992" class="grid"/>
+<text x="863.0" y="1016" text-anchor="middle" class="axis">1700</text>
+<line x1="865.5" y1="102" x2="865.5" y2="992" class="grid"/>
+<text x="865.5" y="1016" text-anchor="middle" class="axis">1710</text>
+<line x1="868.1" y1="102" x2="868.1" y2="992" class="grid"/>
+<text x="868.1" y="1016" text-anchor="middle" class="axis">1720</text>
+<line x1="870.6" y1="102" x2="870.6" y2="992" class="grid"/>
+<text x="870.6" y="1016" text-anchor="middle" class="axis">1730</text>
+<line x1="873.2" y1="102" x2="873.2" y2="992" class="grid"/>
+<text x="873.2" y="1016" text-anchor="middle" class="axis">1740</text>
+<line x1="875.7" y1="102" x2="875.7" y2="992" class="grid"/>
+<text x="875.7" y="1016" text-anchor="middle" class="axis">1750</text>
+<line x1="878.3" y1="102" x2="878.3" y2="992" class="grid"/>
+<text x="878.3" y="1016" text-anchor="middle" class="axis">1760</text>
+<line x1="880.8" y1="102" x2="880.8" y2="992" class="grid"/>
+<text x="880.8" y="1016" text-anchor="middle" class="axis">1770</text>
+<line x1="883.4" y1="102" x2="883.4" y2="992" class="grid"/>
+<text x="883.4" y="1016" text-anchor="middle" class="axis">1780</text>
+<line x1="885.9" y1="102" x2="885.9" y2="992" class="grid"/>
+<text x="885.9" y="1016" text-anchor="middle" class="axis">1790</text>
+<line x1="888.4" y1="102" x2="888.4" y2="992" class="grid"/>
+<text x="888.4" y="1016" text-anchor="middle" class="axis">1800</text>
+<line x1="891.0" y1="102" x2="891.0" y2="992" class="grid"/>
+<text x="891.0" y="1016" text-anchor="middle" class="axis">1810</text>
+<line x1="893.5" y1="102" x2="893.5" y2="992" class="grid"/>
+<text x="893.5" y="1016" text-anchor="middle" class="axis">1820</text>
+<line x1="896.1" y1="102" x2="896.1" y2="992" class="grid"/>
+<text x="896.1" y="1016" text-anchor="middle" class="axis">1830</text>
+<line x1="898.6" y1="102" x2="898.6" y2="992" class="grid"/>
+<text x="898.6" y="1016" text-anchor="middle" class="axis">1840</text>
+<line x1="901.2" y1="102" x2="901.2" y2="992" class="grid"/>
+<text x="901.2" y="1016" text-anchor="middle" class="axis">1850</text>
+<line x1="903.7" y1="102" x2="903.7" y2="992" class="grid"/>
+<text x="903.7" y="1016" text-anchor="middle" class="axis">1860</text>
+<line x1="906.3" y1="102" x2="906.3" y2="992" class="grid"/>
+<text x="906.3" y="1016" text-anchor="middle" class="axis">1870</text>
+<line x1="908.8" y1="102" x2="908.8" y2="992" class="grid"/>
+<text x="908.8" y="1016" text-anchor="middle" class="axis">1880</text>
+<line x1="911.4" y1="102" x2="911.4" y2="992" class="grid"/>
+<text x="911.4" y="1016" text-anchor="middle" class="axis">1890</text>
+<line x1="913.9" y1="102" x2="913.9" y2="992" class="grid"/>
+<text x="913.9" y="1016" text-anchor="middle" class="axis">1900</text>
+<line x1="916.5" y1="102" x2="916.5" y2="992" class="grid"/>
+<text x="916.5" y="1016" text-anchor="middle" class="axis">1910</text>
+<line x1="919.0" y1="102" x2="919.0" y2="992" class="grid"/>
+<text x="919.0" y="1016" text-anchor="middle" class="axis">1920</text>
+<line x1="921.6" y1="102" x2="921.6" y2="992" class="grid"/>
+<text x="921.6" y="1016" text-anchor="middle" class="axis">1930</text>
+<line x1="924.1" y1="102" x2="924.1" y2="992" class="grid"/>
+<text x="924.1" y="1016" text-anchor="middle" class="axis">1940</text>
+<line x1="926.6" y1="102" x2="926.6" y2="992" class="grid"/>
+<text x="926.6" y="1016" text-anchor="middle" class="axis">1950</text>
+<line x1="929.2" y1="102" x2="929.2" y2="992" class="grid"/>
+<text x="929.2" y="1016" text-anchor="middle" class="axis">1960</text>
+<line x1="931.7" y1="102" x2="931.7" y2="992" class="grid"/>
+<text x="931.7" y="1016" text-anchor="middle" class="axis">1970</text>
+<line x1="934.3" y1="102" x2="934.3" y2="992" class="grid"/>
+<text x="934.3" y="1016" text-anchor="middle" class="axis">1980</text>
+<line x1="936.8" y1="102" x2="936.8" y2="992" class="grid"/>
+<text x="936.8" y="1016" text-anchor="middle" class="axis">1990</text>
+<line x1="939.4" y1="102" x2="939.4" y2="992" class="grid"/>
+<text x="939.4" y="1016" text-anchor="middle" class="axis">2000</text>
+<line x1="941.9" y1="102" x2="941.9" y2="992" class="grid"/>
+<text x="941.9" y="1016" text-anchor="middle" class="axis">2010</text>
+<line x1="944.5" y1="102" x2="944.5" y2="992" class="grid"/>
+<text x="944.5" y="1016" text-anchor="middle" class="axis">2020</text>
+<line x1="947.0" y1="102" x2="947.0" y2="992" class="grid"/>
+<text x="947.0" y="1016" text-anchor="middle" class="axis">2030</text>
+<line x1="949.6" y1="102" x2="949.6" y2="992" class="grid"/>
+<text x="949.6" y="1016" text-anchor="middle" class="axis">2040</text>
+<line x1="952.1" y1="102" x2="952.1" y2="992" class="grid"/>
+<text x="952.1" y="1016" text-anchor="middle" class="axis">2050</text>
+<line x1="954.7" y1="102" x2="954.7" y2="992" class="grid"/>
+<text x="954.7" y="1016" text-anchor="middle" class="axis">2060</text>
+<line x1="957.2" y1="102" x2="957.2" y2="992" class="grid"/>
+<text x="957.2" y="1016" text-anchor="middle" class="axis">2070</text>
+<line x1="959.8" y1="102" x2="959.8" y2="992" class="grid"/>
+<text x="959.8" y="1016" text-anchor="middle" class="axis">2080</text>
+<line x1="962.3" y1="102" x2="962.3" y2="992" class="grid"/>
+<text x="962.3" y="1016" text-anchor="middle" class="axis">2090</text>
+<line x1="964.9" y1="102" x2="964.9" y2="992" class="grid"/>
+<text x="964.9" y="1016" text-anchor="middle" class="axis">2100</text>
+<line x1="967.4" y1="102" x2="967.4" y2="992" class="grid"/>
+<text x="967.4" y="1016" text-anchor="middle" class="axis">2110</text>
+<line x1="969.9" y1="102" x2="969.9" y2="992" class="grid"/>
+<text x="969.9" y="1016" text-anchor="middle" class="axis">2120</text>
+<line x1="972.5" y1="102" x2="972.5" y2="992" class="grid"/>
+<text x="972.5" y="1016" text-anchor="middle" class="axis">2130</text>
+<line x1="975.0" y1="102" x2="975.0" y2="992" class="grid"/>
+<text x="975.0" y="1016" text-anchor="middle" class="axis">2140</text>
+<line x1="977.6" y1="102" x2="977.6" y2="992" class="grid"/>
+<text x="977.6" y="1016" text-anchor="middle" class="axis">2150</text>
+<line x1="980.1" y1="102" x2="980.1" y2="992" class="grid"/>
+<text x="980.1" y="1016" text-anchor="middle" class="axis">2160</text>
+<line x1="982.7" y1="102" x2="982.7" y2="992" class="grid"/>
+<text x="982.7" y="1016" text-anchor="middle" class="axis">2170</text>
+<line x1="985.2" y1="102" x2="985.2" y2="992" class="grid"/>
+<text x="985.2" y="1016" text-anchor="middle" class="axis">2180</text>
+<line x1="987.8" y1="102" x2="987.8" y2="992" class="grid"/>
+<text x="987.8" y="1016" text-anchor="middle" class="axis">2190</text>
+<line x1="990.3" y1="102" x2="990.3" y2="992" class="grid"/>
+<text x="990.3" y="1016" text-anchor="middle" class="axis">2200</text>
+<line x1="992.9" y1="102" x2="992.9" y2="992" class="grid"/>
+<text x="992.9" y="1016" text-anchor="middle" class="axis">2210</text>
+<line x1="995.4" y1="102" x2="995.4" y2="992" class="grid"/>
+<text x="995.4" y="1016" text-anchor="middle" class="axis">2220</text>
+<line x1="998.0" y1="102" x2="998.0" y2="992" class="grid"/>
+<text x="998.0" y="1016" text-anchor="middle" class="axis">2230</text>
+<line x1="1000.5" y1="102" x2="1000.5" y2="992" class="grid"/>
+<text x="1000.5" y="1016" text-anchor="middle" class="axis">2240</text>
+<line x1="1003.1" y1="102" x2="1003.1" y2="992" class="grid"/>
+<text x="1003.1" y="1016" text-anchor="middle" class="axis">2250</text>
+<line x1="1005.6" y1="102" x2="1005.6" y2="992" class="grid"/>
+<text x="1005.6" y="1016" text-anchor="middle" class="axis">2260</text>
+<line x1="1008.2" y1="102" x2="1008.2" y2="992" class="grid"/>
+<text x="1008.2" y="1016" text-anchor="middle" class="axis">2270</text>
+<line x1="1010.7" y1="102" x2="1010.7" y2="992" class="grid"/>
+<text x="1010.7" y="1016" text-anchor="middle" class="axis">2280</text>
+<line x1="1013.2" y1="102" x2="1013.2" y2="992" class="grid"/>
+<text x="1013.2" y="1016" text-anchor="middle" class="axis">2290</text>
+<line x1="1015.8" y1="102" x2="1015.8" y2="992" class="grid"/>
+<text x="1015.8" y="1016" text-anchor="middle" class="axis">2300</text>
+<line x1="1018.3" y1="102" x2="1018.3" y2="992" class="grid"/>
+<text x="1018.3" y="1016" text-anchor="middle" class="axis">2310</text>
+<line x1="1020.9" y1="102" x2="1020.9" y2="992" class="grid"/>
+<text x="1020.9" y="1016" text-anchor="middle" class="axis">2320</text>
+<line x1="1023.4" y1="102" x2="1023.4" y2="992" class="grid"/>
+<text x="1023.4" y="1016" text-anchor="middle" class="axis">2330</text>
+<line x1="1026.0" y1="102" x2="1026.0" y2="992" class="grid"/>
+<text x="1026.0" y="1016" text-anchor="middle" class="axis">2340</text>
+<line x1="1028.5" y1="102" x2="1028.5" y2="992" class="grid"/>
+<text x="1028.5" y="1016" text-anchor="middle" class="axis">2350</text>
+<line x1="1031.1" y1="102" x2="1031.1" y2="992" class="grid"/>
+<text x="1031.1" y="1016" text-anchor="middle" class="axis">2360</text>
+<line x1="1033.6" y1="102" x2="1033.6" y2="992" class="grid"/>
+<text x="1033.6" y="1016" text-anchor="middle" class="axis">2370</text>
+<line x1="1036.2" y1="102" x2="1036.2" y2="992" class="grid"/>
+<text x="1036.2" y="1016" text-anchor="middle" class="axis">2380</text>
+<line x1="1038.7" y1="102" x2="1038.7" y2="992" class="grid"/>
+<text x="1038.7" y="1016" text-anchor="middle" class="axis">2390</text>
+<line x1="1041.3" y1="102" x2="1041.3" y2="992" class="grid"/>
+<text x="1041.3" y="1016" text-anchor="middle" class="axis">2400</text>
+<line x1="1043.8" y1="102" x2="1043.8" y2="992" class="grid"/>
+<text x="1043.8" y="1016" text-anchor="middle" class="axis">2410</text>
+<line x1="1046.4" y1="102" x2="1046.4" y2="992" class="grid"/>
+<text x="1046.4" y="1016" text-anchor="middle" class="axis">2420</text>
+<line x1="1048.9" y1="102" x2="1048.9" y2="992" class="grid"/>
+<text x="1048.9" y="1016" text-anchor="middle" class="axis">2430</text>
+<line x1="1051.4" y1="102" x2="1051.4" y2="992" class="grid"/>
+<text x="1051.4" y="1016" text-anchor="middle" class="axis">2440</text>
+<line x1="1054.0" y1="102" x2="1054.0" y2="992" class="grid"/>
+<text x="1054.0" y="1016" text-anchor="middle" class="axis">2450</text>
+<line x1="1056.5" y1="102" x2="1056.5" y2="992" class="grid"/>
+<text x="1056.5" y="1016" text-anchor="middle" class="axis">2460</text>
+<line x1="1059.1" y1="102" x2="1059.1" y2="992" class="grid"/>
+<text x="1059.1" y="1016" text-anchor="middle" class="axis">2470</text>
+<line x1="1061.6" y1="102" x2="1061.6" y2="992" class="grid"/>
+<text x="1061.6" y="1016" text-anchor="middle" class="axis">2480</text>
+<line x1="1064.2" y1="102" x2="1064.2" y2="992" class="grid"/>
+<text x="1064.2" y="1016" text-anchor="middle" class="axis">2490</text>
+<line x1="1066.7" y1="102" x2="1066.7" y2="992" class="grid"/>
+<text x="1066.7" y="1016" text-anchor="middle" class="axis">2500</text>
+<line x1="1069.3" y1="102" x2="1069.3" y2="992" class="grid"/>
+<text x="1069.3" y="1016" text-anchor="middle" class="axis">2510</text>
+<line x1="1071.8" y1="102" x2="1071.8" y2="992" class="grid"/>
+<text x="1071.8" y="1016" text-anchor="middle" class="axis">2520</text>
+<line x1="1074.4" y1="102" x2="1074.4" y2="992" class="grid"/>
+<text x="1074.4" y="1016" text-anchor="middle" class="axis">2530</text>
+<line x1="1076.9" y1="102" x2="1076.9" y2="992" class="grid"/>
+<text x="1076.9" y="1016" text-anchor="middle" class="axis">2540</text>
+<line x1="1079.5" y1="102" x2="1079.5" y2="992" class="grid"/>
+<text x="1079.5" y="1016" text-anchor="middle" class="axis">2550</text>
+<line x1="1082.0" y1="102" x2="1082.0" y2="992" class="grid"/>
+<text x="1082.0" y="1016" text-anchor="middle" class="axis">2560</text>
+<line x1="1084.6" y1="102" x2="1084.6" y2="992" class="grid"/>
+<text x="1084.6" y="1016" text-anchor="middle" class="axis">2570</text>
+<line x1="1087.1" y1="102" x2="1087.1" y2="992" class="grid"/>
+<text x="1087.1" y="1016" text-anchor="middle" class="axis">2580</text>
+<line x1="1089.7" y1="102" x2="1089.7" y2="992" class="grid"/>
+<text x="1089.7" y="1016" text-anchor="middle" class="axis">2590</text>
+<line x1="1092.2" y1="102" x2="1092.2" y2="992" class="grid"/>
+<text x="1092.2" y="1016" text-anchor="middle" class="axis">2600</text>
+<line x1="1094.7" y1="102" x2="1094.7" y2="992" class="grid"/>
+<text x="1094.7" y="1016" text-anchor="middle" class="axis">2610</text>
+<line x1="1097.3" y1="102" x2="1097.3" y2="992" class="grid"/>
+<text x="1097.3" y="1016" text-anchor="middle" class="axis">2620</text>
+<line x1="1099.8" y1="102" x2="1099.8" y2="992" class="grid"/>
+<text x="1099.8" y="1016" text-anchor="middle" class="axis">2630</text>
+<line x1="1102.4" y1="102" x2="1102.4" y2="992" class="grid"/>
+<text x="1102.4" y="1016" text-anchor="middle" class="axis">2640</text>
+<line x1="1104.9" y1="102" x2="1104.9" y2="992" class="grid"/>
+<text x="1104.9" y="1016" text-anchor="middle" class="axis">2650</text>
+<line x1="1107.5" y1="102" x2="1107.5" y2="992" class="grid"/>
+<text x="1107.5" y="1016" text-anchor="middle" class="axis">2660</text>
+<line x1="1110.0" y1="102" x2="1110.0" y2="992" class="grid"/>
+<text x="1110.0" y="1016" text-anchor="middle" class="axis">2670</text>
+<line x1="1112.6" y1="102" x2="1112.6" y2="992" class="grid"/>
+<text x="1112.6" y="1016" text-anchor="middle" class="axis">2680</text>
+<line x1="1115.1" y1="102" x2="1115.1" y2="992" class="grid"/>
+<text x="1115.1" y="1016" text-anchor="middle" class="axis">2690</text>
+<line x1="1117.7" y1="102" x2="1117.7" y2="992" class="grid"/>
+<text x="1117.7" y="1016" text-anchor="middle" class="axis">2700</text>
+<line x1="1120.2" y1="102" x2="1120.2" y2="992" class="grid"/>
+<text x="1120.2" y="1016" text-anchor="middle" class="axis">2710</text>
+<line x1="1122.8" y1="102" x2="1122.8" y2="992" class="grid"/>
+<text x="1122.8" y="1016" text-anchor="middle" class="axis">2720</text>
+<line x1="1125.3" y1="102" x2="1125.3" y2="992" class="grid"/>
+<text x="1125.3" y="1016" text-anchor="middle" class="axis">2730</text>
+<line x1="1127.9" y1="102" x2="1127.9" y2="992" class="grid"/>
+<text x="1127.9" y="1016" text-anchor="middle" class="axis">2740</text>
+<line x1="1130.4" y1="102" x2="1130.4" y2="992" class="grid"/>
+<text x="1130.4" y="1016" text-anchor="middle" class="axis">2750</text>
+<line x1="1132.9" y1="102" x2="1132.9" y2="992" class="grid"/>
+<text x="1132.9" y="1016" text-anchor="middle" class="axis">2760</text>
+<line x1="1135.5" y1="102" x2="1135.5" y2="992" class="grid"/>
+<text x="1135.5" y="1016" text-anchor="middle" class="axis">2770</text>
+<line x1="1138.0" y1="102" x2="1138.0" y2="992" class="grid"/>
+<text x="1138.0" y="1016" text-anchor="middle" class="axis">2780</text>
+<line x1="1140.6" y1="102" x2="1140.6" y2="992" class="grid"/>
+<text x="1140.6" y="1016" text-anchor="middle" class="axis">2790</text>
+<line x1="1143.1" y1="102" x2="1143.1" y2="992" class="grid"/>
+<text x="1143.1" y="1016" text-anchor="middle" class="axis">2800</text>
+<line x1="1145.7" y1="102" x2="1145.7" y2="992" class="grid"/>
+<text x="1145.7" y="1016" text-anchor="middle" class="axis">2810</text>
+<line x1="1148.2" y1="102" x2="1148.2" y2="992" class="grid"/>
+<text x="1148.2" y="1016" text-anchor="middle" class="axis">2820</text>
+<line x1="1150.8" y1="102" x2="1150.8" y2="992" class="grid"/>
+<text x="1150.8" y="1016" text-anchor="middle" class="axis">2830</text>
+<line x1="1153.3" y1="102" x2="1153.3" y2="992" class="grid"/>
+<text x="1153.3" y="1016" text-anchor="middle" class="axis">2840</text>
+<line x1="1155.9" y1="102" x2="1155.9" y2="992" class="grid"/>
+<text x="1155.9" y="1016" text-anchor="middle" class="axis">2850</text>
+<line x1="1158.4" y1="102" x2="1158.4" y2="992" class="grid"/>
+<text x="1158.4" y="1016" text-anchor="middle" class="axis">2860</text>
+<line x1="1161.0" y1="102" x2="1161.0" y2="992" class="grid"/>
+<text x="1161.0" y="1016" text-anchor="middle" class="axis">2870</text>
+<line x1="1163.5" y1="102" x2="1163.5" y2="992" class="grid"/>
+<text x="1163.5" y="1016" text-anchor="middle" class="axis">2880</text>
+<line x1="1166.1" y1="102" x2="1166.1" y2="992" class="grid"/>
+<text x="1166.1" y="1016" text-anchor="middle" class="axis">2890</text>
+<line x1="1168.6" y1="102" x2="1168.6" y2="992" class="grid"/>
+<text x="1168.6" y="1016" text-anchor="middle" class="axis">2900</text>
+<line x1="1171.2" y1="102" x2="1171.2" y2="992" class="grid"/>
+<text x="1171.2" y="1016" text-anchor="middle" class="axis">2910</text>
+<line x1="1173.7" y1="102" x2="1173.7" y2="992" class="grid"/>
+<text x="1173.7" y="1016" text-anchor="middle" class="axis">2920</text>
+<line x1="1176.2" y1="102" x2="1176.2" y2="992" class="grid"/>
+<text x="1176.2" y="1016" text-anchor="middle" class="axis">2930</text>
+<line x1="1178.8" y1="102" x2="1178.8" y2="992" class="grid"/>
+<text x="1178.8" y="1016" text-anchor="middle" class="axis">2940</text>
+<line x1="1181.3" y1="102" x2="1181.3" y2="992" class="grid"/>
+<text x="1181.3" y="1016" text-anchor="middle" class="axis">2950</text>
+<line x1="1183.9" y1="102" x2="1183.9" y2="992" class="grid"/>
+<text x="1183.9" y="1016" text-anchor="middle" class="axis">2960</text>
+<line x1="1186.4" y1="102" x2="1186.4" y2="992" class="grid"/>
+<text x="1186.4" y="1016" text-anchor="middle" class="axis">2970</text>
+<line x1="1189.0" y1="102" x2="1189.0" y2="992" class="grid"/>
+<text x="1189.0" y="1016" text-anchor="middle" class="axis">2980</text>
+<line x1="1191.5" y1="102" x2="1191.5" y2="992" class="grid"/>
+<text x="1191.5" y="1016" text-anchor="middle" class="axis">2990</text>
+<line x1="1194.1" y1="102" x2="1194.1" y2="992" class="grid"/>
+<text x="1194.1" y="1016" text-anchor="middle" class="axis">3000</text>
+<line x1="1196.6" y1="102" x2="1196.6" y2="992" class="grid"/>
+<text x="1196.6" y="1016" text-anchor="middle" class="axis">3010</text>
+<line x1="1199.2" y1="102" x2="1199.2" y2="992" class="grid"/>
+<text x="1199.2" y="1016" text-anchor="middle" class="axis">3020</text>
+<line x1="1201.7" y1="102" x2="1201.7" y2="992" class="grid"/>
+<text x="1201.7" y="1016" text-anchor="middle" class="axis">3030</text>
+<line x1="1204.3" y1="102" x2="1204.3" y2="992" class="grid"/>
+<text x="1204.3" y="1016" text-anchor="middle" class="axis">3040</text>
+<line x1="1206.8" y1="102" x2="1206.8" y2="992" class="grid"/>
+<text x="1206.8" y="1016" text-anchor="middle" class="axis">3050</text>
+<line x1="1209.4" y1="102" x2="1209.4" y2="992" class="grid"/>
+<text x="1209.4" y="1016" text-anchor="middle" class="axis">3060</text>
+<line x1="1211.9" y1="102" x2="1211.9" y2="992" class="grid"/>
+<text x="1211.9" y="1016" text-anchor="middle" class="axis">3070</text>
+<line x1="1214.5" y1="102" x2="1214.5" y2="992" class="grid"/>
+<text x="1214.5" y="1016" text-anchor="middle" class="axis">3080</text>
+<line x1="1217.0" y1="102" x2="1217.0" y2="992" class="grid"/>
+<text x="1217.0" y="1016" text-anchor="middle" class="axis">3090</text>
+<line x1="1219.5" y1="102" x2="1219.5" y2="992" class="grid"/>
+<text x="1219.5" y="1016" text-anchor="middle" class="axis">3100</text>
+<line x1="1222.1" y1="102" x2="1222.1" y2="992" class="grid"/>
+<text x="1222.1" y="1016" text-anchor="middle" class="axis">3110</text>
+<line x1="1224.6" y1="102" x2="1224.6" y2="992" class="grid"/>
+<text x="1224.6" y="1016" text-anchor="middle" class="axis">3120</text>
+<line x1="1227.2" y1="102" x2="1227.2" y2="992" class="grid"/>
+<text x="1227.2" y="1016" text-anchor="middle" class="axis">3130</text>
+<line x1="1229.7" y1="102" x2="1229.7" y2="992" class="grid"/>
+<text x="1229.7" y="1016" text-anchor="middle" class="axis">3140</text>
+<line x1="1232.3" y1="102" x2="1232.3" y2="992" class="grid"/>
+<text x="1232.3" y="1016" text-anchor="middle" class="axis">3150</text>
+<line x1="1234.8" y1="102" x2="1234.8" y2="992" class="grid"/>
+<text x="1234.8" y="1016" text-anchor="middle" class="axis">3160</text>
+<line x1="1237.4" y1="102" x2="1237.4" y2="992" class="grid"/>
+<text x="1237.4" y="1016" text-anchor="middle" class="axis">3170</text>
+<line x1="1239.9" y1="102" x2="1239.9" y2="992" class="grid"/>
+<text x="1239.9" y="1016" text-anchor="middle" class="axis">3180</text>
+<line x1="1242.5" y1="102" x2="1242.5" y2="992" class="grid"/>
+<text x="1242.5" y="1016" text-anchor="middle" class="axis">3190</text>
+<line x1="1245.0" y1="102" x2="1245.0" y2="992" class="grid"/>
+<text x="1245.0" y="1016" text-anchor="middle" class="axis">3200</text>
+<line x1="1247.6" y1="102" x2="1247.6" y2="992" class="grid"/>
+<text x="1247.6" y="1016" text-anchor="middle" class="axis">3210</text>
+<line x1="1250.1" y1="102" x2="1250.1" y2="992" class="grid"/>
+<text x="1250.1" y="1016" text-anchor="middle" class="axis">3220</text>
+<line x1="1252.7" y1="102" x2="1252.7" y2="992" class="grid"/>
+<text x="1252.7" y="1016" text-anchor="middle" class="axis">3230</text>
+<line x1="1255.2" y1="102" x2="1255.2" y2="992" class="grid"/>
+<text x="1255.2" y="1016" text-anchor="middle" class="axis">3240</text>
+<line x1="1257.7" y1="102" x2="1257.7" y2="992" class="grid"/>
+<text x="1257.7" y="1016" text-anchor="middle" class="axis">3250</text>
+<line x1="1260.3" y1="102" x2="1260.3" y2="992" class="grid"/>
+<text x="1260.3" y="1016" text-anchor="middle" class="axis">3260</text>
+<line x1="1262.8" y1="102" x2="1262.8" y2="992" class="grid"/>
+<text x="1262.8" y="1016" text-anchor="middle" class="axis">3270</text>
+<line x1="1265.4" y1="102" x2="1265.4" y2="992" class="grid"/>
+<text x="1265.4" y="1016" text-anchor="middle" class="axis">3280</text>
+<line x1="1267.9" y1="102" x2="1267.9" y2="992" class="grid"/>
+<text x="1267.9" y="1016" text-anchor="middle" class="axis">3290</text>
+<line x1="1270.5" y1="102" x2="1270.5" y2="992" class="grid"/>
+<text x="1270.5" y="1016" text-anchor="middle" class="axis">3300</text>
+<line x1="1273.0" y1="102" x2="1273.0" y2="992" class="grid"/>
+<text x="1273.0" y="1016" text-anchor="middle" class="axis">3310</text>
+<line x1="1275.6" y1="102" x2="1275.6" y2="992" class="grid"/>
+<text x="1275.6" y="1016" text-anchor="middle" class="axis">3320</text>
+<line x1="1278.1" y1="102" x2="1278.1" y2="992" class="grid"/>
+<text x="1278.1" y="1016" text-anchor="middle" class="axis">3330</text>
+<line x1="1280.7" y1="102" x2="1280.7" y2="992" class="grid"/>
+<text x="1280.7" y="1016" text-anchor="middle" class="axis">3340</text>
+<line x1="1283.2" y1="102" x2="1283.2" y2="992" class="grid"/>
+<text x="1283.2" y="1016" text-anchor="middle" class="axis">3350</text>
+<line x1="1285.8" y1="102" x2="1285.8" y2="992" class="grid"/>
+<text x="1285.8" y="1016" text-anchor="middle" class="axis">3360</text>
+<line x1="1288.3" y1="102" x2="1288.3" y2="992" class="grid"/>
+<text x="1288.3" y="1016" text-anchor="middle" class="axis">3370</text>
+<line x1="1290.9" y1="102" x2="1290.9" y2="992" class="grid"/>
+<text x="1290.9" y="1016" text-anchor="middle" class="axis">3380</text>
+<line x1="1293.4" y1="102" x2="1293.4" y2="992" class="grid"/>
+<text x="1293.4" y="1016" text-anchor="middle" class="axis">3390</text>
+<line x1="1296.0" y1="102" x2="1296.0" y2="992" class="grid"/>
+<text x="1296.0" y="1016" text-anchor="middle" class="axis">3400</text>
+<line x1="1298.5" y1="102" x2="1298.5" y2="992" class="grid"/>
+<text x="1298.5" y="1016" text-anchor="middle" class="axis">3410</text>
+<line x1="1301.0" y1="102" x2="1301.0" y2="992" class="grid"/>
+<text x="1301.0" y="1016" text-anchor="middle" class="axis">3420</text>
+<line x1="1303.6" y1="102" x2="1303.6" y2="992" class="grid"/>
+<text x="1303.6" y="1016" text-anchor="middle" class="axis">3430</text>
+<line x1="1306.1" y1="102" x2="1306.1" y2="992" class="grid"/>
+<text x="1306.1" y="1016" text-anchor="middle" class="axis">3440</text>
+<line x1="1308.7" y1="102" x2="1308.7" y2="992" class="grid"/>
+<text x="1308.7" y="1016" text-anchor="middle" class="axis">3450</text>
+<line x1="1311.2" y1="102" x2="1311.2" y2="992" class="grid"/>
+<text x="1311.2" y="1016" text-anchor="middle" class="axis">3460</text>
+<line x1="1313.8" y1="102" x2="1313.8" y2="992" class="grid"/>
+<text x="1313.8" y="1016" text-anchor="middle" class="axis">3470</text>
+<line x1="1316.3" y1="102" x2="1316.3" y2="992" class="grid"/>
+<text x="1316.3" y="1016" text-anchor="middle" class="axis">3480</text>
+<line x1="1318.9" y1="102" x2="1318.9" y2="992" class="grid"/>
+<text x="1318.9" y="1016" text-anchor="middle" class="axis">3490</text>
+<line x1="1321.4" y1="102" x2="1321.4" y2="992" class="grid"/>
+<text x="1321.4" y="1016" text-anchor="middle" class="axis">3500</text>
+<line x1="1324.0" y1="102" x2="1324.0" y2="992" class="grid"/>
+<text x="1324.0" y="1016" text-anchor="middle" class="axis">3510</text>
+<line x1="1326.5" y1="102" x2="1326.5" y2="992" class="grid"/>
+<text x="1326.5" y="1016" text-anchor="middle" class="axis">3520</text>
+<line x1="1329.1" y1="102" x2="1329.1" y2="992" class="grid"/>
+<text x="1329.1" y="1016" text-anchor="middle" class="axis">3530</text>
+<line x1="1331.6" y1="102" x2="1331.6" y2="992" class="grid"/>
+<text x="1331.6" y="1016" text-anchor="middle" class="axis">3540</text>
+<line x1="1334.2" y1="102" x2="1334.2" y2="992" class="grid"/>
+<text x="1334.2" y="1016" text-anchor="middle" class="axis">3550</text>
+<line x1="1336.7" y1="102" x2="1336.7" y2="992" class="grid"/>
+<text x="1336.7" y="1016" text-anchor="middle" class="axis">3560</text>
+<line x1="1339.2" y1="102" x2="1339.2" y2="992" class="grid"/>
+<text x="1339.2" y="1016" text-anchor="middle" class="axis">3570</text>
+<line x1="1341.8" y1="102" x2="1341.8" y2="992" class="grid"/>
+<text x="1341.8" y="1016" text-anchor="middle" class="axis">3580</text>
+<line x1="1344.3" y1="102" x2="1344.3" y2="992" class="grid"/>
+<text x="1344.3" y="1016" text-anchor="middle" class="axis">3590</text>
+<line x1="1346.9" y1="102" x2="1346.9" y2="992" class="grid"/>
+<text x="1346.9" y="1016" text-anchor="middle" class="axis">3600</text>
+<line x1="1349.4" y1="102" x2="1349.4" y2="992" class="grid"/>
+<text x="1349.4" y="1016" text-anchor="middle" class="axis">3610</text>
+<line x1="1352.0" y1="102" x2="1352.0" y2="992" class="grid"/>
+<text x="1352.0" y="1016" text-anchor="middle" class="axis">3620</text>
+<line x1="1354.5" y1="102" x2="1354.5" y2="992" class="grid"/>
+<text x="1354.5" y="1016" text-anchor="middle" class="axis">3630</text>
+<line x1="1357.1" y1="102" x2="1357.1" y2="992" class="grid"/>
+<text x="1357.1" y="1016" text-anchor="middle" class="axis">3640</text>
+<line x1="1359.6" y1="102" x2="1359.6" y2="992" class="grid"/>
+<text x="1359.6" y="1016" text-anchor="middle" class="axis">3650</text>
+<line x1="1362.2" y1="102" x2="1362.2" y2="992" class="grid"/>
+<text x="1362.2" y="1016" text-anchor="middle" class="axis">3660</text>
+<line x1="1364.7" y1="102" x2="1364.7" y2="992" class="grid"/>
+<text x="1364.7" y="1016" text-anchor="middle" class="axis">3670</text>
+<line x1="1367.3" y1="102" x2="1367.3" y2="992" class="grid"/>
+<text x="1367.3" y="1016" text-anchor="middle" class="axis">3680</text>
+<line x1="1369.8" y1="102" x2="1369.8" y2="992" class="grid"/>
+<text x="1369.8" y="1016" text-anchor="middle" class="axis">3690</text>
+<line x1="1372.4" y1="102" x2="1372.4" y2="992" class="grid"/>
+<text x="1372.4" y="1016" text-anchor="middle" class="axis">3700</text>
+<line x1="1374.9" y1="102" x2="1374.9" y2="992" class="grid"/>
+<text x="1374.9" y="1016" text-anchor="middle" class="axis">3710</text>
+<line x1="1377.5" y1="102" x2="1377.5" y2="992" class="grid"/>
+<text x="1377.5" y="1016" text-anchor="middle" class="axis">3720</text>
+<line x1="1380.0" y1="102" x2="1380.0" y2="992" class="grid"/>
+<text x="1380.0" y="1016" text-anchor="middle" class="axis">3730</text>
+<text x="905.0" y="1060" text-anchor="middle" class="muted" font-size="14">million EKF turns/s</text>
+<line x1="434.7" y1="95" x2="434.7" y2="992" stroke="#f3a847" stroke-width="2" stroke-dasharray="7 6"/>
+<text x="442.7" y="91" fill="#f3a847" font-size="13">Rust packed-SIMD unchecked reference: 18.63</text>
 <text x="414" y="139" text-anchor="end" class="label">Mech scalar</text>
-<rect x="430" y="125" width="13.8" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="452.8" y="139" class="value">0.87</text>
-<text x="414" y="170" text-anchor="end" class="label">Mech Cranelift JIT</text>
-<rect x="430" y="156" width="264.2" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="703.2" y="170" class="value">16.68</text>
-<text x="414" y="201" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
-<rect x="430" y="187" width="542.3" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="981.3" y="201" class="value">34.25</text>
-<text x="414" y="232" text-anchor="end" class="label">Mech Cranelift SIMD-JIT checked fast</text>
-<rect x="430" y="218" width="581.7" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="1020.7" y="232" class="value">36.74</text>
-<text x="414" y="263" text-anchor="end" class="label">Mech Cranelift SIMD-JIT unchecked fast</text>
-<rect x="430" y="249" width="651.5" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="1090.5" y="263" class="value">41.15</text>
-<text x="414" y="294" text-anchor="end" class="label">Rust optimized fixed-shape</text>
-<rect x="430" y="280" width="264.9" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="703.9" y="294" class="value">16.73</text>
-<text x="414" y="325" text-anchor="end" class="label">Rust packed SIMD checked</text>
-<rect x="430" y="311" width="406.0" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="845.0" y="325" class="value">25.64</text>
-<text x="414" y="356" text-anchor="end" class="label">Rust packed SIMD unchecked</text>
-<rect x="430" y="342" width="352.1" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="791.1" y="356" class="value">22.24</text>
-<text x="414" y="387" text-anchor="end" class="label">Julia generic checked</text>
-<rect x="430" y="373" width="49.4" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="488.4" y="387" class="value">3.12</text>
-<text x="414" y="418" text-anchor="end" class="label">Julia generic unchecked</text>
-<rect x="430" y="404" width="49.7" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="488.7" y="418" class="value">3.14</text>
-<text x="414" y="449" text-anchor="end" class="label">Julia fixed-shape checked</text>
-<rect x="430" y="435" width="300.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="739.8" y="449" class="value">19.00</text>
-<text x="414" y="480" text-anchor="end" class="label">Julia fixed-shape unchecked</text>
-<rect x="430" y="466" width="347.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="786.8" y="480" class="value">21.96</text>
-<text x="414" y="511" text-anchor="end" class="label">Julia fixed-shape SIMD checked</text>
-<rect x="430" y="497" width="452.2" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="891.2" y="511" class="value">28.56</text>
-<text x="414" y="542" text-anchor="end" class="label">Julia fixed-shape SIMD unchecked</text>
-<rect x="430" y="528" width="566.1" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="1005.1" y="542" class="value">35.75</text>
-<text x="414" y="573" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
-<rect x="430" y="559" width="495.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="934.8" y="573" class="value">31.31</text>
-<text x="414" y="604" text-anchor="end" class="label">Julia SIMD.jl intrinsics unchecked</text>
-<rect x="430" y="590" width="520.0" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="959.0" y="604" class="value">32.84</text>
-<text x="414" y="635" text-anchor="end" class="label">NumPy scalar outer loop</text>
-<rect x="430" y="621" width="1.0" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
-<text x="440.0" y="635" class="value">0.06</text>
-<text x="414" y="666" text-anchor="end" class="label">NumPy vectorized fixed-shape checked</text>
-<rect x="430" y="652" width="171.9" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
-<text x="610.9" y="666" class="value">10.85</text>
-<text x="414" y="697" text-anchor="end" class="label">NumPy vectorized fixed-shape unchecked</text>
-<rect x="430" y="683" width="194.0" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
-<text x="633.0" y="697" class="value">12.26</text>
-<text x="414" y="728" text-anchor="end" class="label">LuaJIT scalar outer loop</text>
-<rect x="430" y="714" width="17.3" height="19" rx="3" fill="#f276ad" opacity="0.9"/>
-<text x="456.3" y="728" class="value">1.09</text>
-<text x="414" y="759" text-anchor="end" class="label">LuaJIT fixed-shape flat checked</text>
-<rect x="430" y="745" width="20.2" height="19" rx="3" fill="#f276ad" opacity="0.9"/>
-<text x="459.2" y="759" class="value">1.28</text>
-<text x="414" y="790" text-anchor="end" class="label">LuaJIT fixed-shape flat unchecked</text>
-<rect x="430" y="776" width="253.0" height="19" rx="3" fill="#f276ad" opacity="0.9"/>
-<text x="692.0" y="790" class="value">15.98</text>
-<text x="414" y="821" text-anchor="end" class="label">Mech GPU, one submission/turn</text>
-<rect x="430" y="807" width="868.9" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
-<text x="1307.9" y="821" class="value">54.88</text>
-<text x="414" y="852" text-anchor="end" class="label">Mech GPU, checked repeated turns</text>
-<rect x="430" y="838" width="801.2" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
-<text x="1240.2" y="852" class="value">50.60</text>
-<text x="52" y="909" class="muted" font-size="12">GPU rows are Mech context measurements, not CPU comparisons. Parse, compilation, setup, and readback are excluded.</text>
+<rect x="430" y="125" width="1.0" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="440.0" y="139" class="value">0.93</text>
+<text x="414" y="170" text-anchor="end" class="label">Mech scalar unchecked</text>
+<rect x="430" y="156" width="1.0" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="440.0" y="170" class="value">1.03</text>
+<text x="414" y="201" text-anchor="end" class="label">Mech Cranelift JIT</text>
+<rect x="430" y="187" width="4.3" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="443.3" y="201" class="value">16.71</text>
+<text x="414" y="232" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
+<rect x="430" y="218" width="8.8" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="447.8" y="232" class="value">34.52</text>
+<text x="414" y="263" text-anchor="end" class="label">Mech Cranelift SIMD-JIT checked fast</text>
+<rect x="430" y="249" width="9.1" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="448.1" y="263" class="value">35.87</text>
+<text x="414" y="294" text-anchor="end" class="label">Mech Cranelift SIMD-JIT unchecked fast</text>
+<rect x="430" y="280" width="10.2" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="449.2" y="294" class="value">40.20</text>
+<text x="414" y="325" text-anchor="end" class="label">Rust optimized fixed-shape</text>
+<rect x="430" y="311" width="4.3" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="443.3" y="325" class="value">16.91</text>
+<text x="414" y="356" text-anchor="end" class="label">Rust packed SIMD checked</text>
+<rect x="430" y="342" width="6.5" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="445.5" y="356" class="value">25.65</text>
+<text x="414" y="387" text-anchor="end" class="label">Rust packed SIMD unchecked</text>
+<rect x="430" y="373" width="4.7" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="443.7" y="387" class="value">18.63</text>
+<text x="414" y="418" text-anchor="end" class="label">Julia generic checked</text>
+<rect x="430" y="404" width="1.0" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="440.0" y="418" class="value">3.07</text>
+<text x="414" y="449" text-anchor="end" class="label">Julia generic unchecked</text>
+<rect x="430" y="435" width="1.0" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="440.0" y="449" class="value">3.12</text>
+<text x="414" y="480" text-anchor="end" class="label">Julia fixed-shape checked</text>
+<rect x="430" y="466" width="4.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="443.8" y="480" class="value">18.67</text>
+<text x="414" y="511" text-anchor="end" class="label">Julia fixed-shape unchecked</text>
+<rect x="430" y="497" width="5.6" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="444.6" y="511" class="value">21.94</text>
+<text x="414" y="542" text-anchor="end" class="label">Julia fixed-shape SIMD checked</text>
+<rect x="430" y="528" width="7.2" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="446.2" y="542" class="value">28.09</text>
+<text x="414" y="573" text-anchor="end" class="label">Julia fixed-shape SIMD unchecked</text>
+<rect x="430" y="559" width="8.9" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="447.9" y="573" class="value">35.10</text>
+<text x="414" y="604" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
+<rect x="430" y="590" width="7.9" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="446.9" y="604" class="value">30.84</text>
+<text x="414" y="635" text-anchor="end" class="label">Julia SIMD.jl intrinsics unchecked</text>
+<rect x="430" y="621" width="8.2" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="447.2" y="635" class="value">32.26</text>
+<text x="414" y="666" text-anchor="end" class="label">NumPy scalar outer loop</text>
+<rect x="430" y="652" width="1.0" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
+<text x="440.0" y="666" class="value">0.05</text>
+<text x="414" y="697" text-anchor="end" class="label">NumPy vectorized fixed-shape checked</text>
+<rect x="430" y="683" width="2.7" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
+<text x="441.7" y="697" class="value">10.67</text>
+<text x="414" y="728" text-anchor="end" class="label">NumPy vectorized fixed-shape unchecked</text>
+<rect x="430" y="714" width="3.1" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
+<text x="442.1" y="728" class="value">12.03</text>
+<text x="414" y="759" text-anchor="end" class="label">LuaJIT scalar outer loop</text>
+<rect x="430" y="745" width="1.0" height="19" rx="3" fill="#f276ad" opacity="0.9"/>
+<text x="440.0" y="759" class="value">1.07</text>
+<text x="414" y="790" text-anchor="end" class="label">LuaJIT fixed-shape flat checked</text>
+<rect x="430" y="776" width="1.0" height="19" rx="3" fill="#f276ad" opacity="0.9"/>
+<text x="440.0" y="790" class="value">1.26</text>
+<text x="414" y="821" text-anchor="end" class="label">LuaJIT fixed-shape flat unchecked</text>
+<rect x="430" y="807" width="4.1" height="19" rx="3" fill="#f276ad" opacity="0.9"/>
+<text x="443.1" y="821" class="value">15.99</text>
+<text x="414" y="852" text-anchor="end" class="label">Mech GPU, checked one-turn API call</text>
+<rect x="430" y="838" width="16.0" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
+<text x="455.0" y="852" class="value">62.80</text>
+<text x="414" y="883" text-anchor="end" class="label">Mech GPU, checked repeated API call</text>
+<rect x="430" y="869" width="14.3" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
+<text x="453.3" y="883" class="value">56.28</text>
+<text x="414" y="914" text-anchor="end" class="label">Mech GPU, unchecked one-turn API call</text>
+<rect x="430" y="900" width="13.2" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
+<text x="452.2" y="914" class="value">51.80</text>
+<text x="414" y="945" text-anchor="end" class="label">Mech GPU, unchecked repeated dispatches</text>
+<rect x="430" y="931" width="89.4" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
+<text x="528.4" y="945" class="value">350.93</text>
+<text x="414" y="976" text-anchor="end" class="label">Mech GPU, unchecked one submission</text>
+<rect x="430" y="962" width="949.9" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
+<text x="1388.9" y="976" class="value">3729.67</text>
+<text x="52" y="1033" class="muted" font-size="12">Checked GPU rows synchronize and validate each turn; the unchecked row batches all turns in one device submission. Parse, compilation, setup, and final readback are excluded.</text>
 </svg>

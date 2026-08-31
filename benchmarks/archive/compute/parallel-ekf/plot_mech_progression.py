@@ -57,7 +57,7 @@ def load_rows(cross: dict, runtime: dict, native: dict, historical: dict) -> lis
         ),
         row(
             "WGPU, one checked submission/turn",
-            backend_values["GPU single-submit"],
+            backend_values["GPU unchecked one-submit"],
             None,
             "100k-filter control",
         ),

@@ -66,7 +66,9 @@ def load_rows(
     native_rows = {row["label"]: row for row in native["rows"]}
 
     def scalar(label: str, family: str, mode: str) -> dict[str, object]:
-        key = label if label in cross_scalar else f"{label} {mode}"
+        key = f"{label} {mode}"
+        if key not in cross_scalar:
+            key = label
         return {
             "label": f"{label}, {mode}",
             "family": family,
@@ -77,12 +79,19 @@ def load_rows(
     def mech_backend(label: str, family: str, mode: str) -> dict[str, object]:
         aliases = {
             "Mech SIMD": "Mech SIMD (4xf32)",
-            "GPU single-submit": "Mech GPU, one submission/turn",
-            "GPU checked repeated": "Mech GPU, checked repeated turns",
+            "GPU one-submit": "Mech GPU, unchecked one submission",
+            "GPU checked repeated": "Mech GPU, checked repeated API call",
         }
-        throughput = cross_mech.get(aliases.get(label, label))
+        key = aliases.get(label, label)
+        # JIT lanes are stored in the scalar summary because their resident
+        # CPU loop is the same harness as the language controls. Backend-only
+        # lanes remain in the backend summary.
+        if key in cross_scalar:
+            throughput = cross_scalar[key]["ekf_turns_per_second"] / 1_000_000
+        else:
+            throughput = cross_mech.get(key)
         if throughput is None:
-            throughput = printed_mech[label]
+            throughput = printed_mech[key]
         return {
             "label": label,
             "family": family,
@@ -91,7 +100,8 @@ def load_rows(
         }
 
     rows = [
-        mech_backend("Mech scalar", "Mech", "checked"),
+        scalar("Mech scalar", "Mech", "checked"),
+        scalar("Mech scalar", "Mech", "unchecked"),
         mech_backend("Mech SIMD", "Mech", "checked"),
         mech_backend("Mech Cranelift JIT", "Mech", "checked"),
         mech_backend("Mech Cranelift JIT checked fast", "Mech", "checked"),
@@ -101,7 +111,7 @@ def load_rows(
         mech_backend("Mech Cranelift SIMD-JIT checked fast", "Mech", "checked"),
         mech_backend("Mech Cranelift SIMD-JIT unchecked", "Mech", "unchecked"),
         mech_backend("Mech Cranelift SIMD-JIT unchecked fast", "Mech", "unchecked"),
-        mech_backend("GPU single-submit", "Mech", "checked"),
+        mech_backend("GPU one-submit", "Mech", "unchecked"),
         mech_backend("GPU checked repeated", "Mech", "checked"),
         {
             "label": "Mech GPU, WGPU per-turn",

@@ -342,6 +342,17 @@ def main() -> None:
                 for text in scalar_mech_outputs
             ),
         )
+        scalar["Mech scalar unchecked"] = (
+            statistics.median(
+                number(text, r"Mech scalar unchecked throughput: ([0-9.]+) million")
+                for text in scalar_mech_outputs
+            )
+            * 1e6,
+            statistics.median(
+                number(text, r"Mech scalar unchecked checksum: ([0-9.eE+-]+)")
+                for text in scalar_mech_outputs
+            ),
+        )
         scalar["Mech Cranelift JIT"] = (
             statistics.median(
                 number(text, r"Mech Cranelift JIT throughput: ([0-9.]+) million")

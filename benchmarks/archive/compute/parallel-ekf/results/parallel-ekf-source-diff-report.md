@@ -6,11 +6,11 @@ This report measures source edits and runtime factors behind the parallel EKF va
 
 | Language | Baseline model | Advanced model | Workload (baseline -> advanced) | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Baseline checked M/s | Baseline unchecked M/s | Advanced checked M/s | Advanced unchecked M/s |
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Mech | compact high-level `.mec` program | same compact `.mec`; native backend selected at build | 10,000 x 20 -> 500,000 x 40 | 42 / 1,513 | 42 / 1,513 | 0 / 0 | 0 / 0 | 0 / 0 | 0.869 | -- | 246.151 | 241.028 |
-| Rust | compact fixed-shape scalar control | compact packed four-lane SIMD control | 10,000 x 20 -> 10,000 x 20 | 206 / 5,003 | 359 / 8,900 | 493 / 15,950 | 210 / 6,454 | 377 / 12,024 | -- | 16.728 | 25.642 | 22.237 |
+| Mech | compact high-level `.mec` program | same compact `.mec`; native backend selected at build | 10,000 x 20 -> 500,000 x 40 | 42 / 1,513 | 42 / 1,513 | 0 / 0 | 0 / 0 | 0 / 0 | 0.919 | 1.029 | 246.151 | 241.028 |
+| Rust | compact fixed-shape scalar control | compact packed four-lane SIMD control | 10,000 x 20 -> 10,000 x 20 | 206 / 5,003 | 359 / 8,900 | 493 / 15,950 | 210 / 6,454 | 377 / 12,024 | -- | 16.907 | 25.650 | 18.627 |
 | NumPy | compact per-filter scalar loop | compact batched fixed-shape vectorized operations | 10,000 x 20 -> 10,000 x 20 | 18 / 1,813 | 31 / 3,043 | 29 / 3,090 | 45 / 2,121 | 45 / 3,417 | 0.040 | 0.053 | 11.129 | 12.558 |
-| Julia | compact generic scalar Julia | compact explicit four-lane SIMD.jl intrinsics | 10,000 x 20 -> 10,000 x 20 | 96 / 4,382 | 194 / 6,939 | 200 / 8,979 | 96 / 4,758 | 194 / 8,158 | 3.119 | 3.137 | 31.311 | 32.842 |
-| LuaJIT | compact generic matrix helper loop | compact flat fixed-shape scalarized state | 10,000 x 20 -> 10,000 x 20 | 43 / 3,288 | 153 / 7,031 | 150 / 7,719 | 46 / 3,369 | 153 / 7,444 | -- | 1.094 | 1.277 | 15.977 |
+| Julia | compact generic scalar Julia | compact explicit four-lane SIMD.jl intrinsics | 10,000 x 20 -> 10,000 x 20 | 96 / 4,382 | 194 / 6,939 | 200 / 8,979 | 96 / 4,758 | 194 / 8,158 | 3.073 | 3.123 | 30.835 | 32.260 |
+| LuaJIT | compact generic matrix helper loop | compact flat fixed-shape scalarized state | 10,000 x 20 -> 10,000 x 20 | 43 / 3,288 | 153 / 7,031 | 150 / 7,719 | 46 / 3,369 | 153 / 7,444 | -- | 1.074 | 1.263 | 15.991 |
 | Lua | same compact flat source under PUC Lua | same compact flat source under PUC Lua | 10,000 x 20 -> 10,000 x 20 | 153 / 7,031 | 153 / 7,031 | 0 / 0 | 153 / 7,444 | 153 / 7,444 | 0.565 | 0.835 | 0.565 | 0.835 |
 | Taichi | compact Vector/Matrix resident fields | compact scalar SoA fields and unrolled 3x3 arithmetic | 500,000 x 40 -> 500,000 x 40 | 260 / 8,891 | 277 / 11,406 | 224 / 11,640 | 260 / 11,243 | 277 / 13,907 | 176.710 | 194.793 | 168.798 | 217.297 |
 | Halide | same fixed-shape JIT pipeline | same pipeline; checked publication select | 10,000 x 20 -> 10,000 x 20 | 18 / 3,875 | 18 / 3,875 | 0 / 0 | 53 / 4,092 | 53 / 4,092 | 2.707 | 5.058 | 2.707 | 5.058 |

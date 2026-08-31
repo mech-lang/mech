@@ -154,6 +154,12 @@ comment-free copies of the same benchmark programs; their harness behavior is
 unchanged, so source size is not being reduced by deleting numerical work.
 The longer reference files remain in the source map for auditability.
 
+The scalar Mech evidence now includes both publication modes: on this Apple
+M1 rerun, checked resident CPU measured **0.919 M EKF-turns/s** and unchecked
+resident CPU measured **1.029 M EKF-turns/s** at 10,000 lanes and 20 turns.
+The unchecked run uses `without_integrity_constraints()` in the same CPU
+executor and matched the checked checksum within `1e-4`.
+
 ## Minimal Halide and Futhark controls
 
 The `minimal/` directory adds two independent controls for the same resident

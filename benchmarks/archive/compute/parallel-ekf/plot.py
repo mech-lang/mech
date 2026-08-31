@@ -11,6 +11,7 @@ from pathlib import Path
 
 ORDER = [
     ("Mech scalar", "mech"),
+    ("Mech scalar unchecked", "mech"),
     ("Mech Cranelift JIT", "mech"),
     ("Mech Cranelift SIMD-JIT", "mech"),
     ("Mech Cranelift SIMD-JIT checked fast", "mech"),

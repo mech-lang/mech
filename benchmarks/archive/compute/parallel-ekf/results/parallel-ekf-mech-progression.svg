@@ -7,96 +7,434 @@
 <rect x="1325" y="24" width="16" height="16" rx="2" fill="#fff0a8"/><text x="1349" y="37" font-size="13">unchecked</text>
 <line x1="570.0" y1="118" x2="570.0" y2="628" class="grid"/>
 <text x="570.0" y="652" text-anchor="middle" class="muted" font-size="13">0</text>
-<line x1="630.0" y1="118" x2="630.0" y2="628" class="grid"/>
-<text x="630.0" y="652" text-anchor="middle" class="muted" font-size="13">20</text>
-<line x1="690.0" y1="118" x2="690.0" y2="628" class="grid"/>
-<text x="690.0" y="652" text-anchor="middle" class="muted" font-size="13">40</text>
-<line x1="750.0" y1="118" x2="750.0" y2="628" class="grid"/>
-<text x="750.0" y="652" text-anchor="middle" class="muted" font-size="13">60</text>
-<line x1="810.0" y1="118" x2="810.0" y2="628" class="grid"/>
-<text x="810.0" y="652" text-anchor="middle" class="muted" font-size="13">80</text>
-<line x1="870.0" y1="118" x2="870.0" y2="628" class="grid"/>
-<text x="870.0" y="652" text-anchor="middle" class="muted" font-size="13">100</text>
-<line x1="930.0" y1="118" x2="930.0" y2="628" class="grid"/>
-<text x="930.0" y="652" text-anchor="middle" class="muted" font-size="13">120</text>
-<line x1="990.0" y1="118" x2="990.0" y2="628" class="grid"/>
-<text x="990.0" y="652" text-anchor="middle" class="muted" font-size="13">140</text>
-<line x1="1050.0" y1="118" x2="1050.0" y2="628" class="grid"/>
-<text x="1050.0" y="652" text-anchor="middle" class="muted" font-size="13">160</text>
-<line x1="1110.0" y1="118" x2="1110.0" y2="628" class="grid"/>
-<text x="1110.0" y="652" text-anchor="middle" class="muted" font-size="13">180</text>
-<line x1="1170.0" y1="118" x2="1170.0" y2="628" class="grid"/>
-<text x="1170.0" y="652" text-anchor="middle" class="muted" font-size="13">200</text>
-<line x1="1230.0" y1="118" x2="1230.0" y2="628" class="grid"/>
-<text x="1230.0" y="652" text-anchor="middle" class="muted" font-size="13">220</text>
-<line x1="1290.0" y1="118" x2="1290.0" y2="628" class="grid"/>
-<text x="1290.0" y="652" text-anchor="middle" class="muted" font-size="13">240</text>
-<line x1="1350.0" y1="118" x2="1350.0" y2="628" class="grid"/>
-<text x="1350.0" y="652" text-anchor="middle" class="muted" font-size="13">260</text>
-<line x1="1410.0" y1="118" x2="1410.0" y2="628" class="grid"/>
-<text x="1410.0" y="652" text-anchor="middle" class="muted" font-size="13">280</text>
-<line x1="1470.0" y1="118" x2="1470.0" y2="628" class="grid"/>
-<text x="1470.0" y="652" text-anchor="middle" class="muted" font-size="13">300</text>
-<line x1="1530.0" y1="118" x2="1530.0" y2="628" class="grid"/>
-<text x="1530.0" y="652" text-anchor="middle" class="muted" font-size="13">320</text>
-<line x1="1590.0" y1="118" x2="1590.0" y2="628" class="grid"/>
-<text x="1590.0" y="652" text-anchor="middle" class="muted" font-size="13">340</text>
+<line x1="575.8" y1="118" x2="575.8" y2="628" class="grid"/>
+<text x="575.8" y="652" text-anchor="middle" class="muted" font-size="13">20</text>
+<line x1="581.6" y1="118" x2="581.6" y2="628" class="grid"/>
+<text x="581.6" y="652" text-anchor="middle" class="muted" font-size="13">40</text>
+<line x1="587.3" y1="118" x2="587.3" y2="628" class="grid"/>
+<text x="587.3" y="652" text-anchor="middle" class="muted" font-size="13">60</text>
+<line x1="593.1" y1="118" x2="593.1" y2="628" class="grid"/>
+<text x="593.1" y="652" text-anchor="middle" class="muted" font-size="13">80</text>
+<line x1="598.9" y1="118" x2="598.9" y2="628" class="grid"/>
+<text x="598.9" y="652" text-anchor="middle" class="muted" font-size="13">100</text>
+<line x1="604.7" y1="118" x2="604.7" y2="628" class="grid"/>
+<text x="604.7" y="652" text-anchor="middle" class="muted" font-size="13">120</text>
+<line x1="610.4" y1="118" x2="610.4" y2="628" class="grid"/>
+<text x="610.4" y="652" text-anchor="middle" class="muted" font-size="13">140</text>
+<line x1="616.2" y1="118" x2="616.2" y2="628" class="grid"/>
+<text x="616.2" y="652" text-anchor="middle" class="muted" font-size="13">160</text>
+<line x1="622.0" y1="118" x2="622.0" y2="628" class="grid"/>
+<text x="622.0" y="652" text-anchor="middle" class="muted" font-size="13">180</text>
+<line x1="627.8" y1="118" x2="627.8" y2="628" class="grid"/>
+<text x="627.8" y="652" text-anchor="middle" class="muted" font-size="13">200</text>
+<line x1="633.5" y1="118" x2="633.5" y2="628" class="grid"/>
+<text x="633.5" y="652" text-anchor="middle" class="muted" font-size="13">220</text>
+<line x1="639.3" y1="118" x2="639.3" y2="628" class="grid"/>
+<text x="639.3" y="652" text-anchor="middle" class="muted" font-size="13">240</text>
+<line x1="645.1" y1="118" x2="645.1" y2="628" class="grid"/>
+<text x="645.1" y="652" text-anchor="middle" class="muted" font-size="13">260</text>
+<line x1="650.9" y1="118" x2="650.9" y2="628" class="grid"/>
+<text x="650.9" y="652" text-anchor="middle" class="muted" font-size="13">280</text>
+<line x1="656.6" y1="118" x2="656.6" y2="628" class="grid"/>
+<text x="656.6" y="652" text-anchor="middle" class="muted" font-size="13">300</text>
+<line x1="662.4" y1="118" x2="662.4" y2="628" class="grid"/>
+<text x="662.4" y="652" text-anchor="middle" class="muted" font-size="13">320</text>
+<line x1="668.2" y1="118" x2="668.2" y2="628" class="grid"/>
+<text x="668.2" y="652" text-anchor="middle" class="muted" font-size="13">340</text>
+<line x1="674.0" y1="118" x2="674.0" y2="628" class="grid"/>
+<text x="674.0" y="652" text-anchor="middle" class="muted" font-size="13">360</text>
+<line x1="679.7" y1="118" x2="679.7" y2="628" class="grid"/>
+<text x="679.7" y="652" text-anchor="middle" class="muted" font-size="13">380</text>
+<line x1="685.5" y1="118" x2="685.5" y2="628" class="grid"/>
+<text x="685.5" y="652" text-anchor="middle" class="muted" font-size="13">400</text>
+<line x1="691.3" y1="118" x2="691.3" y2="628" class="grid"/>
+<text x="691.3" y="652" text-anchor="middle" class="muted" font-size="13">420</text>
+<line x1="697.1" y1="118" x2="697.1" y2="628" class="grid"/>
+<text x="697.1" y="652" text-anchor="middle" class="muted" font-size="13">440</text>
+<line x1="702.8" y1="118" x2="702.8" y2="628" class="grid"/>
+<text x="702.8" y="652" text-anchor="middle" class="muted" font-size="13">460</text>
+<line x1="708.6" y1="118" x2="708.6" y2="628" class="grid"/>
+<text x="708.6" y="652" text-anchor="middle" class="muted" font-size="13">480</text>
+<line x1="714.4" y1="118" x2="714.4" y2="628" class="grid"/>
+<text x="714.4" y="652" text-anchor="middle" class="muted" font-size="13">500</text>
+<line x1="720.2" y1="118" x2="720.2" y2="628" class="grid"/>
+<text x="720.2" y="652" text-anchor="middle" class="muted" font-size="13">520</text>
+<line x1="725.9" y1="118" x2="725.9" y2="628" class="grid"/>
+<text x="725.9" y="652" text-anchor="middle" class="muted" font-size="13">540</text>
+<line x1="731.7" y1="118" x2="731.7" y2="628" class="grid"/>
+<text x="731.7" y="652" text-anchor="middle" class="muted" font-size="13">560</text>
+<line x1="737.5" y1="118" x2="737.5" y2="628" class="grid"/>
+<text x="737.5" y="652" text-anchor="middle" class="muted" font-size="13">580</text>
+<line x1="743.3" y1="118" x2="743.3" y2="628" class="grid"/>
+<text x="743.3" y="652" text-anchor="middle" class="muted" font-size="13">600</text>
+<line x1="749.0" y1="118" x2="749.0" y2="628" class="grid"/>
+<text x="749.0" y="652" text-anchor="middle" class="muted" font-size="13">620</text>
+<line x1="754.8" y1="118" x2="754.8" y2="628" class="grid"/>
+<text x="754.8" y="652" text-anchor="middle" class="muted" font-size="13">640</text>
+<line x1="760.6" y1="118" x2="760.6" y2="628" class="grid"/>
+<text x="760.6" y="652" text-anchor="middle" class="muted" font-size="13">660</text>
+<line x1="766.4" y1="118" x2="766.4" y2="628" class="grid"/>
+<text x="766.4" y="652" text-anchor="middle" class="muted" font-size="13">680</text>
+<line x1="772.1" y1="118" x2="772.1" y2="628" class="grid"/>
+<text x="772.1" y="652" text-anchor="middle" class="muted" font-size="13">700</text>
+<line x1="777.9" y1="118" x2="777.9" y2="628" class="grid"/>
+<text x="777.9" y="652" text-anchor="middle" class="muted" font-size="13">720</text>
+<line x1="783.7" y1="118" x2="783.7" y2="628" class="grid"/>
+<text x="783.7" y="652" text-anchor="middle" class="muted" font-size="13">740</text>
+<line x1="789.5" y1="118" x2="789.5" y2="628" class="grid"/>
+<text x="789.5" y="652" text-anchor="middle" class="muted" font-size="13">760</text>
+<line x1="795.2" y1="118" x2="795.2" y2="628" class="grid"/>
+<text x="795.2" y="652" text-anchor="middle" class="muted" font-size="13">780</text>
+<line x1="801.0" y1="118" x2="801.0" y2="628" class="grid"/>
+<text x="801.0" y="652" text-anchor="middle" class="muted" font-size="13">800</text>
+<line x1="806.8" y1="118" x2="806.8" y2="628" class="grid"/>
+<text x="806.8" y="652" text-anchor="middle" class="muted" font-size="13">820</text>
+<line x1="812.6" y1="118" x2="812.6" y2="628" class="grid"/>
+<text x="812.6" y="652" text-anchor="middle" class="muted" font-size="13">840</text>
+<line x1="818.3" y1="118" x2="818.3" y2="628" class="grid"/>
+<text x="818.3" y="652" text-anchor="middle" class="muted" font-size="13">860</text>
+<line x1="824.1" y1="118" x2="824.1" y2="628" class="grid"/>
+<text x="824.1" y="652" text-anchor="middle" class="muted" font-size="13">880</text>
+<line x1="829.9" y1="118" x2="829.9" y2="628" class="grid"/>
+<text x="829.9" y="652" text-anchor="middle" class="muted" font-size="13">900</text>
+<line x1="835.7" y1="118" x2="835.7" y2="628" class="grid"/>
+<text x="835.7" y="652" text-anchor="middle" class="muted" font-size="13">920</text>
+<line x1="841.4" y1="118" x2="841.4" y2="628" class="grid"/>
+<text x="841.4" y="652" text-anchor="middle" class="muted" font-size="13">940</text>
+<line x1="847.2" y1="118" x2="847.2" y2="628" class="grid"/>
+<text x="847.2" y="652" text-anchor="middle" class="muted" font-size="13">960</text>
+<line x1="853.0" y1="118" x2="853.0" y2="628" class="grid"/>
+<text x="853.0" y="652" text-anchor="middle" class="muted" font-size="13">980</text>
+<line x1="858.8" y1="118" x2="858.8" y2="628" class="grid"/>
+<text x="858.8" y="652" text-anchor="middle" class="muted" font-size="13">1000</text>
+<line x1="864.5" y1="118" x2="864.5" y2="628" class="grid"/>
+<text x="864.5" y="652" text-anchor="middle" class="muted" font-size="13">1020</text>
+<line x1="870.3" y1="118" x2="870.3" y2="628" class="grid"/>
+<text x="870.3" y="652" text-anchor="middle" class="muted" font-size="13">1040</text>
+<line x1="876.1" y1="118" x2="876.1" y2="628" class="grid"/>
+<text x="876.1" y="652" text-anchor="middle" class="muted" font-size="13">1060</text>
+<line x1="881.9" y1="118" x2="881.9" y2="628" class="grid"/>
+<text x="881.9" y="652" text-anchor="middle" class="muted" font-size="13">1080</text>
+<line x1="887.6" y1="118" x2="887.6" y2="628" class="grid"/>
+<text x="887.6" y="652" text-anchor="middle" class="muted" font-size="13">1100</text>
+<line x1="893.4" y1="118" x2="893.4" y2="628" class="grid"/>
+<text x="893.4" y="652" text-anchor="middle" class="muted" font-size="13">1120</text>
+<line x1="899.2" y1="118" x2="899.2" y2="628" class="grid"/>
+<text x="899.2" y="652" text-anchor="middle" class="muted" font-size="13">1140</text>
+<line x1="905.0" y1="118" x2="905.0" y2="628" class="grid"/>
+<text x="905.0" y="652" text-anchor="middle" class="muted" font-size="13">1160</text>
+<line x1="910.7" y1="118" x2="910.7" y2="628" class="grid"/>
+<text x="910.7" y="652" text-anchor="middle" class="muted" font-size="13">1180</text>
+<line x1="916.5" y1="118" x2="916.5" y2="628" class="grid"/>
+<text x="916.5" y="652" text-anchor="middle" class="muted" font-size="13">1200</text>
+<line x1="922.3" y1="118" x2="922.3" y2="628" class="grid"/>
+<text x="922.3" y="652" text-anchor="middle" class="muted" font-size="13">1220</text>
+<line x1="928.1" y1="118" x2="928.1" y2="628" class="grid"/>
+<text x="928.1" y="652" text-anchor="middle" class="muted" font-size="13">1240</text>
+<line x1="933.9" y1="118" x2="933.9" y2="628" class="grid"/>
+<text x="933.9" y="652" text-anchor="middle" class="muted" font-size="13">1260</text>
+<line x1="939.6" y1="118" x2="939.6" y2="628" class="grid"/>
+<text x="939.6" y="652" text-anchor="middle" class="muted" font-size="13">1280</text>
+<line x1="945.4" y1="118" x2="945.4" y2="628" class="grid"/>
+<text x="945.4" y="652" text-anchor="middle" class="muted" font-size="13">1300</text>
+<line x1="951.2" y1="118" x2="951.2" y2="628" class="grid"/>
+<text x="951.2" y="652" text-anchor="middle" class="muted" font-size="13">1320</text>
+<line x1="957.0" y1="118" x2="957.0" y2="628" class="grid"/>
+<text x="957.0" y="652" text-anchor="middle" class="muted" font-size="13">1340</text>
+<line x1="962.7" y1="118" x2="962.7" y2="628" class="grid"/>
+<text x="962.7" y="652" text-anchor="middle" class="muted" font-size="13">1360</text>
+<line x1="968.5" y1="118" x2="968.5" y2="628" class="grid"/>
+<text x="968.5" y="652" text-anchor="middle" class="muted" font-size="13">1380</text>
+<line x1="974.3" y1="118" x2="974.3" y2="628" class="grid"/>
+<text x="974.3" y="652" text-anchor="middle" class="muted" font-size="13">1400</text>
+<line x1="980.1" y1="118" x2="980.1" y2="628" class="grid"/>
+<text x="980.1" y="652" text-anchor="middle" class="muted" font-size="13">1420</text>
+<line x1="985.8" y1="118" x2="985.8" y2="628" class="grid"/>
+<text x="985.8" y="652" text-anchor="middle" class="muted" font-size="13">1440</text>
+<line x1="991.6" y1="118" x2="991.6" y2="628" class="grid"/>
+<text x="991.6" y="652" text-anchor="middle" class="muted" font-size="13">1460</text>
+<line x1="997.4" y1="118" x2="997.4" y2="628" class="grid"/>
+<text x="997.4" y="652" text-anchor="middle" class="muted" font-size="13">1480</text>
+<line x1="1003.2" y1="118" x2="1003.2" y2="628" class="grid"/>
+<text x="1003.2" y="652" text-anchor="middle" class="muted" font-size="13">1500</text>
+<line x1="1008.9" y1="118" x2="1008.9" y2="628" class="grid"/>
+<text x="1008.9" y="652" text-anchor="middle" class="muted" font-size="13">1520</text>
+<line x1="1014.7" y1="118" x2="1014.7" y2="628" class="grid"/>
+<text x="1014.7" y="652" text-anchor="middle" class="muted" font-size="13">1540</text>
+<line x1="1020.5" y1="118" x2="1020.5" y2="628" class="grid"/>
+<text x="1020.5" y="652" text-anchor="middle" class="muted" font-size="13">1560</text>
+<line x1="1026.3" y1="118" x2="1026.3" y2="628" class="grid"/>
+<text x="1026.3" y="652" text-anchor="middle" class="muted" font-size="13">1580</text>
+<line x1="1032.0" y1="118" x2="1032.0" y2="628" class="grid"/>
+<text x="1032.0" y="652" text-anchor="middle" class="muted" font-size="13">1600</text>
+<line x1="1037.8" y1="118" x2="1037.8" y2="628" class="grid"/>
+<text x="1037.8" y="652" text-anchor="middle" class="muted" font-size="13">1620</text>
+<line x1="1043.6" y1="118" x2="1043.6" y2="628" class="grid"/>
+<text x="1043.6" y="652" text-anchor="middle" class="muted" font-size="13">1640</text>
+<line x1="1049.4" y1="118" x2="1049.4" y2="628" class="grid"/>
+<text x="1049.4" y="652" text-anchor="middle" class="muted" font-size="13">1660</text>
+<line x1="1055.1" y1="118" x2="1055.1" y2="628" class="grid"/>
+<text x="1055.1" y="652" text-anchor="middle" class="muted" font-size="13">1680</text>
+<line x1="1060.9" y1="118" x2="1060.9" y2="628" class="grid"/>
+<text x="1060.9" y="652" text-anchor="middle" class="muted" font-size="13">1700</text>
+<line x1="1066.7" y1="118" x2="1066.7" y2="628" class="grid"/>
+<text x="1066.7" y="652" text-anchor="middle" class="muted" font-size="13">1720</text>
+<line x1="1072.5" y1="118" x2="1072.5" y2="628" class="grid"/>
+<text x="1072.5" y="652" text-anchor="middle" class="muted" font-size="13">1740</text>
+<line x1="1078.2" y1="118" x2="1078.2" y2="628" class="grid"/>
+<text x="1078.2" y="652" text-anchor="middle" class="muted" font-size="13">1760</text>
+<line x1="1084.0" y1="118" x2="1084.0" y2="628" class="grid"/>
+<text x="1084.0" y="652" text-anchor="middle" class="muted" font-size="13">1780</text>
+<line x1="1089.8" y1="118" x2="1089.8" y2="628" class="grid"/>
+<text x="1089.8" y="652" text-anchor="middle" class="muted" font-size="13">1800</text>
+<line x1="1095.6" y1="118" x2="1095.6" y2="628" class="grid"/>
+<text x="1095.6" y="652" text-anchor="middle" class="muted" font-size="13">1820</text>
+<line x1="1101.3" y1="118" x2="1101.3" y2="628" class="grid"/>
+<text x="1101.3" y="652" text-anchor="middle" class="muted" font-size="13">1840</text>
+<line x1="1107.1" y1="118" x2="1107.1" y2="628" class="grid"/>
+<text x="1107.1" y="652" text-anchor="middle" class="muted" font-size="13">1860</text>
+<line x1="1112.9" y1="118" x2="1112.9" y2="628" class="grid"/>
+<text x="1112.9" y="652" text-anchor="middle" class="muted" font-size="13">1880</text>
+<line x1="1118.7" y1="118" x2="1118.7" y2="628" class="grid"/>
+<text x="1118.7" y="652" text-anchor="middle" class="muted" font-size="13">1900</text>
+<line x1="1124.4" y1="118" x2="1124.4" y2="628" class="grid"/>
+<text x="1124.4" y="652" text-anchor="middle" class="muted" font-size="13">1920</text>
+<line x1="1130.2" y1="118" x2="1130.2" y2="628" class="grid"/>
+<text x="1130.2" y="652" text-anchor="middle" class="muted" font-size="13">1940</text>
+<line x1="1136.0" y1="118" x2="1136.0" y2="628" class="grid"/>
+<text x="1136.0" y="652" text-anchor="middle" class="muted" font-size="13">1960</text>
+<line x1="1141.8" y1="118" x2="1141.8" y2="628" class="grid"/>
+<text x="1141.8" y="652" text-anchor="middle" class="muted" font-size="13">1980</text>
+<line x1="1147.5" y1="118" x2="1147.5" y2="628" class="grid"/>
+<text x="1147.5" y="652" text-anchor="middle" class="muted" font-size="13">2000</text>
+<line x1="1153.3" y1="118" x2="1153.3" y2="628" class="grid"/>
+<text x="1153.3" y="652" text-anchor="middle" class="muted" font-size="13">2020</text>
+<line x1="1159.1" y1="118" x2="1159.1" y2="628" class="grid"/>
+<text x="1159.1" y="652" text-anchor="middle" class="muted" font-size="13">2040</text>
+<line x1="1164.9" y1="118" x2="1164.9" y2="628" class="grid"/>
+<text x="1164.9" y="652" text-anchor="middle" class="muted" font-size="13">2060</text>
+<line x1="1170.6" y1="118" x2="1170.6" y2="628" class="grid"/>
+<text x="1170.6" y="652" text-anchor="middle" class="muted" font-size="13">2080</text>
+<line x1="1176.4" y1="118" x2="1176.4" y2="628" class="grid"/>
+<text x="1176.4" y="652" text-anchor="middle" class="muted" font-size="13">2100</text>
+<line x1="1182.2" y1="118" x2="1182.2" y2="628" class="grid"/>
+<text x="1182.2" y="652" text-anchor="middle" class="muted" font-size="13">2120</text>
+<line x1="1188.0" y1="118" x2="1188.0" y2="628" class="grid"/>
+<text x="1188.0" y="652" text-anchor="middle" class="muted" font-size="13">2140</text>
+<line x1="1193.7" y1="118" x2="1193.7" y2="628" class="grid"/>
+<text x="1193.7" y="652" text-anchor="middle" class="muted" font-size="13">2160</text>
+<line x1="1199.5" y1="118" x2="1199.5" y2="628" class="grid"/>
+<text x="1199.5" y="652" text-anchor="middle" class="muted" font-size="13">2180</text>
+<line x1="1205.3" y1="118" x2="1205.3" y2="628" class="grid"/>
+<text x="1205.3" y="652" text-anchor="middle" class="muted" font-size="13">2200</text>
+<line x1="1211.1" y1="118" x2="1211.1" y2="628" class="grid"/>
+<text x="1211.1" y="652" text-anchor="middle" class="muted" font-size="13">2220</text>
+<line x1="1216.8" y1="118" x2="1216.8" y2="628" class="grid"/>
+<text x="1216.8" y="652" text-anchor="middle" class="muted" font-size="13">2240</text>
+<line x1="1222.6" y1="118" x2="1222.6" y2="628" class="grid"/>
+<text x="1222.6" y="652" text-anchor="middle" class="muted" font-size="13">2260</text>
+<line x1="1228.4" y1="118" x2="1228.4" y2="628" class="grid"/>
+<text x="1228.4" y="652" text-anchor="middle" class="muted" font-size="13">2280</text>
+<line x1="1234.2" y1="118" x2="1234.2" y2="628" class="grid"/>
+<text x="1234.2" y="652" text-anchor="middle" class="muted" font-size="13">2300</text>
+<line x1="1239.9" y1="118" x2="1239.9" y2="628" class="grid"/>
+<text x="1239.9" y="652" text-anchor="middle" class="muted" font-size="13">2320</text>
+<line x1="1245.7" y1="118" x2="1245.7" y2="628" class="grid"/>
+<text x="1245.7" y="652" text-anchor="middle" class="muted" font-size="13">2340</text>
+<line x1="1251.5" y1="118" x2="1251.5" y2="628" class="grid"/>
+<text x="1251.5" y="652" text-anchor="middle" class="muted" font-size="13">2360</text>
+<line x1="1257.3" y1="118" x2="1257.3" y2="628" class="grid"/>
+<text x="1257.3" y="652" text-anchor="middle" class="muted" font-size="13">2380</text>
+<line x1="1263.0" y1="118" x2="1263.0" y2="628" class="grid"/>
+<text x="1263.0" y="652" text-anchor="middle" class="muted" font-size="13">2400</text>
+<line x1="1268.8" y1="118" x2="1268.8" y2="628" class="grid"/>
+<text x="1268.8" y="652" text-anchor="middle" class="muted" font-size="13">2420</text>
+<line x1="1274.6" y1="118" x2="1274.6" y2="628" class="grid"/>
+<text x="1274.6" y="652" text-anchor="middle" class="muted" font-size="13">2440</text>
+<line x1="1280.4" y1="118" x2="1280.4" y2="628" class="grid"/>
+<text x="1280.4" y="652" text-anchor="middle" class="muted" font-size="13">2460</text>
+<line x1="1286.1" y1="118" x2="1286.1" y2="628" class="grid"/>
+<text x="1286.1" y="652" text-anchor="middle" class="muted" font-size="13">2480</text>
+<line x1="1291.9" y1="118" x2="1291.9" y2="628" class="grid"/>
+<text x="1291.9" y="652" text-anchor="middle" class="muted" font-size="13">2500</text>
+<line x1="1297.7" y1="118" x2="1297.7" y2="628" class="grid"/>
+<text x="1297.7" y="652" text-anchor="middle" class="muted" font-size="13">2520</text>
+<line x1="1303.5" y1="118" x2="1303.5" y2="628" class="grid"/>
+<text x="1303.5" y="652" text-anchor="middle" class="muted" font-size="13">2540</text>
+<line x1="1309.3" y1="118" x2="1309.3" y2="628" class="grid"/>
+<text x="1309.3" y="652" text-anchor="middle" class="muted" font-size="13">2560</text>
+<line x1="1315.0" y1="118" x2="1315.0" y2="628" class="grid"/>
+<text x="1315.0" y="652" text-anchor="middle" class="muted" font-size="13">2580</text>
+<line x1="1320.8" y1="118" x2="1320.8" y2="628" class="grid"/>
+<text x="1320.8" y="652" text-anchor="middle" class="muted" font-size="13">2600</text>
+<line x1="1326.6" y1="118" x2="1326.6" y2="628" class="grid"/>
+<text x="1326.6" y="652" text-anchor="middle" class="muted" font-size="13">2620</text>
+<line x1="1332.4" y1="118" x2="1332.4" y2="628" class="grid"/>
+<text x="1332.4" y="652" text-anchor="middle" class="muted" font-size="13">2640</text>
+<line x1="1338.1" y1="118" x2="1338.1" y2="628" class="grid"/>
+<text x="1338.1" y="652" text-anchor="middle" class="muted" font-size="13">2660</text>
+<line x1="1343.9" y1="118" x2="1343.9" y2="628" class="grid"/>
+<text x="1343.9" y="652" text-anchor="middle" class="muted" font-size="13">2680</text>
+<line x1="1349.7" y1="118" x2="1349.7" y2="628" class="grid"/>
+<text x="1349.7" y="652" text-anchor="middle" class="muted" font-size="13">2700</text>
+<line x1="1355.5" y1="118" x2="1355.5" y2="628" class="grid"/>
+<text x="1355.5" y="652" text-anchor="middle" class="muted" font-size="13">2720</text>
+<line x1="1361.2" y1="118" x2="1361.2" y2="628" class="grid"/>
+<text x="1361.2" y="652" text-anchor="middle" class="muted" font-size="13">2740</text>
+<line x1="1367.0" y1="118" x2="1367.0" y2="628" class="grid"/>
+<text x="1367.0" y="652" text-anchor="middle" class="muted" font-size="13">2760</text>
+<line x1="1372.8" y1="118" x2="1372.8" y2="628" class="grid"/>
+<text x="1372.8" y="652" text-anchor="middle" class="muted" font-size="13">2780</text>
+<line x1="1378.6" y1="118" x2="1378.6" y2="628" class="grid"/>
+<text x="1378.6" y="652" text-anchor="middle" class="muted" font-size="13">2800</text>
+<line x1="1384.3" y1="118" x2="1384.3" y2="628" class="grid"/>
+<text x="1384.3" y="652" text-anchor="middle" class="muted" font-size="13">2820</text>
+<line x1="1390.1" y1="118" x2="1390.1" y2="628" class="grid"/>
+<text x="1390.1" y="652" text-anchor="middle" class="muted" font-size="13">2840</text>
+<line x1="1395.9" y1="118" x2="1395.9" y2="628" class="grid"/>
+<text x="1395.9" y="652" text-anchor="middle" class="muted" font-size="13">2860</text>
+<line x1="1401.7" y1="118" x2="1401.7" y2="628" class="grid"/>
+<text x="1401.7" y="652" text-anchor="middle" class="muted" font-size="13">2880</text>
+<line x1="1407.4" y1="118" x2="1407.4" y2="628" class="grid"/>
+<text x="1407.4" y="652" text-anchor="middle" class="muted" font-size="13">2900</text>
+<line x1="1413.2" y1="118" x2="1413.2" y2="628" class="grid"/>
+<text x="1413.2" y="652" text-anchor="middle" class="muted" font-size="13">2920</text>
+<line x1="1419.0" y1="118" x2="1419.0" y2="628" class="grid"/>
+<text x="1419.0" y="652" text-anchor="middle" class="muted" font-size="13">2940</text>
+<line x1="1424.8" y1="118" x2="1424.8" y2="628" class="grid"/>
+<text x="1424.8" y="652" text-anchor="middle" class="muted" font-size="13">2960</text>
+<line x1="1430.5" y1="118" x2="1430.5" y2="628" class="grid"/>
+<text x="1430.5" y="652" text-anchor="middle" class="muted" font-size="13">2980</text>
+<line x1="1436.3" y1="118" x2="1436.3" y2="628" class="grid"/>
+<text x="1436.3" y="652" text-anchor="middle" class="muted" font-size="13">3000</text>
+<line x1="1442.1" y1="118" x2="1442.1" y2="628" class="grid"/>
+<text x="1442.1" y="652" text-anchor="middle" class="muted" font-size="13">3020</text>
+<line x1="1447.9" y1="118" x2="1447.9" y2="628" class="grid"/>
+<text x="1447.9" y="652" text-anchor="middle" class="muted" font-size="13">3040</text>
+<line x1="1453.6" y1="118" x2="1453.6" y2="628" class="grid"/>
+<text x="1453.6" y="652" text-anchor="middle" class="muted" font-size="13">3060</text>
+<line x1="1459.4" y1="118" x2="1459.4" y2="628" class="grid"/>
+<text x="1459.4" y="652" text-anchor="middle" class="muted" font-size="13">3080</text>
+<line x1="1465.2" y1="118" x2="1465.2" y2="628" class="grid"/>
+<text x="1465.2" y="652" text-anchor="middle" class="muted" font-size="13">3100</text>
+<line x1="1471.0" y1="118" x2="1471.0" y2="628" class="grid"/>
+<text x="1471.0" y="652" text-anchor="middle" class="muted" font-size="13">3120</text>
+<line x1="1476.7" y1="118" x2="1476.7" y2="628" class="grid"/>
+<text x="1476.7" y="652" text-anchor="middle" class="muted" font-size="13">3140</text>
+<line x1="1482.5" y1="118" x2="1482.5" y2="628" class="grid"/>
+<text x="1482.5" y="652" text-anchor="middle" class="muted" font-size="13">3160</text>
+<line x1="1488.3" y1="118" x2="1488.3" y2="628" class="grid"/>
+<text x="1488.3" y="652" text-anchor="middle" class="muted" font-size="13">3180</text>
+<line x1="1494.1" y1="118" x2="1494.1" y2="628" class="grid"/>
+<text x="1494.1" y="652" text-anchor="middle" class="muted" font-size="13">3200</text>
+<line x1="1499.8" y1="118" x2="1499.8" y2="628" class="grid"/>
+<text x="1499.8" y="652" text-anchor="middle" class="muted" font-size="13">3220</text>
+<line x1="1505.6" y1="118" x2="1505.6" y2="628" class="grid"/>
+<text x="1505.6" y="652" text-anchor="middle" class="muted" font-size="13">3240</text>
+<line x1="1511.4" y1="118" x2="1511.4" y2="628" class="grid"/>
+<text x="1511.4" y="652" text-anchor="middle" class="muted" font-size="13">3260</text>
+<line x1="1517.2" y1="118" x2="1517.2" y2="628" class="grid"/>
+<text x="1517.2" y="652" text-anchor="middle" class="muted" font-size="13">3280</text>
+<line x1="1522.9" y1="118" x2="1522.9" y2="628" class="grid"/>
+<text x="1522.9" y="652" text-anchor="middle" class="muted" font-size="13">3300</text>
+<line x1="1528.7" y1="118" x2="1528.7" y2="628" class="grid"/>
+<text x="1528.7" y="652" text-anchor="middle" class="muted" font-size="13">3320</text>
+<line x1="1534.5" y1="118" x2="1534.5" y2="628" class="grid"/>
+<text x="1534.5" y="652" text-anchor="middle" class="muted" font-size="13">3340</text>
+<line x1="1540.3" y1="118" x2="1540.3" y2="628" class="grid"/>
+<text x="1540.3" y="652" text-anchor="middle" class="muted" font-size="13">3360</text>
+<line x1="1546.0" y1="118" x2="1546.0" y2="628" class="grid"/>
+<text x="1546.0" y="652" text-anchor="middle" class="muted" font-size="13">3380</text>
+<line x1="1551.8" y1="118" x2="1551.8" y2="628" class="grid"/>
+<text x="1551.8" y="652" text-anchor="middle" class="muted" font-size="13">3400</text>
+<line x1="1557.6" y1="118" x2="1557.6" y2="628" class="grid"/>
+<text x="1557.6" y="652" text-anchor="middle" class="muted" font-size="13">3420</text>
+<line x1="1563.4" y1="118" x2="1563.4" y2="628" class="grid"/>
+<text x="1563.4" y="652" text-anchor="middle" class="muted" font-size="13">3440</text>
+<line x1="1569.1" y1="118" x2="1569.1" y2="628" class="grid"/>
+<text x="1569.1" y="652" text-anchor="middle" class="muted" font-size="13">3460</text>
+<line x1="1574.9" y1="118" x2="1574.9" y2="628" class="grid"/>
+<text x="1574.9" y="652" text-anchor="middle" class="muted" font-size="13">3480</text>
+<line x1="1580.7" y1="118" x2="1580.7" y2="628" class="grid"/>
+<text x="1580.7" y="652" text-anchor="middle" class="muted" font-size="13">3500</text>
+<line x1="1586.5" y1="118" x2="1586.5" y2="628" class="grid"/>
+<text x="1586.5" y="652" text-anchor="middle" class="muted" font-size="13">3520</text>
+<line x1="1592.2" y1="118" x2="1592.2" y2="628" class="grid"/>
+<text x="1592.2" y="652" text-anchor="middle" class="muted" font-size="13">3540</text>
+<line x1="1598.0" y1="118" x2="1598.0" y2="628" class="grid"/>
+<text x="1598.0" y="652" text-anchor="middle" class="muted" font-size="13">3560</text>
+<line x1="1603.8" y1="118" x2="1603.8" y2="628" class="grid"/>
+<text x="1603.8" y="652" text-anchor="middle" class="muted" font-size="13">3580</text>
+<line x1="1609.6" y1="118" x2="1609.6" y2="628" class="grid"/>
+<text x="1609.6" y="652" text-anchor="middle" class="muted" font-size="13">3600</text>
+<line x1="1615.3" y1="118" x2="1615.3" y2="628" class="grid"/>
+<text x="1615.3" y="652" text-anchor="middle" class="muted" font-size="13">3620</text>
+<line x1="1621.1" y1="118" x2="1621.1" y2="628" class="grid"/>
+<text x="1621.1" y="652" text-anchor="middle" class="muted" font-size="13">3640</text>
+<line x1="1626.9" y1="118" x2="1626.9" y2="628" class="grid"/>
+<text x="1626.9" y="652" text-anchor="middle" class="muted" font-size="13">3660</text>
+<line x1="1632.7" y1="118" x2="1632.7" y2="628" class="grid"/>
+<text x="1632.7" y="652" text-anchor="middle" class="muted" font-size="13">3680</text>
+<line x1="1638.4" y1="118" x2="1638.4" y2="628" class="grid"/>
+<text x="1638.4" y="652" text-anchor="middle" class="muted" font-size="13">3700</text>
+<line x1="1644.2" y1="118" x2="1644.2" y2="628" class="grid"/>
+<text x="1644.2" y="652" text-anchor="middle" class="muted" font-size="13">3720</text>
 <line x1="1650.0" y1="118" x2="1650.0" y2="628" class="grid"/>
-<text x="1650.0" y="652" text-anchor="middle" class="muted" font-size="13">360</text>
+<text x="1650.0" y="652" text-anchor="middle" class="muted" font-size="13">3740</text>
 <text x="554" y="157" text-anchor="end" class="label">resident scalar CPU</text>
-<rect x="570" y="142" width="2.6" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="580.6" y="155" class="value">0.87</text>
+<rect x="570" y="142" width="1.0" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="579.0" y="155" class="value">0.92</text>
 <text x="575" y="176" class="note">not measured</text>
 <text x="554" y="201" text-anchor="end" class="label">resident SIMD CPU (4 lanes)</text>
-<rect x="570" y="186" width="12.3" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="590.3" y="199" class="value">4.10</text>
+<rect x="570" y="186" width="1.2" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="579.2" y="199" class="value">4.08</text>
 <text x="575" y="220" class="note">not measured</text>
 <text x="554" y="245" text-anchor="end" class="label">Cranelift JIT</text>
-<rect x="570" y="230" width="50.1" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="628.1" y="243" class="value">16.69</text>
-<rect x="570" y="250" width="54.4" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
-<text x="632.4" y="263" class="value">18.12</text>
+<rect x="570" y="230" width="4.8" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="582.8" y="243" class="value">16.61</text>
+<rect x="570" y="250" width="5.2" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="583.2" y="263" class="value">18.16</text>
 <text x="554" y="289" text-anchor="end" class="label">Cranelift JIT, checked-fast / unchecked-fast</text>
-<rect x="570" y="274" width="56.3" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="634.3" y="287" class="value">18.78</text>
-<rect x="570" y="294" width="60.7" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
-<text x="638.7" y="307" class="value">20.23</text>
+<rect x="570" y="274" width="5.4" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="583.4" y="287" class="value">18.83</text>
+<rect x="570" y="294" width="5.8" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="583.8" y="307" class="value">20.23</text>
 <text x="554" y="333" text-anchor="end" class="label">Cranelift SIMD-JIT</text>
-<rect x="570" y="318" width="103.8" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="681.8" y="331" class="value">34.61</text>
-<rect x="570" y="338" width="116.0" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
-<text x="694.0" y="351" class="value">38.67</text>
+<rect x="570" y="318" width="10.0" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="588.0" y="331" class="value">34.55</text>
+<rect x="570" y="338" width="11.1" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="589.1" y="351" class="value">38.40</text>
 <text x="554" y="377" text-anchor="end" class="label">Cranelift SIMD-JIT, checked-fast / unchecked-fast</text>
-<rect x="570" y="362" width="111.6" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="689.6" y="375" class="value">37.19</text>
-<rect x="570" y="382" width="124.2" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
-<text x="702.2" y="395" class="value">41.39</text>
-<text x="554" y="421" text-anchor="end" class="label">WGPU, one checked submission/turn</text>
-<rect x="570" y="406" width="164.6" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="742.6" y="419" class="value">54.88</text>
-<text x="575" y="440" class="note">not measured</text>
-<text x="578" y="443" class="note">100k-filter control</text>
-<text x="554" y="465" text-anchor="end" class="label">Cranelift SIMD-JIT, 8 workers</text>
-<rect x="570" y="450" width="314.3" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="892.3" y="463" class="value">104.78</text>
-<rect x="570" y="470" width="331.4" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
-<text x="909.4" y="483" class="value">110.47</text>
-<text x="554" y="509" text-anchor="end" class="label">WGPU, synchronized per-turn</text>
-<rect x="570" y="494" width="458.9" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="1036.9" y="507" class="value">152.97</text>
-<rect x="570" y="514" width="471.4" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
-<text x="1049.4" y="527" class="value">157.14</text>
-<text x="554" y="553" text-anchor="end" class="label">native Metal, direct MSL</text>
-<rect x="570" y="538" width="738.5" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="1316.5" y="551" class="value">246.15</text>
-<rect x="570" y="558" width="723.1" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
-<text x="1301.1" y="571" class="value">241.03</text>
-<text x="578" y="575" class="note">500k filters, 40 synchronized turns</text>
-<text x="554" y="597" text-anchor="end" class="label">WGPU, fused device batch</text>
-<text x="575" y="596" class="note">not measured</text>
-<rect x="570" y="602" width="1031.9" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
-<text x="1609.9" y="615" class="value">343.97</text>
-<text x="578" y="619" class="note">historical 2026-08-14 fused control; no per-turn boundary</text>
+<rect x="570" y="362" width="10.6" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="588.6" y="375" class="value">36.65</text>
+<rect x="570" y="382" width="11.8" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="589.8" y="395" class="value">40.86</text>
+<text x="554" y="421" text-anchor="end" class="label">Cranelift SIMD-JIT, 8 workers</text>
+<rect x="570" y="406" width="30.3" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="608.3" y="419" class="value">104.78</text>
+<rect x="570" y="426" width="31.9" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="609.9" y="439" class="value">110.47</text>
+<text x="554" y="465" text-anchor="end" class="label">WGPU, synchronized per-turn</text>
+<rect x="570" y="450" width="44.2" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="622.2" y="463" class="value">152.97</text>
+<rect x="570" y="470" width="45.4" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="623.4" y="483" class="value">157.14</text>
+<text x="554" y="509" text-anchor="end" class="label">native Metal, direct MSL</text>
+<rect x="570" y="494" width="71.1" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="649.1" y="507" class="value">246.15</text>
+<rect x="570" y="514" width="69.6" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="647.6" y="527" class="value">241.03</text>
+<text x="578" y="531" class="note">500k filters, 40 synchronized turns</text>
+<text x="554" y="553" text-anchor="end" class="label">WGPU, fused device batch</text>
+<text x="575" y="552" class="note">not measured</text>
+<rect x="570" y="558" width="99.3" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="677.3" y="571" class="value">343.97</text>
+<text x="578" y="575" class="note">historical 2026-08-14 fused control; no per-turn boundary</text>
+<text x="554" y="597" text-anchor="end" class="label">WGPU, one checked submission/turn</text>
+<rect x="570" y="582" width="1077.0" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="1655.0" y="595" class="value">3729.67</text>
+<text x="575" y="616" class="note">not measured</text>
+<text x="578" y="619" class="note">100k-filter control</text>
 <text x="1110.0" y="706" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>
 <text x="52" y="679" class="muted" font-size="12">Checked bars include candidate validation/publication. Unchecked bars omit integrity checks. Missing bars mean that lane was not implemented as a separately measured mode.</text>
 </svg>

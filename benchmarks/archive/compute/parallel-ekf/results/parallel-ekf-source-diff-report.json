@@ -45,8 +45,8 @@
       },
       "throughput_variants": {
         "baseline": {
-          "checked": 0.869,
-          "unchecked": null
+          "checked": 0.919,
+          "unchecked": 1.029
         },
         "advanced": {
           "checked": 246.151,
@@ -104,11 +104,11 @@
       "throughput_variants": {
         "baseline": {
           "checked": null,
-          "unchecked": 16.727943913
+          "unchecked": 16.907063983
         },
         "advanced": {
-          "checked": 25.642120362,
-          "unchecked": 22.237150763
+          "checked": 25.650480145,
+          "unchecked": 18.626814473
         }
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
@@ -131,8 +131,8 @@
         "changed_chars": 12024
       },
       "throughput_millions": {
-        "checked": 25.642120362,
-        "unchecked": 22.237150763
+        "checked": 25.650480145,
+        "unchecked": 18.626814473
       }
     },
     {
@@ -219,12 +219,12 @@
       },
       "throughput_variants": {
         "baseline": {
-          "checked": 3.1190826615700025,
-          "unchecked": 3.136789525406568
+          "checked": 3.072806272900473,
+          "unchecked": 3.123446427029506
         },
         "advanced": {
-          "checked": 31.311360481744067,
-          "unchecked": 32.842297200456905
+          "checked": 30.83544633229325,
+          "unchecked": 32.260447626615
         }
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
@@ -247,8 +247,8 @@
         "changed_chars": 8158
       },
       "throughput_millions": {
-        "checked": 31.311360481744067,
-        "unchecked": 32.842297200456905
+        "checked": 30.83544633229325,
+        "unchecked": 32.260447626615
       }
     },
     {
@@ -278,11 +278,11 @@
       "throughput_variants": {
         "baseline": {
           "checked": null,
-          "unchecked": 1.093912378
+          "unchecked": 1.0739408259999998
         },
         "advanced": {
-          "checked": 1.2773431259999999,
-          "unchecked": 15.97699313
+          "checked": 1.262674091,
+          "unchecked": 15.991045015000001
         }
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
@@ -305,8 +305,8 @@
         "changed_chars": 7444
       },
       "throughput_millions": {
-        "checked": 1.2773431259999999,
-        "unchecked": 15.97699313
+        "checked": 1.262674091,
+        "unchecked": 15.991045015000001
       }
     },
     {
