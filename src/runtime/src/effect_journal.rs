@@ -80,7 +80,7 @@ impl RuntimeEffectJournal {
         self.entries.is_empty()
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "source"))]
     pub(in crate::runtime) fn next_sequence(&self) -> u64 {
         self.next_sequence
     }

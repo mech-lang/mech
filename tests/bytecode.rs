@@ -136,23 +136,43 @@ fn scalar_add_returns_the_final_function_register() -> MResult<()> {
 
 #[test]
 #[cfg(feature = "distribution-full")]
-fn completed_math_lowerings_compile_through_bytecode_v1() -> MResult<()> {
-    for source in [
-        "+> math\nmath/copysign(3.0, -2.0)",
-        "+> math\nmath/fdim(5.0, 3.0)",
-        "+> math\nmath/fmod(5.3, 2.0)",
-        "+> math\nmath/nextafter(1.0, 2.0)",
-        "+> math\nmath/remainder(5.3, 2.0)",
-        "+> math\nmath/bessel/jn(2.0, 1.0)",
-        "+> math\nmath/bessel/yn(2.0, 1.0)",
+fn completed_math_lowerings_activate_and_execute_through_bytecode_v1() -> MResult<()> {
+    for (source, expected, tolerance) in [
+        ("+> math\nmath/copysign(3.0, -2.0)", -3.0, 0.0),
+        ("+> math\nmath/fdim(5.0, 3.0)", 2.0, 0.0),
+        ("+> math\nmath/fmod(5.3, 2.0)", 1.3, 1.0e-12),
+        (
+            "+> math\nmath/nextafter(1.0, 2.0)",
+            f64::from_bits(1.0f64.to_bits() + 1),
+            0.0,
+        ),
+        ("+> math\nmath/remainder(5.3, 2.0)", -0.7, 1.0e-12),
+        (
+            "+> math\nmath/bessel/jn(2.0, 1.0)",
+            0.114_903_484_931_900_5,
+            1.0e-12,
+        ),
+        (
+            "+> math\nmath/bessel/yn(2.0, 1.0)",
+            -1.650_682_606_816_254_3,
+            1.0e-12,
+        ),
     ] {
-        let parsed = ParsedProgram::from_bytes(&compile_source(source)?)?;
+        let (parsed, value) = run_compiled_source(source)?;
         assert!(
             parsed.instructions.iter().any(|instruction| matches!(
                 instruction,
                 BytecodeInstruction::RuntimeBinary { .. }
             )),
             "{source} did not lower to a binary runtime instruction",
+        );
+        let ValueData::F64(actual) = value.data() else {
+            panic!("{source} did not produce a canonical f64 value");
+        };
+        let actual = actual.to_f64();
+        assert!(
+            (actual - expected).abs() <= tolerance,
+            "{source} produced {actual}, expected {expected}",
         );
     }
     Ok(())

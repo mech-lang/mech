@@ -33,11 +33,18 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["math"], "neg", bind_negate)?;
     register(builder, &["math"], "pow", bind_pow)?;
     register(builder, &["math"], "abs", bind_abs)?;
+    register(builder, &["math"], "copysign", bind_math_copysign)?;
+    register(builder, &["math"], "fdim", bind_math_fdim)?;
     register(builder, &["math"], "floor", bind_floor)?;
+    register(builder, &["math"], "fmod", bind_math_fmod)?;
+    register(builder, &["math"], "nextafter", bind_math_nextafter)?;
+    register(builder, &["math"], "remainder", bind_math_remainder)?;
     register(builder, &["math"], "sqrt", bind_sqrt)?;
     register(builder, &["math"], "atan2", bind_atan2)?;
     register(builder, &["math"], "cos", bind_cos)?;
     register(builder, &["math"], "sin", bind_sin)?;
+    register(builder, &["math", "bessel"], "jn", bind_math_bessel_jn)?;
+    register(builder, &["math", "bessel"], "yn", bind_math_bessel_yn)?;
     register(builder, &["logic"], "and", bind_semantic_bool_and)?;
     register(builder, &["logic"], "or", bind_bool_or)?;
     register(builder, &["logic"], "xor", bind_bool_xor)?;
@@ -677,6 +684,48 @@ fn bind_atan2(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, atan2)
+}
+
+fn bind_math_copysign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, math_copysign)
+}
+
+fn bind_math_fdim(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, math_fdim)
+}
+
+fn bind_math_fmod(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, math_fmod)
+}
+
+fn bind_math_nextafter(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, math_nextafter)
+}
+
+fn bind_math_remainder(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, math_remainder)
+}
+
+fn bind_math_bessel_jn(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, math_bessel_jn)
+}
+
+fn bind_math_bessel_yn(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, math_bessel_yn)
 }
 
 fn bind_sub(
@@ -2441,6 +2490,66 @@ fn atan2(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     binary_f64(kernel, inputs, output, f64::atan2)
+}
+
+fn math_copysign(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(kernel, inputs, output, libm::copysign)
+}
+
+fn math_fdim(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(kernel, inputs, output, libm::fdim)
+}
+
+fn math_fmod(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(kernel, inputs, output, libm::fmod)
+}
+
+fn math_nextafter(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(kernel, inputs, output, libm::nextafter)
+}
+
+fn math_remainder(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(kernel, inputs, output, libm::remainder)
+}
+
+fn math_bessel_jn(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(kernel, inputs, output, |order, value| {
+        libm::jn(order as i32, value)
+    })
+}
+
+fn math_bessel_yn(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(kernel, inputs, output, |order, value| {
+        libm::yn(order as i32, value)
+    })
 }
 
 fn binary_f64(
