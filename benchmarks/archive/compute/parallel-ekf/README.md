@@ -17,6 +17,7 @@ git switch --track origin/codex/mech-program-gpu
 | Role | Checked-in source |
 | --- | --- |
 | High-level Mech EKF | `hosts/gpu/fixtures/ekf-kernel.mec` |
+| Taichi-comparable Mech EKF | `hosts/gpu/fixtures/ekf-kernel-taichi-comparable.mec` |
 | Mech artifact benchmark harness | `hosts/gpu/examples/parallel_ekf_benchmark.rs` |
 | Generic scalar, SIMD, and WGPU lowering/execution | `hosts/gpu/src/batched.rs` |
 | Cranelift lowering/execution | `hosts/gpu/src/batched/jit.rs` |
@@ -33,6 +34,74 @@ git switch --track origin/codex/mech-program-gpu
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
+
+## Taichi parity harness
+
+`taichi_comparable.py` is a checked-in control, not a hand-written result
+stub. It uses Taichi `Vector.field` and `Matrix.field` values for the same
+3-state/3x3-covariance resident layout, the same f32 constants and three
+resident lane inputs, and the same Joseph covariance update as
+`ekf-kernel-taichi-comparable.mec`. The unchecked kernel advances the resident
+fields directly. The checked kernel uses two resident state/covariance pairs,
+validates the complete candidate, and publishes the alternate pair only when
+the candidate is valid. A failed lane records a two-word atomic fault summary
+and the prior published pair remains selected. That is the Mech checked
+publication contract, rather than a post-hoc assertion after overwriting
+state.
+
+Both modes call `ti.sync()` once per measured turn. This is intentional: it
+measures a steady-state host-driven loop and does not let asynchronous device
+work accumulate. Mech's checked path likewise maps the compact two-word fault
+status before publishing each turn. For a device-resident batch comparison,
+use Mech's explicit fused unchecked mode; it is a different boundary and is
+reported separately.
+
+The harness requires a Python version supported by the installed Taichi
+release (the Apple run used Python 3.12 and Taichi 1.7.4):
+
+```text
+python3 -m venv .venv312
+.venv312/bin/python -m pip install "taichi==1.7.4" "numpy>=2"
+TAICHI_ARCH=metal .venv312/bin/python taichi_comparable.py 100000 120 unchecked
+TAICHI_ARCH=metal .venv312/bin/python taichi_comparable.py 100000 120 checked
+TAICHI_ARCH=metal .venv312/bin/python taichi_comparable.py 100000 120 unchecked-batched
+```
+
+The complete runner can execute both controls and compare their fresh-session
+checksums with the Mech GPU results. It pins the Taichi backend explicitly and
+records the raw process output when evidence is requested:
+
+```text
+python3 run.py --taichi-python /path/to/.venv312/bin/python \
+  --taichi-arch metal --backend-instances 100000 --backend-gpu-turns 120 \
+  --evidence-output results/apple-m1-taichi-parity.json
+```
+
+On the Apple M1/Metal sanity runs used while adding this harness, five
+per-turn synchronized turns measured approximately 264M unchecked and 103M
+checked Taichi filter-turns/s. The corresponding Mech generic WGPU path was
+approximately 65M unchecked and 54--64M checked one-turn filter-turns/s, with
+matching f32 checksums. Mech's ordinary unchecked multi-dispatch path reached
+approximately 325M turns/s when five turns were encoded into one submission;
+that is the relevant apples-to-apples comparison against a device-resident
+Taichi batch, not the per-turn host boundary. Metal scheduling is noisy, so
+new evidence must use the runner's medians rather than a single process.
+
+`unchecked-batched` is the device-resident control: it advances all requested
+turns inside one Taichi kernel and synchronizes once. It is compared with
+Mech's `prepare_resident_unchecked_fused` result. It must not be compared with
+the checked per-turn rows, because neither control performs a publication or
+fault readback at every intermediate turn in that mode.
+
+The result is not that Taichi has a capability Mech fundamentally lacks. Its
+compiler receives the outer `for i in range(N)`, fixed field shapes, and a
+device-selected kernel as explicit program structure. Mech currently derives
+the same outer broadcast from array extents, scalarizes the generic artifact,
+and preserves host-visible transaction boundaries. That gives Taichi more
+room for loop fusion, matrix scalar replacement, and backend-specific launch
+tuning. Mech can recover those opportunities by specializing the lowered
+region and by making device-resident batching an explicit execution policy;
+the source-level recurrence and its checked semantics do not need to change.
 
 ## Mech physical backends
 

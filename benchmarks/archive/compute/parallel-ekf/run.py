@@ -69,6 +69,17 @@ def main() -> None:
     parser.add_argument("--scalar-turns", type=int, default=20)
     parser.add_argument("--backend-instances", type=int, default=100_000)
     parser.add_argument("--backend-cpu-turns", type=int, default=5)
+    parser.add_argument("--backend-gpu-turns", type=int, default=120)
+    parser.add_argument(
+        "--taichi-python",
+        type=Path,
+        help="Python interpreter with Taichi installed; runs the synchronized GPU controls",
+    )
+    parser.add_argument(
+        "--taichi-arch",
+        default="gpu",
+        help="Taichi backend name (for example metal, cuda, vulkan, or cpu)",
+    )
     parser.add_argument("--samples", type=int, default=3)
     parser.add_argument("--luajit-samples", type=int, default=5)
     parser.add_argument(
@@ -283,7 +294,7 @@ def main() -> None:
                 str(args.backend_instances),
                 str(args.backend_cpu_turns),
                 "40",
-                "120",
+                str(args.backend_gpu_turns),
             ],
             args.samples,
             environment,
@@ -341,12 +352,12 @@ def main() -> None:
                     sample(command, count, environment, evidence_runs, lane)
                 )
         reference = scalar["Rust optimized fixed-shape"][1]
-        checksum_tolerance = max(0.1, args.scalar_instances * 2.0e-5)
+        scalar_checksum_tolerance = max(0.1, args.scalar_instances * 2.0e-5)
         for lane, (_, checksum) in scalar.items():
-            if abs(checksum - reference) > checksum_tolerance:
+            if abs(checksum - reference) > scalar_checksum_tolerance:
                 raise RuntimeError(
                     f"{lane} checksum {checksum} differs from Rust {reference} "
-                    f"beyond aggregate f32 tolerance {checksum_tolerance}"
+                    f"beyond aggregate f32 tolerance {scalar_checksum_tolerance}"
                 )
 
         backend = {
@@ -404,6 +415,68 @@ def main() -> None:
                 for text in backend_mech_outputs
             ),
         }
+        mech_gpu_checksums = {
+            "checked": statistics.median(
+                number(text, r"Mech GPU checked checksum: ([0-9.eE+-]+)")
+                for text in backend_mech_outputs
+            ),
+            "unchecked": statistics.median(
+                number(text, r"Mech GPU unchecked checksum: ([0-9.eE+-]+)")
+                for text in backend_mech_outputs
+            ),
+        }
+        if args.taichi_python is not None:
+            taichi_environment = environment.copy()
+            taichi_environment["TAICHI_ARCH"] = args.taichi_arch
+            taichi_commands = {
+                "Taichi Vector/Matrix resident unchecked": [
+                    str(args.taichi_python),
+                    str(HERE / "taichi_comparable.py"),
+                    str(args.backend_instances),
+                    str(args.backend_gpu_turns),
+                    "unchecked",
+                ],
+                "Taichi Vector/Matrix resident checked": [
+                    str(args.taichi_python),
+                    str(HERE / "taichi_comparable.py"),
+                    str(args.backend_instances),
+                    str(args.backend_gpu_turns),
+                    "checked",
+                ],
+                "Taichi Vector/Matrix resident unchecked batched": [
+                    str(args.taichi_python),
+                    str(HERE / "taichi_comparable.py"),
+                    str(args.backend_instances),
+                    str(args.backend_gpu_turns),
+                    "unchecked-batched",
+                ],
+            }
+            taichi_checksums = {}
+            for mode, lane in (
+                ("unchecked", "Taichi Vector/Matrix resident unchecked"),
+                ("checked", "Taichi Vector/Matrix resident checked"),
+                ("unchecked-batched", "Taichi Vector/Matrix resident unchecked batched"),
+            ):
+                taichi_outputs = sample(
+                    taichi_commands[lane],
+                    args.samples,
+                    taichi_environment,
+                    evidence_runs,
+                    lane,
+                )
+                throughput_value, checksum_value = medians(taichi_outputs)
+                backend[lane] = throughput_value / 1e6
+                taichi_checksums[mode] = checksum_value
+            backend_checksum_tolerance = max(0.1, args.backend_instances * 2.0e-5)
+            for mode, checksum in taichi_checksums.items():
+                reference_mode = "unchecked" if mode == "unchecked-batched" else mode
+                if abs(checksum - mech_gpu_checksums[reference_mode]) > backend_checksum_tolerance:
+                    raise RuntimeError(
+                        f"Taichi {mode} checksum {checksum} differs from Mech GPU "
+                        f"{mech_gpu_checksums[reference_mode]} beyond f32 tolerance {backend_checksum_tolerance}"
+                    )
+        else:
+            backend_checksum_tolerance = max(0.1, args.backend_instances * 2.0e-5)
         print("| Mech backend | Million EKF-turns/s |")
         print("| --- | ---: |")
         for lane, throughput in backend.items():
@@ -426,6 +499,12 @@ def main() -> None:
                 "julia": [required["julia"], "--version"],
                 "luajit": [required["luajit"], "-v"],
             }
+            if args.taichi_python is not None:
+                metadata_commands["taichi"] = [
+                    str(args.taichi_python),
+                    "-c",
+                    "import taichi; print(taichi.__version__)",
+                ]
             evidence = {
                 "schema_version": 1,
                 "generated_at": datetime.datetime.now().astimezone().isoformat(),
@@ -438,9 +517,12 @@ def main() -> None:
                     "scalar_turns": args.scalar_turns,
                     "backend_instances": args.backend_instances,
                     "backend_cpu_turns": args.backend_cpu_turns,
+                    "backend_gpu_turns": args.backend_gpu_turns,
+                    "taichi_arch": args.taichi_arch,
                     "samples": args.samples,
                     "luajit_samples": args.luajit_samples,
-                    "aggregate_checksum_tolerance": checksum_tolerance,
+                    "scalar_checksum_tolerance": scalar_checksum_tolerance,
+                    "backend_checksum_tolerance": backend_checksum_tolerance,
                     "thread_environment": {
                         name: environment[name]
                         for name in (

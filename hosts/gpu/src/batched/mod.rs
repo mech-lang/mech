@@ -171,10 +171,20 @@ fn comparison_wgsl(operation: ComparisonOperation) -> &'static str {
 }
 
 fn scalar_predicate_wgsl(predicate: &ScalarPredicate) -> String {
+    scalar_predicate_wgsl_with_aliases(predicate, &BTreeMap::new())
+}
+
+fn scalar_predicate_wgsl_with_aliases(
+    predicate: &ScalarPredicate,
+    aliases: &BTreeMap<usize, ScalarOperand>,
+) -> String {
     match predicate {
-        ScalarPredicate::Value(value) => format!("({} != 0.0)", scalar_operand_wgsl(*value)),
+        ScalarPredicate::Value(value) => format!("({} != 0.0)", fast_operand_wgsl(*value, aliases)),
         ScalarPredicate::IsFinite(value) => {
-            format!("(abs({}) <= 3.402823466e38)", scalar_operand_wgsl(*value))
+            format!(
+                "(abs({}) <= 3.402823466e38)",
+                fast_operand_wgsl(*value, aliases)
+            )
         }
         ScalarPredicate::AbsoluteDifferenceWithin {
             left,
@@ -182,9 +192,9 @@ fn scalar_predicate_wgsl(predicate: &ScalarPredicate) -> String {
             tolerance,
         } => format!(
             "(abs(({}) - ({})) <= ({}))",
-            scalar_operand_wgsl(*left),
-            scalar_operand_wgsl(*right),
-            scalar_operand_wgsl(*tolerance)
+            fast_operand_wgsl(*left, aliases),
+            fast_operand_wgsl(*right, aliases),
+            fast_operand_wgsl(*tolerance, aliases)
         ),
         ScalarPredicate::Compare {
             operation,
@@ -192,29 +202,38 @@ fn scalar_predicate_wgsl(predicate: &ScalarPredicate) -> String {
             right,
         } => format!(
             "(({}) {} ({}))",
-            scalar_operand_wgsl(*left),
+            fast_operand_wgsl(*left, aliases),
             comparison_wgsl(*operation),
-            scalar_operand_wgsl(*right)
+            fast_operand_wgsl(*right, aliases)
         ),
         ScalarPredicate::All(inputs) => format!(
             "({})",
             inputs
                 .iter()
-                .map(scalar_predicate_wgsl)
+                .map(|input| scalar_predicate_wgsl_with_aliases(input, aliases))
                 .collect::<Vec<_>>()
                 .join(" && ")
         ),
         ScalarPredicate::Logic { operation, inputs } => {
-            let left = scalar_predicate_wgsl(&inputs[0]);
+            let left = scalar_predicate_wgsl_with_aliases(&inputs[0], aliases);
             match operation {
                 LogicOperation::And => {
-                    format!("({left} && {})", scalar_predicate_wgsl(&inputs[1]))
+                    format!(
+                        "({left} && {})",
+                        scalar_predicate_wgsl_with_aliases(&inputs[1], aliases)
+                    )
                 }
                 LogicOperation::Or => {
-                    format!("({left} || {})", scalar_predicate_wgsl(&inputs[1]))
+                    format!(
+                        "({left} || {})",
+                        scalar_predicate_wgsl_with_aliases(&inputs[1], aliases)
+                    )
                 }
                 LogicOperation::Xor => {
-                    format!("({left} != {})", scalar_predicate_wgsl(&inputs[1]))
+                    format!(
+                        "({left} != {})",
+                        scalar_predicate_wgsl_with_aliases(&inputs[1], aliases)
+                    )
                 }
                 LogicOperation::Not => format!("(!{left})"),
             }
@@ -264,23 +283,37 @@ fn scalar_computation_wgsl(computation: &ScalarComputation) -> String {
                 .collect::<Vec<_>>();
             super::wgsl_elementwise_expression(*operation, &inputs)
         }
-        ScalarComputation::SumProducts(terms) => terms
-            .iter()
-            .map(|(left, right)| {
-                format!(
-                    "({} * {})",
+        ScalarComputation::SumProducts(terms) => {
+            let mut iter = terms.iter();
+            let Some((left, right)) = iter.next() else {
+                return "0.0".to_owned();
+            };
+            let mut expression = format!(
+                "({} * {})",
+                scalar_operand_wgsl(*left),
+                scalar_operand_wgsl(*right)
+            );
+            for (left, right) in iter {
+                expression = format!(
+                    "fma({}, {}, {})",
                     scalar_operand_wgsl(*left),
-                    scalar_operand_wgsl(*right)
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(" + "),
+                    scalar_operand_wgsl(*right),
+                    expression
+                );
+            }
+            expression
+        }
     }
 }
 
 enum FastWgslInstruction {
     Alias(ScalarOperand),
     Expression(String),
+}
+
+enum FastSumTerm {
+    Product(String, String),
+    Value(String),
 }
 
 fn resolve_fast_operand(
@@ -383,7 +416,7 @@ fn fast_wgsl_instruction(
             }
         }
         ScalarComputation::SumProducts(terms) => {
-            let mut expressions = Vec::new();
+            let mut sum_terms = Vec::new();
             for (left, right) in terms {
                 let left = resolve_fast_operand(*left, aliases);
                 let right = resolve_fast_operand(*right, aliases);
@@ -392,27 +425,36 @@ fn fast_wgsl_instruction(
                 }
                 match (left, right) {
                     (ScalarOperand::Constant(left), ScalarOperand::Constant(right)) => {
-                        expressions.push(super::format_wgsl_f32(left * right));
+                        sum_terms.push(FastSumTerm::Value(super::format_wgsl_f32(left * right)));
                     }
                     (ScalarOperand::Constant(1.0), value)
                     | (value, ScalarOperand::Constant(1.0)) => {
-                        expressions.push(scalar_operand_wgsl(value));
+                        sum_terms.push(FastSumTerm::Value(scalar_operand_wgsl(value)));
                     }
                     (left, right) => {
-                        expressions.push(format!(
-                            "({} * {})",
+                        sum_terms.push(FastSumTerm::Product(
                             scalar_operand_wgsl(left),
-                            scalar_operand_wgsl(right)
+                            scalar_operand_wgsl(right),
                         ));
                     }
                 }
             }
-            if expressions.is_empty() {
+            if sum_terms.is_empty() {
                 FastWgslInstruction::Alias(ScalarOperand::Constant(0.0))
-            } else if expressions.len() == 1 {
-                FastWgslInstruction::Expression(expressions.remove(0))
             } else {
-                FastWgslInstruction::Expression(expressions.join(" + "))
+                let mut expression = match sum_terms.remove(0) {
+                    FastSumTerm::Product(left, right) => format!("({left} * {right})"),
+                    FastSumTerm::Value(value) => value,
+                };
+                for term in sum_terms {
+                    expression = match term {
+                        FastSumTerm::Product(left, right) => {
+                            format!("fma({left}, {right}, {expression})")
+                        }
+                        FastSumTerm::Value(value) => format!("({expression} + {value})"),
+                    };
+                }
+                FastWgslInstruction::Expression(expression)
             }
         }
         ScalarComputation::IsFinite(input) => FastWgslInstruction::Expression(format!(
@@ -2863,6 +2905,7 @@ fn generate_wgsl(
         states,
         constraints,
         None,
+        true,
         false,
     )
 }
@@ -2883,6 +2926,7 @@ fn generate_wgsl_unchecked(
         &[],
         None,
         true,
+        false,
     )
 }
 
@@ -2905,6 +2949,28 @@ fn generate_wgsl_fused(
         &[],
         Some(turns),
         true,
+        false,
+    )
+}
+
+#[cfg(feature = "native")]
+fn generate_wgsl_unchecked_in_place(
+    instances: u32,
+    register_offsets: &BTreeMap<CellSlotId, usize>,
+    instructions: &[ScalarInstruction],
+    inputs: &[BatchedInput],
+    states: &[BatchedState],
+) -> String {
+    generate_wgsl_with_turns(
+        instances,
+        register_offsets,
+        instructions,
+        inputs,
+        states,
+        &[],
+        None,
+        true,
+        true,
     )
 }
 
@@ -2917,6 +2983,7 @@ fn generate_wgsl_with_turns(
     constraints: &[BatchedConstraint],
     fused_turns: Option<u32>,
     optimize_unchecked: bool,
+    in_place_state: bool,
 ) -> String {
     let mut shader = String::from("// Generic fixed-shape Mech batch kernel.\n");
     for input in inputs {
@@ -2927,16 +2994,24 @@ fn generate_wgsl_with_turns(
         ));
     }
     for state in states {
-        shader.push_str(&format!(
-            "@group(0) @binding({}) var<storage, read> state_read_{}: array<f32>;\n",
-            state.read_binding,
-            state.slot.get()
-        ));
-        shader.push_str(&format!(
-            "@group(0) @binding({}) var<storage, read_write> state_write_{}: array<f32>;\n",
-            state.write_binding,
-            state.slot.get()
-        ));
+        if in_place_state {
+            shader.push_str(&format!(
+                "@group(0) @binding({}) var<storage, read_write> state_{}: array<f32>;\n",
+                state.read_binding,
+                state.slot.get()
+            ));
+        } else {
+            shader.push_str(&format!(
+                "@group(0) @binding({}) var<storage, read> state_read_{}: array<f32>;\n",
+                state.read_binding,
+                state.slot.get()
+            ));
+            shader.push_str(&format!(
+                "@group(0) @binding({}) var<storage, read_write> state_write_{}: array<f32>;\n",
+                state.write_binding,
+                state.slot.get()
+            ));
+        }
     }
     if !constraints.is_empty() {
         let binding = inputs.len() as u32 + states.len() as u32 * 2;
@@ -2966,11 +3041,16 @@ fn generate_wgsl_with_turns(
     for state in states {
         let offset = register_offsets[&state.slot];
         for component in 0..state.shape.elements() {
+            let state_name = if in_place_state {
+                format!("state_{}", state.slot.get())
+            } else {
+                format!("state_read_{}", state.slot.get())
+            };
             shader.push_str(&format!(
-                "  {} r{} = state_read_{}[index * {}u + {}u];\n",
+                "  {} r{} = {}[index * {}u + {}u];\n",
                 if fused_turns.is_some() { "var" } else { "let" },
                 offset + component,
-                state.slot.get(),
+                state_name,
                 state.shape.elements(),
                 component
             ));
@@ -3035,9 +3115,14 @@ fn generate_wgsl_with_turns(
         shader.push_str("  }\n");
         for state in states {
             for component in 0..state.shape.elements() {
+                let state_name = if in_place_state {
+                    format!("state_{}", state.slot.get())
+                } else {
+                    format!("state_write_{}", state.slot.get())
+                };
                 shader.push_str(&format!(
-                    "  state_write_{}[index * {}u + {}u] = r{};\n",
-                    state.slot.get(),
+                    "  {}[index * {}u + {}u] = r{};\n",
+                    state_name,
                     state.shape.elements(),
                     component,
                     register_offsets[&state.slot] + component
@@ -3051,7 +3136,11 @@ fn generate_wgsl_with_turns(
                 let code = index + 1;
                 shader.push_str(&format!(
                     "  if (integrity_code == 0u && !{}) {{ integrity_code = {code}u; }}\n",
-                    scalar_predicate_wgsl(&constraint.predicate)
+                    if optimize_unchecked {
+                        scalar_predicate_wgsl_with_aliases(&constraint.predicate, &aliases)
+                    } else {
+                        scalar_predicate_wgsl(&constraint.predicate)
+                    }
                 ));
             }
             shader.push_str(
@@ -3060,9 +3149,14 @@ fn generate_wgsl_with_turns(
         }
         for state in states {
             for (component, source) in state.update.iter().enumerate() {
+                let state_name = if in_place_state {
+                    format!("state_{}", state.slot.get())
+                } else {
+                    format!("state_write_{}", state.slot.get())
+                };
                 shader.push_str(&format!(
-                    "  state_write_{}[index * {}u + {}u] = {};\n",
-                    state.slot.get(),
+                    "  {}[index * {}u + {}u] = {};\n",
+                    state_name,
                     state.shape.elements(),
                     component,
                     if optimize_unchecked {
@@ -3091,7 +3185,7 @@ mod native {
 
     use super::{
         BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, FixedShapeKernel,
-        generate_wgsl_fused,
+        generate_wgsl_fused, generate_wgsl_unchecked_in_place,
     };
     use crate::{
         GpuBindingAccess, GpuExecutionBindingRole, GpuPlanConstraint, GpuPlanInitialValues,
@@ -3134,7 +3228,7 @@ mod native {
             &self,
             inputs: &BTreeMap<String, Vec<f32>>,
         ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
-            pollster::block_on(self.prepare_resident_async(inputs, None))
+            pollster::block_on(self.prepare_resident_async(inputs, None, false))
         }
 
         /// Prepares an explicitly unchecked resident GPU session. Integrity
@@ -3151,7 +3245,23 @@ mod native {
                         .to_owned(),
                 ));
             }
-            pollster::block_on(self.prepare_resident_async(inputs, None))
+            pollster::block_on(self.prepare_resident_async(inputs, None, false))
+        }
+
+        /// Prepares an unchecked resident session with one read-write state
+        /// binding. Since rollback is explicitly disabled, the shader can
+        /// compute a complete candidate before writing it back in place.
+        pub fn prepare_resident_unchecked_in_place(
+            &self,
+            inputs: &BTreeMap<String, Vec<f32>>,
+        ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
+            if !self.constraints.is_empty() {
+                return Err(BatchedExecutionError::Native(
+                    "unchecked in-place GPU preparation requires a kernel without integrity constraints"
+                        .to_owned(),
+                ));
+            }
+            pollster::block_on(self.prepare_resident_async(inputs, None, true))
         }
 
         /// Prepares a single-dispatch unchecked kernel that advances a fixed
@@ -3172,13 +3282,14 @@ mod native {
             if turns == 0 {
                 return Err(BatchedExecutionError::ZeroTurns);
             }
-            pollster::block_on(self.prepare_resident_async(inputs, Some(turns)))
+            pollster::block_on(self.prepare_resident_async(inputs, Some(turns), false))
         }
 
         async fn prepare_resident_async(
             &self,
             inputs: &BTreeMap<String, Vec<f32>>,
             fused_turns: Option<u32>,
+            in_place_unchecked: bool,
         ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
             let mut execution_plan = crate::GpuExecutionPlan::build(
                 crate::GpuKernelPlanSource::FixedShape(self),
@@ -3198,7 +3309,13 @@ mod native {
                 })?;
             let adapter_info = adapter.get_info();
             let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
-            let required_storage_buffers = execution_plan.bindings.len() as u32;
+            let required_storage_buffers = execution_plan
+                .bindings
+                .iter()
+                .filter(|binding| {
+                    !(in_place_unchecked && binding.role == GpuExecutionBindingRole::StateWrite)
+                })
+                .count() as u32;
             let limits = adapter.limits();
             if required_storage_buffers > limits.max_storage_buffers_per_shader_stage {
                 return Err(BatchedExecutionError::Native(format!(
@@ -3266,12 +3383,16 @@ mod native {
                         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                     },
                 ));
-                let alternate = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("Mech fixed-shape alternate state"),
-                    size: state.elements * std::mem::size_of::<f32>() as u64,
-                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-                    mapped_at_creation: false,
-                }));
+                let alternate = if in_place_unchecked {
+                    initial.clone()
+                } else {
+                    Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
+                        label: Some("Mech fixed-shape alternate state"),
+                        size: state.elements * std::mem::size_of::<f32>() as u64,
+                        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                        mapped_at_creation: false,
+                    }))
+                };
                 state_buffers.insert(slot, [initial, alternate]);
             }
 
@@ -3301,12 +3422,17 @@ mod native {
             let layout_entries = execution_plan
                 .bindings
                 .iter()
+                .filter(|binding| {
+                    !(in_place_unchecked && binding.role == GpuExecutionBindingRole::StateWrite)
+                })
                 .map(|binding| wgpu::BindGroupLayoutEntry {
                     binding: binding.binding,
                     visibility: wgpu::ShaderStages::COMPUTE,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Storage {
-                            read_only: binding.access == GpuBindingAccess::Read,
+                            read_only: binding.access == GpuBindingAccess::Read
+                                && !(in_place_unchecked
+                                    && binding.role == GpuExecutionBindingRole::StateRead),
                         },
                         has_dynamic_offset: false,
                         min_binding_size: None,
@@ -3323,6 +3449,9 @@ mod native {
                 let entries = execution_plan
                     .bindings
                     .iter()
+                    .filter(|binding| {
+                        !(in_place_unchecked && binding.role == GpuExecutionBindingRole::StateWrite)
+                    })
                     .map(|binding| {
                         let resource = match binding.role {
                             GpuExecutionBindingRole::Input => {
@@ -3354,7 +3483,15 @@ mod native {
                     entries: &entries,
                 })
             });
-            if let Some(turns) = fused_turns {
+            if in_place_unchecked {
+                execution_plan.wgsl = generate_wgsl_unchecked_in_place(
+                    self.instances,
+                    &self.register_offsets,
+                    &self.instructions,
+                    &self.inputs,
+                    &self.states,
+                );
+            } else if let Some(turns) = fused_turns {
                 execution_plan.wgsl = generate_wgsl_fused(
                     self.instances,
                     &self.register_offsets,
@@ -3570,7 +3707,6 @@ mod native {
                     (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
                 );
                 self.queue.submit(Some(encoder.finish()));
-                self.device.poll(wgpu::Maintain::Wait);
                 let words = self.read_integrity_fault()?;
                 if words[0] != 0 {
                     let packed = words[1];

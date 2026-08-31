@@ -5,16 +5,10 @@ use mech_engine::ProgramArtifact;
 use mech_gpu::ComputeLowerer;
 use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
-const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
-const COMPUTE_INPUT_NAMES: [&str; 7] = [
-    "dt",
-    "linear-velocity",
-    "angular-velocity",
-    "bearing",
-    "measurement-noise",
-    "finite-limit",
-    "covariance-symmetry-tolerance",
-];
+// This fixture deliberately matches the Taichi harness: only the three lane
+// arrays are runtime inputs; dt, noise, and validation thresholds are fixed.
+const SOURCE: &str = include_str!("../fixtures/ekf-kernel-taichi-comparable.mec");
+const COMPUTE_INPUT_NAMES: [&str; 3] = ["linear-velocity", "angular-velocity", "bearing"];
 
 fn main() {
     let requested_instances = argument(1, 100_000_usize).max(1);
@@ -222,6 +216,15 @@ fn main() {
     let (readback, state) = gpu.read_state().unwrap();
     std::hint::black_box(state);
 
+    // Checksums use a fresh session so warm-up and throughput samples cannot
+    // silently change the number of turns being compared with other languages.
+    let mut gpu_checksum_session = program.prepare_resident(&inputs).unwrap();
+    gpu_checksum_session
+        .dispatch_turns(checked_gpu_turns)
+        .unwrap();
+    let (_, gpu_checksum_state) = gpu_checksum_session.read_state().unwrap();
+    let gpu_checksum = state_checksum(&gpu_checksum_state);
+
     let mut gpu_unchecked_single = unchecked_program
         .prepare_resident_unchecked(&inputs)
         .unwrap();
@@ -232,11 +235,31 @@ fn main() {
     }
     let unchecked_single_per_turn = unchecked_single_started.elapsed() / single_gpu_turns;
 
+    let mut gpu_unchecked_in_place_single = unchecked_program
+        .prepare_resident_unchecked_in_place(&inputs)
+        .unwrap();
+    gpu_unchecked_in_place_single.dispatch_turns(1).unwrap();
+    let unchecked_in_place_single_started = Instant::now();
+    for _ in 0..single_gpu_turns {
+        gpu_unchecked_in_place_single.dispatch_turns(1).unwrap();
+    }
+    let unchecked_in_place_single_per_turn =
+        unchecked_in_place_single_started.elapsed() / single_gpu_turns;
+
     let mut gpu_unchecked_batch = unchecked_program
         .prepare_resident_unchecked(&inputs)
         .unwrap();
     gpu_unchecked_batch.dispatch_turns(5).unwrap();
     let unchecked_batch_per_turn = gpu_unchecked_batch
+        .dispatch_turns(checked_gpu_turns)
+        .unwrap()
+        / checked_gpu_turns;
+
+    let mut gpu_unchecked_in_place_batch = unchecked_program
+        .prepare_resident_unchecked_in_place(&inputs)
+        .unwrap();
+    gpu_unchecked_in_place_batch.dispatch_turns(5).unwrap();
+    let unchecked_in_place_batch_per_turn = gpu_unchecked_in_place_batch
         .dispatch_turns(checked_gpu_turns)
         .unwrap()
         / checked_gpu_turns;
@@ -254,6 +277,15 @@ fn main() {
     let unchecked_repeated = gpu_unchecked.dispatch_unchecked_fused().unwrap() / checked_gpu_turns;
     let (_, unchecked_state) = gpu_unchecked.read_state().unwrap();
     std::hint::black_box(unchecked_state);
+
+    let mut gpu_unchecked_checksum_session = unchecked_program
+        .prepare_resident_unchecked_fused(&inputs, checked_gpu_turns)
+        .unwrap();
+    gpu_unchecked_checksum_session
+        .dispatch_unchecked_fused()
+        .unwrap();
+    let (_, gpu_unchecked_checksum_state) = gpu_unchecked_checksum_session.read_state().unwrap();
+    let gpu_unchecked_checksum = state_checksum(&gpu_unchecked_checksum_state);
 
     println!("EKF instances: {instances}");
     println!("batch extent authority: Mech input arrays");
@@ -396,12 +428,24 @@ fn main() {
         throughput(instances, checked_repeated)
     );
     println!(
+        "GPU unchecked ping-pong one-turn throughput: {:.3} million EKF-turns/s",
+        throughput(instances, unchecked_single_per_turn)
+    );
+    println!(
         "GPU unchecked one-turn throughput: {:.3} million EKF-turns/s",
         throughput(instances, unchecked_single_per_turn)
     );
     println!(
         "GPU unchecked repeated throughput: {:.3} million EKF-turns/s",
         throughput(instances, unchecked_batch_per_turn)
+    );
+    println!(
+        "GPU unchecked in-place one-turn throughput: {:.3} million EKF-turns/s",
+        throughput(instances, unchecked_in_place_single_per_turn)
+    );
+    println!(
+        "GPU unchecked in-place repeated throughput: {:.3} million EKF-turns/s",
+        throughput(instances, unchecked_in_place_batch_per_turn)
     );
     println!(
         "GPU unchecked one-submit throughput: {:.3} million EKF-turns/s",
@@ -430,6 +474,8 @@ fn main() {
     println!(
         "Mech Cranelift SIMD-JIT unchecked fast checksum: {jit_simd_unchecked_fast_checksum:.9}"
     );
+    println!("Mech GPU checked checksum: {gpu_checksum:.9}");
+    println!("Mech GPU unchecked checksum: {gpu_unchecked_checksum:.9}");
 }
 
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
@@ -450,14 +496,10 @@ fn source_tree(instances: usize) -> Program {
 }
 
 fn evaluate_driver(tree: &Program) -> BTreeMap<String, Vec<f32>> {
-    const INPUTS: [&str; 7] = [
-        "lane-dt",
+    const INPUTS: [&str; 3] = [
         "lane-linear-velocity",
         "lane-angular-velocity",
         "lane-bearing",
-        "lane-measurement-noise",
-        "finite-limit",
-        "covariance-symmetry-tolerance",
     ];
     RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
@@ -509,11 +551,9 @@ fn source_inputs(
         .iter()
         .filter_map(|input| {
             let driver_name = match input.name.as_str() {
-                "dt" => "lane-dt",
                 "linear-velocity" => "lane-linear-velocity",
                 "angular-velocity" => "lane-angular-velocity",
                 "bearing" => "lane-bearing",
-                "measurement-noise" => "lane-measurement-noise",
                 name => name,
             };
             driver
