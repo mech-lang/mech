@@ -28,6 +28,8 @@ git switch --track origin/codex/mech-program-gpu
 | Julia packed-lane control | `benchmarks/archive/compute/parallel-ekf/julia_simd.jl` |
 | Julia SIMD intrinsics control | `benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl` |
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
+| NumPy batched fixed-shape control | `benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py` |
+| LuaJIT flat fixed-shape control | `benchmarks/archive/compute/parallel-ekf/luajit_fast.lua` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -226,6 +228,16 @@ The runner executes all eight Julia rows plus scalar and packed-SIMD Rust
 controls. The scalar Rust control remains an unchecked reference; the packed
 Rust control has both checked and unchecked modes.
 
+The source-shaped NumPy and LuaJIT controls remain available as
+`numpy_scalar.py` and `luajit_scalar.lua`. Their companion fast lanes,
+`numpy_vectorized.py` and `luajit_fast.lua`, batch the outer population and
+replace generic matrix loops with fixed 3x3 products. Both accept `checked` or
+`unchecked`: checked mode validates every candidate and publishes it only when
+the finite, positive-diagonal, and symmetry predicates pass. The LuaJIT fast
+lane keeps scalar intermediate registers, so its aggregate checksum is allowed
+the same scale-aware `f32` tolerance recorded by the runner; this does not
+change its state-update or validation policy.
+
 In a five-process Apple M1 probe with 10,000 filters and 20 measured turns,
 the current medians were:
 
@@ -299,32 +311,36 @@ one shared 0--60 million-turns/s axis:
 ![Parallel EKF cross-language throughput](apple-m1-simd-cross-language-2026-08-30.svg)
 
 The checked-only view is available separately for reviews that require every
-row to retain the integrity policy:
+row to retain the integrity policy. The latest checked rerun uses the packed
+SIMD-JIT Mech executor from the current branch:
 
-![Parallel EKF checked throughput](apple-m1-checked-cross-language-2026-08-30.svg)
+![Parallel EKF checked throughput](apple-m1-checked-cross-language-2026-08-31.svg)
 
 | Control | Validation | Million EKF-turns/s |
 | --- | --- | ---: |
-| Rust fixed-shape scalar | unchecked | 16.80 |
-| Rust packed `wide::f32x4` | checked | 25.65 |
-| Rust packed `wide::f32x4` | unchecked | 29.35 |
-| Mech Cranelift SIMD-JIT | checked-fast | 31.20 |
-| Mech Cranelift SIMD-JIT | unchecked-fast | 32.64 |
-| Julia `SIMD.jl Vec{4,Float32}` | checked | 31.42 |
-| Julia `SIMD.jl Vec{4,Float32}` | unchecked | 32.80 |
+| Rust fixed-shape scalar | unchecked | 16.69 |
+| Rust packed `wide::f32x4` | checked | 25.68 |
+| Rust packed `wide::f32x4` | unchecked | 20.87 |
+| Mech Cranelift SIMD-JIT | checked-fast | 37.21 |
+| Mech Cranelift SIMD-JIT | unchecked-fast | 41.34 |
+| Julia `SIMD.jl Vec{4,Float32}` | checked | 31.18 |
+| Julia `SIMD.jl Vec{4,Float32}` | unchecked | 32.87 |
+| NumPy vectorized fixed-shape | checked | 10.69 |
+| NumPy vectorized fixed-shape | unchecked | 12.31 |
+| LuaJIT flat fixed-shape | checked | 1.27 |
+| LuaJIT flat fixed-shape | unchecked | 15.98 |
 
 On this run, the specialized Rust control does **not** beat Julia's packed
-SIMD control. That is an empirical result, not a language limit: Rust could
-move ahead with a more aggressively unrolled kernel, architecture-specific
-vector math, or a compiler-generated layout equivalent to the Mech lowering.
-The current Mech checked-fast path is within measurement noise of Julia's
-checked SIMD result, while preserving the source-authored publication policy.
+SIMD control, and the new Mech packed SIMD-JIT is faster than both while
+preserving the source-authored publication policy. These are implementation
+results, not language limits: Rust, Julia, NumPy, and LuaJIT can each move
+closer with a generated fixed-shape kernel and a matching packed layout.
 
 To regenerate the chart from a new run:
 
 ```text
 python3 plot.py results/apple-m1-simd-cross-language-2026-08-30.json results/apple-m1-simd-cross-language-2026-08-30.svg
-python3 plot.py --checked-only results/apple-m1-simd-cross-language-2026-08-30.json results/apple-m1-checked-cross-language-2026-08-30.svg
+python3 plot.py --checked-only results/apple-m1-checked-cross-language-2026-08-31.json results/apple-m1-checked-cross-language-2026-08-31.svg
 ```
 
 ## What "checked-fast" means

@@ -27,7 +27,11 @@ ORDER = [
     ("Julia SIMD.jl intrinsics checked", "julia"),
     ("Julia SIMD.jl intrinsics unchecked", "julia"),
     ("NumPy scalar outer loop", "numpy"),
+    ("NumPy vectorized fixed-shape checked", "numpy"),
+    ("NumPy vectorized fixed-shape unchecked", "numpy"),
     ("LuaJIT scalar outer loop", "luajit"),
+    ("LuaJIT fixed-shape flat checked", "luajit"),
+    ("LuaJIT fixed-shape flat unchecked", "luajit"),
     ("Mech GPU, one submission/turn", "gpu"),
     ("Mech GPU, checked repeated turns", "gpu"),
 ]
@@ -42,6 +46,8 @@ CHECKED_ORDER = [
     ("Julia fixed-shape checked", "julia"),
     ("Julia fixed-shape SIMD checked", "julia"),
     ("Julia SIMD.jl intrinsics checked", "julia"),
+    ("NumPy vectorized fixed-shape checked", "numpy"),
+    ("LuaJIT fixed-shape flat checked", "luajit"),
     ("Mech GPU, one submission/turn", "gpu"),
     ("Mech GPU, checked repeated turns", "gpu"),
 ]
@@ -73,6 +79,7 @@ def main() -> None:
     evidence = json.loads(args.evidence.read_text(encoding="utf-8"))
     scalar = evidence["summary"]["scalar_outer_loop"]
     backend = evidence["summary"]["mech_backends_million_ekf_turns_per_second"]
+    configuration = evidence["configuration"]
     order = CHECKED_ORDER if args.checked_only else ORDER
     values = {
         label: float(
@@ -106,7 +113,7 @@ def main() -> None:
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="52" y="42" font-size="26" font-weight="700">Parallel EKF steady-state throughput{" (checked only)" if args.checked_only else ""}</text>',
-        f'<text x="52" y="68" class="muted" font-size="15">Apple M1 | 10,000 filters x 20 turns | median of three isolated process samples | million EKF turns per second{" | integrity checks enabled" if args.checked_only else ""}</text>',
+        f'<text x="52" y="68" class="muted" font-size="15">Apple M1 | backend: {configuration["backend_instances"]:,} filters x {configuration["backend_cpu_turns"]} turns; language: {configuration["scalar_instances"]:,} filters x {configuration["scalar_turns"]} turns | median of {configuration["samples"]} isolated process samples | million EKF turns per second{" | integrity checks enabled" if args.checked_only else ""}</text>',
     ]
     for tick in range(0, 61, 10):
         tick_x = x(tick)

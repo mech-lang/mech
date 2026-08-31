@@ -184,6 +184,18 @@ def main() -> None:
                 str(HERE / "numpy_scalar.py"),
                 *common,
             ],
+            "NumPy vectorized fixed-shape unchecked": [
+                args.python,
+                str(HERE / "numpy_vectorized.py"),
+                *common,
+                "unchecked",
+            ],
+            "NumPy vectorized fixed-shape checked": [
+                args.python,
+                str(HERE / "numpy_vectorized.py"),
+                *common,
+                "checked",
+            ],
             "Julia generic unchecked": [
                 required["julia"],
                 "--startup-file=no",
@@ -244,6 +256,18 @@ def main() -> None:
                 required["luajit"],
                 str(HERE / "luajit_scalar.lua"),
                 *common,
+            ],
+            "LuaJIT fixed-shape flat unchecked": [
+                required["luajit"],
+                str(HERE / "luajit_fast.lua"),
+                *common,
+                "unchecked",
+            ],
+            "LuaJIT fixed-shape flat checked": [
+                required["luajit"],
+                str(HERE / "luajit_fast.lua"),
+                *common,
+                "checked",
             ],
         }
         scalar_mech_outputs = sample(
@@ -317,9 +341,13 @@ def main() -> None:
                     sample(command, count, environment, evidence_runs, lane)
                 )
         reference = scalar["Rust optimized fixed-shape"][1]
+        checksum_tolerance = max(0.1, args.scalar_instances * 2.0e-5)
         for lane, (_, checksum) in scalar.items():
-            if abs(checksum - reference) > 0.1:
-                raise RuntimeError(f"{lane} checksum {checksum} differs from Rust {reference}")
+            if abs(checksum - reference) > checksum_tolerance:
+                raise RuntimeError(
+                    f"{lane} checksum {checksum} differs from Rust {reference} "
+                    f"beyond aggregate f32 tolerance {checksum_tolerance}"
+                )
 
         backend = {
             "Mech scalar": statistics.median(
@@ -397,6 +425,7 @@ def main() -> None:
                     "backend_cpu_turns": args.backend_cpu_turns,
                     "samples": args.samples,
                     "luajit_samples": args.luajit_samples,
+                    "aggregate_checksum_tolerance": checksum_tolerance,
                     "thread_environment": {
                         name: environment[name]
                         for name in (

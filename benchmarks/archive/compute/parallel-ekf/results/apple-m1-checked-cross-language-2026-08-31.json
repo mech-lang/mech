@@ -1,0 +1,428 @@
+{
+  "configuration": {
+    "aggregate_checksum_tolerance": 0.2,
+    "backend_cpu_turns": 5,
+    "backend_instances": 100000,
+    "luajit_samples": 5,
+    "samples": 3,
+    "scalar_instances": 10000,
+    "scalar_turns": 20,
+    "thread_environment": {
+      "MKL_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    }
+  },
+  "generated_at": "2026-08-31T00:33:36.732904-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64"
+  },
+  "runs": {
+    "Julia SIMD.jl intrinsics checked": {
+      "command": [
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: Julia fixed-shape SIMD (SIMD.jl Vec V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006410625\nthroughput: 3.119820610314907e7\nchecksum: 2.6820560743612703e6\nvalidation: checked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: Julia fixed-shape SIMD (SIMD.jl Vec V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006412042\nthroughput: 3.119131159777182e7\nchecksum: 2.6820560743612703e6\nvalidation: checked\nfaults: 0\n",
+        "lane: Julia fixed-shape SIMD (SIMD.jl Vec V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006411375\nthroughput: 3.1194556549882043e7\nchecksum: 2.6820560743612703e6\nvalidation: checked\nfaults: 0\n",
+        "lane: Julia fixed-shape SIMD (SIMD.jl Vec V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006394584\nthroughput: 3.1276467710800264e7\nchecksum: 2.6820560743612703e6\nvalidation: checked\nfaults: 0\n"
+      ]
+    },
+    "Julia SIMD.jl intrinsics unchecked": {
+      "command": [
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: Julia fixed-shape SIMD (SIMD.jl Vec V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006098708\nthroughput: 3.279383108684659e7\nchecksum: 2.6820560743612703e6\nvalidation: unchecked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: Julia fixed-shape SIMD (SIMD.jl Vec V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006084708\nthroughput: 3.2869284770937238e7\nchecksum: 2.6820560743612703e6\nvalidation: unchecked\nfaults: 0\n",
+        "lane: Julia fixed-shape SIMD (SIMD.jl Vec V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006112375\nthroughput: 3.2720505531810466e7\nchecksum: 2.6820560743612703e6\nvalidation: unchecked\nfaults: 0\n",
+        "lane: Julia fixed-shape SIMD (SIMD.jl Vec V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006085917\nthroughput: 3.286275511151401e7\nchecksum: 2.6820560743612703e6\nvalidation: unchecked\nfaults: 0\n"
+      ]
+    },
+    "Julia fixed-shape SIMD checked": {
+      "command": [
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/julia_simd.jl",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: Julia fixed-shape SIMD (StaticArrays V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.007030917\nthroughput: 2.8445791637136377e7\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: Julia fixed-shape SIMD (StaticArrays V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006996875\nthroughput: 2.858418937025458e7\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n",
+        "lane: Julia fixed-shape SIMD (StaticArrays V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.007032875\nthroughput: 2.8437872136217408e7\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n",
+        "lane: Julia fixed-shape SIMD (StaticArrays V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.006988417\nthroughput: 2.861878448295229e7\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n"
+      ]
+    },
+    "Julia fixed-shape SIMD unchecked": {
+      "command": [
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/julia_simd.jl",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: Julia fixed-shape SIMD (StaticArrays V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.005585708\nthroughput: 3.580566689128755e7\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: Julia fixed-shape SIMD (StaticArrays V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.00559\nthroughput: 3.577817531305903e7\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n",
+        "lane: Julia fixed-shape SIMD (StaticArrays V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.005603334\nthroughput: 3.56930356105847e7\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n",
+        "lane: Julia fixed-shape SIMD (StaticArrays V4)\ninstances: 10000\nturns: 20\nelapsed_s: 0.00565\nthroughput: 3.5398230088495575e7\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n"
+      ]
+    },
+    "Julia fixed-shape checked": {
+      "command": [
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/julia_flat.jl",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: Julia fixed-shape flat tuples\ninstances: 10000\nturns: 20\nelapsed_s: 0.010535333\nthroughput: 1.8983737865713406e7\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: Julia fixed-shape flat tuples\ninstances: 10000\nturns: 20\nelapsed_s: 0.010575083\nthroughput: 1.891238111322625e7\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n",
+        "lane: Julia fixed-shape flat tuples\ninstances: 10000\nturns: 20\nelapsed_s: 0.010559166\nthroughput: 1.8940889839216467e7\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n",
+        "lane: Julia fixed-shape flat tuples\ninstances: 10000\nturns: 20\nelapsed_s: 0.010526958\nthroughput: 1.899884088071787e7\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n"
+      ]
+    },
+    "Julia fixed-shape unchecked": {
+      "command": [
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/julia_flat.jl",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: Julia fixed-shape flat tuples\ninstances: 10000\nturns: 20\nelapsed_s: 0.009089291\nthroughput: 2.200391647709376e7\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: Julia fixed-shape flat tuples\ninstances: 10000\nturns: 20\nelapsed_s: 0.009087084\nthroughput: 2.2009260616496995e7\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n",
+        "lane: Julia fixed-shape flat tuples\ninstances: 10000\nturns: 20\nelapsed_s: 0.009101958\nthroughput: 2.197329409781939e7\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n",
+        "lane: Julia fixed-shape flat tuples\ninstances: 10000\nturns: 20\nelapsed_s: 0.009116416\nthroughput: 2.1938445985790905e7\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n"
+      ]
+    },
+    "Julia generic checked": {
+      "command": [
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/julia_scalar.jl",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.064340959\nthroughput: 3.1084398353465633e6\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.06537625\nthroughput: 3.0592149289688533e6\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n",
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.065445584\nthroughput: 3.0559739523448977e6\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n",
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.064432167\nthroughput: 3.104039632874679e6\nchecksum: 2.682056074361449e6\nvalidation: checked\nfaults: 0\n"
+      ]
+    },
+    "Julia generic unchecked": {
+      "command": [
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/julia_scalar.jl",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.062390042\nthroughput: 3.205639771808456e6\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.064393584\nthroughput: 3.1058994945831867e6\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n",
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.063328625\nthroughput: 3.1581295188392294e6\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n",
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.064743333\nthroughput: 3.0891211609386867e6\nchecksum: 2.682056074361449e6\nvalidation: unchecked\nfaults: 0\n"
+      ]
+    },
+    "LuaJIT fixed-shape flat checked": {
+      "command": [
+        "/opt/homebrew/bin/luajit",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.155826000\nthroughput: 1283482.859\nchecksum: 2682056.218170356\nvalidation: checked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.155566000\nthroughput: 1285627.965\nchecksum: 2682056.218170356\nvalidation: checked\nfaults: 0\n",
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.160765000\nthroughput: 1244051.877\nchecksum: 2682056.218170356\nvalidation: checked\nfaults: 0\n",
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.155002000\nthroughput: 1290305.932\nchecksum: 2682056.218170356\nvalidation: checked\nfaults: 0\n",
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.157820000\nthroughput: 1267266.506\nchecksum: 2682056.218170356\nvalidation: checked\nfaults: 0\n",
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.158017000\nthroughput: 1265686.603\nchecksum: 2682056.218170356\nvalidation: checked\nfaults: 0\n"
+      ]
+    },
+    "LuaJIT fixed-shape flat unchecked": {
+      "command": [
+        "/opt/homebrew/bin/luajit",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.012505000\nthroughput: 15993602.559\nchecksum: 2682056.218170356\nvalidation: unchecked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.012827000\nthroughput: 15592110.392\nchecksum: 2682056.218170356\nvalidation: unchecked\nfaults: 0\n",
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.012513000\nthroughput: 15983377.288\nchecksum: 2682056.218170356\nvalidation: unchecked\nfaults: 0\n",
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.012511000\nthroughput: 15985932.380\nchecksum: 2682056.218170356\nvalidation: unchecked\nfaults: 0\n",
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.012511000\nthroughput: 15985932.380\nchecksum: 2682056.218170356\nvalidation: unchecked\nfaults: 0\n",
+        "lane: LuaJIT fixed-shape flat\ninstances: 10000\nturns: 20\nelapsed_s: 0.012529000\nthroughput: 15962965.919\nchecksum: 2682056.218170356\nvalidation: unchecked\nfaults: 0\n"
+      ]
+    },
+    "LuaJIT scalar outer loop": {
+      "command": [
+        "/opt/homebrew/bin/luajit",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua",
+        "10000",
+        "20"
+      ],
+      "discarded_warmup_stdout": "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.190415000\nthroughput: 1050337.421\nchecksum: 2682056.068860276\n",
+      "measured_stdout": [
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.095716000\nthroughput: 2089514.815\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.104484000\nthroughput: 1914168.677\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.198130000\nthroughput: 1009438.248\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.199694000\nthroughput: 1001532.344\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.184517000\nthroughput: 1083910.968\nchecksum: 2682056.068860276\n"
+      ]
+    },
+    "NumPy scalar outer loop": {
+      "command": [
+        "/private/tmp/mech-ekf-venv/bin/python",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
+        "10000",
+        "20"
+      ],
+      "discarded_warmup_stdout": "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.620165456\nthroughput: 55246.094\nchecksum: 2682056.057376927\n",
+      "measured_stdout": [
+        "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.666876752\nthroughput: 54542.329\nchecksum: 2682056.057376927\n",
+        "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.721335914\nthroughput: 53744.140\nchecksum: 2682056.057376927\n",
+        "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.611192167\nthroughput: 55383.372\nchecksum: 2682056.057376927\n"
+      ]
+    },
+    "NumPy vectorized fixed-shape checked": {
+      "command": [
+        "/private/tmp/mech-ekf-venv/bin/python",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: NumPy vectorized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.018661540\nthroughput: 10717229.124\nchecksum: 2682056.074057378\nvalidation: checked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: NumPy vectorized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.018979661\nthroughput: 10537595.916\nchecksum: 2682056.074057378\nvalidation: checked\nfaults: 0\n",
+        "lane: NumPy vectorized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.018475335\nthroughput: 10825243.440\nchecksum: 2682056.074057378\nvalidation: checked\nfaults: 0\n",
+        "lane: NumPy vectorized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.018716834\nthroughput: 10685567.592\nchecksum: 2682056.074057378\nvalidation: checked\nfaults: 0\n"
+      ]
+    },
+    "NumPy vectorized fixed-shape unchecked": {
+      "command": [
+        "/private/tmp/mech-ekf-venv/bin/python",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: NumPy vectorized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.016266663\nthroughput: 12295085.020\nchecksum: 2682056.074057378\nvalidation: unchecked\nfaults: 0\n",
+      "measured_stdout": [
+        "lane: NumPy vectorized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.016877167\nthroughput: 11850330.145\nchecksum: 2682056.074057378\nvalidation: unchecked\nfaults: 0\n",
+        "lane: NumPy vectorized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.016244579\nthroughput: 12311799.443\nchecksum: 2682056.074057378\nvalidation: unchecked\nfaults: 0\n",
+        "lane: NumPy vectorized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.016224291\nthroughput: 12327194.935\nchecksum: 2682056.074057378\nvalidation: unchecked\nfaults: 0\n"
+      ]
+    },
+    "Rust optimized fixed-shape": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-qqqf1uwi/rust-scalar",
+        "10000",
+        "20"
+      ],
+      "discarded_warmup_stdout": "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.030301875\nthroughput: 6600251.635\nchecksum: 2682056.074091980\n",
+      "measured_stdout": [
+        "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.015845125\nthroughput: 12622178.746\nchecksum: 2682056.074091980\n",
+        "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.011697083\nthroughput: 17098279.973\nchecksum: 2682056.074091980\n",
+        "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.009637250\nthroughput: 20752808.114\nchecksum: 2682056.074091980\n"
+      ]
+    },
+    "Rust packed SIMD checked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-qqqf1uwi/rust-simd",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: Rust packed SIMD (wide f32x4)\nvalidation: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.007825875\nthroughput: 25556247.704\nchecksum: 2682056.074043512\n",
+      "measured_stdout": [
+        "lane: Rust packed SIMD (wide f32x4)\nvalidation: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.007761875\nthroughput: 25766969.965\nchecksum: 2682056.074043512\n",
+        "lane: Rust packed SIMD (wide f32x4)\nvalidation: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.007795458\nthroughput: 25655965.307\nchecksum: 2682056.074043512\n",
+        "lane: Rust packed SIMD (wide f32x4)\nvalidation: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.007775125\nthroughput: 25723059.115\nchecksum: 2682056.074043512\n"
+      ]
+    },
+    "Rust packed SIMD unchecked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-qqqf1uwi/rust-simd",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: Rust packed SIMD (wide f32x4)\nvalidation: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.018609958\nthroughput: 10746934.518\nchecksum: 2682056.074043512\n",
+      "measured_stdout": [
+        "lane: Rust packed SIMD (wide f32x4)\nvalidation: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.012695917\nthroughput: 15753096.054\nchecksum: 2682056.074043512\n",
+        "lane: Rust packed SIMD (wide f32x4)\nvalidation: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.009581083\nthroughput: 20874466.905\nchecksum: 2682056.074043512\n",
+        "lane: Rust packed SIMD (wide f32x4)\nvalidation: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.008084833\nthroughput: 24737678.564\nchecksum: 2682056.074043512\n"
+      ]
+    },
+    "mech_backend_settings": {
+      "command": [
+        "/private/tmp/mech-pr11-taichi/target/release/examples/parallel_ekf_benchmark",
+        "100000",
+        "5",
+        "40",
+        "120"
+      ],
+      "discarded_warmup_stdout": "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 149\ngenerated WGSL bytes: 10238\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nMech integrity constraints: symmetric-covariance!, finite-candidate!, positive-covariance!\nintegrity failure: reject candidate, retain previous published estimate, record latest fault + count\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 221.866 ms\nresident GPU prepare: 5.930 ms\nCranelift JIT prepare: 3.280 ms\nMech scalar CPU: 114.504 ms/turn (5 turns)\nMech SIMD CPU: 24.475 ms/turn (5 turns)\nMech Cranelift JIT CPU: 6.036 ms/turn (5 turns)\nMech Cranelift JIT checked fast CPU: 5.358 ms/turn (5 turns)\nMech Cranelift JIT unchecked CPU: 5.576 ms/turn (5 turns)\nMech Cranelift JIT unchecked fast CPU: 4.999 ms/turn (5 turns)\nMech Cranelift SIMD-JIT CPU: 2.961 ms/turn (5 turns)\nMech Cranelift SIMD-JIT checked fast CPU: 2.773 ms/turn (5 turns)\nMech Cranelift SIMD-JIT unchecked CPU: 2.625 ms/turn (5 turns)\nMech Cranelift SIMD-JIT unchecked fast CPU: 2.491 ms/turn (5 turns)\nresident GPU, one submission per turn: 1.670 ms/turn (40 turns)\nresident GPU, checked repeated turns: 1.678 ms/turn (120 turns)\nMech scalar throughput: 0.873 million EKF-turns/s\nMech SIMD throughput: 4.086 million EKF-turns/s\nMech Cranelift JIT throughput: 16.568 million EKF-turns/s\nMech Cranelift JIT checked fast throughput: 18.663 million EKF-turns/s\nMech Cranelift JIT unchecked throughput: 17.935 million EKF-turns/s\nMech Cranelift JIT unchecked fast throughput: 20.003 million EKF-turns/s\nMech Cranelift SIMD-JIT throughput: 33.768 million EKF-turns/s\nMech Cranelift SIMD-JIT checked fast throughput: 36.067 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked throughput: 38.097 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked fast throughput: 40.138 million EKF-turns/s\nJIT integrity validation time overhead: 8.26%\nJIT checked-fast validation time overhead: 7.18%\nSIMD-JIT integrity validation time overhead: 12.82%\nSIMD-JIT checked-fast validation time overhead: 11.29%\nGPU single-submit throughput: 59.870 million EKF-turns/s\nGPU checked repeated throughput: 59.583 million EKF-turns/s\nfinal state readback: 6.240 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 1.526e-5\nmaximum scalar/SIMD-JIT absolute error: 1.526e-5\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379875608\nMech Cranelift JIT checked fast checksum: 27045907.379875608\nMech Cranelift JIT unchecked checksum: 27045907.379875608\nMech Cranelift JIT unchecked fast checksum: 27045907.379875608\nMech Cranelift SIMD-JIT checksum: 27045907.379875608\nMech Cranelift SIMD-JIT checked fast checksum: 27045907.379875608\nMech Cranelift SIMD-JIT unchecked checksum: 27045907.379875608\nMech Cranelift SIMD-JIT unchecked fast checksum: 27045907.379875608\n",
+      "measured_stdout": [
+        "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 149\ngenerated WGSL bytes: 10238\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nMech integrity constraints: symmetric-covariance!, finite-candidate!, positive-covariance!\nintegrity failure: reject candidate, retain previous published estimate, record latest fault + count\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 207.450 ms\nresident GPU prepare: 5.150 ms\nCranelift JIT prepare: 3.250 ms\nMech scalar CPU: 114.782 ms/turn (5 turns)\nMech SIMD CPU: 24.581 ms/turn (5 turns)\nMech Cranelift JIT CPU: 6.000 ms/turn (5 turns)\nMech Cranelift JIT checked fast CPU: 5.341 ms/turn (5 turns)\nMech Cranelift JIT unchecked CPU: 5.576 ms/turn (5 turns)\nMech Cranelift JIT unchecked fast CPU: 4.967 ms/turn (5 turns)\nMech Cranelift SIMD-JIT CPU: 2.954 ms/turn (5 turns)\nMech Cranelift SIMD-JIT checked fast CPU: 2.726 ms/turn (5 turns)\nMech Cranelift SIMD-JIT unchecked CPU: 2.602 ms/turn (5 turns)\nMech Cranelift SIMD-JIT unchecked fast CPU: 2.432 ms/turn (5 turns)\nresident GPU, one submission per turn: 1.898 ms/turn (40 turns)\nresident GPU, checked repeated turns: 1.852 ms/turn (120 turns)\nMech scalar throughput: 0.871 million EKF-turns/s\nMech SIMD throughput: 4.068 million EKF-turns/s\nMech Cranelift JIT throughput: 16.666 million EKF-turns/s\nMech Cranelift JIT checked fast throughput: 18.722 million EKF-turns/s\nMech Cranelift JIT unchecked throughput: 17.934 million EKF-turns/s\nMech Cranelift JIT unchecked fast throughput: 20.133 million EKF-turns/s\nMech Cranelift SIMD-JIT throughput: 33.855 million EKF-turns/s\nMech Cranelift SIMD-JIT checked fast throughput: 36.683 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked throughput: 38.426 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked fast throughput: 41.124 million EKF-turns/s\nJIT integrity validation time overhead: 7.61%\nJIT checked-fast validation time overhead: 7.53%\nSIMD-JIT integrity validation time overhead: 13.50%\nSIMD-JIT checked-fast validation time overhead: 12.11%\nGPU single-submit throughput: 52.674 million EKF-turns/s\nGPU checked repeated throughput: 54.009 million EKF-turns/s\nfinal state readback: 4.108 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 1.526e-5\nmaximum scalar/SIMD-JIT absolute error: 1.526e-5\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379875608\nMech Cranelift JIT checked fast checksum: 27045907.379875608\nMech Cranelift JIT unchecked checksum: 27045907.379875608\nMech Cranelift JIT unchecked fast checksum: 27045907.379875608\nMech Cranelift SIMD-JIT checksum: 27045907.379875608\nMech Cranelift SIMD-JIT checked fast checksum: 27045907.379875608\nMech Cranelift SIMD-JIT unchecked checksum: 27045907.379875608\nMech Cranelift SIMD-JIT unchecked fast checksum: 27045907.379875608\n",
+        "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 149\ngenerated WGSL bytes: 10238\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nMech integrity constraints: symmetric-covariance!, finite-candidate!, positive-covariance!\nintegrity failure: reject candidate, retain previous published estimate, record latest fault + count\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 212.407 ms\nresident GPU prepare: 5.117 ms\nCranelift JIT prepare: 3.244 ms\nMech scalar CPU: 114.521 ms/turn (5 turns)\nMech SIMD CPU: 24.457 ms/turn (5 turns)\nMech Cranelift JIT CPU: 5.988 ms/turn (5 turns)\nMech Cranelift JIT checked fast CPU: 5.335 ms/turn (5 turns)\nMech Cranelift JIT unchecked CPU: 5.541 ms/turn (5 turns)\nMech Cranelift JIT unchecked fast CPU: 4.955 ms/turn (5 turns)\nMech Cranelift SIMD-JIT CPU: 2.910 ms/turn (5 turns)\nMech Cranelift SIMD-JIT checked fast CPU: 2.723 ms/turn (5 turns)\nMech Cranelift SIMD-JIT unchecked CPU: 2.583 ms/turn (5 turns)\nMech Cranelift SIMD-JIT unchecked fast CPU: 2.424 ms/turn (5 turns)\nresident GPU, one submission per turn: 2.054 ms/turn (40 turns)\nresident GPU, checked repeated turns: 2.005 ms/turn (120 turns)\nMech scalar throughput: 0.873 million EKF-turns/s\nMech SIMD throughput: 4.089 million EKF-turns/s\nMech Cranelift JIT throughput: 16.700 million EKF-turns/s\nMech Cranelift JIT checked fast throughput: 18.745 million EKF-turns/s\nMech Cranelift JIT unchecked throughput: 18.048 million EKF-turns/s\nMech Cranelift JIT unchecked fast throughput: 20.181 million EKF-turns/s\nMech Cranelift SIMD-JIT throughput: 34.364 million EKF-turns/s\nMech Cranelift SIMD-JIT checked fast throughput: 36.719 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked throughput: 38.721 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked fast throughput: 41.253 million EKF-turns/s\nJIT integrity validation time overhead: 8.07%\nJIT checked-fast validation time overhead: 7.66%\nSIMD-JIT integrity validation time overhead: 12.68%\nSIMD-JIT checked-fast validation time overhead: 12.35%\nGPU single-submit throughput: 48.680 million EKF-turns/s\nGPU checked repeated throughput: 49.876 million EKF-turns/s\nfinal state readback: 11.668 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 1.526e-5\nmaximum scalar/SIMD-JIT absolute error: 1.526e-5\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379875608\nMech Cranelift JIT checked fast checksum: 27045907.379875608\nMech Cranelift JIT unchecked checksum: 27045907.379875608\nMech Cranelift JIT unchecked fast checksum: 27045907.379875608\nMech Cranelift SIMD-JIT checksum: 27045907.379875608\nMech Cranelift SIMD-JIT checked fast checksum: 27045907.379875608\nMech Cranelift SIMD-JIT unchecked checksum: 27045907.379875608\nMech Cranelift SIMD-JIT unchecked fast checksum: 27045907.379875608\n",
+        "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 149\ngenerated WGSL bytes: 10238\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nMech integrity constraints: symmetric-covariance!, finite-candidate!, positive-covariance!\nintegrity failure: reject candidate, retain previous published estimate, record latest fault + count\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 214.794 ms\nresident GPU prepare: 4.932 ms\nCranelift JIT prepare: 3.205 ms\nMech scalar CPU: 115.010 ms/turn (5 turns)\nMech SIMD CPU: 24.420 ms/turn (5 turns)\nMech Cranelift JIT CPU: 5.992 ms/turn (5 turns)\nMech Cranelift JIT checked fast CPU: 5.330 ms/turn (5 turns)\nMech Cranelift JIT unchecked CPU: 5.544 ms/turn (5 turns)\nMech Cranelift JIT unchecked fast CPU: 4.964 ms/turn (5 turns)\nMech Cranelift SIMD-JIT CPU: 2.919 ms/turn (5 turns)\nMech Cranelift SIMD-JIT checked fast CPU: 2.728 ms/turn (5 turns)\nMech Cranelift SIMD-JIT unchecked CPU: 2.591 ms/turn (5 turns)\nMech Cranelift SIMD-JIT unchecked fast CPU: 2.587 ms/turn (5 turns)\nresident GPU, one submission per turn: 1.706 ms/turn (40 turns)\nresident GPU, checked repeated turns: 1.641 ms/turn (120 turns)\nMech scalar throughput: 0.869 million EKF-turns/s\nMech SIMD throughput: 4.095 million EKF-turns/s\nMech Cranelift JIT throughput: 16.688 million EKF-turns/s\nMech Cranelift JIT checked fast throughput: 18.762 million EKF-turns/s\nMech Cranelift JIT unchecked throughput: 18.037 million EKF-turns/s\nMech Cranelift JIT unchecked fast throughput: 20.146 million EKF-turns/s\nMech Cranelift SIMD-JIT throughput: 34.262 million EKF-turns/s\nMech Cranelift SIMD-JIT checked fast throughput: 36.652 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked throughput: 38.600 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked fast throughput: 38.652 million EKF-turns/s\nJIT integrity validation time overhead: 8.08%\nJIT checked-fast validation time overhead: 7.37%\nSIMD-JIT integrity validation time overhead: 12.66%\nSIMD-JIT checked-fast validation time overhead: 5.46%\nGPU single-submit throughput: 58.609 million EKF-turns/s\nGPU checked repeated throughput: 60.953 million EKF-turns/s\nfinal state readback: 4.315 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 1.526e-5\nmaximum scalar/SIMD-JIT absolute error: 1.526e-5\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379875608\nMech Cranelift JIT checked fast checksum: 27045907.379875608\nMech Cranelift JIT unchecked checksum: 27045907.379875608\nMech Cranelift JIT unchecked fast checksum: 27045907.379875608\nMech Cranelift SIMD-JIT checksum: 27045907.379875608\nMech Cranelift SIMD-JIT checked fast checksum: 27045907.379875608\nMech Cranelift SIMD-JIT unchecked checksum: 27045907.379875608\nMech Cranelift SIMD-JIT unchecked fast checksum: 27045907.379875608\n"
+      ]
+    },
+    "mech_scalar_settings": {
+      "command": [
+        "/private/tmp/mech-pr11-taichi/target/release/examples/parallel_ekf_benchmark",
+        "10000",
+        "20",
+        "20",
+        "120"
+      ],
+      "discarded_warmup_stdout": "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 149\ngenerated WGSL bytes: 10237\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nMech integrity constraints: symmetric-covariance!, finite-candidate!, positive-covariance!\nintegrity failure: reject candidate, retain previous published estimate, record latest fault + count\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 156.650 ms\nresident GPU prepare: 1.750 ms\nCranelift JIT prepare: 1.174 ms\nMech scalar CPU: 11.492 ms/turn (20 turns)\nMech SIMD CPU: 2.439 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.599 ms/turn (20 turns)\nMech Cranelift JIT checked fast CPU: 0.534 ms/turn (20 turns)\nMech Cranelift JIT unchecked CPU: 0.554 ms/turn (20 turns)\nMech Cranelift JIT unchecked fast CPU: 0.495 ms/turn (20 turns)\nMech Cranelift SIMD-JIT CPU: 0.290 ms/turn (20 turns)\nMech Cranelift SIMD-JIT checked fast CPU: 0.269 ms/turn (20 turns)\nMech Cranelift SIMD-JIT unchecked CPU: 0.260 ms/turn (20 turns)\nMech Cranelift SIMD-JIT unchecked fast CPU: 0.241 ms/turn (20 turns)\nresident GPU, one submission per turn: 1.933 ms/turn (20 turns)\nresident GPU, checked repeated turns: 1.945 ms/turn (120 turns)\nMech scalar throughput: 0.870 million EKF-turns/s\nMech SIMD throughput: 4.101 million EKF-turns/s\nMech Cranelift JIT throughput: 16.693 million EKF-turns/s\nMech Cranelift JIT checked fast throughput: 18.733 million EKF-turns/s\nMech Cranelift JIT unchecked throughput: 18.038 million EKF-turns/s\nMech Cranelift JIT unchecked fast throughput: 20.210 million EKF-turns/s\nMech Cranelift SIMD-JIT throughput: 34.522 million EKF-turns/s\nMech Cranelift SIMD-JIT checked fast throughput: 37.151 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked throughput: 38.478 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked fast throughput: 41.414 million EKF-turns/s\nJIT integrity validation time overhead: 8.06%\nJIT checked-fast validation time overhead: 7.89%\nSIMD-JIT integrity validation time overhead: 11.46%\nSIMD-JIT checked-fast validation time overhead: 11.48%\nGPU single-submit throughput: 5.174 million EKF-turns/s\nGPU checked repeated throughput: 5.142 million EKF-turns/s\nfinal state readback: 1.972 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 1.907e-6\nmaximum scalar/SIMD-JIT absolute error: 1.907e-6\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056256741\nMech Cranelift JIT checked fast checksum: 2682056.056256741\nMech Cranelift JIT unchecked checksum: 2682056.056256741\nMech Cranelift JIT unchecked fast checksum: 2682056.056256741\nMech Cranelift SIMD-JIT checksum: 2682056.056256741\nMech Cranelift SIMD-JIT checked fast checksum: 2682056.056256741\nMech Cranelift SIMD-JIT unchecked checksum: 2682056.056256741\nMech Cranelift SIMD-JIT unchecked fast checksum: 2682056.056256741\n",
+      "measured_stdout": [
+        "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 149\ngenerated WGSL bytes: 10237\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nMech integrity constraints: symmetric-covariance!, finite-candidate!, positive-covariance!\nintegrity failure: reject candidate, retain previous published estimate, record latest fault + count\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 111.482 ms\nresident GPU prepare: 1.716 ms\nCranelift JIT prepare: 1.177 ms\nMech scalar CPU: 11.466 ms/turn (20 turns)\nMech SIMD CPU: 2.440 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.599 ms/turn (20 turns)\nMech Cranelift JIT checked fast CPU: 0.533 ms/turn (20 turns)\nMech Cranelift JIT unchecked CPU: 0.552 ms/turn (20 turns)\nMech Cranelift JIT unchecked fast CPU: 0.495 ms/turn (20 turns)\nMech Cranelift SIMD-JIT CPU: 0.288 ms/turn (20 turns)\nMech Cranelift SIMD-JIT checked fast CPU: 0.269 ms/turn (20 turns)\nMech Cranelift SIMD-JIT unchecked CPU: 0.258 ms/turn (20 turns)\nMech Cranelift SIMD-JIT unchecked fast CPU: 0.243 ms/turn (20 turns)\nresident GPU, one submission per turn: 2.011 ms/turn (20 turns)\nresident GPU, checked repeated turns: 1.808 ms/turn (120 turns)\nMech scalar throughput: 0.872 million EKF-turns/s\nMech SIMD throughput: 4.099 million EKF-turns/s\nMech Cranelift JIT throughput: 16.708 million EKF-turns/s\nMech Cranelift JIT checked fast throughput: 18.759 million EKF-turns/s\nMech Cranelift JIT unchecked throughput: 18.112 million EKF-turns/s\nMech Cranelift JIT unchecked fast throughput: 20.197 million EKF-turns/s\nMech Cranelift SIMD-JIT throughput: 34.692 million EKF-turns/s\nMech Cranelift SIMD-JIT checked fast throughput: 37.134 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked throughput: 38.745 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked fast throughput: 41.154 million EKF-turns/s\nJIT integrity validation time overhead: 8.41%\nJIT checked-fast validation time overhead: 7.67%\nSIMD-JIT integrity validation time overhead: 11.68%\nSIMD-JIT checked-fast validation time overhead: 10.83%\nGPU single-submit throughput: 4.972 million EKF-turns/s\nGPU checked repeated throughput: 5.532 million EKF-turns/s\nfinal state readback: 1.893 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 1.907e-6\nmaximum scalar/SIMD-JIT absolute error: 1.907e-6\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056256741\nMech Cranelift JIT checked fast checksum: 2682056.056256741\nMech Cranelift JIT unchecked checksum: 2682056.056256741\nMech Cranelift JIT unchecked fast checksum: 2682056.056256741\nMech Cranelift SIMD-JIT checksum: 2682056.056256741\nMech Cranelift SIMD-JIT checked fast checksum: 2682056.056256741\nMech Cranelift SIMD-JIT unchecked checksum: 2682056.056256741\nMech Cranelift SIMD-JIT unchecked fast checksum: 2682056.056256741\n",
+        "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 149\ngenerated WGSL bytes: 10237\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nMech integrity constraints: symmetric-covariance!, finite-candidate!, positive-covariance!\nintegrity failure: reject candidate, retain previous published estimate, record latest fault + count\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 111.005 ms\nresident GPU prepare: 1.707 ms\nCranelift JIT prepare: 1.164 ms\nMech scalar CPU: 11.474 ms/turn (20 turns)\nMech SIMD CPU: 2.460 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.599 ms/turn (20 turns)\nMech Cranelift JIT checked fast CPU: 0.532 ms/turn (20 turns)\nMech Cranelift JIT unchecked CPU: 0.553 ms/turn (20 turns)\nMech Cranelift JIT unchecked fast CPU: 0.494 ms/turn (20 turns)\nMech Cranelift SIMD-JIT CPU: 0.289 ms/turn (20 turns)\nMech Cranelift SIMD-JIT checked fast CPU: 0.269 ms/turn (20 turns)\nMech Cranelift SIMD-JIT unchecked CPU: 0.258 ms/turn (20 turns)\nMech Cranelift SIMD-JIT unchecked fast CPU: 0.242 ms/turn (20 turns)\nresident GPU, one submission per turn: 1.935 ms/turn (20 turns)\nresident GPU, checked repeated turns: 1.884 ms/turn (120 turns)\nMech scalar throughput: 0.872 million EKF-turns/s\nMech SIMD throughput: 4.065 million EKF-turns/s\nMech Cranelift JIT throughput: 16.688 million EKF-turns/s\nMech Cranelift JIT checked fast throughput: 18.813 million EKF-turns/s\nMech Cranelift JIT unchecked throughput: 18.090 million EKF-turns/s\nMech Cranelift JIT unchecked fast throughput: 20.247 million EKF-turns/s\nMech Cranelift SIMD-JIT throughput: 34.583 million EKF-turns/s\nMech Cranelift SIMD-JIT checked fast throughput: 37.123 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked throughput: 38.719 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked fast throughput: 41.339 million EKF-turns/s\nJIT integrity validation time overhead: 8.40%\nJIT checked-fast validation time overhead: 7.62%\nSIMD-JIT integrity validation time overhead: 11.96%\nSIMD-JIT checked-fast validation time overhead: 11.35%\nGPU single-submit throughput: 5.169 million EKF-turns/s\nGPU checked repeated throughput: 5.308 million EKF-turns/s\nfinal state readback: 2.078 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 1.907e-6\nmaximum scalar/SIMD-JIT absolute error: 1.907e-6\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056256741\nMech Cranelift JIT checked fast checksum: 2682056.056256741\nMech Cranelift JIT unchecked checksum: 2682056.056256741\nMech Cranelift JIT unchecked fast checksum: 2682056.056256741\nMech Cranelift SIMD-JIT checksum: 2682056.056256741\nMech Cranelift SIMD-JIT checked fast checksum: 2682056.056256741\nMech Cranelift SIMD-JIT unchecked checksum: 2682056.056256741\nMech Cranelift SIMD-JIT unchecked fast checksum: 2682056.056256741\n",
+        "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 149\ngenerated WGSL bytes: 10237\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nMech integrity constraints: symmetric-covariance!, finite-candidate!, positive-covariance!\nintegrity failure: reject candidate, retain previous published estimate, record latest fault + count\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 112.838 ms\nresident GPU prepare: 1.694 ms\nCranelift JIT prepare: 1.156 ms\nMech scalar CPU: 11.441 ms/turn (20 turns)\nMech SIMD CPU: 2.442 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.599 ms/turn (20 turns)\nMech Cranelift JIT checked fast CPU: 0.532 ms/turn (20 turns)\nMech Cranelift JIT unchecked CPU: 0.551 ms/turn (20 turns)\nMech Cranelift JIT unchecked fast CPU: 0.496 ms/turn (20 turns)\nMech Cranelift SIMD-JIT CPU: 0.289 ms/turn (20 turns)\nMech Cranelift SIMD-JIT checked fast CPU: 0.269 ms/turn (20 turns)\nMech Cranelift SIMD-JIT unchecked CPU: 0.259 ms/turn (20 turns)\nMech Cranelift SIMD-JIT unchecked fast CPU: 0.242 ms/turn (20 turns)\nresident GPU, one submission per turn: 1.944 ms/turn (20 turns)\nresident GPU, checked repeated turns: 1.782 ms/turn (120 turns)\nMech scalar throughput: 0.874 million EKF-turns/s\nMech SIMD throughput: 4.095 million EKF-turns/s\nMech Cranelift JIT throughput: 16.683 million EKF-turns/s\nMech Cranelift JIT checked fast throughput: 18.803 million EKF-turns/s\nMech Cranelift JIT unchecked throughput: 18.134 million EKF-turns/s\nMech Cranelift JIT unchecked fast throughput: 20.157 million EKF-turns/s\nMech Cranelift SIMD-JIT throughput: 34.632 million EKF-turns/s\nMech Cranelift SIMD-JIT checked fast throughput: 37.108 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked throughput: 38.581 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked fast throughput: 41.377 million EKF-turns/s\nJIT integrity validation time overhead: 8.69%\nJIT checked-fast validation time overhead: 7.20%\nSIMD-JIT integrity validation time overhead: 11.40%\nSIMD-JIT checked-fast validation time overhead: 11.50%\nGPU single-submit throughput: 5.144 million EKF-turns/s\nGPU checked repeated throughput: 5.610 million EKF-turns/s\nfinal state readback: 1.929 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 1.907e-6\nmaximum scalar/SIMD-JIT absolute error: 1.907e-6\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056256741\nMech Cranelift JIT checked fast checksum: 2682056.056256741\nMech Cranelift JIT unchecked checksum: 2682056.056256741\nMech Cranelift JIT unchecked fast checksum: 2682056.056256741\nMech Cranelift SIMD-JIT checksum: 2682056.056256741\nMech Cranelift SIMD-JIT checked fast checksum: 2682056.056256741\nMech Cranelift SIMD-JIT unchecked checksum: 2682056.056256741\nMech Cranelift SIMD-JIT unchecked fast checksum: 2682056.056256741\n"
+      ]
+    }
+  },
+  "schema_version": 1,
+  "summary": {
+    "mech_backends_million_ekf_turns_per_second": {
+      "Mech Cranelift JIT": 16.688,
+      "Mech Cranelift SIMD-JIT": 34.262,
+      "Mech Cranelift SIMD-JIT checked fast": 36.683,
+      "Mech Cranelift SIMD-JIT unchecked fast": 41.124,
+      "Mech GPU, checked repeated turns": 54.009,
+      "Mech GPU, one submission/turn": 52.674,
+      "Mech SIMD (4xf32)": 4.089,
+      "Mech scalar": 0.871
+    },
+    "scalar_outer_loop": {
+      "Julia SIMD.jl intrinsics checked": {
+        "checksum": 2682056.0743612703,
+        "ekf_turns_per_second": 31194556.549882043
+      },
+      "Julia SIMD.jl intrinsics unchecked": {
+        "checksum": 2682056.0743612703,
+        "ekf_turns_per_second": 32862755.11151401
+      },
+      "Julia fixed-shape SIMD checked": {
+        "checksum": 2682056.074361449,
+        "ekf_turns_per_second": 28584189.37025458
+      },
+      "Julia fixed-shape SIMD unchecked": {
+        "checksum": 2682056.074361449,
+        "ekf_turns_per_second": 35693035.6105847
+      },
+      "Julia fixed-shape checked": {
+        "checksum": 2682056.074361449,
+        "ekf_turns_per_second": 18940889.839216467
+      },
+      "Julia fixed-shape unchecked": {
+        "checksum": 2682056.074361449,
+        "ekf_turns_per_second": 21973294.09781939
+      },
+      "Julia generic checked": {
+        "checksum": 2682056.074361449,
+        "ekf_turns_per_second": 3059214.9289688533
+      },
+      "Julia generic unchecked": {
+        "checksum": 2682056.074361449,
+        "ekf_turns_per_second": 3105899.4945831867
+      },
+      "LuaJIT fixed-shape flat checked": {
+        "checksum": 2682056.218170356,
+        "ekf_turns_per_second": 1267266.506
+      },
+      "LuaJIT fixed-shape flat unchecked": {
+        "checksum": 2682056.218170356,
+        "ekf_turns_per_second": 15983377.288
+      },
+      "LuaJIT scalar outer loop": {
+        "checksum": 2682056.068860276,
+        "ekf_turns_per_second": 1083910.968
+      },
+      "Mech Cranelift JIT": {
+        "checksum": 2682056.056256741,
+        "ekf_turns_per_second": 16687999.999999998
+      },
+      "Mech Cranelift SIMD-JIT": {
+        "checksum": 2682056.056256741,
+        "ekf_turns_per_second": 34632000.0
+      },
+      "Mech Cranelift SIMD-JIT checked fast": {
+        "checksum": 2682056.056256741,
+        "ekf_turns_per_second": 37123000.0
+      },
+      "Mech Cranelift SIMD-JIT unchecked fast": {
+        "checksum": 2682056.056256741,
+        "ekf_turns_per_second": 41339000.0
+      },
+      "Mech scalar": {
+        "checksum": 2682056.056255098,
+        "ekf_turns_per_second": 872000.0
+      },
+      "NumPy scalar outer loop": {
+        "checksum": 2682056.057376927,
+        "ekf_turns_per_second": 54542.329
+      },
+      "NumPy vectorized fixed-shape checked": {
+        "checksum": 2682056.074057378,
+        "ekf_turns_per_second": 10685567.592
+      },
+      "NumPy vectorized fixed-shape unchecked": {
+        "checksum": 2682056.074057378,
+        "ekf_turns_per_second": 12311799.443
+      },
+      "Rust optimized fixed-shape": {
+        "checksum": 2682056.07409198,
+        "ekf_turns_per_second": 17098279.973
+      },
+      "Rust packed SIMD checked": {
+        "checksum": 2682056.074043512,
+        "ekf_turns_per_second": 25723059.115
+      },
+      "Rust packed SIMD unchecked": {
+        "checksum": 2682056.074043512,
+        "ekf_turns_per_second": 20874466.905
+      }
+    }
+  },
+  "versions": {
+    "git_commit": "7dff6aaecc0b26bfc99f4d0bce19ec13f6f0a96f",
+    "julia": "julia version 1.12.6",
+    "luajit": "LuaJIT 2.1.1785763465 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/",
+    "numpy": "2.5.2",
+    "python": "Python 3.14.6",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)"
+  }
+}
