@@ -87,12 +87,12 @@
       }
     },
     {
-      "language": "Python",
+      "language": "Python + NumPy (scalar)",
       "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
       "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
       "baseline_label": "Python outer loop",
       "advanced_label": "same source; interpreter/runtime only",
-      "note": "There is no separate optimized Python source in the evidence set; NumPy vectorization is reported as its own row.",
+      "note": "This is not pure Python: the outer loop is Python, while NumPy supplies the scalar matrix operations. NumPy vectorization is reported as its own row.",
       "baseline_lines": 93,
       "baseline_chars": 4150,
       "advanced_lines": 93,

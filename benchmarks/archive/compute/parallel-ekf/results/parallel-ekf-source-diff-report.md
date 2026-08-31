@@ -8,7 +8,7 @@ This report measures source edits behind the benchmark variants. `Changed lines`
 | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Mech | `ekf-kernel.mec` | 116 | 4,974 | `ekf-kernel.mec` | 116 | 4,974 | 0 | 0 | 0 / 0 | 0 / 0 | 246.151 | 241.028 |
 | Rust | `parallel_ekf_rust_scalar.rs` | 220 | 6,464 | `parallel_ekf_rust_simd.rs` | 411 | 12,058 | 533 | 15,990 | 256 / 8,883 | 431 / 15,278 | 25.642 | 22.237 |
-| Python | `numpy_scalar.py` | 93 | 4,150 | `numpy_scalar.py` | 93 | 4,150 | 0 | 0 | 168 / 8,484 | 168 / 8,484 | -- | 0.055 |
+| Python + NumPy (scalar) | `numpy_scalar.py` | 93 | 4,150 | `numpy_scalar.py` | 93 | 4,150 | 0 | 0 | 168 / 8,484 | 168 / 8,484 | -- | 0.055 |
 | NumPy | `numpy_scalar.py` | 93 | 4,150 | `numpy_vectorized.py` | 173 | 6,731 | 145 | 6,312 | 168 / 8,484 | 205 / 9,492 | 10.854 | 12.255 |
 | Julia | `julia_scalar.jl` | 103 | 4,765 | `julia_simd_intrinsics.jl` | 217 | 8,549 | 245 | 10,636 | 155 / 7,258 | 215 / 9,487 | 31.311 | 32.842 |
 | LuaJIT | `luajit_scalar.lua` | 43 | 3,369 | `luajit_fast.lua` | 169 | 7,609 | 174 | 9,238 | 116 / 4,974 | 182 / 9,573 | 1.277 | 15.977 |
@@ -19,7 +19,7 @@ This report measures source edits behind the benchmark variants. `Changed lines`
 
 - **Mech**: The source recurrence does not change. Native Metal specialization is backend support, not a second Mech program. Baseline -> advanced touches **0 lines / 0 characters**.
 - **Rust**: The advanced control changes the value representation and execution loop. Baseline -> advanced touches **533 lines / 15990 characters**.
-- **Python**: There is no separate optimized Python source in the evidence set; NumPy vectorization is reported as its own row. Baseline -> advanced touches **0 lines / 0 characters**.
+- **Python + NumPy (scalar)**: This is not pure Python: the outer loop is Python, while NumPy supplies the scalar matrix operations. NumPy vectorization is reported as its own row. Baseline -> advanced touches **0 lines / 0 characters**.
 - **NumPy**: This is a whole-program rewrite around NumPy array operations. Baseline -> advanced touches **145 lines / 6312 characters**.
 - **Julia**: The advanced source introduces an explicit packed value type and lane loop. Baseline -> advanced touches **245 lines / 10636 characters**.
 - **LuaJIT**: The advanced source removes helper-level matrix temporaries and writes each component directly. Baseline -> advanced touches **174 lines / 9238 characters**.

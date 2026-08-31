@@ -27,6 +27,7 @@ COLORS = {
     "Mech": "#f4c430",
     "Rust": "#dea584",
     "Python": "#3776ab",
+    "Python + NumPy (scalar)": "#3776ab",
     "NumPy": "#4d77cf",
     "Julia": "#9558b2",
     "Lua": "#000080",
@@ -53,12 +54,12 @@ VARIANTS = [
         "note": "The advanced control changes the value representation and execution loop.",
     },
     {
-        "language": "Python",
+        "language": "Python + NumPy (scalar)",
         "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
         "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
         "baseline_label": "Python outer loop",
         "advanced_label": "same source; interpreter/runtime only",
-        "note": "There is no separate optimized Python source in the evidence set; NumPy vectorization is reported as its own row.",
+        "note": "This is not pure Python: the outer loop is Python, while NumPy supplies the scalar matrix operations. NumPy vectorization is reported as its own row.",
     },
     {
         "language": "NumPy",
@@ -182,7 +183,7 @@ def throughput_rows(cross: dict, native: dict, taichi: dict, lua: dict) -> dict[
     result: dict[str, dict[str, float | None]] = {
         "Mech": {"checked": native_rows["Mech native Metal, checked"]["throughput_millions"], "unchecked": native_rows["Mech native Metal, unchecked"]["throughput_millions"]},
         "Rust": {"checked": scalar["Rust packed SIMD checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["Rust packed SIMD unchecked"]["ekf_turns_per_second"] / 1e6},
-        "Python": {"checked": None, "unchecked": scalar["NumPy scalar outer loop"]["ekf_turns_per_second"] / 1e6},
+        "Python + NumPy (scalar)": {"checked": None, "unchecked": scalar["NumPy scalar outer loop"]["ekf_turns_per_second"] / 1e6},
         "NumPy": {"checked": scalar["NumPy vectorized fixed-shape checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["NumPy vectorized fixed-shape unchecked"]["ekf_turns_per_second"] / 1e6},
         "Julia": {"checked": scalar["Julia SIMD.jl intrinsics checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["Julia SIMD.jl intrinsics unchecked"]["ekf_turns_per_second"] / 1e6},
         "LuaJIT": {"checked": scalar["LuaJIT fixed-shape flat checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["LuaJIT fixed-shape flat unchecked"]["ekf_turns_per_second"] / 1e6},

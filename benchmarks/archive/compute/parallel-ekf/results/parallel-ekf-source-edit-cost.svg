@@ -34,7 +34,7 @@
 <text x="248.0" y="138" class="value">0</text>
 <rect x="940.0" y="123" width="1.0" height="22" rx="3" fill="#f4c430" opacity="0.9"/>
 <text x="948.0" y="138" class="value">0</text>
-<text x="226" y="177" text-anchor="end" class="label">Python</text>
+<text x="226" y="177" text-anchor="end" class="label">Python + NumPy (scalar)</text>
 <rect x="240" y="163" width="1.0" height="22" rx="3" fill="#3776ab" opacity="0.9"/>
 <text x="248.0" y="178" class="value">0</text>
 <rect x="940.0" y="163" width="1.0" height="22" rx="3" fill="#3776ab" opacity="0.9"/>
