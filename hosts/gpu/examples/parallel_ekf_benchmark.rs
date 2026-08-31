@@ -98,6 +98,34 @@ fn main() {
     let jit_per_turn = jit_started.elapsed() / cpu_turns;
     let jit_checksum = state_checksum(jit.state());
 
+    let mut jit_checked_fast_warmup = program.prepare_jit_cpu_checked_fast(&inputs).unwrap();
+    jit_checked_fast_warmup.dispatch_turns(5).unwrap();
+    let mut jit_checked_fast = program.prepare_jit_cpu_checked_fast(&inputs).unwrap();
+    let jit_checked_fast_started = Instant::now();
+    jit_checked_fast.dispatch_turns(cpu_turns).unwrap();
+    let jit_checked_fast_per_turn = jit_checked_fast_started.elapsed() / cpu_turns;
+    let jit_checked_fast_checksum = state_checksum(jit_checked_fast.state());
+
+    let mut jit_unchecked_warmup = program.prepare_jit_cpu_unchecked(&inputs).unwrap();
+    jit_unchecked_warmup.dispatch_turns(5).unwrap();
+    let mut jit_unchecked = program.prepare_jit_cpu_unchecked(&inputs).unwrap();
+    let jit_unchecked_started = Instant::now();
+    jit_unchecked.dispatch_turns(cpu_turns).unwrap();
+    let jit_unchecked_per_turn = jit_unchecked_started.elapsed() / cpu_turns;
+    let jit_unchecked_checksum = state_checksum(jit_unchecked.state());
+    let mut jit_unchecked_fast_warmup = program.prepare_jit_cpu_unchecked_fast(&inputs).unwrap();
+    jit_unchecked_fast_warmup.dispatch_turns(5).unwrap();
+    let mut jit_unchecked_fast = program.prepare_jit_cpu_unchecked_fast(&inputs).unwrap();
+    let jit_unchecked_fast_started = Instant::now();
+    jit_unchecked_fast.dispatch_turns(cpu_turns).unwrap();
+    let jit_unchecked_fast_per_turn = jit_unchecked_fast_started.elapsed() / cpu_turns;
+    let jit_unchecked_fast_checksum = state_checksum(jit_unchecked_fast.state());
+    let jit_validation_overhead =
+        (jit_per_turn.as_secs_f64() / jit_unchecked_per_turn.as_secs_f64() - 1.0) * 100.0;
+    let jit_checked_fast_validation_overhead =
+        (jit_checked_fast_per_turn.as_secs_f64() / jit_unchecked_fast_per_turn.as_secs_f64() - 1.0)
+            * 100.0;
+
     let prepare_started = Instant::now();
     let mut gpu = program.prepare_resident(&inputs).unwrap();
     let resident_prepare = prepare_started.elapsed();
@@ -144,6 +172,18 @@ fn main() {
         millis(jit_per_turn)
     );
     println!(
+        "Mech Cranelift JIT checked fast CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_checked_fast_per_turn)
+    );
+    println!(
+        "Mech Cranelift JIT unchecked CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_unchecked_per_turn)
+    );
+    println!(
+        "Mech Cranelift JIT unchecked fast CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_unchecked_fast_per_turn)
+    );
+    println!(
         "resident GPU, one submission per turn: {:.3} ms/turn ({single_gpu_turns} turns)",
         millis(single_per_turn)
     );
@@ -164,6 +204,22 @@ fn main() {
         throughput(instances, jit_per_turn)
     );
     println!(
+        "Mech Cranelift JIT checked fast throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_checked_fast_per_turn)
+    );
+    println!(
+        "Mech Cranelift JIT unchecked throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_unchecked_per_turn)
+    );
+    println!(
+        "Mech Cranelift JIT unchecked fast throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_unchecked_fast_per_turn)
+    );
+    println!("JIT integrity validation time overhead: {jit_validation_overhead:.2}%");
+    println!(
+        "JIT checked-fast validation time overhead: {jit_checked_fast_validation_overhead:.2}%"
+    );
+    println!(
         "GPU single-submit throughput: {:.3} million EKF-turns/s",
         throughput(instances, single_per_turn)
     );
@@ -178,6 +234,9 @@ fn main() {
     println!("Mech scalar checksum: {cpu_checksum:.9}");
     println!("Mech SIMD checksum: {simd_checksum:.9}");
     println!("Mech Cranelift JIT checksum: {jit_checksum:.9}");
+    println!("Mech Cranelift JIT checked fast checksum: {jit_checked_fast_checksum:.9}");
+    println!("Mech Cranelift JIT unchecked checksum: {jit_unchecked_checksum:.9}");
+    println!("Mech Cranelift JIT unchecked fast checksum: {jit_unchecked_fast_checksum:.9}");
 }
 
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {

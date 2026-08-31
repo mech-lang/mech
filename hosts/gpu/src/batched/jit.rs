@@ -31,7 +31,10 @@ struct NativeKernel {
 pub struct BatchedJitCpuSession {
     program: Arc<FixedShapeKernel>,
     kernel: NativeKernel,
+    checked: bool,
+    fast_math: bool,
     inputs: BTreeMap<CellSlotId, Vec<f32>>,
+    input_broadcast: Vec<bool>,
     state: BTreeMap<CellSlotId, Vec<f32>>,
     next_state: BTreeMap<CellSlotId, Vec<f32>>,
     input_pointers: Vec<*const f32>,
@@ -45,13 +48,62 @@ impl FixedShapeKernel {
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
-        let inputs = self.expand_inputs(inputs)?;
+        self.prepare_jit_cpu_with_validation(inputs, true, false)
+    }
+
+    /// Prepares a JIT session without integrity predicates. Invalid candidate
+    /// state is published, so callers must only use this mode when they own
+    /// equivalent validation or explicitly accept the weaker guarantee.
+    pub fn prepare_jit_cpu_unchecked(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
+        self.prepare_jit_cpu_with_validation(inputs, false, false)
+    }
+
+    /// Prepares a JIT session with integrity predicates disabled and algebraic
+    /// zero-term elimination enabled. This mode does not preserve IEEE NaN
+    /// propagation through zero products; callers must accept that weaker
+    /// numeric guarantee in addition to unchecked publication.
+    pub fn prepare_jit_cpu_unchecked_fast(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
+        self.prepare_jit_cpu_with_validation(inputs, false, true)
+    }
+
+    /// Prepares a checked JIT session with algebraic zero-term elimination.
+    /// Rollback and all declared integrity predicates remain enabled, but
+    /// IEEE NaN propagation through eliminated zero products is not preserved.
+    pub fn prepare_jit_cpu_checked_fast(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
+        self.prepare_jit_cpu_with_validation(inputs, true, true)
+    }
+
+    fn prepare_jit_cpu_with_validation(
+        &self,
+        provided_inputs: &BTreeMap<String, Vec<f32>>,
+        checked: bool,
+        fast_math: bool,
+    ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
+        let input_broadcast = self
+            .inputs
+            .iter()
+            .map(|input| {
+                provided_inputs
+                    .get(&input.name)
+                    .is_some_and(|values| values.len() == input.shape.elements())
+            })
+            .collect::<Vec<_>>();
+        let inputs = self.expand_inputs(provided_inputs)?;
         let state = self.initial_state();
         let next_state = state
             .iter()
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
-        let kernel = NativeKernel::compile(self)?;
+        let kernel = NativeKernel::compile(self, checked, &input_broadcast, fast_math)?;
         let input_pointers = self
             .inputs
             .iter()
@@ -60,7 +112,10 @@ impl FixedShapeKernel {
         let mut session = BatchedJitCpuSession {
             program: Arc::new(self.clone()),
             kernel,
+            checked,
+            fast_math,
             inputs,
+            input_broadcast,
             state,
             next_state,
             input_pointers,
@@ -78,15 +133,22 @@ impl BatchedJitCpuSession {
         &mut self,
         updates: &BTreeMap<String, Vec<f32>>,
     ) -> Result<(), BatchedExecutionError> {
+        let mut recompile = false;
         for (name, values) in updates {
-            let input = self
+            let (index, input) = self
                 .program
                 .inputs
                 .iter()
-                .find(|input| input.name == *name)
+                .enumerate()
+                .find(|(_, input)| input.name == *name)
                 .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
             self.inputs
                 .insert(input.slot, self.program.expand_input(input, values)?);
+            let broadcast = values.len() == input.shape.elements();
+            if self.input_broadcast[index] != broadcast {
+                self.input_broadcast[index] = broadcast;
+                recompile = true;
+            }
         }
         self.input_pointers = self
             .program
@@ -94,6 +156,14 @@ impl BatchedJitCpuSession {
             .iter()
             .map(|input| self.inputs[&input.slot].as_ptr())
             .collect();
+        if recompile {
+            self.kernel = NativeKernel::compile(
+                &self.program,
+                self.checked,
+                &self.input_broadcast,
+                self.fast_math,
+            )?;
+        }
         Ok(())
     }
 
@@ -154,7 +224,12 @@ impl BatchedJitCpuSession {
 }
 
 impl NativeKernel {
-    fn compile(program: &FixedShapeKernel) -> Result<Self, BatchedExecutionError> {
+    fn compile(
+        program: &FixedShapeKernel,
+        checked: bool,
+        input_broadcast: &[bool],
+        fast_math: bool,
+    ) -> Result<Self, BatchedExecutionError> {
         let mut jit_builder =
             JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
                 .map_err(native_error)?;
@@ -219,6 +294,14 @@ impl NativeKernel {
             let exit = builder.create_block();
             builder.append_block_params_for_function_params(entry);
             builder.append_block_param(header, pointer_type);
+            let dynamic_input_count = input_broadcast
+                .iter()
+                .filter(|broadcast| !**broadcast)
+                .count();
+            let loop_base_count = dynamic_input_count + program.states.len() * 2;
+            for _ in 0..loop_base_count {
+                builder.append_block_param(header, pointer_type);
+            }
             builder.append_block_param(fault, pointer_type);
             builder.append_block_param(fault, types::I32);
             builder.switch_to_block(entry);
@@ -237,6 +320,20 @@ impl NativeKernel {
                         input_table,
                         i32::try_from(index).unwrap() * pointer_bytes,
                     )
+                })
+                .collect::<Vec<_>>();
+            let input_broadcast_values = program
+                .inputs
+                .iter()
+                .enumerate()
+                .map(|(index, input)| {
+                    input_broadcast[index].then(|| {
+                        (0..input.shape.elements())
+                            .map(|component| {
+                                load_component(&mut builder, input_bases[index], component)
+                            })
+                            .collect::<Vec<_>>()
+                    })
                 })
                 .collect::<Vec<_>>();
             let state_bases = (0..program.states.len())
@@ -264,10 +361,45 @@ impl NativeKernel {
                 .map(|bits| (bits, builder.ins().f32const(f32::from_bits(bits))))
                 .collect::<BTreeMap<_, _>>();
             let zero = builder.ins().iconst(pointer_type, 0);
-            builder.ins().jump(header, &[zero.into()]);
+            let mut initial_loop_bases = Vec::with_capacity(loop_base_count);
+            for (index, input) in program.inputs.iter().enumerate() {
+                if !input_broadcast[index] {
+                    initial_loop_bases.push((
+                        input_bases[index],
+                        i64::try_from(input.shape.elements())
+                            .unwrap()
+                            .checked_mul(i64::from(types::F32.bytes()))
+                            .unwrap(),
+                    ));
+                }
+            }
+            for (index, state) in program.states.iter().enumerate() {
+                let stride = i64::try_from(state.shape.elements())
+                    .unwrap()
+                    .checked_mul(i64::from(types::F32.bytes()))
+                    .unwrap();
+                initial_loop_bases.push((state_bases[index], stride));
+            }
+            for (index, state) in program.states.iter().enumerate() {
+                let stride = i64::try_from(state.shape.elements())
+                    .unwrap()
+                    .checked_mul(i64::from(types::F32.bytes()))
+                    .unwrap();
+                initial_loop_bases.push((next_state_bases[index], stride));
+            }
+            debug_assert_eq!(initial_loop_bases.len(), loop_base_count);
+            let mut initial_header_args = vec![cranelift_codegen::ir::BlockArg::Value(zero)];
+            initial_header_args.extend(
+                initial_loop_bases
+                    .iter()
+                    .map(|(base, _)| cranelift_codegen::ir::BlockArg::Value(*base)),
+            );
+
+            builder.ins().jump(header, &initial_header_args);
 
             builder.switch_to_block(header);
-            let instance = builder.block_params(header)[0];
+            let header_params = builder.block_params(header).to_vec();
+            let instance = header_params[0];
             let has_instance = builder.ins().icmp_imm(
                 IntCC::UnsignedLessThan,
                 instance,
@@ -289,42 +421,41 @@ impl NativeKernel {
                 atan2: atan2_ref,
             };
             let mut registers = vec![None; program.fixed_ir().register_count];
+            let mut loop_base_index = 1;
             let input_instance_bases = program
                 .inputs
                 .iter()
                 .enumerate()
-                .map(|(index, input)| {
-                    instance_base(
-                        &mut builder,
-                        input_bases[index],
-                        instance,
-                        input.shape.elements(),
-                        pointer_type,
-                    )
+                .map(|(index, _input)| {
+                    (!input_broadcast[index]).then(|| {
+                        let base = header_params[loop_base_index];
+                        loop_base_index += 1;
+                        base
+                    })
                 })
                 .collect::<Vec<_>>();
             for (index, input) in program.inputs.iter().enumerate() {
                 let offset = program.register_offsets[&input.slot];
                 for component in 0..input.shape.elements() {
-                    registers[offset + component] = Some(NativeRegister::F32(load_component(
-                        &mut builder,
-                        input_instance_bases[index],
-                        component,
-                    )));
+                    let value = if let Some(values) = &input_broadcast_values[index] {
+                        values[component]
+                    } else {
+                        load_component(
+                            &mut builder,
+                            input_instance_bases[index].unwrap(),
+                            component,
+                        )
+                    };
+                    registers[offset + component] = Some(NativeRegister::F32(value));
                 }
             }
             let state_instance_bases = program
                 .states
                 .iter()
-                .enumerate()
-                .map(|(index, state)| {
-                    instance_base(
-                        &mut builder,
-                        state_bases[index],
-                        instance,
-                        state.shape.elements(),
-                        pointer_type,
-                    )
+                .map(|_| {
+                    let base = header_params[loop_base_index];
+                    loop_base_index += 1;
+                    base
                 })
                 .collect::<Vec<_>>();
             for (index, state) in program.states.iter().enumerate() {
@@ -340,17 +471,13 @@ impl NativeKernel {
             let next_state_instance_bases = program
                 .states
                 .iter()
-                .enumerate()
-                .map(|(index, state)| {
-                    instance_base(
-                        &mut builder,
-                        next_state_bases[index],
-                        instance,
-                        state.shape.elements(),
-                        pointer_type,
-                    )
+                .map(|_| {
+                    let base = header_params[loop_base_index];
+                    loop_base_index += 1;
+                    base
                 })
                 .collect::<Vec<_>>();
+            debug_assert_eq!(loop_base_index, header_params.len());
             for instruction in &program.fixed_ir().instructions {
                 let value = lower_computation(
                     &mut builder,
@@ -358,23 +485,29 @@ impl NativeKernel {
                     &registers,
                     functions,
                     &constant_values,
+                    fast_math,
                 )?;
                 registers[instruction.output] = Some(value);
             }
-            let mut constraint_code = builder.ins().iconst(types::I32, 0);
-            for (index, constraint) in program.constraints.iter().enumerate() {
-                let condition = lower_predicate(
-                    &mut builder,
-                    &constraint.predicate,
-                    &registers,
-                    &constant_values,
-                )?;
-                let code_is_empty = builder.ins().icmp_imm(IntCC::Equal, constraint_code, 0);
-                let failed = builder.ins().bnot(condition);
-                let record = builder.ins().band(code_is_empty, failed);
-                let code = builder.ins().iconst(types::I32, (index + 1) as i64);
-                constraint_code = builder.ins().select(record, code, constraint_code);
-            }
+            let constraint_result = if checked {
+                let mut constraint_code = builder.ins().iconst(types::I32, 0);
+                for (index, constraint) in program.constraints.iter().enumerate() {
+                    let condition = lower_predicate(
+                        &mut builder,
+                        &constraint.predicate,
+                        &registers,
+                        &constant_values,
+                    )?;
+                    let code_is_empty = builder.ins().icmp_imm(IntCC::Equal, constraint_code, 0);
+                    let failed = builder.ins().bnot(condition);
+                    let record = builder.ins().band(code_is_empty, failed);
+                    let code = builder.ins().iconst(types::I32, (index + 1) as i64);
+                    constraint_code = builder.ins().select(record, code, constraint_code);
+                }
+                Some((constraint_code, constraint_code))
+            } else {
+                None
+            };
             for (index, state) in program.states.iter().enumerate() {
                 for (component, source) in state.update.iter().enumerate() {
                     let value =
@@ -388,18 +521,27 @@ impl NativeKernel {
                 }
             }
 
-            let has_fault = builder.ins().icmp_imm(IntCC::NotEqual, constraint_code, 0);
-            builder.ins().brif(
-                has_fault,
-                fault,
-                &[instance.into(), constraint_code.into()],
-                advance,
-                &[],
-            );
+            if let Some((failed_mask, fault_code)) = constraint_result {
+                let has_fault = builder.ins().icmp_imm(IntCC::NotEqual, failed_mask, 0);
+                builder.ins().brif(
+                    has_fault,
+                    fault,
+                    &[instance.into(), fault_code.into()],
+                    advance,
+                    &[],
+                );
+            } else {
+                builder.ins().jump(advance, &[]);
+            }
 
             builder.switch_to_block(advance);
             let next_instance = builder.ins().iadd_imm(instance, 1);
-            builder.ins().jump(header, &[next_instance.into()]);
+            let mut next_header_args = vec![cranelift_codegen::ir::BlockArg::Value(next_instance)];
+            for (index, (_, stride)) in initial_loop_bases.iter().enumerate() {
+                let next_base = builder.ins().iadd_imm(header_params[index + 1], *stride);
+                next_header_args.push(cranelift_codegen::ir::BlockArg::Value(next_base));
+            }
+            builder.ins().jump(header, &next_header_args);
 
             builder.switch_to_block(fault);
             let fault_instance = builder.block_params(fault)[0];
@@ -530,6 +672,7 @@ fn lower_computation(
     registers: &[Option<NativeRegister>],
     functions: MathFunctions,
     constants: &BTreeMap<u32, Value>,
+    fast_math: bool,
 ) -> Result<NativeRegister, BatchedExecutionError> {
     Ok(match computation {
         ScalarComputation::Copy(input) => lower_operand(builder, *input, registers, constants)?,
@@ -604,23 +747,62 @@ fn lower_computation(
             })
         }
         ScalarComputation::SumProducts(terms) => {
-            // There is no accumulated addend for the first product. Starting
-            // with fmul removes one instruction while preserving the checked
-            // finite/tolerance-based publication contract.
-            let Some((first_left, first_right)) = terms.first() else {
-                return Ok(NativeRegister::F32(constants[&0.0f32.to_bits()]));
-            };
-            let first_left = lower_numeric_operand(builder, *first_left, registers, constants)?;
-            let first_right = lower_numeric_operand(builder, *first_right, registers, constants)?;
-            let mut sum = builder.ins().fmul(first_left, first_right);
-            for (left, right) in terms.iter().skip(1) {
-                let left = lower_numeric_operand(builder, *left, registers, constants)?;
-                let right = lower_numeric_operand(builder, *right, registers, constants)?;
-                sum = builder.ins().fma(left, right, sum);
-            }
-            NativeRegister::F32(sum)
+            return lower_sum_products(builder, terms, registers, constants, fast_math);
         }
     })
+}
+
+fn lower_sum_products(
+    builder: &mut FunctionBuilder<'_>,
+    terms: &[(ScalarOperand, ScalarOperand)],
+    registers: &[Option<NativeRegister>],
+    constants: &BTreeMap<u32, Value>,
+    skip_zero_terms: bool,
+) -> Result<NativeRegister, BatchedExecutionError> {
+    let mut sum = None;
+    for (left, right) in terms {
+        if skip_zero_terms && (is_zero_operand(*left) || is_zero_operand(*right)) {
+            continue;
+        }
+        let value = match sum {
+            None => {
+                if skip_zero_terms && is_one_operand(*left) {
+                    lower_numeric_operand(builder, *right, registers, constants)?
+                } else if skip_zero_terms && is_one_operand(*right) {
+                    lower_numeric_operand(builder, *left, registers, constants)?
+                } else {
+                    let left = lower_numeric_operand(builder, *left, registers, constants)?;
+                    let right = lower_numeric_operand(builder, *right, registers, constants)?;
+                    builder.ins().fmul(left, right)
+                }
+            }
+            Some(sum) if skip_zero_terms && is_one_operand(*left) => {
+                let right = lower_numeric_operand(builder, *right, registers, constants)?;
+                builder.ins().fadd(sum, right)
+            }
+            Some(sum) if skip_zero_terms && is_one_operand(*right) => {
+                let left = lower_numeric_operand(builder, *left, registers, constants)?;
+                builder.ins().fadd(sum, left)
+            }
+            Some(sum) => {
+                let left = lower_numeric_operand(builder, *left, registers, constants)?;
+                let right = lower_numeric_operand(builder, *right, registers, constants)?;
+                builder.ins().fma(left, right, sum)
+            }
+        };
+        sum = Some(value);
+    }
+    Ok(NativeRegister::F32(
+        sum.unwrap_or_else(|| constants[&0.0_f32.to_bits()]),
+    ))
+}
+
+fn is_zero_operand(operand: ScalarOperand) -> bool {
+    matches!(operand, ScalarOperand::Constant(value) if value == 0.0)
+}
+
+fn is_one_operand(operand: ScalarOperand) -> bool {
+    matches!(operand, ScalarOperand::Constant(value) if value == 1.0)
 }
 
 fn lower_predicate(
@@ -789,23 +971,6 @@ fn store_component(builder: &mut FunctionBuilder<'_>, base: Value, component: us
     builder
         .ins()
         .store(MemFlags::trusted(), value, base, offset);
-}
-
-fn instance_base(
-    builder: &mut FunctionBuilder<'_>,
-    base: Value,
-    instance: Value,
-    elements: usize,
-    pointer_type: cranelift_codegen::ir::Type,
-) -> Value {
-    let element = builder
-        .ins()
-        .imul_imm(instance, i64::try_from(elements).unwrap());
-    let byte_offset = builder
-        .ins()
-        .imul_imm(element, i64::from(types::F32.bytes()));
-    debug_assert_eq!(builder.func.dfg.value_type(byte_offset), pointer_type);
-    builder.ins().iadd(base, byte_offset)
 }
 
 fn native_error(error: impl std::fmt::Display) -> BatchedExecutionError {

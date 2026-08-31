@@ -1141,6 +1141,19 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
             jit.last_fault().unwrap().constraint_name.as_ref(),
             "finite-candidate!"
         );
+
+        let mut jit_fast = program.prepare_jit_cpu_checked_fast(&inputs).unwrap();
+        let jit_fast_published = jit_fast.state().clone();
+        assert!(matches!(
+            jit_fast.dispatch_turns(1).unwrap_err(),
+            BatchedExecutionError::Integrity(_)
+        ));
+        assert_eq!(jit_fast.state(), &jit_fast_published);
+        assert_eq!(jit_fast.fault_count(), 1);
+        assert_eq!(
+            jit_fast.last_fault().unwrap().constraint_name.as_ref(),
+            "finite-candidate!"
+        );
     }
 }
 
