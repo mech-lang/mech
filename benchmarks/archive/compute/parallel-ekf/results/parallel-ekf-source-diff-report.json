@@ -1,0 +1,294 @@
+{
+  "schema_version": 1,
+  "base_mech": "hosts/gpu/fixtures/ekf-kernel.mec",
+  "definition": "Changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. This is an edit-size measure, not a claim about semantic difficulty.",
+  "mech_backend_support_delta": {
+    "base_commit": "1ca47cdeef1cef071a891babf5423af03f51466f",
+    "head_commit": "HEAD",
+    "files": [
+      "Cargo.lock",
+      "hosts/gpu/Cargo.toml",
+      "hosts/gpu/examples/parallel_ekf_benchmark.rs",
+      "hosts/gpu/src/batched/mod.rs",
+      "hosts/gpu/src/metal.rs"
+    ],
+    "added_lines": 348,
+    "deleted_lines": 85,
+    "changed_line_slots": 433,
+    "note": "This is backend/compiler support for native Metal and the direct benchmark path; generated WGSL/MSL is an artifact, not a second user program."
+  },
+  "rows": [
+    {
+      "language": "Mech",
+      "baseline": "hosts/gpu/fixtures/ekf-kernel.mec",
+      "advanced": "hosts/gpu/fixtures/ekf-kernel.mec",
+      "baseline_label": "same high-level `.mec` program",
+      "advanced_label": "same `.mec`; native backend selected at build",
+      "note": "The source recurrence does not change. Native Metal specialization is backend support, not a second Mech program.",
+      "baseline_lines": 116,
+      "baseline_chars": 4974,
+      "advanced_lines": 116,
+      "advanced_chars": 4974,
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "throughput_millions": {
+        "checked": 246.151,
+        "unchecked": 241.028
+      }
+    },
+    {
+      "language": "Rust",
+      "baseline": "hosts/gpu/examples/parallel_ekf_rust_scalar.rs",
+      "advanced": "hosts/gpu/examples/parallel_ekf_rust_simd.rs",
+      "baseline_label": "fixed-shape scalar control",
+      "advanced_label": "packed four-lane SIMD control",
+      "note": "The advanced control changes the value representation and execution loop.",
+      "baseline_lines": 220,
+      "baseline_chars": 6464,
+      "advanced_lines": 411,
+      "advanced_chars": 12058,
+      "baseline_to_advanced": {
+        "changed_line_slots": 533,
+        "added_lines": 374,
+        "deleted_lines": 183,
+        "changed_chars": 15990
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 256,
+        "added_lines": 210,
+        "deleted_lines": 106,
+        "changed_chars": 8883
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 431,
+        "added_lines": 391,
+        "deleted_lines": 96,
+        "changed_chars": 15278
+      },
+      "throughput_millions": {
+        "checked": 25.642120362,
+        "unchecked": 22.237150763
+      }
+    },
+    {
+      "language": "Python",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
+      "baseline_label": "Python outer loop",
+      "advanced_label": "same source; interpreter/runtime only",
+      "note": "There is no separate optimized Python source in the evidence set; NumPy vectorization is reported as its own row.",
+      "baseline_lines": 93,
+      "baseline_chars": 4150,
+      "advanced_lines": 93,
+      "advanced_chars": 4150,
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 168,
+        "added_lines": 81,
+        "deleted_lines": 104,
+        "changed_chars": 8484
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 168,
+        "added_lines": 81,
+        "deleted_lines": 104,
+        "changed_chars": 8484
+      },
+      "throughput_millions": {
+        "checked": null,
+        "unchecked": 0.055142191
+      }
+    },
+    {
+      "language": "NumPy",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py",
+      "baseline_label": "per-filter scalar loop",
+      "advanced_label": "batched fixed-shape vectorized operations",
+      "note": "This is a whole-program rewrite around NumPy array operations.",
+      "baseline_lines": 93,
+      "baseline_chars": 4150,
+      "advanced_lines": 173,
+      "advanced_chars": 6731,
+      "baseline_to_advanced": {
+        "changed_line_slots": 145,
+        "added_lines": 136,
+        "deleted_lines": 56,
+        "changed_chars": 6312
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 168,
+        "added_lines": 81,
+        "deleted_lines": 104,
+        "changed_chars": 8484
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 205,
+        "added_lines": 153,
+        "deleted_lines": 96,
+        "changed_chars": 9492
+      },
+      "throughput_millions": {
+        "checked": 10.854448735,
+        "unchecked": 12.255119158
+      }
+    },
+    {
+      "language": "Julia",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/julia_scalar.jl",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl",
+      "baseline_label": "generic scalar Julia",
+      "advanced_label": "explicit four-lane SIMD.jl intrinsics",
+      "note": "The advanced source introduces an explicit packed value type and lane loop.",
+      "baseline_lines": 103,
+      "baseline_chars": 4765,
+      "advanced_lines": 217,
+      "advanced_chars": 8549,
+      "baseline_to_advanced": {
+        "changed_line_slots": 245,
+        "added_lines": 200,
+        "deleted_lines": 86,
+        "changed_chars": 10636
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 155,
+        "added_lines": 96,
+        "deleted_lines": 109,
+        "changed_chars": 7258
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 215,
+        "added_lines": 200,
+        "deleted_lines": 99,
+        "changed_chars": 9487
+      },
+      "throughput_millions": {
+        "checked": 31.311360481744067,
+        "unchecked": 32.842297200456905
+      }
+    },
+    {
+      "language": "LuaJIT",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
+      "baseline_label": "generic matrix helper loop",
+      "advanced_label": "flat fixed-shape scalarized state",
+      "note": "The advanced source removes helper-level matrix temporaries and writes each component directly.",
+      "baseline_lines": 43,
+      "baseline_chars": 3369,
+      "advanced_lines": 169,
+      "advanced_chars": 7609,
+      "baseline_to_advanced": {
+        "changed_line_slots": 174,
+        "added_lines": 161,
+        "deleted_lines": 35,
+        "changed_chars": 9238
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 116,
+        "added_lines": 43,
+        "deleted_lines": 116,
+        "changed_chars": 4974
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 182,
+        "added_lines": 155,
+        "deleted_lines": 102,
+        "changed_chars": 9573
+      },
+      "throughput_millions": {
+        "checked": 1.2773431259999999,
+        "unchecked": 15.97699313
+      }
+    },
+    {
+      "language": "Lua",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
+      "baseline_label": "same flat source under PUC Lua",
+      "advanced_label": "same flat source under PUC Lua",
+      "note": "The Lua comparison isolates the runtime: the source is identical to the LuaJIT flat control.",
+      "baseline_lines": 169,
+      "baseline_chars": 7609,
+      "advanced_lines": 169,
+      "advanced_chars": 7609,
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 182,
+        "added_lines": 155,
+        "deleted_lines": 102,
+        "changed_chars": 9573
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 182,
+        "added_lines": 155,
+        "deleted_lines": 102,
+        "changed_chars": 9573
+      },
+      "throughput_millions": {
+        "checked": 0.565098,
+        "unchecked": 0.83461
+      }
+    },
+    {
+      "language": "Taichi",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/taichi_comparable.py",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/taichi_optimized.py",
+      "baseline_label": "Vector/Matrix resident fields",
+      "advanced_label": "scalar SoA fields and unrolled 3x3 arithmetic",
+      "note": "This is the source-specialized Taichi control; it still uses stock Taichi 1.7.4 and per-turn sync.",
+      "baseline_lines": 307,
+      "baseline_chars": 11996,
+      "advanced_lines": 318,
+      "advanced_chars": 14346,
+      "baseline_to_advanced": {
+        "changed_line_slots": 255,
+        "added_lines": 192,
+        "deleted_lines": 181,
+        "changed_chars": 13096
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 333,
+        "added_lines": 287,
+        "deleted_lines": 96,
+        "changed_chars": 14642
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 351,
+        "added_lines": 298,
+        "deleted_lines": 96,
+        "changed_chars": 17149
+      },
+      "throughput_millions": {
+        "checked": 168.798,
+        "unchecked": 217.297
+      }
+    }
+  ]
+}

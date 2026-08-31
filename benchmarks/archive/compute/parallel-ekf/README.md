@@ -39,6 +39,7 @@ git switch --track origin/codex/mech-program-gpu
 | Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
 | Cross-language checked/unchecked chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_cross_language_comparison.py` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
+| Source-edit cost report/renderer | `benchmarks/archive/compute/parallel-ekf/source_diff_report.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
 
 ## Native Metal control
@@ -114,6 +115,20 @@ the synchronized rows.
 
 ![Mech EKF execution-lane progression](results/parallel-ekf-mech-progression.svg)
 
+The throughput charts are paired with a source-edit inventory. It measures the
+actual baseline-to-advanced edit surface rather than comparing file lengths:
+changed line slots, changed character slots, and each variant's distance from
+the base Mech `.mec`. This makes the portability cost visible. Mech's high-level
+source delta is zero because the same program is compiled to every backend;
+the native-Metal implementation work is explicitly identified as backend
+support instead of being hidden as a source rewrite.
+
+![Parallel EKF source-edit cost](results/parallel-ekf-source-edit-cost.svg)
+
+The complete table is in
+`results/parallel-ekf-source-diff-report.md`, with machine-readable metrics in
+`results/parallel-ekf-source-diff-report.json`.
+
 Regenerate all three charts from the checked-in evidence with:
 
 ```text
@@ -131,6 +146,13 @@ python3 plot_mech_progression.py \
   results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
   results/apple-m1-2026-08-14.json \
   results/parallel-ekf-mech-progression.svg
+
+python3 source_diff_report.py \
+  results/apple-m1-checked-cross-language-2026-08-31.json \
+  results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
+  results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
+  results/apple-m1-lua-2026-08-31.json \
+  results
 ```
 
 To isolate the direct control from the other backend warmups, build the

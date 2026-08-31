@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="530" viewBox="0 0 1700 530">
+<rect width="100%" height="100%" fill="#080c14"/>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:14px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
+<text x="42" y="42" font-size="26" font-weight="700">Parallel EKF source-edit cost</text>
+<text x="42" y="68" class="muted" font-size="15">Changed source between baseline and advanced variants; zero means the runtime/backend changed instead of the program source</text>
+<text x="240" y="98" font-size="15" font-weight="600">Changed line slots</text>
+<text x="940.0" y="98" font-size="15" font-weight="600">Changed characters</text>
+<line x1="240.0" y1="108" x2="240.0" y2="440" class="grid"/>
+<line x1="940.0" y1="108" x2="940.0" y2="440" class="grid"/>
+<text x="240.0" y="462" text-anchor="middle" class="muted" font-size="12">0</text>
+<text x="940.0" y="462" text-anchor="middle" class="muted" font-size="12">0</text>
+<line x1="364.0" y1="108" x2="364.0" y2="440" class="grid"/>
+<line x1="1064.0" y1="108" x2="1064.0" y2="440" class="grid"/>
+<text x="364.0" y="462" text-anchor="middle" class="muted" font-size="12">106</text>
+<text x="1064.0" y="462" text-anchor="middle" class="muted" font-size="12">3,198</text>
+<line x1="488.0" y1="108" x2="488.0" y2="440" class="grid"/>
+<line x1="1188.0" y1="108" x2="1188.0" y2="440" class="grid"/>
+<text x="488.0" y="462" text-anchor="middle" class="muted" font-size="12">213</text>
+<text x="1188.0" y="462" text-anchor="middle" class="muted" font-size="12">6,396</text>
+<line x1="612.0" y1="108" x2="612.0" y2="440" class="grid"/>
+<line x1="1312.0" y1="108" x2="1312.0" y2="440" class="grid"/>
+<text x="612.0" y="462" text-anchor="middle" class="muted" font-size="12">319</text>
+<text x="1312.0" y="462" text-anchor="middle" class="muted" font-size="12">9,594</text>
+<line x1="736.0" y1="108" x2="736.0" y2="440" class="grid"/>
+<line x1="1436.0" y1="108" x2="1436.0" y2="440" class="grid"/>
+<text x="736.0" y="462" text-anchor="middle" class="muted" font-size="12">426</text>
+<text x="1436.0" y="462" text-anchor="middle" class="muted" font-size="12">12,792</text>
+<line x1="860.0" y1="108" x2="860.0" y2="440" class="grid"/>
+<line x1="1560.0" y1="108" x2="1560.0" y2="440" class="grid"/>
+<text x="860.0" y="462" text-anchor="middle" class="muted" font-size="12">533</text>
+<text x="1560.0" y="462" text-anchor="middle" class="muted" font-size="12">15,990</text>
+<text x="226" y="137" text-anchor="end" class="label">Mech</text>
+<rect x="240" y="123" width="1.0" height="22" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="248.0" y="138" class="value">0</text>
+<rect x="940.0" y="123" width="1.0" height="22" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="948.0" y="138" class="value">0</text>
+<text x="226" y="177" text-anchor="end" class="label">Python</text>
+<rect x="240" y="163" width="1.0" height="22" rx="3" fill="#3776ab" opacity="0.9"/>
+<text x="248.0" y="178" class="value">0</text>
+<rect x="940.0" y="163" width="1.0" height="22" rx="3" fill="#3776ab" opacity="0.9"/>
+<text x="948.0" y="178" class="value">0</text>
+<text x="226" y="217" text-anchor="end" class="label">Lua</text>
+<rect x="240" y="203" width="1.0" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<text x="248.0" y="218" class="value">0</text>
+<rect x="940.0" y="203" width="1.0" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<text x="948.0" y="218" class="value">0</text>
+<text x="226" y="257" text-anchor="end" class="label">NumPy</text>
+<rect x="240" y="243" width="168.7" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="416.7" y="258" class="value">145</text>
+<rect x="940.0" y="243" width="244.7" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="1192.7" y="258" class="value">6,312</text>
+<text x="226" y="297" text-anchor="end" class="label">LuaJIT</text>
+<rect x="240" y="283" width="202.4" height="22" rx="3" fill="#5ba37f" opacity="0.9"/>
+<text x="450.4" y="298" class="value">174</text>
+<rect x="940.0" y="283" width="358.2" height="22" rx="3" fill="#5ba37f" opacity="0.9"/>
+<text x="1306.2" y="298" class="value">9,238</text>
+<text x="226" y="337" text-anchor="end" class="label">Julia</text>
+<rect x="240" y="323" width="285.0" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="533.0" y="338" class="value">245</text>
+<rect x="940.0" y="323" width="412.4" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="1360.4" y="338" class="value">10,636</text>
+<text x="226" y="377" text-anchor="end" class="label">Taichi</text>
+<rect x="240" y="363" width="296.6" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="544.6" y="378" class="value">255</text>
+<rect x="940.0" y="363" width="507.8" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="1455.8" y="378" class="value">13,096</text>
+<text x="226" y="417" text-anchor="end" class="label">Rust</text>
+<rect x="240" y="403" width="620.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
+<text x="852.0" y="418" class="value">533</text>
+<rect x="940.0" y="403" width="620.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
+<text x="1552.0" y="418" class="value">15,990</text>
+<text x="42" y="495" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed 433 backend line slots and is intentionally not counted as program edits.</text>
+</svg>
