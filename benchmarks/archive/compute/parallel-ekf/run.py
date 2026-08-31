@@ -100,6 +100,19 @@ def main() -> None:
     missing = [name for name, path in required.items() if path is None]
     if missing:
         raise RuntimeError(f"missing benchmark tools: {', '.join(missing)}")
+    julia_simd_check = subprocess.run(
+        [required["julia"], "--startup-file=no", "-e", "using StaticArrays; using SIMD"],
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+    if julia_simd_check.returncode != 0:
+        raise RuntimeError(
+            "Julia SIMD comparison requires StaticArrays and SIMD.jl; install "
+            "them in the Julia environment used by the runner (Pkg.add([\"StaticArrays\", \"SIMD\"]))"
+        )
     if not args.mech_binary.is_file():
         raise RuntimeError(
             "build parallel_ekf_benchmark with --release --features native,jit first"
