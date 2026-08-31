@@ -18,12 +18,13 @@ from pathlib import Path
 COLORS = {
     "Mech": "#f4c430",      # Mech brand yellow
     "Rust": "#dea584",      # Rust orange
-    "Python": "#3776ab",    # Python blue
     "NumPy": "#4d77cf",     # NumPy blue
     "Julia": "#9558b2",     # Julia purple
     "Lua": "#000080",       # Lua navy
     "LuaJIT": "#5ba37f",    # LuaJIT green
     "Taichi": "#e36b6b",    # Taichi red
+    "Halide": "#ff8f00",    # Halide orange
+    "Futhark": "#e94f37",   # Futhark red
 }
 
 
@@ -56,6 +57,7 @@ def load_rows(
     native: dict,
     lua: dict | None = None,
     taichi_optimized: dict | None = None,
+    minimal: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -138,7 +140,7 @@ def load_rows(
         scalar("Julia SIMD.jl intrinsics", "Julia", "unchecked"),
         scalar("NumPy vectorized fixed-shape", "NumPy", "checked"),
         scalar("NumPy vectorized fixed-shape", "NumPy", "unchecked"),
-        scalar("NumPy scalar outer loop", "Python", "unchecked"),
+        scalar("NumPy scalar outer loop", "NumPy", "unchecked"),
         scalar("LuaJIT fixed-shape flat", "LuaJIT", "checked"),
         scalar("LuaJIT fixed-shape flat", "LuaJIT", "unchecked"),
         scalar("LuaJIT scalar outer loop", "LuaJIT", "unchecked"),
@@ -175,6 +177,25 @@ def load_rows(
             }
             for row in taichi_optimized["rows"]
         )
+    if minimal is not None:
+        for label, family in (
+            ("Halide checked", "Halide"),
+            ("Halide unchecked", "Halide"),
+            ("Futhark multicore 8 threads checked", "Futhark"),
+            ("Futhark multicore 8 threads unchecked", "Futhark"),
+        ):
+            row = minimal.get("rows", {}).get(label)
+            if row is not None and "throughput" in row:
+                import statistics
+
+                rows.append(
+                    {
+                        "label": family + ", " + ("unchecked" if label.endswith("unchecked") else "checked"),
+                        "family": family,
+                        "mode": "unchecked" if label.endswith("unchecked") else "checked",
+                        "throughput": statistics.median(row["throughput"]) / 1_000_000,
+                    }
+                )
     return rows
 
 
@@ -252,6 +273,7 @@ def main() -> None:
     parser.add_argument("output_directory", type=Path)
     parser.add_argument("lua", type=Path, nargs="?", help="plain Lua evidence JSON")
     parser.add_argument("--taichi-optimized", type=Path, help="optimized Taichi evidence JSON")
+    parser.add_argument("--minimal-source", type=Path, help="Halide/Futhark/NumPy minimal-control evidence JSON")
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
@@ -262,7 +284,12 @@ def main() -> None:
         if args.taichi_optimized
         else None
     )
-    rows = load_rows(cross_language, runtime, native, lua, taichi_optimized)
+    minimal = (
+        json.loads(args.minimal_source.read_text(encoding="utf-8"))
+        if args.minimal_source
+        else None
+    )
+    rows = load_rows(cross_language, runtime, native, lua, taichi_optimized, minimal)
     configuration = cross_language["configuration"]
     render(
         rows,

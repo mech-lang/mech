@@ -182,7 +182,8 @@ python3 plot_cross_language_comparison.py \
   results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
   results \
   results/apple-m1-lua-2026-08-31.json \
-  --taichi-optimized results/apple-m1-taichi-optimized-native-metal-2026-08-31.json
+  --taichi-optimized results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
+  --minimal-source results/apple-m1-minimal-source-2026-08-31.json
 
 python3 plot_mech_progression.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \
