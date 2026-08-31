@@ -3062,6 +3062,7 @@ fn generate_wgsl_with_turns(
         ));
     }
     let mut aliases = BTreeMap::new();
+    let mut expression_aliases = BTreeMap::<String, ScalarOperand>::new();
     for instruction in instructions {
         if optimize_unchecked {
             match fast_wgsl_instruction(&instruction.computation, &aliases) {
@@ -3070,6 +3071,18 @@ fn generate_wgsl_with_turns(
                     continue;
                 }
                 FastWgslInstruction::Expression(expression) => {
+                    // All scalar computations are pure. Reuse an identical
+                    // expression instead of asking the backend to rediscover
+                    // common subexpressions across the lowered instruction
+                    // stream (matrix products commonly repeat these terms).
+                    if let Some(operand) = expression_aliases.get(&expression).copied() {
+                        aliases.insert(instruction.output, operand);
+                        continue;
+                    }
+                    expression_aliases.insert(
+                        expression.clone(),
+                        ScalarOperand::Register(instruction.output),
+                    );
                     shader.push_str(&format!(
                         "  {}let r{} = {};\n",
                         if fused_turns.is_some() { "  " } else { "" },

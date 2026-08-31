@@ -1180,6 +1180,12 @@ fn simd_jit_matches_scalar_and_retains_state_on_fault() {
         assert_close(expected, &simd.state()[slot], 1.0e-4);
     }
 
+    let mut parallel = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    parallel.dispatch_turns_parallel(3, 2).unwrap();
+    for (slot, expected) in scalar.state() {
+        assert_close(expected, &parallel.state()[slot], 1.0e-4);
+    }
+
     let mut invalid_inputs = inputs;
     invalid_inputs
         .get_mut("bearing")
@@ -1198,6 +1204,15 @@ fn simd_jit_matches_scalar_and_retains_state_on_fault() {
         checked.last_fault().unwrap().constraint_name.as_ref(),
         "finite-candidate!"
     );
+
+    let mut parallel_checked = program.prepare_jit_simd_cpu(&invalid_inputs).unwrap();
+    let parallel_published = parallel_checked.state().clone();
+    assert!(matches!(
+        parallel_checked.dispatch_turns_parallel(1, 2).unwrap_err(),
+        BatchedExecutionError::Integrity(_)
+    ));
+    assert_eq!(parallel_checked.state(), &parallel_published);
+    assert_eq!(parallel_checked.fault_count(), 1);
 }
 
 #[cfg(feature = "native")]

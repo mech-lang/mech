@@ -348,6 +348,25 @@ def main() -> None:
                     for text in scalar_mech_outputs
                 ),
             )
+        for label, pattern, checksum_pattern in (
+            (
+                "Mech Cranelift SIMD-JIT parallel",
+                r"Mech Cranelift SIMD-JIT parallel throughput: ([0-9.]+) million",
+                r"Mech Cranelift SIMD-JIT parallel checksum: ([0-9.eE+-]+)",
+            ),
+            (
+                "Mech Cranelift SIMD-JIT parallel unchecked fast",
+                r"Mech Cranelift SIMD-JIT parallel unchecked fast throughput: ([0-9.]+) million",
+                r"Mech Cranelift SIMD-JIT parallel unchecked fast checksum: ([0-9.eE+-]+)",
+            ),
+        ):
+            scalar[label] = (
+                statistics.median(number(text, pattern) for text in scalar_mech_outputs)
+                * 1e6,
+                statistics.median(
+                    number(text, checksum_pattern) for text in scalar_mech_outputs
+                ),
+            )
         for lane, command in language_commands.items():
             if command is not None:
                 count = (

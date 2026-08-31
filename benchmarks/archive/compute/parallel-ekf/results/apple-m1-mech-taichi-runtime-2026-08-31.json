@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31",
+  "platform": "Apple M1",
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples": 3,
+    "synchronization": "after every turn",
+    "mech_cpu_workers": 8,
+    "taichi_cpu_workers": 8,
+    "mech_gpu_backend": "WGPU Metal",
+    "taichi_gpu_backend": "Metal"
+  },
+  "rows": [
+    {"label": "Mech SIMD/JIT CPU, checked (8 workers)", "runtime": "Mech", "throughput_millions": 104.783, "samples": [98.691, 104.783, 128.144]},
+    {"label": "Taichi LLVM CPU, checked (8 workers)", "runtime": "Taichi", "throughput_millions": 86.047, "samples": [86.047, 85.795, 86.720]},
+    {"label": "Mech WGPU GPU, checked", "runtime": "Mech", "throughput_millions": 152.972, "samples": [152.314, 152.972, 160.313]},
+    {"label": "Taichi Metal GPU, checked", "runtime": "Taichi", "throughput_millions": 179.504, "samples": [179.504, 151.519, 190.000]},
+    {"label": "Mech SIMD/JIT CPU, unchecked (8 workers)", "runtime": "Mech", "throughput_millions": 110.469, "samples": [133.520, 110.469, 100.190]},
+    {"label": "Taichi LLVM CPU, unchecked (8 workers)", "runtime": "Taichi", "throughput_millions": 98.140, "samples": [98.140, 97.587, 98.296]},
+    {"label": "Mech WGPU GPU, unchecked", "runtime": "Mech", "throughput_millions": 157.141, "samples": [167.418, 143.895, 157.141]},
+    {"label": "Taichi Metal GPU, unchecked", "runtime": "Taichi", "throughput_millions": 222.210, "samples": [231.464, 204.548, 222.210]}
+  ]
+}

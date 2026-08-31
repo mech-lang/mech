@@ -33,6 +33,7 @@ git switch --track origin/codex/mech-program-gpu
 | LuaJIT flat fixed-shape control | `benchmarks/archive/compute/parallel-ekf/luajit_fast.lua` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
+| Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
 
 ## Taichi parity harness
@@ -102,6 +103,44 @@ Taichi receives an explicit `for i in range(N)` and lets LLVM decide its CPU
 parallel/vector lowering, while Mech's SIMD lane width is explicit. Use the
 worker count and synchronization policy in the result table whenever comparing
 the two.
+
+## Matched eight-worker CPU/GPU comparison
+
+The parallel SIMD-JIT entry point partitions complete four-lane groups across
+eight scoped workers. Workers join before the next turn begins, so this remains
+a synchronous resident loop with the same state publication and fault boundary
+as the single-worker path. The checked path retains the previously published
+state when any worker reports an invalid candidate.
+
+The chart below uses the same 500,000 resident filters, 40 measured turns,
+three isolated process samples, and synchronization after every turn for both
+runtimes. Mech's GPU rows use one host dispatch per turn; Taichi's Metal rows
+call `ti.sync()` after each kernel turn. CPU rows use eight workers. Setup,
+compilation, allocation, warmup, and final readback are excluded.
+
+![Matched Mech and Taichi EKF throughput](results/apple-m1-mech-taichi-runtime-2026-08-31.svg)
+
+| Runtime/backend | Checked | Unchecked |
+| --- | ---: | ---: |
+| Mech SIMD/JIT CPU, 8 workers | 104.783M/s | 110.469M/s |
+| Taichi LLVM CPU, 8 workers | 86.047M/s | 98.140M/s |
+| Mech WGPU GPU, per-turn dispatch | 152.972M/s | 157.141M/s |
+| Taichi Metal GPU, per-turn sync | 179.504M/s | 222.210M/s |
+
+The checked Mech GPU path is within 15% of the Taichi Metal control, while the
+parallel checked and unchecked CPU paths exceed Taichi's eight-worker CPU
+throughput. The remaining unchecked GPU gap is a launch/device-code tuning
+target; it is not hidden by batching, because every row above waits at the
+turn boundary. Raw medians and all individual samples are recorded in
+`results/apple-m1-mech-taichi-runtime-2026-08-31.json`.
+
+Regenerate the SVG from the checked-in measurements with:
+
+```text
+python3 plot_runtime_comparison.py \
+  results/apple-m1-mech-taichi-runtime-2026-08-31.json \
+  results/apple-m1-mech-taichi-runtime-2026-08-31.svg
+```
 
 The complete runner can execute both controls and compare their fresh-session
 checksums with the Mech GPU results. It pins the Taichi backend explicitly and

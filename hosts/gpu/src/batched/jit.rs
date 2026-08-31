@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::{mem, sync::Arc};
+use std::{mem, sync::Arc, thread};
 
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, MemFlags, UserFuncName, Value,
@@ -28,6 +28,8 @@ type NativeSimdTurn = unsafe extern "C" fn(
     input_pointers: *const *const f32,
     state_pointers: *const *mut f32,
     next_state_pointers: *const *mut f32,
+    start_group: usize,
+    end_group: usize,
 ) -> u64;
 
 struct NativeKernel {
@@ -435,8 +437,48 @@ impl BatchedJitSimdCpuSession {
                     self.input_pointers.as_ptr(),
                     self.state_pointers.as_ptr(),
                     self.next_state_pointers.as_ptr(),
+                    0,
+                    self.program.instances as usize / SIMD_JIT_LANES,
                 )
             };
+            if let Some(fault) = self
+                .program
+                .failed_packed_constraint(packed_fault, attempted_turn)
+            {
+                return Err(self.faults.record(fault));
+            }
+            mem::swap(&mut self.state_pointers, &mut self.next_state_pointers);
+            mem::swap(&mut self.packed_state, &mut self.packed_next_state);
+            self.logical_state_dirty = true;
+        }
+        Ok(())
+    }
+
+    /// Dispatches the resident SIMD kernel across disjoint instance ranges.
+    /// Workers join before the next turn starts, preserving the synchronous
+    /// resident-loop contract while exposing the parallel CPU baseline used by
+    /// Taichi's CPU backend.
+    pub fn dispatch_turns_parallel(
+        &mut self,
+        turns: u32,
+        workers: usize,
+    ) -> Result<(), BatchedExecutionError> {
+        if turns == 0 {
+            return Err(BatchedExecutionError::ZeroTurns);
+        }
+        if workers <= 1 {
+            return self.dispatch_turns(turns);
+        }
+        let groups = self.program.instances as usize / SIMD_JIT_LANES;
+        if groups == 0 {
+            return Err(BatchedExecutionError::Native(
+                "parallel SIMD JIT requires at least one instance group".to_owned(),
+            ));
+        }
+        let workers = workers.min(groups);
+        for _ in 0..turns {
+            let attempted_turn = self.faults.next_turn();
+            let packed_fault = self.dispatch_parallel_once(groups, workers);
             if let Some(fault) = self
                 .program
                 .failed_packed_constraint(packed_fault, attempted_turn)
@@ -489,6 +531,74 @@ impl BatchedJitSimdCpuSession {
                     .as_mut_ptr(),
             );
         }
+    }
+
+    fn dispatch_parallel_once(&self, groups: usize, workers: usize) -> u64 {
+        let turn = self.kernel.turn;
+        // Raw pointers cannot be sent across a thread boundary directly. The
+        // generated kernel's range contract makes these addresses safe to
+        // reconstruct in each worker: workers receive disjoint SIMD groups.
+        let input_addresses = Arc::new(
+            self.input_pointers
+                .iter()
+                .map(|pointer| *pointer as usize)
+                .collect::<Vec<_>>(),
+        );
+        let state_addresses = Arc::new(
+            self.state_pointers
+                .iter()
+                .map(|pointer| *pointer as usize)
+                .collect::<Vec<_>>(),
+        );
+        let next_state_addresses = Arc::new(
+            self.next_state_pointers
+                .iter()
+                .map(|pointer| *pointer as usize)
+                .collect::<Vec<_>>(),
+        );
+        thread::scope(|scope| {
+            let mut handles = Vec::with_capacity(workers);
+            for worker in 0..workers {
+                let input_addresses = Arc::clone(&input_addresses);
+                let state_addresses = Arc::clone(&state_addresses);
+                let next_state_addresses = Arc::clone(&next_state_addresses);
+                let start_group = groups * worker / workers;
+                let end_group = groups * (worker + 1) / workers;
+                handles.push(scope.spawn(move || {
+                    let input_pointers = input_addresses
+                        .iter()
+                        .map(|pointer| *pointer as *const f32)
+                        .collect::<Vec<_>>();
+                    let state_pointers = state_addresses
+                        .iter()
+                        .map(|pointer| *pointer as *mut f32)
+                        .collect::<Vec<_>>();
+                    let next_state_pointers = next_state_addresses
+                        .iter()
+                        .map(|pointer| *pointer as *mut f32)
+                        .collect::<Vec<_>>();
+                    // SAFETY: each invocation receives a non-overlapping
+                    // [start_group, end_group) range. The generated function
+                    // only accesses that range and all backing allocations
+                    // remain live through the scoped join.
+                    unsafe {
+                        turn(
+                            input_pointers.as_ptr(),
+                            state_pointers.as_ptr(),
+                            next_state_pointers.as_ptr(),
+                            start_group,
+                            end_group,
+                        )
+                    }
+                }));
+            }
+            handles
+                .drain(..)
+                .map(|handle| handle.join().expect("parallel SIMD worker panicked"))
+                .filter(|fault| *fault != 0)
+                .min()
+                .unwrap_or(0)
+        })
     }
 }
 
@@ -938,6 +1048,8 @@ impl NativeSimdKernel {
         for _ in 0..3 {
             signature.params.push(AbiParam::new(pointer_type));
         }
+        signature.params.push(AbiParam::new(pointer_type));
+        signature.params.push(AbiParam::new(pointer_type));
         signature.returns.push(AbiParam::new(types::I64));
         let function_id = module
             .declare_function("mech_fixed_numeric_simd_turn", Linkage::Local, &signature)
@@ -1031,7 +1143,8 @@ impl NativeSimdKernel {
                     (bits, builder.ins().splat(types::F32X4, scalar))
                 })
                 .collect::<BTreeMap<_, _>>();
-            let zero = builder.ins().iconst(pointer_type, 0);
+            let start_group = builder.block_params(entry)[3];
+            let end_group = builder.block_params(entry)[4];
             let mut initial_loop_bases = Vec::with_capacity(loop_base_count);
             for (index, input) in program.inputs.iter().enumerate() {
                 if !input_broadcast[index] {
@@ -1045,7 +1158,9 @@ impl NativeSimdKernel {
                             .unwrap(),
                     )
                     .unwrap();
-                    initial_loop_bases.push((input_bases[index], stride));
+                    let offset = builder.ins().imul_imm(start_group, stride);
+                    let base = builder.ins().iadd(input_bases[index], offset);
+                    initial_loop_bases.push((base, stride));
                 }
             }
             for (index, state) in program.states.iter().enumerate() {
@@ -1059,7 +1174,9 @@ impl NativeSimdKernel {
                         .unwrap(),
                 )
                 .unwrap();
-                initial_loop_bases.push((state_bases[index], stride));
+                let offset = builder.ins().imul_imm(start_group, stride);
+                let base = builder.ins().iadd(state_bases[index], offset);
+                initial_loop_bases.push((base, stride));
             }
             for (index, state) in program.states.iter().enumerate() {
                 let stride = i64::try_from(
@@ -1072,10 +1189,12 @@ impl NativeSimdKernel {
                         .unwrap(),
                 )
                 .unwrap();
-                initial_loop_bases.push((next_state_bases[index], stride));
+                let offset = builder.ins().imul_imm(start_group, stride);
+                let base = builder.ins().iadd(next_state_bases[index], offset);
+                initial_loop_bases.push((base, stride));
             }
             debug_assert_eq!(initial_loop_bases.len(), loop_base_count);
-            let mut initial_header_args = vec![cranelift_codegen::ir::BlockArg::Value(zero)];
+            let mut initial_header_args = vec![cranelift_codegen::ir::BlockArg::Value(start_group)];
             initial_header_args.extend(
                 initial_loop_bases
                     .iter()
@@ -1086,10 +1205,9 @@ impl NativeSimdKernel {
             builder.switch_to_block(header);
             let header_params = builder.block_params(header).to_vec();
             let group = header_params[0];
-            let groups = i64::from(program.instances / SIMD_JIT_LANES as u32);
             let has_group = builder
                 .ins()
-                .icmp_imm(IntCC::UnsignedLessThan, group, groups);
+                .icmp(IntCC::UnsignedLessThan, group, end_group);
             builder.ins().brif(has_group, body, &[], exit, &[]);
 
             builder.switch_to_block(body);

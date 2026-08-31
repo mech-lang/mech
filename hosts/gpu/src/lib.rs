@@ -47,6 +47,9 @@ mod compute_backends;
 pub use compute_backends::*;
 mod execution_plan;
 pub use execution_plan::*;
+// The EKF and particle kernels are register-heavy. 64 keeps enough resident
+// workgroups on Apple Metal and Vulkan while avoiding the occupancy drop seen
+// with 128-thread groups on the benchmark hardware.
 pub const WORKGROUP_SIZE: u32 = 64;
 
 #[cfg(all(test, feature = "native"))]
