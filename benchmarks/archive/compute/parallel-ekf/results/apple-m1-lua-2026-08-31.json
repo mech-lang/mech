@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31",
+  "platform": "Apple M1 macOS",
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 3,
+    "synchronization": "after every measured dispatch",
+    "source": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
+    "note": "The same fixed-shape flat source runs under PUC Lua and LuaJIT; only the interpreter/runtime changes."
+  },
+  "versions": {
+    "lua": "Lua 5.5.1",
+    "luajit": "LuaJIT 2.1.1785763465"
+  },
+  "rows": [
+    {
+      "label": "Lua fixed-shape flat checked",
+      "mode": "checked",
+      "throughput_millions": 0.565098,
+      "samples_millions": [0.562058, 0.565098, 0.567534],
+      "checksum": 2682056.217546998,
+      "faults": 0
+    },
+    {
+      "label": "Lua fixed-shape flat unchecked",
+      "mode": "unchecked",
+      "throughput_millions": 0.834610,
+      "samples_millions": [0.832802, 0.834610, 0.834770],
+      "checksum": 2682056.217546998,
+      "faults": 0
+    }
+  ],
+  "raw_samples": {
+    "checked_elapsed_seconds": [0.355835, 0.353921, 0.352402],
+    "unchecked_elapsed_seconds": [0.240153, 0.239633, 0.239587]
+  },
+  "commit": "1ca47cdeef1cef071a891babf5423af03f51466f"
+}

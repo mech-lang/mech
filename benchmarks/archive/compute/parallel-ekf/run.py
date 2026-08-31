@@ -120,6 +120,7 @@ def main() -> None:
 
     required = {
         "julia": shutil.which("julia"),
+        "lua": shutil.which("lua"),
         "luajit": shutil.which("luajit"),
         "rustc": shutil.which("rustc"),
     }
@@ -278,6 +279,18 @@ def main() -> None:
                 str(HERE / "luajit_scalar.lua"),
                 *common,
             ],
+            "Lua fixed-shape flat unchecked": [
+                required["lua"],
+                str(HERE / "luajit_fast.lua"),
+                *common,
+                "unchecked",
+            ],
+            "Lua fixed-shape flat checked": [
+                required["lua"],
+                str(HERE / "luajit_fast.lua"),
+                *common,
+                "checked",
+            ],
             "LuaJIT fixed-shape flat unchecked": [
                 required["luajit"],
                 str(HERE / "luajit_fast.lua"),
@@ -375,7 +388,9 @@ def main() -> None:
         for lane, command in language_commands.items():
             if command is not None:
                 count = (
-                    args.luajit_samples if lane.startswith("LuaJIT") else args.samples
+                    args.luajit_samples
+                    if lane.startswith(("LuaJIT", "Lua fixed-shape"))
+                    else args.samples
                 )
                 scalar[lane] = medians(
                     sample(command, count, environment, evidence_runs, lane)
@@ -545,6 +560,7 @@ def main() -> None:
                 ],
                 "julia": [required["julia"], "--version"],
                 "luajit": [required["luajit"], "-v"],
+                "lua": [required["lua"], "-v"],
             }
             if args.taichi_python is not None:
                 metadata_commands["taichi"] = [

@@ -7,7 +7,7 @@
 
 use std::{
     collections::BTreeMap,
-    mem,
+    env, mem,
     time::{Duration, Instant},
 };
 
@@ -18,14 +18,18 @@ use naga::{
     front::wgsl,
     valid::{Capabilities, ValidationFlags, Validator},
 };
+use objc::rc::autoreleasepool;
 
-use crate::{BatchedExecutionError, FixedShapeKernel, WORKGROUP_SIZE};
+use crate::{BatchedExecutionError, FixedShapeKernel};
 use mech_core::{CellSlotId, IntegrityConstraintId};
 
 const FAULT_WORDS: usize = 2;
+const DEFAULT_METAL_THREADS_PER_THREADGROUP: u64 = 64;
+const STACK_BINDING_LIMIT: usize = 16;
 
 struct MetalState {
     slot: CellSlotId,
+    elements_per_instance: usize,
     elements: usize,
     read_binding: u32,
     write_binding: u32,
@@ -38,15 +42,19 @@ pub struct MetalResidentGpuSession {
     queue: CommandQueue,
     pipeline: ComputePipelineState,
     inputs: Vec<(u32, Buffer)>,
-    sizes: Buffer,
-    sizes_binding: u32,
+    sizes: Option<Buffer>,
+    sizes_binding: Option<u32>,
+    binding_count: usize,
     states: Vec<MetalState>,
     fault: Option<Buffer>,
     constraints: Vec<(IntegrityConstraintId, Box<str>)>,
-    workgroups: u64,
+    threads: u64,
     next_group: usize,
     last_output_group: Option<usize>,
     attempted_turns: u64,
+    threads_per_threadgroup: u64,
+    in_place: bool,
+    component_major: bool,
     checked: bool,
 }
 
@@ -70,9 +78,35 @@ impl MetalResidentGpuSession {
         let device = Device::system_default()
             .ok_or_else(|| BatchedExecutionError::Native("Metal device unavailable".to_owned()))?;
         let queue = device.new_command_queue();
-        let (msl_source, entry_point, size_bindings) = wgsl_to_msl(kernel.wgsl())?;
+        let checked = kernel.integrity_buffer().is_some();
+        let in_place = !checked;
+        let component_major = in_place;
+        let shader_source = if component_major {
+            component_major_wgsl(kernel, &kernel.unchecked_in_place_wgsl()?)
+        } else {
+            kernel.wgsl().to_owned()
+        };
+        if env::var_os("MECH_DUMP_NATIVE_WGSL").is_some() {
+            std::fs::write("/tmp/mech-native-metal.wgsl", &shader_source).map_err(|error| {
+                BatchedExecutionError::Native(format!("dump native Metal WGSL: {error}"))
+            })?;
+        }
+        let (msl_source, entry_point, size_bindings, sizes_binding) = wgsl_to_msl(&shader_source)?;
+        if env::var_os("MECH_DUMP_NATIVE_MSL").is_some() {
+            std::fs::write("/tmp/mech-native-metal.metal", &msl_source).map_err(|error| {
+                BatchedExecutionError::Native(format!("dump native Metal MSL: {error}"))
+            })?;
+        }
         let options = metal::CompileOptions::new();
-        options.set_language_version(metal::MTLLanguageVersion::V2_2);
+        let language_version = match env::var("MECH_METAL_LANGUAGE_VERSION").as_deref() {
+            Ok("3.0") => metal::MTLLanguageVersion::V3_0,
+            Ok("3.1") => metal::MTLLanguageVersion::V3_1,
+            _ => metal::MTLLanguageVersion::V2_2,
+        };
+        options.set_language_version(language_version);
+        // The unchecked contract explicitly permits relaxed floating-point
+        // reassociation; checked publication keeps Metal's default precision.
+        options.set_fast_math_enabled(!checked);
         let library = device
             .new_library_with_source(&msl_source, &options)
             .map_err(|error| {
@@ -84,6 +118,14 @@ impl MetalResidentGpuSession {
         let pipeline = device
             .new_compute_pipeline_state_with_function(&function)
             .map_err(|error| BatchedExecutionError::Native(format!("Metal pipeline: {error}")))?;
+        let threads_per_threadgroup = env::var("MECH_METAL_THREADS_PER_THREADGROUP")
+            .ok()
+            .and_then(|value| value.parse::<u64>().ok())
+            .filter(|value| {
+                value.is_power_of_two()
+                    && *value <= pipeline.max_total_threads_per_threadgroup() as u64
+            })
+            .unwrap_or(DEFAULT_METAL_THREADS_PER_THREADGROUP);
 
         let physical_inputs = kernel.physical_inputs(inputs)?;
         let input_buffers = physical_inputs
@@ -102,17 +144,31 @@ impl MetalResidentGpuSession {
             .physical_states()
             .into_iter()
             .map(|state| {
+                let initial_values = if component_major {
+                    transpose_state(
+                        &state.initial_values,
+                        state.elements_per_instance,
+                        kernel.instances() as usize,
+                    )
+                } else {
+                    state.initial_values.clone()
+                };
                 let initial = device.new_buffer_with_data(
-                    state.initial_values.as_ptr() as *const _,
-                    (state.initial_values.len() * mem::size_of::<f32>()) as metal::NSUInteger,
+                    initial_values.as_ptr() as *const _,
+                    (initial_values.len() * mem::size_of::<f32>()) as metal::NSUInteger,
                     MTLResourceOptions::StorageModeShared,
                 );
-                let alternate = device.new_buffer(
-                    (state.elements * mem::size_of::<f32>()) as u64,
-                    MTLResourceOptions::StorageModeShared,
-                );
+                let alternate = if in_place {
+                    initial.clone()
+                } else {
+                    device.new_buffer(
+                        (state.elements * mem::size_of::<f32>()) as u64,
+                        MTLResourceOptions::StorageModeShared,
+                    )
+                };
                 MetalState {
                     slot: state.slot,
+                    elements_per_instance: state.elements_per_instance,
                     elements: state.elements,
                     read_binding: state.read_binding,
                     write_binding: state.write_binding,
@@ -121,7 +177,6 @@ impl MetalResidentGpuSession {
             })
             .collect::<Vec<_>>();
 
-        let checked = kernel.integrity_buffer().is_some();
         let fault = checked.then(|| {
             let values = [0_u32, u32::MAX];
             device.new_buffer_with_data(
@@ -130,8 +185,6 @@ impl MetalResidentGpuSession {
                 MTLResourceOptions::StorageModeShared,
             )
         });
-        let sizes_binding =
-            (physical_inputs.len() + states.len() * 2 + usize::from(checked)) as u32;
         let mut buffer_lengths = BTreeMap::new();
         for input in &physical_inputs {
             buffer_lengths.insert(input.binding, input.elements as u32);
@@ -143,47 +196,76 @@ impl MetalResidentGpuSession {
         if let Some(integrity) = kernel.integrity_buffer() {
             buffer_lengths.insert(integrity.binding, FAULT_WORDS as u32);
         }
-        let size_words = size_bindings
-            .iter()
-            .map(|(_, index)| *index as usize + 1)
-            .max()
-            .unwrap_or(0);
-        let mut size_values = vec![0_u32; size_words];
-        for (binding, index) in size_bindings {
-            size_values[index as usize] = *buffer_lengths.get(&binding).ok_or_else(|| {
-                BatchedExecutionError::Native(format!(
-                    "Metal has no physical buffer for WGSL binding {binding}"
-                ))
-            })?;
-        }
-        let sizes = device.new_buffer_with_data(
-            size_values.as_ptr() as *const _,
-            (size_values.len() * mem::size_of::<u32>()) as metal::NSUInteger,
-            MTLResourceOptions::StorageModeShared,
-        );
+        let sizes = if size_bindings.is_empty() {
+            None
+        } else {
+            let size_words = size_bindings
+                .iter()
+                .map(|(_, index)| *index as usize + 1)
+                .max()
+                .unwrap_or(0);
+            let mut size_values = vec![0_u32; size_words];
+            for (binding, index) in size_bindings {
+                size_values[index as usize] = *buffer_lengths.get(&binding).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "Metal has no physical buffer for WGSL binding {binding}"
+                    ))
+                })?;
+            }
+            Some(device.new_buffer_with_data(
+                size_values.as_ptr() as *const _,
+                (size_values.len() * mem::size_of::<u32>()) as metal::NSUInteger,
+                MTLResourceOptions::StorageModeShared,
+            ))
+        };
         let constraints = kernel
             .named_integrity_constraints()
             .map(|(id, name)| (id, name.into()))
             .collect();
+        let binding_count = physical_inputs
+            .iter()
+            .map(|input| input.binding as usize + 1)
+            .chain(states.iter().flat_map(|state| {
+                [
+                    state.read_binding as usize + 1,
+                    state.write_binding as usize + 1,
+                ]
+            }))
+            .chain(
+                fault
+                    .as_ref()
+                    .map(|_| physical_inputs.len() + states.len() * 2 + 1),
+            )
+            .chain(sizes_binding.map(|binding| binding as usize + 1))
+            .max()
+            .unwrap_or(0);
         Ok(Self {
             queue,
             pipeline,
             inputs: input_buffers,
             sizes,
             sizes_binding,
+            binding_count,
             states,
             fault,
             constraints,
-            workgroups: u64::from(kernel.workgroup_count()),
+            threads: u64::from(kernel.instances()),
             next_group: 0,
             last_output_group: None,
             attempted_turns: 0,
+            threads_per_threadgroup,
+            in_place,
+            component_major,
             checked,
         })
     }
 
     pub fn adapter(&self) -> &'static str {
         "Metal (native)"
+    }
+
+    pub const fn threads_per_threadgroup(&self) -> u64 {
+        self.threads_per_threadgroup
     }
 
     pub fn dispatch_turns(&mut self, turns: u32) -> Result<Duration, BatchedExecutionError> {
@@ -197,45 +279,86 @@ impl MetalResidentGpuSession {
                 self.clear_fault();
             }
             let read_group = self.next_group;
-            let write_group = 1 - read_group;
-            let command_buffer = self.queue.new_command_buffer();
-            let encoder = command_buffer.new_compute_command_encoder();
-            encoder.set_compute_pipeline_state(&self.pipeline);
-            for (binding, buffer) in &self.inputs {
-                encoder.set_buffer(u64::from(*binding), Some(buffer), 0);
-            }
-            for state in &self.states {
-                encoder.set_buffer(
-                    u64::from(state.read_binding),
-                    Some(&state.buffers[read_group]),
-                    0,
+            let write_group = if self.in_place {
+                read_group
+            } else {
+                1 - read_group
+            };
+            autoreleasepool(|| {
+                // All bound buffers outlive this command buffer and completion
+                // is awaited before the next turn, so avoid per-submit retain
+                // traffic on the hot path.
+                let command_buffer = self.queue.new_command_buffer_with_unretained_references();
+                let encoder = command_buffer.new_compute_command_encoder();
+                encoder.set_compute_pipeline_state(&self.pipeline);
+                if self.binding_count <= STACK_BINDING_LIMIT {
+                    let mut buffers: [Option<&metal::BufferRef>; STACK_BINDING_LIMIT] =
+                        [None; STACK_BINDING_LIMIT];
+                    let offsets = [0_u64; STACK_BINDING_LIMIT];
+                    for (binding, buffer) in &self.inputs {
+                        buffers[*binding as usize] = Some(buffer);
+                    }
+                    for state in &self.states {
+                        buffers[state.read_binding as usize] = Some(&state.buffers[read_group]);
+                        if !self.in_place {
+                            buffers[state.write_binding as usize] =
+                                Some(&state.buffers[write_group]);
+                        }
+                    }
+                    if let Some(fault) = &self.fault {
+                        let binding = self.inputs.len() + self.states.len() * 2;
+                        buffers[binding] = Some(fault);
+                    }
+                    if let (Some(binding), Some(sizes)) = (self.sizes_binding, &self.sizes) {
+                        buffers[binding as usize] = Some(sizes);
+                    }
+                    encoder.set_buffers(
+                        0,
+                        &buffers[..self.binding_count],
+                        &offsets[..self.binding_count],
+                    );
+                } else {
+                    for (binding, buffer) in &self.inputs {
+                        encoder.set_buffer(u64::from(*binding), Some(buffer), 0);
+                    }
+                    for state in &self.states {
+                        encoder.set_buffer(
+                            u64::from(state.read_binding),
+                            Some(&state.buffers[read_group]),
+                            0,
+                        );
+                        if !self.in_place {
+                            encoder.set_buffer(
+                                u64::from(state.write_binding),
+                                Some(&state.buffers[write_group]),
+                                0,
+                            );
+                        }
+                    }
+                    if let Some(fault) = &self.fault {
+                        let binding = self.inputs.len() as u64 + self.states.len() as u64 * 2;
+                        encoder.set_buffer(binding, Some(fault), 0);
+                    }
+                    if let (Some(binding), Some(sizes)) = (self.sizes_binding, &self.sizes) {
+                        encoder.set_buffer(u64::from(binding), Some(sizes), 0);
+                    }
+                }
+                encoder.dispatch_threads(
+                    MTLSize {
+                        width: self.threads,
+                        height: 1,
+                        depth: 1,
+                    },
+                    MTLSize {
+                        width: self.threads_per_threadgroup,
+                        height: 1,
+                        depth: 1,
+                    },
                 );
-                encoder.set_buffer(
-                    u64::from(state.write_binding),
-                    Some(&state.buffers[write_group]),
-                    0,
-                );
-            }
-            if let Some(fault) = &self.fault {
-                let binding = self.inputs.len() as u64 + self.states.len() as u64 * 2;
-                encoder.set_buffer(binding, Some(fault), 0);
-            }
-            encoder.set_buffer(u64::from(self.sizes_binding), Some(&self.sizes), 0);
-            encoder.dispatch_thread_groups(
-                MTLSize {
-                    width: self.workgroups,
-                    height: 1,
-                    depth: 1,
-                },
-                MTLSize {
-                    width: u64::from(WORKGROUP_SIZE),
-                    height: 1,
-                    depth: 1,
-                },
-            );
-            encoder.end_encoding();
-            command_buffer.commit();
-            command_buffer.wait_until_completed();
+                encoder.end_encoding();
+                command_buffer.commit();
+                command_buffer.wait_until_completed();
+            });
             if let Some((instance, code)) = self.read_fault()? {
                 let constraint_index = code as usize - 1;
                 let Some((constraint, name)) = self.constraints.get(constraint_index) else {
@@ -273,7 +396,20 @@ impl MetalResidentGpuSession {
                         state.elements,
                     )
                 };
-                (state.slot, values.to_vec())
+                let values = if self.component_major {
+                    let instances = state.elements / state.elements_per_instance;
+                    let mut transposed = vec![0.0_f32; state.elements];
+                    for instance in 0..instances {
+                        for component in 0..state.elements_per_instance {
+                            transposed[instance * state.elements_per_instance + component] =
+                                values[component * instances + instance];
+                        }
+                    }
+                    transposed
+                } else {
+                    values.to_vec()
+                };
+                (state.slot, values)
             })
             .collect())
     }
@@ -307,7 +443,59 @@ impl MetalResidentGpuSession {
     }
 }
 
-fn wgsl_to_msl(source: &str) -> Result<(String, String, Vec<(u32, u32)>), BatchedExecutionError> {
+fn transpose_state(values: &[f32], elements_per_instance: usize, instances: usize) -> Vec<f32> {
+    let mut transposed = vec![0.0_f32; values.len()];
+    for instance in 0..instances {
+        for component in 0..elements_per_instance {
+            transposed[component * instances + instance] =
+                values[instance * elements_per_instance + component];
+        }
+    }
+    transposed
+}
+
+fn component_major_wgsl(kernel: &FixedShapeKernel, source: &str) -> String {
+    let mut source = source.to_owned();
+    let instances = kernel.instances();
+    for (slot, elements) in kernel.input_layout() {
+        let declaration = format!("input_{}: array<f32>", slot.get());
+        let fixed_declaration = format!(
+            "input_{}: array<f32, {}>",
+            slot.get(),
+            u64::from(instances) * elements as u64
+        );
+        source = source.replace(&declaration, &fixed_declaration);
+    }
+    for (slot, elements) in kernel.state_layout() {
+        let declaration = format!("state_{}: array<f32>", slot.get());
+        let fixed_declaration = format!(
+            "state_{}: array<f32, {}>",
+            slot.get(),
+            u64::from(instances) * elements as u64
+        );
+        source = source.replace(&declaration, &fixed_declaration);
+        for component in 0..elements {
+            let lane_major = format!(
+                "state_{}[index * {}u + {}u]",
+                slot.get(),
+                elements,
+                component
+            );
+            let component_major = format!(
+                "state_{}[{}u * {}u + index]",
+                slot.get(),
+                component,
+                instances
+            );
+            source = source.replace(&lane_major, &component_major);
+        }
+    }
+    source
+}
+
+fn wgsl_to_msl(
+    source: &str,
+) -> Result<(String, String, Vec<(u32, u32)>, Option<u32>), BatchedExecutionError> {
     let module = wgsl::parse_str(source)
         .map_err(|error| BatchedExecutionError::Native(format!("WGSL parse for Metal: {error}")))?;
     let info = Validator::new(ValidationFlags::all(), Capabilities::all())
@@ -317,8 +505,11 @@ fn wgsl_to_msl(source: &str) -> Result<(String, String, Vec<(u32, u32)>), Batche
         })?;
     let mut resources = BTreeMap::new();
     let mut size_bindings = Vec::new();
+    let mut max_binding = None;
     for (handle, variable) in module.global_variables.iter() {
         if let Some(binding) = variable.binding.clone() {
+            max_binding =
+                Some(max_binding.map_or(binding.binding, |max: u32| max.max(binding.binding)));
             if matches!(variable.space, AddressSpace::Storage { .. }) {
                 if let TypeInner::Array {
                     size: ArraySize::Dynamic,
@@ -338,18 +529,13 @@ fn wgsl_to_msl(source: &str) -> Result<(String, String, Vec<(u32, u32)>), Batche
             );
         }
     }
+    let sizes_binding =
+        (!size_bindings.is_empty()).then(|| max_binding.unwrap_or(0).saturating_add(1));
     let per_entry_point_map = msl::EntryPointResourceMap::from([(
         "main".to_owned(),
         msl::EntryPointResources {
             resources,
-            sizes_buffer: Some(
-                (size_bindings
-                    .iter()
-                    .map(|(binding, _)| *binding)
-                    .max()
-                    .unwrap_or(0)
-                    .saturating_add(1)) as msl::Slot,
-            ),
+            sizes_buffer: sizes_binding.map(|binding| binding as msl::Slot),
             ..Default::default()
         },
     )]);
@@ -370,5 +556,5 @@ fn wgsl_to_msl(source: &str) -> Result<(String, String, Vec<(u32, u32)>), Batche
         .map_err(|error| {
             BatchedExecutionError::Native(format!("WGSL to MSL entry point: {error}"))
         })?;
-    Ok((source, entry_point, size_bindings))
+    Ok((source, entry_point, size_bindings, sizes_binding))
 }

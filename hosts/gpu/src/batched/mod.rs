@@ -997,6 +997,26 @@ impl FixedShapeKernel {
         unchecked
     }
 
+    /// Returns the unchecked in-place shader used by backends that explicitly
+    /// opt out of rollback publication. Every state value is loaded before its
+    /// corresponding write, so one resident state buffer is sufficient.
+    #[cfg(feature = "native")]
+    pub fn unchecked_in_place_wgsl(&self) -> Result<String, BatchedExecutionError> {
+        if !self.constraints.is_empty() {
+            return Err(BatchedExecutionError::Native(
+                "unchecked in-place WGSL requires a kernel without integrity constraints"
+                    .to_owned(),
+            ));
+        }
+        Ok(generate_wgsl_unchecked_in_place(
+            self.instances,
+            &self.register_offsets,
+            &self.instructions,
+            &self.inputs,
+            &self.states,
+        ))
+    }
+
     pub fn inputs(&self) -> impl Iterator<Item = (&str, usize)> {
         self.inputs
             .iter()
@@ -1007,6 +1027,15 @@ impl FixedShapeKernel {
         self.states
             .iter()
             .map(|state| (state.slot, state.shape.elements()))
+    }
+
+    /// Returns the scalar extent of each physical input before batch expansion.
+    /// Backends that know the inferred batch size can use this metadata to
+    /// specialize runtime arrays without reaching into the lowering plan.
+    pub fn input_layout(&self) -> impl Iterator<Item = (CellSlotId, usize)> + '_ {
+        self.inputs
+            .iter()
+            .map(|input| (input.slot, input.shape.elements()))
     }
 
     /// Materializes the backend-neutral physical input plan used by both the

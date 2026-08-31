@@ -1,6 +1,8 @@
-local ffi = require("ffi")
+local has_ffi, ffi = pcall(require, "ffi")
+if not has_ffi then ffi = nil end
 
-local sin, cos, atan2, abs, pi = math.sin, math.cos, math.atan2, math.abs, math.pi
+local sin, cos, abs, pi = math.sin, math.cos, math.abs, math.pi
+local atan2 = math.atan2 or function(y, x) return math.atan(y, x) end
 local instances = math.max(1, tonumber(arg[1]) or 10000)
 local turns = math.max(1, tonumber(arg[2]) or 5)
 local checked = string.lower(arg[3] or "unchecked") == "checked"
@@ -11,7 +13,16 @@ local symmetry_tolerance = 0.0001
 local finite_limit = 3.402823466e38
 
 local function array()
-  return ffi.new("float[?]", instances)
+  if ffi then
+    return ffi.new("float[?]", instances)
+  end
+  -- Lua tables do not have the zero-initialization that FFI arrays provide.
+  -- Seed every lane so the pre-reset warmup has the same defined inputs.
+  local result = {}
+  for lane = 0, instances - 1 do
+    result[lane] = 0.0
+  end
+  return result
 end
 
 local velocity, angular_velocity, bearing = array(), array(), array()
@@ -148,7 +159,7 @@ end
 for lane = 0, instances - 1 do
   checksum = checksum + p00[lane] + p01[lane] + p02[lane] + p10[lane] + p11[lane] + p12[lane] + p20[lane] + p21[lane] + p22[lane]
 end
-print("lane: LuaJIT fixed-shape flat")
+print("lane: " .. (ffi and "LuaJIT" or "Lua") .. " fixed-shape flat")
 print("instances: " .. instances)
 print("turns: " .. turns)
 print(string.format("elapsed_s: %.9f", elapsed))

@@ -101,6 +101,52 @@ fn main() {
         "fused unchecked GPU result differs from generic CPU lowering by {unchecked_fused_max_error}"
     );
 
+    // The full comparison below intentionally exercises every backend. For
+    // native Metal tuning, an opt-in short mode avoids measuring the setup and
+    // hot loops of the other backends before the direct API control sample.
+    #[cfg(feature = "native-metal")]
+    if env::var_os("MECH_NATIVE_METAL_ONLY").is_some() {
+        let mut reference = program.prepare_cpu(&inputs).unwrap();
+        reference.dispatch_turns(single_gpu_turns).unwrap();
+        let expected = reference.state().clone();
+        let measure = |kernel: &mech_gpu::FixedShapeKernel| {
+            let mut warmup = kernel.prepare_native_metal(&inputs).unwrap();
+            warmup.dispatch_turns(5).unwrap();
+            let mut session = kernel.prepare_native_metal(&inputs).unwrap();
+            let started = Instant::now();
+            for _ in 0..single_gpu_turns {
+                session.dispatch_turns(1).unwrap();
+            }
+            let per_turn = started.elapsed() / single_gpu_turns;
+            let state = session.read_state().unwrap();
+            (
+                per_turn,
+                state_checksum(&state),
+                maximum_error(&expected, &state),
+                session.threads_per_threadgroup(),
+            )
+        };
+        let (checked_per_turn, checked_checksum, checked_error, threadgroup) = measure(&program);
+        let (unchecked_per_turn, unchecked_checksum, unchecked_error, unchecked_threadgroup) =
+            measure(&unchecked_program);
+        println!("native Metal tuning mode: direct API, per-turn completion wait");
+        println!("native Metal threadgroup size: {threadgroup}");
+        assert_eq!(threadgroup, unchecked_threadgroup);
+        println!(
+            "Mech native Metal checked one-turn throughput: {:.3} million EKF-turns/s",
+            throughput(instances, checked_per_turn)
+        );
+        println!(
+            "Mech native Metal unchecked one-turn throughput: {:.3} million EKF-turns/s",
+            throughput(instances, unchecked_per_turn)
+        );
+        println!("Mech native Metal checked checksum: {checked_checksum:.9}");
+        println!("Mech native Metal unchecked checksum: {unchecked_checksum:.9}");
+        println!("maximum CPU/native Metal checked absolute error: {checked_error:.3e}");
+        println!("maximum CPU/native Metal unchecked absolute error: {unchecked_error:.3e}");
+        return;
+    }
+
     let mut cpu_warmup = program.prepare_cpu(&inputs).unwrap();
     cpu_warmup.dispatch_turns(5).unwrap();
     let mut cpu = program.prepare_cpu(&inputs).unwrap();

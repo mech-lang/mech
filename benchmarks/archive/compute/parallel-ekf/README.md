@@ -30,11 +30,14 @@ git switch --track origin/codex/mech-program-gpu
 | Julia packed-lane control | `benchmarks/archive/compute/parallel-ekf/julia_simd.jl` |
 | Julia SIMD intrinsics control | `benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl` |
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
+| Plain Lua and LuaJIT fixed-shape control | `benchmarks/archive/compute/parallel-ekf/luajit_fast.lua` |
 | NumPy batched fixed-shape control | `benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py` |
 | LuaJIT flat fixed-shape control | `benchmarks/archive/compute/parallel-ekf/luajit_fast.lua` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
+| Cross-language checked/unchecked chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_cross_language_comparison.py` |
+| Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
 
 ## Native Metal control
@@ -56,19 +59,81 @@ WGPU, and it does not replace the portable runtime backend for other targets.
 
 | Runtime/backend | Checked | Unchecked |
 | --- | ---: | ---: |
-| Mech native Metal (direct MSL) | 184.246M/s | 208.312M/s |
-| Taichi native Metal | 176.036M/s | 234.247M/s |
+| Mech native Metal (direct MSL) | 246.151M/s | 241.028M/s |
+| Taichi native Metal | 176.710M/s | 194.793M/s |
 | Mech WGPU over Metal (transport control) | 165.149M/s | 156.671M/s |
 
 These are medians of three isolated processes on the Apple M1 using 500,000
 resident filters and 40 synchronized turns. The native Metal Mech rows came
-from `parallel_ekf_benchmark` built with `native,jit,native-metal`; the Taichi
-rows came from `taichi_comparable.py` with `TAICHI_ARCH=metal`. The WGPU rows
-remain useful for measuring the portable command path, but are no longer used
-as the native-Metal comparison.
+from `parallel_ekf_benchmark` built with `native,jit,native-metal`, after
+specializing the unchecked buffers and using one native Metal binding update
+per turn. The Taichi rows came from `taichi_comparable.py` with
+`TAICHI_ARCH=metal`. The WGPU rows remain useful for measuring the portable
+command path, but are no longer used as the native-Metal comparison. Metal
+clocking is noisy; the raw samples are retained so the median, rather than a
+single best run, is the reported value.
 
 Raw samples, checksums, and the direct-vs-WGPU distinction are recorded in
 `results/apple-m1-mech-taichi-native-metal-2026-08-31.json`.
+
+## Cross-language checked and unchecked charts
+
+The complete comparison is split into two charts so the integrity contract is
+never hidden by a mixed bar. Mech rows use the project yellow; Rust, Python,
+NumPy, Julia, Lua, LuaJIT, and Taichi retain distinct language-family colors.
+The CPU language rows use 10,000 resident filters and 20 turns. GPU rows use
+100,000 resident filters and 5 synchronized turns. Both are steady-state
+throughput measurements; setup, compilation, allocation, and final readback
+are outside the timed region. The subtitle on each chart records those two
+workloads explicitly.
+
+![Cross-language checked EKF throughput](results/parallel-ekf-cross-language-checked.svg)
+
+![Cross-language unchecked EKF throughput](results/parallel-ekf-cross-language-unchecked.svg)
+
+Plain PUC Lua now runs the same fixed-shape flat source as LuaJIT. Its table
+arrays are explicitly zero-initialized so the warmup has the same defined state
+as LuaJIT's FFI arrays. The raw three-sample medians are recorded in
+`results/apple-m1-lua-2026-08-31.json`.
+
+The Mech-only progression view keeps checked and unchecked bars together while
+sorting execution lanes from resident scalar through SIMD, Cranelift JIT,
+eight-worker SIMD-JIT, synchronized WGPU, direct native Metal, and the fused
+device batch. The fused batch is marked historical because it has no per-turn
+publication boundary and therefore is not an apples-to-apples replacement for
+the synchronized rows.
+
+![Mech EKF execution-lane progression](results/parallel-ekf-mech-progression.svg)
+
+Regenerate all three charts from the checked-in evidence with:
+
+```text
+python3 plot_cross_language_comparison.py \
+  results/apple-m1-checked-cross-language-2026-08-31.json \
+  results/apple-m1-mech-taichi-runtime-2026-08-31.json \
+  results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
+  results \
+  results/apple-m1-lua-2026-08-31.json
+
+python3 plot_mech_progression.py \
+  results/apple-m1-checked-cross-language-2026-08-31.json \
+  results/apple-m1-mech-taichi-runtime-2026-08-31.json \
+  results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
+  results/apple-m1-2026-08-14.json \
+  results/parallel-ekf-mech-progression.svg
+```
+
+To isolate the direct control from the other backend warmups, build the
+benchmark with `native,jit,native-metal` and run:
+
+```sh
+MECH_NATIVE_METAL_ONLY=1 \
+  target/release/examples/parallel_ekf_benchmark 500000 1 40 40
+```
+
+The optional `MECH_METAL_THREADS_PER_THREADGROUP` variable overrides the
+native default of 64 for hardware tuning; it is printed with every isolated
+sample.
 
 ## Taichi parity harness
 

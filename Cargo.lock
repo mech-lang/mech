@@ -2737,6 +2737,7 @@ dependencies = [
  "mech-syntax",
  "metal",
  "naga",
+ "objc",
  "pollster",
  "serde",
  "serde_json",

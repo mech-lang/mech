@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="734" viewBox="0 0 1800 734">
+<rect width="100%" height="100%" fill="#080c14"/>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:14px}.value{font-size:13px;font-variant-numeric:tabular-nums}.note{fill:#91a0b5;font-size:11px}</style>
+<text x="52" y="42" font-size="26" font-weight="700">Mech EKF execution-lane progression</text>
+<text x="52" y="68" class="muted" font-size="15">Apple M1 | paired checked and unchecked steady-state throughput | million EKF turns per second | sorted slowest to fastest</text>
+<rect x="1220" y="24" width="16" height="16" rx="2" fill="#f4c430"/><text x="1244" y="37" font-size="13">checked</text>
+<rect x="1325" y="24" width="16" height="16" rx="2" fill="#fff0a8"/><text x="1349" y="37" font-size="13">unchecked</text>
+<line x1="570.0" y1="118" x2="570.0" y2="628" class="grid"/>
+<text x="570.0" y="652" text-anchor="middle" class="muted" font-size="13">0</text>
+<line x1="630.0" y1="118" x2="630.0" y2="628" class="grid"/>
+<text x="630.0" y="652" text-anchor="middle" class="muted" font-size="13">20</text>
+<line x1="690.0" y1="118" x2="690.0" y2="628" class="grid"/>
+<text x="690.0" y="652" text-anchor="middle" class="muted" font-size="13">40</text>
+<line x1="750.0" y1="118" x2="750.0" y2="628" class="grid"/>
+<text x="750.0" y="652" text-anchor="middle" class="muted" font-size="13">60</text>
+<line x1="810.0" y1="118" x2="810.0" y2="628" class="grid"/>
+<text x="810.0" y="652" text-anchor="middle" class="muted" font-size="13">80</text>
+<line x1="870.0" y1="118" x2="870.0" y2="628" class="grid"/>
+<text x="870.0" y="652" text-anchor="middle" class="muted" font-size="13">100</text>
+<line x1="930.0" y1="118" x2="930.0" y2="628" class="grid"/>
+<text x="930.0" y="652" text-anchor="middle" class="muted" font-size="13">120</text>
+<line x1="990.0" y1="118" x2="990.0" y2="628" class="grid"/>
+<text x="990.0" y="652" text-anchor="middle" class="muted" font-size="13">140</text>
+<line x1="1050.0" y1="118" x2="1050.0" y2="628" class="grid"/>
+<text x="1050.0" y="652" text-anchor="middle" class="muted" font-size="13">160</text>
+<line x1="1110.0" y1="118" x2="1110.0" y2="628" class="grid"/>
+<text x="1110.0" y="652" text-anchor="middle" class="muted" font-size="13">180</text>
+<line x1="1170.0" y1="118" x2="1170.0" y2="628" class="grid"/>
+<text x="1170.0" y="652" text-anchor="middle" class="muted" font-size="13">200</text>
+<line x1="1230.0" y1="118" x2="1230.0" y2="628" class="grid"/>
+<text x="1230.0" y="652" text-anchor="middle" class="muted" font-size="13">220</text>
+<line x1="1290.0" y1="118" x2="1290.0" y2="628" class="grid"/>
+<text x="1290.0" y="652" text-anchor="middle" class="muted" font-size="13">240</text>
+<line x1="1350.0" y1="118" x2="1350.0" y2="628" class="grid"/>
+<text x="1350.0" y="652" text-anchor="middle" class="muted" font-size="13">260</text>
+<line x1="1410.0" y1="118" x2="1410.0" y2="628" class="grid"/>
+<text x="1410.0" y="652" text-anchor="middle" class="muted" font-size="13">280</text>
+<line x1="1470.0" y1="118" x2="1470.0" y2="628" class="grid"/>
+<text x="1470.0" y="652" text-anchor="middle" class="muted" font-size="13">300</text>
+<line x1="1530.0" y1="118" x2="1530.0" y2="628" class="grid"/>
+<text x="1530.0" y="652" text-anchor="middle" class="muted" font-size="13">320</text>
+<line x1="1590.0" y1="118" x2="1590.0" y2="628" class="grid"/>
+<text x="1590.0" y="652" text-anchor="middle" class="muted" font-size="13">340</text>
+<line x1="1650.0" y1="118" x2="1650.0" y2="628" class="grid"/>
+<text x="1650.0" y="652" text-anchor="middle" class="muted" font-size="13">360</text>
+<text x="554" y="157" text-anchor="end" class="label">resident scalar CPU</text>
+<rect x="570" y="142" width="2.6" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="580.6" y="155" class="value">0.87</text>
+<text x="575" y="176" class="note">not measured</text>
+<text x="554" y="201" text-anchor="end" class="label">resident SIMD CPU (4 lanes)</text>
+<rect x="570" y="186" width="12.3" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="590.3" y="199" class="value">4.10</text>
+<text x="575" y="220" class="note">not measured</text>
+<text x="554" y="245" text-anchor="end" class="label">Cranelift JIT</text>
+<rect x="570" y="230" width="50.1" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="628.1" y="243" class="value">16.69</text>
+<rect x="570" y="250" width="54.4" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="632.4" y="263" class="value">18.12</text>
+<text x="554" y="289" text-anchor="end" class="label">Cranelift JIT, checked-fast / unchecked-fast</text>
+<rect x="570" y="274" width="56.3" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="634.3" y="287" class="value">18.78</text>
+<rect x="570" y="294" width="60.7" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="638.7" y="307" class="value">20.23</text>
+<text x="554" y="333" text-anchor="end" class="label">Cranelift SIMD-JIT</text>
+<rect x="570" y="318" width="103.8" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="681.8" y="331" class="value">34.61</text>
+<rect x="570" y="338" width="116.0" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="694.0" y="351" class="value">38.67</text>
+<text x="554" y="377" text-anchor="end" class="label">Cranelift SIMD-JIT, checked-fast / unchecked-fast</text>
+<rect x="570" y="362" width="111.6" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="689.6" y="375" class="value">37.19</text>
+<rect x="570" y="382" width="124.2" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="702.2" y="395" class="value">41.39</text>
+<text x="554" y="421" text-anchor="end" class="label">WGPU, one checked submission/turn</text>
+<rect x="570" y="406" width="164.6" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="742.6" y="419" class="value">54.88</text>
+<text x="575" y="440" class="note">not measured</text>
+<text x="578" y="443" class="note">100k-filter control</text>
+<text x="554" y="465" text-anchor="end" class="label">Cranelift SIMD-JIT, 8 workers</text>
+<rect x="570" y="450" width="314.3" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="892.3" y="463" class="value">104.78</text>
+<rect x="570" y="470" width="331.4" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="909.4" y="483" class="value">110.47</text>
+<text x="554" y="509" text-anchor="end" class="label">WGPU, synchronized per-turn</text>
+<rect x="570" y="494" width="458.9" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="1036.9" y="507" class="value">152.97</text>
+<rect x="570" y="514" width="471.4" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="1049.4" y="527" class="value">157.14</text>
+<text x="554" y="553" text-anchor="end" class="label">native Metal, direct MSL</text>
+<rect x="570" y="538" width="738.5" height="15" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="1316.5" y="551" class="value">246.15</text>
+<rect x="570" y="558" width="723.1" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="1301.1" y="571" class="value">241.03</text>
+<text x="578" y="575" class="note">500k filters, 40 synchronized turns</text>
+<text x="554" y="597" text-anchor="end" class="label">WGPU, fused device batch</text>
+<text x="575" y="596" class="note">not measured</text>
+<rect x="570" y="602" width="1031.9" height="15" rx="2" fill="#fff0a8" opacity="0.92"/>
+<text x="1609.9" y="615" class="value">343.97</text>
+<text x="578" y="619" class="note">historical 2026-08-14 fused control; no per-turn boundary</text>
+<text x="1110.0" y="706" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>
+<text x="52" y="679" class="muted" font-size="12">Checked bars include candidate validation/publication. Unchecked bars omit integrity checks. Missing bars mean that lane was not implemented as a separately measured mode.</text>
+</svg>

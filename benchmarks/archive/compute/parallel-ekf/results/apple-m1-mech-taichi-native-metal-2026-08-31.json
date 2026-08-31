@@ -11,22 +11,24 @@
     "mech_wgpu_backend": "WGPU Metal",
     "taichi_gpu_backend": "native Metal",
     "source": "same Taichi-comparable EKF recurrence and f32 constants",
+    "mech_native_metal_threadgroup_size": 64,
+    "mech_native_metal_binding_path": "one set_buffers call per turn; unretained command buffer; per-turn autorelease pool",
     "timed_region": "resident dispatch plus completion wait per turn; setup, compilation, allocation, warmup, and final readback excluded"
   },
   "rows": [
     {
       "label": "Mech native Metal, checked",
       "runtime": "Mech",
-      "throughput_millions": 184.246,
-      "samples": [184.246, 171.024, 185.310],
-      "checksum": 133818337.958878681,
-      "maximum_error": 1.907e-4
+      "throughput_millions": 246.151,
+      "samples": [205.653, 265.402, 246.151],
+      "checksum": 133818338.344719559,
+      "maximum_error": 1.221e-4
     },
     {
       "label": "Taichi native Metal, checked",
       "runtime": "Taichi",
-      "throughput_millions": 176.036,
-      "samples": [180.357, 176.036, 153.731],
+      "throughput_millions": 176.710,
+      "samples": [166.585, 181.327, 176.710],
       "checksum": 133818340.004379436,
       "faults": 0
     },
@@ -41,16 +43,16 @@
     {
       "label": "Mech native Metal, unchecked",
       "runtime": "Mech",
-      "throughput_millions": 208.312,
-      "samples": [208.312, 195.459, 213.169],
+      "throughput_millions": 241.028,
+      "samples": [241.028, 246.705, 189.212],
       "checksum": 133818337.958878681,
       "maximum_error": 1.907e-4
     },
     {
       "label": "Taichi native Metal, unchecked",
       "runtime": "Taichi",
-      "throughput_millions": 234.247,
-      "samples": [197.275, 259.398, 234.247],
+      "throughput_millions": 194.793,
+      "samples": [194.793, 200.950, 193.187],
       "checksum": 133818340.004379436,
       "faults": 0
     },
