@@ -269,3 +269,10 @@ unchecked Julia-only advantage. The `StaticArrays` source needs `StaticArrays`;
 the intrinsic source needs `SIMD.jl` (tested with SIMD.jl 3.7.2). Both are
 ordinary Julia packages and must be installed in the Julia environment used by
 the runner.
+
+At the runner's 10,000-filter/20-turn setting, five isolated Julia intrinsic
+processes measured a median of `31.34M` checked and `32.54M` unchecked
+lane-turns/s. Five corresponding Mech SIMD-JIT processes measured `31.16M`
+checked-fast and `32.65M` unchecked-fast. The remaining difference is within
+normal process noise; this is now the relevant performance target for the
+SIMD-capable path, not the sequential `19M` result.

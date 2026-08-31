@@ -237,6 +237,25 @@ def main() -> None:
                 for text in scalar_mech_outputs
             ),
         )
+        for label, pattern in (
+            ("Mech Cranelift SIMD-JIT", r"Mech Cranelift SIMD-JIT throughput: ([0-9.]+) million"),
+            (
+                "Mech Cranelift SIMD-JIT checked fast",
+                r"Mech Cranelift SIMD-JIT checked fast throughput: ([0-9.]+) million",
+            ),
+            (
+                "Mech Cranelift SIMD-JIT unchecked fast",
+                r"Mech Cranelift SIMD-JIT unchecked fast throughput: ([0-9.]+) million",
+            ),
+        ):
+            scalar[label] = (
+                statistics.median(number(text, pattern) for text in scalar_mech_outputs)
+                * 1e6,
+                statistics.median(
+                    number(text, r"Mech Cranelift SIMD-JIT checksum: ([0-9.eE+-]+)")
+                    for text in scalar_mech_outputs
+                ),
+            )
         for lane, command in language_commands.items():
             if command is not None:
                 count = (
@@ -259,6 +278,24 @@ def main() -> None:
                 number(text, r"Mech Cranelift JIT throughput: ([0-9.]+) million")
                 for text in backend_mech_outputs
             ),
+            "Mech Cranelift SIMD-JIT": statistics.median(
+                number(text, r"Mech Cranelift SIMD-JIT throughput: ([0-9.]+) million")
+                for text in backend_mech_outputs
+            ),
+            "Mech Cranelift SIMD-JIT checked fast": statistics.median(
+                number(
+                    text,
+                    r"Mech Cranelift SIMD-JIT checked fast throughput: ([0-9.]+) million",
+                )
+                for text in backend_mech_outputs
+            ),
+            "Mech Cranelift SIMD-JIT unchecked fast": statistics.median(
+                number(
+                    text,
+                    r"Mech Cranelift SIMD-JIT unchecked fast throughput: ([0-9.]+) million",
+                )
+                for text in backend_mech_outputs
+            ),
             "Mech SIMD (4xf32)": statistics.median(
                 number(text, r"Mech SIMD throughput: ([0-9.]+) million")
                 for text in backend_mech_outputs
@@ -276,7 +313,7 @@ def main() -> None:
         print("| --- | ---: |")
         for lane, throughput in backend.items():
             print(f"| {lane} | {throughput:.3f} |")
-        print("\n| Scalar outer-loop lane | Million EKF-turns/s |")
+        print("\n| Execution lane | Million EKF-turns/s |")
         print("| --- | ---: |")
         for lane, (throughput, _) in scalar.items():
             print(f"| {lane} | {throughput / 1e6:.3f} |")
