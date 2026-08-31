@@ -11,8 +11,9 @@ use mech_runtime::{
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
     RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputUpdate,
     RuntimeHostInputValue, RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
-    RuntimeResourceWriteRequest, materialize_host_manifest, resource_observation_contract,
+    RuntimeResourceReadRequest, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
+    resource_observation_contract,
 };
 
 use crate::{
@@ -302,7 +303,7 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
         }
         Ok(())
     }
-    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri,
             path: request.path.clone(),

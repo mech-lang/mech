@@ -1,5 +1,9 @@
 use crate::*;
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::{boxed::Box, string::String, vec::Vec};
 use core::ops::Range;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::{boxed::Box, string::String, vec::Vec};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProgramComputeRegion {

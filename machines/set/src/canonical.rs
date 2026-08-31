@@ -277,6 +277,11 @@ macro_rules! define_set_relation {
                 *self.out.borrow_mut() = self.lhs.relation(&self.rhs, SetRelation::$relation)?;
                 Ok(())
             }
+            fn semantic_operation_contract(
+                &self,
+            ) -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_SET_PREDICATE_CONTRACT)
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -363,7 +368,7 @@ macro_rules! define_set_membership {
             fn semantic_operation_contract(
                 &self,
             ) -> Option<&'static OperationContractDeclaration> {
-                Some(&PURE_SET_MEMBERSHIP_CONTRACT)
+                Some(&PURE_SET_PREDICATE_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)

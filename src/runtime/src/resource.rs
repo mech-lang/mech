@@ -38,7 +38,7 @@ pub struct RuntimeResourceWritePreflightRequest {
 }
 
 #[derive(Clone, Debug)]
-pub struct RuntimeResourceWriteRequest {
+pub struct RuntimeResourceWriteCommand {
     pub base_uri: String,
     pub path: String,
     pub context_name: String,
@@ -47,8 +47,29 @@ pub struct RuntimeResourceWriteRequest {
     pub intent: RuntimeResourceWriteIntent,
 }
 
+impl RuntimeResourceWriteCommand {
+    /// Binds a validated write command to the transaction-owned identity that
+    /// providers use for idempotent preparation and delivery.
+    pub fn bind_effect(
+        self,
+        effect_id: crate::RuntimeEffectId,
+        idempotency_key: String,
+    ) -> RuntimeResourceWriteRequest {
+        RuntimeResourceWriteRequest {
+            base_uri: self.base_uri,
+            path: self.path,
+            context_name: self.context_name,
+            operation: self.operation,
+            value: self.value,
+            intent: self.intent,
+            effect_id,
+            idempotency_key,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
-pub struct RuntimeResidentResourceWriteRequest {
+pub struct RuntimeResourceWriteRequest {
     pub base_uri: String,
     pub path: String,
     pub context_name: String,
@@ -57,19 +78,6 @@ pub struct RuntimeResidentResourceWriteRequest {
     pub intent: RuntimeResourceWriteIntent,
     pub effect_id: crate::RuntimeEffectId,
     pub idempotency_key: String,
-}
-
-impl RuntimeResidentResourceWriteRequest {
-    pub fn into_request(self) -> RuntimeResourceWriteRequest {
-        RuntimeResourceWriteRequest {
-            base_uri: self.base_uri,
-            path: self.path,
-            context_name: self.context_name,
-            operation: self.operation,
-            value: self.value,
-            intent: self.intent,
-        }
-    }
 }
 
 pub trait RuntimeResourceProvider: std::fmt::Debug {
@@ -130,7 +138,7 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
     /// Effect-free native/source planning hook that validates both the target
     /// and the value a write or send would carry. Providers with typed payloads
     /// must override this method; the default retains path/intent validation.
-    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri,
             path: request.path,
@@ -156,13 +164,6 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
 
     fn supports_resident_idempotency(&self, _intent: RuntimeResourceWriteIntent) -> bool {
         false
-    }
-
-    fn prepare_resident_write(
-        &self,
-        request: RuntimeResidentResourceWriteRequest,
-    ) -> MResult<PreparedRuntimeEffect> {
-        self.prepare_write(request.into_request())
     }
 }
 
@@ -249,12 +250,12 @@ impl RuntimeResidentProviderBinding {
 
     pub(crate) fn prepare_write(
         &self,
-        request: RuntimeResidentResourceWriteRequest,
+        request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
         invoke_extension(
             format!("resource provider `{}`", self.scheme),
-            "prepare_resident_write",
-            || self.provider.prepare_resident_write(request),
+            "prepare_write",
+            || self.provider.prepare_write(request),
         )
     }
 }
@@ -463,7 +464,7 @@ impl RuntimeResourceRegistry {
     }
 
     #[cfg(feature = "resident-routing-source")]
-    pub(crate) fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    pub(crate) fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
             return Err(MechError::new(
@@ -1238,8 +1239,8 @@ mod tests {
         ValueCell::from_exact(value).unwrap().snapshot().unwrap()
     }
 
-    fn write_request(path: &str, value: bool) -> RuntimeResourceWriteRequest {
-        RuntimeResourceWriteRequest {
+    fn write_request(path: &str, value: bool) -> RuntimeResourceWriteCommand {
+        RuntimeResourceWriteCommand {
             base_uri: "docs://manual".to_string(),
             path: path.to_string(),
             context_name: "manual".to_string(),
@@ -1443,7 +1444,7 @@ mod tests {
         assert!(format!("{read_error:?}").contains("deliberate provider read panic"));
 
         let write_error = runtime
-            .write_resource(RuntimeResourceWriteRequest {
+            .write_resource(RuntimeResourceWriteCommand {
                 base_uri: "panic://provider".to_string(),
                 path: "value".to_string(),
                 context_name: "panic".to_string(),

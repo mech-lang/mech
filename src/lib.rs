@@ -83,14 +83,24 @@ pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {
         "[Save]".truecolor(153, 221, 85),
         path.display()
     );
-    stdout().flush()?;
+    let write_error = |error: std::io::Error| {
+        MechError::new(
+            FileWriteFailed {
+                file_path: path.display().to_string(),
+                source: error.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    };
+    stdout().flush().map_err(&write_error)?;
 
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
+        fs::create_dir_all(parent).map_err(&write_error)?;
     }
 
-    let mut file = fs::File::create(&path)?;
-    file.write_all(content.as_bytes())?;
+    let mut file = fs::File::create(&path).map_err(&write_error)?;
+    file.write_all(content.as_bytes()).map_err(&write_error)?;
 
     println!("Done.");
     Ok(())

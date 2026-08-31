@@ -24,8 +24,8 @@ use mech_engine::{
 use crate::{
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeBuilder, RuntimeCompensatableEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostInputValue,
-    RuntimeResidentResourceWriteRequest, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
     RuntimeTransactionalEffect, TransactionId, config::ResidentDurabilityPolicy,
 };
 
@@ -274,7 +274,7 @@ impl RuntimeResourceProvider for EffectProvider {
             None,
         ))
     }
-    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         if !self.base_uris().contains(&request.base_uri) || request.path.is_empty() {
             return Err(test_error(
                 "D3 fixture write is outside its declared target",
@@ -282,9 +282,9 @@ impl RuntimeResourceProvider for EffectProvider {
         }
         Ok(())
     }
-    fn prepare_resident_write(
+    fn prepare_write(
         &self,
-        request: RuntimeResidentResourceWriteRequest,
+        request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
         let mut trace = self.trace.lock().unwrap();
         if let ValueData::F64(value) = request.value.data() {

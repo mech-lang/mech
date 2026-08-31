@@ -19,10 +19,18 @@ use crate::nodes::*;
 use crate::types::*;
 use crate::*;
 
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::{collections::BTreeSet, rc::Rc};
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use hashbrown::HashSet as HashBrownSet;
 #[cfg(feature = "functions")]
 use indexmap::map::IndexMap;
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+type HashSet<T> = HashBrownSet<T, core::hash::BuildHasherDefault<fxhash::FxHasher>>;
+use core::fmt;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::collections::{BTreeSet, HashMap, HashSet};
-use std::fmt;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::rc::Rc;
 #[cfg(feature = "pretty_print")]
 use tabled::{
@@ -1640,8 +1648,10 @@ impl ReactivePlan {
             }
         }
 
-        let mut reactive_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> = HashMap::new();
-        let mut sampled_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> = HashMap::new();
+        let mut reactive_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> =
+            HashMap::default();
+        let mut sampled_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> =
+            HashMap::default();
         for node in &self.nodes {
             for dependency in &node.inputs {
                 let consumers = match dependency.kind {
@@ -1794,8 +1804,8 @@ impl ReactivePlan {
     pub fn new() -> Self {
         Self {
             nodes: Vec::new(),
-            reactive_consumers: HashMap::new(),
-            sampled_consumers: HashMap::new(),
+            reactive_consumers: HashMap::default(),
+            sampled_consumers: HashMap::default(),
             pattern_activation_registrations: Vec::new(),
             activation_sampled_cells: Vec::new(),
         }
@@ -2215,7 +2225,7 @@ impl ReactivePlan {
         pending_nodes: &[ReactiveNodeId],
         mut journal: Option<&mut CanonicalTurnJournal>,
     ) -> MResult<ReactiveRegisterCommitOutcome> {
-        let mut unique = HashSet::new();
+        let mut unique: HashSet<ReactiveNodeId> = HashSet::default();
         let mut ordered = BTreeSet::new();
         for node_id in pending_nodes.iter().copied() {
             if !unique.insert(node_id) {
@@ -2236,7 +2246,7 @@ impl ReactivePlan {
             ordered.insert((node.plan_index, node.id));
         }
 
-        let mut owners = HashMap::new();
+        let mut owners: HashMap<CanonicalCellId, ReactiveNodeId> = HashMap::default();
         for (_, node_id) in &ordered {
             let node = &self.nodes[*node_id];
             for cell in &node.outputs {
@@ -2317,7 +2327,7 @@ impl ReactivePlan {
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {
         let before_commit = self.solve_dirty_cells_with_services(dirty_cells, services)?;
-        let mut pending_register_nodes = std::mem::take(&mut state.pending_register_nodes);
+        let mut pending_register_nodes = core::mem::take(&mut state.pending_register_nodes);
         pending_register_nodes.extend(before_commit.pending_register_nodes.iter().copied());
         let register_commit = match self.commit_pending_registers(&pending_register_nodes) {
             Ok(outcome) => outcome,
@@ -2354,7 +2364,7 @@ impl ReactivePlan {
     ) -> MResult<ReactiveTurnOutcome> {
         let before_commit =
             self.solve_dirty_cells_with_journal_and_services(dirty_cells, journal, services)?;
-        let mut pending_register_nodes = std::mem::take(&mut state.pending_register_nodes);
+        let mut pending_register_nodes = core::mem::take(&mut state.pending_register_nodes);
         pending_register_nodes.extend(before_commit.pending_register_nodes.iter().copied());
         let register_commit =
             match self.commit_pending_registers_with_journal(&pending_register_nodes, journal) {
@@ -2534,11 +2544,11 @@ impl Plan {
         Self(Ref::new(ReactivePlan::new()), Ref::new(Vec::new()))
     }
 
-    pub fn borrow(&self) -> std::cell::Ref<'_, ReactivePlan> {
+    pub fn borrow(&self) -> core::cell::Ref<'_, ReactivePlan> {
         self.0.borrow()
     }
 
-    pub fn borrow_mut(&self) -> std::cell::RefMut<'_, ReactivePlan> {
+    pub fn borrow_mut(&self) -> core::cell::RefMut<'_, ReactivePlan> {
         self.0.borrow_mut()
     }
 
@@ -2657,14 +2667,14 @@ impl Plan {
             )
     }
 
-    pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {
+    pub fn get_functions(&self) -> core::cell::Ref<'_, ReactivePlan> {
         self.0.borrow()
     }
 
     pub fn pattern_activation_registrations(
         &self,
-    ) -> std::cell::Ref<'_, Vec<PatternActivationRegistration>> {
-        std::cell::Ref::map(self.0.borrow(), |plan| {
+    ) -> core::cell::Ref<'_, Vec<PatternActivationRegistration>> {
+        core::cell::Ref::map(self.0.borrow(), |plan| {
             &plan.pattern_activation_registrations
         })
     }

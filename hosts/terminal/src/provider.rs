@@ -13,8 +13,9 @@ use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
     RuntimeHostInputValue, RuntimeHostInstallation, RuntimeResourceProvider,
-    RuntimeResourceReadNotPlannable, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
+    RuntimeResourceReadNotPlannable, RuntimeResourceReadRequest, RuntimeResourceWriteCommand,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    materialize_host_manifest,
 };
 
 static CLI_OUTPUT_EFFECT_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
@@ -257,7 +258,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         )))
     }
 
-    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri.clone(),
             path: request.path,

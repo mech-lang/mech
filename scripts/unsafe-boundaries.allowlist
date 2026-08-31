@@ -27,7 +27,6 @@ machines/math/src/bessel/yn.rs|typed-machine-kernel|mech-math|macro-selected Val
 machines/math/src/dynamic_module.rs|ffi|mech-math|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 machines/math/src/gamma/lgamma.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/gamma/tgamma.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/logarithm/ilogb.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/logarithm/log.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/logarithm/log10.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/logarithm/log1p.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
@@ -64,10 +63,8 @@ machines/math/src/trig/cos.rs|typed-machine-kernel|mech-math|macro-selected Valu
 machines/math/src/trig/cosh.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/trig/cot.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/trig/csc.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/hypot.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/trig/sec.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/trig/sin.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/sincos.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/trig/sinh.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/trig/tan.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/trig/tanh.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch

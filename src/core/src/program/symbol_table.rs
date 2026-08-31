@@ -78,9 +78,9 @@ impl SymbolTable {
 
     pub fn new() -> SymbolTable {
         Self {
-            symbols: HashMap::new(),
-            mutable_variables: HashMap::new(),
-            dictionary: Ref::new(HashMap::new()),
+            symbols: HashMap::default(),
+            mutable_variables: HashMap::default(),
+            dictionary: Ref::new(HashMap::default()),
         }
     }
 

@@ -1,6 +1,35 @@
 use crate::intrinsics::canonical_access::canonical_draft;
 use crate::intrinsics::*;
 use mech_core::snapshot::{OptionDraft, TableColumnDraft};
+use std::sync::LazyLock;
+
+static PURE_TABLE_JOIN_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[derive(Clone, Copy, Debug)]
 enum JoinMode {
@@ -276,7 +305,7 @@ impl MechFunctionImpl for TableJoinFxn {
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        None
+        Some(&PURE_TABLE_JOIN_CONTRACT)
     }
 
     fn to_string(&self) -> String {

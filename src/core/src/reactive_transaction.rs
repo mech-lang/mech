@@ -2,7 +2,11 @@ use crate::{
     CanonicalStateJournal, FunctionInstance, MResult, MechError, MechErrorKind, MechFunction,
     ValueCell,
 };
-use std::cell::Cell;
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::string::{String, ToString};
+use core::cell::Cell;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::string::String;
 
 /// The value-state portion of one ephemeral reactive turn.
 ///

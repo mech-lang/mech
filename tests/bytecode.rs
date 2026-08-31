@@ -135,6 +135,30 @@ fn scalar_add_returns_the_final_function_register() -> MResult<()> {
 }
 
 #[test]
+#[cfg(feature = "distribution-full")]
+fn completed_math_lowerings_compile_through_bytecode_v1() -> MResult<()> {
+    for source in [
+        "+> math\nmath/copysign(3.0, -2.0)",
+        "+> math\nmath/fdim(5.0, 3.0)",
+        "+> math\nmath/fmod(5.3, 2.0)",
+        "+> math\nmath/nextafter(1.0, 2.0)",
+        "+> math\nmath/remainder(5.3, 2.0)",
+        "+> math\nmath/bessel/jn(2.0, 1.0)",
+        "+> math\nmath/bessel/yn(2.0, 1.0)",
+    ] {
+        let parsed = ParsedProgram::from_bytes(&compile_source(source)?)?;
+        assert!(
+            parsed.instructions.iter().any(|instruction| matches!(
+                instruction,
+                BytecodeInstruction::RuntimeBinary { .. }
+            )),
+            "{source} did not lower to a binary runtime instruction",
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn dynamic_strict_equality_round_trips_through_bytecode() -> MResult<()> {
     let (parsed, value) = run_compiled_source("x := 1 + [4 5 6]\nx === [5 6 7]")?;
     assert_bool(&value, true);

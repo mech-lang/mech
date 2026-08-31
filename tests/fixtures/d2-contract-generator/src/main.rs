@@ -186,24 +186,13 @@ fn main() {
     }
     assert!(!activation_nodes.is_empty());
     assert!(activation_nodes.len() < artifact.nodes().len());
-    let opaque = artifact
-        .nodes()
-        .iter()
-        .filter(|node| {
-            matches!(
-                artifact.contracts().get(node.contract),
-                Some(ResolvedOperationContract::LegacyOpaque(_))
-            )
-        })
-        .map(|node| {
-            format!(
-                "{}/{}",
-                node.operation.module_path.join("/"),
-                node.operation.operation_name
-            )
-        })
-        .collect::<BTreeSet<_>>();
-    assert!(opaque.is_empty(), "opaque n-body operations: {opaque:#?}");
+    assert!(
+        artifact
+            .contracts()
+            .iter()
+            .all(|contract| matches!(contract, ResolvedOperationContract::Declared(_))),
+        "every n-body operation must carry a declared contract",
+    );
 
     let mut source_instance = activate(
         mech_core::ReactiveInstanceId::new(0, 0),
@@ -863,8 +852,8 @@ fn assert_activation_fact_reconfiguration(
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
             operation: OperationReference {
-                module_path: vec!["runtime".to_owned()].into_boxed_slice(),
-                operation_name: "Assign<f64DMatrix>".to_owned(),
+                module_path: vec!["core".to_owned()].into_boxed_slice(),
+                operation_name: "assign".to_owned(),
             },
             contract,
             requirement: None,
@@ -1049,12 +1038,23 @@ fn assert_activation_fact_reconfiguration(
         &facts(3),
         ResidentKernelBindError::UnsupportedLayout,
     );
-    assert_bind_rejected(
-        &wrong_kind_artifact(&artifact, bool_),
-        catalog,
-        &ActivationFacts::default(),
-        ResidentKernelBindError::UnsupportedLayout,
-    );
+    let bool_assignment = canonical_bool_assign_artifact(&artifact, bool_);
+    let decoded_bool_assignment = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&bool_assignment).unwrap(),
+    )
+    .unwrap();
+    for (id, candidate) in [&bool_assignment, &decoded_bool_assignment]
+        .into_iter()
+        .enumerate()
+    {
+        activate(
+            mech_core::ReactiveInstanceId::new(96 + id as u32, 0),
+            candidate,
+            catalog,
+            &ActivationFacts::default(),
+        )
+        .expect("canonical core/assign supports the declared Bool schema");
+    }
     let observation_bytes = encode_program_artifact_bytecode_v1(&observation_state).unwrap();
     let observation_decoded =
         decode_program_artifact_bytecode_v1(&observation_bytes).unwrap();
@@ -1071,8 +1071,8 @@ fn assert_activation_fact_reconfiguration(
     let zero_input = zero_input_state_artifact(&artifact);
     let mut wrong_arity_node = zero_input.nodes()[0].clone();
     wrong_arity_node.operation = OperationReference {
-        module_path: vec!["runtime".to_owned()].into_boxed_slice(),
-        operation_name: "Assign<f64DMatrix>".to_owned(),
+        module_path: vec!["core".to_owned()].into_boxed_slice(),
+        operation_name: "assign".to_owned(),
     };
     let wrong_arity = ProgramArtifactDraft {
         schemas: zero_input.schemas().clone(),
@@ -1295,8 +1295,8 @@ fn wrong_dimension_artifact(
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
             operation: OperationReference {
-                module_path: vec!["runtime".to_owned()].into_boxed_slice(),
-                operation_name: "SubMDMD<f64>".to_owned(),
+                module_path: vec!["math".to_owned()].into_boxed_slice(),
+                operation_name: "sub".to_owned(),
             },
             contract,
             requirement: None,
@@ -1340,7 +1340,7 @@ fn wrong_dimension_artifact(
     .expect("mismatched activation shapes remain structurally valid")
 }
 
-fn wrong_kind_artifact(
+fn canonical_bool_assign_artifact(
     template: &ProgramArtifact,
     bool_: mech_core::SchemaId,
 ) -> ProgramArtifact {
@@ -1403,8 +1403,8 @@ fn wrong_kind_artifact(
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
             operation: OperationReference {
-                module_path: vec!["runtime".to_owned()].into_boxed_slice(),
-                operation_name: "Assign<f64DMatrix>".to_owned(),
+                module_path: vec!["core".to_owned()].into_boxed_slice(),
+                operation_name: "assign".to_owned(),
             },
             contract,
             requirement: None,

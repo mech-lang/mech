@@ -1,9 +1,17 @@
 use crate::function::extensions::ExtensionFunctionId;
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::{
+    collections::{BTreeMap, BTreeSet},
+    string::String,
+};
 use mech_core::{
     FunctionCatalog, FunctionExport, FunctionExposure, FunctionOperationNotVisible, MResult,
     MechError, MechErrorKind, OperationId, hash_str,
 };
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::collections::{BTreeMap, BTreeSet};
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::string::String;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FunctionBinding {

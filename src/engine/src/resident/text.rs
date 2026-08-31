@@ -16,47 +16,6 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         "assign-range",
         bind_semantic_string_range_assign,
     )?;
-
-    // Frozen bytecode may still refer to the selected implementation identity.
-    builder.insert_resident_factory(["runtime"], "ConcatSS<string>", bind_concat)?;
-    builder.insert_resident_factory(["runtime"], "EQSS<string>", bind_string_equal)?;
-    builder.insert_resident_factory(["runtime"], "TransposeVD<string>", bind_string_transpose)?;
-    builder.insert_resident_factory(
-        ["runtime"],
-        "Access1DSRD<string>",
-        bind_string_scalar_access,
-    )?;
-    builder.insert_resident_factory(["runtime"], "Access1DVDRD<string>", bind_string_gather)?;
-    builder.insert_resident_factory(
-        ["runtime"],
-        "ConvertMatToMat2<[f64]:1,0,[string]:1,0>",
-        bind_f64_vector_to_string,
-    )?;
-    for name in ["Assign1DB<stringDVector>", "Assign1DB<stringRowDVector>"] {
-        builder.insert_resident_factory(["runtime"], name, bind_string_all_assign)?;
-    }
-    builder.insert_resident_factory(
-        ["runtime"],
-        "Assign1DS<stringDVector>",
-        bind_string_index_assign,
-    )?;
-    builder.insert_resident_factory(
-        ["runtime"],
-        "Assign1DS<stringRowDVector>",
-        bind_string_index_assign,
-    )?;
-    for name in [
-        "Assign1DRB<stringDVectorDVector>",
-        "Assign1DRB<stringRowDVectorDVector>",
-    ] {
-        builder.insert_resident_factory(["runtime"], name, bind_string_mask_assign)?;
-    }
-    for name in [
-        "Assign1DRS<stringDVectorDVector>",
-        "Assign1DRS<stringRowDVectorDVector>",
-    ] {
-        builder.insert_resident_factory(["runtime"], name, bind_string_indices_assign)?;
-    }
     Ok(())
 }
 
@@ -501,14 +460,6 @@ fn bind_semantic_string_range_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_string_mask_assign(request).or_else(|_| bind_string_indices_assign(request))
-}
-
-pub(super) fn bind_semantic_string_assign(
-    request: &ResidentKernelBindRequest<'_>,
-) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_string_all_assign(request)
-        .or_else(|_| bind_string_index_assign(request))
-        .or_else(|_| bind_semantic_string_range_assign(request))
 }
 
 fn bind_string_all_assign(

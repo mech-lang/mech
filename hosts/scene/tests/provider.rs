@@ -11,8 +11,9 @@ use mech_core::{
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
-    ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectId,
+    RuntimeResourceProvider, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, TransactionId,
 };
 #[cfg(feature = "browser")]
 use mech_runtime::{
@@ -42,6 +43,12 @@ fn s(value: &str) -> ValueCell {
 }
 fn b(value: bool) -> ValueCell {
     ValueCell::from_exact(value).unwrap()
+}
+fn effect_id() -> RuntimeEffectId {
+    RuntimeEffectId {
+        transaction: TransactionId::new(1),
+        sequence: 0,
+    }
 }
 fn record(fields: Vec<(&str, ValueCell)>) -> ValueCell {
     let fields = fields
@@ -168,8 +175,8 @@ fn points(rows: usize, columns: usize, values: Vec<f64>) -> ValueCell {
     )
     .unwrap()
 }
-fn points_write(value: ValueCell) -> RuntimeResourceWriteRequest {
-    RuntimeResourceWriteRequest {
+fn points_command(value: ValueCell) -> RuntimeResourceWriteCommand {
+    RuntimeResourceWriteCommand {
         base_uri: "scene://view/frame".to_string(),
         path: "points".to_string(),
         context_name: "view".to_string(),
@@ -177,6 +184,9 @@ fn points_write(value: ValueCell) -> RuntimeResourceWriteRequest {
         intent: RuntimeResourceWriteIntent::Send,
         value: canonical(value),
     }
+}
+fn points_write(value: ValueCell) -> RuntimeResourceWriteRequest {
+    points_command(value).bind_effect(effect_id(), "scene-test:0".to_owned())
 }
 fn circle(id: &str) -> ValueCell {
     record(vec![
@@ -813,20 +823,20 @@ fn scene_send_contract_is_at_most_once_without_idempotency() {
 #[test]
 fn points_reject_wrong_kinds_shapes_and_nonfinite_coordinates() {
     let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
-    assert!(provider.plan_write(points_write(f(1.0))).is_err());
+    assert!(provider.plan_write(points_command(f(1.0))).is_err());
     assert!(
         provider
-            .plan_write(points_write(points(2, 1, vec![0.0; 2])))
+            .plan_write(points_command(points(2, 1, vec![0.0; 2])))
             .is_err()
     );
     assert!(
         provider
-            .plan_write(points_write(points(2, 3, vec![0.0; 6])))
+            .plan_write(points_command(points(2, 3, vec![0.0; 6])))
             .is_err()
     );
     assert!(
         provider
-            .plan_write(points_write(points(
+            .plan_write(points_command(points(
                 2,
                 2,
                 vec![1.0, 2.0, 3.0, f64::INFINITY],
@@ -894,6 +904,8 @@ fn latest_scene_replaces_older_scene() {
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
             value: canonical(empty_scene()),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
         },
     )
     .unwrap();
@@ -913,6 +925,8 @@ fn latest_scene_replaces_older_scene() {
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
             value: canonical(newer),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
         },
     )
     .unwrap();
@@ -931,6 +945,8 @@ fn scene_prepare_write_does_not_render_before_delivery() {
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
             value: canonical(empty_scene()),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
         })
         .unwrap();
 
@@ -982,6 +998,8 @@ fn native_scene_instances_are_isolated() {
                 ("circles", tuple(vec![])),
                 ("lines", tuple(vec![])),
             ])),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
         },
     )
     .unwrap();
@@ -1000,6 +1018,8 @@ fn native_scene_instances_are_isolated() {
                 ("circles", tuple(vec![])),
                 ("lines", tuple(vec![])),
             ])),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
         },
     )
     .unwrap();
@@ -1219,6 +1239,8 @@ fn scene_provider_deduplicates_identical_replacements() {
         operation: RuntimeCapabilityOperation::Write,
         intent: RuntimeResourceWriteIntent::Send,
         value: canonical(value),
+        effect_id: effect_id(),
+        idempotency_key: "scene-test:0".to_owned(),
     };
 
     deliver_write(&mut provider, write(empty_scene())).unwrap();
@@ -1247,6 +1269,8 @@ fn scene_provider_deduplicates_identical_replacements() {
             operation: RuntimeCapabilityOperation::Write,
             intent: RuntimeResourceWriteIntent::Send,
             value: canonical(empty_scene()),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
         },
     )
     .unwrap();
@@ -1299,6 +1323,8 @@ fn scene_provider_failed_replace_does_not_advance_dedup_state() {
         operation: RuntimeCapabilityOperation::Write,
         intent: RuntimeResourceWriteIntent::Send,
         value: canonical(value),
+        effect_id: effect_id(),
+        idempotency_key: "scene-test:0".to_owned(),
     };
     backend.fail_next();
     assert!(deliver_write(&mut provider, write(empty_scene())).is_err());

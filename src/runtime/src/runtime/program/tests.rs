@@ -23,8 +23,8 @@ use crate::{
     CapabilityRequest, InMemorySourceResolver, ModuleBuildOptions, PreparedRuntimeEffect,
     RuntimeAfterCommitEffect, RuntimeBuilder, RuntimeEffectCost, RuntimeEffectMetadata,
     RuntimeEffectSource, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputValue,
-    RuntimeIngress, RuntimeResidentResourceWriteRequest, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
     RuntimeResourceWriteRequest, SourceRequest,
 };
 
@@ -367,7 +367,7 @@ impl RuntimeResourceProvider for ProductSceneProvider {
         Ok(())
     }
 
-    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri,
             path: request.path,
@@ -377,9 +377,9 @@ impl RuntimeResourceProvider for ProductSceneProvider {
         })
     }
 
-    fn prepare_resident_write(
+    fn prepare_write(
         &self,
-        request: RuntimeResidentResourceWriteRequest,
+        request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
         std::thread::sleep(self.prepare_delay);
         self.preflight_write(RuntimeResourceWritePreflightRequest {

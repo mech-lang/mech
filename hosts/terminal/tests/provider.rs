@@ -5,9 +5,9 @@ use mech_core::{
     MechError, MechErrorKind, ObservationContract, ObservationReplayPolicy, Value, ValueData,
 };
 use mech_runtime::{
-    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
-    value_empty, value_string,
+    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectId, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    RuntimeResourceWriteRequest, TransactionId, value_empty, value_string,
 };
 use mech_terminal::{CliBackend, CliResourceProvider};
 
@@ -58,6 +58,13 @@ impl MechErrorKind for FakeCliBackendError {
 
 fn str_value(text: &str) -> Value {
     value_string(text)
+}
+
+fn effect_id() -> RuntimeEffectId {
+    RuntimeEffectId {
+        transaction: TransactionId::new(1),
+        sequence: 0,
+    }
 }
 
 fn assert_string(value: &Value, expected: &str) {
@@ -225,7 +232,9 @@ fn env_write_and_send_error() {
                     context_name: "env".to_string(),
                     operation: RuntimeCapabilityOperation::Write,
                     value: str_value("x"),
-                    intent
+                    intent,
+                    effect_id: effect_id(),
+                    idempotency_key: "terminal-test:0".to_owned(),
                 })
                 .is_err()
         );
@@ -244,6 +253,8 @@ fn stdout_and_stderr_send_text_and_line() {
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("abc"),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: effect_id(),
+            idempotency_key: "terminal-test:0".to_owned(),
         },
     )
     .unwrap();
@@ -256,6 +267,8 @@ fn stdout_and_stderr_send_text_and_line() {
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("abc"),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: effect_id(),
+            idempotency_key: "terminal-test:0".to_owned(),
         },
     )
     .unwrap();
@@ -268,6 +281,8 @@ fn stdout_and_stderr_send_text_and_line() {
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("warning"),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: effect_id(),
+            idempotency_key: "terminal-test:0".to_owned(),
         },
     )
     .unwrap();
@@ -280,6 +295,8 @@ fn stdout_and_stderr_send_text_and_line() {
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("warning"),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: effect_id(),
+            idempotency_key: "terminal-test:0".to_owned(),
         },
     )
     .unwrap();
@@ -298,6 +315,8 @@ fn stdout_prepare_write_buffers_until_delivery() {
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("buffered"),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: effect_id(),
+            idempotency_key: "terminal-test:0".to_owned(),
         })
         .unwrap();
 
@@ -322,6 +341,8 @@ fn discarded_candidate_delivers_zero_terminal_output() {
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("rejected"),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: effect_id(),
+            idempotency_key: "terminal-test:0".to_owned(),
         })
         .unwrap();
 
@@ -334,7 +355,7 @@ fn discarded_candidate_delivers_zero_terminal_output() {
 #[test]
 fn stdout_planning_accepts_only_scalar_strings_without_output() {
     let provider = CliResourceProvider::new(FakeCliBackend::default());
-    let request = |value| RuntimeResourceWriteRequest {
+    let request = |value| RuntimeResourceWriteCommand {
         base_uri: "cli://stdout".to_string(),
         path: "line".to_string(),
         context_name: "out".to_string(),
@@ -366,7 +387,9 @@ fn stdout_and_stderr_reject_assign_read_and_unknown_path() {
                 context_name: "out".to_string(),
                 operation: RuntimeCapabilityOperation::Write,
                 value: str_value("abc"),
-                intent: RuntimeResourceWriteIntent::Assign
+                intent: RuntimeResourceWriteIntent::Assign,
+                effect_id: effect_id(),
+                idempotency_key: "terminal-test:0".to_owned(),
             })
             .is_err()
     );
@@ -387,7 +410,9 @@ fn stdout_and_stderr_reject_assign_read_and_unknown_path() {
                 context_name: "err".to_string(),
                 operation: RuntimeCapabilityOperation::Write,
                 value: str_value("abc"),
-                intent: RuntimeResourceWriteIntent::Send
+                intent: RuntimeResourceWriteIntent::Send,
+                effect_id: effect_id(),
+                idempotency_key: "terminal-test:0".to_owned(),
             })
             .is_err()
     );

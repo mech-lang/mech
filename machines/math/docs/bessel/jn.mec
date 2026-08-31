@@ -1,4 +1,4 @@
-math/jn
+math/bessel/jn
 ===============================================================================
 
 %% Bessel function of the first kind, integer order n
@@ -7,13 +7,15 @@ math/jn
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-Y := math/jn(N, X)
+Y := math/bessel/jn(N, X)
 ```
 
 2. Description
 -------------------------------------------------------------------------------
 
-Computes the Bessel function of the first kind of integer order `N` for each element of `X`.  
+Computes the Bessel function of the first kind for each element of `X`. `N`
+uses the same floating-point representation and shape as `X`; each value is
+converted to an `i32` order before evaluation.
 The result `Y` has the same shape as the input `X`.
 
 3. Input
@@ -21,7 +23,7 @@ The result `Y` has the same shape as the input `X`.
 
 | Argument | Kind               | Description |
 |----------|--------------------|-------------|
-| `N`      | `int`, `[int]`     | The order of the Bessel function. Must be an integer. |
+| `N`      | `float`, `[float]` | The order values, converted to `i32` before evaluation. |
 | `X`      | `float`, `[float]` | Input value(s). Can be real. For complex inputs, the function may not be defined. |
 
 4. Output
@@ -37,21 +39,21 @@ The result `Y` has the same shape as the input `X`.
 (a) Compute jn of order 0
 
 ```mech:ex1
-y := math/jn(0, 1.0)
+y := math/bessel/jn(0.0, 1.0)
 ```
 
 (b) Compute jn of order 2 for a vector of numbers
 
 ```mech:ex2
 x := [0.0, 1.0, 2.0]
-y := math/jn(2, x)
+y := math/bessel/jn(2.0, x)
 ```
 
 (c) Compute jn of order 3 for a matrix of numbers
 
 ```mech:ex3
 x := [0.0, 1.0; 2.0 3.0]
-y := math/jn(3, x)
+y := math/bessel/jn(3.0, x)
 ```
 
 6. Details
@@ -66,4 +68,3 @@ For integer order `n`, the function can be expressed as a power series:
 $$ J_n(x) = \sum_{m=0}^{\infty} \frac{(-1)^m}{m!(n+m)!} \left( \frac{x}{2} \right)^{2m+n}
 
 These functions are widely used in applied mathematics, especially in problems involving cylindrical or spherical symmetry, such as waveguides, heat conduction, and vibrations.
-

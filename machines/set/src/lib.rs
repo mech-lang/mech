@@ -18,41 +18,55 @@ use mech_core::*;
     feature = "setdata"
 ))]
 mod canonical;
-#[cfg(any(
-    feature = "union",
-    feature = "element_of",
-    feature = "not_element_of"
-))]
+#[cfg(feature = "runtime")]
 use std::sync::LazyLock;
 
-#[cfg(feature = "union")]
-static PURE_SET_BINARY_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| set_full_write_contract(ChangeDetectionPolicy::AlwaysChanged));
-#[cfg(any(feature = "element_of", feature = "not_element_of"))]
-static PURE_SET_MEMBERSHIP_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| set_full_write_contract(ChangeDetectionPolicy::ExactScalar));
-
 #[cfg(any(
-    feature = "union",
-    feature = "element_of",
-    feature = "not_element_of"
+    feature = "cartesian_product",
+    feature = "difference",
+    feature = "intersection",
+    feature = "symmetric_difference",
+    feature = "union"
 ))]
-fn set_full_write_contract(
+static PURE_SET_BINARY_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_full_write_contract(2, ChangeDetectionPolicy::AlwaysChanged));
+#[cfg(feature = "powerset")]
+static PURE_SET_UNARY_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_full_write_contract(1, ChangeDetectionPolicy::AlwaysChanged));
+#[cfg(any(
+    feature = "disjoint",
+    feature = "element_of",
+    feature = "equals",
+    feature = "not_element_of",
+    feature = "not_equals",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "subset",
+    feature = "superset"
+))]
+static PURE_SET_PREDICATE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_full_write_contract(2, ChangeDetectionPolicy::ExactScalar));
+#[cfg(any(feature = "insert", feature = "remove"))]
+static PURE_SET_UPDATE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_full_write_contract(2, ChangeDetectionPolicy::KernelReported));
+#[cfg(feature = "size")]
+static PURE_SET_SIZE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_full_write_contract(1, ChangeDetectionPolicy::ExactScalar));
+
+#[cfg(feature = "runtime")]
+fn pure_full_write_contract(
+    input_count: usize,
     change_detection: ChangeDetectionPolicy,
 ) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
-            vec![
-                InputPortPolicy {
+            (0..input_count)
+                .map(|_| InputPortPolicy {
                     access: AccessMode::Read,
                     delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-            ]
-            .into_boxed_slice(),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
         ),
         outputs: vec![OutputPortPolicy {
             access: AccessMode::Write,

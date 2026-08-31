@@ -348,7 +348,17 @@ impl MechErrorKind for RobotArmResourceProviderError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_runtime::{RuntimeCapabilityOperation, RuntimeResourceProvider, value_bool};
+    use mech_runtime::{
+        RuntimeCapabilityOperation, RuntimeEffectId, RuntimeResourceProvider, TransactionId,
+        value_bool,
+    };
+
+    fn effect_id() -> RuntimeEffectId {
+        RuntimeEffectId {
+            transaction: TransactionId::new(1),
+            sequence: 0,
+        }
+    }
 
     fn bool_value(value: bool) -> Value {
         value_bool(value)
@@ -378,6 +388,8 @@ mod tests {
                 operation: RuntimeCapabilityOperation::Custom("move".to_string()),
                 value: bool_value(true),
                 intent: RuntimeResourceWriteIntent::Send,
+                effect_id: effect_id(),
+                idempotency_key: "robot-test:0".to_owned(),
             },
         )
         .unwrap();
@@ -390,6 +402,8 @@ mod tests {
                 operation: RuntimeCapabilityOperation::Custom("grip".to_string()),
                 value: bool_value(false),
                 intent: RuntimeResourceWriteIntent::Send,
+                effect_id: effect_id(),
+                idempotency_key: "robot-test:0".to_owned(),
             },
         )
         .unwrap();
@@ -407,6 +421,8 @@ mod tests {
             operation: RuntimeCapabilityOperation::Custom(operation.to_string()),
             value: bool_value(true),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: effect_id(),
+            idempotency_key: "robot-test:0".to_owned(),
         }
     }
 
@@ -483,6 +499,8 @@ mod tests {
                     operation: RuntimeCapabilityOperation::Write,
                     value: bool_value(true),
                     intent: RuntimeResourceWriteIntent::Assign,
+                    effect_id: effect_id(),
+                    idempotency_key: "robot-test:0".to_owned(),
                 })
                 .is_err()
         );
@@ -495,6 +513,8 @@ mod tests {
                     operation: RuntimeCapabilityOperation::Custom("dance".to_string()),
                     value: bool_value(true),
                     intent: RuntimeResourceWriteIntent::Send,
+                    effect_id: effect_id(),
+                    idempotency_key: "robot-test:0".to_owned(),
                 })
                 .is_err()
         );

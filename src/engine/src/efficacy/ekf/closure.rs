@@ -96,9 +96,6 @@ pub struct FrozenEkfArtifactClosure {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FrozenEkfArtifactClosureError {
-    LegacyOpaqueContract {
-        contract: OperationContractId,
-    },
     UnexpectedExecutableNode {
         node: NodeId,
         operation: crate::OperationReference,
@@ -155,14 +152,6 @@ impl FrozenEkfArtifactClosure {
         {
             return Err(FrozenEkfArtifactClosureError::InvalidStateUpdate);
         }
-        for (index, contract) in artifact.contracts().iter().enumerate() {
-            if matches!(contract, ResolvedOperationContract::LegacyOpaque(_)) {
-                return Err(FrozenEkfArtifactClosureError::LegacyOpaqueContract {
-                    contract: OperationContractId::new(index as u32),
-                });
-            }
-        }
-
         let mut observation = None;
         let mut kernels = Vec::with_capacity(15);
         let mut predicates = Vec::with_capacity(3);
@@ -325,10 +314,7 @@ fn declared_contract<'a>(
 ) -> Result<&'a mech_core::DeclaredOperationContract, FrozenEkfArtifactClosureError> {
     match artifact.contracts().get(contract) {
         Some(ResolvedOperationContract::Declared(contract)) => Ok(contract),
-        Some(ResolvedOperationContract::LegacyOpaque(_)) => {
-            Err(FrozenEkfArtifactClosureError::LegacyOpaqueContract { contract })
-        }
-        None => Err(FrozenEkfArtifactClosureError::UnsupportedNodeContract { node, contract }),
+        _ => Err(FrozenEkfArtifactClosureError::UnsupportedNodeContract { node, contract }),
     }
 }
 

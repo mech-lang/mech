@@ -10,8 +10,6 @@ use mech_core::{
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    let runtime = ["runtime"];
-
     // ProgramArtifact nodes carry semantic identities. These factories select
     // the resident implementation from the resolved contract and layouts.
     register(builder, &["math"], "add", bind_add)?;
@@ -65,7 +63,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     )?;
     register(builder, &["matrix"], "multiply", bind_matmul)?;
     register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
-    register(builder, &["core"], "assign", bind_semantic_assign)?;
+    register(builder, &["core"], "assign", bind_hold_state)?;
     register(
         builder,
         &["core", "assign"],
@@ -89,224 +87,6 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
     register(builder, &["stats", "sum"], "column", bind_sum_columns)?;
     register(builder, &["stats", "sum"], "row", bind_sum_rows)?;
-
-    // Frozen bytecode may still refer to the selected implementation identity.
-    register(builder, &runtime, "Access1DSRD<f64>", bind_scalar_access_1d)?;
-    register(builder, &runtime, "Access1DSVD<f64>", bind_scalar_access_1d)?;
-    register(builder, &runtime, "Access1DSMD<f64>", bind_scalar_access_1d)?;
-    register(builder, &runtime, "Access1DVDVD<f64>", bind_gather_1d)?;
-    for name in [
-        "Access2DSSM2<f64>",
-        "Access2DSSM3<f64>",
-        "Access2DSSM4<f64>",
-        "Access2DSSM2x3<f64>",
-        "Access2DSSM3x2<f64>",
-        "Access2DSSMD<f64>",
-        "Access2DSSV2<f64>",
-        "Access2DSSV3<f64>",
-        "Access2DSSV4<f64>",
-        "Access2DSSVD<f64>",
-        "Access2DSSR2<f64>",
-        "Access2DSSR3<f64>",
-        "Access2DSSR4<f64>",
-        "Access2DSSRD<f64>",
-    ] {
-        register(builder, &runtime, name, bind_scalar_access_2d)?;
-    }
-    register(
-        builder,
-        &runtime,
-        "Access2DARV<f64DMatrixDMatrixDVector>",
-        bind_all_rows_columns,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "Access2DARV<f64DMatrixDMatrixVector2>",
-        bind_all_rows_columns,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "Access2DARV<f64DMatrixDMatrixVector3>",
-        bind_all_rows_columns,
-    )?;
-    register(builder, &runtime, "Access2DASMD<f64>", bind_all_rows_column)?;
-    register(builder, &runtime, "Access2DSAMD<f64>", bind_row_all_columns)?;
-    register(
-        builder,
-        &runtime,
-        "Access2DVDAMD<f64>",
-        bind_rows_all_columns,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "AddAssign2DRAV<f64DMatrixDMatrixDVector>",
-        bind_add_indexed_rows,
-    )?;
-    register(builder, &runtime, "AddAssignVV<[f64]:0,0>", bind_add_assign)?;
-    register(builder, &runtime, "AddAssignSS<f64>", bind_add_assign)?;
-    register(builder, &runtime, "AddM2M2<f64>", bind_add)?;
-    register(builder, &runtime, "AddMDMD<f64>", bind_add)?;
-    register(builder, &runtime, "AddMDS<f64>", bind_add)?;
-    register(builder, &runtime, "AddSRD<f64>", bind_add)?;
-    register(builder, &runtime, "AddSS<f64>", bind_add)?;
-    register(builder, &runtime, "AddSVD<f64>", bind_add)?;
-    register(builder, &runtime, "AddVDS<f64>", bind_add)?;
-    register(builder, &runtime, "AndSS<bool>", bind_bool_and)?;
-    register(builder, &runtime, "AndRDRD<bool>", bind_bool_vector_and)?;
-    register(builder, &runtime, "DivSS<f64>", bind_div)?;
-    register(builder, &runtime, "EQSS<f64>", bind_f64_equal)?;
-    register(builder, &runtime, "EQRDS<f64>", bind_f64_vector_equal)?;
-    register(builder, &runtime, "GTESS<f64>", bind_f64_greater_equal)?;
-    register(builder, &runtime, "GTSS<f64>", bind_f64_greater)?;
-    register(builder, &runtime, "LTESS<f64>", bind_f64_less_equal)?;
-    register(builder, &runtime, "LTSS<f64>", bind_f64_less)?;
-    register(builder, &runtime, "NEQSS<f64>", bind_f64_not_equal)?;
-    register(builder, &runtime, "NotS<bool>", bind_bool_not)?;
-    register(builder, &runtime, "OrSS<bool>", bind_bool_or)?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateTwoArgs<f64>",
-        bind_horizontal,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateThreeArgs<f64>",
-        bind_horizontal,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateFourArgs<f64>",
-        bind_horizontal,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateNArgs<f64>",
-        bind_horizontal,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateRDN<f64>",
-        bind_horizontal,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateS1<f64>",
-        bind_horizontal,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateS2<f64>",
-        bind_horizontal,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateS3<f64>",
-        bind_horizontal,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateS4<f64>",
-        bind_horizontal,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "HorizontalConcatenateS1D<f64>",
-        bind_horizontal,
-    )?;
-    register(builder, &runtime, "MulMDS<f64>", bind_mul)?;
-    register(builder, &runtime, "MulMDVD<f64>", bind_mul_rows)?;
-    register(builder, &runtime, "MulSS<f64>", bind_mul)?;
-    register(builder, &runtime, "MulSVD<f64>", bind_mul)?;
-    register(builder, &runtime, "MulVDVD<f64>", bind_mul)?;
-    register(builder, &runtime, "MulVDS<f64>", bind_mul)?;
-    register(builder, &runtime, "ModRDS<f64>", bind_remainder)?;
-    register(builder, &runtime, "MathCosF64S", bind_cos)?;
-    register(builder, &runtime, "MathCosF64VD", bind_cos)?;
-    register(builder, &runtime, "MathAbsF64S", bind_abs)?;
-    register(builder, &runtime, "MathAbsF64VD", bind_abs)?;
-    register(builder, &runtime, "MathFloorF64S", bind_floor)?;
-    register(builder, &runtime, "MathFloorF64VD", bind_floor)?;
-    register(builder, &runtime, "MathSqrtF64S", bind_sqrt)?;
-    register(builder, &runtime, "MathSqrtF64VD", bind_sqrt)?;
-    register(builder, &runtime, "MathSinF64S", bind_sin)?;
-    register(builder, &runtime, "MathSinF64VD", bind_sin)?;
-    register(builder, &runtime, "Atan2F64", bind_atan2)?;
-    register(builder, &runtime, "Atan2RDF64", bind_atan2)?;
-    register(builder, &runtime, "Atan2VDF64", bind_atan2)?;
-    register(builder, &runtime, "Atan2MDF64", bind_atan2)?;
-    register(builder, &runtime, "MatMulMDMD<f64>", bind_matmul)?;
-    register(builder, &runtime, "NChooseKMatrix<f64>", bind_n_choose_k)?;
-    register(builder, &runtime, "NegateS<f64>", bind_negate)?;
-    register(builder, &runtime, "PowMDS<f64>", bind_pow)?;
-    register(builder, &runtime, "PowSS<f64>", bind_pow)?;
-    register(builder, &runtime, "PowVDS<f64>", bind_pow)?;
-    register_range_implementations(
-        builder,
-        &runtime,
-        "RangeExclusiveScalar",
-        bind_range_exclusive,
-    )?;
-    register_range_implementations(
-        builder,
-        &runtime,
-        "RangeIncrementExclusiveScalar",
-        bind_range_increment_exclusive,
-    )?;
-    register_range_implementations(
-        builder,
-        &runtime,
-        "RangeInclusiveScalar",
-        bind_range_inclusive,
-    )?;
-    register_range_implementations(
-        builder,
-        &runtime,
-        "RangeIncrementInclusiveScalar",
-        bind_range_increment_inclusive,
-    )?;
-    register(builder, &runtime, "StatsSumColumnMD<f64>", bind_sum_columns)?;
-    register(builder, &runtime, "StatsSumRowMD<f64>", bind_sum_rows)?;
-    register(
-        builder,
-        &runtime,
-        "SubAssign2DRAV<f64DMatrixDMatrixDVector>",
-        bind_sub_indexed_rows,
-    )?;
-    register(builder, &runtime, "SubMDMD<f64>", bind_sub)?;
-    register(builder, &runtime, "SubSVD<f64>", bind_sub)?;
-    register(builder, &runtime, "TransposeMD<f64>", bind_transpose)?;
-    register(builder, &runtime, "TransposeRD<f64>", bind_transpose)?;
-    register(builder, &runtime, "XorSS<bool>", bind_bool_xor)?;
-    register(
-        builder,
-        &runtime,
-        "VerticalConcatenateNArgs<f64>",
-        bind_vertical,
-    )?;
-    register(
-        builder,
-        &runtime,
-        "VerticalConcatenateVDN<f64>",
-        bind_vertical,
-    )?;
-    register(builder, &runtime, "Assign<f64DVector>", bind_assign)?;
-    register(builder, &runtime, "Assign<f64DMatrix>", bind_assign)?;
-    register(builder, &runtime, "Assign<f64Vector3>", bind_assign)?;
-    register(builder, &runtime, "Assign<f64Matrix3>", bind_assign)?;
-    register(builder, &runtime, "hold-state", bind_hold_state)?;
 
     register(builder, &["ekf"], "trigonometric-state", bind_ekf_trig)?;
     register(builder, &["ekf"], "motion-jacobian", bind_ekf_motion)?;
@@ -391,28 +171,6 @@ fn register(
     factory: mech_core::ResidentKernelFactory,
 ) -> MResult<()> {
     builder.insert_resident_factory(module.iter().copied(), operation, factory)
-}
-
-fn register_range_implementations(
-    builder: &mut FunctionCatalogBuilder,
-    module: &[&str],
-    family: &str,
-    factory: mech_core::ResidentKernelFactory,
-) -> MResult<()> {
-    // The source range factories select fixed or dynamic matrix identities by
-    // cardinality. Frozen artifacts must be able to resolve every identity the
-    // compiler can emit, independent of the feature closure doing the load.
-    for shape in [
-        "Matrix1",
-        "DMatrix",
-        "RowVector2",
-        "RowVector3",
-        "RowVector4",
-        "RowDVector",
-    ] {
-        register(builder, module, &format!("{family}<f64{shape}>"), factory)?;
-    }
-    Ok(())
 }
 
 fn bound(
@@ -832,29 +590,6 @@ binder!(
     1,
     ChangeDetectionPolicy::ExactScalar
 );
-
-fn bind_assign(
-    request: &ResidentKernelBindRequest<'_>,
-) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    validate_full_write(
-        request,
-        1,
-        ShapeRule::SameAsInput { input: 0 },
-        ChangeDetectionPolicy::KernelReported,
-    )?;
-    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
-    if request.inputs[0].shape != request.output.shape {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
-    bind_hold_state(request)
-}
-
-fn bind_semantic_assign(
-    request: &ResidentKernelBindRequest<'_>,
-) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    // The semantic operation is contract-dispatched; frozen runtime IDs remain type-specific.
-    bind_hold_state(request).or_else(|_| super::text::bind_semantic_string_assign(request))
-}
 
 fn bind_hold_state(
     request: &ResidentKernelBindRequest<'_>,
@@ -3841,32 +3576,26 @@ mod tests {
     }
 
     #[test]
-    fn frozen_range_catalog_resolves_every_compiler_output_identity() {
+    fn resident_range_catalog_uses_only_canonical_operation_identities() {
         let mut builder = FunctionCatalogBuilder::new();
         install(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
-        let runtime = vec!["runtime".to_owned()];
-
-        for family in [
-            "RangeExclusiveScalar",
-            "RangeIncrementExclusiveScalar",
-            "RangeInclusiveScalar",
-            "RangeIncrementInclusiveScalar",
+        for (module, operation) in [
+            (["range"].as_slice(), "exclusive"),
+            (["range"].as_slice(), "exclusive-increment"),
+            (["range"].as_slice(), "inclusive"),
+            (["range"].as_slice(), "inclusive-increment"),
         ] {
-            for shape in [
-                "Matrix1",
-                "DMatrix",
-                "RowVector2",
-                "RowVector3",
-                "RowVector4",
-                "RowDVector",
-            ] {
-                let identity = format!("{family}<f64{shape}>");
-                assert!(
-                    catalog.resident_factory(&runtime, &identity).is_some(),
-                    "missing frozen range identity {identity}"
-                );
-            }
+            let module = module
+                .iter()
+                .map(|segment| (*segment).to_owned())
+                .collect::<Vec<_>>();
+            assert!(
+                catalog.resident_factory(&module, operation).is_some(),
+                "missing canonical resident operation {}/{}",
+                module.join("/"),
+                operation,
+            );
         }
     }
 
@@ -3883,16 +3612,6 @@ mod tests {
         assert!(
             catalog
                 .resident_factory(&["stats".to_owned(), "sum".to_owned()], "row")
-                .is_some()
-        );
-        assert!(
-            catalog
-                .resident_factory(&["runtime".to_owned()], "StatsSumColumnMD<f64>")
-                .is_some()
-        );
-        assert!(
-            catalog
-                .resident_factory(&["runtime".to_owned()], "StatsSumRowMD<f64>")
                 .is_some()
         );
 
@@ -4488,9 +4207,10 @@ mod tests {
             (
                 schemas,
                 schema,
-                ResolvedOperationContract::LegacyOpaque(mech_core::LegacyOpaqueOperationContract {
-                    input_schemas: Box::new([]),
-                    output_schemas: Box::new([]),
+                ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+                    inputs: Box::new([]),
+                    outputs: Box::new([]),
+                    interaction: mech_core::ExternalInteraction::Pure,
                 }),
             )
         }

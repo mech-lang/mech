@@ -5,7 +5,7 @@ use crate::{
     ActorId, ActorRecord, BasicCapability, CapabilityId, CapabilityRequest, HostCall,
     InMemoryDocsProvider, InMemorySourceResolver, MechRuntime, ObjectId, ObjectRecord,
     PlannedPureHostFunction, PreparedRuntimeEffect, RuntimeCallContext, RuntimeCapabilityOperation,
-    RuntimeHealth, RuntimeHostInputValue, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    RuntimeHealth, RuntimeHostInputValue, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
     RuntimeValueSnapshot, SharedCapabilityKernel, SourceRequest, TaskId, TaskRecord,
 };
 
@@ -231,7 +231,7 @@ fn poisoned_runtime_owned_mutation_is_fail_closed() {
     );
     poison_kinds.push(
         runtime
-            .write_resource(RuntimeResourceWriteRequest {
+            .write_resource(RuntimeResourceWriteCommand {
                 base_uri: "docs://manual".to_string(),
                 path: "poisoned".to_string(),
                 context_name: "manual".to_string(),

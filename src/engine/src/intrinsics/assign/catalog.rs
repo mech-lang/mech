@@ -313,43 +313,6 @@ macro_rules! export_assign_scalar_factory {
     };
 }
 
-// These legacy `Set*` kernels mutate only the output register. Their encoded
-// inputs are the source value and indices, so unlike the `Assign*` register
-// families they do not need a general output/input alias exception.
-#[cfg(feature = "matrix")]
-macro_rules! assign_output_alias_policy {
-    (Set1DAS) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DARB) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DARS) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DARV) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DARVB) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DRAB) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DRAS) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DRAV) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DRAVB) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    ($_assign:ident) => {
-        RuntimeOutputAliasPolicy::AllowInputAlias
-    };
-}
-
 // All three consumers below are fed by the same concrete-factory traversal:
 // declarations for native plans, direct runtime registrations, and hidden
 // generated-application exports.  This deliberately replaces the historic
@@ -358,7 +321,7 @@ macro_rules! assign_output_alias_policy {
 #[cfg(feature = "matrix")]
 macro_rules! declare_matrix_assign_factory {
     (
-        $_context:tt;
+        ($_context:tt, $output_alias:expr);
         $fxn_name:ident, $scalar:ident, $scalar_name:literal, $scalar_feature:literal,
         [$($shape:ident),+], [$($extra_feature:literal),*], $factory:ty
     ) => {
@@ -371,7 +334,7 @@ macro_rules! declare_matrix_assign_factory {
                 factory_type: $factory,
                 contract: RuntimeFunctionContract::canonical_custom(
                     "assign_slice",
-                    assign_output_alias_policy!($fxn_name),
+                    $output_alias,
                     validate_assign_row_and_column_indices,
                 ),
                 package: "mech-engine", crate_name: "mech_engine",
@@ -389,7 +352,7 @@ macro_rules! declare_matrix_assign_factory {
 #[cfg(feature = "matrix")]
 macro_rules! export_matrix_assign_factory {
     (
-        $_context:tt;
+        ($_context:tt, $_output_alias:expr);
         $fxn_name:ident, $scalar:ident, $scalar_name:literal, $scalar_feature:literal,
         [$($shape:ident),+], [$($extra_feature:literal),*], $factory:expr
     ) => {
@@ -402,7 +365,7 @@ macro_rules! export_matrix_assign_factory {
 #[cfg(feature = "matrix")]
 macro_rules! register_matrix_assign_factory {
     (
-        $builder:ident;
+        ($builder:ident, $_output_alias:expr);
         $fxn_name:ident, $scalar:ident, $scalar_name:literal, $scalar_feature:literal,
         [$($shape:ident),+], [$($extra_feature:literal),*], $factory:expr
     ) => {
@@ -1744,105 +1707,105 @@ macro_rules! for_each_matrix_assignment_factory {
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_scalar_arms,
             Assign1D
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_scalar_arms_b,
             Assign1D
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_set_range_arms,
             Assign1DR
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_set_range_arms_b,
             Assign1DR
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_assign_all_arms,
             Set1DA
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_scalar_scalar_arms,
             Assign2DSS
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_all_scalar_arms,
             Assign2DAS
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_scalar_all_arms,
             Assign2DSA
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_range_scalar_arms,
             Assign2DRS
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_range_scalar_arms_b,
             Assign2DRS
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_scalar_range_arms,
             Assign2DSR
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_scalar_range_arms_b,
             Assign2DSR
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_range_range_arms,
             Assign2DRR
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_range_range_arms_b,
             Assign2DRR
         );
         #[cfg(feature = "f64")]
         $direct!(
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_range_range_arms_bu,
             Assign2DRR,
             f64,
@@ -1851,7 +1814,7 @@ macro_rules! for_each_matrix_assignment_factory {
         #[cfg(feature = "f64")]
         $direct!(
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::AllowInputAlias),
             install_legacy_impl_assign_range_range_arms_ub,
             Assign2DRR,
             f64,
@@ -1860,14 +1823,14 @@ macro_rules! for_each_matrix_assignment_factory {
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_assign_all_range_arms,
             Set2DAR
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_all_range_arms_b,
             Set2DAR
         );
@@ -1876,7 +1839,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u8,
@@ -1885,7 +1848,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u16,
@@ -1894,7 +1857,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u32,
@@ -1903,7 +1866,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u64,
@@ -1912,7 +1875,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u128,
@@ -1921,7 +1884,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             i8,
@@ -1930,7 +1893,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             i16,
@@ -1939,7 +1902,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             i32,
@@ -1948,7 +1911,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             i64,
@@ -1957,7 +1920,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             f32,
@@ -1966,7 +1929,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             f64,
@@ -1975,7 +1938,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             R64,
@@ -1984,7 +1947,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             C64,
@@ -1993,7 +1956,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             bool,
@@ -2002,7 +1965,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             String,
@@ -2011,7 +1974,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias),
             install_legacy_impl_set_range_all_arms_b,
             Set2DRA
         );
@@ -2024,7 +1987,7 @@ macro_rules! install_legacy_for_type_runtime {
     (
         $driver:ident,
         $emit:ident,
-        $builder:ident,
+        ($builder:ident, $output_alias:expr),
         $arm:ident,
         $fxn_name:ident,
         $value_kind:ident,
@@ -2034,7 +1997,14 @@ macro_rules! install_legacy_for_type_runtime {
         {
             #[inline(never)]
             fn install_type(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-                $driver!($emit, builder, $arm, $fxn_name, $value_kind, $value_string);
+                $driver!(
+                    $emit,
+                    (builder, $output_alias),
+                    $arm,
+                    $fxn_name,
+                    $value_kind,
+                    $value_string
+                );
                 Ok(())
             }
 
@@ -2045,36 +2015,166 @@ macro_rules! install_legacy_for_type_runtime {
 
 #[cfg(feature = "matrix")]
 macro_rules! install_legacy_for_all_types_runtime {
-    ($driver:ident, $emit:ident, $builder:ident, $arm:ident, $fxn_name:ident) => {
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u8, "u8");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u16, "u16");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u32, "u32");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u64, "u64");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u128, "u128");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i8, "i8");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i16, "i16");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i32, "i32");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i64, "i64");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i128, "i128");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, f32, "f32");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, f64, "f64");
+    ($driver:ident, $emit:ident, ($builder:ident, $output_alias:expr), $arm:ident, $fxn_name:ident) => {
         install_legacy_for_type_runtime!(
-            $driver, $emit, $builder, $arm, $fxn_name, R64, "rational"
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            u8,
+            "u8"
         );
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, C64, "complex");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, bool, "bool");
         install_legacy_for_type_runtime!(
-            $driver, $emit, $builder, $arm, $fxn_name, String, "string"
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            u16,
+            "u16"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            u32,
+            "u32"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            u64,
+            "u64"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            u128,
+            "u128"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            i8,
+            "i8"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            i16,
+            "i16"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            i32,
+            "i32"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            i64,
+            "i64"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            i128,
+            "i128"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            f32,
+            "f32"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            f64,
+            "f64"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            R64,
+            "rational"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            C64,
+            "complex"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            bool,
+            "bool"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias),
+            $arm,
+            $fxn_name,
+            String,
+            "string"
         );
     };
 }
 
 #[cfg(all(feature = "matrix", feature = "f64"))]
 macro_rules! install_legacy_direct_runtime {
-    ($emit:ident, $builder:ident, $arm:ident, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {{
+    ($emit:ident, ($builder:ident, $output_alias:expr), $arm:ident, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {{
         #[inline(never)]
         fn install_type(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-            $arm!($emit, builder, $fxn_name, $value_kind, $value_string);
+            $arm!(
+                $emit,
+                (builder, $output_alias),
+                $fxn_name,
+                $value_kind,
+                $value_string
+            );
             Ok(())
         }
 

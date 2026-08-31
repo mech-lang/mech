@@ -532,11 +532,11 @@ mod tests {
         let matrix = build.resolve(matrix).unwrap();
         let tuple = build.resolve(tuple).unwrap();
         let (schemas, _) = build.into_parts();
-        let contract =
-            ResolvedOperationContract::LegacyOpaque(mech_core::LegacyOpaqueOperationContract {
-                input_schemas: Box::new([]),
-                output_schemas: Box::new([]),
-            });
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: Box::new([]),
+            outputs: Box::new([]),
+            interaction: mech_core::ExternalInteraction::Pure,
+        });
         let output = layout(&schemas, tuple, ResidentValueKind::Snapshot);
 
         let good = [
@@ -627,11 +627,11 @@ mod tests {
         let matrix = build.resolve(matrix).unwrap();
         let tuple = build.resolve(tuple).unwrap();
         let (schemas, _) = build.into_parts();
-        let contract =
-            ResolvedOperationContract::LegacyOpaque(mech_core::LegacyOpaqueOperationContract {
-                input_schemas: Box::new([]),
-                output_schemas: Box::new([]),
-            });
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: Box::new([]),
+            outputs: Box::new([]),
+            interaction: mech_core::ExternalInteraction::Pure,
+        });
         let matrix_layout = layout_with_shape(
             &schemas,
             matrix,

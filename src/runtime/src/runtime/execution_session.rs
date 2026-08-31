@@ -10,7 +10,7 @@ use crate::{
     RuntimeCallContext, RuntimeCapabilityOperation, RuntimeContext, RuntimeEffectId, RuntimeEvent,
     RuntimeEventKind, RuntimeId, RuntimeManagedServices, RuntimePreparedHostCall,
     RuntimeResourceKey, RuntimeResourceReadRequest, RuntimeResourceRegistry,
-    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, RuntimeTransactionNotFoundError,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeTransactionNotFoundError,
     RuntimeValueSnapshot, default_host_capability_request,
 };
 use mech_core::{
@@ -187,14 +187,16 @@ impl RuntimeSessionServices<'_> {
         self.check_resource_capability(&operation, &key)?;
 
         let value = value.clone();
-        let runtime_request = RuntimeResourceWriteRequest {
+        let expected_effect_id = self.transaction.effects.next_id(self.transaction.store.id);
+        let runtime_request = RuntimeResourceWriteCommand {
             base_uri: key.base_uri,
             path: key.path,
             context_name: request.context_name.clone(),
             operation,
             value: value.clone(),
             intent,
-        };
+        }
+        .bind_effect(expected_effect_id, expected_effect_id.to_string());
         let staged_resource = if intent == RuntimeResourceWriteIntent::Assign {
             Some((
                 self.resources
@@ -206,13 +208,20 @@ impl RuntimeSessionServices<'_> {
             None
         };
         let effect = self.resources.prepare_write(runtime_request)?;
-        match staged_resource {
+        let staged_effect_id = match staged_resource {
             Some((base_uri, path, value)) => {
-                self.stage_resource_effect(effect, base_uri, path, value)?;
+                self.stage_resource_effect(effect, base_uri, path, value)?
             }
-            None => {
-                self.stage_effect(effect)?;
-            }
+            None => self.stage_effect(effect)?,
+        };
+        if staged_effect_id != expected_effect_id {
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "execution_write_resource",
+                    reason: "resource provider effect identity changed before staging".to_owned(),
+                },
+                None,
+            ));
         }
         Ok(())
     }

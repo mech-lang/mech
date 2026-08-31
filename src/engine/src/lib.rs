@@ -1,6 +1,10 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 #![feature(where_clause_attrs)]
 
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+#[macro_use]
+extern crate alloc;
+
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 

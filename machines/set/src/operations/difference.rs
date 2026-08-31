@@ -43,6 +43,9 @@ impl MechFunctionImpl for SetDifferenceFxn {
                 .set_difference_elements(self.rhs.canonical_value())?,
         )
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_BINARY_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }

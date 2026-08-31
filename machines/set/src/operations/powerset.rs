@@ -109,6 +109,9 @@ impl MechFunctionImpl for SetPowersetFxn {
                 .into_boxed_slice(),
         )
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_UNARY_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }

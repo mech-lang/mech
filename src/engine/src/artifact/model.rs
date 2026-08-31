@@ -3,11 +3,11 @@ use core::ops::Range;
 use mech_core::{
     AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
     ConstantId, ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction,
-    InputId, IntegrityConstraintId, LegacyOpaqueOperationContract, MechError, NodeId,
-    OperationContractDeclaration, OperationContractError, OperationContractId,
-    OperationContractTable, OperationContractTableBuilder, OutputId, PortDirection,
-    ProgramRevision, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaId,
-    SchemaTable, SemanticModelError, SnapshotValueError, validate_declaration,
+    InputId, IntegrityConstraintId, MechError, NodeId, OperationContractDeclaration,
+    OperationContractError, OperationContractId, OperationContractTable,
+    OperationContractTableBuilder, OutputId, PortDirection, ProgramRevision, ResolvedInputPort,
+    ResolvedOperationContract, ResolvedOutputPort, SchemaId, SchemaTable, SemanticModelError,
+    SnapshotValueError, validate_declaration,
 };
 
 use super::CompilerIrError;
@@ -286,14 +286,9 @@ impl ProgramArtifactDraft {
 }
 
 impl ProgramArtifactDraft {
-    pub(super) fn attach_legacy_contracts(self) -> Result<Self, ArtifactBuildError> {
-        let declarations = vec![None; self.nodes.len()];
-        self.attach_contracts(&declarations)
-    }
-
     pub(super) fn attach_contracts(
         mut self,
-        declarations: &[Option<&OperationContractDeclaration>],
+        declarations: &[&OperationContractDeclaration],
     ) -> Result<Self, ArtifactBuildError> {
         if declarations.len() != self.nodes.len() {
             return Err(ArtifactBuildError::CompiledMetadataLengthMismatch {
@@ -328,50 +323,42 @@ impl ProgramArtifactDraft {
                     }
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            let contract = match declaration {
-                None => ResolvedOperationContract::LegacyOpaque(LegacyOpaqueOperationContract {
-                    input_schemas: inputs.into_boxed_slice(),
-                    output_schemas: outputs.into_boxed_slice(),
-                }),
-                Some(declaration) => {
-                    validate_declaration(declaration)?;
-                    let policies = declaration.inputs.resolve(inputs.len())?;
-                    if declaration.outputs.len() != outputs.len() {
-                        return Err(OperationContractError::PortCountMismatch {
-                            direction: PortDirection::Output,
-                            expected: declaration.outputs.len() as u64,
-                            actual: outputs.len() as u64,
-                        }
-                        .into());
-                    }
-                    ResolvedOperationContract::Declared(DeclaredOperationContract {
-                        inputs: inputs
-                            .into_iter()
-                            .zip(policies)
-                            .map(|(schema, policy)| ResolvedInputPort {
-                                schema,
-                                access: policy.access,
-                                delivery: policy.delivery,
-                            })
-                            .collect::<Vec<_>>()
-                            .into_boxed_slice(),
-                        outputs: outputs
-                            .into_iter()
-                            .zip(declaration.outputs.iter())
-                            .map(|(schema, policy)| ResolvedOutputPort {
-                                schema,
-                                access: policy.access,
-                                delivery: policy.delivery,
-                                construction: policy.construction.clone(),
-                                alias: policy.alias,
-                                change_detection: policy.change_detection,
-                            })
-                            .collect::<Vec<_>>()
-                            .into_boxed_slice(),
-                        interaction: declaration.interaction.clone(),
-                    })
+            validate_declaration(declaration)?;
+            let policies = declaration.inputs.resolve(inputs.len())?;
+            if declaration.outputs.len() != outputs.len() {
+                return Err(OperationContractError::PortCountMismatch {
+                    direction: PortDirection::Output,
+                    expected: declaration.outputs.len() as u64,
+                    actual: outputs.len() as u64,
                 }
-            };
+                .into());
+            }
+            let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
+                inputs: inputs
+                    .into_iter()
+                    .zip(policies)
+                    .map(|(schema, policy)| ResolvedInputPort {
+                        schema,
+                        access: policy.access,
+                        delivery: policy.delivery,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                outputs: outputs
+                    .into_iter()
+                    .zip(declaration.outputs.iter())
+                    .map(|(schema, policy)| ResolvedOutputPort {
+                        schema,
+                        access: policy.access,
+                        delivery: policy.delivery,
+                        construction: policy.construction.clone(),
+                        alias: policy.alias,
+                        change_detection: policy.change_detection,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                interaction: declaration.interaction.clone(),
+            });
             node_handles.push(builder.insert(contract)?);
         }
 
@@ -445,6 +432,9 @@ pub enum ArtifactBuildError {
         table: &'static str,
         expected: usize,
         actual: usize,
+    },
+    MissingOperationContract {
+        node: NodeId,
     },
     MatrixLiteralMetadataMismatch {
         output: u32,

@@ -34,6 +34,9 @@ impl MechFunctionImpl for SetSizeFxn {
         *self.out.borrow_mut() = self.input.canonical_value().set_elements()?.len() as u64;
         Ok(())
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_SIZE_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }

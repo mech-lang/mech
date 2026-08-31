@@ -15,7 +15,7 @@ use mech_core::{
 use crate::{
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeCompensatableEffect, RuntimeEffectCost,
     RuntimeEffectId, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostInputValue,
-    RuntimeResidentResourceWriteRequest, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteCommand,
     RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
 };
 
@@ -194,13 +194,13 @@ impl RuntimeResourceProvider for D3SceneProvider {
         )))
     }
 
-    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
-        validate_d3_write(&request, "gate-d3://scene/output", "frame")
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
+        validate_d3_write_command(&request, "gate-d3://scene/output", "frame")
     }
 
-    fn prepare_resident_write(
+    fn prepare_write(
         &self,
-        request: RuntimeResidentResourceWriteRequest,
+        request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
         if request.idempotency_key.is_empty() {
             return Err(provider_error(
@@ -289,13 +289,13 @@ impl RuntimeResourceProvider for D3TransactionalProvider {
         )))
     }
 
-    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
-        validate_d3_write(&request, "gate-d3://transactional/state", "value")
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
+        validate_d3_write_command(&request, "gate-d3://transactional/state", "value")
     }
 
-    fn prepare_resident_write(
+    fn prepare_write(
         &self,
-        request: RuntimeResidentResourceWriteRequest,
+        request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
         self.trace
             .lock()
@@ -348,8 +348,8 @@ fn metadata(name: &str) -> RuntimeEffectMetadata {
     .with_cost(RuntimeEffectCost { bytes: 8, items: 1 })
 }
 
-fn validate_d3_write(
-    request: &RuntimeResourceWriteRequest,
+fn validate_d3_write_command(
+    request: &RuntimeResourceWriteCommand,
     expected_base_uri: &str,
     expected_path: &str,
 ) -> MResult<()> {
