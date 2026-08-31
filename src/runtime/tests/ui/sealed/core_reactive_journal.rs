@@ -1,5 +1,5 @@
-use mech_core::ReactiveTurnJournal;
+use mech_core::CanonicalTurnJournal;
 
 fn main() {
-  drop(ReactiveTurnJournal::default());
+  drop(CanonicalTurnJournal::default());
 }

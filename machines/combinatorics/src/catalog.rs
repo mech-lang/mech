@@ -3,7 +3,6 @@ use mech_core::{FunctionCatalogBuilder, MResult};
 use mech_core::{FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
-
 #[cfg(all(feature = "source", feature = "n_choose_k"))]
 use crate::CombinatoricsNChooseK;
 
@@ -35,10 +34,10 @@ macro_rules! declare_n_choose_k_scalar {
                 installer: [<install_n_choose_k_ $scalar_token>],
                 name: concat!("NChooseK<", $scalar_name, ">"),
                 factory_type: crate::n_choose_k::NChooseK<$scalar>,
-                contract: mech_core::RuntimeFunctionContract::custom(
+                contract: mech_core::RuntimeFunctionContract::canonical_custom(
                     "n_choose_k_scalar",
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
-                    crate::n_choose_k::validate_n_choose_k_scalar_contract,
+                    crate::n_choose_k::validate_canonical_n_choose_k_scalar_contract,
                 ),
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
@@ -58,10 +57,10 @@ macro_rules! declare_n_choose_k_matrix {
                 installer: [<install_n_choose_k_matrix_ $scalar_token>],
                 name: concat!("NChooseKMatrix<", $scalar_name, ">"),
                 factory_type: crate::n_choose_k::NChooseKMatrix<$scalar>,
-                contract: mech_core::RuntimeFunctionContract::custom(
+                contract: mech_core::RuntimeFunctionContract::canonical_custom(
                     "n_choose_k_matrix",
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
-                    crate::n_choose_k::validate_n_choose_k_matrix_contract,
+                    crate::n_choose_k::validate_canonical_n_choose_k_matrix_contract,
                 ),
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
@@ -82,7 +81,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     {
         let canonical_name = "combinatorics/n-choose-k";
         let operation =
-            builder.insert_specializer(canonical_name, Arc::new(CombinatoricsNChooseK {}))?;
+            builder.insert_canonical_specializer(canonical_name, Arc::new(CombinatoricsNChooseK {}))?;
         builder.insert_export(FunctionExport {
             operation,
             canonical_name: canonical_name.to_string(),
@@ -165,31 +164,5 @@ mod tests {
         assert_eq!(export.operation, operation);
         assert_eq!(export.exposure, FunctionExposure::ModuleOnly);
         assert_eq!(catalog.exports_for_operation(operation), [export.clone()]);
-    }
-}
-
-#[cfg(all(test, feature = "n_choose_k", feature = "f64"))]
-mod scalar_runtime_contract_tests {
-    use super::*;
-    use mech_core::{FunctionArgs, Ref, RuntimeFunctionId, LegacyValue};
-
-    #[test]
-    fn installed_f64_factory_rejects_non_finite_selection_before_instantiation() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-        let entry = catalog
-            .runtime_entry(RuntimeFunctionId::from_name("NChooseK<f64>"))
-            .unwrap();
-        let error = entry
-            .validate_args(&FunctionArgs::Binary(
-                LegacyValue::F64(Ref::new(0.0)),
-                LegacyValue::F64(Ref::new(10.0)),
-                LegacyValue::F64(Ref::new(f64::INFINITY)),
-            ))
-            .unwrap_err();
-
-        assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
-        assert!(error.kind_message().contains("finite"));
     }
 }

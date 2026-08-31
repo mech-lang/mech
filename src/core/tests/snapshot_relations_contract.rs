@@ -143,7 +143,7 @@ fn exact_language_and_key_float_relations_are_distinct() {
 fn sets_and_maps_are_sorted_deduplicated_and_hash_stable() {
     let (set_schemas, set_id) = fixture(SchemaBody::Set {
         element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-        cardinality: DimensionExpr::Constant(3),
+        cardinality: DimensionExpr::Constant(3).into(),
     });
     let make_set = |values: [f64; 3]| {
         value(
@@ -176,7 +176,7 @@ fn sets_and_maps_are_sorted_deduplicated_and_hash_stable() {
     let (map_schemas, map_id) = fixture(SchemaBody::Map {
         key: Box::new(SchemaBody::String),
         value: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
-        cardinality: DimensionExpr::Constant(2),
+        cardinality: DimensionExpr::Constant(2).into(),
     });
     let map = value(
         &map_schemas,
@@ -205,7 +205,7 @@ fn sets_and_maps_are_sorted_deduplicated_and_hash_stable() {
 fn duplicate_canonical_float_keys_are_rejected() {
     let (schemas, schema) = fixture(SchemaBody::Set {
         element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-        cardinality: DimensionExpr::Constant(2),
+        cardinality: DimensionExpr::Constant(2).into(),
     });
     let error = ValueDraft {
         schema,
@@ -345,7 +345,7 @@ fn distinct_nominal_schemas_order_by_schema_key() {
 fn collection_language_equality_uses_key_equality_only_for_keys() {
     let (set_schemas, set_id) = fixture(SchemaBody::Set {
         element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-        cardinality: DimensionExpr::Constant(1),
+        cardinality: DimensionExpr::Constant(1).into(),
     });
     let nan_set = |bits| {
         value(
@@ -372,7 +372,7 @@ fn collection_language_equality_uses_key_equality_only_for_keys() {
     let (map_schemas, map_id) = fixture(SchemaBody::Map {
         key: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
         value: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-        cardinality: DimensionExpr::Constant(1),
+        cardinality: DimensionExpr::Constant(1).into(),
     });
     let singleton_map = |key_bits, value_bits| {
         value(

@@ -50,28 +50,30 @@ pub struct RangeIncrementInclusiveScalar<T, MatA> {
     pub step: Ref<T>,
     pub to: Ref<T>,
     pub out: Ref<MatA>,
+    from_value: FunctionValueInput,
+    step_value: FunctionValueInput,
+    to_value: FunctionValueInput,
+    output_value: FunctionValueOutput,
     phantom: PhantomData<T>,
 }
 impl<T, R1, C1, S1> MechFunctionFactory
     for RangeIncrementInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
     T: Copy
+        + CanonicalMatrixElementBacking
         + Debug
         + Clone
         + Sync
         + Send
-        + AsValueKind
+        + FunctionRuntimeType
         + PartialOrd
         + 'static
         + One
         + Add<Output = T>,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
-    Ref<T>: ToValue,
-    Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-    naMatrix<T, R1, C1, S1>: AsNaKind,
-    naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
-    T: FunctionRuntimeType,
+    naMatrix<T, R1, C1, S1>: FunctionStateBacking,
+    T: FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     R1: Dim + 'static,
@@ -85,38 +87,35 @@ where
         T::REPRESENTATION,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Ternary(out, from, step, to) => {
-                let from: Ref<T> = from.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let step: Ref<T> = step.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let to: Ref<T> = to.try_function_ref(FunctionArgumentRole::Input(2))?;
-                let out: Ref<naMatrix<T, R1, C1, S1>> =
-                    out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self {
-                    from,
-                    step,
-                    to,
-                    out,
-                    phantom: PhantomData::default(),
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 3,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, from, step, to) = invocation.expect_ternary()?;
+        let from_value = from.value();
+        let step_value = step.value();
+        let to_value = to.value();
+        let output_value = out.value();
+        let from: Ref<T> = from.try_ref()?;
+        let step: Ref<T> = step.try_ref()?;
+        let to: Ref<T> = to.try_ref()?;
+        let out: Ref<naMatrix<T, R1, C1, S1>> = out.try_ref()?;
+        Ok(Box::new(Self {
+            from,
+            step,
+            to,
+            out,
+            from_value,
+            step_value,
+            to_value,
+            output_value,
+            phantom: PhantomData::default(),
+        }))
     }
+
 }
 impl<T, R1, C1, S1> MechFunctionImpl for RangeIncrementInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
-    Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-    Ref<T>: ToValue,
+    naMatrix<T, R1, C1, S1>: FunctionStateBacking,
     T: Copy
+        + CanonicalMatrixElementBacking
         + Scalar
         + Clone
         + Debug
@@ -131,39 +130,41 @@ where
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
-    fn solve_result(&self) -> MResult<()> {
-        crate::catalog::validate_range_increment_inclusive(&FunctionArgs::Ternary(
-            self.out.to_value(),
-            self.from.to_value(),
-            self.step.to_value(),
-            self.to.to_value(),
-        ))?;
-        unsafe {
-            let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
-            let mut current = *self.from.as_ptr();
-            let step = *self.step.as_ptr();
-            let output_len = (*out_ptr).len();
-            for i in 0..output_len {
-                (&mut (*out_ptr))[i] = current;
-                if i + 1 < output_len {
-                    current = current + step;
-                }
-            }
-        };
-        Ok(())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(self.output_value.state_port())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![self.output_value.state_port()]))
+    }
+    fn solve_result(&self) -> MResult<()> {
+        let output_len = crate::catalog::canonical_range_size(
+            &[
+                self.from_value.cell().clone(),
+                self.step_value.cell().clone(),
+                self.to_value.cell().clone(),
+            ],
+            true,
+            true,
+        )?;
+        let mut current = *self.from.borrow();
+        let step = *self.step.borrow();
+        let mut elements = Vec::with_capacity(output_len);
+        for index in 0..output_len {
+            elements.push(current.data_draft());
+            if index + 1 < output_len {
+                current = current + step;
+            }
+        }
+        self.output_value.replace_matrix_drafts(
+            vec![1, output_len as u64].into_boxed_slice(),
+            elements.into_boxed_slice(),
+        )
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_INCLUSIVE_INCREMENT_RANGE_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -174,17 +175,16 @@ mod tests {
 
     #[test]
     fn inclusive_increment_range_does_not_step_past_the_final_max_value() {
-        let from = Ref::new(u128::MAX - 1);
-        let step = Ref::new(1_u128);
-        let to = Ref::new(u128::MAX);
-        let out = Ref::new(DMatrix::from_element(1, 2, 0));
-        let function = RangeIncrementInclusiveScalar::<u128, DMatrix<u128>> {
-            from,
-            step,
-            to,
-            out: out.clone(),
-            phantom: PhantomData::default(),
-        };
+        let out = Ref::new(DMatrix::from_element(1, 2, 0_u128));
+        let function = RangeIncrementInclusiveScalar::<u128, DMatrix<u128>>::new_invocation(
+            FunctionInvocation::ternary(
+                ValueCell::from_exact_matrix_ref(out.clone(), 1, 2).unwrap(),
+                ValueCell::from_exact(u128::MAX - 1).unwrap(),
+                ValueCell::from_exact(1_u128).unwrap(),
+                ValueCell::from_exact(u128::MAX).unwrap(),
+            ),
+        )
+        .unwrap();
 
         function.solve_result().unwrap();
         assert_eq!(out.borrow().as_slice(), &[u128::MAX - 1, u128::MAX]);
@@ -192,216 +192,111 @@ mod tests {
 
     #[test]
     fn inclusive_increment_range_revalidates_reactive_cardinality() {
-        let to = Ref::new(3_u128);
-        let out = Ref::new(DMatrix::from_element(1, 2, 0));
-        let function = RangeIncrementInclusiveScalar::<u128, DMatrix<u128>> {
-            from: Ref::new(1),
-            step: Ref::new(2),
-            to: to.clone(),
-            out: out.clone(),
-            phantom: PhantomData::default(),
-        };
+        let to = ValueCell::from_exact(3_u128).unwrap();
+        let out = Ref::new(DMatrix::from_element(1, 2, 0_u128));
+        let function = RangeIncrementInclusiveScalar::<u128, DMatrix<u128>>::new_invocation(
+            FunctionInvocation::ternary(
+                ValueCell::from_exact_matrix_ref(out.clone(), 1, 2).unwrap(),
+                ValueCell::from_exact(1_u128).unwrap(),
+                ValueCell::from_exact(2_u128).unwrap(),
+                to.clone(),
+            ),
+        )
+        .unwrap();
 
         function.solve_result().unwrap();
         assert_eq!(out.borrow().as_slice(), &[1, 3]);
-        let previous = out.borrow().clone();
-
-        *to.borrow_mut() = 5;
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-        assert_eq!(*out.borrow(), previous);
+        to.replace(&ValueCell::from_exact(5_u128).unwrap().snapshot().unwrap())
+            .unwrap();
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[1, 3, 5]);
     }
 }
 #[cfg(feature = "semantic-compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler
     for RangeIncrementInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
-    T: CompileConst + ConstElem + AsValueKind,
-    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+    T: CompileConst + ConstElem + FunctionRuntimeType,
+    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!(
             "RangeIncrementInclusiveScalar<{}{}>",
-            T::as_value_kind(),
-            naMatrix::<T, R1, C1, S1>::as_na_kind()
+            <T as FunctionRuntimeType>::REPRESENTATION,
+            function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>()
         );
         compile_ternop!(name, self.out, self.from, self.step, self.to, ctx);
     }
 }
 
-#[macro_export]
 #[cfg(feature = "source")]
-macro_rules! impl_range_increment_inclusive_match_arms {
-  ($fxn:ident, $arg1:expr, $arg2:expr, $arg3:expr, $($ty:tt, $feat:tt);+ $(;)?) => {
-    paste! {
-      match ($arg1, $arg2, $arg3) {
-        $(
-          #[cfg(feature = $feat)]
-          (LegacyValue::[<$ty:camel>](from), LegacyValue::[<$ty:camel>](step), LegacyValue::[<$ty:camel>](to))  => {
-            let from_val = *from.borrow();
-            let step_val = *step.borrow();
-            let to_val = *to.borrow();
-            let diff = to_val - from_val;
-            if diff < $ty::zero() {
-              return Err(MechError::new(
-                EmptyRangeError{},
-                None
-              ).with_compiler_loc());
-            }
-            let size = {
-              let diff = to_val as f64 - from_val as f64;
-              let step = step_val as f64;
-              if step == 0.0 {
-                return Err(MechError::new(EmptyRangeError {}, None).with_compiler_loc());
-              }
-              if (diff > 0.0 && step > 0.0) || (diff < 0.0 && step < 0.0) {
-                (diff / step).floor() as usize + 1
-              } else if diff == 0.0 {
-                1
-              } else {
-                return Err(MechError::new(EmptyRangeError {}, None).with_compiler_loc());
-              }
-            };
-            let vec = vec![from_val; size];
-            match size {
-              0 => Err(MechError::new(
-                EmptyRangeError{},
-                None
-              ).with_compiler_loc()),
-              #[cfg(feature = "matrix1")]
-              1 => {
-                Ok(Box::new($fxn::<$ty,Matrix1<$ty>>{from: from.clone(), step: step.clone(), to: to.clone(), out: Ref::new(Matrix1::from_element(vec[0])), phantom: PhantomData::default()}))
-              }
-              #[cfg(all(not(feature = "matrix1"), feature = "matrixd")  )]
-              1 => {
-                Ok(Box::new($fxn::<$ty,DMatrix<$ty>>{from: from.clone(), step: step.clone(), to: to.clone(), out: Ref::new(DMatrix::from_element(1,1,vec[0])), phantom: PhantomData::default()}))
-              }
-              #[cfg(feature = "row_vector2")]
-              2 => {
-                Ok(Box::new($fxn::<$ty,RowVector2<$ty>>{from: from.clone(), step: step.clone(), to: to.clone(), out: Ref::new(RowVector2::from_vec(vec)), phantom: PhantomData::default()}))
-              }
-              #[cfg(feature = "row_vector3")]
-              3 => {
-                Ok(Box::new($fxn::<$ty,RowVector3<$ty>>{from: from.clone(), step: step.clone(), to: to.clone(), out: Ref::new(RowVector3::from_vec(vec)), phantom: PhantomData::default()}))
-              }
-              #[cfg(feature = "row_vector4")]
-              4 => {
-                Ok(Box::new($fxn::<$ty,RowVector4<$ty>>{from: from.clone(), step: step.clone(), to: to.clone(), out: Ref::new(RowVector4::from_vec(vec)), phantom: PhantomData::default()}))
-              }
-              #[cfg(feature = "row_vectord")]
-              _ => {
-                Ok(Box::new($fxn::<$ty,RowDVector<$ty>>{from: from.clone(), step: step.clone(), to: to.clone(), out: Ref::new(RowDVector::from_vec(vec)), phantom: PhantomData::default()}))
-              }
-            }
-          }
-        )+
-        (arg1,arg2,arg3) => Err(MechError::new(
-          UnhandledFunctionArgumentKind3 {arg: (arg1.kind(),arg2.kind(), arg3.kind()), fxn_name: stringify!($fxn).to_string() },
-          None
-        ).with_compiler_loc()),
-      }
-    }
-  }
-}
+pub struct RangeIncrementInclusive;
 
 #[cfg(feature = "source")]
-fn impl_range_increment_inclusive_fxn(
-    arg1_value: LegacyValue,
-    arg2_value: LegacyValue,
-    arg3_value: LegacyValue,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_range_increment_inclusive_match_arms!(RangeIncrementInclusiveScalar, arg1_value, arg2_value, arg3_value,
-      f32, "f32";
-      f64, "f64";
-      i8,  "i8";
-      i16, "i16";
-      i32, "i32";
-      i64, "i64";
-      i128,"i128";
-      u8,  "u8";
-      u16, "u16";
-      u32, "u32";
-      u64, "u64";
-      u128,"u128";
-    )
-}
-
-#[cfg(feature = "source")]
-pub struct RangeIncrementInclusive {}
-
-#[cfg(feature = "source")]
-impl FunctionSpecializer for RangeIncrementInclusive {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 3 {
+impl CanonicalFunctionSpecializer for RangeIncrementInclusive {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 3,
-                    found: arguments.len(),
+                    found: invocation.len(),
                 },
                 None,
             )
             .with_compiler_loc());
         }
-        let arg1 = arguments[0].clone();
-        let arg2 = arguments[1].clone();
-        let arg3 = arguments[2].clone();
-        match impl_range_increment_inclusive_fxn(arg1.clone(), arg2.clone(), arg3.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (arg1, arg2, arg3) {
-                (
-                    LegacyValue::MutableReference(arg1),
-                    LegacyValue::MutableReference(arg2),
-                    LegacyValue::MutableReference(arg3),
-                ) => impl_range_increment_inclusive_fxn(
-                    arg1.borrow().clone(),
-                    arg2.borrow().clone(),
-                    arg3.borrow().clone(),
-                ),
-                (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2), arg3) => {
-                    impl_range_increment_inclusive_fxn(
-                        arg1.borrow().clone(),
-                        arg2.borrow().clone(),
-                        arg3.clone(),
-                    )
+        let from = invocation.input(0).expect("validated range start");
+        let step = invocation.input(1).expect("validated range step");
+        let to = invocation.input(2).expect("validated range end");
+        macro_rules! try_scalar {
+            ($scalar:ty, $feature:literal) => {
+                #[cfg(feature = $feature)]
+                if from.representation() == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
+                    && step.representation()
+                        == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
+                    && to.representation()
+                        == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
+                {
+                    bind_dynamic_ternary_range!(
+                        RangeIncrementInclusiveScalar,
+                        $scalar,
+                        from,
+                        step,
+                        to,
+                        true
+                    );
                 }
-                (LegacyValue::MutableReference(arg1), arg2, LegacyValue::MutableReference(arg3)) => {
-                    impl_range_increment_inclusive_fxn(
-                        arg1.borrow().clone(),
-                        arg2.clone(),
-                        arg3.borrow().clone(),
-                    )
-                }
-                (LegacyValue::MutableReference(arg1), arg2, arg3) => impl_range_increment_inclusive_fxn(
-                    arg1.borrow().clone(),
-                    arg2.clone(),
-                    arg3.clone(),
-                ),
-                (arg1, LegacyValue::MutableReference(arg2), LegacyValue::MutableReference(arg3)) => {
-                    impl_range_increment_inclusive_fxn(
-                        arg1.clone(),
-                        arg2.borrow().clone(),
-                        arg3.borrow().clone(),
-                    )
-                }
-                (arg1, LegacyValue::MutableReference(arg2), arg3) => impl_range_increment_inclusive_fxn(
-                    arg1.clone(),
-                    arg2.borrow().clone(),
-                    arg3.clone(),
-                ),
-                (arg1, arg2, LegacyValue::MutableReference(arg3)) => impl_range_increment_inclusive_fxn(
-                    arg1.clone(),
-                    arg2.clone(),
-                    arg3.borrow().clone(),
-                ),
-                (arg1, arg2, arg3) => Err(MechError::new(
-                    UnhandledFunctionArgumentKind3 {
-                        arg: (arg1.kind(), arg2.kind(), arg3.kind()),
-                        fxn_name: "range/inclusive-increment".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
+            };
         }
+        try_scalar!(f32, "f32");
+        try_scalar!(f64, "f64");
+        try_scalar!(i8, "i8");
+        try_scalar!(i16, "i16");
+        try_scalar!(i32, "i32");
+        try_scalar!(i64, "i64");
+        try_scalar!(i128, "i128");
+        try_scalar!(u8, "u8");
+        try_scalar!(u16, "u16");
+        try_scalar!(u32, "u32");
+        try_scalar!(u64, "u64");
+        try_scalar!(u128, "u128");
+        Err(MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Input(0),
+                expected: "matching numeric scalar range inputs".into(),
+                found: format!(
+                    "{:?}, {:?}, and {:?}",
+                    from.representation(),
+                    step.representation(),
+                    to.representation()
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc())
     }
 }

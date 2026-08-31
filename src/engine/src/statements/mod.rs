@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
 
 use crate::{
-    Environment, FeatureNotEnabledError, InterpreterExecution, LegacyValue, MResult, MechError,
-    Statement,
+    Environment, FeatureNotEnabledError, InterpreterExecution, MResult, MechError, Statement,
+    ValueCell,
 };
 
 mod context;
@@ -113,10 +113,10 @@ pub fn statement(
     )))]
     _: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     match stmt {
-        Statement::ImportDeclaration(_) => Ok(LegacyValue::Empty),
-        Statement::ExportDeclaration(_) => Ok(LegacyValue::Empty),
+        Statement::ImportDeclaration(_) => Ok(ValueCell::unit()),
+        Statement::ExportDeclaration(_) => Ok(ValueCell::unit()),
         Statement::ContextDeclaration(ctx) => context_declaration(ctx, p),
         Statement::ContextSend(send) => context_send(send, p),
         #[cfg(feature = "tuple")]
@@ -132,7 +132,7 @@ pub fn statement(
         #[cfg(feature = "enum")]
         Statement::EnumDefine(enm_def) => {
             enum_define(&enm_def, p)?;
-            Ok(LegacyValue::Empty)
+            Ok(ValueCell::unit())
         }
         #[cfg(any(
             feature = "math_add_assign",

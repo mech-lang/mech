@@ -4,13 +4,13 @@ use super::{
     current_string_access_expression_live, mark_current_string_access_expression_live,
     mark_string_access_value_live, string_access_input_is_live,
 };
+#[cfg(feature = "trace")]
+use crate::format_trace;
 use crate::{
     FunctionCall, FunctionDefinition, FunctionExtensionEntry, FunctionResolver,
-    FunctionSpecializerEntry, InterpreterExecution, LegacyValue, MResult, ResolvedNamedFunction,
-    execute_specialized_function,
+    FunctionSpecializerEntry, InterpreterExecution, MResult, ResolvedNamedFunction,
+    SpecializationInput, ValueCell, execute_bound_specialized_function,
 };
-#[cfg(feature = "trace")]
-use crate::{format_trace, format_trace_args};
 
 enum OwnedResolvedNamedFunction {
     User(FunctionDefinition),
@@ -22,7 +22,7 @@ fn evaluate_arguments(
     fxn_call: &FunctionCall,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Vec<LegacyValue>> {
+) -> MResult<Vec<SpecializationInput>> {
     fxn_call
         .args
         .iter()
@@ -36,7 +36,7 @@ pub fn function_call(
     fxn_call: &FunctionCall,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let fxn_name = fxn_call.name.to_string();
 
     let resolved = {
@@ -64,12 +64,17 @@ pub fn function_call(
     let input_arg_values = evaluate_arguments(fxn_call, env, p)?;
     match resolved {
         OwnedResolvedNamedFunction::User(definition) => {
+            let user_inputs = input_arg_values
+                .iter()
+                .map(|input| input.cell().cloned())
+                .collect::<MResult<Vec<_>>>()?;
             #[cfg(feature = "subscript_formula")]
             let output_is_live = current_string_access_expression_live(p)
                 || input_arg_values
                     .iter()
+                    .filter_map(|input| input.cell().ok())
                     .any(|value| string_access_input_is_live(value, p));
-            let output = crate::function::execute_user_function(&definition, &input_arg_values, p)?;
+            let output = crate::function::execute_user_function(&definition, &user_inputs, p)?;
             #[cfg(feature = "subscript_formula")]
             if output_is_live {
                 mark_current_string_access_expression_live(p);
@@ -86,15 +91,29 @@ pub fn function_call(
                     format!(
                         "catalog {}({})",
                         fxn_name,
-                        format_trace_args(&input_arg_values)
+                        input_arg_values
+                            .iter()
+                            .map(|input| format!("{input:?}"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
                     ),
                 )
             );
-            let function = mech_core::with_semantic_operation(
-                entry.canonical_name,
-                entry.specializer.specialize(&input_arg_values)?,
+            let invocation = mech_core::SpecializationInvocation::new(
+                input_arg_values.clone().into_boxed_slice(),
             );
-            execute_specialized_function(function, &input_arg_values, p)
+            let mut context = mech_core::SpecializationContext::for_invocation(
+                &invocation,
+                Some(p.function_catalog()),
+            )?;
+            let specialized = entry
+                .specializer
+                .specialize_invocation(&invocation, &mut context)?;
+            execute_bound_specialized_function(
+                specialized.with_semantic_operation(entry.canonical_name),
+                &input_arg_values,
+                p,
+            )
         }
         OwnedResolvedNamedFunction::Extension(entry) => {
             trace_println!(
@@ -105,15 +124,29 @@ pub fn function_call(
                     format!(
                         "extension {}({})",
                         fxn_name,
-                        format_trace_args(&input_arg_values)
+                        input_arg_values
+                            .iter()
+                            .map(|input| format!("{input:?}"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
                     ),
                 )
             );
-            let function = mech_core::with_semantic_operation(
-                entry.canonical_name,
-                entry.specializer.specialize(&input_arg_values)?,
+            let invocation = mech_core::SpecializationInvocation::new(
+                input_arg_values.clone().into_boxed_slice(),
             );
-            execute_specialized_function(function, &input_arg_values, p)
+            let mut context = mech_core::SpecializationContext::for_invocation(
+                &invocation,
+                Some(p.function_catalog()),
+            )?;
+            let specialized = entry
+                .specializer
+                .specialize_invocation(&invocation, &mut context)?;
+            execute_bound_specialized_function(
+                specialized.with_semantic_operation(entry.canonical_name),
+                &input_arg_values,
+                p,
+            )
         }
     }
 }

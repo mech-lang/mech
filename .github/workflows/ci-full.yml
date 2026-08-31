@@ -66,11 +66,8 @@ jobs:
         run: cargo +nightly-2026-03-03 fetch --locked
       - name: Validate permanent architecture contracts
         run: |
-          python3 scripts/generate-value-system-inventory.py --check
-          python3 scripts/generate-value-system-inventory.py \
-            --git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \
-            --check-legacy-baseline
           python3 scripts/check-value-system-contract.py
+          python3 scripts/check-no-retired-value-system.py
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
           python3 scripts/check-resident-activation-contract.py
@@ -85,8 +82,7 @@ jobs:
           python3 -B -m unittest \
             tests/ci/test_ci_full_contract.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
-            scripts/tests/test_generate_value_system_inventory.py \
-            scripts/tests/test_check_value_system_contract.py \
+            scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \
@@ -469,7 +465,13 @@ jobs:
           - extended-engine-shard-signed
           - extended-engine-shard-float
           - extended-engine-shard-convert
-          - extended-math
+          - extended-math-shard-unsigned-small
+          - extended-math-shard-unsigned-wide
+          - extended-math-shard-signed-small
+          - extended-math-shard-signed-wide
+          - extended-math-shard-float
+          - extended-math-shard-complex
+          - extended-math-shard-rational
           - extended-compare
           - extended-logic
           - extended-range
@@ -1038,7 +1040,7 @@ jobs:
           status=$?
           set -e
           test "$status" -eq 0
-          grep '^│' /tmp/analog-clock.out > /tmp/clock-values.out
+          grep '^(' /tmp/analog-clock.out > /tmp/clock-values.out
           test "$(wc -l < /tmp/clock-values.out)" -ge 2
           test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
 

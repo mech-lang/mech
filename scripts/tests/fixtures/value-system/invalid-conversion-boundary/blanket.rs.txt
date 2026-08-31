@@ -1,5 +1,0 @@
-impl From<LegacyValue> for snapshot::Value {
-    fn from(value: LegacyValue) -> Self {
-        convert_without_context(value)
-    }
-}

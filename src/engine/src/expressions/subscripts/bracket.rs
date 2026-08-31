@@ -1,322 +1,75 @@
-use super::super::environment::expression_solves_deferred;
 #[cfg(feature = "subscript_formula")]
 use super::string::{
     current_string_access_expression_live, string_access_argument_is_live,
-    string_access_index_argument, string_access_source_argument,
+    string_access_index_argument,
 };
-use super::{
-    Environment, catalog_access_function, subscript_formula, subscript_formula_ix, subscript_range,
+use super::{Environment, execute_access_function, subscript_formula_ix, subscript_range};
+use crate::{
+    FunctionValueRepresentation, InterpreterExecution, MResult, SpecializationInput, Subscript,
+    ValueCell,
 };
-use crate::{InterpreterExecution, LegacyValue, MResult, Subscript, ValueKind};
-#[cfg(feature = "subscript_formula")]
-use crate::{StringAccessCompileMode, set_next_string_access_compile_mode};
+
+fn selector_is_scalar(selector: &SpecializationInput) -> MResult<bool> {
+    let Some(cell) = selector.cell().ok() else {
+        return Ok(false);
+    };
+    if !matches!(
+        cell.representation(),
+        FunctionValueRepresentation::Matrix { .. }
+    ) {
+        return Ok(true);
+    }
+    Ok(selector
+        .matrix_descriptor()?
+        .is_some_and(|matrix| matrix.rows.saturating_mul(matrix.cols) == 1))
+}
+
+fn operation_for(selectors: &[SpecializationInput]) -> MResult<&'static str> {
+    if selectors
+        .iter()
+        .all(|selector| selector_is_scalar(selector).unwrap_or(false))
+    {
+        Ok("access/scalar")
+    } else {
+        Ok("access/range")
+    }
+}
 
 pub(super) fn access(
-    sbscrpt: &Subscript,
-    val: &LegacyValue,
+    subscript: &Subscript,
+    value: &ValueCell,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let plan = p.plan();
-    match sbscrpt {
-        #[cfg(feature = "subscript_slice")]
-        Subscript::Bracket(subs) => {
-            let string_source_is_live = matches!(val.deref_kind(), ValueKind::String)
-                && string_access_argument_is_live(val, p);
-            let mut fxn_input = if matches!(val.deref_kind(), ValueKind::String) {
-                vec![string_access_source_argument(val, p)]
-            } else {
-                vec![val.clone()]
-            };
-            match &subs[..] {
-                #[cfg(feature = "subscript_formula")]
-                [Subscript::Formula(_)] => {
-                    let raw_index = subscript_formula(&subs[0], env, p)?;
-                    let index_arg = if matches!(val.deref_kind(), ValueKind::String) {
-                        string_access_index_argument(raw_index, &subs[0], env, p)?
-                    } else {
-                        super::subscript_formula_index(&raw_index, p)?
-                    };
-                    if matches!(val.deref_kind(), ValueKind::String)
-                        && matches!(fxn_input.first(), Some(LegacyValue::String(_)))
-                        && matches!(&index_arg, LegacyValue::Index(_))
-                    {
-                        let mode = if current_string_access_expression_live(p)
-                            || string_source_is_live
-                            || string_access_argument_is_live(&index_arg, p)
-                        {
-                            StringAccessCompileMode::LiveDirect
-                        } else {
-                            StringAccessCompileMode::Constant
-                        };
-                        set_next_string_access_compile_mode(mode);
-                    }
-                    let shape = index_arg.shape();
-                    fxn_input.push(index_arg);
-                    match shape[..] {
-                        [1, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/scalar",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "subscript_range")]
-                        [1, _] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "subscript_range")]
-                        [_, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        _ => todo!(),
-                    }
-                }
-                #[cfg(feature = "subscript_range")]
-                [Subscript::Range(_)] => {
-                    let result = subscript_range(&subs[0], env, p)?;
-                    fxn_input.push(result);
-                    plan.borrow_mut()
-                        .push(catalog_access_function(p, "access/range", &fxn_input)?);
-                }
-                [Subscript::All] => {
-                    fxn_input.push(LegacyValue::IndexAll);
-                    #[cfg(feature = "matrix")]
-                    plan.borrow_mut().push(catalog_access_function(
-                        p,
-                        "access/scalar",
-                        &fxn_input,
-                    )?);
-                }
-                [Subscript::All, Subscript::All] => todo!(),
-                #[cfg(feature = "subscript_formula")]
-                [Subscript::Formula(_), Subscript::Formula(_)] => {
-                    let result = subscript_formula_ix(&subs[0], env, p)?;
-                    let shape1 = result.shape();
-                    fxn_input.push(result);
-                    let result = subscript_formula_ix(&subs[1], env, p)?;
-                    let shape2 = result.shape();
-                    fxn_input.push(result);
-                    match ((shape1[0], shape1[1]), (shape2[0], shape2[1])) {
-                        #[cfg(feature = "matrix")]
-                        ((1, 1), (1, 1)) => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/scalar",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        ((1, 1), (_, 1)) => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        ((_, 1), (1, 1)) => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        ((_, 1), (_, 1)) => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        _ => unreachable!(),
-                    }
-                }
-                #[cfg(feature = "subscript_range")]
-                [Subscript::Range(_), Subscript::Range(_)] => {
-                    let result = subscript_range(&subs[0], env, p)?;
-                    fxn_input.push(result);
-                    let result = subscript_range(&subs[1], env, p)?;
-                    fxn_input.push(result);
-                    #[cfg(feature = "matrix")]
-                    plan.borrow_mut()
-                        .push(catalog_access_function(p, "access/range", &fxn_input)?);
-                }
-                #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
-                [Subscript::All, Subscript::Formula(_)] => {
-                    fxn_input.push(LegacyValue::IndexAll);
-                    let result = subscript_formula_ix(&subs[1], env, p)?;
-                    let shape = result.shape();
-                    fxn_input.push(result);
-                    match &shape[..] {
-                        #[cfg(feature = "matrix")]
-                        [1, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/scalar",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        [1, _] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        [_, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        _ => todo!(),
-                    }
-                }
-                #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
-                [Subscript::Formula(_), Subscript::All] => {
-                    let result = subscript_formula_ix(&subs[0], env, p)?;
-                    let shape = result.shape();
-                    fxn_input.push(result);
-                    fxn_input.push(LegacyValue::IndexAll);
-                    match &shape[..] {
-                        #[cfg(feature = "matrix")]
-                        [1, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/scalar",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        [1, _] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        [_, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        _ => todo!(),
-                    }
-                }
-                #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
-                [Subscript::Range(_), Subscript::Formula(_)] => {
-                    let result = subscript_range(&subs[0], env, p)?;
-                    fxn_input.push(result);
-                    let result = subscript_formula_ix(&subs[1], env, p)?;
-                    let shape = result.shape();
-                    fxn_input.push(result);
-                    match &shape[..] {
-                        #[cfg(feature = "matrix")]
-                        [1, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        [1, _] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        [_, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        _ => todo!(),
-                    }
-                }
-                #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
-                [Subscript::Formula(_), Subscript::Range(_)] => {
-                    let result = subscript_formula_ix(&subs[0], env, p)?;
-                    let shape = result.shape();
-                    fxn_input.push(result);
-                    let result = subscript_range(&subs[1], env, p)?;
-                    fxn_input.push(result);
-                    match &shape[..] {
-                        #[cfg(feature = "matrix")]
-                        [1, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        [1, _] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "matrix")]
-                        [_, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        _ => todo!(),
-                    }
-                }
-                #[cfg(feature = "subscript_range")]
-                [Subscript::All, Subscript::Range(_)] => {
-                    fxn_input.push(LegacyValue::IndexAll);
-                    let result = subscript_range(&subs[1], env, p)?;
-                    fxn_input.push(result);
-                    #[cfg(feature = "matrix")]
-                    plan.borrow_mut()
-                        .push(catalog_access_function(p, "access/range", &fxn_input)?);
-                }
-                #[cfg(feature = "subscript_range")]
-                [Subscript::Range(_), Subscript::All] => {
-                    let result = subscript_range(&subs[0], env, p)?;
-                    fxn_input.push(result);
-                    fxn_input.push(LegacyValue::IndexAll);
-                    #[cfg(feature = "matrix")]
-                    plan.borrow_mut()
-                        .push(catalog_access_function(p, "access/range", &fxn_input)?);
-                }
-                _ => unreachable!(),
-            };
-            let plan_brrw = plan.borrow();
-            let new_fxn = &plan_brrw.last().unwrap();
-            if !expression_solves_deferred(p) {
-                new_fxn.solve_result()?;
+) -> MResult<ValueCell> {
+    let Subscript::Bracket(subscripts) = subscript else {
+        unreachable!()
+    };
+    let mut selectors = Vec::with_capacity(subscripts.len());
+    for selector in subscripts {
+        match selector {
+            #[cfg(feature = "subscript_formula")]
+            Subscript::Formula(_) => {
+                let index = subscript_formula_ix(selector, env, p)?;
+                selectors.push(SpecializationInput::Cell(string_access_index_argument(
+                    index, selector, env, p,
+                )?));
             }
-            let res = new_fxn.out();
-            return Ok(res);
+            #[cfg(feature = "subscript_range")]
+            Subscript::Range(_) => {
+                selectors.push(SpecializationInput::Cell(subscript_range(
+                    selector, env, p,
+                )?));
+            }
+            Subscript::All => selectors.push(SpecializationInput::MatrixAllSelection),
+            _ => unreachable!("invalid bracket selector"),
         }
-        _ => unreachable!(),
     }
+    #[cfg(feature = "subscript_formula")]
+    let _source_is_live =
+        current_string_access_expression_live(p) || string_access_argument_is_live(value, p);
+    let operation = operation_for(&selectors)?;
+    let mut inputs = Vec::with_capacity(selectors.len() + 1);
+    inputs.push(SpecializationInput::Cell(value.clone()));
+    inputs.extend(selectors);
+    execute_access_function(p, operation, inputs)
 }

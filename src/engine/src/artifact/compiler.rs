@@ -20,30 +20,26 @@ use mech_core::{
 
 #[cfg(feature = "semantic-compiler")]
 use crate::{
-    CompiledBytecode, CompiledInstructionRole, CompiledNodeKind, CompiledSymbolDefinition,
+    CompiledBytecode, CompiledInstructionRole, CompiledMatrixLiteralElement, CompiledNodeKind,
+    CompiledSymbolDefinition,
 };
 #[cfg(feature = "semantic-compiler")]
-use mech_core::snapshot::SnapshotValidationContext;
-#[cfg(feature = "semantic-compiler")]
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeInstruction, CanonicalNominalPath,
-    ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder, DeliveryMode,
-    DimensionEnvironmentBuilder, DimensionExpr, ExternalInteraction, FunctionCatalog,
-    InputPortLayout, InputPortPolicy, KindId, LegacyEmptyPolicy, LegacyExtentRole,
-    LegacyExtentSite, LegacyNominalResolution, LegacyReferencePolicy, LegacyResolvedExtent,
-    LegacySemanticContext, LegacySnapshotContext, NamedKindPathResolver, NominalKind,
-    OperationContractError, OutputConstruction, OutputPortPolicy, Register, SchemaBody,
-    SchemaHandle, SchemaTableBuilder, SemanticModelError, ShapeRule, ValueKind,
-    schema_from_legacy_value_kind, snapshot_from_legacy,
+    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeInstruction, ChangeDetectionPolicy,
+    ConstantHandle, ConstantStoreBuilder, DeliveryMode, DimensionExpr, ExternalInteraction,
+    FunctionCatalog, InputPortLayout, InputPortPolicy, OperationContractError, OutputConstruction,
+    OutputPortPolicy, Register, RuntimeType, SchemaBody, SchemaDraft, SchemaHandle,
+    SchemaTableBuilder, ShapeRule, Value,
 };
 
 #[cfg(feature = "semantic-compiler")]
 use super::ComputeRegionDeclaration;
 use super::{
     ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
-    InitializerReference, InputDeclaration, IntegrityConstraintDeclaration,
-    InteractiveSymbolBinding, NodeDeclaration, OperationReference, OutputDeclaration,
-    ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    CompilerIrError, ExpressionIR, InitializerReference, InputDeclaration,
+    IntegrityConstraintDeclaration, InteractiveSymbolBinding, MatrixLiteralIR, NodeDeclaration,
+    OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
+    ProgramArtifactDraft, SlotDeclaration, SlotRole,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -52,6 +48,15 @@ pub enum SourceValue {
     Input(u32),
     State(u32),
     NodeOutput { node: u32, output_ordinal: u16 },
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct SourceMatrixLiteral {
+    rows: u64,
+    columns: u64,
+    // `None` is the compiler-only empty expression; `Some` retains a source
+    // identity until artifact slots have been allocated.
+    elements: Box<[Option<SourceValue>]>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -104,6 +109,32 @@ static COMPILER_STATE_HOLD_CONTRACT: LazyLock<OperationContractDeclaration> =
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
     });
+
+#[cfg(feature = "semantic-compiler")]
+fn matrix_literal_contract(element_count: usize) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            (0..element_count)
+                .map(|_| InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::AlwaysChanged,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceOutput {
@@ -212,8 +243,24 @@ pub fn compile_source_program(
 pub fn compile_source_program_with_contracts(
     graph: &SourceProgram,
     context: &mut ArtifactBuildContext<'_>,
-    node_contracts: &[Option<&'static OperationContractDeclaration>],
+    node_contracts: &[Option<&OperationContractDeclaration>],
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_source_program_with_metadata(graph, context, node_contracts, &[])
+}
+
+fn compile_source_program_with_metadata(
+    graph: &SourceProgram,
+    context: &mut ArtifactBuildContext<'_>,
+    node_contracts: &[Option<&OperationContractDeclaration>],
+    node_matrix_literals: &[Option<SourceMatrixLiteral>],
+) -> Result<ProgramArtifact, ArtifactBuildError> {
+    if !node_matrix_literals.is_empty() && node_matrix_literals.len() != graph.nodes.len() {
+        return Err(ArtifactBuildError::CompiledMetadataLengthMismatch {
+            table: "node_matrix_literals",
+            expected: graph.nodes.len(),
+            actual: node_matrix_literals.len(),
+        });
+    }
     let input_count = checked_u32(graph.inputs.len(), "InputId")?;
     let state_count = checked_u32(graph.states.len(), "CellSlotId")?;
     let mut next_slot = input_count.checked_add(state_count).ok_or(
@@ -315,13 +362,50 @@ pub fn compile_source_program_with_contracts(
     for (node_index, declaration) in graph.nodes.iter().enumerate() {
         let node = NodeId(checked_u32(node_index, "NodeId")?);
         let input_start = checked_u32(bindings.len(), "BindingId")?;
-        for (ordinal, source) in declaration.inputs.iter().enumerate() {
+        let matrix_ir = node_matrix_literals
+            .get(node_index)
+            .and_then(Option::as_ref)
+            .map(|literal| {
+                resolve_source_matrix_literal(literal, &input_slots, &state_slots, &output_slots)
+            })
+            .transpose()?;
+        let resolved_inputs = if let Some(matrix_ir) = &matrix_ir {
+            if matrix_ir.elements.len() != declaration.inputs.len() {
+                return Err(ArtifactBuildError::CompiledMetadataLengthMismatch {
+                    table: "matrix_literal_elements",
+                    expected: declaration.inputs.len(),
+                    actual: matrix_ir.elements.len(),
+                });
+            }
+            matrix_ir
+                .elements
+                .iter()
+                .enumerate()
+                .map(|(index, expression)| match expression {
+                    ExpressionIR::Constant(constant) => Ok(ArtifactSource::Constant(*constant)),
+                    ExpressionIR::Slot(slot) => Ok(ArtifactSource::Slot(*slot)),
+                    ExpressionIR::Empty => {
+                        Err(CompilerIrError::DynamicEmptyMatrixLiteralUnsupported { index }.into())
+                    }
+                    ExpressionIR::MatrixLiteral(_) | ExpressionIR::Selection(_) => {
+                        Err(CompilerIrError::UnresolvedMatrixLiteralElement { index }.into())
+                    }
+                })
+                .collect::<Result<Vec<_>, ArtifactBuildError>>()?
+        } else {
+            declaration
+                .inputs
+                .iter()
+                .map(|source| resolve_source(*source, &input_slots, &state_slots, &output_slots))
+                .collect::<Result<Vec<_>, ArtifactBuildError>>()?
+        };
+        for (ordinal, source) in resolved_inputs.into_iter().enumerate() {
             let id = BindingId(checked_u32(bindings.len(), "BindingId")?);
             bindings.push(BindingDeclaration::Input {
                 id,
                 node,
                 port_ordinal: checked_u16(ordinal, "input port ordinal")?,
-                source: resolve_source(*source, &input_slots, &state_slots, &output_slots)?,
+                source,
             });
         }
         let input_end = checked_u32(bindings.len(), "BindingId")?;
@@ -393,12 +477,8 @@ pub fn compile_source_program_with_contracts(
                         output: output_id,
                         source: artifact_source,
                     },
-                    initializer: match artifact_source {
-                        ArtifactSource::Constant(constant) => {
-                            Some(InitializerReference::Constant(constant))
-                        }
-                        ArtifactSource::Slot(_) => None,
-                    },
+                    initializer: published_output_initializer(graph, output.source)
+                        .map(InitializerReference::Constant),
                 });
                 published_sources.insert(artifact_source, target);
                 target
@@ -470,72 +550,79 @@ struct RegisterSemantic {
 }
 
 #[cfg(feature = "semantic-compiler")]
-#[derive(Clone, Debug, Default)]
-struct CompilerLegacyContext {
-    extent: u64,
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum RegisterMatrixLiteralElement {
+    Empty,
+    Constant(ConstantId),
+    Register(Register),
 }
 
 #[cfg(feature = "semantic-compiler")]
-impl CompilerLegacyContext {
-    fn for_kind(
-        kind: &ValueKind,
-        collection_cardinality: Option<usize>,
-        register: u32,
-    ) -> Result<Self, ArtifactBuildError> {
-        let extent = match kind {
-            ValueKind::Matrix(_, dimensions) => dimensions.last().copied().unwrap_or(0),
-            ValueKind::Table(_, rows) => *rows,
-            ValueKind::Set(_, _) | ValueKind::Map(_, _) => collection_cardinality
-                .ok_or(ArtifactBuildError::MissingRegisterCollectionCardinality { register })?,
-            _ => 0,
-        };
-        Ok(Self {
-            extent: extent as u64,
-        })
-    }
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct RegisterMatrixLiteral {
+    rows: u64,
+    columns: u64,
+    elements: Box<[RegisterMatrixLiteralElement]>,
 }
 
 #[cfg(feature = "semantic-compiler")]
-impl NamedKindPathResolver for CompilerLegacyContext {
-    fn canonical_path(&self, _id: KindId) -> Option<&CanonicalNominalPath> {
-        None
-    }
-}
-
-#[cfg(feature = "semantic-compiler")]
-impl LegacySemanticContext for CompilerLegacyContext {
-    fn resolve_named_kind(&mut self, legacy_id: u64) -> Result<KindId, SemanticModelError> {
-        Err(SemanticModelError::LegacyNamedKindUnresolved { legacy_id })
-    }
-
-    fn resolve_nominal(
-        &mut self,
-        nominal_kind: NominalKind,
-        legacy_id: u64,
-        legacy_name: &str,
-    ) -> Result<LegacyNominalResolution, SemanticModelError> {
-        Err(SemanticModelError::LegacyNominalUnresolved {
-            kind: nominal_kind,
-            legacy_id,
-            legacy_name: legacy_name.to_owned(),
+impl RegisterMatrixLiteral {
+    fn constant_ir(&self) -> Option<MatrixLiteralIR> {
+        let elements = self
+            .elements
+            .iter()
+            .map(|element| match element {
+                RegisterMatrixLiteralElement::Empty => Some(ExpressionIR::Empty),
+                RegisterMatrixLiteralElement::Constant(constant) => {
+                    Some(ExpressionIR::Constant(*constant))
+                }
+                RegisterMatrixLiteralElement::Register(_) => None,
+            })
+            .collect::<Option<Vec<_>>>()?;
+        Some(MatrixLiteralIR {
+            rows: self.rows,
+            columns: self.columns,
+            elements: elements.into_boxed_slice(),
         })
     }
 
-    fn resolve_unspecified_extent(
-        &mut self,
-        site: &LegacyExtentSite,
-        _dimensions: &mut DimensionEnvironmentBuilder,
-    ) -> Result<LegacyResolvedExtent, SemanticModelError> {
-        let value = DimensionExpr::Constant(self.extent);
-        Ok(match site.role {
-            LegacyExtentRole::MatrixDimensions => {
-                LegacyResolvedExtent::Dimensions(vec![value].into_boxed_slice())
+    fn contains_empty(&self) -> bool {
+        self.elements
+            .iter()
+            .any(|element| matches!(element, RegisterMatrixLiteralElement::Empty))
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn source_matrix_literal_from_registers(
+    literal: &RegisterMatrixLiteral,
+    registers: &[Option<RegisterSemantic>],
+    instruction: u32,
+) -> Result<SourceMatrixLiteral, ArtifactBuildError> {
+    let elements = literal
+        .elements
+        .iter()
+        .map(|element| match element {
+            RegisterMatrixLiteralElement::Empty => Ok(None),
+            RegisterMatrixLiteralElement::Constant(constant) => {
+                Ok(Some(SourceValue::Constant(*constant)))
             }
-            LegacyExtentRole::TableRows
-            | LegacyExtentRole::SetCardinality
-            | LegacyExtentRole::MapCardinality => LegacyResolvedExtent::Cardinality(value),
+            RegisterMatrixLiteralElement::Register(input_register) => {
+                register(registers, *input_register)?
+                    .map(|semantic| Some(semantic.source))
+                    .ok_or(ArtifactBuildError::MissingRegisterSource {
+                        instruction,
+                        register: *input_register,
+                        role: "matrix literal input",
+                    })
+            }
         })
-    }
+        .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
+    Ok(SourceMatrixLiteral {
+        rows: literal.rows,
+        columns: literal.columns,
+        elements: elements.into_boxed_slice(),
+    })
 }
 
 /// Adapts the actual executable compiler product into C3's durable semantic
@@ -555,8 +642,8 @@ pub fn compile_executable_program_artifact(
 }
 
 /// Compiles a source product while publishing every explicitly requested root
-/// result. The legacy bytecode still has one return instruction, but bytecode
-/// v1's authoritative artifact sections retain all root outputs.
+/// result. The executable bytecode stream has one return instruction, while
+/// bytecode v1's authoritative artifact sections retain all root outputs.
 #[cfg(feature = "semantic-compiler")]
 pub fn compile_executable_program_artifact_with_outputs(
     compiled: &CompiledBytecode,
@@ -678,6 +765,314 @@ pub(crate) fn compile_legacy_bytecode_program_artifact_with_outputs(
 }
 
 #[cfg(feature = "semantic-compiler")]
+fn matrix_literal_mismatch(output: Register, reason: &'static str) -> ArtifactBuildError {
+    ArtifactBuildError::MatrixLiteralMetadataMismatch { output, reason }
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn validate_compiled_matrix_literals(
+    compiled: &CompiledBytecode,
+) -> Result<BTreeMap<Register, usize>, ArtifactBuildError> {
+    let mut instructions = BTreeMap::new();
+    for (key, literal) in &compiled.matrix_literals {
+        if *key != literal.output {
+            return Err(matrix_literal_mismatch(
+                *key,
+                "sidecar key does not match output",
+            ));
+        }
+        let output = literal.output;
+        if output >= compiled.program.register_count {
+            return Err(matrix_literal_mismatch(
+                output,
+                "output register is out of range",
+            ));
+        }
+        if literal
+            .elements
+            .iter()
+            .any(|element| element.register() >= compiled.program.register_count)
+        {
+            return Err(matrix_literal_mismatch(
+                output,
+                "element register is out of range",
+            ));
+        }
+
+        let writers = compiled
+            .program
+            .instructions
+            .iter()
+            .enumerate()
+            .filter(|(index, instruction)| {
+                instruction_destination(instruction) == Some(output)
+                    && !matches!(
+                        compiled.instruction_roles[*index],
+                        Some(CompiledInstructionRole::DeclarationMarker)
+                    )
+            })
+            .collect::<Vec<_>>();
+        let [
+            (
+                instruction_index,
+                BytecodeInstruction::CompositePack {
+                    template, children, ..
+                },
+            ),
+        ] = writers.as_slice()
+        else {
+            return Err(matrix_literal_mismatch(
+                output,
+                "output must have exactly one CompositePack writer",
+            ));
+        };
+        let descriptor_children = literal
+            .elements
+            .iter()
+            .map(|element| element.register())
+            .collect::<Vec<_>>();
+        if children != &descriptor_children {
+            return Err(matrix_literal_mismatch(
+                output,
+                "CompositePack children do not match the sidecar",
+            ));
+        }
+        let Some(template_constant) = compiled.program.constants.get(*template as usize) else {
+            return Err(matrix_literal_mismatch(
+                output,
+                "CompositePack template constant is out of range",
+            ));
+        };
+        let RuntimeType::Kind(mech_core::BytecodeKind::Matrix(
+            template_element,
+            template_dimensions,
+        )) = &template_constant.runtime_type
+        else {
+            return Err(matrix_literal_mismatch(
+                output,
+                "CompositePack template is not a matrix kind",
+            ));
+        };
+        let [template_rows, template_columns] = template_dimensions.as_slice() else {
+            return Err(matrix_literal_mismatch(
+                output,
+                "CompositePack matrix template is not rank two",
+            ));
+        };
+        let Some(Some(SchemaBody::Matrix {
+            element: output_element,
+            dimensions: output_dimensions,
+        })) = compiled.register_schemas.get(output as usize)
+        else {
+            return Err(matrix_literal_mismatch(
+                output,
+                "output register schema is not a matrix",
+            ));
+        };
+        let [
+            DimensionExpr::Constant(output_rows),
+            DimensionExpr::Constant(output_columns),
+        ] = output_dimensions.as_ref()
+        else {
+            return Err(matrix_literal_mismatch(
+                output,
+                "output register matrix schema does not have concrete rank-two dimensions",
+            ));
+        };
+        let expected_template_element = mech_core::bytecode_kind_from_schema(output_element)?;
+        let empty_extent = literal.rows == 0 || literal.columns == 0;
+        if !(empty_extent && matches!(template_element.as_ref(), mech_core::BytecodeKind::Any))
+            && template_element.as_ref() != &expected_template_element
+        {
+            return Err(matrix_literal_mismatch(
+                output,
+                "output register schema does not match the matrix template",
+            ));
+        }
+        let literal_rows = usize::try_from(literal.rows).map_err(|_| {
+            matrix_literal_mismatch(output, "matrix literal row count exceeds usize")
+        })?;
+        let literal_columns = usize::try_from(literal.columns).map_err(|_| {
+            matrix_literal_mismatch(output, "matrix literal column count exceeds usize")
+        })?;
+        if [*template_rows, *template_columns] != [literal_rows, literal_columns]
+            || [*output_rows as usize, *output_columns as usize] != [literal_rows, literal_columns]
+        {
+            return Err(matrix_literal_mismatch(
+                output,
+                "matrix kind dimensions do not match the sidecar",
+            ));
+        }
+        for element in &literal.elements {
+            let register = element.register();
+            let constant = compiled
+                .program
+                .instructions
+                .iter()
+                .find_map(|instruction| match instruction {
+                    BytecodeInstruction::ConstLoad { dst, constant } if *dst == register => {
+                        Some(*constant)
+                    }
+                    _ => None,
+                });
+            match element {
+                CompiledMatrixLiteralElement::Empty { .. } => {
+                    if !constant
+                        .and_then(|constant| compiled.program.constants.get(constant as usize))
+                        .is_some_and(|constant| constant.runtime_type == RuntimeType::Empty)
+                    {
+                        return Err(matrix_literal_mismatch(
+                            output,
+                            "empty element does not reference an Empty constant",
+                        ));
+                    }
+                }
+                CompiledMatrixLiteralElement::Value { .. } => {
+                    if constant
+                        .and_then(|constant| compiled.program.constants.get(constant as usize))
+                        .is_some_and(|constant| constant.runtime_type == RuntimeType::Empty)
+                    {
+                        return Err(matrix_literal_mismatch(
+                            output,
+                            "value element references an Empty constant",
+                        ));
+                    }
+                }
+            }
+        }
+        instructions.insert(output, *instruction_index);
+    }
+
+    let empty_registers = compiled
+        .matrix_literals
+        .values()
+        .flat_map(|literal| literal.elements.iter())
+        .filter_map(|element| match element {
+            CompiledMatrixLiteralElement::Empty { register } => Some(*register),
+            CompiledMatrixLiteralElement::Value { .. } => None,
+        })
+        .collect::<BTreeSet<_>>();
+    for register in empty_registers {
+        for (instruction_index, instruction) in compiled.program.instructions.iter().enumerate() {
+            match instruction {
+                BytecodeInstruction::ConstLoad { dst, .. } if *dst == register => {}
+                BytecodeInstruction::CompositePack { dst, children, .. } => {
+                    for (index, child) in children.iter().enumerate() {
+                        if *child != register {
+                            continue;
+                        }
+                        let allowed = compiled
+                            .matrix_literals
+                            .get(dst)
+                            .and_then(|literal| literal.elements.get(index))
+                            .is_some_and(|element| {
+                                matches!(
+                                    element,
+                                    CompiledMatrixLiteralElement::Empty { register: empty }
+                                        if *empty == register
+                                )
+                            });
+                        if !allowed {
+                            return Err(ArtifactBuildError::UnresolvedEmptyRegister { register });
+                        }
+                    }
+                }
+                _ if instruction_input_registers(instruction).contains(&register) => {
+                    let _ = instruction_index;
+                    return Err(ArtifactBuildError::UnresolvedEmptyRegister { register });
+                }
+                _ => {}
+            }
+        }
+    }
+    Ok(instructions)
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn instruction_input_registers(instruction: &BytecodeInstruction) -> Vec<Register> {
+    match instruction {
+        BytecodeInstruction::ConstLoad { .. }
+        | BytecodeInstruction::RuntimeNullary { .. }
+        | BytecodeInstruction::ResourceRead { .. } => Vec::new(),
+        BytecodeInstruction::CompositePack { children, .. }
+        | BytecodeInstruction::RuntimeVariadic {
+            arguments: children,
+            ..
+        }
+        | BytecodeInstruction::HostCall {
+            arguments: children,
+            ..
+        } => children.clone(),
+        BytecodeInstruction::RuntimeUnary { src, .. }
+        | BytecodeInstruction::ResourceWrite { src, .. }
+        | BytecodeInstruction::ResourceSend { src, .. }
+        | BytecodeInstruction::Return { src } => vec![*src],
+        BytecodeInstruction::RuntimeBinary { lhs, rhs, .. } => vec![*lhs, *rhs],
+        BytecodeInstruction::RuntimeTernary { a, b, c, .. } => vec![*a, *b, *c],
+        BytecodeInstruction::RuntimeQuaternary { a, b, c, d, .. } => vec![*a, *b, *c, *d],
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn constant_for_register(
+    register: Register,
+    register_schemas: &[Option<SchemaId>],
+    constants: &BTreeMap<(u32, SchemaId), ConstantId>,
+    instructions: &[BytecodeInstruction],
+) -> Option<ConstantId> {
+    let schema = register_schemas.get(register as usize).copied().flatten()?;
+    let encoded = instructions
+        .iter()
+        .find_map(|instruction| match instruction {
+            BytecodeInstruction::ConstLoad { dst, constant } if *dst == register => Some(*constant),
+            BytecodeInstruction::CompositePack { dst, template, .. } if *dst == register => {
+                Some(*template)
+            }
+            _ => None,
+        })?;
+    constants.get(&(encoded, schema)).copied()
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn extend_constant_store_with_matrix_literals(
+    schemas: &SchemaTable,
+    constants: &ConstantStore,
+    matrices: BTreeMap<Register, Value>,
+) -> Result<
+    (
+        ConstantStore,
+        BTreeMap<ConstantId, ConstantId>,
+        BTreeMap<Register, ConstantId>,
+    ),
+    ArtifactBuildError,
+> {
+    let mut builder = ConstantStoreBuilder::new(schemas);
+    let mut existing = BTreeMap::new();
+    for raw in 0..constants.len() {
+        let old = ConstantId::new(checked_u32(raw, "ConstantId")?);
+        let value = constants
+            .get(old)
+            .ok_or(ArtifactBuildError::UnknownConstant { constant: old })?;
+        existing.insert(old, builder.insert(value.clone())?);
+    }
+    let mut matrix_handles = BTreeMap::new();
+    for (register, value) in matrices {
+        matrix_handles.insert(register, builder.insert(value)?);
+    }
+    let build = builder.finish()?;
+    let existing = existing
+        .into_iter()
+        .map(|(old, handle)| Ok((old, build.resolve(handle)?)))
+        .collect::<Result<BTreeMap<_, _>, ArtifactBuildError>>()?;
+    let matrices = matrix_handles
+        .into_iter()
+        .map(|(register, handle)| Ok((register, build.resolve(handle)?)))
+        .collect::<Result<BTreeMap<_, _>, ArtifactBuildError>>()?;
+    let (store, _) = build.into_parts();
+    Ok((store, existing, matrices))
+}
+
+#[cfg(feature = "semantic-compiler")]
 fn compile_executable_program_artifact_with_identity(
     compiled: &CompiledBytecode,
     published_outputs: &[Register],
@@ -707,9 +1102,9 @@ fn compile_executable_program_artifact_with_identity(
         compiled.instruction_source_nodes.len(),
     )?;
     validate_compiled_metadata_length(
-        "register_kinds",
+        "register_schemas",
         compiled.program.register_count as usize,
-        compiled.register_kinds.len(),
+        compiled.register_schemas.len(),
     )?;
     validate_compiled_metadata_length(
         "register_collection_cardinalities",
@@ -723,38 +1118,35 @@ fn compile_executable_program_artifact_with_identity(
     )?;
     validate_compiled_instruction_roles(compiled, catalog)?;
 
-    let legacy_constants = mech_core::decode_encoded_constants(&compiled.program.constants)?;
+    let canonical_constants = mech_core::decode_encoded_constants(&compiled.program.constants)?;
+    let matrix_literal_instructions = validate_compiled_matrix_literals(compiled)?;
 
     struct PendingRegisterSchema {
         handle: SchemaHandle,
-        semantic: CompilerLegacyContext,
         contains_reference: bool,
     }
 
     let mut schema_builder = SchemaTableBuilder::new();
-    let mut pending_register_schemas = Vec::with_capacity(compiled.register_kinds.len());
-    for (register, kind) in compiled.register_kinds.iter().enumerate() {
-        let Some(kind) = kind else {
-            pending_register_schemas.push(None);
+    let mut pending_register_schemas = Vec::with_capacity(compiled.register_schemas.len());
+    for (register, body) in compiled.register_schemas.iter().enumerate() {
+        if let Some(body) = body.clone() {
+            let schema = SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()?;
+            pending_register_schemas.push(Some(PendingRegisterSchema {
+                handle: schema_builder.insert(schema)?,
+                contains_reference: false,
+            }));
             continue;
-        };
-        if is_compiler_pseudo_kind(kind) {
+        }
+        let register = checked_u32(register, "bytecode register")?;
+        if compiled.absent_registers.contains(&register) {
             pending_register_schemas.push(None);
             continue;
         }
-        let (kind, contains_reference) = normalize_legacy_binding_kind(kind.clone());
-        let register = checked_u32(register, "bytecode register")?;
-        let mut semantic = CompilerLegacyContext::for_kind(
-            &kind,
-            compiled.register_collection_cardinalities[register as usize],
-            register,
-        )?;
-        let schema = schema_from_legacy_value_kind(&kind, &mut semantic)?;
-        pending_register_schemas.push(Some(PendingRegisterSchema {
-            handle: schema_builder.insert(schema)?,
-            semantic,
-            contains_reference,
-        }));
+        pending_register_schemas.push(None);
     }
     let schema_build = schema_builder.finish()?;
     let register_schemas = pending_register_schemas
@@ -859,11 +1251,15 @@ fn compile_executable_program_artifact_with_identity(
         });
     }
 
-    let mut pending_constants = BTreeMap::<(u32, SchemaId), CompilerLegacyContext>::new();
+    let mut pending_constants = BTreeSet::<(u32, SchemaId)>::new();
     for instruction in &compiled.program.instructions {
         let (register, constant) = match instruction {
             BytecodeInstruction::ConstLoad { dst, constant } => (*dst, *constant),
-            BytecodeInstruction::CompositePack { dst, template, .. } => (*dst, *template),
+            BytecodeInstruction::CompositePack { dst, template, .. }
+                if !compiled.matrix_literals.contains_key(dst) =>
+            {
+                (*dst, *template)
+            }
             _ => continue,
         };
         let register_index = register as usize;
@@ -893,20 +1289,13 @@ fn compile_executable_program_artifact_with_identity(
                 instruction: 0,
                 register,
             })?;
-        let semantic = pending_register_schemas[register_index]
-            .as_ref()
-            .expect("schema and pending schema are parallel")
-            .semantic
-            .clone();
-        legacy_constants.get(constant as usize).ok_or(
+        canonical_constants.get(constant as usize).ok_or(
             ArtifactBuildError::SourceGraphReferenceOutOfRange {
                 reference: "bytecode constant",
                 index: constant,
             },
         )?;
-        pending_constants
-            .entry((constant, schema))
-            .or_insert(semantic);
+        pending_constants.insert((constant, schema));
     }
     for (register, constant) in compiled.register_state_initializers.iter().enumerate() {
         let Some(constant) = constant else {
@@ -918,48 +1307,94 @@ fn compile_executable_program_artifact_with_identity(
                 register: register as u32,
             },
         )?;
-        let semantic = pending_register_schemas[register]
-            .as_ref()
-            .expect("schema and pending schema are parallel")
-            .semantic
-            .clone();
-        legacy_constants.get(*constant as usize).ok_or(
+        canonical_constants.get(*constant as usize).ok_or(
             ArtifactBuildError::SourceGraphReferenceOutOfRange {
                 reference: "state initializer bytecode constant",
                 index: *constant,
             },
         )?;
-        pending_constants
-            .entry((*constant, schema))
-            .or_insert(semantic);
+        pending_constants.insert((*constant, schema));
     }
 
     let mut constant_builder = ConstantStoreBuilder::new(&schemas);
     let mut constant_handles = BTreeMap::<(u32, SchemaId), ConstantHandle>::new();
-    for ((constant, schema), mut semantic) in pending_constants {
-        let value = &legacy_constants[constant as usize];
-        let named = semantic.clone();
-        let validation = SnapshotValidationContext::with_named_kinds(&schemas, &named);
-        let mut snapshot_context = LegacySnapshotContext::new(
-            &mut semantic,
-            LegacyEmptyPolicy::Reject,
-            LegacyReferencePolicy::SnapshotCurrentValue,
-        );
-        let value = snapshot_from_legacy(
-            value,
+    for (constant, schema) in pending_constants {
+        let value = canonical_constants[constant as usize].rebind(
             schema,
-            Box::new([]),
-            &validation,
-            &mut snapshot_context,
+            &schemas
+                .get(schema)
+                .expect("registered artifact schema remains present")
+                .instantiate_shape(Box::new([]))?,
+            &schemas,
         )?;
         constant_handles.insert((constant, schema), constant_builder.insert(value)?);
     }
     let constant_build = constant_builder.finish()?;
-    let constants = constant_handles
+    let mut constants = constant_handles
         .into_iter()
         .map(|(key, handle)| Ok((key, constant_build.resolve(handle)?)))
         .collect::<Result<BTreeMap<_, _>, ArtifactBuildError>>()?;
-    let (constant_store, _) = constant_build.into_parts();
+    let (base_constant_store, _) = constant_build.into_parts();
+
+    let mut register_matrix_literals = BTreeMap::<Register, RegisterMatrixLiteral>::new();
+    let mut folded_matrix_values = BTreeMap::<Register, Value>::new();
+    for literal in compiled.matrix_literals.values() {
+        let elements = literal
+            .elements
+            .iter()
+            .map(|element| match element {
+                CompiledMatrixLiteralElement::Empty { .. } => RegisterMatrixLiteralElement::Empty,
+                CompiledMatrixLiteralElement::Value { register }
+                    if register_constant_roles[*register as usize]
+                        == Some(CompilerConstantRole::Snapshot) =>
+                {
+                    constant_for_register(
+                        *register,
+                        &register_schemas,
+                        &constants,
+                        &compiled.program.instructions,
+                    )
+                    .map(RegisterMatrixLiteralElement::Constant)
+                    .unwrap_or(RegisterMatrixLiteralElement::Register(*register))
+                }
+                CompiledMatrixLiteralElement::Value { register } => {
+                    RegisterMatrixLiteralElement::Register(*register)
+                }
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        let source_literal = RegisterMatrixLiteral {
+            rows: u64::from(literal.rows),
+            columns: u64::from(literal.columns),
+            elements,
+        };
+        let instruction = matrix_literal_instructions[&literal.output];
+        if let Some(ir) = source_literal.constant_ir()
+            && compiled.instruction_source_nodes[instruction].is_none()
+        {
+            let schema = register_schemas[literal.output as usize].ok_or(
+                ArtifactBuildError::MissingRegisterKind {
+                    instruction: checked_u32(instruction, "instruction")?,
+                    register: literal.output,
+                },
+            )?;
+            folded_matrix_values.insert(
+                literal.output,
+                ir.resolve_constant(schema, &schemas, &base_constant_store)?,
+            );
+        }
+        register_matrix_literals.insert(literal.output, source_literal);
+    }
+
+    let (constant_store, constant_remap, folded_matrix_constants) =
+        extend_constant_store_with_matrix_literals(
+            &schemas,
+            &base_constant_store,
+            folded_matrix_values,
+        )?;
+    for constant in constants.values_mut() {
+        *constant = constant_remap[constant];
+    }
     let explicit_state_initializers = compiled
         .register_state_initializers
         .iter()
@@ -1067,8 +1502,10 @@ fn compile_executable_program_artifact_with_identity(
         let Some(schema) = register_schemas[register as usize] else {
             continue;
         };
-        inferred_state_initializers[register as usize] =
-            constants.get(&(constant, schema)).copied();
+        inferred_state_initializers[register as usize] = folded_matrix_constants
+            .get(&register)
+            .copied()
+            .or_else(|| constants.get(&(constant, schema)).copied());
     }
 
     let mut register_state_indexes = vec![None::<u32>; compiled.program.register_count as usize];
@@ -1110,7 +1547,8 @@ fn compile_executable_program_artifact_with_identity(
     let mut registers = vec![None::<RegisterSemantic>; compiled.program.register_count as usize];
     let mut nodes = Vec::<SourceNode>::new();
     let mut source_node_origins = Vec::<Option<u32>>::new();
-    let mut node_contracts = Vec::<Option<&'static OperationContractDeclaration>>::new();
+    let mut node_contracts = Vec::<Option<OperationContractDeclaration>>::new();
+    let mut node_matrix_literals = Vec::<Option<SourceMatrixLiteral>>::new();
     let mut lowered_declared_source_nodes = std::collections::BTreeSet::new();
 
     // A mutable declaration remains semantic state even when source contains
@@ -1136,12 +1574,142 @@ fn compile_executable_program_artifact_with_identity(
             inputs: vec![SourceValue::State(state)].into_boxed_slice(),
             outputs: vec![SourceNodeOutput::State(state)].into_boxed_slice(),
         });
-        node_contracts.push(Some(&COMPILER_STATE_HOLD_CONTRACT));
+        node_contracts.push(Some((*COMPILER_STATE_HOLD_CONTRACT).clone()));
+        node_matrix_literals.push(None);
     }
 
     for (instruction_index, instruction) in compiled.program.instructions.iter().enumerate() {
         let instruction_id = checked_u32(instruction_index, "instruction")?;
         let role = compiled.instruction_roles[instruction_index];
+        if let BytecodeInstruction::CompositePack { dst, .. } = instruction
+            && let Some(literal) = compiled.matrix_literals.get(dst)
+        {
+            let kind = match role {
+                Some(CompiledInstructionRole::Node(kind)) => kind,
+                Some(role) => {
+                    return Err(ArtifactBuildError::UnexpectedInstructionRole {
+                        instruction: instruction_id,
+                        role: instruction_role_name(role),
+                    });
+                }
+                None => {
+                    return Err(ArtifactBuildError::MissingInstructionRole {
+                        instruction: instruction_id,
+                    });
+                }
+            };
+            if kind != CompiledNodeKind::Combinational {
+                return Err(matrix_literal_mismatch(
+                    *dst,
+                    "matrix literal CompositePack is not combinational",
+                ));
+            }
+            let schema =
+                register_schemas[*dst as usize].ok_or(ArtifactBuildError::MissingRegisterKind {
+                    instruction: instruction_id,
+                    register: *dst,
+                })?;
+            if register_constant_roles[*dst as usize] == Some(CompilerConstantRole::ExternalInput) {
+                let input = input_indexes[*dst as usize].ok_or(
+                    ArtifactBuildError::MissingRegisterSource {
+                        instruction: instruction_id,
+                        register: *dst,
+                        role: "external input",
+                    },
+                )?;
+                set_register(
+                    &mut registers,
+                    *dst,
+                    Some(RegisterSemantic {
+                        source: SourceValue::Input(input),
+                        schema,
+                    }),
+                )?;
+                continue;
+            }
+            if let Some(constant) = folded_matrix_constants.get(dst).copied() {
+                let source = register_state_indexes[*dst as usize]
+                    .map(SourceValue::State)
+                    .unwrap_or(SourceValue::Constant(constant));
+                set_register(
+                    &mut registers,
+                    *dst,
+                    Some(RegisterSemantic { source, schema }),
+                )?;
+                continue;
+            }
+
+            let register_literal = &register_matrix_literals[dst];
+            if register_literal.contains_empty() {
+                let index = register_literal
+                    .elements
+                    .iter()
+                    .position(|element| matches!(element, RegisterMatrixLiteralElement::Empty))
+                    .expect("compiled matrix literals contain no nested expressions");
+                return Err(
+                    super::CompilerIrError::DynamicEmptyMatrixLiteralUnsupported { index }.into(),
+                );
+            }
+            let node_index = checked_u32(nodes.len(), "NodeId")?;
+            let state_index = if register_state_indexes[*dst as usize].is_some()
+                && mutable_declaration_instructions[*dst as usize]
+                    .is_some_and(|marker| instruction_index > marker)
+            {
+                let state = register_state_indexes[*dst as usize].ok_or(
+                    ArtifactBuildError::MissingRegisterSource {
+                        instruction: instruction_id,
+                        register: *dst,
+                        role: "state declaration",
+                    },
+                )?;
+                states[state as usize].producer_node = node_index;
+                Some(state)
+            } else {
+                None
+            };
+            let source_literal =
+                source_matrix_literal_from_registers(register_literal, &registers, instruction_id)?;
+            let inputs = source_literal
+                .elements
+                .iter()
+                .filter_map(|element| *element)
+                .collect::<Vec<_>>();
+            if let Some(source_node) = compiled.instruction_source_nodes[instruction_index]
+                && !lowered_declared_source_nodes.insert(source_node)
+            {
+                return Err(ArtifactBuildError::DeclaredSourceNodeLoweringUnsupported {
+                    source_node,
+                });
+            }
+            nodes.push(SourceNode {
+                operation: OperationReference {
+                    module_path: vec!["matrix".to_owned()].into_boxed_slice(),
+                    operation_name: "literal".to_owned(),
+                },
+                requirement: None,
+                inputs: inputs.into_boxed_slice(),
+                outputs: match state_index {
+                    Some(state) => vec![SourceNodeOutput::State(state)],
+                    None => vec![SourceNodeOutput::Derived { schema }],
+                }
+                .into_boxed_slice(),
+            });
+            source_node_origins.push(compiled.instruction_source_nodes[instruction_index]);
+            node_contracts.push(Some(matrix_literal_contract(literal.elements.len())));
+            node_matrix_literals.push(Some(source_literal));
+            let source = state_index
+                .map(SourceValue::State)
+                .unwrap_or(SourceValue::NodeOutput {
+                    node: node_index,
+                    output_ordinal: 0,
+                });
+            set_register(
+                &mut registers,
+                *dst,
+                Some(RegisterSemantic { source, schema }),
+            )?;
+            continue;
+        }
         match instruction {
             BytecodeInstruction::ConstLoad { dst, constant } => {
                 if let Some(role) = role {
@@ -1246,11 +1814,7 @@ fn compile_executable_program_artifact_with_identity(
                 })?;
                 let dst = semantics.destination;
                 let schema = register_schemas.get(dst as usize).copied().flatten();
-                let pseudo_destination = compiled
-                    .register_kinds
-                    .get(dst as usize)
-                    .and_then(Option::as_ref)
-                    .is_some_and(is_compiler_pseudo_kind);
+                let pseudo_destination = compiled.absent_registers.contains(&dst);
                 if schema.is_none() && !pseudo_destination {
                     return Err(ArtifactBuildError::MissingRegisterKind {
                         instruction: instruction_id,
@@ -1424,21 +1988,34 @@ fn compile_executable_program_artifact_with_identity(
                         }
                     }
                 }
+                let exposes_output =
+                    declaration.is_none_or(|declaration| !declaration.outputs.is_empty());
                 nodes.push(SourceNode {
                     operation: semantics.operation,
                     requirement: semantics.requirement,
                     inputs: semantic_inputs,
-                    outputs: match (state_index, schema) {
-                        (Some(state), _) => vec![SourceNodeOutput::State(state)],
-                        (None, Some(schema)) => vec![SourceNodeOutput::Derived { schema }],
-                        (None, None) => Vec::new(),
+                    outputs: match (exposes_output, state_index, schema) {
+                        (false, _, _) => Vec::new(),
+                        (true, Some(state), _) => vec![SourceNodeOutput::State(state)],
+                        (true, None, Some(schema)) => vec![SourceNodeOutput::Derived { schema }],
+                        (true, None, None) => Vec::new(),
                     }
                     .into_boxed_slice(),
                 });
                 source_node_origins.push(compiled.instruction_source_nodes[instruction_index]);
-                node_contracts.push(declaration);
+                node_contracts.push(declaration.cloned());
+                node_matrix_literals.push(None);
                 if schema.is_none() {
                     set_register(&mut registers, dst, None)?;
+                    continue;
+                }
+                // Effect nodes such as resource writes deliberately expose no
+                // graph output, but their bytecode destination still owns the
+                // canonical unit seed returned by the source statement. Keep
+                // that prior source available when the statement itself is a
+                // published program result without fabricating an effect-node
+                // output binding.
+                if !exposes_output {
                     continue;
                 }
                 let source = match state_index {
@@ -1489,12 +2066,7 @@ fn compile_executable_program_artifact_with_identity(
     let mut outputs = Vec::with_capacity(output_registers.len());
     for (ordinal, output_register) in output_registers.into_iter().enumerate() {
         let Some(returned) = register(&registers, output_register)? else {
-            if compiled
-                .register_kinds
-                .get(output_register as usize)
-                .and_then(Option::as_ref)
-                .is_some_and(is_compiler_pseudo_kind)
-            {
+            if compiled.absent_registers.contains(&output_register) {
                 continue;
             }
             return Err(ArtifactBuildError::MissingRegisterSource {
@@ -1576,8 +2148,13 @@ fn compile_executable_program_artifact_with_identity(
         });
     }
 
-    let (inputs, mut nodes, mut outputs, mut constraints) =
-        prune_unused_inputs(inputs, nodes, outputs, constraints)?;
+    let (inputs, mut nodes, mut outputs, mut constraints) = prune_unused_inputs(
+        inputs,
+        nodes,
+        outputs,
+        constraints,
+        &mut node_matrix_literals,
+    )?;
     let constant_store = prune_unused_constants(
         &schemas,
         &constant_store,
@@ -1597,10 +2174,15 @@ fn compile_executable_program_artifact_with_identity(
         outputs: outputs.into_boxed_slice(),
         constraints: constraints.into_boxed_slice(),
     };
-    let artifact = compile_source_program_with_contracts(
+    let node_contract_refs = node_contracts
+        .iter()
+        .map(Option::as_ref)
+        .collect::<Vec<_>>();
+    let artifact = compile_source_program_with_metadata(
         &source,
         &mut ArtifactBuildContext::new(&schemas, &constant_store),
-        &node_contracts,
+        &node_contract_refs,
+        &node_matrix_literals,
     )?;
     let compute_regions = compiled
         .compute_regions
@@ -1752,6 +2334,7 @@ fn prune_unused_inputs(
     mut nodes: Vec<SourceNode>,
     mut outputs: Vec<SourceOutput>,
     mut constraints: Vec<SourceIntegrityConstraint>,
+    node_matrix_literals: &mut [Option<SourceMatrixLiteral>],
 ) -> Result<
     (
         Vec<SourceInput>,
@@ -1801,6 +2384,13 @@ fn prune_unused_inputs(
             remap_value(source);
         }
     }
+    for literal in node_matrix_literals.iter_mut().flatten() {
+        for element in &mut literal.elements {
+            if let Some(source) = element {
+                remap_value(source);
+            }
+        }
+    }
     for output in &mut outputs {
         remap_value(&mut output.source);
     }
@@ -1810,92 +2400,6 @@ fn prune_unused_inputs(
         }
     }
     Ok((retained, nodes, outputs, constraints))
-}
-
-#[cfg(feature = "semantic-compiler")]
-fn normalize_legacy_binding_kind(kind: ValueKind) -> (ValueKind, bool) {
-    match kind {
-        ValueKind::Reference(referenced) => {
-            let (kind, _) = normalize_legacy_binding_kind(*referenced);
-            (kind, true)
-        }
-        ValueKind::Matrix(element, dimensions) => {
-            let (element, contains_reference) = normalize_legacy_binding_kind(*element);
-            (
-                ValueKind::Matrix(Box::new(element), dimensions),
-                contains_reference,
-            )
-        }
-        ValueKind::Record(fields) => {
-            let mut contains_reference = false;
-            let fields = fields
-                .into_iter()
-                .map(|(name, kind)| {
-                    let (kind, nested_reference) = normalize_legacy_binding_kind(kind);
-                    contains_reference |= nested_reference;
-                    (name, kind)
-                })
-                .collect();
-            (ValueKind::Record(fields), contains_reference)
-        }
-        ValueKind::Map(key, value) => {
-            let (key, key_reference) = normalize_legacy_binding_kind(*key);
-            let (value, value_reference) = normalize_legacy_binding_kind(*value);
-            (
-                ValueKind::Map(Box::new(key), Box::new(value)),
-                key_reference || value_reference,
-            )
-        }
-        ValueKind::Table(columns, rows) => {
-            let mut contains_reference = false;
-            let columns = columns
-                .into_iter()
-                .map(|(name, kind)| {
-                    let (kind, nested_reference) = normalize_legacy_binding_kind(kind);
-                    contains_reference |= nested_reference;
-                    (name, kind)
-                })
-                .collect();
-            (ValueKind::Table(columns, rows), contains_reference)
-        }
-        ValueKind::Tuple(elements) => {
-            let mut contains_reference = false;
-            let elements = elements
-                .into_iter()
-                .map(|kind| {
-                    let (kind, nested_reference) = normalize_legacy_binding_kind(kind);
-                    contains_reference |= nested_reference;
-                    kind
-                })
-                .collect();
-            (ValueKind::Tuple(elements), contains_reference)
-        }
-        ValueKind::Set(element, maximum_len) => {
-            let (element, contains_reference) = normalize_legacy_binding_kind(*element);
-            (
-                ValueKind::Set(Box::new(element), maximum_len),
-                contains_reference,
-            )
-        }
-        ValueKind::Option(element) => {
-            let (element, contains_reference) = normalize_legacy_binding_kind(*element);
-            (ValueKind::Option(Box::new(element)), contains_reference)
-        }
-        ValueKind::Kind(reified) => {
-            let (reified, contains_reference) = normalize_legacy_binding_kind(*reified);
-            (ValueKind::Kind(Box::new(reified)), contains_reference)
-        }
-        kind => (kind, false),
-    }
-}
-
-#[cfg(feature = "semantic-compiler")]
-fn is_compiler_pseudo_kind(kind: &ValueKind) -> bool {
-    match kind {
-        ValueKind::Empty | ValueKind::Any | ValueKind::None => true,
-        ValueKind::Reference(referenced) => is_compiler_pseudo_kind(referenced),
-        _ => false,
-    }
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -2249,22 +2753,20 @@ fn instruction_semantics(
     runtime_function_names: &BTreeMap<u64, String>,
     requirements: &[ApplicationRequirement],
 ) -> Result<Option<CompiledInstructionSemantics>, ArtifactBuildError> {
-    let runtime = |function: u64| {
-        let implementation = catalog
-            .runtime_entry_by_raw(function)
-            .map(|entry| entry.name.as_str())
-            .or_else(|| runtime_function_names.get(&function).map(String::as_str))
-            .ok_or(ArtifactBuildError::UnknownRuntimeFunction { function })?;
-        match operation_identity {
-            RuntimeOperationIdentity::Semantic => semantic_operation
-                .ok_or_else(|| ArtifactBuildError::MissingSemanticOperation {
-                    instruction: instruction_id,
-                    implementation: implementation.to_owned(),
-                })
-                .and_then(semantic_operation_reference),
-            RuntimeOperationIdentity::Implementation => {
-                operation_reference_from_name("runtime", implementation)
-            }
+    let runtime = |function: u64| match operation_identity {
+        RuntimeOperationIdentity::Semantic => semantic_operation
+            .ok_or_else(|| ArtifactBuildError::MissingSemanticOperation {
+                instruction: instruction_id,
+                implementation: format!("0x{function:016x}"),
+            })
+            .and_then(semantic_operation_reference),
+        RuntimeOperationIdentity::Implementation => {
+            let implementation = catalog
+                .runtime_entry_by_raw(function)
+                .map(|entry| entry.name.as_str())
+                .or_else(|| runtime_function_names.get(&function).map(String::as_str))
+                .ok_or(ArtifactBuildError::UnknownRuntimeFunction { function })?;
+            operation_reference_from_name("runtime", implementation)
         }
     };
     let semantics = match instruction {
@@ -2406,6 +2908,30 @@ fn instruction_semantics(
     Ok(Some(semantics))
 }
 
+fn resolve_source_matrix_literal(
+    literal: &SourceMatrixLiteral,
+    inputs: &[CellSlotId],
+    states: &[CellSlotId],
+    outputs: &BTreeMap<(u32, u16), CellSlotId>,
+) -> Result<MatrixLiteralIR, ArtifactBuildError> {
+    let elements = literal
+        .elements
+        .iter()
+        .map(|element| match element {
+            None => Ok(ExpressionIR::Empty),
+            Some(source) => Ok(match resolve_source(*source, inputs, states, outputs)? {
+                ArtifactSource::Constant(constant) => ExpressionIR::Constant(constant),
+                ArtifactSource::Slot(slot) => ExpressionIR::Slot(slot),
+            }),
+        })
+        .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
+    Ok(MatrixLiteralIR {
+        rows: literal.rows,
+        columns: literal.columns,
+        elements: elements.into_boxed_slice(),
+    })
+}
+
 fn resolve_source(
     source: SourceValue,
     inputs: &[CellSlotId],
@@ -2438,10 +2964,111 @@ fn resolve_source(
     })
 }
 
+fn published_output_initializer(graph: &SourceProgram, source: SourceValue) -> Option<ConstantId> {
+    match source {
+        SourceValue::Constant(constant) => Some(constant),
+        SourceValue::NodeOutput {
+            node,
+            output_ordinal: 0,
+        } => {
+            let node = graph.nodes.get(node as usize)?;
+            (node.operation.module_path.as_ref() == ["core"]
+                && node.operation.operation_name == "composite-pack")
+                .then(|| match node.inputs.first() {
+                    Some(SourceValue::Constant(template)) => Some(*template),
+                    _ => None,
+                })
+                .flatten()
+        }
+        SourceValue::Input(_) | SourceValue::State(_) | SourceValue::NodeOutput { .. } => None,
+    }
+}
+
 fn checked_u32(value: usize, identity: &'static str) -> Result<u32, ArtifactBuildError> {
     u32::try_from(value).map_err(|_| ArtifactBuildError::ArtifactIdentityExhausted { identity })
 }
 
 fn checked_u16(value: usize, identity: &'static str) -> Result<u16, ArtifactBuildError> {
     u16::try_from(value).map_err(|_| ArtifactBuildError::ArtifactIdentityExhausted { identity })
+}
+
+#[cfg(all(test, feature = "semantic-compiler"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn matrix_ir_slots_use_resolved_artifact_identity_not_register_numbers() {
+        let mut registers = vec![None; 10];
+        registers[9] = Some(RegisterSemantic {
+            source: SourceValue::Input(0),
+            schema: SchemaId::new(0),
+        });
+        let register_literal = RegisterMatrixLiteral {
+            rows: 1,
+            columns: 1,
+            elements: vec![RegisterMatrixLiteralElement::Register(9)].into_boxed_slice(),
+        };
+
+        let source_literal =
+            source_matrix_literal_from_registers(&register_literal, &registers, 0).unwrap();
+        let ir = resolve_source_matrix_literal(
+            &source_literal,
+            &[CellSlotId::new(0)],
+            &[],
+            &BTreeMap::new(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            ir.elements.as_ref(),
+            [ExpressionIR::Slot(CellSlotId::new(0))]
+        );
+        assert_ne!(
+            ir.elements.as_ref(),
+            [ExpressionIR::Slot(CellSlotId::new(9))]
+        );
+    }
+
+    #[test]
+    fn published_reactive_composite_retains_its_canonical_template_initializer() {
+        let template = ConstantId::new(3);
+        let graph = SourceProgram {
+            nodes: vec![SourceNode {
+                operation: OperationReference {
+                    module_path: vec!["core".to_owned()].into_boxed_slice(),
+                    operation_name: "composite-pack".to_owned(),
+                },
+                requirement: None,
+                inputs: vec![SourceValue::Constant(template), SourceValue::Input(0)]
+                    .into_boxed_slice(),
+                outputs: vec![SourceNodeOutput::Derived {
+                    schema: SchemaId::new(0),
+                }]
+                .into_boxed_slice(),
+            }]
+            .into_boxed_slice(),
+            ..SourceProgram::default()
+        };
+
+        assert_eq!(
+            published_output_initializer(
+                &graph,
+                SourceValue::NodeOutput {
+                    node: 0,
+                    output_ordinal: 0,
+                },
+            ),
+            Some(template),
+        );
+        assert_eq!(
+            published_output_initializer(
+                &graph,
+                SourceValue::NodeOutput {
+                    node: 0,
+                    output_ordinal: 1,
+                },
+            ),
+            None,
+        );
+    }
 }

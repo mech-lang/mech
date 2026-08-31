@@ -142,16 +142,16 @@ fn schema_body(value: &Value) -> Result<SchemaBody, &'static str> {
         },
         "Table" => SchemaBody::Table {
             columns: schema_fields(required(value, "columns"))?,
-            rows: dimension(required(value, "row_count")),
+            rows: CardinalitySpec::Exact(dimension(required(value, "row_count"))),
         },
         "Set" => SchemaBody::Set {
             element: Box::new(schema_body(required(value, "element"))?),
-            cardinality: dimension(required(value, "cardinality")),
+            cardinality: dimension(required(value, "cardinality")).into(),
         },
         "Map" => SchemaBody::Map {
             key: Box::new(schema_body(required(value, "key"))?),
             value: Box::new(schema_body(required(value, "value"))?),
-            cardinality: dimension(required(value, "cardinality")),
+            cardinality: CardinalitySpec::Exact(dimension(required(value, "cardinality"))),
         },
         "ReifiedType" => SchemaBody::ReifiedType,
         other => panic!("unknown schema body {other}"),

@@ -43,6 +43,10 @@ impl SchemaTableBuilder {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.schemas.is_empty()
+    }
+
     pub fn insert(&mut self, schema: Schema) -> Result<SchemaHandle, SemanticModelError> {
         self.insert_with_limit(schema, usize::MAX)
     }
@@ -257,6 +261,10 @@ impl SchemaTable {
             .iter()
             .position(|entry| entry.key == key)
             .map(|index| SchemaId::new(index as u32))
+    }
+
+    pub fn entries(&self) -> impl ExactSizeIterator<Item = &SchemaEntry> {
+        self.entries.iter()
     }
 }
 

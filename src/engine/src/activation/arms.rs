@@ -1,5 +1,5 @@
 use super::ActivationPatternCapture;
-use crate::{CompiledPattern, ValueKind};
+use crate::CompiledPattern;
 
 #[derive(Clone)]
 pub(super) struct PreflightActivationArm {
@@ -7,6 +7,5 @@ pub(super) struct PreflightActivationArm {
     pub(super) captures: Vec<ActivationPatternCapture>,
 }
 pub(super) struct PreflightPatternedActivation {
-    pub(super) trigger_kind: ValueKind,
     pub(super) arms: Vec<PreflightActivationArm>,
 }

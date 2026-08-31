@@ -1,28 +1,4 @@
 use crate::*;
-#[cfg(feature = "assign")]
-pub fn compile_stable_value_update(
-    sink: ValRef,
-    source: LegacyValue,
-) -> MResult<Box<dyn MechFunction>> {
-    {
-        let current = sink.borrow();
-        validate_stable_value_update(&current, &source)?;
-    }
-
-    crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink), source])
-}
-#[cfg(feature = "assign")]
-pub fn apply_stable_value_update(sink: ValRef, source: LegacyValue) -> MResult<LegacyValue> {
-    {
-        let current = sink.borrow();
-        validate_stable_value_update(&current, &source)?;
-    }
-    let update =
-        crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink.clone()), source])?;
-    update.solve_result()?;
-    Ok(sink.borrow().clone())
-}
-
 use core::ops::Range;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -31,7 +7,6 @@ pub struct ProgramComputeRegion {
     pub placement: ComputePlacement,
     pub plan_nodes: Range<usize>,
 }
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ComputeRegionNameConflictError {
     pub name: String,
@@ -82,7 +57,7 @@ pub struct ProgramState {
     pub user_function_scope_depth: usize,
     #[cfg(feature = "functions")]
     pub compute_regions: Vec<ProgramComputeRegion>,
-    pub kinds: KindTable,
+    pub kinds: NamedSchemaTable,
     #[cfg(feature = "enum")]
     pub enums: EnumTable,
     #[cfg(feature = "invariant_define")]
@@ -138,7 +113,7 @@ impl ProgramState {
             user_function_scope_depth: 0,
             #[cfg(feature = "functions")]
             compute_regions: Vec::new(),
-            kinds: KindTable::default(),
+            kinds: NamedSchemaTable::default(),
             #[cfg(feature = "enum")]
             enums: EnumTable::new(),
             #[cfg(feature = "invariant_define")]
@@ -167,13 +142,13 @@ impl ProgramState {
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn get_symbol(&self, id: u64) -> Option<Ref<LegacyValue>> {
+    pub fn get_symbol(&self, id: u64) -> Option<ValueCell> {
         let syms = self.symbol_table.borrow();
         syms.get(id)
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn get_mutable_symbol(&self, id: u64) -> Option<ValRef> {
+    pub fn get_mutable_symbol(&self, id: u64) -> Option<ValueCell> {
         let syms = self.symbol_table.borrow();
         syms.get_mutable(id)
     }
@@ -201,7 +176,7 @@ impl ProgramState {
 
     /// Look up symbol in environment first, then in global symbol table.
     #[cfg(feature = "symbol_table")]
-    pub fn get_env_symbol(&self, id: u64) -> Option<Ref<LegacyValue>> {
+    pub fn get_env_symbol(&self, id: u64) -> Option<ValueCell> {
         if let Some(env) = &self.environment {
             let env_brrw = env.borrow();
             match env_brrw.get(id) {
@@ -223,9 +198,9 @@ impl ProgramState {
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn save_symbol(&self, id: u64, name: String, value: LegacyValue, mutable: bool) -> ValRef {
+    pub fn save_symbol(&self, id: u64, name: String, value: ValueCell, mutable: bool) -> ValueCell {
         let mut symbols_brrw = self.symbol_table.borrow_mut();
-        let val_ref = symbols_brrw.insert(id, value, mutable);
+        let val_ref = symbols_brrw.insert_cell(id, value, mutable);
         let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
         dict_brrw.insert(id, name);
         val_ref
@@ -236,12 +211,12 @@ impl ProgramState {
         &self,
         id: u64,
         name: String,
-        value: LegacyValue,
+        value: ValueCell,
         mutable: bool,
-    ) -> ValRef {
+    ) -> ValueCell {
         if let Some(env) = &self.environment {
             let mut env_brrw = env.borrow_mut();
-            let val_ref = env_brrw.insert(id, value, mutable);
+            let val_ref = env_brrw.insert_cell(id, value, mutable);
             let mut dict_brrw = env_brrw.dictionary.borrow_mut();
             dict_brrw.insert(id, name);
             val_ref

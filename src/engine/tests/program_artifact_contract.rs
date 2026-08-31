@@ -3,22 +3,23 @@
 use mech_engine::*;
 
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BytecodeProgram,
-    CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder,
-    DeliveryMode, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
-    DimensionParameterId, DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy,
-    ExecutionResourceRequest, ExternalInteraction, FloatWidth, IdempotencyRequirement,
-    InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr, LegacyOpaqueOperationContract,
-    LegacyValue, NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
-    OperationContractDeclaration, OperationContractId, OperationContractTable,
-    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, RegionPolicy,
-    ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, ResourceDelivery,
-    ResourceIntent, SchemaBody, SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder,
-    ShapeContractReference, ShapeRule, Value, ValueDataDraft, ValueDraft,
+    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BytecodeInstruction,
+    BytecodeProgram, CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle,
+    ConstantStoreBuilder, DeliveryMode, DimensionExpr, DimensionLifetime,
+    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, EffectContract,
+    EffectDeliveryPolicy, EncodedConstant, ExecutionResourceRequest, ExternalInteraction,
+    FloatWidth, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr,
+    LegacyOpaqueOperationContract, NominalKey, NominalKind, ObservationContract,
+    ObservationReplayPolicy, OperationContractDeclaration, OperationContractId,
+    OperationContractTable, OperationContractTableBuilder, OutputConstruction, OutputPortPolicy,
+    RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort,
+    ResourceDelivery, ResourceIntent, RuntimeType, SchemaBody, SchemaDraft, SchemaField,
+    SchemaHandle, SchemaTableBuilder, ShapeContractReference, ShapeRule, Value, ValueCell,
+    ValueData, ValueDataDraft, ValueDraft, compile_value_cell_matrix_literal_register,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
-        MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SnapshotValidationContext,
-        TableColumnDraft,
+        MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SequenceView,
+        SnapshotValidationContext, TableColumnDraft,
     },
     write_bytecode_with_artifact,
 };
@@ -629,7 +630,7 @@ fn pure_state_rmw_contract(base_input: u16) -> OperationContractDeclaration {
 fn build_both_with_contracts(
     data: &FixtureData,
     graph: SourceProgram,
-    declarations: &[Option<&'static OperationContractDeclaration>],
+    declarations: &[Option<&OperationContractDeclaration>],
 ) -> (ProgramArtifact, ProgramArtifact) {
     let mut source_context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     let source =
@@ -693,14 +694,10 @@ fn synthetic_ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids
     let declarations = graph
         .nodes
         .iter()
-        .map(|node| {
-            Some(Box::leak(Box::new(pure_full_write_contract(
-                node.inputs.len(),
-                node.outputs.len(),
-            ))) as &'static OperationContractDeclaration)
-        })
+        .map(|node| pure_full_write_contract(node.inputs.len(), node.outputs.len()))
         .collect::<Vec<_>>();
-    let (source, bytecode) = build_both_with_contracts(&data, graph, &declarations);
+    let declaration_refs = declarations.iter().map(Some).collect::<Vec<_>>();
+    let (source, bytecode) = build_both_with_contracts(&data, graph, &declaration_refs);
 
     assert!(
         source
@@ -862,25 +859,13 @@ fn state_reads_depend_on_the_latest_preceding_writer() {
         .into_boxed_slice(),
         ..SourceProgram::default()
     };
-    let write = Box::leak(Box::new(pure_state_rmw_contract(1)));
-    let read = Box::leak(Box::new(pure_full_write_contract(1, 1)));
+    let write = pure_state_rmw_contract(1);
+    let read = pure_full_write_contract(1, 1);
     let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     assert!(matches!(
-        compile_source_program_with_contracts(&graph, &mut context, &[Some(write), Some(read)],),
+        compile_source_program_with_contracts(&graph, &mut context, &[Some(&write), Some(&read)],),
         Err(ArtifactBuildError::CombinationalCycle)
     ));
-}
-
-#[test]
-fn compiler_pseudo_values_never_enter_snapshot_constants() {
-    assert_eq!(
-        compiler_ir_from_legacy_pseudo_value(&LegacyValue::Empty).unwrap(),
-        ExpressionIR::Empty
-    );
-    assert_eq!(
-        compiler_ir_from_legacy_pseudo_value(&LegacyValue::IndexAll).unwrap(),
-        ExpressionIR::Selection(SelectionIR::All)
-    );
 }
 
 #[test]
@@ -919,8 +904,545 @@ fn matrix_literal_resolution_is_homogeneous_and_structured() {
     };
     assert!(matches!(
         unresolved.resolve_constant(data.schema.matrix2, &data.schemas, &data.constants),
-        Err(CompilerIrError::MatrixLiteralElementNotConstant { index: 0 })
+        Err(CompilerIrError::UnresolvedMatrixLiteralElement { index: 0 })
     ));
+
+    let malformed_shape = MatrixLiteralIR {
+        rows: 2,
+        columns: 2,
+        elements: vec![ExpressionIR::Constant(data.constant.one); 3].into_boxed_slice(),
+    };
+    assert!(matches!(
+        malformed_shape.resolve_constant(data.schema.matrix2, &data.schemas, &data.constants),
+        Err(CompilerIrError::MatrixLiteralShapeMismatch {
+            actual_elements: 3,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn matrix_literal_resolution_canonicalizes_optional_elements() {
+    let mut schemas = SchemaTableBuilder::new();
+    let f64_schema = schemas
+        .insert(schema(SchemaBody::FloatingPoint(FloatWidth::W64)))
+        .unwrap();
+    let option_schema = schemas
+        .insert(schema(SchemaBody::Option(Box::new(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+        ))))
+        .unwrap();
+    let matrix_schema = schemas
+        .insert(schema(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(
+                FloatWidth::W64,
+            )))),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(3)]
+                .into_boxed_slice(),
+        }))
+        .unwrap();
+    let build = schemas.finish().unwrap();
+    let f64_schema = build.resolve(f64_schema).unwrap();
+    let option_schema = build.resolve(option_schema).unwrap();
+    let matrix_schema = build.resolve(matrix_schema).unwrap();
+    let (schemas, _) = build.into_parts();
+    let validation = SnapshotValidationContext::new(&schemas);
+    let mut constants = ConstantStoreBuilder::new(&schemas);
+    let bare = constants
+        .insert(scalar_value(&schemas, f64_schema, 1.0))
+        .unwrap();
+    let wrapped = constants
+        .insert(
+            ValueDraft {
+                schema: option_schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Option(OptionDraft {
+                    present: true,
+                    value: Some(Box::new(ValueDataDraft::F64(F64Bits::from_f64(2.0)))),
+                }),
+            }
+            .finalize(&validation)
+            .unwrap(),
+        )
+        .unwrap();
+    let build = constants.finish().unwrap();
+    let bare = build.resolve(bare).unwrap();
+    let wrapped = build.resolve(wrapped).unwrap();
+    let (constants, _) = build.into_parts();
+
+    let literal = MatrixLiteralIR {
+        rows: 1,
+        columns: 3,
+        elements: vec![
+            ExpressionIR::Empty,
+            ExpressionIR::Constant(bare),
+            ExpressionIR::Constant(wrapped),
+        ]
+        .into_boxed_slice(),
+    };
+    let value = literal
+        .resolve_constant(matrix_schema, &schemas, &constants)
+        .unwrap();
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("optional matrix literal must resolve to matrix data");
+    };
+    let SequenceView::Values(elements) = matrix.elements() else {
+        panic!("option matrix elements must use canonical value storage");
+    };
+    assert!(matches!(elements[0], ValueData::Option(None)));
+    assert!(matches!(elements[1], ValueData::Option(Some(_))));
+    assert!(matches!(elements[2], ValueData::Option(Some(_))));
+
+    let data = fixture_data();
+    let empty_f64 = MatrixLiteralIR {
+        rows: 2,
+        columns: 1,
+        elements: vec![
+            ExpressionIR::Empty,
+            ExpressionIR::Constant(data.constant.one),
+        ]
+        .into_boxed_slice(),
+    };
+    assert!(matches!(
+        empty_f64.resolve_constant(data.schema.vector2, &data.schemas, &data.constants),
+        Err(CompilerIrError::EmptyMatrixLiteralElementRequiresOption { index: 0 })
+    ));
+}
+
+#[test]
+fn matrix_literal_dynamic_classification_is_recursive() {
+    let literal = MatrixLiteralIR {
+        rows: 1,
+        columns: 2,
+        elements: vec![
+            ExpressionIR::Selection(SelectionIR::Index(Box::new(ExpressionIR::Slot(
+                CellSlotId::new(0),
+            )))),
+            ExpressionIR::MatrixLiteral(MatrixLiteralIR {
+                rows: 1,
+                columns: 1,
+                elements: vec![ExpressionIR::Empty].into_boxed_slice(),
+            }),
+        ]
+        .into_boxed_slice(),
+    };
+    assert!(literal.contains_slots());
+    assert!(literal.contains_empty());
+}
+
+fn compiled_generic_matrix(
+    values: Vec<Option<f64>>,
+    rows: usize,
+    columns: usize,
+) -> CompiledBytecode {
+    assert_eq!(values.len(), rows * columns);
+    let column_major = &values;
+    let values = (0..rows)
+        .flat_map(|row| (0..columns).map(move |column| column_major[column * rows + row]))
+        .collect::<Vec<_>>();
+    let elements = values
+        .iter()
+        .map(|value| value.map(|value| ValueCell::from_exact(value).unwrap()))
+        .collect::<Vec<_>>();
+    let optional = values.iter().any(Option::is_none);
+    let schema = if optional {
+        SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)))
+    } else {
+        SchemaBody::FloatingPoint(FloatWidth::W64)
+    };
+    let drafts = values
+        .into_iter()
+        .map(|value| match (optional, value) {
+            (false, Some(value)) => ValueDataDraft::F64(F64Bits::from_f64(value)),
+            (true, value) => ValueDataDraft::Option(OptionDraft {
+                present: value.is_some(),
+                value: value.map(|value| Box::new(ValueDataDraft::F64(F64Bits::from_f64(value)))),
+            }),
+            (false, None) => unreachable!("non-optional matrix element is present"),
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let matrix = ValueCell::dynamic_matrix(
+        schema,
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        drafts,
+    )
+    .unwrap();
+    let mut context = CompileCtx::new();
+    let output = compile_value_cell_matrix_literal_register(
+        &matrix,
+        rows.try_into().unwrap(),
+        columns.try_into().unwrap(),
+        &elements,
+        &mut context,
+    )
+    .unwrap();
+    context.finish_program(output).unwrap()
+}
+
+fn compiled_scalar_artifact_fixture(
+    first_type: RuntimeType,
+    first_schema: Option<SchemaBody>,
+) -> CompiledBytecode {
+    let first = match first_type {
+        RuntimeType::Empty => EncodedConstant {
+            runtime_type: RuntimeType::Empty,
+            alignment: 1,
+            bytes: Vec::new(),
+        },
+        RuntimeType::F64 => EncodedConstant {
+            runtime_type: RuntimeType::F64,
+            alignment: 8,
+            bytes: 1.0_f64.to_bits().to_le_bytes().to_vec(),
+        },
+        other => panic!("unsupported scalar artifact fixture type {other:?}"),
+    };
+    let mut absent_registers = BTreeSet::new();
+    if matches!(first.runtime_type, RuntimeType::Empty) {
+        absent_registers.insert(0);
+    }
+    CompiledBytecode {
+        program: BytecodeProgram {
+            register_count: 2,
+            constants: vec![
+                first,
+                EncodedConstant {
+                    runtime_type: RuntimeType::F64,
+                    alignment: 8,
+                    bytes: 0.0_f64.to_bits().to_le_bytes().to_vec(),
+                },
+            ],
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 1,
+                },
+                BytecodeInstruction::Return { src: 1 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        },
+        runtime_function_names: BTreeMap::new(),
+        instruction_roles: vec![None, None, None],
+        instruction_contracts: vec![None, None, None],
+        instruction_operations: vec![None, None, None],
+        instruction_source_nodes: vec![None, None, None],
+        register_schemas: vec![
+            first_schema,
+            Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        ],
+        absent_registers,
+        register_collection_cardinalities: vec![None, None],
+        register_state_initializers: vec![None, None],
+        matrix_literals: BTreeMap::new(),
+        symbol_definitions: Vec::new(),
+        return_register: 1,
+        integrity_constraints: Vec::new(),
+        compute_regions: Vec::new(),
+    }
+}
+
+fn compiled_assign_artifact_fixture(
+    first_type: RuntimeType,
+) -> (CompiledBytecode, FunctionCatalog) {
+    let first_schema = match first_type {
+        RuntimeType::Empty => None,
+        RuntimeType::F64 => Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        ref other => panic!("unsupported assignment fixture type {other:?}"),
+    };
+    let mut builder = FunctionCatalogBuilder::new();
+    install_intrinsic_runtime(&mut builder).unwrap();
+    let catalog = builder.build().unwrap();
+    let function = catalog
+        .runtime_entries()
+        .find(|entry| entry.name == "Assign<f64>")
+        .expect("the full compiler profile installs scalar assignment")
+        .id
+        .raw();
+    let mut compiled = compiled_scalar_artifact_fixture(first_type, first_schema);
+    compiled.program.instructions.insert(
+        2,
+        BytecodeInstruction::RuntimeUnary {
+            function,
+            dst: 1,
+            src: 0,
+        },
+    );
+    compiled.instruction_roles.insert(
+        2,
+        Some(CompiledInstructionRole::Node(
+            CompiledNodeKind::Combinational,
+        )),
+    );
+    compiled.instruction_contracts.insert(2, None);
+    compiled
+        .instruction_operations
+        .insert(2, Some("assign/value".to_owned()));
+    compiled.instruction_source_nodes.insert(2, Some(0));
+    (compiled, catalog)
+}
+
+#[test]
+fn malformed_compiled_scalar_metadata_fails_closed() {
+    let (mut missing_kind, catalog) = compiled_assign_artifact_fixture(RuntimeType::F64);
+    missing_kind.register_schemas[1] = None;
+    let missing_kind = compile_executable_program_artifact(&missing_kind, &catalog);
+    assert!(
+        matches!(
+            &missing_kind,
+            Err(ArtifactBuildError::MissingRegisterKind { register: 1, .. })
+        ),
+        "unexpected missing-kind result: {missing_kind:?}"
+    );
+
+    let (missing_source, catalog) = compiled_assign_artifact_fixture(RuntimeType::Empty);
+    let missing_source = compile_executable_program_artifact(&missing_source, &catalog);
+    assert!(
+        matches!(
+            &missing_source,
+            Err(ArtifactBuildError::MissingRegisterSource {
+                register: 0,
+                role: "input",
+                ..
+            })
+        ),
+        "unexpected missing-source result: {missing_source:?}"
+    );
+
+    let mut wrong_integrity_kind = compiled_scalar_artifact_fixture(
+        RuntimeType::F64,
+        Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+    );
+    wrong_integrity_kind.program.instructions.insert(
+        2,
+        BytecodeInstruction::RuntimeVariadic {
+            function: mech_core::hash_str("integrity/constraint"),
+            dst: 1,
+            arguments: vec![0],
+        },
+    );
+    wrong_integrity_kind
+        .instruction_roles
+        .insert(2, Some(CompiledInstructionRole::IntegrityMarker));
+    wrong_integrity_kind.instruction_contracts.insert(2, None);
+    wrong_integrity_kind.instruction_operations.insert(2, None);
+    wrong_integrity_kind
+        .instruction_source_nodes
+        .insert(2, None);
+    wrong_integrity_kind
+        .integrity_constraints
+        .push(CompiledIntegrityConstraint {
+            name: "constraint-0".to_owned(),
+            result_register: 0,
+        });
+    let wrong_integrity_kind =
+        compile_executable_program_artifact(&wrong_integrity_kind, &empty_function_catalog());
+    assert!(
+        matches!(
+            &wrong_integrity_kind,
+            Err(ArtifactBuildError::IntegrityConstraintSchemaMismatch { constraint: 0, .. })
+        ),
+        "unexpected integrity-kind result: {wrong_integrity_kind:?}"
+    );
+}
+
+#[test]
+fn compiled_matrix_sidecars_fold_static_literals_through_canonical_ir() {
+    let compiled =
+        compiled_generic_matrix([1.0, 3.0, 2.0, 4.0].into_iter().map(Some).collect(), 2, 2);
+    let artifact = compile_executable_program_artifact(&compiled, &empty_function_catalog())
+        .expect("a valid static matrix sidecar must compile");
+    assert!(artifact.nodes().iter().all(|node| {
+        node.operation.module_path.as_ref() != ["matrix"]
+            || node.operation.operation_name != "literal"
+    }));
+    let output = &artifact.outputs()[0];
+    let slot = &artifact.slots()[output.source.get() as usize];
+    let Some(InitializerReference::Constant(constant)) = slot.initializer else {
+        panic!("a folded matrix output must be initialized by one canonical constant");
+    };
+    let value = artifact.constants().get(constant).unwrap();
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("the folded output constant must be matrix data");
+    };
+    let SequenceView::F64(values) = matrix.elements() else {
+        panic!("the folded homogeneous f64 matrix must use f64 storage");
+    };
+    assert_eq!(
+        values
+            .iter()
+            .map(|value| value.to_f64())
+            .collect::<Vec<_>>(),
+        vec![1.0, 2.0, 3.0, 4.0]
+    );
+}
+
+#[test]
+fn compiled_matrix_sidecars_emit_fixed_row_major_dynamic_bindings() {
+    let mut compiled = compiled_generic_matrix(vec![Some(1.0), Some(2.0)], 1, 2);
+    let literal = compiled
+        .matrix_literals
+        .get(&compiled.return_register)
+        .unwrap();
+    let first = literal.elements[0].register();
+    compiled.symbol_definitions.push(CompiledSymbolDefinition {
+        id: mech_core::hash_str("live"),
+        name: "live".to_owned(),
+        register: first,
+        mutable: false,
+        root_visible: true,
+        ordinal: 0,
+    });
+    let artifact = compile_executable_program_artifact_with_outputs_and_external_inputs(
+        &compiled,
+        &[],
+        &empty_function_catalog(),
+        &BTreeSet::from(["live".to_owned()]),
+    )
+    .expect("a live matrix element must lower to matrix/literal");
+    let node = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.operation.module_path.as_ref() == ["matrix"]
+                && node.operation.operation_name == "literal"
+        })
+        .expect("dynamic matrix lowering must emit one matrix/literal node");
+    let bindings =
+        &artifact.bindings()[node.input_bindings.start as usize..node.input_bindings.end as usize];
+    assert_eq!(
+        bindings.len(),
+        2,
+        "the kind template is not an artifact input"
+    );
+    let BindingDeclaration::Input {
+        port_ordinal: 0,
+        source: ArtifactSource::Slot(first_slot),
+        ..
+    } = &bindings[0]
+    else {
+        panic!("the live first element must bind from an artifact slot");
+    };
+    assert_ne!(
+        first_slot.get(),
+        first,
+        "the fixture must distinguish bytecode register and artifact slot identities",
+    );
+    assert!(matches!(
+        bindings[1],
+        BindingDeclaration::Input {
+            port_ordinal: 1,
+            source: ArtifactSource::Constant(_),
+            ..
+        }
+    ));
+}
+
+#[test]
+fn compiled_matrix_sidecar_disagreement_fails_before_lowering() {
+    let mut compiled = compiled_generic_matrix(vec![Some(1.0), Some(2.0)], 1, 2);
+    compiled
+        .matrix_literals
+        .get_mut(&compiled.return_register)
+        .unwrap()
+        .elements
+        .swap(0, 1);
+    assert!(matches!(
+        compile_executable_program_artifact(&compiled, &empty_function_catalog()),
+        Err(ArtifactBuildError::MatrixLiteralMetadataMismatch { .. })
+    ));
+}
+
+#[test]
+fn dynamic_matrix_sidecars_reject_empty_pseudo_values() {
+    let mut compiled = compiled_generic_matrix(vec![None, Some(2.0)], 1, 2);
+    let second = compiled.matrix_literals[&compiled.return_register].elements[1].register();
+    compiled.symbol_definitions.push(CompiledSymbolDefinition {
+        id: mech_core::hash_str("live"),
+        name: "live".to_owned(),
+        register: second,
+        mutable: false,
+        root_visible: true,
+        ordinal: 0,
+    });
+    assert!(matches!(
+        compile_executable_program_artifact_with_outputs_and_external_inputs(
+            &compiled,
+            &[],
+            &empty_function_catalog(),
+            &BTreeSet::from(["live".to_owned()]),
+        ),
+        Err(ArtifactBuildError::CompilerIr(
+            CompilerIrError::DynamicEmptyMatrixLiteralUnsupported { index: 0 }
+        ))
+    ));
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn dynamic_matrix_literal_artifacts_execute_and_update_resident_output() {
+    use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
+
+    let mut compiled =
+        compiled_generic_matrix([1.0, 3.0, 2.0, 4.0].into_iter().map(Some).collect(), 2, 2);
+    let first = compiled.matrix_literals[&compiled.return_register].elements[0].register();
+    compiled.symbol_definitions.push(CompiledSymbolDefinition {
+        id: mech_core::hash_str("live"),
+        name: "live".to_owned(),
+        register: first,
+        mutable: false,
+        root_visible: true,
+        ordinal: 0,
+    });
+    let mut catalog = mech_core::FunctionCatalogBuilder::new();
+    install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let artifact = compile_executable_program_artifact_with_outputs_and_external_inputs(
+        &compiled,
+        &[],
+        &catalog,
+        &BTreeSet::from(["live".to_owned()]),
+    )
+    .unwrap();
+    let mut instance = activate(
+        mech_core::ReactiveInstanceId::new(1, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for (live, expected) in [
+        (9.0, vec![9.0, 2.0, 3.0, 4.0]),
+        (7.0, vec![7.0, 2.0, 3.0, 4.0]),
+    ] {
+        let live = [live];
+        instance
+            .turn_without_summary(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: mech_core::ResidentValueRef::F64(&live),
+            }])
+            .unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let ValueData::Matrix(matrix) = output.data() else {
+            panic!("resident matrix/literal output must remain canonical matrix data");
+        };
+        let SequenceView::F64(values) = matrix.elements() else {
+            panic!("resident f64 literal must preserve f64 matrix storage");
+        };
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_f64())
+                .collect::<Vec<_>>(),
+            expected
+        );
+    }
 }
 
 #[test]
@@ -1901,14 +2423,14 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
                 },
             ]
             .into_boxed_slice(),
-            rows: DimensionExpr::Constant(2),
+            rows: DimensionExpr::Constant(2).into(),
         },
     );
     insert(
         "set",
         SchemaBody::Set {
             element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
-            cardinality: DimensionExpr::Constant(2),
+            cardinality: DimensionExpr::Constant(2).into(),
         },
     );
     insert(
@@ -1918,7 +2440,7 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
             value: Box::new(SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(
                 FloatWidth::W64,
             )))),
-            cardinality: DimensionExpr::Constant(1),
+            cardinality: DimensionExpr::Constant(1).into(),
         },
     );
     insert("type", SchemaBody::ReifiedType);

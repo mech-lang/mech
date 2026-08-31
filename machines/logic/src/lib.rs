@@ -1,6 +1,5 @@
 #![cfg_attr(not(test), no_main)]
 #![feature(where_clause_attrs)]
-
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[doc(hidden)]
@@ -99,8 +98,12 @@ use nalgebra::Vector3;
 ))]
 use nalgebra::Vector4;
 
-#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
-use paste::paste;
+#[cfg(any(
+    feature = "and",
+    feature = "not",
+    feature = "or",
+    feature = "xor"
+))]
 use std::sync::LazyLock;
 
 #[cfg(any(feature = "and", feature = "or", feature = "xor"))]
@@ -202,27 +205,16 @@ macro_rules! impl_logic_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let rhs: Ref<$arg2_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { lhs, rhs, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
+                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { lhs, rhs, out }))
             }
+
         }
         impl MechFunctionImpl for $struct_name {
             fn solve_result(&self) -> MResult<()> {
@@ -232,8 +224,8 @@ macro_rules! impl_logic_binop {
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some($crate::logic_binary_full_write_contract(
@@ -243,9 +235,8 @@ macro_rules! impl_logic_binop {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -263,4 +254,239 @@ macro_rules! impl_logic_fxns {
     ($lib:ident) => {
         impl_fxns!($lib, bool, bool, impl_logic_binop);
     };
+}
+
+#[cfg(feature = "source")]
+fn specialize_logic_binary_factory<F>(
+    first: &SpecializationInput,
+    second: &SpecializationInput,
+) -> MResult<SpecializedFunction>
+where
+    F: MechFunctionFactory,
+{
+    let output_representation = F::SIGNATURE.output;
+    let template = if first.representation() == Some(output_representation) {
+        first
+    } else if second.representation() == Some(output_representation) {
+        second
+    } else {
+        return Err(MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Output,
+                expected: format!("{output_representation:?}"),
+                found: format!(
+                    "inputs {:?} and {:?}",
+                    first.representation(),
+                    second.representation(),
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    let invocation = FunctionInvocation::binary(
+        template.cell()?.detached_clone()?,
+        first.cell()?.clone(),
+        second.cell()?.clone(),
+    );
+    let implementation = F::new_invocation(invocation.clone())?;
+    Ok(SpecializedFunction::new(FunctionInstance::new(
+        implementation,
+        invocation,
+    )))
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __try_logic_binary_factory {
+    (($module:ident, $first:ident, $second:ident), $lib:ident, $suffix:ident, $shape_features:tt, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        mech_core::paste::paste! {
+            if let RuntimeFunctionInputs::Binary(expected_first, expected_second) =
+                <$crate::$module::[<$lib $suffix>] as MechFunctionFactory>::SIGNATURE.inputs
+                && $first.representation() == Some(expected_first)
+                && $second.representation() == Some(expected_second)
+            {
+                return $crate::specialize_logic_binary_factory::<
+                    $crate::$module::[<$lib $suffix>]
+                >($first, $second);
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_canonical_logic_binop_specializer {
+    ($specializer:ident, $module:ident, $lib:ident, $operation:literal) => {
+        #[cfg(feature = "source")]
+        pub struct $specializer {}
+
+        #[cfg(feature = "source")]
+        impl CanonicalFunctionSpecializer for $specializer {
+            fn specialize_invocation(
+                &self,
+                specialization: &SpecializationInvocation,
+                _context: &mut SpecializationContext<'_>,
+            ) -> MResult<SpecializedFunction> {
+                if specialization.len() != 2 {
+                    return Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: specialization.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let first = specialization.input(0).expect("validated first input");
+                let second = specialization.input(1).expect("validated second input");
+                mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+                    $crate::__try_logic_binary_factory,
+                    ($module, first, second),
+                    $lib,
+                    bool,
+                    "bool",
+                    bool
+                );
+                Err(MechError::new(
+                    FunctionArgumentTypeMismatch {
+                        role: FunctionArgumentRole::Input(0),
+                        expected: concat!("supported Bool inputs for ", $operation).into(),
+                        found: format!(
+                            "{:?} and {:?}",
+                            first.representation(),
+                            second.representation(),
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc())
+            }
+        }
+    };
+}
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "and",
+    feature = "not",
+    feature = "bool",
+    feature = "matrix2",
+    feature = "matrixd"
+))]
+mod invocation_port_tests {
+    use super::*;
+    use nalgebra::{DMatrix, Matrix2};
+
+    #[test]
+    fn scalar_binary_and_unary_factories_use_canonical_ports() {
+        let binary_out = ValueCell::from_exact(true).unwrap();
+        let binary = crate::and::AndSS::new_invocation(FunctionInvocation::binary(
+            binary_out.clone(),
+            ValueCell::from_exact(true).unwrap(),
+            ValueCell::from_exact(false).unwrap(),
+        ))
+        .unwrap();
+        binary.solve_result().unwrap();
+        assert!(matches!(
+            binary_out.snapshot().unwrap().data(),
+            ValueData::Bool(false)
+        ));
+        assert_eq!(
+            binary.reactive_output_cell_ids(),
+            vec![binary_out.reactive_cell_id()]
+        );
+
+        let unary_out = ValueCell::from_exact(false).unwrap();
+        let unary = crate::not::NotS::<bool>::new_invocation(FunctionInvocation::unary(
+            unary_out.clone(),
+            ValueCell::from_exact(true).unwrap(),
+        ))
+        .unwrap();
+        unary.solve_result().unwrap();
+
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(binary.as_ref())?;
+            participant.capture_function_state(unary.as_ref())?;
+            binary_out.replace(&ValueCell::from_exact(true)?.snapshot()?)?;
+            unary_out.replace(&ValueCell::from_exact(true)?.snapshot()?)?;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert!(matches!(
+            binary_out.snapshot().unwrap().data(),
+            ValueData::Bool(false)
+        ));
+        assert!(matches!(
+            unary_out.snapshot().unwrap().data(),
+            ValueData::Bool(false)
+        ));
+    }
+
+    #[test]
+    fn fixed_and_dynamic_logic_factories_preserve_exact_storage() {
+        let fixed_lhs = Ref::new(Matrix2::new(true, true, false, false));
+        let fixed_rhs = Ref::new(Matrix2::new(true, false, true, false));
+        let fixed_out = Ref::new(Matrix2::from_element(false));
+        crate::and::AndM2M2::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(fixed_lhs, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(fixed_rhs, 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(
+            *fixed_out.borrow(),
+            Matrix2::new(true, false, false, false)
+        );
+
+        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(
+            2,
+            2,
+            &[true, true, false, false],
+        ));
+        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(
+            2,
+            2,
+            &[true, false, true, false],
+        ));
+        let dynamic_out = Ref::new(DMatrix::from_element(2, 2, false));
+        let function = crate::and::AndMDMD::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic_lhs, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic_rhs, 2, 2).unwrap(),
+        ))
+        .unwrap();
+        function.solve_result().unwrap();
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            *dynamic_out.borrow_mut() = DMatrix::from_element(1, 1, true);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            DMatrix::from_row_slice(2, 2, &[true, false, false, false])
+        );
+    }
+
+    #[test]
+    fn logic_ports_reject_wrong_types_and_layouts() {
+        assert!(crate::and::AndSS::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact(false).unwrap(),
+            ValueCell::from_exact(1_usize).unwrap(),
+            ValueCell::from_exact(true).unwrap(),
+        ))
+        .is_err());
+        assert!(crate::and::AndSS::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact(false).unwrap(),
+            ValueCell::from_exact(true).unwrap(),
+        ))
+        .is_err());
+    }
 }

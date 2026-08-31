@@ -139,16 +139,16 @@ fn schema_body(value: &JsonValue) -> SchemaBody {
         },
         "Table" => SchemaBody::Table {
             columns: schema_fields(required(value, "columns")),
-            rows: dimension(required(value, "row_count")),
+            rows: dimension(required(value, "row_count")).into(),
         },
         "Set" => SchemaBody::Set {
             element: Box::new(schema_body(required(value, "element"))),
-            cardinality: dimension(required(value, "cardinality")),
+            cardinality: dimension(required(value, "cardinality")).into(),
         },
         "Map" => SchemaBody::Map {
             key: Box::new(schema_body(required(value, "key"))),
             value: Box::new(schema_body(required(value, "value"))),
-            cardinality: dimension(required(value, "cardinality")),
+            cardinality: dimension(required(value, "cardinality")).into(),
         },
         "ReifiedType" => SchemaBody::ReifiedType,
         other => panic!("unknown schema body {other}"),
@@ -559,7 +559,7 @@ fn all_five_key_vectors_match() {
                 let scalar_schema = required(input, "schema");
                 let set_schema = SchemaBody::Set {
                     element: Box::new(schema_body(scalar_schema)),
-                    cardinality: DimensionExpr::Constant(2),
+                    cardinality: DimensionExpr::Constant(2).into(),
                 };
                 let schema = SchemaDraft {
                     dimension_parameters: Box::new([]),

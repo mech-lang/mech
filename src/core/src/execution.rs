@@ -1,6 +1,6 @@
 //! Explicit services supplied while Mech functions execute.
 
-use crate::{LegacyValue, MResult, MechError, MechErrorKind, ValRef};
+use crate::{MResult, MechError, MechErrorKind, Value, ValueCell};
 
 #[cfg(feature = "no_std")]
 use alloc::{borrow::ToOwned, format, string::String, vec::Vec};
@@ -72,8 +72,8 @@ pub trait MechExecutionServices {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
-        arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue>;
+        arguments: &[Value],
+    ) -> MResult<Value>;
 
     /// Supplies a detached representative of the first resource-read output
     /// representation for bytecode contract planning.
@@ -86,10 +86,7 @@ pub trait MechExecutionServices {
     /// value, and is used only to establish shape and representation. The
     /// provider promises that the actual runtime value is stable-update
     /// compatible with this representative.
-    fn plan_resource_read_output(
-        &mut self,
-        request: &ExecutionResourceRequest,
-    ) -> MResult<LegacyValue> {
+    fn plan_resource_read_output(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
         Err(MechError::new(
             ResourceReadPlanningUnsupported {
                 request: request.clone(),
@@ -98,13 +95,9 @@ pub trait MechExecutionServices {
         ))
     }
 
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue>;
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value>;
 
-    fn write_resource(
-        &mut self,
-        request: &ExecutionResourceRequest,
-        value: &LegacyValue,
-    ) -> MResult<()>;
+    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()>;
 
     /// Retains a live delivery target. Repeating the same interpreter, request,
     /// and target binding must be idempotent.
@@ -112,7 +105,7 @@ pub trait MechExecutionServices {
         &mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
-        target: ValRef,
+        target: ValueCell,
     ) -> MResult<()>;
 }
 
@@ -123,8 +116,8 @@ impl MechExecutionServices for NoMechExecutionServices {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
-        _arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue> {
+        _arguments: &[Value],
+    ) -> MResult<Value> {
         Err(MechError::new(
             HostFunctionExecutionUnsupported {
                 request: request.clone(),
@@ -133,7 +126,7 @@ impl MechExecutionServices for NoMechExecutionServices {
         ))
     }
 
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
         Err(MechError::new(
             ResourceReadExecutionUnsupported {
                 request: request.clone(),
@@ -145,7 +138,7 @@ impl MechExecutionServices for NoMechExecutionServices {
     fn write_resource(
         &mut self,
         request: &ExecutionResourceRequest,
-        _value: &LegacyValue,
+        _value: &Value,
     ) -> MResult<()> {
         Err(MechError::new(
             ResourceWriteExecutionUnsupported {
@@ -159,7 +152,7 @@ impl MechExecutionServices for NoMechExecutionServices {
         &mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
-        _target: ValRef,
+        _target: ValueCell,
     ) -> MResult<()> {
         Err(MechError::new(
             LiveResourceBindingUnsupported {
@@ -322,7 +315,6 @@ impl MechErrorKind for ApplicationRequirementEncodingError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Ref;
 
     fn resource_request() -> ExecutionResourceRequest {
         ExecutionResourceRequest {
@@ -380,8 +372,9 @@ mod tests {
             resource_request,
         );
 
+        let unit = ValueCell::unit().snapshot().unwrap();
         let write_error = services
-            .write_resource(&resource_request, &LegacyValue::Empty)
+            .write_resource(&resource_request, &unit)
             .unwrap_err();
         assert_eq!(write_error.kind_name(), "ResourceWriteExecutionUnsupported");
         assert_eq!(
@@ -393,7 +386,7 @@ mod tests {
         );
 
         let bind_error = services
-            .bind_live_resource(17, &resource_request, Ref::new(LegacyValue::Empty))
+            .bind_live_resource(17, &resource_request, ValueCell::unit())
             .unwrap_err();
         assert_eq!(bind_error.kind_name(), "LiveResourceBindingUnsupported");
         let binding = bind_error

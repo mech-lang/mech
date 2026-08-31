@@ -985,6 +985,10 @@ impl InMemoryStore {
     }
 
     #[cfg(all(test, feature = "source"))]
+    #[allow(
+        dead_code,
+        reason = "used by source-enabled transaction regression profiles"
+    )]
     pub(crate) fn with_commit_runtime_counter_for_test(
         mut self,
         counter: Arc<AtomicUsize>,

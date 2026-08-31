@@ -367,7 +367,7 @@ pub fn render_engine_main_source() -> String {
     String::from(
         r#"mod catalog;
 
-use mech_core::{LegacyValue, MResult};
+use mech_core::MResult;
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
 
 static PROGRAM: &[u8] =
@@ -397,10 +397,9 @@ fn run(_once: bool) -> MResult<()> {
         .build()?;
     let value = runtime
         .load_bytecode_program(PROGRAM, ResidentDurabilityPolicy::Volatile)?
-        .initial_value
-        .into_value();
+        .initial_value;
 
-    if !matches!(value, LegacyValue::Empty) {
+    if !value.is_empty() {
         println!("{value}");
     }
 
@@ -520,7 +519,7 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
         let value = outcome.initial_value;
 
         if !arguments.once && !value.is_empty() {
-            println!("{}", value.into_value());
+            println!("{}", value);
         }
 
         let interrupted = Arc::new(AtomicBool::new(false));
@@ -560,7 +559,7 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
         if arguments.once {
             if let Some((_, value)) = runtime.root_symbol_values_all()?.into_iter().next() {
                 if !value.is_empty() {
-                    println!("{}", value.into_value());
+                    println!("{}", value);
                 }
             }
         }
@@ -684,7 +683,7 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
         let value = outcome.initial_value;
 
         if !value.is_empty() {
-            println!("{}", value.into_value());
+            println!("{}", value);
         }
         if arguments.runtime_info {
             println!("MECH_RUNTIME_INFO {}", runtime_info_json(&runtime));
@@ -1285,6 +1284,8 @@ mod tests {
         assert!(!engine.contains("mod runtime;"));
         assert!(hosted.contains("mod runtime;"));
         assert!(!engine.contains("pretty_print"));
+        assert!(!engine.contains("into_value()"));
+        assert!(!hosted.contains("into_value()"));
     }
 
     #[test]

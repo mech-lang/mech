@@ -1,10 +1,10 @@
-error[E0603]: struct `ReactiveTurnJournal` is private
+error[E0603]: struct `CanonicalTurnJournal` is private
  --> tests/ui/sealed/core_reactive_journal.rs:1:16
   |
-1 | use mech_core::ReactiveTurnJournal;
-  |                ^^^^^^^^^^^^^^^^^^^ private struct
+1 | use mech_core::CanonicalTurnJournal;
+  |                ^^^^^^^^^^^^^^^^^^^^ private struct
   |
-note: the struct `ReactiveTurnJournal` is defined here
+note: the struct `CanonicalTurnJournal` is defined here
  --> $WORKSPACE/src/core/src/lib.rs
   |
   | pub use self::reactive_transaction::*;

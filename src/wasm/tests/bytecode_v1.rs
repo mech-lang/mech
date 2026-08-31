@@ -1,5 +1,4 @@
-use mech_core::matrix::Matrix;
-use mech_core::{LegacyValue, Ref};
+use mech_core::{Value, ValueData, snapshot::SequenceView};
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
 use wasm_bindgen_test::*;
 
@@ -22,7 +21,7 @@ const STRING: &[u8] = include_bytes!(concat!(
     "/../../tests/architecture/bytecode-v1/string.mecb"
 ));
 
-fn run(bytecode: &[u8]) -> LegacyValue {
+fn run(bytecode: &[u8]) -> Value {
     let mut runtime = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::runtime_catalog())
         .build()
@@ -36,14 +35,16 @@ fn run(bytecode: &[u8]) -> LegacyValue {
 
 #[wasm_bindgen_test]
 fn official_literal_scalar_matrix_and_string_fixtures_execute() {
-    assert_eq!(run(LITERAL), LegacyValue::F64(Ref::new(42.0)));
-    assert_eq!(run(SCALAR), LegacyValue::F64(Ref::new(3.0)));
-    assert_eq!(
-        run(MATRIX),
-        LegacyValue::MatrixF64(Matrix::from_vec(vec![26.0; 25], 5, 5)),
+    assert!(matches!(run(LITERAL).data(), ValueData::F64(value) if value.to_f64() == 42.0));
+    assert!(matches!(run(SCALAR).data(), ValueData::F64(value) if value.to_f64() == 3.0));
+    let matrix = run(MATRIX);
+    let ValueData::Matrix(matrix) = matrix.data() else {
+        panic!("matrix fixture must return a canonical matrix")
+    };
+    assert!(
+        matches!(matrix.elements(), SequenceView::F64(values) if values.len() == 25 && values.iter().all(|value| value.to_f64() == 26.0))
     );
-    assert_eq!(
-        run(STRING),
-        LegacyValue::String(Ref::new("bytecode-v1".to_owned())),
+    assert!(
+        matches!(run(STRING).data(), ValueData::String(value) if value.as_ref() == "bytecode-v1")
     );
 }

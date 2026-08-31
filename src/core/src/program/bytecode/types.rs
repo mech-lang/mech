@@ -8,7 +8,7 @@ use alloc::{
 #[cfg(not(feature = "no_std"))]
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{MResult, hash_str, kind::Kind};
+use crate::{MResult, hash_str};
 
 use super::{
     ByteReader, MAX_TYPE_RECURSION, checked_usize, invalid, write_string, write_u32, write_u64,
@@ -75,7 +75,34 @@ pub enum RuntimeType {
         max_len: Option<u32>,
     },
     Option(Box<RuntimeType>),
-    Kind(Kind),
+    Kind(BytecodeKind),
+}
+
+/// The bytecode-v1 wire representation of a reified kind.
+///
+/// This is encoding metadata, not the retired semantic [`crate::kind::Kind`]
+/// model. Canonical constant decoding resolves it immediately to `KindExpr`
+/// using the authoritative scalar and nominal rules.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum BytecodeKind {
+    Any,
+    None,
+    Atom(u64, String),
+    Empty,
+    Enum(u64, String),
+    Id,
+    Index,
+    Map(Box<Self>, Box<Self>),
+    Matrix(Box<Self>, Vec<usize>),
+    Option(Box<Self>),
+    Record(Vec<(String, Self)>),
+    Reference(Box<Self>),
+    Scalar(u64),
+    Set(Box<Self>, Option<usize>),
+    Table(Vec<(String, Self)>, usize),
+    Tuple(Vec<Self>),
+    Kind(Box<Self>),
 }
 
 #[repr(u16)]
@@ -435,6 +462,7 @@ fn canonical_key(ty: &RuntimeType, depth: usize) -> MResult<Vec<u8>> {
 }
 
 #[cfg(any(all(feature = "semantic-compiler", feature = "enum"), test))]
+#[cfg(test)]
 pub(crate) fn canonical_runtime_type_key(ty: &RuntimeType) -> MResult<Vec<u8>> {
     validate_runtime_type(ty, 0)?;
     canonical_key(ty, 0)
@@ -797,18 +825,18 @@ fn validate_matrix_element_type(element: &RuntimeType) -> MResult<()> {
     }
 }
 
-fn validate_kind(kind: &Kind, depth: usize) -> MResult<()> {
+fn validate_kind(kind: &BytecodeKind, depth: usize) -> MResult<()> {
     if depth > MAX_TYPE_RECURSION {
         return invalid("semantic kind recursion exceeds bytecode v1 limit");
     }
     match kind {
-        Kind::Atom(id, name) => validate_named_id("kind atom", *id, name)?,
-        Kind::Enum(id, name) => validate_named_id("kind enum", *id, name)?,
-        Kind::Map(key, value) => {
+        BytecodeKind::Atom(id, name) => validate_named_id("kind atom", *id, name)?,
+        BytecodeKind::Enum(id, name) => validate_named_id("kind enum", *id, name)?,
+        BytecodeKind::Map(key, value) => {
             validate_kind(key, depth + 1)?;
             validate_kind(value, depth + 1)?;
         }
-        Kind::Matrix(element, dimensions) => {
+        BytecodeKind::Matrix(element, dimensions) => {
             let _: u32 = dimensions
                 .len()
                 .try_into()
@@ -820,10 +848,12 @@ fn validate_kind(kind: &Kind, depth: usize) -> MResult<()> {
             }
             validate_kind(element, depth + 1)?;
         }
-        Kind::Option(inner) | Kind::Reference(inner) | Kind::Kind(inner) => {
+        BytecodeKind::Option(inner)
+        | BytecodeKind::Reference(inner)
+        | BytecodeKind::Kind(inner) => {
             validate_kind(inner, depth + 1)?;
         }
-        Kind::Record(fields) => {
+        BytecodeKind::Record(fields) => {
             let _: u32 = fields
                 .len()
                 .try_into()
@@ -836,7 +866,7 @@ fn validate_kind(kind: &Kind, depth: usize) -> MResult<()> {
                 validate_kind(field, depth + 1)?;
             }
         }
-        Kind::Set(element, max_len) => {
+        BytecodeKind::Set(element, max_len) => {
             if let Some(max_len) = max_len {
                 let _: u32 = (*max_len)
                     .try_into()
@@ -844,7 +874,7 @@ fn validate_kind(kind: &Kind, depth: usize) -> MResult<()> {
             }
             validate_kind(element, depth + 1)?;
         }
-        Kind::Table(columns, primary_key) => {
+        BytecodeKind::Table(columns, primary_key) => {
             let _: u32 = columns
                 .len()
                 .try_into()
@@ -863,7 +893,7 @@ fn validate_kind(kind: &Kind, depth: usize) -> MResult<()> {
                 validate_kind(column, depth + 1)?;
             }
         }
-        Kind::Tuple(types) => {
+        BytecodeKind::Tuple(types) => {
             let _: u32 = types
                 .len()
                 .try_into()
@@ -872,8 +902,12 @@ fn validate_kind(kind: &Kind, depth: usize) -> MResult<()> {
                 validate_kind(ty, depth + 1)?;
             }
         }
-        Kind::Scalar(id) => validate_scalar_kind_id(*id)?,
-        Kind::Any | Kind::None | Kind::Empty | Kind::Id | Kind::Index => {}
+        BytecodeKind::Scalar(id) => validate_scalar_kind_id(*id)?,
+        BytecodeKind::Any
+        | BytecodeKind::None
+        | BytecodeKind::Empty
+        | BytecodeKind::Id
+        | BytecodeKind::Index => {}
     }
     Ok(())
 }
@@ -1027,38 +1061,38 @@ pub(crate) fn encode_type_payload(
     Ok(out)
 }
 
-fn encode_kind(kind: &Kind, out: &mut Vec<u8>, depth: usize) -> MResult<()> {
+fn encode_kind(kind: &BytecodeKind, out: &mut Vec<u8>, depth: usize) -> MResult<()> {
     validate_kind(kind, depth)?;
     let tag = match kind {
-        Kind::Any => EncodedKindTag::Any,
-        Kind::None => EncodedKindTag::None,
-        Kind::Atom(..) => EncodedKindTag::Atom,
-        Kind::Empty => EncodedKindTag::Empty,
-        Kind::Enum(..) => EncodedKindTag::Enum,
-        Kind::Id => EncodedKindTag::Id,
-        Kind::Index => EncodedKindTag::Index,
-        Kind::Map(..) => EncodedKindTag::Map,
-        Kind::Matrix(..) => EncodedKindTag::Matrix,
-        Kind::Option(..) => EncodedKindTag::Option,
-        Kind::Record(..) => EncodedKindTag::Record,
-        Kind::Reference(..) => EncodedKindTag::Reference,
-        Kind::Scalar(..) => EncodedKindTag::Scalar,
-        Kind::Set(..) => EncodedKindTag::Set,
-        Kind::Table(..) => EncodedKindTag::Table,
-        Kind::Tuple(..) => EncodedKindTag::Tuple,
-        Kind::Kind(..) => EncodedKindTag::Kind,
+        BytecodeKind::Any => EncodedKindTag::Any,
+        BytecodeKind::None => EncodedKindTag::None,
+        BytecodeKind::Atom(..) => EncodedKindTag::Atom,
+        BytecodeKind::Empty => EncodedKindTag::Empty,
+        BytecodeKind::Enum(..) => EncodedKindTag::Enum,
+        BytecodeKind::Id => EncodedKindTag::Id,
+        BytecodeKind::Index => EncodedKindTag::Index,
+        BytecodeKind::Map(..) => EncodedKindTag::Map,
+        BytecodeKind::Matrix(..) => EncodedKindTag::Matrix,
+        BytecodeKind::Option(..) => EncodedKindTag::Option,
+        BytecodeKind::Record(..) => EncodedKindTag::Record,
+        BytecodeKind::Reference(..) => EncodedKindTag::Reference,
+        BytecodeKind::Scalar(..) => EncodedKindTag::Scalar,
+        BytecodeKind::Set(..) => EncodedKindTag::Set,
+        BytecodeKind::Table(..) => EncodedKindTag::Table,
+        BytecodeKind::Tuple(..) => EncodedKindTag::Tuple,
+        BytecodeKind::Kind(..) => EncodedKindTag::Kind,
     };
     out.push(tag as u8);
     match kind {
-        Kind::Atom(id, name) | Kind::Enum(id, name) => {
+        BytecodeKind::Atom(id, name) | BytecodeKind::Enum(id, name) => {
             write_u64(out, *id);
             write_string(out, name)?;
         }
-        Kind::Map(key, value) => {
+        BytecodeKind::Map(key, value) => {
             encode_kind(key, out, depth + 1)?;
             encode_kind(value, out, depth + 1)?;
         }
-        Kind::Matrix(element, dimensions) => {
+        BytecodeKind::Matrix(element, dimensions) => {
             encode_kind(element, out, depth + 1)?;
             write_u32(
                 out,
@@ -1076,10 +1110,10 @@ fn encode_kind(kind: &Kind, out: &mut Vec<u8>, depth: usize) -> MResult<()> {
                 );
             }
         }
-        Kind::Option(inner) | Kind::Reference(inner) | Kind::Kind(inner) => {
-            encode_kind(inner, out, depth + 1)?
-        }
-        Kind::Record(fields) => {
+        BytecodeKind::Option(inner)
+        | BytecodeKind::Reference(inner)
+        | BytecodeKind::Kind(inner) => encode_kind(inner, out, depth + 1)?,
+        BytecodeKind::Record(fields) => {
             write_u32(
                 out,
                 fields
@@ -1092,8 +1126,8 @@ fn encode_kind(kind: &Kind, out: &mut Vec<u8>, depth: usize) -> MResult<()> {
                 encode_kind(field, out, depth + 1)?;
             }
         }
-        Kind::Scalar(id) => write_u64(out, *id),
-        Kind::Set(element, max) => {
+        BytecodeKind::Scalar(id) => write_u64(out, *id),
+        BytecodeKind::Set(element, max) => {
             encode_kind(element, out, depth + 1)?;
             match max {
                 Some(value) => {
@@ -1108,7 +1142,7 @@ fn encode_kind(kind: &Kind, out: &mut Vec<u8>, depth: usize) -> MResult<()> {
                 None => out.push(0),
             }
         }
-        Kind::Table(columns, primary_key) => {
+        BytecodeKind::Table(columns, primary_key) => {
             write_u32(
                 out,
                 columns
@@ -1127,7 +1161,7 @@ fn encode_kind(kind: &Kind, out: &mut Vec<u8>, depth: usize) -> MResult<()> {
                     .map_err(|_| invalid::<()>("kind primary key exceeds u32").unwrap_err())?,
             );
         }
-        Kind::Tuple(types) => {
+        BytecodeKind::Tuple(types) => {
             write_u32(
                 out,
                 types
@@ -1511,26 +1545,26 @@ pub(crate) fn resolve_raw_types(raw: &[RawRuntimeType]) -> MResult<Vec<RuntimeTy
     Ok(types)
 }
 
-fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
+fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<BytecodeKind> {
     if depth > MAX_TYPE_RECURSION {
         return invalid("semantic kind recursion exceeds bytecode v1 limit");
     }
     let tag = r.read_u8("kind tag")?;
     let kind = match tag {
-        1 => Kind::Any,
-        2 => Kind::None,
-        3 => Kind::Atom(
+        1 => BytecodeKind::Any,
+        2 => BytecodeKind::None,
+        3 => BytecodeKind::Atom(
             r.read_u64("kind atom ID")?,
             r.read_string("kind atom name")?,
         ),
-        4 => Kind::Empty,
-        5 => Kind::Enum(
+        4 => BytecodeKind::Empty,
+        5 => BytecodeKind::Enum(
             r.read_u64("kind enum ID")?,
             r.read_string("kind enum name")?,
         ),
-        6 => Kind::Id,
-        7 => Kind::Index,
-        8 => Kind::Map(
+        6 => BytecodeKind::Id,
+        7 => BytecodeKind::Index,
+        8 => BytecodeKind::Map(
             Box::new(decode_kind(r, depth + 1)?),
             Box::new(decode_kind(r, depth + 1)?),
         ),
@@ -1547,9 +1581,9 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
                     })?,
                 );
             }
-            Kind::Matrix(element, dimensions)
+            BytecodeKind::Matrix(element, dimensions)
         }
-        10 => Kind::Option(Box::new(decode_kind(r, depth + 1)?)),
+        10 => BytecodeKind::Option(Box::new(decode_kind(r, depth + 1)?)),
         11 => {
             let encoded_count = r.read_u32("kind record count")?;
             let count = checked_embedded_count(r, encoded_count, 5, 0, "kind record count")?;
@@ -1560,10 +1594,10 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
                     decode_kind(r, depth + 1)?,
                 ));
             }
-            Kind::Record(fields)
+            BytecodeKind::Record(fields)
         }
-        12 => Kind::Reference(Box::new(decode_kind(r, depth + 1)?)),
-        13 => Kind::Scalar(r.read_u64("kind scalar ID")?),
+        12 => BytecodeKind::Reference(Box::new(decode_kind(r, depth + 1)?)),
+        13 => BytecodeKind::Scalar(r.read_u64("kind scalar ID")?),
         14 => {
             let element = Box::new(decode_kind(r, depth + 1)?);
             let max = match r.read_u8("kind set presence")? {
@@ -1573,7 +1607,7 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
                 })?),
                 _ => return invalid("invalid kind set presence"),
             };
-            Kind::Set(element, max)
+            BytecodeKind::Set(element, max)
         }
         15 => {
             let encoded_count = r.read_u32("kind table count")?;
@@ -1589,7 +1623,7 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
             if primary_key != 0 {
                 return invalid("kind table primary keys other than zero are unsupported");
             }
-            Kind::Table(
+            BytecodeKind::Table(
                 columns,
                 usize::try_from(primary_key).map_err(|_| {
                     invalid::<()>("kind table primary key exceeds address space").unwrap_err()
@@ -1603,9 +1637,9 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
             for _ in 0..count {
                 types.push(decode_kind(r, depth + 1)?);
             }
-            Kind::Tuple(types)
+            BytecodeKind::Tuple(types)
         }
-        17 => Kind::Kind(Box::new(decode_kind(r, depth + 1)?)),
+        17 => BytecodeKind::Kind(Box::new(decode_kind(r, depth + 1)?)),
         _ => return invalid("unknown semantic kind tag"),
     };
     validate_kind(&kind, depth)?;

@@ -1,34 +1,35 @@
-use super::captures::transaction_bool_state;
+use super::captures::{increment, read_bool, register_node, write_bool};
 use super::{
     ActivationPatternCapture, ActivationPatternGuardDependencyInvariant,
     ActivationPatternGuardMustBePure, activation_scope_entry_cells,
 };
 use crate::{
-    Expression, InterpreterExecution, LegacyValue, MResult, MechError, MechFunctionImpl,
-    ReactiveNodeId, ReactiveNodeKind, ReactiveSolveStatus, Ref,
+    Expression, FunctionStatePort, InterpreterExecution, MResult, MechError, MechFunctionImpl,
+    ReactiveNodeId, ReactiveNodeKind, ReactiveSolveStatus, ValueCell,
 };
 
 pub(super) struct GuardFinalize {
-    pub(super) guard: Ref<bool>,
-    pub(super) eligible: Ref<bool>,
-    pub(super) out: Ref<usize>,
+    pub(super) guard: ValueCell,
+    pub(super) eligible: ValueCell,
+    pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for GuardFinalize {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        *self.eligible.borrow_mut() = *self.guard.borrow();
-        *self.out.borrow_mut() += 1;
+        write_bool(&self.eligible, read_bool(&self.guard)?)?;
+        increment(&self.out)?;
         Ok(ReactiveSolveStatus::Changed)
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Index(self.out.clone())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(&self.out))
     }
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let mut values = self.reactive_output_values();
-        values.push(transaction_bool_state(&self.eligible)?);
-        Ok(values)
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![
+            FunctionStatePort::from_cell(&self.out),
+            FunctionStatePort::from_cell(&self.eligible),
+        ]))
     }
     fn to_string(&self) -> String {
         "ActivationPatternGuardFinalize".into()
@@ -44,9 +45,9 @@ pub(super) struct ElaboratedPatternGuard {
 pub(super) fn elaborate_patterned_arm_guard(
     guard: &Expression,
     captures: &[ActivationPatternCapture],
-    pulse: &LegacyValue,
-    eligible: &Ref<bool>,
-    completion: Ref<usize>,
+    pulse: &ValueCell,
+    eligible: &ValueCell,
+    completion: ValueCell,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<ElaboratedPatternGuard> {
     let symbols = interpreter.symbols();
@@ -57,7 +58,7 @@ pub(super) fn elaborate_patterned_arm_guard(
         let mut symbols = symbols.borrow_mut();
         for capture in captures {
             symbols.mutable_variables.remove(&capture.id);
-            symbols.insert(capture.id, capture.proposed.clone(), false);
+            symbols.insert_cell(capture.id, capture.proposed.clone(), false);
             symbols
                 .dictionary
                 .borrow_mut()
@@ -65,7 +66,7 @@ pub(super) fn elaborate_patterned_arm_guard(
         }
     }
     let node_start = plan.len();
-    let pulse_cells = pulse.reactive_root_cell_ids();
+    let pulse_cells = vec![pulse.reactive_cell_id()];
     plan.push_activation_registration_scope_with_sampled_cells(
         pulse_cells.clone(),
         activation_scope_entry_cells(interpreter),
@@ -75,18 +76,18 @@ pub(super) fn elaborate_patterned_arm_guard(
             crate::expressions::DeferredExpressionSolveScope::enter(interpreter);
         let _persistent_user_function_plan =
             crate::function::PersistentUserFunctionPlanScope::enter(interpreter);
-        let guard_value = crate::expression(guard, None, interpreter)?;
-        let guard_ref = crate::expressions::validate_guard_expression_result(
-            guard_value.clone(),
-            guard.tokens(),
-        )?;
-        let finalizer_node = plan.register_function(
+        let guard_value = crate::expression_cell(guard, None, interpreter)?;
+        let guard_cell =
+            crate::expressions::validate_guard_expression_result(guard_value, guard.tokens())?;
+        let finalizer_node = register_node(
+            &plan,
             Box::new(GuardFinalize {
-                guard: guard_ref,
+                guard: guard_cell.clone(),
                 eligible: eligible.clone(),
-                out: completion,
+                out: completion.clone(),
             }),
-            &[guard_value],
+            completion,
+            vec![guard_cell],
         )?;
         let node_end = plan.len();
         {
@@ -115,8 +116,9 @@ pub(super) fn elaborate_patterned_arm_guard(
                     );
                 }
                 for capture in captures {
-                    let capture_cell = capture.proposed.reactive_root_cell_ids()[0];
-                    if !plan_borrow.add_sampled_dependency(node, capture_cell) {
+                    if !plan_borrow
+                        .add_sampled_dependency(node, capture.proposed.reactive_cell_id())
+                    {
                         return Err(MechError::new(
                             ActivationPatternGuardDependencyInvariant,
                             None,

@@ -1,36 +1,26 @@
 use super::{Environment, UndefinedVariableError};
 #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
 use crate::{FeatureNotEnabledError, MechError};
-use crate::{
-    Identifier, InterpreterExecution, LegacyValue, MResult, MutableReference, Var, hash_str,
-};
-#[cfg(all(feature = "kind_annotation", feature = "convert"))]
-use crate::{execute_catalog_operation, kind_annotation};
+use crate::{Identifier, InterpreterExecution, MResult, ValueCell, Var, hash_str};
 
 fn maybe_cast_variable_to_kind(
     variable: &Var,
-    value: LegacyValue,
+    value: ValueCell,
     #[cfg(all(feature = "kind_annotation", feature = "convert"))]
     interpreter: &InterpreterExecution<'_>,
     #[cfg(not(all(feature = "kind_annotation", feature = "convert")))] _: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let Some(annotation) = &variable.kind else {
         return Ok(value);
     };
 
     #[cfg(all(feature = "kind_annotation", feature = "convert"))]
     {
-        let target_kind = {
-            let state = interpreter.state.borrow();
-            kind_annotation(&annotation.kind, interpreter)?.to_value_kind(&state.kinds)?
-        };
-
-        return execute_catalog_operation(
-            interpreter,
-            &interpreter.plan(),
-            "convert/kind",
-            vec![value, LegacyValue::Kind(target_kind)],
-        );
+        let target = crate::structures::schema_body_from_kind(&annotation.kind, interpreter)?;
+        if value.closed_schema_body()? == target {
+            return Ok(value);
+        }
+        return crate::literals::convert_cell_reactively(value, target, interpreter);
     }
 
     #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
@@ -56,29 +46,23 @@ pub(super) fn addressed_identifier_hash(name: &Identifier, context: &Option<Iden
 }
 
 #[cfg(feature = "symbol_table")]
-pub fn var(
-    v: &Var,
-    env: Option<&Environment>,
-    p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<ValueCell> {
     let id = addressed_identifier_hash(&v.name, &v.context);
     let name = addressed_identifier_name(&v.name, &v.context);
     #[cfg(feature = "subscript_formula")]
-    let mark_if_live_symbol = |value: &MutableReference| {
+    let mark_if_live_symbol = |value: &ValueCell| {
         use super::{
             mark_current_string_access_expression_live, string_access_value_is_marked_live,
         };
 
         let state_brrw = p.state.borrow();
         let symbols_brrw = state_brrw.symbol_table.borrow();
-        if symbols_brrw.get_mutable(id).is_some()
-            || string_access_value_is_marked_live(p, &value.borrow())
-        {
+        if symbols_brrw.get_mutable(id).is_some() || string_access_value_is_marked_live(p, value) {
             mark_current_string_access_expression_live(p);
         }
     };
     #[cfg(not(feature = "subscript_formula"))]
-    let mark_if_live_symbol = |_: &MutableReference| {};
+    let mark_if_live_symbol = |_: &ValueCell| {};
     if let Some(value) = env.and_then(|env| env.get(&id)) {
         return maybe_cast_variable_to_kind(v, value.clone(), p);
     }
@@ -90,7 +74,7 @@ pub fn var(
     };
     if let Some(value) = symbol_value {
         mark_if_live_symbol(&value);
-        return maybe_cast_variable_to_kind(v, LegacyValue::MutableReference(value), p);
+        return maybe_cast_variable_to_kind(v, value, p);
     }
     if v.context.is_some() {
         return lower_missing_addressed_variable(v, p);
@@ -106,7 +90,7 @@ pub fn var(
 fn lower_missing_addressed_variable(
     variable: &Var,
     interpreter: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let id = addressed_identifier_hash(&variable.name, &variable.context);
     let addressed_name = addressed_identifier_name(&variable.name, &variable.context);
     let output = crate::context_read(variable, interpreter)?;
@@ -118,5 +102,5 @@ fn lower_missing_addressed_variable(
         symbols.dictionary.borrow_mut().insert(id, addressed_name);
     }
 
-    maybe_cast_variable_to_kind(variable, LegacyValue::MutableReference(output), interpreter)
+    maybe_cast_variable_to_kind(variable, output, interpreter)
 }

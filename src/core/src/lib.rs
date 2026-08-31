@@ -53,7 +53,16 @@ extern crate serde_derive;
 extern crate serde;
 
 pub extern crate paste;
-use paste::paste;
+
+/// Escapes text for insertion into canonical HTML presentations.
+pub fn escape_html_text(input: &str) -> String {
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
 
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
@@ -98,44 +107,38 @@ use num_rational::Rational64;
 ))]
 use tabled::{builder::Builder, settings::Style};
 
+pub mod cell_binding;
 pub mod element;
 pub mod error;
 pub mod execution;
 #[cfg(feature = "functions")]
 pub mod function;
-pub mod kind;
+#[path = "function/signature.rs"]
+mod function_signature;
+#[cfg(feature = "mika")]
+pub mod mika;
 pub mod nodes;
+pub mod program;
 #[cfg(feature = "functions")]
 pub mod reactive_transaction;
+pub mod read_source;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub mod resident_execution;
 pub mod snapshot;
 pub mod state_journal;
-pub mod structures;
-// The physical path remains value.rs during migration so the frozen
-// legacy-site inventory retains stable source paths. Final cutover
-// deletes this file.
-#[path = "value.rs"]
-pub mod legacy_value;
-mod value_snapshot;
-pub use self::value_snapshot::{
-    ValueSnapshotBorrowConflict, ValueSnapshotCollectionCollision, ValueSnapshotCycleUnsupported,
-    ValueSnapshotRecreator,
-};
-#[cfg(feature = "mika")]
-pub mod mika;
-pub mod program;
-pub mod read_source;
 pub mod stdlib;
+pub mod structures;
 pub mod types;
 
+pub use self::cell_binding::*;
 pub use self::element::*;
 pub use self::error::*;
 pub use self::execution::*;
 #[cfg(feature = "functions")]
 pub use self::function::*;
-pub use self::legacy_value::*;
+#[cfg(not(feature = "functions"))]
+pub use self::function_signature::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::nodes::*;
@@ -147,19 +150,10 @@ pub use self::schema::*;
 pub use self::semantic_error::*;
 pub use self::semantic_identity::*;
 pub use self::snapshot::{
-    ConstantHandle, ConstantStore, ConstantStoreBuilder, SnapshotValueError, Value, ValueData,
-    ValueDataDraft, ValueDraft,
+    ConstantHandle, ConstantStore, ConstantStoreBuilder, SetValueRelation, SnapshotValueError,
+    Value, ValueData, ValueDataDraft, ValueDraft,
 };
 pub use self::state_journal::*;
-pub use self::stdlib::*;
-#[cfg(feature = "enum")]
-pub use self::structures::enums;
-#[cfg(feature = "enum")]
-pub use self::structures::enums::*;
-#[cfg(feature = "map")]
-pub use self::structures::map;
-#[cfg(feature = "map")]
-pub use self::structures::map::*;
 #[cfg(feature = "matrix")]
 pub use self::structures::matrix;
 #[cfg(feature = "matrix")]
@@ -167,28 +161,11 @@ pub use self::structures::matrix::{
     CopyMat, IncompatibleMatrixAppendToTableError, MechMatrix, PushIntoStaticMatrixError,
     ResizeStaticMatrixError, ToMatrix,
 };
-#[cfg(feature = "record")]
-pub use self::structures::record;
-#[cfg(feature = "record")]
-pub use self::structures::record::*;
-#[cfg(feature = "set")]
-pub use self::structures::set;
-#[cfg(feature = "set")]
-pub use self::structures::set::*;
-#[cfg(feature = "table")]
-pub use self::structures::table;
-#[cfg(feature = "table")]
-pub use self::structures::table::*;
-#[cfg(feature = "tuple")]
-pub use self::structures::tuple;
-#[cfg(feature = "tuple")]
-pub use self::structures::tuple::*;
 pub use self::types::*;
 
 pub mod dimension;
 pub mod kind_expr;
 pub mod kind_scheme;
-pub mod legacy_adapter;
 pub mod nominal;
 pub mod operation_contract;
 pub mod schema;
@@ -198,7 +175,6 @@ pub mod semantic_identity;
 pub use self::dimension::*;
 pub use self::kind_expr::*;
 pub use self::kind_scheme::*;
-pub use self::legacy_adapter::*;
 pub use self::nominal::*;
 pub use self::operation_contract::*;
 

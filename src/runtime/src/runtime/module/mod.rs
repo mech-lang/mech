@@ -209,7 +209,7 @@ impl MechRuntime {
         let Some(index) =
             source_index_for_module_record_source(&record.source, record.syntax_tree.as_deref())?
         else {
-            return self.materialize_manifest_context_imports_legacy(record);
+            return self.materialize_manifest_context_imports_from_scopes(record);
         };
 
         let mut all_contexts = Vec::new();
@@ -224,7 +224,7 @@ impl MechRuntime {
         Ok(())
     }
 
-    fn materialize_manifest_context_imports_legacy(
+    fn materialize_manifest_context_imports_from_scopes(
         &mut self,
         record: &mut crate::RuntimeModuleRecord,
     ) -> MResult<()> {

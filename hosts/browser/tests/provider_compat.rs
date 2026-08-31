@@ -8,14 +8,20 @@ use mech_browser::{
     BrowserResource, BrowserResourceProvider,
 };
 use mech_core::{
-    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, LegacyValue,
-    MResult, ObservationContract, ObservationReplayPolicy, Ref,
+    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, MResult,
+    ObservationContract, ObservationReplayPolicy, ValueCell, ValueData,
 };
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
     RuntimeResourceWriteRequest,
 };
+
+fn string_value(value: &str) -> mech_core::Value {
+    ValueCell::from_exact(value.to_owned())
+        .and_then(|cell| cell.snapshot())
+        .expect("browser test strings are canonical")
+}
 
 #[derive(Debug, Clone)]
 struct TestDomBackend;
@@ -157,17 +163,15 @@ fn browser_dom_planning_validates_without_touching_the_backend() {
     let observed = backend.clone();
     let provider = BrowserResourceProvider::new(authority(), backend);
 
-    assert_eq!(
-        provider.plan_read(read_request()).unwrap(),
-        LegacyValue::String(Ref::new(String::new())),
-    );
+    let planned = provider.plan_read(read_request()).unwrap();
+    assert!(matches!(planned.data(), ValueData::String(value) if value.is_empty()));
     provider
         .plan_write(RuntimeResourceWriteRequest {
             base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
             path: "body/header/title".to_string(),
             context_name: "ui".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: LegacyValue::String(Ref::new("planned".to_string())),
+            value: string_value("planned"),
             intent: RuntimeResourceWriteIntent::Assign,
         })
         .unwrap();
@@ -187,7 +191,7 @@ fn browser_dom_write_is_deferred_until_delivery() {
             path: "body/header/title".to_string(),
             context_name: "ui".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: LegacyValue::String(Ref::new("deferred".to_string())),
+            value: string_value("deferred"),
             intent: RuntimeResourceWriteIntent::Assign,
         })
         .unwrap();

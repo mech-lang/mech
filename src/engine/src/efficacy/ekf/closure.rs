@@ -1,14 +1,13 @@
 //! Semantic admission and normalization for the frozen EKF artifact.
 
-use mech_core::matrix::Matrix as RuntimeMatrix;
 use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, ConstantId, DeliveryMode,
     DimensionExpr, ExecutionHostFunctionRequest, ExecutionResourceRequest, ExternalInteraction,
-    FloatWidth, LegacyValue, MResult, MechError, MechErrorKind, MechExecutionServices, NodeId,
+    FloatWidth, MResult, MechError, MechErrorKind, MechExecutionServices, NodeId,
     ObservationReplayPolicy, OperationContractId, OutputConstruction, OutputId, ProgramRevision,
     ResolvedOperationContract, ResourceDelivery, ResourceIntent, SchemaBody, SchemaId, ShapeRule,
-    ValRef, ValueData,
+    ValueCell, ValueData,
 };
 use nalgebra::DVector;
 
@@ -918,13 +917,13 @@ fn validate_resource_request(request: &ExecutionResourceRequest) -> Result<(), (
 pub struct FrozenLiveBinding {
     pub interpreter_id: u64,
     pub request: ExecutionResourceRequest,
-    pub target: ValRef,
+    pub target: ValueCell,
 }
 
 #[derive(Debug)]
 pub struct FrozenEkfCompilationServices {
-    frame: LegacyValue,
-    planning_frame: LegacyValue,
+    frame: ValueCell,
+    planning_frame: ValueCell,
     pub planned_reads: Vec<ExecutionResourceRequest>,
     pub reads: Vec<ExecutionResourceRequest>,
     pub live_bindings: Vec<FrozenLiveBinding>,
@@ -948,9 +947,12 @@ impl FrozenEkfCompilationServices {
 
     pub fn from_frames(frame: [f64; 4], planning_frame: [f64; 4]) -> Self {
         let frame_value = |values: [f64; 4]| {
-            LegacyValue::MatrixF64(RuntimeMatrix::DVector(mech_core::Ref::new(
-                DVector::from_vec(values.to_vec()),
-            )))
+            ValueCell::from_exact_matrix_ref(
+                mech_core::Ref::new(DVector::from_vec(values.to_vec())),
+                4,
+                1,
+            )
+            .expect("the frozen EKF frame is a canonical four-element vector")
         };
         Self {
             frame: frame_value(frame),
@@ -981,8 +983,8 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
-        _arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue> {
+        _arguments: &[mech_core::Value],
+    ) -> MResult<mech_core::Value> {
         Err(frozen_service_error(format!(
             "host call is outside the frozen EKF fixture: {request:?}"
         )))
@@ -991,13 +993,13 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
     fn plan_resource_read_output(
         &mut self,
         request: &ExecutionResourceRequest,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<mech_core::Value> {
         Self::validate_request(request)?;
         self.planned_reads.push(request.clone());
-        self.planning_frame.try_deep_snapshot()
+        self.planning_frame.snapshot()
     }
 
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<mech_core::Value> {
         Self::validate_request(request)?;
         if self
             .reads
@@ -1009,13 +1011,13 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
         if self.reads.is_empty() {
             self.reads.push(request.clone());
         }
-        Ok(self.frame.clone())
+        self.frame.snapshot()
     }
 
     fn write_resource(
         &mut self,
         request: &ExecutionResourceRequest,
-        _value: &LegacyValue,
+        _value: &mech_core::Value,
     ) -> MResult<()> {
         Err(frozen_service_error(format!(
             "resource write is outside the frozen EKF fixture: {request:?}"
@@ -1026,7 +1028,7 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
         &mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
-        target: ValRef,
+        target: ValueCell,
     ) -> MResult<()> {
         Self::validate_request(request)?;
         if let Some(existing) = self
@@ -1034,7 +1036,7 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
             .iter()
             .find(|binding| binding.interpreter_id == interpreter_id && binding.request == *request)
         {
-            if existing.target.addr() == target.addr() {
+            if existing.target.same_cell(&target) {
                 return Ok(());
             }
             return Err(frozen_service_error(

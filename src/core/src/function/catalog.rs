@@ -4,14 +4,13 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, GuardFunctionSafety, LegacyValue, MResult, MechError, MechErrorKind,
+    FunctionInstance, FunctionInvocation, GuardFunctionSafety, MResult, MechError, MechErrorKind,
     MechFunction, MechFunctionFactory, OperationContractDeclaration, ResidentKernelFactory,
     ResidentKernelFactoryEntry, ResidentOperationKey, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, hash_str,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SpecializationContext,
+    SpecializationInvocation, SpecializedFunction, hash_str,
 };
 
-#[cfg(test)]
-use crate::FunctionValueRepresentation;
 #[cfg(feature = "native-plan")]
 use crate::NativeValueFeature;
 
@@ -51,7 +50,7 @@ impl RuntimeFunctionId {
     }
 }
 
-type RuntimeFunctionFactory = fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>;
+type RuntimeFunctionInvocationFactory = fn(FunctionInvocation) -> MResult<Box<dyn MechFunction>>;
 
 #[cfg(feature = "native-plan")]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -98,25 +97,45 @@ impl NativeFunctionLinkage {
     }
 }
 
-pub trait FunctionSpecializer: Send + Sync {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>>;
+/// Production source specialization over canonical cells and explicit source
+/// control inputs.
+pub trait CanonicalFunctionSpecializer: Send + Sync {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction>;
 
     fn guard_safety(&self) -> GuardFunctionSafety {
         GuardFunctionSafety::Unsupported
     }
 }
 
-#[derive(Clone)]
 pub struct RuntimeFunctionEntry {
     pub id: RuntimeFunctionId,
     pub name: String,
-    factory: RuntimeFunctionFactory,
+    invocation_factory: RuntimeFunctionInvocationFactory,
     signature: RuntimeFunctionSignature,
     contract: RuntimeFunctionContract,
     semantic_contract: Option<&'static OperationContractDeclaration>,
 
     #[cfg(feature = "native-plan")]
     pub native_linkage: Option<NativeFunctionLinkage>,
+}
+
+impl Clone for RuntimeFunctionEntry {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id,
+            name: self.name.clone(),
+            invocation_factory: self.invocation_factory,
+            signature: self.signature,
+            contract: self.contract,
+            semantic_contract: self.semantic_contract,
+            #[cfg(feature = "native-plan")]
+            native_linkage: self.native_linkage.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -171,24 +190,39 @@ impl RuntimeFunctionEntry {
         .with_compiler_loc()
     }
 
-    pub fn validate_args(&self, args: &FunctionArgs) -> MResult<()> {
-        let args = args.clone().normalize_for_signature(self.signature);
-        args.validate_signature(self.signature)
+    pub fn validate_invocation(&self, invocation: &FunctionInvocation) -> MResult<()> {
+        let invocation = invocation.clone().normalize_for_signature(self.signature);
+        invocation
+            .validate_signature(self.signature)
             .map_err(|error| self.wrap_contract_error(error))?;
-        args.validate_contract(self.contract)
+        invocation
+            .validate_contract(self.contract)
             .map_err(|error| self.wrap_contract_error(error))?;
-        let function = (self.factory)(args).map_err(|error| self.wrap_contract_error(error))?;
+        let function = (self.invocation_factory)(invocation)
+            .map_err(|error| self.wrap_contract_error(error))?;
         drop(function);
         Ok(())
     }
 
-    pub fn instantiate(&self, args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        let args = args.normalize_for_signature(self.signature);
-        args.validate_signature(self.signature)
+    pub fn instantiate_invocation(
+        &self,
+        invocation: FunctionInvocation,
+    ) -> MResult<Box<dyn MechFunction>> {
+        self.bind_invocation(invocation)
+            .map(FunctionInstance::into_implementation)
+    }
+
+    pub fn bind_invocation(&self, invocation: FunctionInvocation) -> MResult<FunctionInstance> {
+        let invocation = invocation.normalize_for_signature(self.signature);
+        invocation
+            .validate_signature(self.signature)
             .map_err(|error| self.wrap_contract_error(error))?;
-        args.validate_contract(self.contract)
+        invocation
+            .validate_contract(self.contract)
             .map_err(|error| self.wrap_contract_error(error))?;
-        (self.factory)(args).map_err(|error| self.wrap_contract_error(error))
+        let implementation = (self.invocation_factory)(invocation.clone())
+            .map_err(|error| self.wrap_contract_error(error))?;
+        Ok(FunctionInstance::new(implementation, invocation))
     }
 }
 
@@ -196,7 +230,7 @@ impl RuntimeFunctionEntry {
 pub struct FunctionSpecializerEntry {
     pub operation: OperationId,
     pub canonical_name: String,
-    pub specializer: Arc<dyn FunctionSpecializer>,
+    pub specializer: Arc<dyn CanonicalFunctionSpecializer>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -653,7 +687,7 @@ impl FunctionCatalogBuilder {
         self.insert_runtime_entry(RuntimeFunctionEntry {
             id,
             name,
-            factory: F::new,
+            invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
             semantic_contract: None,
@@ -715,7 +749,7 @@ impl FunctionCatalogBuilder {
         self.insert_runtime_entry(RuntimeFunctionEntry {
             id,
             name,
-            factory: F::new,
+            invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
             semantic_contract: Some(semantic_contract),
@@ -739,7 +773,7 @@ impl FunctionCatalogBuilder {
         self.insert_runtime_entry(RuntimeFunctionEntry {
             id,
             name,
-            factory: F::new,
+            invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
             semantic_contract: None,
@@ -763,7 +797,7 @@ impl FunctionCatalogBuilder {
         self.insert_runtime_entry(RuntimeFunctionEntry {
             id,
             name,
-            factory: F::new,
+            invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
             semantic_contract: Some(semantic_contract),
@@ -771,10 +805,10 @@ impl FunctionCatalogBuilder {
         })
     }
 
-    pub fn insert_specializer(
+    pub fn insert_canonical_specializer(
         &mut self,
         canonical_name: impl Into<String>,
-        specializer: Arc<dyn FunctionSpecializer>,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
@@ -785,10 +819,10 @@ impl FunctionCatalogBuilder {
         })
     }
 
-    pub fn insert_intrinsic_specializer(
+    pub fn insert_canonical_intrinsic_specializer(
         &mut self,
         canonical_name: impl Into<String>,
-        specializer: Arc<dyn FunctionSpecializer>,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
@@ -1395,908 +1429,5 @@ fn validate_export(export: &FunctionExport) -> MResult<()> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn test_runtime_contract() -> RuntimeFunctionContract {
-        RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
-    }
-
-    struct TestFactory;
-
-    impl crate::MechFunctionFactory for TestFactory {
-        const SIGNATURE: RuntimeFunctionSignature =
-            RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Empty);
-
-        fn new(_: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-            unreachable!("catalog tests do not instantiate runtime functions")
-        }
-    }
-
-    struct RejectingFactory;
-
-    impl crate::MechFunctionFactory for RejectingFactory {
-        const SIGNATURE: RuntimeFunctionSignature =
-            RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Empty);
-
-        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-            Err(MechError::new(
-                crate::IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc())
-        }
-    }
-
-    struct MacroFactory;
-
-    impl crate::MechFunctionFactory for MacroFactory {
-        const SIGNATURE: RuntimeFunctionSignature =
-            RuntimeFunctionSignature::nullary(FunctionValueRepresentation::F64);
-
-        fn new(_: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-            unreachable!("catalog tests do not instantiate runtime functions")
-        }
-    }
-
-    crate::declare_native_runtime_factory! {
-        cfg: test,
-
-        registration: register_macro_factory,
-        installer: install_macro_factory,
-
-        name: concat!("MacroFactory", "<f64>"),
-        factory_type: MacroFactory,
-        contract: RuntimeFunctionContract::no_matrix(
-            RuntimeOutputAliasPolicy::DisallowInputAlias,
-        ),
-
-        package: "mech-core",
-        crate_name: "mech_core",
-        installer_path: concat!("mech_core::__mech_native::", "install_macro_factory"),
-
-        extra_cargo_features: [],
-    }
-
-    struct TestSpecializer;
-
-    impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            unreachable!("catalog tests do not run specializers")
-        }
-    }
-
-    fn test_specializer() -> Arc<dyn FunctionSpecializer> {
-        Arc::new(TestSpecializer)
-    }
-
-    fn export(
-        canonical_name: &str,
-        module: Option<&str>,
-        item: Option<&str>,
-        exposure: FunctionExposure,
-    ) -> FunctionExport {
-        FunctionExport {
-            operation: OperationId::from_name(canonical_name),
-            canonical_name: String::from(canonical_name),
-            module: module.map(String::from),
-            item: item.map(String::from),
-            exposure,
-        }
-    }
-
-    #[test]
-    fn empty_and_default_catalogs_have_no_function_surface() {
-        for catalog in [FunctionCatalog::empty(), FunctionCatalog::default()] {
-            assert_eq!(catalog.runtime_factory_count(), 0);
-            assert_eq!(catalog.specializer_count(), 0);
-            assert_eq!(catalog.intrinsic_specializer_count(), 0);
-            assert_eq!(catalog.resident_factory_count(), 0);
-            assert_eq!(catalog.all_exports().len(), 0);
-        }
-    }
-
-    #[test]
-    fn resident_factories_are_separate_and_resolve_by_semantic_operation_path() {
-        fn binder(
-            _request: &crate::ResidentKernelBindRequest<'_>,
-        ) -> Result<crate::BoundResidentKernel, crate::ResidentKernelBindError> {
-            Err(crate::ResidentKernelBindError::UnsupportedLayout)
-        }
-
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_resident_factory(["numeric", "matrix"], "add", binder)
-            .unwrap();
-        let catalog = builder.build().unwrap();
-
-        assert_eq!(catalog.runtime_factory_count(), 0);
-        assert_eq!(catalog.specializer_count(), 0);
-        assert_eq!(catalog.resident_factory_count(), 1);
-        let module = [String::from("numeric"), String::from("matrix")];
-        assert_eq!(
-            catalog
-                .resident_factory(&module, "add")
-                .expect("resident operation is independently addressable")
-                .key
-                .operation_name,
-            "add"
-        );
-        assert!(catalog.resident_factory(&module, "subtract").is_none());
-    }
-
-    #[test]
-    fn operation_id_preserves_existing_math_add_hash() {
-        assert_eq!(
-            OperationId::from_name("math/add").raw(),
-            0x00cc_5290_41cb_60c3
-        );
-    }
-
-    #[test]
-    fn runtime_function_id_preserves_existing_add_ss_f64_hash() {
-        assert_eq!(
-            RuntimeFunctionId::from_name("AddSS<f64>").raw(),
-            0x000a_2c77_6884_86f3,
-        );
-    }
-
-    #[test]
-    fn distinct_runtime_names_with_the_same_raw_id_are_rejected() {
-        let mut builder = FunctionCatalogBuilder::new();
-        let id = RuntimeFunctionId::from_raw(0x2a);
-        builder
-            .insert_runtime_entry(RuntimeFunctionEntry {
-                id,
-                name: String::from("first"),
-                factory: TestFactory::new,
-                signature: TestFactory::SIGNATURE,
-                contract: test_runtime_contract(),
-                semantic_contract: None,
-                #[cfg(feature = "native-plan")]
-                native_linkage: None,
-            })
-            .unwrap();
-
-        let error = builder
-            .insert_runtime_entry(RuntimeFunctionEntry {
-                id,
-                name: String::from("second"),
-                factory: TestFactory::new,
-                signature: TestFactory::SIGNATURE,
-                contract: test_runtime_contract(),
-                semantic_contract: None,
-                #[cfg(feature = "native-plan")]
-                native_linkage: None,
-            })
-            .unwrap_err();
-
-        assert_eq!(error.kind_name(), "FunctionCatalogRuntimeIdCollision");
-        assert!(error.kind_message().contains("0x000000000000002a"));
-        assert!(error.kind_message().contains("first"));
-        assert!(error.kind_message().contains("second"));
-    }
-
-    #[test]
-    fn distinct_specializer_names_with_the_same_raw_id_are_rejected() {
-        let mut builder = FunctionCatalogBuilder::new();
-        let operation = OperationId::from_raw(0x2a);
-        builder
-            .insert_specializer_entry(FunctionSpecializerEntry {
-                operation,
-                canonical_name: String::from("first"),
-                specializer: test_specializer(),
-            })
-            .unwrap();
-
-        let error = builder
-            .insert_specializer_entry(FunctionSpecializerEntry {
-                operation,
-                canonical_name: String::from("second"),
-                specializer: test_specializer(),
-            })
-            .unwrap_err();
-
-        assert_eq!(error.kind_name(), "FunctionCatalogOperationIdCollision");
-        assert!(error.kind_message().contains("0x000000000000002a"));
-    }
-
-    #[test]
-    fn duplicate_runtime_factories_are_rejected() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_runtime_factory::<TestFactory>("AddSS<f64>", test_runtime_contract())
-            .unwrap();
-        let error = builder
-            .insert_runtime_factory::<TestFactory>("AddSS<f64>", test_runtime_contract())
-            .unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionCatalogDuplicateRuntimeFactory");
-    }
-
-    #[test]
-    fn runtime_entry_wraps_factory_argument_failures_with_identity() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_runtime_factory::<RejectingFactory>("RejectingFactory", test_runtime_contract())
-            .unwrap();
-        let catalog = builder.build().unwrap();
-        let entry = catalog
-            .runtime_entry(RuntimeFunctionId::from_name("RejectingFactory"))
-            .unwrap();
-
-        let error = entry
-            .instantiate(FunctionArgs::Nullary(LegacyValue::Empty))
-            .err()
-            .expect("rejecting factory must fail");
-        assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
-        let violation = error.kind_as::<RuntimeFunctionContractViolation>().unwrap();
-        assert_eq!(
-            violation.id,
-            RuntimeFunctionId::from_name("RejectingFactory")
-        );
-        assert_eq!(violation.name, "RejectingFactory");
-        assert!(violation.reason.contains("IncorrectNumberOfArguments"));
-    }
-
-    #[test]
-    fn declaration_macro_registers_exactly_one_factory_and_rejects_duplicates() {
-        let mut builder = FunctionCatalogBuilder::new();
-        register_macro_factory(&mut builder).unwrap();
-
-        #[cfg(feature = "native-link")]
-        {
-            let mut native_builder = FunctionCatalogBuilder::new();
-            install_macro_factory(&mut native_builder).unwrap();
-            assert_eq!(native_builder.build().unwrap().runtime_factory_count(), 1);
-        }
-
-        let error = register_macro_factory(&mut builder).unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionCatalogDuplicateRuntimeFactory");
-
-        let catalog = builder.build().unwrap();
-        assert_eq!(catalog.runtime_factory_count(), 1);
-        let entry = catalog
-            .runtime_entry(RuntimeFunctionId::from_name("MacroFactory<f64>"))
-            .unwrap();
-        assert_eq!(entry.name, "MacroFactory<f64>");
-
-        #[cfg(feature = "native-plan")]
-        assert_eq!(
-            entry.native_linkage,
-            Some(NativeFunctionLinkage {
-                package: "mech-core",
-                crate_name: "mech_core",
-                installer_path: "mech_core::__mech_native::install_macro_factory",
-                cargo_features: vec!["f64", "native-link", "runtime"],
-            }),
-        );
-    }
-
-    #[cfg(feature = "native-plan")]
-    #[test]
-    fn native_linkage_rejects_representation_features_as_extras() {
-        let error = NativeFunctionLinkage::for_factory::<MacroFactory>(
-            "mech-core",
-            "mech_core",
-            "mech_core::__mech_native::install_macro_factory",
-            &["f64"],
-        )
-        .unwrap_err();
-
-        assert_eq!(
-            error.kind_name(),
-            "NativeRepresentationFeatureDeclaredAsExtra"
-        );
-    }
-
-    #[cfg(feature = "native-plan")]
-    #[test]
-    fn plain_runtime_registration_keeps_native_linkage_absent() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_runtime_factory::<TestFactory>("PlainFactory", test_runtime_contract())
-            .unwrap();
-
-        let catalog = builder.build().unwrap();
-        assert_eq!(
-            catalog
-                .runtime_entry(RuntimeFunctionId::from_name("PlainFactory"))
-                .unwrap()
-                .native_linkage,
-            None,
-        );
-    }
-
-    #[cfg(feature = "native-plan")]
-    #[test]
-    fn linked_runtime_registration_preserves_trusted_metadata_exactly() {
-        let linkage = NativeFunctionLinkage {
-            package: "mech-math",
-            crate_name: "Mech_Math",
-            installer_path: "Mech_Math::__mech_native::install_Add_2",
-            cargo_features: vec!["F64", "add-2", "native_link", "runtime"],
-        };
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_runtime_factory_with_linkage::<TestFactory>(
-                "AddSS<f64>",
-                test_runtime_contract(),
-                linkage.clone(),
-            )
-            .unwrap();
-
-        let catalog = builder.build().unwrap();
-        assert_eq!(
-            catalog
-                .runtime_entry(RuntimeFunctionId::from_name("AddSS<f64>"))
-                .unwrap()
-                .native_linkage
-                .as_ref(),
-            Some(&linkage),
-        );
-    }
-
-    #[cfg(feature = "native-plan")]
-    #[test]
-    fn native_linkage_validation_accepts_each_frozen_name_grammar() {
-        for linkage in [
-            NativeFunctionLinkage {
-                package: "m",
-                crate_name: "_",
-                installer_path: "_::i",
-                cargo_features: vec!["_"],
-            },
-            NativeFunctionLinkage {
-                package: "mech-2-native-",
-                crate_name: "Mech_2",
-                installer_path: "Mech_2::__mech_native::install_2",
-                cargo_features: vec!["A-1", "_f64", "native-link"],
-            },
-        ] {
-            let mut builder = FunctionCatalogBuilder::new();
-            builder
-                .insert_runtime_factory_with_linkage::<TestFactory>(
-                    "ValidFactory",
-                    test_runtime_contract(),
-                    linkage,
-                )
-                .unwrap();
-        }
-    }
-
-    #[cfg(feature = "native-plan")]
-    #[test]
-    fn native_linkage_validation_rejects_every_malformed_field() {
-        let invalid = [
-            (
-                NativeFunctionLinkage {
-                    package: "",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec!["runtime"],
-                },
-                "package",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "Mech-core",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec!["runtime"],
-                },
-                "package",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech_core",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec!["runtime"],
-                },
-                "package",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "2mech_core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec!["runtime"],
-                },
-                "crate name",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "mech-core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec!["runtime"],
-                },
-                "crate name",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "mech_core",
-                    installer_path: "install",
-                    cargo_features: vec!["runtime"],
-                },
-                "installer path",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::::install",
-                    cargo_features: vec!["runtime"],
-                },
-                "installer path",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::2install",
-                    cargo_features: vec!["runtime"],
-                },
-                "installer path",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec![],
-                },
-                "must not be empty",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec!["2runtime"],
-                },
-                "Cargo feature",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec!["native/link"],
-                },
-                "Cargo feature",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec!["runtime", "f64"],
-                },
-                "sorted",
-            ),
-            (
-                NativeFunctionLinkage {
-                    package: "mech-core",
-                    crate_name: "mech_core",
-                    installer_path: "mech_core::install",
-                    cargo_features: vec!["runtime", "runtime"],
-                },
-                "duplicated",
-            ),
-        ];
-
-        for (linkage, expected_reason) in invalid {
-            let mut builder = FunctionCatalogBuilder::new();
-            let error = builder
-                .insert_runtime_factory_with_linkage::<TestFactory>(
-                    "InvalidFactory",
-                    test_runtime_contract(),
-                    linkage,
-                )
-                .unwrap_err();
-            assert_eq!(error.kind_name(), "FunctionCatalogInvalidNativeLinkage");
-            assert!(
-                error.kind_message().contains(expected_reason),
-                "expected {:?} in {:?}",
-                expected_reason,
-                error.kind_message(),
-            );
-        }
-    }
-
-    #[test]
-    fn duplicate_specializers_are_rejected() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        let error = builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionCatalogDuplicateSpecializer");
-    }
-
-    #[test]
-    fn parser_intrinsics_are_separate_from_named_specializers() {
-        let mut builder = FunctionCatalogBuilder::new();
-        let intrinsic = builder
-            .insert_intrinsic_specializer("assign", test_specializer())
-            .unwrap();
-        builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-
-        let catalog = builder.build().unwrap();
-
-        assert_eq!(catalog.specializer_count(), 1);
-        assert_eq!(catalog.intrinsic_specializer_count(), 1);
-        assert!(catalog.specializer(intrinsic).is_none());
-        assert_eq!(
-            catalog
-                .intrinsic_specializer(intrinsic)
-                .unwrap()
-                .canonical_name,
-            "assign",
-        );
-        assert_eq!(
-            catalog
-                .operation_specializer(intrinsic)
-                .unwrap()
-                .canonical_name,
-            "assign",
-        );
-    }
-
-    #[test]
-    fn named_and_intrinsic_specializers_cannot_claim_the_same_operation() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_intrinsic_specializer("assign", test_specializer())
-            .unwrap();
-
-        let error = builder
-            .insert_specializer("assign", test_specializer())
-            .unwrap_err();
-
-        assert_eq!(error.kind_name(), "FunctionCatalogDuplicateSpecializer");
-    }
-
-    #[test]
-    fn exports_require_a_registered_specializer_at_build_time() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_export(export("math/add", None, None, FunctionExposure::Prelude))
-            .unwrap();
-        let error = builder.build().err().unwrap();
-        assert_eq!(error.kind_name(), "FunctionCatalogMissingExportSpecializer");
-        assert!(error.kind_message().contains("0x00cc529041cb60c3"));
-    }
-
-    #[test]
-    fn malformed_module_item_pairs_are_rejected() {
-        for malformed in [
-            export("math/add", Some("math"), None, FunctionExposure::ModuleOnly),
-            export("math/add", None, Some("add"), FunctionExposure::ModuleOnly),
-            export(
-                "math/add",
-                Some(""),
-                Some("add"),
-                FunctionExposure::ModuleOnly,
-            ),
-            export(
-                "math/add",
-                Some("math"),
-                Some(""),
-                FunctionExposure::ModuleOnly,
-            ),
-            export("math/add", None, None, FunctionExposure::ModuleOnly),
-            export(
-                "math/add",
-                Some("math"),
-                Some("add"),
-                FunctionExposure::Internal,
-            ),
-            export(
-                "math/add",
-                Some("math"),
-                Some("add"),
-                FunctionExposure::Prelude,
-            ),
-        ] {
-            let mut builder = FunctionCatalogBuilder::new();
-            let error = builder.insert_export(malformed).unwrap_err();
-            assert_eq!(error.kind_name(), "FunctionCatalogInvalidExport");
-        }
-    }
-
-    #[test]
-    fn conflicting_module_exports_are_rejected_without_overwriting() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        builder
-            .insert_specializer("math/subtract", test_specializer())
-            .unwrap();
-        builder
-            .insert_export(export(
-                "math/add",
-                Some("math"),
-                Some("operator"),
-                FunctionExposure::ModuleOnly,
-            ))
-            .unwrap();
-        let error = builder
-            .insert_export(export(
-                "math/subtract",
-                Some("math"),
-                Some("operator"),
-                FunctionExposure::ModuleOnly,
-            ))
-            .unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionCatalogInvalidExport");
-
-        let catalog = builder.build().unwrap();
-        assert_eq!(
-            catalog
-                .module_export("math", "operator")
-                .unwrap()
-                .canonical_name,
-            "math/add"
-        );
-    }
-
-    #[test]
-    fn exports_must_match_their_canonical_operation_id() {
-        let mut invalid = export(
-            "math/add",
-            Some("math"),
-            Some("add"),
-            FunctionExposure::ModuleOnly,
-        );
-        invalid.operation = OperationId::from_name("math/subtract");
-        let mut builder = FunctionCatalogBuilder::new();
-        let error = builder.insert_export(invalid).unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionCatalogInvalidExport");
-        assert!(error.kind_message().contains("0x00cc529041cb60c3"));
-    }
-
-    #[test]
-    fn empty_canonical_names_are_rejected() {
-        let mut builder = FunctionCatalogBuilder::new();
-        let error = builder
-            .insert_specializer("", test_specializer())
-            .unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionCatalogInvalidName");
-
-        let error = builder
-            .insert_export(export("", None, None, FunctionExposure::Prelude))
-            .unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionCatalogInvalidExport");
-    }
-
-    #[test]
-    fn operation_diagnostics_include_names_when_available() {
-        let operation = OperationId::from_name("math/add");
-        assert_eq!(
-            FunctionOperationNotVisible {
-                operation,
-                canonical_name: Some(String::from("math/add")),
-            }
-            .message(),
-            "function operation `math/add` (0x00cc529041cb60c3) is not visible in this program",
-        );
-        assert_eq!(
-            FunctionOperationUnavailable {
-                operation,
-                canonical_name: Some(String::from("math/add")),
-            }
-            .message(),
-            "function operation `math/add` (0x00cc529041cb60c3) is unavailable in the catalog",
-        );
-        assert_eq!(
-            FunctionOperationNotVisible {
-                operation,
-                canonical_name: None,
-            }
-            .message(),
-            "function operation 0x00cc529041cb60c3 is not visible in this program",
-        );
-    }
-
-    #[test]
-    fn built_catalog_indexes_are_read_only_and_consistent() {
-        let mut builder = FunctionCatalogBuilder::new();
-        let operation = builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        let runtime_id = RuntimeFunctionId::from_name("AddSS<f64>");
-        builder
-            .insert_runtime_factory::<TestFactory>("AddSS<f64>", test_runtime_contract())
-            .unwrap();
-        builder
-            .insert_export(export(
-                "math/add",
-                Some("math"),
-                Some("add"),
-                FunctionExposure::ModuleOnly,
-            ))
-            .unwrap();
-
-        let catalog = builder.build().unwrap();
-        assert_eq!(catalog.runtime_factory_count(), 1);
-        assert_eq!(catalog.specializer_count(), 1);
-        assert_eq!(catalog.runtime_entries().count(), 1);
-        assert!(catalog.runtime_entry(runtime_id).is_some());
-        assert_eq!(
-            catalog.runtime_entry(runtime_id).unwrap().name,
-            "AddSS<f64>"
-        );
-        assert!(std::ptr::eq(
-            catalog.runtime_entry_by_raw(runtime_id.raw()).unwrap(),
-            catalog.runtime_entry(runtime_id).unwrap(),
-        ));
-        assert!(catalog.runtime_entry_by_raw(u64::MAX).is_none());
-        assert_eq!(
-            catalog.specializer(operation).unwrap().canonical_name,
-            "math/add"
-        );
-        assert_eq!(catalog.exports_for_operation(operation).len(), 1);
-        assert_eq!(
-            catalog.module_export("math", "add").unwrap().canonical_name,
-            "math/add"
-        );
-    }
-
-    #[test]
-    fn module_queries_are_exact_and_sorted_by_item() {
-        let mut builder = FunctionCatalogBuilder::new();
-        for name in ["math/zeta", "math/alpha", "math-extra/only"] {
-            builder
-                .insert_specializer(name, test_specializer())
-                .unwrap();
-        }
-        for (name, module, item) in [
-            ("math/zeta", "math", "zeta"),
-            ("math-extra/only", "math-extra", "only"),
-            ("math/alpha", "math", "alpha"),
-        ] {
-            builder
-                .insert_export(export(
-                    name,
-                    Some(module),
-                    Some(item),
-                    FunctionExposure::ModuleOnly,
-                ))
-                .unwrap();
-        }
-
-        let catalog = builder.build().unwrap();
-        let items = catalog
-            .module_exports("math")
-            .map(|export| export.item.as_deref().unwrap())
-            .collect::<Vec<_>>();
-
-        assert_eq!(items, ["alpha", "zeta"]);
-        assert!(catalog.has_module("math"));
-        assert!(catalog.has_module("math-extra"));
-        assert!(!catalog.has_module("mat"));
-        assert!(!catalog.has_module("missing"));
-    }
-
-    #[test]
-    fn all_specializers_are_named_only_and_sorted_by_operation_id() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_specializer("stats/mean", test_specializer())
-            .unwrap();
-        builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        builder
-            .insert_specializer("logic/and", test_specializer())
-            .unwrap();
-        builder
-            .insert_intrinsic_specializer("assign", test_specializer())
-            .unwrap();
-
-        let catalog = builder.build().unwrap();
-        let specializers = catalog.all_specializers().collect::<Vec<_>>();
-        let operation_ids = specializers
-            .iter()
-            .map(|entry| entry.operation)
-            .collect::<Vec<_>>();
-
-        assert_eq!(specializers.len(), 3);
-        assert!(operation_ids.is_sorted());
-        assert!(
-            specializers
-                .iter()
-                .all(|entry| entry.canonical_name != "assign")
-        );
-    }
-
-    #[test]
-    fn all_exports_are_complete_unique_and_independent_of_insertion_order() {
-        fn build_catalog(reverse_exports: bool) -> FunctionCatalog {
-            let mut builder = FunctionCatalogBuilder::new();
-            for name in ["stats/mean", "math/add"] {
-                builder
-                    .insert_specializer(name, test_specializer())
-                    .unwrap();
-            }
-
-            let mut exports = vec![
-                export("math/add", None, None, FunctionExposure::Prelude),
-                export(
-                    "stats/mean",
-                    Some("stats"),
-                    Some("mean"),
-                    FunctionExposure::ModuleOnly,
-                ),
-                export("math/add", None, None, FunctionExposure::Internal),
-                export(
-                    "math/add",
-                    Some("math"),
-                    Some("add"),
-                    FunctionExposure::ModuleOnly,
-                ),
-            ];
-            if reverse_exports {
-                exports.reverse();
-            }
-            for export in exports {
-                builder.insert_export(export).unwrap();
-            }
-            builder.build().unwrap()
-        }
-
-        fn signatures(
-            catalog: &FunctionCatalog,
-        ) -> Vec<(
-            OperationId,
-            Option<String>,
-            Option<String>,
-            FunctionExposure,
-            String,
-        )> {
-            catalog
-                .all_exports()
-                .map(|export| {
-                    (
-                        export.operation,
-                        export.module.clone(),
-                        export.item.clone(),
-                        export.exposure,
-                        export.canonical_name.clone(),
-                    )
-                })
-                .collect()
-        }
-
-        let forward = build_catalog(false);
-        let reverse = build_catalog(true);
-        let forward_signatures = signatures(&forward);
-
-        assert_eq!(forward_signatures, signatures(&reverse));
-        assert_eq!(forward_signatures.len(), 4);
-        assert!(forward_signatures.windows(2).all(|pair| pair[0] != pair[1]));
-        assert_eq!(
-            forward
-                .exports_for_operation(OperationId::from_name("math/add"))
-                .iter()
-                .map(|export| export.exposure)
-                .collect::<Vec<_>>(),
-            [
-                FunctionExposure::Internal,
-                FunctionExposure::Prelude,
-                FunctionExposure::ModuleOnly,
-            ],
-        );
-    }
-}
+#[path = "tests/catalog.rs"]
+mod tests;

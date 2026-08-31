@@ -185,7 +185,7 @@ fn is_cargo_feature_name(name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use mech_core::{
-        FunctionArgs, FunctionCatalogBuilder, FunctionValueRepresentation, MechFunction,
+        FunctionCatalogBuilder, FunctionInvocation, FunctionValueRepresentation, MechFunction,
         MechFunctionFactory, NativeFunctionLinkage, RuntimeFunctionContract,
         RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
     };
@@ -198,7 +198,7 @@ mod tests {
         const SIGNATURE: RuntimeFunctionSignature =
             RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Empty);
 
-        fn new(_arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        fn new_invocation(_invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
             panic!("factory must not run during native planning")
         }
     }

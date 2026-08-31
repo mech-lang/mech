@@ -13,7 +13,7 @@ use mech_compute::{
     ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputePortId,
     ComputeProgram, ComputeSession, ComputeValue, TensorLayout, WGPU_BACKEND,
 };
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Program};
+use mech_core::{MResult, MechError, MechErrorKind, Program};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
     ComputeHostFactory, ComputeHostStateSnapshotHandle, ComputeLowerer, CpuScalarBackendFactory,
@@ -733,7 +733,7 @@ impl PointerResourceProvider {
     fn base(&self) -> String {
         format!("pointer://{}/frame", self.instance)
     }
-    fn value(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn value(&self, request: RuntimeResourceReadRequest) -> MResult<mech_core::Value> {
         if request.base_uri != self.base() || !POINTER_PATHS.contains(&request.path.as_str()) {
             return Err(mixed_error(format!(
                 "unknown pointer input `{}/{}`",
@@ -746,11 +746,11 @@ impl PointerResourceProvider {
                 columns: 1,
                 values: vec![0.0, 0.0],
             }
-            .into_mech_value()
+            .into_value()
         } else if request.path == "pulse" {
-            RuntimeHostInputValue::F64(0.0).into_mech_value()
+            RuntimeHostInputValue::F64(0.0).into_value()
         } else {
-            RuntimeHostInputValue::F32(0.0).into_mech_value()
+            RuntimeHostInputValue::F32(0.0).into_value()
         }
     }
 }
@@ -765,10 +765,10 @@ impl RuntimeResourceProvider for PointerResourceProvider {
     fn semantic_read_contract(&self) -> Option<&'static mech_core::OperationContractDeclaration> {
         Some(mech_runtime::resource_observation_contract())
     }
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<mech_core::Value> {
         self.value(request)
     }
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<mech_core::Value> {
         self.value(request)
     }
 }

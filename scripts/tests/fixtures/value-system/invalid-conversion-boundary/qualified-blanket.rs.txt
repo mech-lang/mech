@@ -1,3 +1,0 @@
-impl std::convert::From<LegacyValue> for snapshot::Value {
-    fn from(value: LegacyValue) -> Self { convert(value) }
-}

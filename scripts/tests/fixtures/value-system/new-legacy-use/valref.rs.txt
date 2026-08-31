@@ -1,3 +1,0 @@
-fn production(value: ValRef) {
-    let _ = value;
-}

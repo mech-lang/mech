@@ -1,5 +1,5 @@
-use mech_core::{LegacyValue, MResult, OperationContractDeclaration, Ref};
-use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest};
+use mech_core::{MResult, OperationContractDeclaration, Value};
+use mech_runtime::{RuntimeHostInputValue, RuntimeResourceProvider, RuntimeResourceReadRequest};
 
 use crate::{SharedTimerSnapshot, TimerSnapshot, timer_error, timer_input_base_uri};
 
@@ -31,7 +31,7 @@ impl TimerResourceProvider {
         timer_input_base_uri(&self.instance)
     }
 
-    fn value_for(snapshot: TimerSnapshot, path: &str) -> MResult<LegacyValue> {
+    fn value_for(snapshot: TimerSnapshot, path: &str) -> MResult<Value> {
         let value = match path {
             "tick" => snapshot.tick as f64,
             "elapsed-ms" => snapshot.elapsed_ms,
@@ -46,7 +46,7 @@ impl TimerResourceProvider {
                 ));
             }
         };
-        Ok(LegacyValue::F64(Ref::new(value)))
+        RuntimeHostInputValue::F64(value).into_value()
     }
 }
 
@@ -62,7 +62,7 @@ impl RuntimeResourceProvider for TimerResourceProvider {
         Some(mech_runtime::resource_observation_contract())
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if request.base_uri != self.base_uri() {
             return Err(timer_error(
                 "TimerResourceProvider",
@@ -72,7 +72,7 @@ impl RuntimeResourceProvider for TimerResourceProvider {
         Self::value_for(self.planning_snapshot, &request.path)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if request.base_uri != self.base_uri() {
             return Err(timer_error(
                 "TimerResourceProvider",
@@ -102,9 +102,9 @@ mod tests {
         }
     }
 
-    fn f64_value(value: LegacyValue) -> f64 {
-        match value {
-            LegacyValue::F64(value) => *value.borrow(),
+    fn f64_value(value: Value) -> f64 {
+        match value.data() {
+            mech_core::ValueData::F64(value) => value.to_f64(),
             value => panic!("expected F64, got {value:?}"),
         }
     }

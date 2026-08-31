@@ -1,6 +1,4 @@
 use super::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Add Assign -----------------------------------------------------------------
@@ -51,70 +49,6 @@ macro_rules! impl_add_assign_range_fxn_v {
 impl_assign_scalar_scalar!(Add, checked_add_assign);
 impl_assign_vector_vector!(Add, checked_add_assign);
 impl_assign_vector_scalar!(Add, checked_add_assign);
-
-#[cfg(feature = "source")]
-pub fn add_assign_math_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_op_assign_value_match_arms!(
-      Add,
-      (sink, source),
-      U8,  "u8";
-      U16, "u16";
-      U32, "u32";
-      U64, "u64";
-      I128, "i128";
-      I8,  "i8";
-      I16, "i16";
-      I32, "i32";
-      I64, "i64";
-      U128, "u128";
-      F32, "f32";
-      F64, "f64";
-      R64, "rational";
-      C64, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-pub struct AddAssignMath {}
-#[cfg(feature = "source")]
-impl FunctionSpecializer for AddAssignMath {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink = arguments[0].clone();
-        let source = arguments[1].clone();
-        match add_assign_math_fxn(sink.clone(), source.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (sink, source) {
-                (LegacyValue::MutableReference(sink), LegacyValue::MutableReference(source)) => {
-                    add_assign_math_fxn(sink.borrow().clone(), source.borrow().clone())
-                }
-                (sink, LegacyValue::MutableReference(source)) => {
-                    add_assign_math_fxn(sink.clone(), source.borrow().clone())
-                }
-                (LegacyValue::MutableReference(sink), source) => {
-                    add_assign_math_fxn(sink.borrow().clone(), source.clone())
-                }
-                (arg1, arg2) => Err(MechError::new(
-                    UnhandledFunctionArgumentKind2 {
-                        arg: (arg1.kind(), arg2.kind()),
-                        fxn_name: "math/add-assign".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
 
 // x[1..3] += 1 ----------------------------------------------------------------
 
@@ -180,60 +114,6 @@ impl_add_assign_range_fxn_s!(AddAssign1DRB, add_assign_1d_range_b, bool);
 impl_add_assign_range_fxn_v!(AddAssign1DRV, add_assign_1d_range_vec, usize);
 #[cfg(feature = "matrix")]
 impl_add_assign_range_fxn_v!(AddAssign1DRVB, add_assign_1d_range_vec_b, bool);
-
-#[cfg(feature = "source")]
-op_assign_range_fxn!(add_assign_range_fxn, AddAssign1DR);
-
-#[cfg(feature = "source")]
-pub struct AddAssignRange {}
-#[cfg(feature = "source")]
-impl FunctionSpecializer for AddAssignRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match add_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (&sink, &ixes, &source) {
-                (LegacyValue::MutableReference(sink), ixes, LegacyValue::MutableReference(source)) => {
-                    add_assign_range_fxn(
-                        sink.borrow().clone(),
-                        source.borrow().clone(),
-                        ixes.clone(),
-                    )
-                }
-                (sink, ixes, LegacyValue::MutableReference(source)) => {
-                    add_assign_range_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
-                }
-                (LegacyValue::MutableReference(sink), ixes, source) => {
-                    add_assign_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                (sink, ixes, source) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|x| x.kind()).collect(),
-                            source.kind(),
-                        ),
-                        fxn_name: "math/add-assign/range".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
 
 // x[1..3,:] += 1 ------------------------------------------------------------------
 
@@ -317,55 +197,12 @@ impl_add_assign_range_fxn_v!(AddAssign2DRAV, add_assign_2d_vector_all_mat, usize
 impl_add_assign_range_fxn_v!(AddAssign2DRAVB, add_assign_2d_vector_all_mat_b, bool);
 
 #[cfg(feature = "source")]
-op_assign_range_all_fxn!(add_assign_range_all_fxn, AddAssign2DRA);
-
-#[cfg(feature = "source")]
-pub struct AddAssignRangeAll {}
-#[cfg(feature = "source")]
-impl FunctionSpecializer for AddAssignRangeAll {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let sink: LegacyValue = arguments[0].clone();
-        let source: LegacyValue = arguments[1].clone();
-        let ixes = arguments[2..].to_vec();
-        match add_assign_range_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (sink, ixes, source) {
-                (LegacyValue::MutableReference(sink), ixes, LegacyValue::MutableReference(source)) => {
-                    add_assign_range_all_fxn(
-                        sink.borrow().clone(),
-                        source.borrow().clone(),
-                        ixes.clone(),
-                    )
-                }
-                (sink, ixes, LegacyValue::MutableReference(source)) => {
-                    add_assign_range_all_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
-                }
-                (LegacyValue::MutableReference(sink), ixes, source) => {
-                    add_assign_range_all_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
-                }
-                (sink, ixes, source) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxes {
-                        arg: (
-                            sink.kind(),
-                            ixes.iter().map(|x| x.kind()).collect(),
-                            source.kind(),
-                        ),
-                        fxn_name: "math/add-assign/range-all".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
+crate::impl_canonical_op_assign_specializers!(
+    AddAssignMath,
+    AddAssignRange,
+    AddAssignRangeAll,
+    Add,
+    "AddAssign",
+    "AddAssign1DR",
+    "AddAssign2DRA"
+);

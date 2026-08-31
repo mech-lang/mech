@@ -1,10 +1,8 @@
+use crate::intrinsics::canonical_access::canonical_draft;
 use crate::intrinsics::*;
-use indexmap::map::IndexMap;
-use mech_core::matrix::Matrix;
-use na::DVector;
-use std::collections::{HashMap, HashSet};
+use mech_core::snapshot::{OptionDraft, TableColumnDraft};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum JoinMode {
     Inner,
     LeftOuter,
@@ -14,298 +12,294 @@ enum JoinMode {
     LeftAnti,
 }
 
+#[derive(Clone)]
+struct CanonicalTable {
+    fields: Box<[SchemaField]>,
+    columns: Box<[TableColumnDraft]>,
+    rows: usize,
+}
+
+impl CanonicalTable {
+    fn from_cell(cell: &ValueCell) -> MResult<Self> {
+        let SchemaBody::Table { columns, .. } = cell.closed_schema_body()? else {
+            return Err(table_join_error("input must be a canonical table"));
+        };
+        let ValueDataDraft::Table(values) = canonical_draft(cell)? else {
+            return Err(table_join_error("table input has a non-table payload"));
+        };
+        let rows = values.first().map_or(0, |column| column.values.len());
+        if values.iter().any(|column| column.values.len() != rows) {
+            return Err(table_join_error(
+                "table columns have inconsistent row counts",
+            ));
+        }
+        Ok(Self {
+            fields: columns,
+            columns: values,
+            rows,
+        })
+    }
+
+    fn value(&self, column: usize, row: usize) -> &ValueDataDraft {
+        &self.columns[column].values[row]
+    }
+}
+
+fn table_join_error(message: impl Into<String>) -> MechError {
+    MechError::new(
+        GenericError {
+            msg: message.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+fn optional_schema(schema: &SchemaBody) -> SchemaBody {
+    match schema {
+        SchemaBody::Option(_) => schema.clone(),
+        schema => SchemaBody::Option(Box::new(schema.clone())),
+    }
+}
+
+fn present_for_schema(
+    target: &SchemaBody,
+    source: &SchemaBody,
+    value: &ValueDataDraft,
+) -> ValueDataDraft {
+    if matches!(target, SchemaBody::Option(_)) && !matches!(source, SchemaBody::Option(_)) {
+        ValueDataDraft::Option(OptionDraft {
+            present: true,
+            value: Some(Box::new(value.clone())),
+        })
+    } else {
+        value.clone()
+    }
+}
+
+fn absent_for_schema(target: &SchemaBody) -> MResult<ValueDataDraft> {
+    if matches!(target, SchemaBody::Option(_)) {
+        Ok(ValueDataDraft::Option(OptionDraft {
+            present: false,
+            value: None,
+        }))
+    } else {
+        Err(table_join_error(
+            "outer join attempted to omit a non-optional output column",
+        ))
+    }
+}
+
+fn rows_match(
+    lhs: &CanonicalTable,
+    lhs_row: usize,
+    rhs: &CanonicalTable,
+    rhs_row: usize,
+    common: &[(usize, usize)],
+) -> bool {
+    common
+        .iter()
+        .all(|(left, right)| lhs.value(*left, lhs_row) == rhs.value(*right, rhs_row))
+}
+
+fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> MResult<ValueCell> {
+    let lhs = CanonicalTable::from_cell(lhs)?;
+    let rhs = CanonicalTable::from_cell(rhs)?;
+    let common = lhs
+        .fields
+        .iter()
+        .enumerate()
+        .filter_map(|(left, field)| {
+            rhs.fields
+                .iter()
+                .position(|candidate| candidate.name == field.name)
+                .map(|right| (left, right))
+        })
+        .collect::<Vec<_>>();
+    let common_rhs = common
+        .iter()
+        .map(|(_, right)| *right)
+        .collect::<std::collections::BTreeSet<_>>();
+
+    let lhs_outer = matches!(mode, JoinMode::RightOuter | JoinMode::FullOuter);
+    let rhs_outer = matches!(mode, JoinMode::LeftOuter | JoinMode::FullOuter);
+    let lhs_only = matches!(mode, JoinMode::LeftSemi | JoinMode::LeftAnti);
+    let mut fields = lhs
+        .fields
+        .iter()
+        .enumerate()
+        .map(|(index, field)| SchemaField {
+            name: field.name.clone(),
+            schema: if lhs_outer && !common.iter().any(|(left, _)| *left == index) {
+                optional_schema(&field.schema)
+            } else {
+                field.schema.clone()
+            },
+        })
+        .collect::<Vec<_>>();
+    if !lhs_only {
+        fields.extend(
+            rhs.fields
+                .iter()
+                .enumerate()
+                .filter(|(index, _)| !common_rhs.contains(index))
+                .map(|(_, field)| SchemaField {
+                    name: field.name.clone(),
+                    schema: if rhs_outer {
+                        optional_schema(&field.schema)
+                    } else {
+                        field.schema.clone()
+                    },
+                }),
+        );
+    }
+
+    let mut row_pairs = Vec::new();
+    let mut rhs_matched = vec![false; rhs.rows];
+    for lhs_row in 0..lhs.rows {
+        let matches = (0..rhs.rows)
+            .filter(|rhs_row| rows_match(&lhs, lhs_row, &rhs, *rhs_row, &common))
+            .collect::<Vec<_>>();
+        match mode {
+            JoinMode::Inner | JoinMode::RightOuter => {
+                for rhs_row in matches {
+                    rhs_matched[rhs_row] = true;
+                    row_pairs.push((Some(lhs_row), Some(rhs_row)));
+                }
+            }
+            JoinMode::LeftOuter | JoinMode::FullOuter => {
+                if matches.is_empty() {
+                    row_pairs.push((Some(lhs_row), None));
+                } else {
+                    for rhs_row in matches {
+                        rhs_matched[rhs_row] = true;
+                        row_pairs.push((Some(lhs_row), Some(rhs_row)));
+                    }
+                }
+            }
+            JoinMode::LeftSemi if !matches.is_empty() => row_pairs.push((Some(lhs_row), None)),
+            JoinMode::LeftAnti if matches.is_empty() => row_pairs.push((Some(lhs_row), None)),
+            JoinMode::LeftSemi | JoinMode::LeftAnti => {}
+        }
+    }
+    if matches!(mode, JoinMode::RightOuter | JoinMode::FullOuter) {
+        row_pairs.extend(
+            rhs_matched
+                .iter()
+                .enumerate()
+                .filter(|(_, matched)| !**matched)
+                .map(|(row, _)| (None, Some(row))),
+        );
+    }
+
+    let mut output_columns = fields
+        .iter()
+        .map(|field| TableColumnDraft {
+            name: field.name.clone(),
+            values: Box::new([]),
+        })
+        .collect::<Vec<_>>();
+    let mut values = vec![Vec::with_capacity(row_pairs.len()); fields.len()];
+    for (lhs_row, rhs_row) in row_pairs {
+        for (index, field) in lhs.fields.iter().enumerate() {
+            let target = &fields[index].schema;
+            let value = if let Some(row) = lhs_row {
+                present_for_schema(target, &field.schema, lhs.value(index, row))
+            } else if let Some((_, rhs_index)) = common.iter().find(|(left, _)| *left == index) {
+                let row = rhs_row.expect("right outer row has a right source");
+                present_for_schema(
+                    target,
+                    &rhs.fields[*rhs_index].schema,
+                    rhs.value(*rhs_index, row),
+                )
+            } else {
+                absent_for_schema(target)?
+            };
+            values[index].push(value);
+        }
+        if !lhs_only {
+            let mut output = lhs.fields.len();
+            for (index, field) in rhs.fields.iter().enumerate() {
+                if common_rhs.contains(&index) {
+                    continue;
+                }
+                let target = &fields[output].schema;
+                let value = if let Some(row) = rhs_row {
+                    present_for_schema(target, &field.schema, rhs.value(index, row))
+                } else {
+                    absent_for_schema(target)?
+                };
+                values[output].push(value);
+                output += 1;
+            }
+        }
+    }
+    for (column, values) in output_columns.iter_mut().zip(values) {
+        column.values = values.into_boxed_slice();
+    }
+    ValueCell::from_schema_data(
+        SchemaBody::Table {
+            columns: fields.into_boxed_slice(),
+            rows: CardinalitySpec::Dynamic { upper_bound: None },
+        },
+        ValueDataDraft::Table(output_columns.into_boxed_slice()),
+    )
+}
+
 #[derive(Debug)]
 struct TableJoinFxn {
-    lhs: Ref<MechTable>,
-    rhs: Ref<MechTable>,
-    out: Ref<MechTable>,
+    lhs: FunctionValueInput,
+    rhs: FunctionValueInput,
+    out: FunctionValueOutput,
     mode: JoinMode,
 }
 
 impl TableJoinFxn {
-    fn build_joined_table(lhs: &MechTable, rhs: &MechTable, mode: JoinMode) -> MResult<MechTable> {
-        let rhs_name_to_id: HashMap<String, u64> = rhs
-            .col_names
-            .iter()
-            .map(|(id, name)| (name.clone(), *id))
-            .collect();
-
-        let mut common_cols: Vec<(u64, u64)> = vec![];
-        for (lhs_id, lhs_name) in &lhs.col_names {
-            if let Some(rhs_id) = rhs_name_to_id.get(lhs_name) {
-                common_cols.push((*lhs_id, *rhs_id));
-            }
-        }
-
-        let common_rhs: HashSet<u64> = common_cols.iter().map(|(_, rhs_id)| *rhs_id).collect();
-        let common_lhs: HashSet<u64> = common_cols.iter().map(|(lhs_id, _)| *lhs_id).collect();
-
-        let mut output_cols: Vec<(u64, ValueKind, String)> = vec![];
-        for (lhs_id, (kind, _)) in lhs.data.iter() {
-            let name = lhs
-                .col_names
-                .get(lhs_id)
-                .cloned()
-                .unwrap_or_else(|| lhs_id.to_string());
-            let out_kind = if !common_lhs.contains(lhs_id)
-                && matches!(mode, JoinMode::RightOuter | JoinMode::FullOuter)
-            {
-                make_optional_kind(kind)
-            } else {
-                kind.clone()
-            };
-            output_cols.push((*lhs_id, out_kind, name));
-        }
-        for (rhs_id, (kind, _)) in rhs.data.iter() {
-            if common_rhs.contains(rhs_id) {
-                continue;
-            }
-            let name = rhs
-                .col_names
-                .get(rhs_id)
-                .cloned()
-                .unwrap_or_else(|| rhs_id.to_string());
-            let out_kind = if matches!(mode, JoinMode::LeftOuter | JoinMode::FullOuter) {
-                make_optional_kind(kind)
-            } else {
-                kind.clone()
-            };
-            output_cols.push((*rhs_id, out_kind, name));
-        }
-
-        if matches!(mode, JoinMode::LeftSemi | JoinMode::LeftAnti) {
-            output_cols = lhs
-                .data
-                .iter()
-                .map(|(lhs_id, (kind, _))| {
-                    let name = lhs
-                        .col_names
-                        .get(lhs_id)
-                        .cloned()
-                        .unwrap_or_else(|| lhs_id.to_string());
-                    (*lhs_id, kind.clone(), name)
-                })
-                .collect();
-        }
-
-        let mut out_rows: Vec<HashMap<u64, LegacyValue>> = vec![];
-        let mut rhs_matched: Vec<bool> = vec![false; rhs.rows];
-
-        for lhs_row in 1..=lhs.rows {
-            let mut matched_rhs: Vec<usize> = vec![];
-            for rhs_row in 1..=rhs.rows {
-                if rows_match(lhs, lhs_row, rhs, rhs_row, &common_cols) {
-                    matched_rhs.push(rhs_row);
-                }
-            }
-
-            match mode {
-                JoinMode::Inner => {
-                    for rhs_row in matched_rhs {
-                        rhs_matched[rhs_row - 1] = true;
-                        out_rows.push(merge_rows(lhs, lhs_row, rhs, rhs_row, &common_rhs, false));
-                    }
-                }
-                JoinMode::LeftOuter => {
-                    if matched_rhs.is_empty() {
-                        out_rows.push(merge_rows(lhs, lhs_row, rhs, 0, &common_rhs, true));
-                    } else {
-                        for rhs_row in matched_rhs {
-                            rhs_matched[rhs_row - 1] = true;
-                            out_rows.push(merge_rows(
-                                lhs,
-                                lhs_row,
-                                rhs,
-                                rhs_row,
-                                &common_rhs,
-                                false,
-                            ));
-                        }
-                    }
-                }
-                JoinMode::RightOuter => {
-                    if matched_rhs.is_empty() {
-                        // handled when iterating unmatched rhs rows below
-                    } else {
-                        for rhs_row in matched_rhs {
-                            rhs_matched[rhs_row - 1] = true;
-                            out_rows.push(merge_rows(
-                                lhs,
-                                lhs_row,
-                                rhs,
-                                rhs_row,
-                                &common_rhs,
-                                false,
-                            ));
-                        }
-                    }
-                }
-                JoinMode::FullOuter => {
-                    if matched_rhs.is_empty() {
-                        out_rows.push(merge_rows(lhs, lhs_row, rhs, 0, &common_rhs, true));
-                    } else {
-                        for rhs_row in matched_rhs {
-                            rhs_matched[rhs_row - 1] = true;
-                            out_rows.push(merge_rows(
-                                lhs,
-                                lhs_row,
-                                rhs,
-                                rhs_row,
-                                &common_rhs,
-                                false,
-                            ));
-                        }
-                    }
-                }
-                JoinMode::LeftSemi => {
-                    if !matched_rhs.is_empty() {
-                        out_rows.push(lhs_only_row(lhs, lhs_row));
-                    }
-                }
-                JoinMode::LeftAnti => {
-                    if matched_rhs.is_empty() {
-                        out_rows.push(lhs_only_row(lhs, lhs_row));
-                    }
-                }
-            }
-        }
-
-        if matches!(mode, JoinMode::RightOuter | JoinMode::FullOuter) {
-            for rhs_row in 1..=rhs.rows {
-                if rhs_matched[rhs_row - 1] {
-                    continue;
-                }
-                let mut row = HashMap::new();
-
-                if !matches!(mode, JoinMode::LeftSemi | JoinMode::LeftAnti) {
-                    for (lhs_id, _) in lhs.data.iter() {
-                        if let Some((_, rhs_id)) = common_cols.iter().find(|(l, _)| l == lhs_id) {
-                            let value = rhs
-                                .data
-                                .get(rhs_id)
-                                .map(|(_, col)| col.index1d(rhs_row))
-                                .unwrap_or(LegacyValue::Empty);
-                            row.insert(*lhs_id, value);
-                        } else {
-                            row.insert(*lhs_id, LegacyValue::Empty);
-                        }
-                    }
-                    for (rhs_id, _) in rhs.data.iter() {
-                        if common_rhs.contains(rhs_id) {
-                            continue;
-                        }
-                        let value = rhs
-                            .data
-                            .get(rhs_id)
-                            .map(|(_, col)| col.index1d(rhs_row))
-                            .unwrap_or(LegacyValue::Empty);
-                        row.insert(*rhs_id, value);
-                    }
-                }
-
-                out_rows.push(row);
-            }
-        }
-
-        let mut data: IndexMap<u64, (ValueKind, Matrix<LegacyValue>)> = IndexMap::new();
-        let mut col_names: HashMap<u64, String> = HashMap::new();
-
-        for (col_id, kind, name) in &output_cols {
-            let mut values = Vec::with_capacity(out_rows.len());
-            for row in &out_rows {
-                values.push(row.get(col_id).cloned().unwrap_or(LegacyValue::Empty));
-            }
-            data.insert(
-                *col_id,
-                (
-                    kind.clone(),
-                    Matrix::DVector(Ref::new(DVector::from_vec(values))),
-                ),
-            );
-            col_names.insert(*col_id, name.clone());
-        }
-
-        Ok(MechTable {
-            rows: out_rows.len(),
-            cols: output_cols.len(),
-            data,
-            col_names,
-        })
-    }
-}
-
-fn make_optional_kind(kind: &ValueKind) -> ValueKind {
-    match kind {
-        ValueKind::Option(_) => kind.clone(),
-        _ => ValueKind::Option(Box::new(kind.clone())),
-    }
-}
-
-impl MechFunctionFactory for TableJoinFxn {
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
-        FunctionValueRepresentation::Table,
-        FunctionValueRepresentation::Table,
-        FunctionValueRepresentation::Table,
-    );
-
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        table_join_from_args(args, JoinMode::Inner)
+    fn from_invocation(
+        invocation: FunctionInvocation,
+        mode: JoinMode,
+    ) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        Ok(Box::new(Self {
+            lhs: lhs.value(),
+            rhs: rhs.value(),
+            out: out.value(),
+            mode,
+        }))
     }
 }
 
 impl MechFunctionImpl for TableJoinFxn {
     fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let lhs = &*self.lhs.as_ptr();
-            let rhs = &*self.rhs.as_ptr();
-            if let Ok(joined) = Self::build_joined_table(lhs, rhs, self.mode) {
-                *self.out.as_mut_ptr() = joined;
-            }
-        };
-        Ok(())
+        let joined = joined_table(self.lhs.cell(), self.rhs.cell(), self.mode)?;
+        self.out.replace(&joined.snapshot()?)
     }
 
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Table(self.out.clone())
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        None
     }
+
     fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+        format!("TableJoinFxn::{:?}", self.mode)
     }
 }
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableJoinFxn {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("TableJoinFxn::{:?}", self.mode);
-        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![
+            self.out.cell().clone(),
+            self.lhs.cell().clone(),
+            self.rhs.cell().clone(),
+        ]
     }
-}
 
-fn table_join_from_args(args: FunctionArgs, mode: JoinMode) -> MResult<Box<dyn MechFunction>> {
-    match args {
-        FunctionArgs::Binary(out, arg1, arg2) => {
-            let lhs: Ref<MechTable> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-            let rhs: Ref<MechTable> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-            let out: Ref<MechTable> = out.try_function_ref(FunctionArgumentRole::Output)?;
-            Ok(Box::new(TableJoinFxn {
-                lhs,
-                rhs,
-                out,
-                mode,
-            }))
-        }
-        _ => Err(MechError::new(
-            IncorrectNumberOfArguments {
-                expected: 2,
-                found: args.len(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.out.compile_register(context)?;
+        let lhs = self.lhs.compile_register(context)?;
+        let rhs = self.rhs.compile_register(context)?;
+        context.emit_binop(hash_str(&self.to_string()), output, lhs, rhs);
+        Ok(output)
     }
 }
 
@@ -315,10 +309,14 @@ macro_rules! table_join_factory {
         struct $factory;
 
         impl MechFunctionFactory for $factory {
-            const SIGNATURE: RuntimeFunctionSignature = TableJoinFxn::SIGNATURE;
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                FunctionValueRepresentation::Table,
+                FunctionValueRepresentation::Table,
+                FunctionValueRepresentation::Table,
+            );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                table_join_from_args(args, JoinMode::$mode)
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                TableJoinFxn::from_invocation(invocation, JoinMode::$mode)
             }
         }
     };
@@ -344,10 +342,7 @@ macro_rules! table_join_native_factory {
             ),
             package: "mech-engine",
             crate_name: "mech_engine",
-            installer_path: concat!(
-                "mech_engine::__mech_native::",
-                stringify!($installer),
-            ),
+            installer_path: concat!("mech_engine::__mech_native::", stringify!($installer)),
             extra_cargo_features: [],
         }
     };
@@ -410,157 +405,42 @@ pub mod __mech_native {
     };
 }
 
-fn rows_match(
-    lhs: &MechTable,
-    lhs_row: usize,
-    rhs: &MechTable,
-    rhs_row: usize,
-    common_cols: &[(u64, u64)],
-) -> bool {
-    common_cols.iter().all(|(lhs_col, rhs_col)| {
-        let lhs_val = lhs.data.get(lhs_col).map(|(_, col)| col.index1d(lhs_row));
-        let rhs_val = rhs.data.get(rhs_col).map(|(_, col)| col.index1d(rhs_row));
-        lhs_val == rhs_val
-    })
-}
+macro_rules! table_join_specializer {
+    ($specializer:ident, $mode:ident) => {
+        pub struct $specializer;
 
-fn merge_rows(
-    lhs: &MechTable,
-    lhs_row: usize,
-    rhs: &MechTable,
-    rhs_row: usize,
-    common_rhs: &HashSet<u64>,
-    rhs_empty: bool,
-) -> HashMap<u64, LegacyValue> {
-    let mut row = HashMap::new();
-    for (lhs_id, _) in lhs.data.iter() {
-        let value = lhs
-            .data
-            .get(lhs_id)
-            .map(|(_, col)| col.index1d(lhs_row))
-            .unwrap_or(LegacyValue::Empty);
-        row.insert(*lhs_id, value);
-    }
-    for (rhs_id, _) in rhs.data.iter() {
-        if common_rhs.contains(rhs_id) {
-            continue;
-        }
-        let value = if rhs_empty || rhs_row == 0 {
-            LegacyValue::Empty
-        } else {
-            rhs.data
-                .get(rhs_id)
-                .map(|(_, col)| col.index1d(rhs_row))
-                .unwrap_or(LegacyValue::Empty)
-        };
-        row.insert(*rhs_id, value);
-    }
-    row
-}
-
-fn lhs_only_row(lhs: &MechTable, lhs_row: usize) -> HashMap<u64, LegacyValue> {
-    lhs.data
-        .iter()
-        .map(|(lhs_id, _)| {
-            let value = lhs
-                .data
-                .get(lhs_id)
-                .map(|(_, col)| col.index1d(lhs_row))
-                .unwrap_or(LegacyValue::Empty);
-            (*lhs_id, value)
-        })
-        .collect()
-}
-
-fn compile_table_join(arguments: &[LegacyValue], mode: JoinMode) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-        return Err(MechError::new(
-            IncorrectNumberOfArguments {
-                expected: 2,
-                found: arguments.len(),
-            },
-            None,
-        )
-        .with_compiler_loc());
-    }
-
-    let resolve = |v: &LegacyValue| -> Option<Ref<MechTable>> {
-        match v {
-            LegacyValue::Table(t) => Some(t.clone()),
-            LegacyValue::MutableReference(r) => match &*r.borrow() {
-                LegacyValue::Table(t) => Some(t.clone()),
-                _ => None,
-            },
-            _ => None,
+        impl CanonicalFunctionSpecializer for $specializer {
+            fn specialize_invocation(
+                &self,
+                invocation: &SpecializationInvocation,
+                _: &mut SpecializationContext<'_>,
+            ) -> MResult<SpecializedFunction> {
+                if invocation.len() != 2 {
+                    return Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: invocation.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let lhs = invocation.input(0).expect("validated lhs").cell()?.clone();
+                let rhs = invocation.input(1).expect("validated rhs").cell()?.clone();
+                let output = joined_table(&lhs, &rhs, JoinMode::$mode)?;
+                let bound = FunctionInvocation::binary(output, lhs, rhs);
+                Ok(SpecializedFunction::new(FunctionInstance::new(
+                    TableJoinFxn::from_invocation(bound.clone(), JoinMode::$mode)?,
+                    bound,
+                )))
+            }
         }
     };
-
-    let lhs = resolve(&arguments[0]);
-    let rhs = resolve(&arguments[1]);
-
-    match (lhs, rhs) {
-        (Some(lhs), Some(rhs)) => {
-            let out = Ref::new(TableJoinFxn::build_joined_table(
-                &lhs.borrow(),
-                &rhs.borrow(),
-                mode,
-            )?);
-            Ok(Box::new(TableJoinFxn {
-                lhs,
-                rhs,
-                out,
-                mode,
-            }))
-        }
-        _ => Err(MechError::new(
-            UnhandledFunctionArgumentKind2 {
-                arg: (arguments[0].kind(), arguments[1].kind()),
-                fxn_name: "table/join".to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
 }
 
-pub struct TableInnerJoin {}
-impl FunctionSpecializer for TableInnerJoin {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        compile_table_join(arguments, JoinMode::Inner)
-    }
-}
-
-pub struct TableLeftOuterJoin {}
-impl FunctionSpecializer for TableLeftOuterJoin {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        compile_table_join(arguments, JoinMode::LeftOuter)
-    }
-}
-
-pub struct TableRightOuterJoin {}
-impl FunctionSpecializer for TableRightOuterJoin {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        compile_table_join(arguments, JoinMode::RightOuter)
-    }
-}
-
-pub struct TableFullOuterJoin {}
-impl FunctionSpecializer for TableFullOuterJoin {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        compile_table_join(arguments, JoinMode::FullOuter)
-    }
-}
-
-pub struct TableLeftSemiJoin {}
-impl FunctionSpecializer for TableLeftSemiJoin {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        compile_table_join(arguments, JoinMode::LeftSemi)
-    }
-}
-
-pub struct TableLeftAntiJoin {}
-impl FunctionSpecializer for TableLeftAntiJoin {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        compile_table_join(arguments, JoinMode::LeftAnti)
-    }
-}
+table_join_specializer!(TableInnerJoin, Inner);
+table_join_specializer!(TableLeftOuterJoin, LeftOuter);
+table_join_specializer!(TableRightOuterJoin, RightOuter);
+table_join_specializer!(TableFullOuterJoin, FullOuter);
+table_join_specializer!(TableLeftSemiJoin, LeftSemi);
+table_join_specializer!(TableLeftAntiJoin, LeftAnti);

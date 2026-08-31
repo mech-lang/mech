@@ -3,13 +3,38 @@ use alloc::{collections::BTreeSet, string::String};
 #[cfg(not(feature = "no_std"))]
 use std::{collections::BTreeSet, string::String};
 
+use crate::MechErrorKind;
 #[cfg(feature = "program")]
 use crate::RuntimeType;
 #[cfg(feature = "matrix")]
 use crate::structures::Matrix as MechMatrix;
-use crate::{
-    FunctionArgumentRole, FunctionMatrixRepresentation, LegacyValue, MechError, MechErrorKind,
-};
+use core::fmt;
+
+/// Identifies the argument whose exact runtime representation was rejected.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FunctionArgumentRole {
+    Output,
+    Input(usize),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum FunctionMatrixRepresentation {
+    Matrix1,
+    Matrix2,
+    Matrix3,
+    Matrix4,
+    Matrix2x3,
+    Matrix3x2,
+    RowVector2,
+    RowVector3,
+    RowVector4,
+    Vector2,
+    Vector3,
+    Vector4,
+    RowVectorD,
+    VectorD,
+    MatrixD,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionMatrixElement {
@@ -74,6 +99,129 @@ pub enum FunctionValueRepresentation {
     Kind,
     MutableValueCell,
     AnyValue,
+}
+
+impl fmt::Display for FunctionMatrixElement {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Index => "ix",
+            Self::Bool => "bool",
+            Self::String => "string",
+            Self::U8 => "u8",
+            Self::U16 => "u16",
+            Self::U32 => "u32",
+            Self::U64 => "u64",
+            Self::U128 => "u128",
+            Self::I8 => "i8",
+            Self::I16 => "i16",
+            Self::I32 => "i32",
+            Self::I64 => "i64",
+            Self::I128 => "i128",
+            Self::F32 => "f32",
+            Self::F64 => "f64",
+            Self::C64 => "c64",
+            Self::R64 => "r64",
+            Self::Value => "*",
+        })
+    }
+}
+
+impl FunctionMatrixRepresentation {
+    const fn signature_shape(self) -> &'static str {
+        match self {
+            Self::Matrix1 => "1,1",
+            Self::Matrix2 => "2,2",
+            Self::Matrix3 => "3,3",
+            Self::Matrix4 => "4,4",
+            Self::Matrix2x3 => "2,3",
+            Self::Matrix3x2 => "3,2",
+            Self::RowVector2 => "1,2",
+            Self::RowVector3 => "1,3",
+            Self::RowVector4 => "1,4",
+            Self::Vector2 => "2,1",
+            Self::Vector3 => "3,1",
+            Self::Vector4 => "4,1",
+            Self::RowVectorD => "1,0",
+            Self::VectorD => "0,1",
+            Self::MatrixD => "0,0",
+        }
+    }
+
+    pub const fn runtime_name(self) -> &'static str {
+        match self {
+            Self::Matrix1 => "Matrix1",
+            Self::Matrix2 => "Matrix2",
+            Self::Matrix3 => "Matrix3",
+            Self::Matrix4 => "Matrix4",
+            Self::Matrix2x3 => "Matrix2x3",
+            Self::Matrix3x2 => "Matrix3x2",
+            Self::RowVector2 => "RowVector2",
+            Self::RowVector3 => "RowVector3",
+            Self::RowVector4 => "RowVector4",
+            Self::Vector2 => "Vector2",
+            Self::Vector3 => "Vector3",
+            Self::Vector4 => "Vector4",
+            Self::RowVectorD => "RowDVector",
+            Self::VectorD => "DVector",
+            Self::MatrixD => "DMatrix",
+        }
+    }
+}
+
+pub fn function_matrix_storage_name<T: FunctionRuntimeType>() -> &'static str {
+    let FunctionValueRepresentation::Matrix {
+        storage: FunctionMatrixStoragePattern::Exact(storage),
+        ..
+    } = T::REPRESENTATION
+    else {
+        panic!("exact matrix runtime factory requires exact matrix storage")
+    };
+    storage.runtime_name()
+}
+
+impl fmt::Display for FunctionValueRepresentation {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::U8 => formatter.write_str("u8"),
+            Self::U16 => formatter.write_str("u16"),
+            Self::U32 => formatter.write_str("u32"),
+            Self::U64 => formatter.write_str("u64"),
+            Self::U128 => formatter.write_str("u128"),
+            Self::I8 => formatter.write_str("i8"),
+            Self::I16 => formatter.write_str("i16"),
+            Self::I32 => formatter.write_str("i32"),
+            Self::I64 => formatter.write_str("i64"),
+            Self::I128 => formatter.write_str("i128"),
+            Self::F32 => formatter.write_str("f32"),
+            Self::F64 => formatter.write_str("f64"),
+            Self::C64 => formatter.write_str("c64"),
+            Self::R64 => formatter.write_str("r64"),
+            Self::String => formatter.write_str("string"),
+            Self::Bool => formatter.write_str("bool"),
+            Self::Id => formatter.write_str("id"),
+            Self::Index => formatter.write_str("ix"),
+            Self::Empty => formatter.write_str("_"),
+            Self::Matrix { element, storage } => match storage {
+                FunctionMatrixStoragePattern::Exact(representation) => {
+                    write!(
+                        formatter,
+                        "[{element}]:{}",
+                        representation.signature_shape()
+                    )
+                }
+                FunctionMatrixStoragePattern::AnyStorage => write!(formatter, "[{element}]"),
+            },
+            Self::Atom => formatter.write_str(":atom"),
+            Self::Enum => formatter.write_str(":enum"),
+            Self::Record => formatter.write_str("{record}"),
+            Self::Map => formatter.write_str("{map}"),
+            Self::Set => formatter.write_str("{set}"),
+            Self::Table => formatter.write_str("|table|"),
+            Self::Tuple => formatter.write_str("(tuple)"),
+            Self::Kind => formatter.write_str("<kind>"),
+            Self::MutableValueCell | Self::AnyValue => formatter.write_str("*"),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -241,43 +389,13 @@ impl FunctionRuntimeType for crate::R64 {
     const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::R64;
 }
 
-impl FunctionRuntimeType for LegacyValue {
+impl FunctionRuntimeType for crate::Value {
     const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::AnyValue;
 }
 
 #[cfg(feature = "atom")]
 impl FunctionRuntimeType for crate::MechAtom {
     const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Atom;
-}
-
-#[cfg(feature = "enum")]
-impl FunctionRuntimeType for crate::MechEnum {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Enum;
-}
-
-#[cfg(feature = "record")]
-impl FunctionRuntimeType for crate::MechRecord {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Record;
-}
-
-#[cfg(feature = "map")]
-impl FunctionRuntimeType for crate::MechMap {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Map;
-}
-
-#[cfg(feature = "set")]
-impl FunctionRuntimeType for crate::MechSet {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Set;
-}
-
-#[cfg(feature = "table")]
-impl FunctionRuntimeType for crate::MechTable {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Table;
-}
-
-#[cfg(feature = "tuple")]
-impl FunctionRuntimeType for crate::MechTuple {
-    const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::Tuple;
 }
 
 #[cfg(feature = "matrix")]
@@ -320,7 +438,7 @@ exact_matrix_runtime_type!(DVector, "vectord", VectorD);
 exact_matrix_runtime_type!(DMatrix, "matrixd", MatrixD);
 
 #[cfg(feature = "matrix")]
-const fn matrix_element_for_representation(
+pub(crate) const fn matrix_element_for_representation(
     representation: FunctionValueRepresentation,
 ) -> FunctionMatrixElement {
     match representation {
@@ -649,158 +767,6 @@ impl MechErrorKind for FunctionSignatureViolation {
 }
 
 impl FunctionValueRepresentation {
-    pub fn from_value(value: &LegacyValue) -> Self {
-        #[cfg(feature = "matrix")]
-        let matrix = |element, representation| Self::Matrix {
-            element,
-            storage: FunctionMatrixStoragePattern::Exact(representation),
-        };
-        match value {
-            #[cfg(feature = "u8")]
-            LegacyValue::U8(_) => Self::U8,
-            #[cfg(feature = "u16")]
-            LegacyValue::U16(_) => Self::U16,
-            #[cfg(feature = "u32")]
-            LegacyValue::U32(_) => Self::U32,
-            #[cfg(feature = "u64")]
-            LegacyValue::U64(_) => Self::U64,
-            #[cfg(feature = "u128")]
-            LegacyValue::U128(_) => Self::U128,
-            #[cfg(feature = "i8")]
-            LegacyValue::I8(_) => Self::I8,
-            #[cfg(feature = "i16")]
-            LegacyValue::I16(_) => Self::I16,
-            #[cfg(feature = "i32")]
-            LegacyValue::I32(_) => Self::I32,
-            #[cfg(feature = "i64")]
-            LegacyValue::I64(_) => Self::I64,
-            #[cfg(feature = "i128")]
-            LegacyValue::I128(_) => Self::I128,
-            #[cfg(feature = "f32")]
-            LegacyValue::F32(_) => Self::F32,
-            #[cfg(feature = "f64")]
-            LegacyValue::F64(_) => Self::F64,
-            #[cfg(any(feature = "string", feature = "variable_define"))]
-            LegacyValue::String(_) => Self::String,
-            #[cfg(any(feature = "bool", feature = "variable_define"))]
-            LegacyValue::Bool(_) => Self::Bool,
-            #[cfg(feature = "complex")]
-            LegacyValue::C64(_) => Self::C64,
-            #[cfg(feature = "rational")]
-            LegacyValue::R64(_) => Self::R64,
-            #[cfg(feature = "atom")]
-            LegacyValue::Atom(_) => Self::Atom,
-            #[cfg(feature = "enum")]
-            LegacyValue::Enum(_) => Self::Enum,
-            #[cfg(feature = "record")]
-            LegacyValue::Record(_) => Self::Record,
-            #[cfg(feature = "map")]
-            LegacyValue::Map(_) => Self::Map,
-            #[cfg(feature = "set")]
-            LegacyValue::Set(_) => Self::Set,
-            #[cfg(feature = "table")]
-            LegacyValue::Table(_) => Self::Table,
-            #[cfg(feature = "tuple")]
-            LegacyValue::Tuple(_) => Self::Tuple,
-            LegacyValue::Id(_) => Self::Id,
-            LegacyValue::Index(_) | LegacyValue::IndexAll => Self::Index,
-            LegacyValue::MutableReference(_) => Self::MutableValueCell,
-            LegacyValue::Kind(_) => Self::Kind,
-            LegacyValue::Empty | LegacyValue::EmptyKind(_) => Self::Empty,
-            LegacyValue::Typed(_, _) => Self::AnyValue,
-            #[cfg(feature = "matrix")]
-            LegacyValue::MatrixIndex(value) => matrix(
-                FunctionMatrixElement::Index,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "bool"))]
-            LegacyValue::MatrixBool(value) => matrix(
-                FunctionMatrixElement::Bool,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "u8"))]
-            LegacyValue::MatrixU8(value) => matrix(
-                FunctionMatrixElement::U8,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "u16"))]
-            LegacyValue::MatrixU16(value) => matrix(
-                FunctionMatrixElement::U16,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "u32"))]
-            LegacyValue::MatrixU32(value) => matrix(
-                FunctionMatrixElement::U32,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "u64"))]
-            LegacyValue::MatrixU64(value) => matrix(
-                FunctionMatrixElement::U64,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "u128"))]
-            LegacyValue::MatrixU128(value) => matrix(
-                FunctionMatrixElement::U128,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "i8"))]
-            LegacyValue::MatrixI8(value) => matrix(
-                FunctionMatrixElement::I8,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "i16"))]
-            LegacyValue::MatrixI16(value) => matrix(
-                FunctionMatrixElement::I16,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "i32"))]
-            LegacyValue::MatrixI32(value) => matrix(
-                FunctionMatrixElement::I32,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "i64"))]
-            LegacyValue::MatrixI64(value) => matrix(
-                FunctionMatrixElement::I64,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "i128"))]
-            LegacyValue::MatrixI128(value) => matrix(
-                FunctionMatrixElement::I128,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "f32"))]
-            LegacyValue::MatrixF32(value) => matrix(
-                FunctionMatrixElement::F32,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "f64"))]
-            LegacyValue::MatrixF64(value) => matrix(
-                FunctionMatrixElement::F64,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "string"))]
-            LegacyValue::MatrixString(value) => matrix(
-                FunctionMatrixElement::String,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "rational"))]
-            LegacyValue::MatrixR64(value) => matrix(
-                FunctionMatrixElement::R64,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(all(feature = "matrix", feature = "complex"))]
-            LegacyValue::MatrixC64(value) => matrix(
-                FunctionMatrixElement::C64,
-                matrix_storage_representation(value),
-            ),
-            #[cfg(feature = "matrix")]
-            LegacyValue::MatrixValue(value) => matrix(
-                FunctionMatrixElement::Value,
-                matrix_storage_representation(value),
-            ),
-        }
-    }
-
     pub fn matches(self, found: Self) -> bool {
         match (self, found) {
             (Self::AnyValue, _) => true,
@@ -816,42 +782,6 @@ impl FunctionValueRepresentation {
             ) => expected_element == found_element,
             _ => self == found,
         }
-    }
-}
-
-#[cfg(feature = "matrix")]
-fn matrix_storage_representation<T>(matrix: &MechMatrix<T>) -> FunctionMatrixRepresentation {
-    match matrix {
-        #[cfg(feature = "matrix1")]
-        MechMatrix::Matrix1(_) => FunctionMatrixRepresentation::Matrix1,
-        #[cfg(feature = "matrix2")]
-        MechMatrix::Matrix2(_) => FunctionMatrixRepresentation::Matrix2,
-        #[cfg(feature = "matrix3")]
-        MechMatrix::Matrix3(_) => FunctionMatrixRepresentation::Matrix3,
-        #[cfg(feature = "matrix4")]
-        MechMatrix::Matrix4(_) => FunctionMatrixRepresentation::Matrix4,
-        #[cfg(feature = "matrix2x3")]
-        MechMatrix::Matrix2x3(_) => FunctionMatrixRepresentation::Matrix2x3,
-        #[cfg(feature = "matrix3x2")]
-        MechMatrix::Matrix3x2(_) => FunctionMatrixRepresentation::Matrix3x2,
-        #[cfg(feature = "row_vector2")]
-        MechMatrix::RowVector2(_) => FunctionMatrixRepresentation::RowVector2,
-        #[cfg(feature = "row_vector3")]
-        MechMatrix::RowVector3(_) => FunctionMatrixRepresentation::RowVector3,
-        #[cfg(feature = "row_vector4")]
-        MechMatrix::RowVector4(_) => FunctionMatrixRepresentation::RowVector4,
-        #[cfg(feature = "vector2")]
-        MechMatrix::Vector2(_) => FunctionMatrixRepresentation::Vector2,
-        #[cfg(feature = "vector3")]
-        MechMatrix::Vector3(_) => FunctionMatrixRepresentation::Vector3,
-        #[cfg(feature = "vector4")]
-        MechMatrix::Vector4(_) => FunctionMatrixRepresentation::Vector4,
-        #[cfg(feature = "row_vectord")]
-        MechMatrix::RowDVector(_) => FunctionMatrixRepresentation::RowVectorD,
-        #[cfg(feature = "vectord")]
-        MechMatrix::DVector(_) => FunctionMatrixRepresentation::VectorD,
-        #[cfg(feature = "matrixd")]
-        MechMatrix::DMatrix(_) => FunctionMatrixRepresentation::MatrixD,
     }
 }
 
@@ -977,20 +907,4 @@ pub fn native_features_for_runtime_type(
             features.insert(NativeValueFeature::KindAnnotation);
         }
     }
-}
-
-pub(crate) fn signature_violation(
-    role: FunctionArgumentRole,
-    expected: FunctionValueRepresentation,
-    value: &LegacyValue,
-) -> MechError {
-    MechError::new(
-        FunctionSignatureViolation {
-            role,
-            expected,
-            found: FunctionValueRepresentation::from_value(value),
-        },
-        None,
-    )
-    .with_compiler_loc()
 }

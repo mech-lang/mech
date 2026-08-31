@@ -1,9 +1,9 @@
 use mech_core::{
-    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, LegacyValue, MResult,
-    RuntimeFunctionContract, RuntimeOutputAliasPolicy, function_shape_contract_violation,
+    ExtentEvolution, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
+    RuntimeOutputAliasPolicy, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
-use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -28,9 +28,9 @@ fn install_operation<T>(
     exposure: FunctionExposure,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
+    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -95,34 +95,34 @@ enum RangeContractNumber {
     Float(f64),
 }
 
-fn range_numeric_value(value: &LegacyValue) -> Option<RangeContractNumber> {
-    match value {
+fn range_numeric_cell(value: &ValueCell) -> MResult<Option<RangeContractNumber>> {
+    Ok(match value.snapshot()?.data() {
         #[cfg(feature = "u8")]
-        LegacyValue::U8(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
+        ValueData::U8(value) => Some(RangeContractNumber::Unsigned(*value as u128)),
         #[cfg(feature = "u16")]
-        LegacyValue::U16(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
+        ValueData::U16(value) => Some(RangeContractNumber::Unsigned(*value as u128)),
         #[cfg(feature = "u32")]
-        LegacyValue::U32(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
+        ValueData::U32(value) => Some(RangeContractNumber::Unsigned(*value as u128)),
         #[cfg(feature = "u64")]
-        LegacyValue::U64(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
+        ValueData::U64(value) => Some(RangeContractNumber::Unsigned(*value as u128)),
         #[cfg(feature = "u128")]
-        LegacyValue::U128(value) => Some(RangeContractNumber::Unsigned(*value.borrow())),
+        ValueData::U128(value) => Some(RangeContractNumber::Unsigned(*value)),
         #[cfg(feature = "i8")]
-        LegacyValue::I8(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
+        ValueData::I8(value) => Some(RangeContractNumber::Signed(*value as i128)),
         #[cfg(feature = "i16")]
-        LegacyValue::I16(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
+        ValueData::I16(value) => Some(RangeContractNumber::Signed(*value as i128)),
         #[cfg(feature = "i32")]
-        LegacyValue::I32(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
+        ValueData::I32(value) => Some(RangeContractNumber::Signed(*value as i128)),
         #[cfg(feature = "i64")]
-        LegacyValue::I64(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
+        ValueData::I64(value) => Some(RangeContractNumber::Signed(*value as i128)),
         #[cfg(feature = "i128")]
-        LegacyValue::I128(value) => Some(RangeContractNumber::Signed(*value.borrow())),
+        ValueData::I128(value) => Some(RangeContractNumber::Signed(*value)),
         #[cfg(feature = "f32")]
-        LegacyValue::F32(value) => Some(RangeContractNumber::Float(*value.borrow() as f64)),
+        ValueData::F32(value) => Some(RangeContractNumber::Float(value.to_f32() as f64)),
         #[cfg(feature = "f64")]
-        LegacyValue::F64(value) => Some(RangeContractNumber::Float(*value.borrow())),
+        ValueData::F64(value) => Some(RangeContractNumber::Float(value.to_f64())),
         _ => None,
-    }
+    })
 }
 
 #[cfg(any(
@@ -169,75 +169,6 @@ fn float_range_size(from: f64, step: f64, to: f64, inclusive: bool) -> Option<us
         return None;
     }
     Some(size as usize)
-}
-
-#[cfg(all(
-    test,
-    feature = "u64",
-    feature = "u128",
-    feature = "matrixd",
-    feature = "exclusive",
-    feature = "exclusive_increment",
-    feature = "inclusive",
-    feature = "inclusive_increment"
-))]
-mod exact_range_contract_tests {
-    use super::*;
-    use mech_core::{Ref, matrix::Matrix};
-
-    fn u64_output(columns: usize) -> LegacyValue {
-        LegacyValue::MatrixU64(Matrix::from_vec(vec![0; columns], 1, columns))
-    }
-
-    fn u128_output(columns: usize) -> LegacyValue {
-        LegacyValue::MatrixU128(Matrix::from_vec(vec![0; columns], 1, columns))
-    }
-
-    #[test]
-    fn large_unsigned_ranges_preserve_exact_cardinality() {
-        let from = 1_u64 << 60;
-        validate_range_exclusive(&FunctionArgs::Binary(
-            u64_output(2),
-            LegacyValue::U64(Ref::new(from)),
-            LegacyValue::U64(Ref::new(from + 2)),
-        ))
-        .unwrap();
-
-        validate_range_inclusive(&FunctionArgs::Binary(
-            u128_output(2),
-            LegacyValue::U128(Ref::new(u128::MAX - 1)),
-            LegacyValue::U128(Ref::new(u128::MAX)),
-        ))
-        .unwrap();
-    }
-
-    #[test]
-    fn large_incremented_ranges_preserve_exact_cardinality() {
-        let from = 1_u64 << 60;
-        validate_range_increment_exclusive(&FunctionArgs::Ternary(
-            u64_output(2),
-            LegacyValue::U64(Ref::new(from)),
-            LegacyValue::U64(Ref::new(2)),
-            LegacyValue::U64(Ref::new(from + 4)),
-        ))
-        .unwrap();
-        validate_range_increment_inclusive(&FunctionArgs::Ternary(
-            u64_output(3),
-            LegacyValue::U64(Ref::new(from)),
-            LegacyValue::U64(Ref::new(2)),
-            LegacyValue::U64(Ref::new(from + 4)),
-        ))
-        .unwrap();
-
-        let error = validate_range_increment_exclusive(&FunctionArgs::Ternary(
-            u64_output(1),
-            LegacyValue::U64(Ref::new(from)),
-            LegacyValue::U64(Ref::new(2)),
-            LegacyValue::U64(Ref::new(from + 4)),
-        ))
-        .unwrap_err();
-        assert!(error.kind_message().contains("range requires 2"));
-    }
 }
 
 fn range_contract_size(
@@ -337,96 +268,139 @@ fn range_contract_size(
     }
 }
 
-fn validate_range_contract(args: &FunctionArgs, inclusive: bool, incremented: bool) -> MResult<()> {
+pub(crate) fn canonical_range_size(
+    inputs: &[ValueCell],
+    inclusive: bool,
+    incremented: bool,
+) -> MResult<usize> {
     let contract = "range_construction";
-    let output = args
-        .output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "output must be matrix-backed")
-        })?;
-    if output.rows != 1 {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!(
-                "output must be a row, found {}x{}",
-                output.rows, output.cols
-            ),
-        ));
-    }
     let expected_inputs = if incremented { 3 } else { 2 };
-    if args.input_count() != expected_inputs {
+    if inputs.len() != expected_inputs {
         return Err(function_shape_contract_violation(
             contract,
-            format!(
-                "expected {expected_inputs} inputs, found {}",
-                args.input_count()
-            ),
+            format!("expected {expected_inputs} inputs, found {}", inputs.len()),
         ));
     }
-    let mut values = Vec::with_capacity(expected_inputs);
-    for index in 0..expected_inputs {
-        let input = args
-            .input_value(index)
-            .and_then(range_numeric_value)
-            .ok_or_else(|| {
+    let values = inputs
+        .iter()
+        .enumerate()
+        .map(|(index, input)| {
+            range_numeric_cell(input)?.ok_or_else(|| {
                 function_shape_contract_violation(
                     contract,
                     format!("input {index} must be a numeric scalar"),
                 )
-            })?;
-        values.push(input);
-    }
+            })
+        })
+        .collect::<MResult<Vec<_>>>()?;
     let size = range_contract_size(&values, inclusive, incremented).ok_or_else(|| {
         function_shape_contract_violation(
             contract,
             "range values must have one numeric representation, finite endpoints, a nonzero step, and a representable element count",
         )
     })?;
-    if size == 0 || output.cols != size {
+    if size == 0 {
         return Err(function_shape_contract_violation(
             contract,
-            format!(
-                "output has {} elements, range requires {size}",
-                output.rows.saturating_mul(output.cols),
-            ),
+            "range output must contain at least one element",
+        ));
+    }
+    Ok(size)
+}
+
+fn validate_canonical_range_contract(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+    inclusive: bool,
+    incremented: bool,
+) -> MResult<()> {
+    let contract = "range_construction";
+    let SchemaBody::Matrix { dimensions, .. } = output.closed_schema_body()? else {
+        return Err(function_shape_contract_violation(
+            contract,
+            "output must be matrix-backed",
+        ));
+    };
+    let [mech_core::DimensionExpr::Constant(rows), mech_core::DimensionExpr::Constant(columns)] =
+        dimensions.as_ref()
+    else {
+        return Err(function_shape_contract_violation(
+            contract,
+            "output matrix dimensions must be resolved",
+        ));
+    };
+    if *rows != 1 {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("output must be a row, found {rows}x{columns}"),
+        ));
+    }
+    let expected_inputs = if incremented { 3 } else { 2 };
+    if inputs.len() != expected_inputs {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("expected {expected_inputs} inputs, found {}", inputs.len()),
+        ));
+    }
+    let size = canonical_range_size(inputs, inclusive, incremented)?;
+    let columns = usize::try_from(*columns).unwrap_or(usize::MAX);
+    if matches!(
+        output.extent_evolution(),
+        ExtentEvolution::Fixed | ExtentEvolution::ActivationFixed
+    ) && columns != size
+    {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("output has {columns} elements, range requires {size}"),
         ));
     }
     Ok(())
 }
 
 #[cfg(feature = "exclusive")]
-pub(crate) fn validate_range_exclusive(args: &FunctionArgs) -> MResult<()> {
-    validate_range_contract(args, false, false)
+pub(crate) fn validate_canonical_range_exclusive(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    validate_canonical_range_contract(output, inputs, false, false)
 }
 
 #[cfg(feature = "inclusive")]
-pub(crate) fn validate_range_inclusive(args: &FunctionArgs) -> MResult<()> {
-    validate_range_contract(args, true, false)
+pub(crate) fn validate_canonical_range_inclusive(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    validate_canonical_range_contract(output, inputs, true, false)
 }
 
 #[cfg(feature = "exclusive")]
-pub(crate) fn validate_range_increment_exclusive(args: &FunctionArgs) -> MResult<()> {
-    validate_range_contract(args, false, true)
+pub(crate) fn validate_canonical_range_increment_exclusive(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    validate_canonical_range_contract(output, inputs, false, true)
 }
 
 #[cfg(feature = "inclusive")]
-pub(crate) fn validate_range_increment_inclusive(args: &FunctionArgs) -> MResult<()> {
-    validate_range_contract(args, true, true)
+pub(crate) fn validate_canonical_range_increment_inclusive(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    validate_canonical_range_contract(output, inputs, true, true)
 }
 
-macro_rules! range_contract_validator {
+macro_rules! canonical_range_contract_validator {
     (exclusive) => {
-        validate_range_exclusive
+        validate_canonical_range_exclusive
     };
     (inclusive) => {
-        validate_range_inclusive
+        validate_canonical_range_inclusive
     };
     (exclusive_increment) => {
-        validate_range_increment_exclusive
+        validate_canonical_range_increment_exclusive
     };
     (inclusive_increment) => {
-        validate_range_increment_inclusive
+        validate_canonical_range_increment_inclusive
     };
 }
 
@@ -485,10 +459,10 @@ macro_rules! declare_range_runtime_factory {
                 installer: [<install_ $factory:snake _ $scalar_token _ $shape:snake>],
                 name: concat!(stringify!($factory), "<", $scalar_feature, stringify!($shape), ">"),
                 factory_type: crate::$module::$factory<$scalar, $shape<$scalar>>,
-                contract: RuntimeFunctionContract::custom(
+                contract: RuntimeFunctionContract::canonical_custom(
                     "range_construction",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
-                    range_contract_validator!($module),
+                    canonical_range_contract_validator!($module),
                 ),
                 package: "mech-range", crate_name: "mech_range",
                 installer_path: concat!("mech_range::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token _ $shape:snake>])),

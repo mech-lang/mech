@@ -9,10 +9,11 @@ use std::{
 };
 
 use mech_compute::{
-    BinaryOperation, ComputeKernel, ComputeProgram, ElementwiseInstruction, ElementwiseIr,
-    ElementwiseLowering, ElementwiseOperation, ElementwiseStateStorage, ElementwiseStoragePlan,
-    UnaryOperation, build_compute_region_interface, display_operation, elementwise_lowering,
-    plan_compute_artifact, turn_required_nodes,
+    BinaryOperation, ComputeKernel, ComputeProgram, ConcatenationAxis, ConcatenationInput,
+    ElementwiseInstruction, ElementwiseIr, ElementwiseLowering, ElementwiseOperation,
+    ElementwiseStateStorage, ElementwiseStoragePlan, UnaryOperation,
+    build_compute_region_interface, display_operation, elementwise_lowering, plan_compute_artifact,
+    turn_required_nodes,
 };
 pub use mech_compute::{
     ComputeAdmissionError as GpuAdmissionError, ComputeDiagnostic as GpuDiagnostic,
@@ -365,24 +366,23 @@ impl ElementwiseKernel {
                         wgsl_elementwise_expression(*operation, &inputs)
                     ));
                 }
-                ElementwiseInstruction::Concat2 {
-                    left,
-                    right,
+                ElementwiseInstruction::Concatenate {
+                    axis,
+                    inputs,
                     output,
-                    left_elements,
-                    right_elements,
+                    rows,
+                    columns,
                 } => {
                     let elements = instruction.elements();
-                    let left = self.wgsl_source_at(*left, *left_elements, "index");
-                    let local_index = format!("concat_index_{}", output.get());
-                    let right = self.wgsl_source_at(*right, *right_elements, &local_index);
-                    shader.push_str(&wgsl_concat2_instruction(
+                    shader.push_str(&wgsl_concatenate_instruction(
                         *output,
-                        *left_elements,
-                        elements,
-                        &left,
-                        &right,
+                        *axis,
+                        inputs,
+                        *rows,
+                        *columns,
+                        |input, index| self.wgsl_source_at(input.source, input.elements(), index),
                     ));
+                    debug_assert_eq!(elements, rows * columns);
                 }
             }
         }
@@ -587,28 +587,16 @@ impl ElementwiseKernel {
                     }
                     (*output, values)
                 }
-                ElementwiseInstruction::Concat2 {
-                    left,
-                    right,
-                    output,
-                    left_elements,
-                    right_elements,
-                } => {
+                ElementwiseInstruction::Concatenate { output, .. } => {
                     let mut values = Vec::with_capacity(instruction.elements() as usize);
-                    for index in 0..*left_elements as usize {
+                    for index in 0..instruction.elements() {
+                        let (source, local_index, source_elements) = instruction
+                            .concat_source_at(index)
+                            .expect("validated concatenation covers every output element");
                         values.push(cpu_source_value(
-                            *left,
-                            index,
-                            *left_elements as usize,
-                            slots,
-                            &self.constants,
-                        )?);
-                    }
-                    for index in 0..*right_elements as usize {
-                        values.push(cpu_source_value(
-                            *right,
-                            index,
-                            *right_elements as usize,
+                            source,
+                            local_index as usize,
+                            source_elements as usize,
                             slots,
                             &self.constants,
                         )?);
@@ -1182,11 +1170,7 @@ impl<'a> Compiler<'a> {
                 );
                 continue;
             };
-            let host_proven_concatenation = matches!(
-                lowering,
-                ElementwiseLowering::Apply(ElementwiseOperation::Identity)
-                    | ElementwiseLowering::Concat2
-            );
+            let host_proven_concatenation = matches!(lowering, ElementwiseLowering::Concatenate(_));
             if !host_proven_concatenation
                 && !self.admit_contract(node.node, &operation_name, node.contract)
             {
@@ -1208,14 +1192,19 @@ impl<'a> Compiler<'a> {
                     Some(_) | None => None,
                 })
                 .collect::<Vec<_>>();
-            if inputs.len() != lowering.arity() || outputs.len() != 1 {
+            let arity_supported = lowering
+                .fixed_arity()
+                .map_or(!inputs.is_empty(), |arity| inputs.len() == arity);
+            if !arity_supported || outputs.len() != 1 {
+                let expected = lowering
+                    .fixed_arity()
+                    .map_or_else(|| "one or more".to_owned(), |arity| arity.to_string());
                 self.reject(
                     GpuDiagnosticCode::ArityUnsupported,
                     Some(node.node),
                     Some(operation_name),
                     format!(
-                        "expected {} inputs and one output, found {} inputs and {} outputs",
-                        lowering.arity(),
+                        "expected {expected} inputs and one output, found {} inputs and {} outputs",
                         inputs.len(),
                         outputs.len()
                     ),
@@ -1225,7 +1214,7 @@ impl<'a> Compiler<'a> {
             let Some(output_elements) = self.slot_elements.get(&outputs[0]).copied() else {
                 continue;
             };
-            let mut input_elements = Vec::with_capacity(2);
+            let mut input_elements = Vec::with_capacity(inputs.len());
             let mut sources_valid = true;
             for source in &inputs {
                 match self.source_elements(*source, node.node, &operation_name) {
@@ -1238,10 +1227,16 @@ impl<'a> Compiler<'a> {
             }
             let output_dimensions = self.slot_dimensions(outputs[0]);
             let shapes_compatible = match lowering {
-                ElementwiseLowering::Concat2 => {
-                    input_elements.len() == 2
-                        && input_elements[0].checked_add(input_elements[1]) == Some(output_elements)
-                }
+                ElementwiseLowering::Concatenate(axis) => concatenate_shapes(
+                    axis,
+                    &inputs
+                        .iter()
+                        .map(|source| self.source_dimensions(*source))
+                        .collect::<Option<Vec<_>>>()
+                        .unwrap_or_default(),
+                    &output_dimensions,
+                )
+                .is_some(),
                 _ => inputs
                     .iter()
                     .zip(&input_elements)
@@ -1264,29 +1259,55 @@ impl<'a> Compiler<'a> {
                 );
                 continue;
             }
-            if lowering != ElementwiseLowering::Concat2 {
-                if let Some(source) = inputs.iter().find(|source| {
+            let source_requiring_materialization = match lowering {
+                ElementwiseLowering::Concatenate(_) => inputs
+                    .iter()
+                    .find(|source| self.derived_source_requires_materialization(**source)),
+                ElementwiseLowering::Apply(_) => inputs.iter().find(|source| {
                     self.derived_broadcast_requires_materialization(**source, output_elements)
-                }) {
-                    self.reject(
-                        GpuDiagnosticCode::DerivedBroadcastRequiresMaterialization,
-                        Some(node.node),
-                        Some(operation_name),
-                        format!(
-                            "derived source {source:?} must be materialized before remapped broadcasting"
-                        ),
-                    );
-                    continue;
-                }
+                }),
+            };
+            if let Some(source) = source_requiring_materialization {
+                let reason = match lowering {
+                    ElementwiseLowering::Concatenate(_) => "indexed concatenation assembly",
+                    ElementwiseLowering::Apply(_) => "remapped broadcasting",
+                };
+                self.reject(
+                    GpuDiagnosticCode::DerivedBroadcastRequiresMaterialization,
+                    Some(node.node),
+                    Some(operation_name),
+                    format!("derived source {source:?} must be materialized before {reason}"),
+                );
+                continue;
             }
             let instruction = match lowering {
-                ElementwiseLowering::Concat2 => ElementwiseInstruction::Concat2 {
-                    left: inputs[0],
-                    right: inputs[1],
-                    output: outputs[0],
-                    left_elements: input_elements[0],
-                    right_elements: input_elements[1],
-                },
+                ElementwiseLowering::Concatenate(axis) => {
+                    let (rows, columns, input_shapes) = concatenate_shapes(
+                        axis,
+                        &inputs
+                            .iter()
+                            .map(|source| self.source_dimensions(*source))
+                            .collect::<Option<Vec<_>>>()
+                            .expect("validated concatenation sources retain dimensions"),
+                        &output_dimensions,
+                    )
+                    .expect("validated concatenation shapes remain compatible");
+                    ElementwiseInstruction::Concatenate {
+                        axis,
+                        inputs: inputs
+                            .into_iter()
+                            .zip(input_shapes)
+                            .map(|(source, (rows, columns))| ConcatenationInput {
+                                source,
+                                rows,
+                                columns,
+                            })
+                            .collect(),
+                        output: outputs[0],
+                        rows,
+                        columns,
+                    }
+                }
                 ElementwiseLowering::Apply(operation) => ElementwiseInstruction::Apply {
                     operation,
                     inputs: inputs.into_boxed_slice(),
@@ -1705,6 +1726,16 @@ impl<'a> Compiler<'a> {
             .is_some_and(|slot| slot.role == SlotRole::Derived)
     }
 
+    fn derived_source_requires_materialization(&self, source: ArtifactSource) -> bool {
+        let ArtifactSource::Slot(slot) = source else {
+            return false;
+        };
+        self.artifact
+            .slots()
+            .get(slot.get() as usize)
+            .is_some_and(|slot| slot.role == SlotRole::Derived)
+    }
+
     fn source_elements(
         &mut self,
         source: ArtifactSource,
@@ -1847,18 +1878,108 @@ fn wgsl_elementwise_expression(operation: ElementwiseOperation, inputs: &[String
     }
 }
 
-fn wgsl_concat2_instruction(
+fn wgsl_concatenate_instruction(
     output: CellSlotId,
-    left_elements: u64,
-    elements: u64,
-    left: &str,
-    right: &str,
+    axis: ConcatenationAxis,
+    inputs: &[ConcatenationInput],
+    rows: u64,
+    columns: u64,
+    mut source_at: impl FnMut(ConcatenationInput, &str) -> String,
 ) -> String {
     let output = output.get();
-    let local_index = format!("concat_index_{output}");
-    format!(
-        "  var slot_{output} = 0.0;\n  if (index < {left_elements}u) {{\n    slot_{output} = {left};\n  }} else if (index < {elements}u) {{\n    let {local_index} = index - {left_elements}u;\n    slot_{output} = {right};\n  }}\n"
-    )
+    let elements = rows
+        .checked_mul(columns)
+        .expect("validated concatenation output element count");
+    if elements == 0 {
+        return format!("  var slot_{output} = 0.0;\n");
+    }
+    let row = format!("concat_row_{output}");
+    let column = format!("concat_column_{output}");
+    let mut rendered = format!(
+        "  var slot_{output} = 0.0;\n  if (index < {elements}u) {{\n    let {row} = index / {columns}u;\n    let {column} = index % {columns}u;\n"
+    );
+    let mut row_offset = 0;
+    let mut column_offset = 0;
+    for (ordinal, input) in inputs.iter().copied().enumerate() {
+        let (limit, local_index) = match axis {
+            ConcatenationAxis::Horizontal => {
+                let limit = column_offset + input.columns;
+                let local_column = if column_offset == 0 {
+                    column.clone()
+                } else {
+                    format!("({column} - {column_offset}u)")
+                };
+                (
+                    format!("{column} < {limit}u"),
+                    format!("{row} * {}u + {local_column}", input.columns),
+                )
+            }
+            ConcatenationAxis::Vertical => {
+                let limit = row_offset + input.rows;
+                let local_row = if row_offset == 0 {
+                    row.clone()
+                } else {
+                    format!("({row} - {row_offset}u)")
+                };
+                (
+                    format!("{row} < {limit}u"),
+                    format!("{local_row} * {}u + {column}", input.columns),
+                )
+            }
+        };
+        let keyword = if ordinal == 0 { "if" } else { "else if" };
+        rendered.push_str(&format!(
+            "    {keyword} ({limit}) {{ slot_{output} = {}; }}\n",
+            source_at(input, &local_index),
+        ));
+        match axis {
+            ConcatenationAxis::Horizontal => column_offset += input.columns,
+            ConcatenationAxis::Vertical => row_offset += input.rows,
+        }
+    }
+    rendered.push_str("  }\n");
+    rendered
+}
+
+fn concatenate_shapes(
+    axis: ConcatenationAxis,
+    input_dimensions: &[Vec<u64>],
+    output_dimensions: &[u64],
+) -> Option<(u64, u64, Vec<(u64, u64)>)> {
+    let (output_rows, output_columns) = two_dimensional_shape(output_dimensions)?;
+    let inputs = input_dimensions
+        .iter()
+        .map(|dimensions| two_dimensional_shape(dimensions))
+        .collect::<Option<Vec<_>>>()?;
+    if inputs.is_empty() {
+        return None;
+    }
+    let compatible = match axis {
+        ConcatenationAxis::Horizontal => {
+            inputs.iter().all(|(rows, _)| *rows == output_rows)
+                && inputs
+                    .iter()
+                    .try_fold(0_u64, |total, (_, columns)| total.checked_add(*columns))
+                    == Some(output_columns)
+        }
+        ConcatenationAxis::Vertical => {
+            inputs.iter().all(|(_, columns)| *columns == output_columns)
+                && inputs
+                    .iter()
+                    .try_fold(0_u64, |total, (rows, _)| total.checked_add(*rows))
+                    == Some(output_rows)
+        }
+    };
+    compatible.then_some((output_rows, output_columns, inputs))
+}
+
+fn two_dimensional_shape(dimensions: &[u64]) -> Option<(u64, u64)> {
+    match dimensions {
+        [] => Some((1, 1)),
+        [rows] => Some((*rows, 1)),
+        [rows, columns] => Some((*rows, *columns)),
+        _ => None,
+    }
 }
 
 fn block_broadcast_dimensions(input: &[u64], output: &[u64]) -> bool {
@@ -1946,19 +2067,35 @@ mod tests {
     use super::*;
     use mech_core::ConstantId;
 
-    fn concat_program(left: &[f32], right: &[f32]) -> ElementwiseKernel {
+    fn concat_program(
+        axis: ConcatenationAxis,
+        left: (&[f32], u64, u64),
+        right: (&[f32], u64, u64),
+        rows: u64,
+        columns: u64,
+    ) -> ElementwiseKernel {
         let left_constant = ConstantId::new(0);
         let right_constant = ConstantId::new(1);
         let output = CellSlotId::new(0);
-        let left_elements = left.len() as u64;
-        let right_elements = right.len() as u64;
-        let elements = left_elements.checked_add(right_elements).unwrap();
-        let instruction = ElementwiseInstruction::Concat2 {
-            left: ArtifactSource::Constant(left_constant),
-            right: ArtifactSource::Constant(right_constant),
+        let elements = rows.checked_mul(columns).unwrap();
+        let instruction = ElementwiseInstruction::Concatenate {
+            axis,
+            inputs: vec![
+                ConcatenationInput {
+                    source: ArtifactSource::Constant(left_constant),
+                    rows: left.1,
+                    columns: left.2,
+                },
+                ConcatenationInput {
+                    source: ArtifactSource::Constant(right_constant),
+                    rows: right.1,
+                    columns: right.2,
+                },
+            ]
+            .into_boxed_slice(),
             output,
-            left_elements,
-            right_elements,
+            rows,
+            columns,
         };
         let compute = ComputeProgram::new(
             Default::default(),
@@ -1968,8 +2105,8 @@ mod tests {
             }),
         );
         let constants = BTreeMap::from([
-            (left_constant, left.to_vec()),
-            (right_constant, right.to_vec()),
+            (left_constant, left.0.to_vec()),
+            (right_constant, right.0.to_vec()),
         ]);
 
         ElementwiseKernel {
@@ -1980,7 +2117,7 @@ mod tests {
                 name: "result".to_owned(),
                 source: output,
                 elements,
-                dimensions: vec![elements],
+                dimensions: vec![rows, columns],
             }],
             states: Vec::new(),
             input_slots: BTreeMap::new(),
@@ -1989,36 +2126,77 @@ mod tests {
         }
     }
 
-    fn assert_concat_cpu_wgsl_parity(left: &[f32], right: &[f32]) {
-        let program = concat_program(left, right);
-        let expected = left.iter().chain(right).copied().collect::<Vec<_>>();
+    fn assert_concat_cpu_wgsl_parity(
+        axis: ConcatenationAxis,
+        left: (&[f32], u64, u64),
+        right: (&[f32], u64, u64),
+        output: (u64, u64),
+        expected: &[f32],
+    ) {
+        let program = concat_program(axis, left, right, output.0, output.1);
         assert_eq!(
             program.run_cpu(&BTreeMap::new()).unwrap()["result"],
             expected
         );
 
-        let left_elements = left.len() as u64;
-        let elements = expected.len() as u64;
-        let wgsl = wgsl_concat2_instruction(
+        let inputs = [
+            ConcatenationInput {
+                source: ArtifactSource::Constant(ConstantId::new(0)),
+                rows: left.1,
+                columns: left.2,
+            },
+            ConcatenationInput {
+                source: ArtifactSource::Constant(ConstantId::new(1)),
+                rows: right.1,
+                columns: right.2,
+            },
+        ];
+        let wgsl = wgsl_concatenate_instruction(
             CellSlotId::new(0),
-            left_elements,
-            elements,
-            "left[index]",
-            "right[concat_index_0]",
+            axis,
+            &inputs,
+            output.0,
+            output.1,
+            |input, index| format!("source_{}[{index}]", input.source == inputs[1].source),
         );
-        assert!(wgsl.contains(&format!("if (index < {left_elements}u)")));
-        assert!(wgsl.contains(&format!("let concat_index_0 = index - {left_elements}u")));
-        assert!(wgsl.contains(&format!("else if (index < {elements}u)")));
-        assert!(wgsl.contains("right[concat_index_0]"));
+        assert!(wgsl.contains("concat_row_0"));
+        assert!(wgsl.contains("concat_column_0"));
+        assert!(wgsl.contains("source_false["));
+        assert!(wgsl.contains("source_true["));
     }
 
     #[test]
-    fn unequal_concatenation_has_cpu_wgsl_indexing_parity() {
-        assert_concat_cpu_wgsl_parity(&[1.0, 2.0], &[3.0, 4.0, 5.0]);
+    fn horizontal_concatenation_has_cpu_wgsl_indexing_parity() {
+        assert_concat_cpu_wgsl_parity(
+            ConcatenationAxis::Horizontal,
+            (&[1.0, 2.0], 2, 1),
+            (&[3.0, 4.0, 5.0, 6.0], 2, 2),
+            (2, 3),
+            &[1.0, 3.0, 4.0, 2.0, 5.0, 6.0],
+        );
     }
 
     #[test]
-    fn equal_concatenation_has_cpu_wgsl_indexing_parity() {
-        assert_concat_cpu_wgsl_parity(&[1.0, 2.0], &[3.0, 4.0]);
+    fn vertical_concatenation_has_cpu_wgsl_indexing_parity() {
+        assert_concat_cpu_wgsl_parity(
+            ConcatenationAxis::Vertical,
+            (&[1.0, 2.0], 1, 2),
+            (&[3.0, 4.0, 5.0, 6.0], 2, 2),
+            (3, 2),
+            &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+        );
+    }
+
+    #[test]
+    fn empty_concatenation_wgsl_does_not_divide_by_zero() {
+        let wgsl = wgsl_concatenate_instruction(
+            CellSlotId::new(0),
+            ConcatenationAxis::Horizontal,
+            &[],
+            0,
+            0,
+            |_, _| unreachable!("empty concatenation has no sources"),
+        );
+        assert_eq!(wgsl, "  var slot_0 = 0.0;\n");
     }
 }

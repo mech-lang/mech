@@ -2,7 +2,7 @@ use mech_core::{
     FunctionCatalogBuilder, MResult, RuntimeFunctionContract, RuntimeOutputAliasPolicy,
 };
 #[cfg(feature = "source")]
-use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -51,9 +51,9 @@ fn install_operation<T>(
     exposure: FunctionExposure,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
+    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),

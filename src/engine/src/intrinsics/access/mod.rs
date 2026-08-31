@@ -28,33 +28,78 @@ pub use self::table::*;
 #[cfg(feature = "tuple")]
 pub use self::tuple::*;
 
-#[cfg(any(
-    feature = "matrix",
-    feature = "table",
-    feature = "map",
-    feature = "string",
-    feature = "tuple",
-    feature = "record"
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(feature = "record", feature = "table")
 ))]
-use crate::ValueKind;
-#[cfg(all(feature = "native-plan", feature = "semantic-compiler"))]
+use crate::UndefinedRecordFieldError;
+#[cfg(all(feature = "semantic-compiler", feature = "table"))]
+use crate::UndefinedTableColumnError;
+#[cfg(feature = "semantic-compiler")]
+use crate::intrinsics::canonical_access::{
+    CanonicalAccessSelector, canonical_draft, canonical_indices,
+};
+#[cfg(feature = "semantic-compiler")]
 use crate::{
-    BytecodeCompilerContext, CompileConst, MechFunctionCompiler, Register, compile_register,
+    AccessMode, AliasPolicy, BytecodeCompilerContext, CanonicalFunctionSpecializer,
+    ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExternalInteraction, FunctionInstance,
+    FunctionInvocation, FunctionStatePort, FunctionValueRepresentation, GenericError,
+    InputPortLayout, InputPortPolicy, MechFunctionCompiler, MechFunctionImpl,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ReactiveNodeKind, Register,
+    SchemaBody, ShapeRule, SpecializationContext, SpecializationInput, SpecializationInvocation,
+    SpecializedFunction, ValueCell, ValueData, ValueDataDraft, compile_value_cell_register,
     hash_str,
 };
+use crate::{FunctionCatalogBuilder, MResult};
+#[cfg(all(feature = "native-plan", not(feature = "semantic-compiler")))]
+use crate::{
+    FunctionInvocation, FunctionValueOutput, FunctionValueRepresentation, MechFunction,
+    MechFunctionImpl, ValueCell,
+};
+#[cfg(all(feature = "native-plan", feature = "semantic-compiler"))]
+use crate::{FunctionValueOutput, MechFunction};
+#[cfg(feature = "semantic-compiler")]
+use crate::{IncorrectNumberOfArguments, MechError};
+
+#[cfg(feature = "semantic-compiler")]
+fn canonical_access_contract(input_count: usize, shape: ShapeRule) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                input_count
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite { shape },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+static PURE_CANONICAL_ACCESS_COPY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| canonical_access_contract(1, ShapeRule::SameAsInput { input: 0 }));
+#[cfg(feature = "semantic-compiler")]
+static PURE_CANONICAL_ACCESS_BINARY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| canonical_access_contract(2, ShapeRule::Declared));
+#[cfg(feature = "semantic-compiler")]
+static PURE_CANONICAL_ACCESS_TERNARY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| canonical_access_contract(3, ShapeRule::Declared));
 #[cfg(feature = "native-plan")]
 use crate::{
-    FunctionArgs, FunctionValueRepresentation, MechFunctionFactory, MechFunctionImpl,
-    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
+    MechFunctionFactory, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy,
 };
-use crate::{
-    FunctionCatalogBuilder, FunctionSpecializer, IncorrectNumberOfArguments, LegacyValue, MResult,
-    MechError, MechFunction, UnhandledFunctionArgumentKind2,
-};
-#[cfg(any(feature = "record", feature = "table"))]
-use crate::{MechTuple, Ref, UndefinedRecordFieldError};
-#[cfg(feature = "table")]
-use crate::{ToValue, UndefinedTableColumnError, UnhandledFunctionArgumentIxesMono};
 
 #[cfg(feature = "native-plan")]
 macro_rules! declare_structural_access_alias {
@@ -67,25 +112,17 @@ macro_rules! declare_structural_access_alias {
     ) => {
         #[derive(Debug)]
         struct $factory {
-            out: LegacyValue,
+            output: FunctionValueOutput,
         }
 
         impl MechFunctionFactory for $factory {
             const SIGNATURE: RuntimeFunctionSignature =
                 RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Nullary(out) => Ok(Box::new(Self { out })),
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 0,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                Ok(Box::new(Self {
+                    output: invocation.expect_nullary()?.value(),
+                }))
             }
         }
 
@@ -94,23 +131,23 @@ macro_rules! declare_structural_access_alias {
                 Ok(())
             }
 
-            fn out(&self) -> LegacyValue {
-                self.out.clone()
+            fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+                vec![self.output.cell().clone()]
             }
 
             fn to_string(&self) -> String {
                 format!("{self:#?}")
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
         }
 
         #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $factory {
+            fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+                vec![self.output.cell().clone()]
+            }
+
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let register = compile_register!(self.out, ctx);
+                let register = self.output.compile_register(ctx)?;
                 ctx.emit_nullop(hash_str($name), register);
                 Ok(register)
             }
@@ -176,43 +213,298 @@ pub(crate) fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResu
     Ok(())
 }
 
-#[cfg(feature = "matrix")]
-fn matrix_access_index_is_scalar(index: &LegacyValue) -> bool {
-    index.shape().as_slice() == [1, 1]
+pub struct AccessScalar {}
+
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
+fn canonical_matrix_dimensions(value: &ValueCell) -> MResult<(usize, usize)> {
+    let crate::SchemaBody::Matrix { dimensions, .. } = value.closed_schema_body()? else {
+        return Err(MechError::new(
+            crate::GenericError {
+                msg: "matrix access source does not have a matrix schema".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        unreachable!("closed matrix schemas have constant dimensions")
+    };
+    Ok((*rows as usize, *columns as usize))
 }
 
-#[cfg(feature = "matrix")]
-fn compile_matrix_access(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-    match arguments.get(1..).unwrap_or_default() {
-        [LegacyValue::IndexAll] => MatrixAccessAll {}.specialize(arguments),
-        [index] if matrix_access_index_is_scalar(index) => {
-            MatrixAccessScalar {}.specialize(arguments)
+#[cfg(feature = "semantic-compiler")]
+#[derive(Debug)]
+struct CanonicalAccess {
+    source: ValueCell,
+    selectors: Vec<CanonicalAccessSelector>,
+    output: ValueCell,
+    name: &'static str,
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionImpl for CanonicalAccess {
+    fn solve_result(&self) -> MResult<()> {
+        let next = canonical_access_result(&self.source, &self.selectors)?;
+        self.output.replace(&next.snapshot()?)
+    }
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(&self.output))
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_cell(&self.output)]))
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Combinational
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(match self.selector_cells().len() {
+            0 => &PURE_CANONICAL_ACCESS_COPY_CONTRACT,
+            1 => &PURE_CANONICAL_ACCESS_BINARY_CONTRACT,
+            2 => &PURE_CANONICAL_ACCESS_TERNARY_CONTRACT,
+            _ => unreachable!("canonical access supports at most two concrete selectors"),
+        })
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some(self.semantic_name())
+    }
+
+    fn to_string(&self) -> String {
+        self.name.to_owned()
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl CanonicalAccess {
+    fn selector_cells(&self) -> Vec<ValueCell> {
+        self.selectors
+            .iter()
+            .filter_map(|selector| match selector {
+                CanonicalAccessSelector::Cell(cell) => Some(cell.clone()),
+                CanonicalAccessSelector::All => None,
+            })
+            .collect()
+    }
+
+    fn semantic_name(&self) -> &'static str {
+        if self.selector_cells().is_empty() {
+            "core/assign"
+        } else if matches!(
+            self.output.representation(),
+            FunctionValueRepresentation::Matrix { .. }
+        ) {
+            "access/range"
+        } else {
+            "access/scalar"
         }
-        [_] => MatrixAccessRange {}.specialize(arguments),
-        [LegacyValue::IndexAll, index] if matrix_access_index_is_scalar(index) => {
-            MatrixAccessAllScalar {}.specialize(arguments)
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for CanonicalAccess {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        let mut cells = vec![self.output.clone(), self.source.clone()];
+        cells.extend(self.selector_cells());
+        cells
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = compile_value_cell_register(&self.output, context)?;
+        let source = compile_value_cell_register(&self.source, context)?;
+        let mut arguments = vec![source];
+        arguments.extend(
+            self.selector_cells()
+                .iter()
+                .map(|selector| compile_value_cell_register(selector, context))
+                .collect::<MResult<Vec<_>>>()?,
+        );
+        context.emit_varop(hash_str(self.semantic_name()), output, arguments);
+        Ok(output)
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn canonical_access_result(
+    source: &ValueCell,
+    selectors: &[CanonicalAccessSelector],
+) -> MResult<ValueCell> {
+    match source.closed_schema_body()? {
+        SchemaBody::Tuple(_) if selectors.len() == 1 => {
+            let values = source
+                .tuple_elements()?
+                .expect("tuple schema retains tuple values");
+            let index = canonical_indices(&selectors[0], values.len())?[0];
+            values[index].detached_clone()
         }
-        [LegacyValue::IndexAll, _] => MatrixAccessAllRange {}.specialize(arguments),
-        [index, LegacyValue::IndexAll] if matrix_access_index_is_scalar(index) => {
-            MatrixAccessScalarAll {}.specialize(arguments)
+        SchemaBody::Record(fields) if selectors.len() == 1 => {
+            let CanonicalAccessSelector::Cell(selector) = &selectors[0] else {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "record fields require an id selector".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            let ValueData::Id(field_id) = selector.snapshot()?.data().clone() else {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "record fields require an id selector".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            let index = fields
+                .iter()
+                .position(|field| hash_str(&field.name) == field_id)
+                .ok_or_else(|| {
+                    MechError::new(UndefinedRecordFieldError { id: field_id }, None)
+                        .with_compiler_loc()
+                })?;
+            let ValueDataDraft::Record(values) = canonical_draft(source)? else {
+                unreachable!()
+            };
+            ValueCell::from_schema_data(fields[index].schema.clone(), values[index].value.clone())
         }
-        [_, LegacyValue::IndexAll] => MatrixAccessRangeAll {}.specialize(arguments),
-        [left, right]
-            if matrix_access_index_is_scalar(left) && matrix_access_index_is_scalar(right) =>
-        {
-            MatrixAccessScalarScalar {}.specialize(arguments)
+        SchemaBody::Map { key, value, .. } if selectors.len() == 1 => {
+            let CanonicalAccessSelector::Cell(selector) = &selectors[0] else {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "map access requires a canonical key".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            let ValueDataDraft::Map(entries) = canonical_draft(source)? else {
+                unreachable!()
+            };
+            for entry in entries {
+                let [key_draft, value_draft] = entry.items.into_vec().try_into().map_err(|_| {
+                    MechError::new(
+                        GenericError {
+                            msg: "canonical map entry does not contain a key and value".to_owned(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+                let candidate = ValueCell::from_schema_data((*key).clone(), key_draft)?;
+                if candidate.snapshot_eq(selector)? {
+                    return ValueCell::from_schema_data((*value).clone(), value_draft);
+                }
+            }
+            Err(MechError::new(
+                GenericError {
+                    msg: "canonical map key is not present".to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc())
         }
-        [left, _] if matrix_access_index_is_scalar(left) => {
-            MatrixAccessScalarRange {}.specialize(arguments)
+        SchemaBody::Table { columns, .. } if selectors.len() == 1 => {
+            let CanonicalAccessSelector::Cell(selector) = &selectors[0] else {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "table columns require an id selector".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            let ValueData::Id(column_id) = selector.snapshot()?.data().clone() else {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "table columns require an id selector".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            let index = columns
+                .iter()
+                .position(|column| hash_str(&column.name) == column_id)
+                .ok_or_else(|| {
+                    MechError::new(UndefinedTableColumnError { id: column_id }, None)
+                        .with_compiler_loc()
+                })?;
+            let ValueDataDraft::Table(values) = canonical_draft(source)? else {
+                unreachable!()
+            };
+            let values = values[index].values.clone();
+            ValueCell::dynamic_matrix(
+                columns[index].schema.clone(),
+                vec![values.len() as u64, 1].into_boxed_slice(),
+                values,
+            )
         }
-        [_, right] if matrix_access_index_is_scalar(right) => {
-            MatrixAccessRangeScalar {}.specialize(arguments)
+        SchemaBody::String if selectors.len() == 1 => {
+            let index = canonical_indices(&selectors[0], usize::MAX)?[0];
+            let ValueData::String(value) = source.snapshot()?.data().clone() else {
+                unreachable!()
+            };
+            let grapheme = grapheme::Graphemes::from_usvs(&value)
+                .iter()
+                .nth(index)
+                .map(|value| value.as_str().to_owned())
+                .ok_or_else(|| {
+                    MechError::new(crate::intrinsics::IndexOutOfBoundsError, None)
+                        .with_compiler_loc()
+                })?;
+            ValueCell::from_exact(grapheme)
         }
-        [_, _] => MatrixAccessRangeRange {}.specialize(arguments),
-        _ => Err(MechError::new(
-            IncorrectNumberOfArguments {
-                expected: 1,
-                found: arguments.len(),
+        SchemaBody::Matrix { element, .. } if (1..=2).contains(&selectors.len()) => {
+            let (rows, columns) = canonical_matrix_dimensions(source)?;
+            let elements = source
+                .matrix_elements()?
+                .expect("matrix schema retains matrix values");
+            if selectors.len() == 1 {
+                let selected = canonical_indices(&selectors[0], rows.saturating_mul(columns))?;
+                let values = selected
+                    .iter()
+                    .map(|linear| {
+                        let row = linear % rows;
+                        let column = linear / rows;
+                        elements[row * columns + column].clone()
+                    })
+                    .collect::<Vec<_>>();
+                if selectors[0].is_scalar() {
+                    return values[0].detached_clone();
+                }
+                return ValueCell::dynamic_matrix_from_cells(values.len(), 1, &values);
+            }
+            let selected_rows = canonical_indices(&selectors[0], rows)?;
+            let selected_columns = canonical_indices(&selectors[1], columns)?;
+            if selectors[0].is_scalar() && selectors[1].is_scalar() {
+                return elements[selected_rows[0] * columns + selected_columns[0]].detached_clone();
+            }
+            let values = selected_rows
+                .iter()
+                .flat_map(|row| {
+                    selected_columns
+                        .iter()
+                        .map(|column| elements[*row * columns + *column].clone())
+                })
+                .collect::<Vec<_>>();
+            let _ = element;
+            ValueCell::dynamic_matrix_from_cells(
+                selected_rows.len(),
+                selected_columns.len(),
+                &values,
+            )
+        }
+        schema => Err(MechError::new(
+            GenericError {
+                msg: format!("canonical access is not implemented for schema {schema:?}"),
             },
             None,
         )
@@ -220,190 +512,219 @@ fn compile_matrix_access(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunct
     }
 }
 
-pub struct AccessScalar {}
-impl FunctionSpecializer for AccessScalar {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if !(2..=3).contains(&arguments.len()) {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let src = &arguments[0];
-        let index = &arguments[1];
-        match src.kind().deref_kind() {
-            #[cfg(feature = "matrix")]
-            ValueKind::Matrix(..) => compile_matrix_access(arguments),
-            #[cfg(feature = "table")]
-            ValueKind::Table(..) => TableAccessScalar {}.specialize(arguments),
-            #[cfg(feature = "map")]
-            ValueKind::Map(..) => MapAccess {}.specialize(arguments),
-            #[cfg(all(feature = "string", feature = "semantic-compiler"))]
-            ValueKind::String => StringAccessScalar {}.specialize(arguments),
-            #[cfg(feature = "tuple")]
-            ValueKind::Tuple(..) => TupleAccess {}.specialize(arguments),
-            _ => Err(MechError::new(
-                UnhandledFunctionArgumentKind2 {
-                    arg: (src.kind(), index.kind()),
-                    fxn_name: "access/scalar".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
-    }
-}
-
-pub struct AccessRange {}
-impl FunctionSpecializer for AccessRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if !(2..=3).contains(&arguments.len()) {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let src = &arguments[0];
-        let index = &arguments[1];
-        match src.kind().deref_kind() {
-            #[cfg(feature = "matrix")]
-            ValueKind::Matrix(..) => compile_matrix_access(arguments),
-            #[cfg(feature = "table")]
-            ValueKind::Table(..) => TableAccessRange {}.specialize(arguments),
-            _ => Err(MechError::new(
-                UnhandledFunctionArgumentKind2 {
-                    arg: (src.kind(), index.kind()),
-                    fxn_name: "access/range".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
-    }
-}
-
-pub struct AccessSwizzle {}
-impl FunctionSpecializer for AccessSwizzle {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() < 3 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let keys = &arguments[1..];
-        let src = &arguments[0];
-        match src {
-            #[cfg(feature = "record")]
-            LegacyValue::Record(rcrd) => {
-                let mut values = vec![];
-                for key in keys {
-                    let k = key.as_u64().unwrap().borrow().clone();
-                    match rcrd.borrow().get(&k) {
-                        Some(value) => values.push(value.clone()),
-                        None => {
-                            return Err(MechError::new(
-                                UndefinedRecordFieldError { id: k.clone() },
-                                None,
-                            )
-                            .with_compiler_loc());
-                        }
-                    }
-                }
-                Ok(Box::new(RecordAccessSwizzle {
-                    source: LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))),
-                }))
-            }
-            #[cfg(feature = "table")]
-            LegacyValue::Table(tbl) => {
-                let mut elements = vec![];
-                for k in keys {
-                    match k {
-                        LegacyValue::Id(k) => match tbl.borrow().get(&k) {
-                            Some((_, mat_values)) => {
-                                elements.push(Box::new(mat_values.to_value()));
-                            }
-                            None => {
-                                return Err(MechError::new(
-                                    UndefinedRecordFieldError { id: k.clone() },
-                                    None,
-                                )
-                                .with_compiler_loc());
-                            }
-                        },
-                        _ => {
-                            return Err(MechError::new(
-                                UnhandledFunctionArgumentIxesMono {
-                                    arg: (src.kind(), keys.iter().map(|x| x.kind()).collect()),
-                                    fxn_name: "access/swizzle".to_string(),
-                                },
-                                None,
-                            )
-                            .with_compiler_loc());
-                        }
-                    }
-                }
-                let tuple = LegacyValue::Tuple(Ref::new(MechTuple { elements }));
-                Ok(Box::new(TableAccessSwizzle { out: tuple }))
-            }
-            LegacyValue::MutableReference(r) => match &*r.borrow() {
-                #[cfg(feature = "record")]
-                LegacyValue::Record(rcrd) => {
-                    let mut values = vec![];
-                    for key in keys {
-                        let k = key.as_u64().unwrap().borrow().clone();
-                        match rcrd.borrow().get(&k) {
-                            Some(value) => values.push(value.clone()),
-                            None => {
-                                return Err(MechError::new(
-                                    UndefinedRecordFieldError { id: k.clone() },
-                                    None,
-                                )
-                                .with_compiler_loc());
-                            }
-                        }
-                    }
-                    Ok(Box::new(RecordAccessSwizzle {
-                        source: LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))),
-                    }))
-                }
-                #[cfg(feature = "table")]
-                LegacyValue::Table(tbl) => {
-                    let mut elements = vec![];
-                    for key in keys {
-                        let k = key.as_u64().unwrap().borrow().clone();
-                        match tbl.borrow().get(&k) {
-                            Some((_, mat_values)) => {
-                                elements.push(Box::new(mat_values.to_value()));
-                            }
-                            None => {
-                                return Err(MechError::new(
-                                    UndefinedTableColumnError { id: k.clone() },
-                                    None,
-                                )
-                                .with_compiler_loc());
-                            }
-                        }
-                    }
-                    let tuple = LegacyValue::Tuple(Ref::new(MechTuple { elements }));
-                    Ok(Box::new(TableAccessSwizzle { out: tuple }))
-                }
-                _ => todo!(),
+#[cfg(feature = "semantic-compiler")]
+fn canonical_access(
+    invocation: &SpecializationInvocation,
+    fallback_name: &'static str,
+) -> MResult<SpecializedFunction> {
+    if !(2..=3).contains(&invocation.len()) {
+        return Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: 2,
+                found: invocation.len(),
             },
-            _ => todo!(),
+            None,
+        )
+        .with_compiler_loc());
+    }
+    let source = invocation
+        .input(0)
+        .expect("validated access source")
+        .cell()?
+        .clone();
+    let selectors = invocation.inputs()[1..]
+        .iter()
+        .map(CanonicalAccessSelector::from_input)
+        .collect::<MResult<Vec<_>>>()?;
+    let name = match source.closed_schema_body()? {
+        SchemaBody::Tuple(_) => "TupleAccessElement",
+        SchemaBody::Record(_) => "RecordAccessField",
+        SchemaBody::Map { .. } => "MapAccessField",
+        SchemaBody::Table { .. } => "TableAccessColumn",
+        SchemaBody::String => "StringAccessScalar",
+        SchemaBody::Matrix { .. } => "MatrixAccessCanonical",
+        _ => fallback_name,
+    };
+    let output = canonical_access_result(&source, &selectors)?;
+    let inputs = std::iter::once(source.clone())
+        .chain(selectors.iter().filter_map(|selector| match selector {
+            CanonicalAccessSelector::Cell(cell) => Some(cell.clone()),
+            CanonicalAccessSelector::All => None,
+        }))
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    Ok(SpecializedFunction::new(FunctionInstance::new(
+        Box::new(CanonicalAccess {
+            source,
+            selectors,
+            output: output.clone(),
+            name,
+        }),
+        FunctionInvocation::variadic(output, inputs),
+    )))
+}
+
+#[cfg(feature = "semantic-compiler")]
+#[derive(Debug)]
+struct CanonicalSwizzle {
+    source: ValueCell,
+    selectors: Vec<CanonicalAccessSelector>,
+    output: ValueCell,
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl CanonicalSwizzle {
+    fn result(&self) -> MResult<ValueCell> {
+        let values = self
+            .selectors
+            .iter()
+            .map(|selector| canonical_access_result(&self.source, std::slice::from_ref(selector)))
+            .collect::<MResult<Vec<_>>>()?;
+        ValueCell::tuple_from_cells(&values)
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionImpl for CanonicalSwizzle {
+    fn solve_result(&self) -> MResult<()> {
+        self.output.replace(&self.result()?.snapshot()?)
+    }
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(&self.output))
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_cell(&self.output)]))
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Combinational
+    }
+
+    fn to_string(&self) -> String {
+        "CanonicalSwizzle".to_owned()
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for CanonicalSwizzle {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone(), self.source.clone()]
+    }
+
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Err(MechError::new(
+            GenericError {
+                msg: "canonical swizzle is not bytecode-compilable yet".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn canonical_swizzle(invocation: &SpecializationInvocation) -> MResult<SpecializedFunction> {
+    if invocation.len() < 2 {
+        return Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: 2,
+                found: invocation.len(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    let source = invocation
+        .input(0)
+        .expect("validated swizzle source")
+        .cell()?
+        .clone();
+    let selectors = invocation.inputs()[1..]
+        .iter()
+        .map(CanonicalAccessSelector::from_input)
+        .collect::<MResult<Vec<_>>>()?;
+    let implementation = CanonicalSwizzle {
+        source: source.clone(),
+        selectors,
+        output: ValueCell::unit(),
+    };
+    let output = implementation.result()?;
+    let inputs = invocation
+        .inputs()
+        .iter()
+        .map(SpecializationInput::cell)
+        .collect::<MResult<Vec<_>>>()?
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    Ok(SpecializedFunction::new(FunctionInstance::new(
+        Box::new(CanonicalSwizzle {
+            output: output.clone(),
+            ..implementation
+        }),
+        FunctionInvocation::variadic(output, inputs),
+    )))
+}
+
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
+fn canonical_matrix_access(
+    invocation: &SpecializationInvocation,
+    _context: &mut SpecializationContext<'_>,
+) -> MResult<SpecializedFunction> {
+    canonical_access(invocation, "MatrixAccessCanonical")
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl CanonicalFunctionSpecializer for AccessScalar {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        #[cfg(feature = "matrix")]
+        if invocation.input(0).is_some_and(|input| {
+            matches!(
+                input.representation(),
+                Some(FunctionValueRepresentation::Matrix { .. })
+            )
+        }) {
+            return canonical_matrix_access(invocation, context);
         }
+        canonical_access(invocation, "CanonicalScalarAccess")
+    }
+}
+pub struct AccessRange {}
+#[cfg(feature = "semantic-compiler")]
+impl CanonicalFunctionSpecializer for AccessRange {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        #[cfg(feature = "matrix")]
+        if invocation.input(0).is_some_and(|input| {
+            matches!(
+                input.representation(),
+                Some(FunctionValueRepresentation::Matrix { .. })
+            )
+        }) {
+            return canonical_matrix_access(invocation, context);
+        }
+        canonical_access(invocation, "CanonicalRangeAccess")
+    }
+}
+pub struct AccessSwizzle {}
+#[cfg(feature = "semantic-compiler")]
+impl CanonicalFunctionSpecializer for AccessSwizzle {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        canonical_swizzle(invocation)
     }
 }
 
@@ -411,58 +732,14 @@ impl FunctionSpecializer for AccessSwizzle {
 
 // Access Column
 
-pub fn impl_access_column_fxn(
-    source: LegacyValue,
-    key: LegacyValue,
-) -> MResult<Box<dyn MechFunction>> {
-    match source.kind().deref_kind() {
-        #[cfg(feature = "record")]
-        ValueKind::Record(_) => RecordAccess {}.specialize(&vec![source, key]),
-        #[cfg(feature = "map")]
-        ValueKind::Map(..) => MapAccess {}.specialize(&vec![source, key]),
-        #[cfg(feature = "table")]
-        ValueKind::Table(_, _) => TableAccessColumn {}.specialize(&vec![source, key]),
-        _ => Err(MechError::new(
-            UnhandledFunctionArgumentKind2 {
-                arg: (source.kind(), key.kind()),
-                fxn_name: "access/column".to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
-}
-
 pub struct AccessColumn {}
-impl FunctionSpecializer for AccessColumn {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 2 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let src = arguments[0].clone();
-        let key = arguments[1].clone();
-        match impl_access_column_fxn(src.clone(), key.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (src.clone(), &key.clone()) {
-                (LegacyValue::MutableReference(src), _) => {
-                    impl_access_column_fxn(src.borrow().clone(), key.clone())
-                }
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentKind2 {
-                        arg: (src.kind(), key.kind()),
-                        fxn_name: "access/column".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
+#[cfg(feature = "semantic-compiler")]
+impl CanonicalFunctionSpecializer for AccessColumn {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        canonical_access(invocation, "CanonicalColumnAccess")
     }
 }

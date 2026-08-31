@@ -1,7 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
-
 // Equal ---------------------------------------------------------------
 
 macro_rules! eq_scalar_lhs_op {
@@ -107,8 +104,8 @@ impl_compare_fxns!(EQ);
 #[cfg(feature = "atom")]
 #[derive(Debug)]
 pub struct AtomEq {
-    pub lhs: Ref<MechAtom>,
-    pub rhs: Ref<MechAtom>,
+    lhs: FunctionValueInput,
+    rhs: FunctionValueInput,
     pub out: Ref<bool>,
 }
 #[cfg(feature = "atom")]
@@ -119,45 +116,29 @@ impl MechFunctionFactory for AtomEq {
         FunctionValueRepresentation::Atom,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechAtom> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<MechAtom> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(AtomEq { lhs, rhs, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs = lhs.value();
+        let rhs = rhs.value();
+        let out: Ref<bool> = out.try_ref()?;
+        Ok(Box::new(AtomEq { lhs, rhs, out }))
     }
 }
 #[cfg(feature = "atom")]
 impl MechFunctionImpl for AtomEq {
     fn solve_result(&self) -> MResult<()> {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_mut_ptr();
-        unsafe {
-            *out_ptr = (*lhs_ptr) == (*rhs_ptr);
-        };
+        let next = self.lhs.snapshot_eq(&self.rhs)?;
+        *self.out.borrow_mut() = next;
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "atom")]
@@ -165,15 +146,19 @@ impl MechFunctionImpl for AtomEq {
 impl MechFunctionCompiler for AtomEq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("AtomEq");
-        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
+        let destination = compile_register_brrw!(self.out, ctx);
+        let lhs = self.lhs.compile_register(ctx)?;
+        let rhs = self.rhs.compile_register(ctx)?;
+        ctx.emit_binop(hash_str(&name), destination, lhs, rhs);
+        Ok(destination)
     }
 }
 
 #[cfg(feature = "table")]
 #[derive(Debug)]
 pub struct TableEq {
-    pub lhs: Ref<MechTable>,
-    pub rhs: Ref<MechTable>,
+    lhs: FunctionValueInput,
+    rhs: FunctionValueInput,
     pub out: Ref<bool>,
 }
 #[cfg(feature = "table")]
@@ -184,45 +169,29 @@ impl MechFunctionFactory for TableEq {
         FunctionValueRepresentation::Table,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechTable> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<MechTable> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(TableEq { lhs, rhs, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs = lhs.value();
+        let rhs = rhs.value();
+        let out: Ref<bool> = out.try_ref()?;
+        Ok(Box::new(TableEq { lhs, rhs, out }))
     }
 }
 #[cfg(feature = "table")]
 impl MechFunctionImpl for TableEq {
     fn solve_result(&self) -> MResult<()> {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_mut_ptr();
-        unsafe {
-            *out_ptr = (*lhs_ptr) == (*rhs_ptr);
-        };
+        let next = self.lhs.snapshot_eq(&self.rhs)?;
+        *self.out.borrow_mut() = next;
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
 #[cfg(feature = "table")]
@@ -230,52 +199,239 @@ impl MechFunctionImpl for TableEq {
 impl MechFunctionCompiler for TableEq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableEq");
-        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
+        let destination = compile_register_brrw!(self.out, ctx);
+        let lhs = self.lhs.compile_register(ctx)?;
+        let rhs = self.rhs.compile_register(ctx)?;
+        ctx.emit_binop(hash_str(&name), destination, lhs, rhs);
+        Ok(destination)
     }
 }
 
 #[cfg(feature = "source")]
-fn impl_eq_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    match (&lhs_value, &rhs_value) {
-        #[cfg(all(feature = "table"))]
-        (LegacyValue::Table(lhs), LegacyValue::Table(rhs)) => {
-            return Ok(Box::new(TableEq {
-                lhs: lhs.clone(),
-                rhs: rhs.clone(),
-                out: Ref::new(false),
-            }));
+pub struct CompareEqual;
+
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for CompareEqual {
+    fn specialize_invocation(
+        &self,
+        specialization: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if specialization.len() != 2 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: specialization.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
+        let lhs = specialization.input(0).expect("validated comparison lhs");
+        let rhs = specialization.input(1).expect("validated comparison rhs");
+
         #[cfg(feature = "atom")]
-        (LegacyValue::Atom(lhs), LegacyValue::Atom(rhs)) => {
-            return Ok(Box::new(AtomEq {
-                lhs: lhs.clone(),
-                rhs: rhs.clone(),
-                out: Ref::new(false),
-            }));
+        if lhs.representation() == Some(FunctionValueRepresentation::Atom)
+            && rhs.representation() == Some(FunctionValueRepresentation::Atom)
+        {
+            return SpecializedFunction::bind_factory::<AtomEq>(
+                ValueCell::from_exact(false)?,
+                vec![lhs.cell()?.clone(), rhs.cell()?.clone()].into_boxed_slice(),
+            );
         }
-        _ => (),
+        #[cfg(feature = "table")]
+        if lhs.representation() == Some(FunctionValueRepresentation::Table)
+            && rhs.representation() == Some(FunctionValueRepresentation::Table)
+        {
+            return SpecializedFunction::bind_factory::<TableEq>(
+                ValueCell::from_exact(false)?,
+                vec![lhs.cell()?.clone(), rhs.cell()?.clone()].into_boxed_slice(),
+            );
+        }
+
+        try_compare_binary_factories!(eq, lhs, rhs, EQ);
+        Err(MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Input(0),
+                expected: "matching supported comparison inputs".into(),
+                found: format!(
+                    "{:?} and {:?}",
+                    lhs.representation(),
+                    rhs.representation(),
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc())
     }
-    impl_binop_match_arms!(
-      EQ,
-      (lhs_value, rhs_value),
-      Bool, bool, "bool";
-      I8,   bool, "i8";
-      I16,  bool, "i16";
-      I32,  bool, "i32";
-      I64,  bool, "i64";
-      I128, bool, "i128";
-      U8,   bool, "u8";
-      U16,  bool, "u16";
-      U32,  bool, "u32";
-      U64,  bool, "u64";
-      U128, bool, "u128";
-      F32,  bool, "f32";
-      F64,  bool, "f64";
-      String, bool, "string";
-      R64, bool, "rational";
-      C64, bool, "complex";
-    )
 }
 
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(CompareEqual, impl_eq_fxn, "compare/eq");
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "f64",
+    feature = "bool",
+    feature = "matrix2",
+    feature = "matrixd",
+    feature = "atom",
+    feature = "table"
+))]
+mod invocation_port_tests {
+    use super::*;
+    use mech_core::snapshot::*;
+    use nalgebra::{DMatrix, Matrix2};
+    use std::rc::Rc;
+
+    fn canonical_value(body: SchemaBody, data: ValueDataDraft) -> ValueCell {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body,
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data,
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        ValueCell::from_value(value, Rc::new(schemas)).unwrap()
+    }
+
+    fn canonical_bool_output() -> (Ref<bool>, ValueCell) {
+        let reference = Ref::new(false);
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Bool,
+        }
+        .finalize()
+        .unwrap();
+        let shape = schema.instantiate_shape(Box::new([])).unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let cell = ValueCell::from_ref(reference.clone(), schema, shape, Rc::new(schemas)).unwrap();
+        (reference, cell)
+    }
+
+    #[test]
+    fn scalar_comparison_uses_exact_ports_identity_and_state() {
+        let output = ValueCell::from_exact(false).unwrap();
+        let alias = output.clone();
+        let function = EQSS::<f64>::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            ValueCell::from_exact(3.0_f64).unwrap(),
+            ValueCell::from_exact(3.0_f64).unwrap(),
+        ))
+        .unwrap();
+        function.solve_result().unwrap();
+        assert!(matches!(output.snapshot().unwrap().data(), ValueData::Bool(true)));
+        assert!(output.same_cell(&alias));
+        assert_eq!(
+            function.reactive_output_cell_ids(),
+            vec![output.reactive_cell_id()]
+        );
+
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            output.replace(&ValueCell::from_exact(false)?.snapshot()?)?;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert!(matches!(output.snapshot().unwrap().data(), ValueData::Bool(true)));
+    }
+
+    #[test]
+    fn fixed_and_dynamic_comparisons_preserve_exact_storage() {
+        let lhs = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
+        let rhs = Ref::new(Matrix2::new(1.0_f64, 0.0, 3.0, 5.0));
+        let out = Ref::new(Matrix2::from_element(false));
+        EQM2M2::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(lhs, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(rhs, 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(*out.borrow(), Matrix2::new(true, false, true, false));
+
+        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(1, 2, &[1.0_f64, 2.0]));
+        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(1, 2, &[1.0_f64, 0.0]));
+        let dynamic_out = Ref::new(DMatrix::from_element(1, 2, false));
+        let function = EQMDMD::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 1, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic_lhs, 1, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic_rhs, 1, 2).unwrap(),
+        ))
+        .unwrap();
+        function.solve_result().unwrap();
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            *dynamic_out.borrow_mut() = DMatrix::from_element(2, 1, false);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            *dynamic_out.borrow(),
+            DMatrix::from_row_slice(1, 2, &[true, false])
+        );
+    }
+
+    #[test]
+    fn comparison_rejects_wrong_exact_types_and_layouts() {
+        assert!(EQSS::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact(false).unwrap(),
+            ValueCell::from_exact(1.0_f64).unwrap(),
+            ValueCell::from_exact(1_usize).unwrap(),
+        ))
+        .is_err());
+        assert!(EQSS::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact(false).unwrap(),
+            ValueCell::from_exact(1.0_f64).unwrap(),
+        ))
+        .is_err());
+    }
+
+    #[test]
+    fn atom_and_table_comparisons_use_canonical_snapshots() {
+        let nominal = NominalKey::from_bytes([9; 32]);
+        let (atom_out, atom_output) = canonical_bool_output();
+        AtomEq::new_invocation(FunctionInvocation::binary(
+            atom_output,
+            canonical_value(SchemaBody::Atom(nominal), ValueDataDraft::Atom),
+            canonical_value(SchemaBody::Atom(nominal), ValueDataDraft::Atom),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert!(*atom_out.borrow());
+
+        let table_body = SchemaBody::Table {
+            columns: Box::new([]),
+            rows: CardinalitySpec::Exact(DimensionExpr::Constant(0)),
+        };
+        let (table_out, table_output) = canonical_bool_output();
+        TableEq::new_invocation(FunctionInvocation::binary(
+            table_output,
+            canonical_value(table_body.clone(), ValueDataDraft::Table(Box::new([]))),
+            canonical_value(table_body, ValueDataDraft::Table(Box::new([]))),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert!(*table_out.borrow());
+    }
+}

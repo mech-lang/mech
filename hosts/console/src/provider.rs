@@ -2,15 +2,15 @@ use std::sync::{Arc, LazyLock, Mutex};
 
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
-    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult,
-    OperationContractDeclaration,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
+    OperationContractDeclaration, Value, ValueData,
 };
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
     RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-    materialize_host_manifest,
+    RuntimeValueSnapshot, materialize_host_manifest,
 };
 
 use crate::{console_error, console_host_manifest};
@@ -121,7 +121,7 @@ impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourcePro
         vec![vec![self.base(), "console://output".to_string()]]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         Err(console_error(
             request.base_uri,
             "console output is send-only and cannot be read",
@@ -202,10 +202,12 @@ impl<B: ConsoleBackend> RuntimeAfterCommitEffect for ConsoleOutputEffect<B> {
     }
 }
 
-fn value_to_text(value: &LegacyValue) -> String {
-    match value {
-        LegacyValue::String(value) => value.borrow().clone(),
-        other => format!("{}", other),
+fn value_to_text(value: &Value) -> String {
+    match value.data() {
+        ValueData::String(value) => value.to_string(),
+        _ => RuntimeValueSnapshot::from_value(value.clone())
+            .expect("resource writes carry a validated canonical value")
+            .format_canonical_inline(),
     }
 }
 

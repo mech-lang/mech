@@ -1,10 +1,11 @@
+use crate::canonical::{ArbitraryInput, SetInput, SetOutput};
+#[cfg(feature = "source")]
+use crate::canonical::specialize_dynamic_set;
 use crate::*;
-
-use mech_core::set::MechSet;
 use std::sync::LazyLock;
 
-static PURE_SET_REMOVE_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
+static PURE_SET_REMOVE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![
                 InputPortPolicy {
@@ -29,68 +30,48 @@ static PURE_SET_REMOVE_CONTRACT: LazyLock<OperationContractDeclaration> =
         }]
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
-    });
-
-// Remove ------------------------------------------------------------------------
+    }
+});
 
 #[derive(Debug)]
 pub(crate) struct SetRemoveFxn {
-    arg1: Ref<MechSet>,
-    arg2: LegacyValue,
-    out: Ref<MechSet>,
+    arg1: SetInput,
+    arg2: ArbitraryInput,
+    out: SetOutput,
 }
+
 impl MechFunctionFactory for SetRemoveFxn {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::AnyValue,
     );
+    const OUTPUT_SCHEMA_RULE: FunctionOutputSchemaRule =
+        FunctionOutputSchemaRule::DynamicSetLikeInput(0);
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let arg1: Ref<MechSet> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let arg2 = normalize_set_element(arg2);
-                let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(SetRemoveFxn { arg1, arg2, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, set, element) = invocation.expect_binary()?;
+        Ok(Box::new(Self {
+            arg1: SetInput::canonical(set)?,
+            arg2: ArbitraryInput::canonical(element),
+            out: SetOutput::canonical(out)?,
+        }))
     }
 }
+
 impl MechFunctionImpl for SetRemoveFxn {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            // Get mutable reference to the output set
-            let out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
-
-            // Get references to arg1 and arg2 sets
-            let set_ptr: &MechSet = &*(self.arg1.as_ptr());
-            let elem_ptr = &self.arg2;
-
-            // Clear the output set first (optional, depending on semantics)
-            out_ptr.set.clear();
-
-            // Remove arg2 into arg1
-            if set_ptr.kind == elem_ptr.kind() {
-                out_ptr.set = set_ptr.set.clone();
-                out_ptr.set.shift_remove(elem_ptr);
-            }
-            // Update metadata
-            out_ptr.sync_cardinality_from_contents();
-            out_ptr.kind = set_ptr.kind.clone();
-        };
-        Ok(())
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        self.out.primary_state_port()
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Set(self.out.clone())
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        self.out.transaction_state_ports()
+    }
+    fn solve_result(&self) -> MResult<()> {
+        self.out.canonical_value().replace_set(
+            self.arg1
+                .canonical_value()
+                .set_elements_after_remove(self.arg2.canonical_value())?,
+        )
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_SET_REMOVE_CONTRACT)
@@ -98,83 +79,29 @@ impl MechFunctionImpl for SetRemoveFxn {
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
 }
+
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetRemoveFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let destination = compile_register_brrw!(self.out, ctx);
-        let set = compile_register_brrw!(self.arg1, ctx);
-        let element =
-            compile_value_register(&self.arg2, core::ptr::from_ref(&self.arg2).addr(), ctx)?;
+        let destination = self.out.compile_register(ctx)?;
+        let set = self.arg1.compile_register(ctx)?;
+        let element = self.arg2.compile_register(ctx)?;
         ctx.emit_binop(hash_str("SetRemoveFxn"), destination, set, element);
         Ok(destination)
     }
 }
 
 #[cfg(feature = "source")]
-fn set_remove_fxn(arg1: LegacyValue, arg2: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    match (arg1, arg2) {
-        (LegacyValue::Set(arg1), arg2) => Ok(Box::new(SetRemoveFxn {
-            arg1: arg1.clone(),
-            arg2: normalize_set_element(arg2),
-            out: Ref::new(MechSet::new(
-                arg1.borrow().kind.clone(),
-                arg1.borrow().num_elements + 1,
-            )),
-        })),
-        x => Err(MechError::new(
-            UnhandledFunctionArgumentKind2 {
-                arg: (x.0.kind(), x.1.kind()),
-                fxn_name: "set/remove".to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
-}
+pub struct SetRemove {}
 
 #[cfg(feature = "source")]
-pub struct SetRemove {}
-#[cfg(feature = "source")]
-impl FunctionSpecializer for SetRemove {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 2 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let arg1 = arguments[0].clone();
-        let arg2 = arguments[1].clone();
-        match set_remove_fxn(arg1.clone(), arg2.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (arg1, arg2) {
-                (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
-                    set_remove_fxn(arg1.borrow().clone(), arg2.borrow().clone())
-                }
-                (arg1, LegacyValue::MutableReference(arg2)) => {
-                    set_remove_fxn(arg1.clone(), arg2.borrow().clone())
-                }
-                (LegacyValue::MutableReference(arg1), arg2) => {
-                    set_remove_fxn(arg1.borrow().clone(), arg2.clone())
-                }
-                x => Err(MechError::new(
-                    UnhandledFunctionArgumentKind2 {
-                        arg: (x.0.kind(), x.1.kind()),
-                        fxn_name: "set/remove".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
+impl CanonicalFunctionSpecializer for SetRemove {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        specialize_dynamic_set::<SetRemoveFxn>(invocation)
     }
 }

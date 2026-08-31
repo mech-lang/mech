@@ -14,22 +14,8 @@ case "$mode" in
     ;;
 esac
 
-baseline_manifest="$repository_root/tests/fixtures/function-system-baseline/Cargo.toml"
-baseline_target="$scratch/baseline-target"
-
 check_surface() {
-  CARGO_PROFILE_DEV_DEBUG=0 cargo +nightly-2026-03-03 run \
-    --manifest-path "$baseline_manifest" \
-    --target-dir "$baseline_target" \
-    -- \
-    --check "$repository_root/tests/architecture/function-system"
-
-  CARGO_PROFILE_DEV_DEBUG=0 cargo +nightly-2026-03-03 run \
-    --manifest-path "$baseline_manifest" \
-    --target-dir "$baseline_target" \
-    --no-default-features \
-    -- \
-    --check-runtime "$repository_root/tests/architecture/function-system"
+  bash "$repository_root/scripts/check-static-distribution-profiles.sh" static
 }
 
 check_machines() {
@@ -38,6 +24,11 @@ check_machines() {
 
 check_source() {
   bash "$repository_root/scripts/check-static-distribution-profiles.sh" full-source
+  cargo +nightly-2026-03-03 test --locked \
+    --manifest-path "$repository_root/src/stdlib/Cargo.toml" \
+    --no-default-features \
+    --features full_compiler,matrix2,vector2 \
+    --test specialization_contract
 }
 
 check_consumer() {
@@ -47,7 +38,6 @@ check_consumer() {
 case "$mode" in
   all)
     check_surface
-    rm -rf "$baseline_target"
     check_machines
     check_source
     check_consumer

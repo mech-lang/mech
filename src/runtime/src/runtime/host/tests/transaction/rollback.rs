@@ -5,10 +5,15 @@ use crate::{
     PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, RuntimeHealth,
     RuntimeInvalidOperationError, RuntimeValueSnapshot,
 };
-use mech_core::{LegacyValue, MechError, Ref};
+use mech_core::MechError;
 
-fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
-    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+fn scalar_snapshot(value: f64) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::from_value(
+        crate::RuntimeHostInputValue::F64(value)
+            .into_value()
+            .unwrap(),
+    )
+    .unwrap()
 }
 
 #[test]
@@ -16,7 +21,7 @@ fn pure_host_panic_is_contained_without_poisoning_runtime() {
     let mut runtime = test_runtime_builder()
         .host_function(PlannedPureHostFunction::new(
             "sealed/pure-panic",
-            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(scalar_snapshot(1.0)),
             |_context, _arguments| {
                 panic!("deliberate pure host panic");
             },
@@ -40,7 +45,7 @@ fn runtime_managed_host_panic_is_an_ordinary_rollback_failure() {
     let mut runtime = MechRuntime::builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "sealed/managed-panic",
-            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(scalar_snapshot(1.0)),
             |_services, _context, _arguments| {
                 panic!("deliberate runtime-managed host panic");
             },
@@ -64,7 +69,7 @@ fn runtime_managed_host_error_stays_contained_and_cleans_transaction_state() {
     let mut runtime = MechRuntime::builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "sealed/managed-error",
-            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(scalar_snapshot(1.0)),
             |_services, _context, _arguments| {
                 Err(MechError::new(
                     RuntimeInvalidOperationError {
@@ -95,7 +100,7 @@ fn staged_host_prepare_panic_stages_no_effect() {
     let mut runtime = MechRuntime::builder()
         .host_function(PlannedStagedHostFunction::new(
             "sealed/staged-panic",
-            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(scalar_snapshot(1.0)),
             |_context, _arguments| {
                 panic!("deliberate staged host prepare panic");
             },

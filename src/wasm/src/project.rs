@@ -2563,23 +2563,22 @@ pub(super) fn rendered_value(
     snapshot: mech_runtime::RuntimeValueSnapshot,
     max_elements: usize,
 ) -> Result<JsValue, JsValue> {
-    let value = snapshot.into_value();
     let rendered = Object::new();
     Reflect::set(
         &rendered,
         &JsValue::from_str("kind"),
-        &JsValue::from_str(&value.format_kind_with_element_limit(max_elements)),
+        &JsValue::from_str(&snapshot.kind().to_string()),
     )?;
     Reflect::set(
         &rendered,
         &JsValue::from_str("blockHtml"),
-        &JsValue::from_str(&value.to_html_with_element_limit(max_elements)),
+        &JsValue::from_str(&snapshot.format_repl_html(max_elements)),
     )?;
     Reflect::set(
         &rendered,
         &JsValue::from_str("inlineHtml"),
         &JsValue::from_str(&mech_core::escape_html_text(
-            &value.format_canonical_inline_with_element_limit(max_elements),
+            &snapshot.format_repl_inline(max_elements),
         )),
     )?;
     Ok(rendered.into())
@@ -3198,10 +3197,10 @@ mod tests {
 
         run_project_sources(&mut runtime, &document).unwrap();
         assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
-        assert_eq!(
-            runtime.root_symbol_value("greeting").unwrap().into_value(),
-            mech_core::LegacyValue::String(mech_core::Ref::new("Hello, Ada".to_string())),
-        );
+        assert!(matches!(
+            runtime.root_symbol_value("greeting").unwrap().value().data(),
+            mech_core::ValueData::String(value) if value.as_ref() == "Hello, Ada"
+        ));
     }
 
     #[test]
@@ -3351,9 +3350,11 @@ phase"#;
         );
         document.repl.session.select_value(
             "another-output",
-            mech_runtime::RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(
-                mech_core::Ref::new(7.0),
-            ))
+            mech_runtime::RuntimeValueSnapshot::from_value(
+                mech_runtime::RuntimeHostInputValue::F64(7.0)
+                    .into_value()
+                    .unwrap(),
+            )
             .unwrap(),
         );
         assert_eq!(
@@ -3457,12 +3458,8 @@ phase"#;
     }
 
     fn assert_f64(value: mech_runtime::RuntimeValueSnapshot, expected: f64) {
-        match value.into_value() {
-            mech_core::LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
-            mech_core::LegacyValue::MutableReference(value) => match &*value.borrow() {
-                mech_core::LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
-                other => panic!("expected f64 value, got {other:?}"),
-            },
+        match value.value().data() {
+            mech_core::ValueData::F64(value) => assert_eq!(value.to_f64(), expected),
             other => panic!("expected f64 value, got {other:?}"),
         }
     }
@@ -4430,6 +4427,15 @@ rows := |id<string> x<f64>|
                 .fixed_shape_storage()
                 .expect("EKF must lower to a fixed-shape kernel");
             assert_eq!(
+                storage
+                    .inputs
+                    .iter()
+                    .map(|input| input.name.as_ref())
+                    .collect::<std::collections::BTreeSet<_>>(),
+                std::collections::BTreeSet::from(["camera", "control", "measurement"]),
+                "the fixed-shape kernel must retain every declared activation input",
+            );
+            assert_eq!(
                 storage.instances, 1_000,
                 "the browser EKF must execute 1,000 independent filter lanes",
             );
@@ -5151,16 +5157,6 @@ mod browser_tests {
         mech_core::nodes::compress_and_encode(&tree).unwrap()
     }
 
-    fn assert_resident_rejection<T>(result: Result<T, JsValue>, expected: &str) {
-        let error = match result {
-            Ok(_) => panic!("expected resident production admission to reject the program"),
-            Err(error) => error,
-        };
-        let message = error.as_string().unwrap_or_else(|| format!("{error:?}"));
-        assert!(message.contains("ResidentRouteFailure"), "{message}");
-        assert!(message.contains(expected), "{message}");
-    }
-
     #[cfg(feature = "served_project_authority")]
     fn served_document_authority() -> BrowserRuntimeInjectionConfig {
         BrowserRuntimeInjectionConfig {
@@ -5375,9 +5371,11 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn wasm_inline_values_use_html_escaped_canonical_mech_strings() {
-        let value = mech_core::LegacyValue::String(mech_core::Ref::new(
-            "a\"b\\c\nα\u{2028}line\u{2029}paragraph".to_string(),
-        ));
+        let value =
+            mech_core::ValueCell::from_exact("a\"b\\c\nα\u{2028}line\u{2029}paragraph".to_string())
+                .unwrap()
+                .snapshot()
+                .unwrap();
         let snapshot = mech_runtime::RuntimeValueSnapshot::try_from(value).unwrap();
         let rendered = rendered_value(snapshot, 500).unwrap();
         assert_eq!(
@@ -5819,7 +5817,7 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn generic_timer_table_scene_is_excluded_from_the_resident_browser_product() {
+    fn generic_timer_table_scene_is_supported_by_the_resident_browser_product() {
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
         let canvas = document.create_element("canvas").unwrap();
@@ -5836,10 +5834,8 @@ mod browser_tests {
             )),
         )
         .unwrap();
-        assert_resident_rejection(
-            WasmProject::from_sources(config, sources.into()),
-            "SemanticUnsupported",
-        );
+        let project = WasmProject::from_sources(config, sources.into());
+        assert!(project.is_ok());
         canvas.remove();
     }
 }

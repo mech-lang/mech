@@ -1,180 +1,256 @@
-#[cfg(feature = "set")]
-pub use crate::intrinsics::constructors::ValueSet;
 use crate::*;
-#[cfg(any(feature = "map", feature = "record", feature = "table"))]
-use indexmap::map::IndexMap;
-#[cfg(feature = "kind_annotation")]
-use mech_core::kind::Kind;
-#[cfg(feature = "matrix")]
-use mech_core::matrix::Matrix;
 #[cfg(feature = "matrix")]
 use mech_core::nodes::Matrix as Mat;
-#[cfg(any(feature = "record", feature = "table"))]
-use std::collections::HashMap;
-#[cfg(feature = "set")]
-use std::collections::HashSet;
+#[cfg(feature = "enum")]
+use mech_core::snapshot::EnumDraft;
+#[cfg(feature = "map")]
+use mech_core::snapshot::MapEntryDraft;
+#[cfg(any(feature = "matrix", feature = "set"))]
+use mech_core::snapshot::OptionDraft;
 
-// Structures
-// ----------------------------------------------------------------------------
+#[cfg(any(
+    feature = "tuple",
+    feature = "map",
+    feature = "record",
+    feature = "set",
+    feature = "table",
+    feature = "matrix"
+))]
+fn snapshot_draft(cell: &ValueCell) -> MResult<ValueDataDraft> {
+    cell.snapshot()?.canonical_data_draft().map_err(|error| {
+        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+    })
+}
 
-#[cfg(feature = "set")]
-fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<ValueKind> {
-    fn optionalize(kind: ValueKind) -> ValueKind {
-        match kind {
-            ValueKind::Empty => ValueKind::Empty,
-            ValueKind::Option(_) => kind,
-            other => ValueKind::Option(Box::new(other)),
-        }
+#[cfg(any(
+    feature = "tuple",
+    feature = "map",
+    feature = "record",
+    feature = "table"
+))]
+fn required_cell(input: SpecializationInput, context: &'static str) -> MResult<ValueCell> {
+    input.cell().cloned().map_err(|error| {
+        MechError::new(
+            CanonicalAggregateSourceAbsence { context },
+            Some(format!("{error:?}")),
+        )
+        .with_compiler_loc()
+    })
+}
+
+#[cfg(any(
+    feature = "tuple",
+    feature = "map",
+    feature = "record",
+    feature = "table"
+))]
+fn expression_value(
+    expression_node: &Expression,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+    context: &'static str,
+) -> MResult<ValueCell> {
+    required_cell(expression(expression_node, env, p)?, context)
+}
+
+#[cfg(feature = "tuple")]
+struct CanonicalTuplePack {
+    output: ValueCell,
+    elements: Box<[ValueCell]>,
+}
+
+#[cfg(feature = "tuple")]
+impl CanonicalTuplePack {
+    fn next_value(&self) -> MResult<mech_core::Value> {
+        self.output.rebuild_tuple_cells(&self.elements)
+    }
+}
+
+#[cfg(feature = "tuple")]
+impl MechFunctionImpl for CanonicalTuplePack {
+    fn solve_result(&self) -> MResult<()> {
+        self.output.replace(&self.next_value()?)
     }
 
-    fn join_set_element_kinds_inner(
-        expected: &ValueKind,
-        actual: &ValueKind,
-        seen: &mut HashSet<(ValueKind, ValueKind)>,
-    ) -> Option<ValueKind> {
-        // Guard against recursive/cyclic revisits for empty/optional normalization.
-        let key = (expected.clone(), actual.clone());
-        if !seen.insert(key.clone()) {
-            return if expected == actual {
-                Some(expected.clone())
-            } else {
-                None
-            };
-        }
-
-        let out = match (expected, actual) {
-            (a, b) if a == b => Some(a.clone()),
-            (ValueKind::Empty, ValueKind::Empty) => Some(ValueKind::Empty),
-            (ValueKind::Empty, other) | (other, ValueKind::Empty) => {
-                Some(optionalize(other.clone()))
-            }
-            (ValueKind::Option(a), ValueKind::Option(b)) if a == b => {
-                Some(ValueKind::Option(a.clone()))
-            }
-            (ValueKind::Option(a), ValueKind::Option(b)) => {
-                join_set_element_kinds_inner(a, b, seen).map(optionalize)
-            }
-            (ValueKind::Option(a), b) | (b, ValueKind::Option(a)) => {
-                if a.as_ref() == b {
-                    Some(ValueKind::Option(a.clone()))
-                } else {
-                    join_set_element_kinds_inner(a, b, seen).map(optionalize)
-                }
-            }
-            (ValueKind::Set(a, _), ValueKind::Set(b, _)) => {
-                join_set_element_kinds_inner(a, b, seen).map(|k| ValueKind::Set(Box::new(k), None))
-            }
-            (ValueKind::Record(a_fields), ValueKind::Record(b_fields)) => {
-                let mut out = Vec::new();
-                let mut names: Vec<std::string::String> =
-                    a_fields.iter().map(|(n, _)| n.clone()).collect();
-                for (name, _) in b_fields.iter() {
-                    if !names.contains(name) {
-                        names.push(name.clone());
-                    }
-                }
-                for name in names {
-                    let a_kind = a_fields
-                        .iter()
-                        .find(|(n, _)| n == &name)
-                        .map(|(_, k)| k.clone())
-                        .unwrap_or(ValueKind::Empty);
-                    let b_kind = b_fields
-                        .iter()
-                        .find(|(n, _)| n == &name)
-                        .map(|(_, k)| k.clone())
-                        .unwrap_or(ValueKind::Empty);
-                    let joined = join_set_element_kinds_inner(&a_kind, &b_kind, seen)?;
-                    out.push((name, joined));
-                }
-                Some(ValueKind::Record(out))
-            }
-            (ValueKind::Tuple(a), ValueKind::Tuple(b)) if a.len() == b.len() => {
-                let mut out = Vec::with_capacity(a.len());
-                for (ak, bk) in a.iter().zip(b.iter()) {
-                    out.push(join_set_element_kinds_inner(ak, bk, seen)?);
-                }
-                Some(ValueKind::Tuple(out))
-            }
-            _ => None,
-        };
-
-        seen.remove(&key);
-        out
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
     }
 
-    let mut seen: HashSet<(ValueKind, ValueKind)> = HashSet::new();
-    let out = join_set_element_kinds_inner(expected, actual, &mut seen);
-    out
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some("core/composite-pack")
+    }
+
+    fn to_string(&self) -> String {
+        "CanonicalTuplePack".to_owned()
+    }
+}
+
+#[cfg(all(feature = "tuple", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for CanonicalTuplePack {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        let mut cells = Vec::with_capacity(self.elements.len() + 1);
+        cells.push(self.output.clone());
+        cells.extend(self.elements.iter().cloned());
+        cells
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        compile_value_cell_composite_register(&self.output, &self.elements, context)
+    }
+}
+
+#[cfg(feature = "record")]
+struct CanonicalRecordPack {
+    output: ValueCell,
+    fields: Box<[(String, ValueCell)]>,
+}
+
+#[cfg(feature = "record")]
+impl CanonicalRecordPack {
+    fn next_value(&self) -> MResult<mech_core::Value> {
+        self.output.rebuild_record_cells(&self.fields)
+    }
+}
+
+#[cfg(feature = "record")]
+impl MechFunctionImpl for CanonicalRecordPack {
+    fn solve_result(&self) -> MResult<()> {
+        self.output.replace(&self.next_value()?)
+    }
+
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some("core/composite-pack")
+    }
+
+    fn to_string(&self) -> String {
+        "CanonicalRecordPack".to_owned()
+    }
+}
+
+#[cfg(all(feature = "record", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for CanonicalRecordPack {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        let mut cells = Vec::with_capacity(self.fields.len() + 1);
+        cells.push(self.output.clone());
+        cells.extend(self.fields.iter().map(|(_, cell)| cell.clone()));
+        cells
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let fields = self
+            .fields
+            .iter()
+            .map(|(_, cell)| cell.clone())
+            .collect::<Vec<_>>();
+        compile_value_cell_composite_register(&self.output, &fields, context)
+    }
+}
+
+#[cfg(feature = "table")]
+struct CanonicalTablePack {
+    output: ValueCell,
+    columns: Box<[(String, Box<[ValueCell]>)]>,
+}
+
+#[cfg(feature = "table")]
+impl CanonicalTablePack {
+    fn next_value(&self) -> MResult<mech_core::Value> {
+        self.output.rebuild_table_cell_columns(&self.columns)
+    }
+}
+
+#[cfg(feature = "table")]
+impl MechFunctionImpl for CanonicalTablePack {
+    fn solve_result(&self) -> MResult<()> {
+        self.output.replace(&self.next_value()?)
+    }
+
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some("core/composite-pack")
+    }
+
+    fn to_string(&self) -> String {
+        "CanonicalTablePack".to_owned()
+    }
+}
+
+#[cfg(all(feature = "table", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for CanonicalTablePack {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        let mut cells = vec![self.output.clone()];
+        cells.extend(
+            self.columns
+                .iter()
+                .flat_map(|(_, values)| values.iter().cloned()),
+        );
+        cells
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let children = self
+            .columns
+            .iter()
+            .flat_map(|(_, values)| values.iter().cloned())
+            .collect::<Vec<_>>();
+        compile_value_cell_composite_register(&self.output, &children, context)
+    }
+}
+
+#[cfg(any(
+    feature = "map",
+    feature = "record",
+    feature = "set",
+    feature = "table",
+    feature = "matrix"
+))]
+fn schema_mismatch(context: &'static str, expected: &SchemaBody, actual: &SchemaBody) -> MechError {
+    MechError::new(
+        CanonicalAggregateSchemaMismatch {
+            context,
+            expected: format!("{expected:?}"),
+            actual: format!("{actual:?}"),
+        },
+        None,
+    )
+    .with_compiler_loc()
 }
 
 pub fn structure(
-    strct: &Structure,
-    #[cfg(any(
-        feature = "record",
-        feature = "matrix",
-        feature = "table",
-        feature = "tuple",
-        feature = "set",
-        feature = "map"
-    ))]
-    env: Option<&Environment>,
-    #[cfg(not(any(
-        feature = "record",
-        feature = "matrix",
-        feature = "table",
-        feature = "tuple",
-        feature = "set",
-        feature = "map"
-    )))]
-    _: Option<&Environment>,
-    #[cfg(any(
-        feature = "record",
-        feature = "matrix",
-        feature = "table",
-        feature = "tuple",
-        feature = "set",
-        feature = "map"
-    ))]
-    p: &InterpreterExecution<'_>,
-    #[cfg(not(any(
-        feature = "record",
-        feature = "matrix",
-        feature = "table",
-        feature = "tuple",
-        feature = "set",
-        feature = "map"
-    )))]
-    _: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    match strct {
-        Structure::Empty => Ok(LegacyValue::Empty),
+    structure: &Structure,
+    _env: Option<&Environment>,
+    _p: &InterpreterExecution<'_>,
+) -> MResult<ValueCell> {
+    #[allow(
+        unreachable_patterns,
+        reason = "the fallback is reachable only in narrow structure feature profiles"
+    )]
+    match structure {
+        Structure::Empty => Ok(ValueCell::unit()),
         #[cfg(feature = "record")]
-        Structure::Record(x) => record(&x, env, p),
+        Structure::Record(record_node) => record(record_node, _env, _p),
         #[cfg(feature = "matrix")]
-        Structure::Matrix(x) => matrix(&x, env, p),
+        Structure::Matrix(matrix_node) => matrix(matrix_node, _env, _p),
         #[cfg(feature = "table")]
-        Structure::Table(x) => table(&x, env, p),
+        Structure::Table(table_node) => table(table_node, _env, _p),
         #[cfg(feature = "tuple")]
-        Structure::Tuple(x) => tuple(&x, env, p),
+        Structure::Tuple(tuple_node) => tuple(tuple_node, _env, _p),
         #[cfg(all(feature = "tuple", feature = "atom"))]
-        Structure::TupleStruct(x) => tuple_struct(&x, env, p),
+        Structure::TupleStruct(tuple_node) => tuple_struct(tuple_node, _env, _p),
         #[cfg(feature = "set")]
-        Structure::Set(x) => set(&x, env, p),
+        Structure::Set(set_node) => set(set_node, _env, _p),
         #[cfg(feature = "map")]
-        Structure::Map(x) => map(&x, env, p),
-        #[cfg(not(all(
-            feature = "record",
-            feature = "matrix",
-            feature = "table",
-            feature = "tuple",
-            feature = "atom",
-            feature = "set",
-            feature = "map"
-        )))]
+        Structure::Map(map_node) => map(map_node, _env, _p),
         _ => Err(MechError::new(
             FeatureNotEnabledError,
-            Some("feature not enabled for this structure kind".to_string()),
+            Some("feature not enabled for this structure kind".to_owned()),
         )
         .with_compiler_loc()),
     }
@@ -182,943 +258,1070 @@ pub fn structure(
 
 #[cfg(feature = "tuple")]
 pub fn tuple(
-    tpl: &Tuple,
+    tuple_node: &Tuple,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let mut elements = vec![];
-    for el in &tpl.elements {
-        let result = expression(el, env, p)?;
-        elements.push(Box::new(result));
+) -> MResult<ValueCell> {
+    let mut elements = Vec::with_capacity(tuple_node.elements.len());
+    for element in &tuple_node.elements {
+        let value = expression_value(element, env, p, "tuple element")?;
+        elements.push(value);
     }
-    let mech_tuple = Ref::new(MechTuple { elements });
-    Ok(LegacyValue::Tuple(mech_tuple))
+    let output = ValueCell::tuple_from_cells(&elements)?;
+    p.plan().register_instance(FunctionInstance::new(
+        Box::new(CanonicalTuplePack {
+            output: output.clone(),
+            elements: elements.clone().into_boxed_slice(),
+        }),
+        FunctionInvocation::variadic(output.clone(), elements.into_boxed_slice()),
+    ))?;
+    Ok(output)
 }
 
 #[cfg(all(feature = "tuple", feature = "atom"))]
 pub fn tuple_struct(
-    tpl: &TupleStruct,
+    tuple_node: &TupleStruct,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let payload = expression(&tpl.value, env, p)?;
-    let variant_id = tpl.name.hash();
-    let state_brrw = p.state.borrow();
-    if let Some((enum_id, enum_def)) = state_brrw.enums.iter().find(|(_, enm)| {
-        enm.variants
+) -> MResult<ValueCell> {
+    let payload = expression_value(&tuple_node.value, env, p, "tuple-struct payload")?;
+    let variant_id = tuple_node.name.hash();
+    let state = p.state.borrow();
+    if let Some(definition) = state.enums.values().find(|definition| {
+        definition
+            .variants
             .iter()
-            .any(|(known_variant, _)| *known_variant == variant_id)
+            .any(|variant| variant.id == variant_id)
     }) {
-        let variants = vec![(variant_id, Some(payload))];
-        let enm = MechEnum {
-            id: *enum_id,
-            variants,
-            names: enum_def.names.clone(),
-        };
-        return Ok(LegacyValue::Enum(Ref::new(enm)));
+        let schema = enum_schema(definition)?;
+        let ordinal = definition
+            .variants
+            .iter()
+            .position(|variant| variant.id == variant_id)
+            .expect("matched enum variant remains present") as u32;
+        return ValueCell::from_schema_data(
+            schema,
+            ValueDataDraft::Enum(EnumDraft {
+                ordinal,
+                payload: Some(Box::new(snapshot_draft(&payload)?)),
+            }),
+        );
     }
-    drop(state_brrw);
-    let mut elements = vec![];
-    let atom_value = atom(
+    drop(state);
+    let tag = atom(
         &Atom {
-            name: tpl.name.clone(),
+            name: tuple_node.name.clone(),
         },
         p,
-    );
-    elements.push(Box::new(atom_value));
-    elements.push(Box::new(payload));
-    Ok(LegacyValue::Tuple(Ref::new(MechTuple { elements })))
+    )?;
+    ValueCell::from_schema_data(
+        SchemaBody::Tuple(
+            vec![tag.closed_schema_body()?, payload.closed_schema_body()?].into_boxed_slice(),
+        ),
+        ValueDataDraft::Tuple(
+            vec![snapshot_draft(&tag)?, snapshot_draft(&payload)?].into_boxed_slice(),
+        ),
+    )
 }
 
 #[cfg(feature = "map")]
 pub fn map(
-    mp: &Map,
+    map_node: &Map,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let mut m = IndexMap::new();
-    for b in &mp.elements {
-        let key = expression(&b.key, env, p)?;
-        let val = expression(&b.value, env, p)?;
-        m.insert(key, val);
-    }
-
-    let key_kind = m.keys().next().unwrap().kind();
-    // verify that all the keys are the same kind:
-    for k in m.keys() {
-        if k.kind() != key_kind {
-            return Err(MechError::new(
-                MapKeyKindMismatchError {
-                    expected_kind: key_kind.clone(),
-                    actual_kind: k.kind().clone(),
-                },
-                None,
-            )
-            .with_compiler_loc());
+) -> MResult<ValueCell> {
+    let mut key_schema = None;
+    let mut value_schema = None;
+    let mut entries = Vec::with_capacity(map_node.elements.len());
+    for binding in &map_node.elements {
+        let key = expression_value(&binding.key, env, p, "map key")?;
+        let value = expression_value(&binding.value, env, p, "map value")?;
+        let actual_key = key.closed_schema_body()?;
+        let actual_value = value.closed_schema_body()?;
+        if let Some(expected) = &key_schema {
+            if expected != &actual_key {
+                return Err(schema_mismatch("map key", expected, &actual_key));
+            }
+        } else {
+            key_schema = Some(actual_key);
         }
-    }
-
-    let value_kind = m.values().next().unwrap().kind();
-    // verify that all the values are the same kind:
-    for v in m.values() {
-        if v.kind() != value_kind {
-            return Err(MechError::new(
-                MapValueKindMismatchError {
-                    expected_kind: value_kind.clone(),
-                    actual_kind: v.kind().clone(),
-                },
-                None,
-            )
-            .with_compiler_loc());
+        if let Some(expected) = &value_schema {
+            if expected != &actual_value {
+                return Err(schema_mismatch("map value", expected, &actual_value));
+            }
+        } else {
+            value_schema = Some(actual_value);
         }
+        entries.push(MapEntryDraft {
+            items: vec![snapshot_draft(&key)?, snapshot_draft(&value)?].into_boxed_slice(),
+        });
     }
-    Ok(LegacyValue::Map(Ref::new(MechMap {
-        num_elements: m.len(),
-        key_kind,
-        value_kind,
-        map: m,
-    })))
+    let key = key_schema.ok_or_else(|| {
+        MechError::new(
+            CanonicalAggregateTypeInferenceFailure {
+                context: "empty map",
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    let value = value_schema.expect("non-empty map has a value schema");
+    let cardinality = entries.len() as u64;
+    ValueCell::from_schema_data(
+        SchemaBody::Map {
+            key: Box::new(key),
+            value: Box::new(value),
+            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(cardinality)),
+        },
+        ValueDataDraft::Map(entries.into_boxed_slice()),
+    )
 }
 
 #[cfg(feature = "record")]
 pub fn record(
-    rcrd: &Record,
+    record_node: &Record,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let plan = p.plan();
-    let mut data: IndexMap<u64, LegacyValue> = IndexMap::new();
-    let cols: usize = rcrd.bindings.len();
-    let mut kinds: Vec<ValueKind> = Vec::new();
-    let mut field_names: HashMap<u64, String> = HashMap::new();
-    for b in &rcrd.bindings {
-        let name_hash = b.name.hash();
-        let name_str = b.name.to_string();
-        let val = expression(&b.value, env, p)?;
-        let knd: ValueKind = match &b.kind {
-            Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(&p.state.borrow().kinds)?,
-            None => val.kind(),
+) -> MResult<ValueCell> {
+    let mut cells = Vec::with_capacity(record_node.bindings.len());
+    for binding in &record_node.bindings {
+        let value = expression_value(&binding.value, env, p, "record field")?;
+        let schema = match &binding.kind {
+            Some(annotation) => schema_body_from_kind(&annotation.kind, p)?,
+            None => value.closed_schema_body()?,
         };
-        // If the kinds are different, do a conversion.
-        kinds.push(knd.clone());
-        #[cfg(feature = "convert")]
-        if knd != val.kind() {
-            let arguments = vec![val.clone(), LegacyValue::Kind(knd.clone())];
-            match execute_catalog_operation(p, &plan, "convert/kind", arguments) {
-                Ok(converted_result) => {
-                    data.insert(name_hash, converted_result);
-                }
-                Err(_) => {
-                    return Err(MechError::new(
-                        TableColumnKindMismatchError {
-                            column_id: name_hash,
-                            expected_kind: knd.clone(),
-                            actual_kind: val.kind().clone(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
-                }
-            }
-        } else {
-            data.insert(name_hash, val);
+        let actual = value.closed_schema_body()?;
+        if schema != actual {
+            return Err(schema_mismatch("record field", &schema, &actual));
         }
-        #[cfg(not(feature = "convert"))]
-        if knd != val.kind() {
-            return Err(MechError::new(
-                TableColumnKindMismatchError {
-                    column_id: name_hash,
-                    expected_kind: knd,
-                    actual_kind: val.kind(),
+        let name = binding.name.to_string();
+        cells.push((name, value));
+    }
+    let output = ValueCell::record_from_cells(&cells)?;
+    p.plan().register_instance(FunctionInstance::new(
+        Box::new(CanonicalRecordPack {
+            output: output.clone(),
+            fields: cells.clone().into_boxed_slice(),
+        }),
+        FunctionInvocation::variadic(
+            output.clone(),
+            cells
+                .into_iter()
+                .map(|(_, cell)| cell)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ),
+    ))?;
+    Ok(output)
+}
+
+#[cfg(feature = "set")]
+pub(crate) fn canonical_set_from_inputs(inputs: Vec<SpecializationInput>) -> MResult<ValueCell> {
+    let concrete = inputs
+        .iter()
+        .filter_map(|input| input.cell().ok())
+        .collect::<Vec<_>>();
+    let Some(first) = concrete.first() else {
+        return Err(MechError::new(
+            CanonicalAggregateTypeInferenceFailure {
+                context: "empty or all-absent set",
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    let element = first.closed_schema_body()?;
+    for value in concrete.iter().skip(1) {
+        let actual = value.closed_schema_body()?;
+        if actual != element {
+            return Err(schema_mismatch("set element", &element, &actual));
+        }
+    }
+    let optional = inputs.iter().any(SpecializationInput::is_absent);
+    let schema = if optional {
+        SchemaBody::Option(Box::new(element))
+    } else {
+        element
+    };
+    let values = inputs
+        .into_iter()
+        .map(|input| match input {
+            SpecializationInput::Cell(value) if optional => snapshot_draft(&value).map(|value| {
+                ValueDataDraft::Option(OptionDraft {
+                    present: true,
+                    value: Some(Box::new(value)),
+                })
+            }),
+            SpecializationInput::Cell(value) => snapshot_draft(&value),
+            SpecializationInput::Absent => Ok(ValueDataDraft::Option(OptionDraft {
+                present: false,
+                value: None,
+            })),
+            SpecializationInput::MatrixAllSelection => Err(MechError::new(
+                CanonicalAggregateSourceAbsence {
+                    context: "set element",
                 },
-                None,
+                Some("matrix all-selection is not a set value".to_owned()),
             )
-            .with_compiler_loc());
-        } else {
-            data.insert(name_hash, val);
-        }
-        field_names.insert(name_hash, name_str);
-    }
-    Ok(LegacyValue::Record(Ref::new(MechRecord {
-        cols,
-        kinds,
-        data,
-        field_names,
-    })))
+            .with_compiler_loc()),
+        })
+        .collect::<MResult<Vec<_>>>()?;
+    let cardinality = values.len() as u64;
+    ValueCell::from_schema_data(
+        SchemaBody::Set {
+            element: Box::new(schema),
+            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(cardinality)),
+        },
+        ValueDataDraft::Set(values.into_boxed_slice()),
+    )
 }
 
-// Set
-// ----------------------------------------------------------------------------
-
-#[cfg(feature = "set")]
-#[cfg(feature = "functions")]
-#[cfg(feature = "set")]
-pub struct SetDefine {}
-#[cfg(feature = "set")]
-#[cfg(feature = "functions")]
-impl FunctionSpecializer for SetDefine {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        let mut element_kind = arguments
-            .first()
-            .map(LegacyValue::kind)
-            .unwrap_or(ValueKind::Empty);
-        for element in arguments {
-            let actual_kind = element.kind();
-            if actual_kind != element_kind {
-                element_kind =
-                    join_set_element_kinds(&element_kind, &actual_kind).ok_or_else(|| {
-                        MechError::new(
-                            SetKindMismatchError {
-                                expected_kind: element_kind.clone(),
-                                actual_kind,
-                            },
-                            None,
-                        )
-                        .with_compiler_loc()
-                    })?;
-            }
-        }
-        let mut set = MechSet::from_vec(arguments.to_vec());
-        set.kind = element_kind;
-        Ok(Box::new(ValueSet { out: Ref::new(set) }))
-    }
-}
-#[cfg(feature = "set")]
-#[cfg(feature = "functions")]
 #[cfg(feature = "set")]
 pub fn set(
-    m: &Set,
+    set_node: &Set,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let plan = p.plan();
-    let mut elements = Vec::new();
-    for el in &m.elements {
-        let result = expression(el, env, p)?;
-        elements.push(result.clone());
+) -> MResult<ValueCell> {
+    let mut inputs = Vec::with_capacity(set_node.elements.len());
+    for element in &set_node.elements {
+        inputs.push(expression(element, env, p)?);
     }
-    let mut element_kind = if elements.len() > 0 {
-        elements[0].kind()
-    } else {
-        ValueKind::Empty
-    };
-    // Join element kinds so empty placeholders (`_`) can coexist with concrete values.
-    for el in &elements {
-        let actual_kind = el.kind();
-        if actual_kind != element_kind {
-            match join_set_element_kinds(&element_kind, &actual_kind) {
-                Some(joined_kind) => element_kind = joined_kind,
-                None => {
-                    return Err(MechError::new(
-                        SetKindMismatchError {
-                            expected_kind: element_kind.clone(),
-                            actual_kind,
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
-                }
-            }
-        }
-    }
-    #[cfg(feature = "functions")]
-    {
-        execute_catalog_operation(p, &plan, "set/define", elements)
-    }
-    #[cfg(not(feature = "functions"))]
-    {
-        let mut set = MechSet::from_vec(elements);
-        set.kind = element_kind;
-        Ok(LegacyValue::Set(Ref::new(set)))
-    }
-}
-
-// Table
-// ----------------------------------------------------------------------------
-
-#[cfg(all(
-    feature = "table",
-    any(
-        feature = "i8",
-        feature = "i16",
-        feature = "i32",
-        feature = "i64",
-        feature = "i128",
-        feature = "u8",
-        feature = "u16",
-        feature = "u32",
-        feature = "u64",
-        feature = "u128",
-        feature = "f32",
-        feature = "f64",
-        feature = "string",
-        feature = "complex",
-        feature = "rational"
-    )
-))]
-macro_rules! handle_value_kind {
-    ($value_kind:ident, $val:expr, $field_label:expr, $data_map:expr, $converter:ident) => {{
-        let mut vals = Vec::new();
-        let id = $field_label; // <- FIXED: it's already a u64
-        for x in $val.as_vec().iter() {
-            match x.$converter() {
-                Ok(u) => vals.push(u.to_value()),
-                Err(_) => {
-                    return Err(MechError::new(
-                        TableColumnKindMismatchError {
-                            column_id: id,
-                            expected_kind: $value_kind.clone(),
-                            actual_kind: x.kind(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
-                }
-            }
-        }
-        $data_map.insert(
-            id,
-            (
-                $value_kind.clone(),
-                LegacyValue::to_matrixd(vals.clone(), vals.len(), 1),
-            ),
-        );
-    }};
-}
-
-#[cfg(feature = "table")]
-fn handle_column_kind(
-    kind: ValueKind,
-    id: u64,
-    val: Matrix<LegacyValue>,
-    data_map: &mut IndexMap<u64, (ValueKind, Matrix<LegacyValue>)>,
-) -> MResult<()> {
-    match kind {
-        #[cfg(feature = "i8")]
-        ValueKind::I8 => handle_value_kind!(kind, val, id, data_map, as_i8),
-        #[cfg(feature = "i16")]
-        ValueKind::I16 => handle_value_kind!(kind, val, id, data_map, as_i16),
-        #[cfg(feature = "i32")]
-        ValueKind::I32 => handle_value_kind!(kind, val, id, data_map, as_i32),
-        #[cfg(feature = "i64")]
-        ValueKind::I64 => handle_value_kind!(kind, val, id, data_map, as_i64),
-        #[cfg(feature = "i128")]
-        ValueKind::I128 => handle_value_kind!(kind, val, id, data_map, as_i128),
-
-        #[cfg(feature = "u8")]
-        ValueKind::U8 => handle_value_kind!(kind, val, id, data_map, as_u8),
-        #[cfg(feature = "u16")]
-        ValueKind::U16 => handle_value_kind!(kind, val, id, data_map, as_u16),
-        #[cfg(feature = "u32")]
-        ValueKind::U32 => handle_value_kind!(kind, val, id, data_map, as_u32),
-        #[cfg(feature = "u64")]
-        ValueKind::U64 => handle_value_kind!(kind, val, id, data_map, as_u64),
-        #[cfg(feature = "u128")]
-        ValueKind::U128 => handle_value_kind!(kind, val, id, data_map, as_u128),
-
-        #[cfg(feature = "f32")]
-        ValueKind::F32 => handle_value_kind!(kind, val, id, data_map, as_f32),
-        #[cfg(feature = "f64")]
-        ValueKind::F64 => handle_value_kind!(kind, val, id, data_map, as_f64),
-
-        #[cfg(feature = "string")]
-        ValueKind::String => handle_value_kind!(kind, val, id, data_map, as_string),
-
-        #[cfg(feature = "complex")]
-        ValueKind::C64 => handle_value_kind!(kind, val, id, data_map, as_c64),
-
-        #[cfg(feature = "rational")]
-        ValueKind::R64 => handle_value_kind!(kind, val, id, data_map, as_r64),
-
-        #[cfg(feature = "bool")]
-        ValueKind::Bool => {
-            let vals: Vec<LegacyValue> = val
-                .as_vec()
-                .iter()
-                .map(|x| x.as_bool().unwrap().to_value())
-                .collect();
-            data_map.insert(
-                id,
-                (
-                    ValueKind::Bool,
-                    LegacyValue::to_matrix(vals.clone(), vals.len(), 1),
-                ),
-            );
-        }
-        ValueKind::Index => {
-            let source_values = val.as_vec();
-            let mut values = Vec::with_capacity(source_values.len());
-            for value in source_values {
-                let LegacyValue::Index(index) = value.as_index()? else {
-                    unreachable!("numeric index conversion returned a non-index scalar")
-                };
-                values.push(LegacyValue::Index(index));
-            }
-            data_map.insert(
-                id,
-                (
-                    ValueKind::Index,
-                    LegacyValue::to_matrix(values.clone(), values.len(), 1),
-                ),
-            );
-        }
-        ValueKind::Any => {
-            let vals: Vec<LegacyValue> = val.as_vec().iter().map(|x| x.clone()).collect();
-            data_map.insert(
-                id,
-                (
-                    ValueKind::Any,
-                    LegacyValue::to_matrix(vals.clone(), vals.len(), 1),
-                ),
-            );
-        }
-
-        declared_kind => {
-            let values = val.as_vec();
-            for value in &values {
-                let actual_kind = value.deref_kind();
-                if actual_kind != declared_kind {
-                    return Err(MechError::new(
-                        TableColumnKindMismatchError {
-                            column_id: id,
-                            expected_kind: declared_kind.clone(),
-                            actual_kind,
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
-                }
-            }
-            data_map.insert(
-                id,
-                (
-                    declared_kind,
-                    LegacyValue::to_matrix(values.clone(), values.len(), 1),
-                ),
-            );
-        }
-    }
-
-    Ok(())
+    canonical_set_from_inputs(inputs)
 }
 
 #[cfg(feature = "table")]
 pub fn table(
-    t: &Table,
+    table_node: &Table,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let mut rows = vec![];
-    let headings = table_header(&t.header, p)?;
-    let mut cols = 0;
-
-    // Interpret rows
-    for row in &t.rows {
-        let result = table_row(row, env, p)?;
-        cols = result.len();
-        rows.push(result);
-    }
-
-    // Allocate columns
-    let mut data = vec![Vec::<LegacyValue>::new(); cols];
-
-    // Populate columns
-    for row in rows {
-        for (ix, el) in row.into_iter().enumerate() {
-            data[ix].push(el);
-        }
-    }
-
-    // Build table
-    let mut data_map: IndexMap<u64, (ValueKind, Matrix<LegacyValue>)> = IndexMap::new();
-
-    for ((id, knd, _name), column) in headings.iter().zip(data.iter()) {
-        let id_u64 = id.as_u64().unwrap().borrow().clone();
-
-        // Infer kind if None
-        let actual_kind = match knd {
-            ValueKind::None => {
-                match column.first() {
-                    Some(v) => v.kind(),
-                    None => ValueKind::String, // default for empty column
-                }
-            }
-            _ => knd.clone(),
-        };
-
-        // Convert column to matrix
-        let val = LegacyValue::to_matrix(column.clone(), column.len(), 1);
-
-        // Dispatch conversion
-        handle_column_kind(actual_kind, id_u64, val, &mut data_map)?;
-    }
-
-    // Assign names
-    let names: HashMap<u64, String> = headings
+) -> MResult<ValueCell> {
+    let names = table_node
+        .header
+        .0
         .iter()
-        .map(|(id, _, name)| (id.as_u64().unwrap().borrow().clone(), name.to_string()))
-        .collect();
-
-    let tbl = MechTable::new(t.rows.len(), cols, data_map.clone(), names);
-    Ok(LegacyValue::Table(Ref::new(tbl)))
-}
-
-#[cfg(feature = "kind_annotation")]
-pub fn table_header(
-    fields: &TableHeader,
-    p: &InterpreterExecution<'_>,
-) -> MResult<Vec<(LegacyValue, ValueKind, Identifier)>> {
-    let mut headings: Vec<(LegacyValue, ValueKind, Identifier)> = Vec::new();
-    for f in &fields.0 {
-        let id = f.name.hash();
-        let kind = match &f.kind {
-            Some(k) => kind_annotation(&k.kind, p)?,
-            None => Kind::None,
-        };
-        headings.push((
-            LegacyValue::Id(id),
-            kind.to_value_kind(&p.state.borrow().kinds)?,
-            f.name.clone(),
-        ));
-    }
-    Ok(headings)
-}
-
-pub fn table_row(
-    r: &TableRow,
-    env: Option<&Environment>,
-    p: &InterpreterExecution<'_>,
-) -> MResult<Vec<LegacyValue>> {
-    let mut row: Vec<LegacyValue> = Vec::new();
-    for col in &r.columns {
-        let result = table_column(col, env, p)?;
-        row.push(result);
-    }
-    Ok(row)
-}
-
-pub fn table_column(
-    r: &TableColumn,
-    env: Option<&Environment>,
-    p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    expression(&r.element, env, p)
-}
-
-// Matrix
-// ----------------------------------------------------------------------------
-
-#[cfg(feature = "matrix")]
-fn is_composite_matrix_cell(value: &LegacyValue) -> bool {
-    match value {
-        #[cfg(feature = "record")]
-        LegacyValue::Record(_) => true,
-        #[cfg(feature = "map")]
-        LegacyValue::Map(_) => true,
-        #[cfg(feature = "tuple")]
-        LegacyValue::Tuple(_) => true,
-        #[cfg(feature = "set")]
-        LegacyValue::Set(_) => true,
-        #[cfg(feature = "table")]
-        LegacyValue::Table(_) => true,
-        LegacyValue::MatrixValue(_) => true,
-        _ => false,
-    }
-}
-
-#[cfg(feature = "matrix")]
-pub fn matrix(
-    m: &Mat,
-    env: Option<&Environment>,
-    p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let plan = p.plan();
-    let mut shape = vec![0, 0];
-    let mut col: Vec<LegacyValue> = Vec::new();
-    #[cfg(feature = "matrix_horzcat")]
-    {
-        for row in &m.rows {
-            let result = matrix_row(row, env, p)?;
-            if shape == vec![0, 0] {
-                shape = result.shape();
-                col.push(result);
-            } else if shape[1] == result.shape()[1] {
-                col.push(result);
-            } else {
-                return Err(MechError::new(
-                    DimensionMismatch {
-                        dims: vec![shape[1], result.shape()[1]],
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-        }
-        if col.is_empty() {
-            return Ok(LegacyValue::MatrixValue(Matrix::from_vec(vec![], 0, 0)));
-        } else if col.len() == 1 {
-            return Ok(col[0].clone());
-        }
-    }
-    #[cfg(feature = "matrix_vertcat")]
-    {
-        if col
-            .iter()
-            .any(|value| matches!(value, LegacyValue::MatrixValue(_)))
-        {
-            let mut values = Vec::new();
-            let mut expected_cols: Option<usize> = None;
-            let mut row_count = 0;
-
-            for row_value in col {
-                let row_matrix = match row_value {
-                    LegacyValue::MatrixValue(matrix) => matrix,
-                    other => Matrix::from_vec(vec![other], 1, 1),
-                };
-                let row_shape = row_matrix.shape();
-                let row_cols = row_shape[1];
-
-                match expected_cols {
-                    Some(cols) if cols != row_cols => {
-                        return Err(MechError::new(
-                            DimensionMismatch {
-                                dims: vec![cols, row_cols],
-                            },
-                            None,
-                        )
-                        .with_compiler_loc());
-                    }
-                    None => expected_cols = Some(row_cols),
-                    _ => (),
-                }
-
-                row_count += row_shape[0];
-                values.extend(row_matrix.as_vec());
-            }
-
-            let cols = expected_cols.unwrap_or(0);
-            return Ok(LegacyValue::MatrixValue(Matrix::from_vec(
-                values, row_count, cols,
-            )));
-        }
-
-        return execute_catalog_operation(p, &plan, "matrix/vertcat", col);
-    }
-    #[cfg(not(feature = "matrix_vertcat"))]
-    return Err(MechError::new(
-        FeatureNotEnabledError,
-        Some("matrix/vertcat feature not enabled".to_string()),
-    )
-    .with_compiler_loc());
-}
-
-#[cfg(feature = "matrix_horzcat")]
-pub fn matrix_row(
-    r: &MatrixRow,
-    env: Option<&Environment>,
-    p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let plan = p.plan();
-    let mut row: Vec<LegacyValue> = Vec::new();
-    let mut shape = vec![0, 0];
-    let mut saw_empty = false;
-    for col in &r.columns {
-        let result = matrix_column(col, env, p)?;
-        saw_empty |= matches!(result.kind(), ValueKind::Empty);
-        if shape == vec![0, 0] {
-            shape = result.shape();
-            row.push(result);
-        } else if shape[0] == result.shape()[0] {
-            row.push(result);
-        } else {
+        .map(|field| field.name.to_string())
+        .collect::<Vec<_>>();
+    let mut columns = vec![Vec::<ValueCell>::new(); names.len()];
+    for row in &table_node.rows {
+        if row.columns.len() != names.len() {
             return Err(MechError::new(
                 DimensionMismatch {
-                    dims: vec![shape[0], result.shape()[0]],
+                    dims: vec![names.len(), row.columns.len()],
                 },
                 None,
             )
             .with_compiler_loc());
         }
+        for (index, column) in row.columns.iter().enumerate() {
+            columns[index].push(expression_value(&column.element, env, p, "table cell")?);
+        }
     }
-    if row.iter().any(is_composite_matrix_cell) {
-        let cols = row.len();
-        return Ok(LegacyValue::MatrixValue(Matrix::from_vec(row, 1, cols)));
+    let mut schema_columns = Vec::with_capacity(names.len());
+    let mut cell_columns = Vec::with_capacity(names.len());
+    for (index, (field, mut values)) in table_node.header.0.iter().zip(columns).enumerate() {
+        let schema = if let Some(annotation) = &field.kind {
+            schema_body_from_kind(&annotation.kind, p)?
+        } else {
+            values
+                .first()
+                .ok_or_else(|| {
+                    MechError::new(
+                        CanonicalAggregateTypeInferenceFailure {
+                            context: "unannotated empty table column",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?
+                .closed_schema_body()?
+        };
+        if !matches!(schema, SchemaBody::Dynamic) {
+            for value in &mut values {
+                let actual = value.closed_schema_body()?;
+                if actual == schema {
+                    continue;
+                }
+                #[cfg(feature = "convert")]
+                {
+                    *value = crate::literals::convert_literal_cell(value.clone(), &schema)?;
+                    continue;
+                }
+                #[cfg(not(feature = "convert"))]
+                return Err(schema_mismatch("table column", &schema, &actual));
+            }
+        }
+        schema_columns.push(SchemaField {
+            name: names[index].clone(),
+            schema,
+        });
+        cell_columns.push((names[index].clone(), values.into_boxed_slice()));
     }
-    if saw_empty && row.iter().all(|value| value.shape() == vec![1, 1]) {
-        return Ok(LegacyValue::MatrixValue(Matrix::from_vec(
-            row,
-            1,
-            r.columns.len(),
-        )));
-    }
-    execute_catalog_operation(p, &plan, "matrix/horzcat", row)
+    let row_count = table_node.rows.len() as u64;
+    let canonical_columns = schema_columns
+        .into_iter()
+        .zip(cell_columns.iter())
+        .map(|(field, (_, values))| (field, values.clone()))
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let output = ValueCell::table_from_cell_columns(
+        canonical_columns,
+        CardinalitySpec::Exact(DimensionExpr::Constant(row_count)),
+    )?;
+    let dependencies = cell_columns
+        .iter()
+        .flat_map(|(_, values)| values.iter().cloned())
+        .collect::<Vec<_>>();
+    p.plan().register_instance(FunctionInstance::new(
+        Box::new(CanonicalTablePack {
+            output: output.clone(),
+            columns: cell_columns.into_boxed_slice(),
+        }),
+        FunctionInvocation::variadic(output.clone(), dependencies.into_boxed_slice()),
+    ))?;
+    Ok(output)
 }
-pub fn matrix_column(
-    r: &MatrixColumn,
+
+#[cfg(feature = "matrix")]
+#[derive(Clone)]
+struct MatrixBlock {
+    element: SchemaBody,
+    rows: usize,
+    columns: usize,
+    values: Vec<ValueDataDraft>,
+}
+
+#[cfg(feature = "matrix")]
+struct MatrixCellBlock {
+    rows: usize,
+    columns: usize,
+    values: Vec<Option<ValueCell>>,
+}
+
+#[cfg(feature = "matrix")]
+struct CanonicalMatrixPack {
+    output: ValueCell,
+    rows: Box<[Box<[Option<ValueCell>]>]>,
+    optional: bool,
+}
+
+#[cfg(feature = "matrix")]
+impl CanonicalMatrixPack {
+    fn next_value(&self) -> MResult<mech_core::Value> {
+        let matrix = matrix_from_source_rows(&self.rows, self.optional)?;
+        self.output.rebuild_matrix_drafts(
+            vec![matrix.rows as u64, matrix.columns as u64].into_boxed_slice(),
+            matrix.values.into_boxed_slice(),
+        )
+    }
+}
+
+#[cfg(feature = "matrix")]
+impl MechFunctionImpl for CanonicalMatrixPack {
+    fn solve_result(&self) -> MResult<()> {
+        self.output.replace(&self.next_value()?)
+    }
+
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
+    fn to_string(&self) -> String {
+        "CanonicalMatrixPack".to_owned()
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for CanonicalMatrixPack {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        let mut cells = vec![self.output.clone()];
+        cells.extend(
+            self.rows
+                .iter()
+                .flatten()
+                .filter_map(|cell| cell.as_ref().cloned()),
+        );
+        cells
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let layout = matrix_cell_layout(&self.rows)?;
+        compile_value_cell_matrix_literal_register(
+            &self.output,
+            layout.rows.try_into().map_err(|_| {
+                MechError::new(
+                    GenericError {
+                        msg: "matrix literal rows exceed bytecode-v1 limits".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
+            layout.columns.try_into().map_err(|_| {
+                MechError::new(
+                    GenericError {
+                        msg: "matrix literal columns exceed bytecode-v1 limits".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
+            &layout.values,
+            context,
+        )
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_block(cell: &ValueCell) -> MResult<MatrixBlock> {
+    let schema = cell.closed_schema_body()?;
+    let draft = snapshot_draft(cell)?;
+    match (schema, draft) {
+        (
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            },
+            ValueDataDraft::Matrix(values),
+        ) => {
+            let [
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ] = dimensions.as_ref()
+            else {
+                return Err(MechError::new(
+                    CanonicalAggregateTypeInferenceFailure {
+                        context: "matrix literal extent",
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            Ok(MatrixBlock {
+                element: *element,
+                rows: *rows as usize,
+                columns: *columns as usize,
+                values: values.into_vec(),
+            })
+        }
+        (element, value) => Ok(MatrixBlock {
+            element,
+            rows: 1,
+            columns: 1,
+            values: vec![value],
+        }),
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_cell_block(cell: &ValueCell) -> MResult<MatrixCellBlock> {
+    let SchemaBody::Matrix { dimensions, .. } = cell.closed_schema_body()? else {
+        return Ok(MatrixCellBlock {
+            rows: 1,
+            columns: 1,
+            values: vec![Some(cell.clone())],
+        });
+    };
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        return Err(MechError::new(
+            CanonicalAggregateTypeInferenceFailure {
+                context: "matrix literal extent",
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    Ok(MatrixCellBlock {
+        rows: *rows as usize,
+        columns: *columns as usize,
+        values: cell
+            .matrix_elements()?
+            .expect("matrix schema retains matrix elements")
+            .into_iter()
+            .map(Some)
+            .collect(),
+    })
+}
+
+#[cfg(feature = "matrix")]
+fn horizontal_cell_blocks(blocks: Vec<MatrixCellBlock>) -> MResult<MatrixCellBlock> {
+    let Some(first) = blocks.first() else {
+        return Err(MechError::new(
+            CanonicalAggregateTypeInferenceFailure {
+                context: "empty matrix row",
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    let rows = first.rows;
+    let columns = blocks.iter().map(|block| block.columns).sum();
+    if let Some(block) = blocks.iter().find(|block| block.rows != rows) {
+        return Err(MechError::new(
+            DimensionMismatch {
+                dims: vec![rows, block.rows],
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    let mut values = Vec::with_capacity(rows.saturating_mul(columns));
+    for row in 0..rows {
+        for block in &blocks {
+            let start = row * block.columns;
+            values.extend_from_slice(&block.values[start..start + block.columns]);
+        }
+    }
+    Ok(MatrixCellBlock {
+        rows,
+        columns,
+        values,
+    })
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_cell_layout(rows: &[Box<[Option<ValueCell>]>]) -> MResult<MatrixCellBlock> {
+    let mut blocks = Vec::with_capacity(rows.len());
+    for row in rows {
+        blocks.push(horizontal_cell_blocks(
+            row.iter()
+                .map(|cell| match cell {
+                    Some(cell) => matrix_cell_block(cell),
+                    None => Ok(MatrixCellBlock {
+                        rows: 1,
+                        columns: 1,
+                        values: vec![None],
+                    }),
+                })
+                .collect::<MResult<Vec<_>>>()?,
+        )?);
+    }
+    let Some(first) = blocks.first() else {
+        return Ok(MatrixCellBlock {
+            rows: 0,
+            columns: 0,
+            values: Vec::new(),
+        });
+    };
+    let columns = first.columns;
+    if let Some(block) = blocks.iter().find(|block| block.columns != columns) {
+        return Err(MechError::new(
+            DimensionMismatch {
+                dims: vec![columns, block.columns],
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    Ok(MatrixCellBlock {
+        rows: blocks.iter().map(|block| block.rows).sum(),
+        columns,
+        values: blocks.into_iter().flat_map(|block| block.values).collect(),
+    })
+}
+
+#[cfg(feature = "matrix")]
+fn horizontal(blocks: Vec<MatrixBlock>) -> MResult<MatrixBlock> {
+    let Some(first) = blocks.first() else {
+        return Err(MechError::new(
+            CanonicalAggregateTypeInferenceFailure {
+                context: "empty matrix row",
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    let element = first.element.clone();
+    let rows = first.rows;
+    let mut columns = 0;
+    for block in &blocks {
+        if block.rows != rows {
+            return Err(MechError::new(
+                DimensionMismatch {
+                    dims: vec![rows, block.rows],
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        if block.element != element {
+            return Err(schema_mismatch(
+                "horizontal matrix literal",
+                &element,
+                &block.element,
+            ));
+        }
+        columns += block.columns;
+    }
+    let mut values = Vec::with_capacity(rows.saturating_mul(columns));
+    for row in 0..rows {
+        for block in &blocks {
+            let start = row * block.columns;
+            values.extend_from_slice(&block.values[start..start + block.columns]);
+        }
+    }
+    Ok(MatrixBlock {
+        element,
+        rows,
+        columns,
+        values,
+    })
+}
+
+#[cfg(feature = "matrix")]
+fn vertical(blocks: Vec<MatrixBlock>) -> MResult<MatrixBlock> {
+    let Some(first) = blocks.first() else {
+        return ValueCell::dynamic_matrix(
+            SchemaBody::Tuple(Box::new([])),
+            vec![0, 0].into_boxed_slice(),
+            Box::new([]),
+        )
+        .and_then(|cell| matrix_block(&cell));
+    };
+    let element = first.element.clone();
+    let columns = first.columns;
+    let rows = blocks.iter().map(|block| block.rows).sum();
+    for block in &blocks {
+        if block.columns != columns {
+            return Err(MechError::new(
+                DimensionMismatch {
+                    dims: vec![columns, block.columns],
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        if block.element != element {
+            return Err(schema_mismatch(
+                "vertical matrix literal",
+                &element,
+                &block.element,
+            ));
+        }
+    }
+    let values = blocks.into_iter().flat_map(|block| block.values).collect();
+    Ok(MatrixBlock {
+        element,
+        rows,
+        columns,
+        values,
+    })
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_from_source_rows(
+    inputs: &[Box<[Option<ValueCell>]>],
+    optional: bool,
+) -> MResult<MatrixBlock> {
+    let element = inputs
+        .iter()
+        .flatten()
+        .find_map(|input| input.as_ref())
+        .map(matrix_block)
+        .transpose()?
+        .map(|block| block.element)
+        .unwrap_or_else(|| SchemaBody::Tuple(Box::new([])));
+    let rows = inputs
+        .iter()
+        .map(|row| {
+            let blocks = row
+                .iter()
+                .map(|input| match input {
+                    Some(value) => {
+                        let mut block = matrix_block(value)?;
+                        if optional {
+                            if block.element != element {
+                                return Err(schema_mismatch(
+                                    "optional matrix literal",
+                                    &element,
+                                    &block.element,
+                                ));
+                            }
+                            block.element = SchemaBody::Option(Box::new(element.clone()));
+                            block.values = block
+                                .values
+                                .into_iter()
+                                .map(|value| {
+                                    ValueDataDraft::Option(OptionDraft {
+                                        present: true,
+                                        value: Some(Box::new(value)),
+                                    })
+                                })
+                                .collect();
+                        }
+                        Ok(block)
+                    }
+                    None => Ok(MatrixBlock {
+                        element: SchemaBody::Option(Box::new(element.clone())),
+                        rows: 1,
+                        columns: 1,
+                        values: vec![ValueDataDraft::Option(OptionDraft {
+                            present: false,
+                            value: None,
+                        })],
+                    }),
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            horizontal(blocks)
+        })
+        .collect::<MResult<Vec<_>>>()?;
+    vertical(rows)
+}
+
+#[cfg(feature = "matrix")]
+pub fn matrix(
+    matrix_node: &Mat,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    expression(&r.element, env, p)
+) -> MResult<ValueCell> {
+    let rows = matrix_node
+        .rows
+        .iter()
+        .map(|row| {
+            row.columns
+                .iter()
+                .map(|column| match expression(&column.element, env, p)? {
+                    SpecializationInput::Cell(value) => Ok(Some(value)),
+                    SpecializationInput::Absent => Ok(None),
+                    SpecializationInput::MatrixAllSelection => Err(MechError::new(
+                        CanonicalAggregateSourceAbsence {
+                            context: "matrix element",
+                        },
+                        Some(
+                            "matrix all-selection is only valid in a selector position".to_owned(),
+                        ),
+                    )
+                    .with_compiler_loc()),
+                })
+                .collect::<MResult<Vec<_>>>()
+                .map(Vec::into_boxed_slice)
+        })
+        .collect::<MResult<Vec<_>>>()?
+        .into_boxed_slice();
+    let optional = rows.iter().flatten().any(Option::is_none);
+    if optional && rows.iter().flatten().all(Option::is_none) {
+        return Err(MechError::new(
+            CanonicalAggregateTypeInferenceFailure {
+                context: "all-absent matrix literal",
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    let matrix = matrix_from_source_rows(&rows, optional)?;
+    #[cfg(feature = "matrix_horzcat")]
+    if !optional && (rows.len() == 1 || cfg!(feature = "matrix_vertcat")) {
+        let plan = p.plan();
+        let mut row_values = Vec::with_capacity(rows.len());
+        for row in &rows {
+            let arguments = row
+                .iter()
+                .map(|cell| {
+                    cell.clone().ok_or_else(|| {
+                        MechError::new(
+                            CanonicalAggregateSourceAbsence {
+                                context: "matrix row",
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            row_values.push(execute_catalog_operation_with_registration_arguments(
+                p,
+                &plan,
+                "matrix/horzcat",
+                arguments.clone(),
+                arguments,
+            )?);
+        }
+        if row_values.len() == 1 {
+            return Ok(row_values.pop().expect("one matrix row was constructed"));
+        }
+        #[cfg(feature = "matrix_vertcat")]
+        {
+            return execute_catalog_operation_with_registration_arguments(
+                p,
+                &plan,
+                "matrix/vertcat",
+                row_values.clone(),
+                row_values,
+            );
+        }
+    }
+    let output = ValueCell::dynamic_matrix(
+        matrix.element,
+        vec![matrix.rows as u64, matrix.columns as u64].into_boxed_slice(),
+        matrix.values.into_boxed_slice(),
+    )?;
+    let dependencies = rows
+        .iter()
+        .flatten()
+        .filter_map(|cell| cell.as_ref().cloned())
+        .collect::<Vec<_>>();
+    p.plan().register_instance(FunctionInstance::new(
+        Box::new(CanonicalMatrixPack {
+            output: output.clone(),
+            rows,
+            optional,
+        }),
+        FunctionInvocation::variadic(output.clone(), dependencies.into_boxed_slice()),
+    ))?;
+    Ok(output)
 }
 
-#[cfg(all(
-    test,
-    feature = "f64",
-    feature = "matrix_horzcat",
-    feature = "matrix_vertcat",
-    feature = "program",
-    feature = "semantic-compiler"
-))]
-mod matrix_dependency_tests {
-    use super::*;
-
-    fn scalar(value: f64) -> (LegacyValue, ReactiveCellId) {
-        let reference = Ref::new(value);
-        let cell = ReactiveCellId::new(reference.id());
-        (LegacyValue::F64(reference), cell)
-    }
-
-    fn assert_matrix_literal_chain(plan: &Plan) {
-        let plan = plan.borrow();
-        assert_eq!(plan.len(), 3);
-
-        let first_row = plan.node(0).unwrap();
-        let second_row = plan.node(1).unwrap();
-        let vertical = plan.node(2).unwrap();
-        assert!(!first_row.inputs.is_empty());
-        assert!(!second_row.inputs.is_empty());
-        assert!(!vertical.inputs.is_empty());
-
-        assert!(
-            first_row
-                .outputs
+#[cfg(feature = "kind_annotation")]
+pub(crate) fn schema_body_from_kind(
+    kind: &mech_core::nodes::Kind,
+    p: &InterpreterExecution<'_>,
+) -> MResult<SchemaBody> {
+    match kind {
+        mech_core::nodes::Kind::Any => Ok(SchemaBody::Dynamic),
+        mech_core::nodes::Kind::Scalar(identifier) => {
+            schema_body_from_scalar_name(&identifier.to_string(), p)
+        }
+        mech_core::nodes::Kind::Atom(identifier) => {
+            let path = source_nominal_path(&identifier.to_string())?;
+            Ok(SchemaBody::Atom(NominalKey::from_path(
+                NominalKind::Atom,
+                &path,
+            )))
+        }
+        mech_core::nodes::Kind::Option(element) => Ok(SchemaBody::Option(Box::new(
+            schema_body_from_kind(element, p)?,
+        ))),
+        mech_core::nodes::Kind::Tuple(elements) => Ok(SchemaBody::Tuple(
+            elements
                 .iter()
-                .all(|output| !vertical.outputs.contains(output))
-        );
-        assert!(
-            second_row
-                .outputs
+                .map(|element| schema_body_from_kind(element, p))
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+        )),
+        mech_core::nodes::Kind::Record(fields) => Ok(SchemaBody::Record(
+            fields
                 .iter()
-                .all(|output| !vertical.outputs.contains(output))
-        );
-        assert!(
-            vertical
-                .inputs
+                .map(|(name, kind)| {
+                    Ok(SchemaField {
+                        name: name.to_string(),
+                        schema: schema_body_from_kind(kind, p)?,
+                    })
+                })
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+        )),
+        mech_core::nodes::Kind::Matrix((element, dimensions)) => Ok(SchemaBody::Matrix {
+            element: Box::new(schema_body_from_kind(element, p)?),
+            dimensions: dimensions
                 .iter()
-                .all(|dependency| dependency.kind == ReactiveDependencyKind::Reactive)
-        );
-        assert!(!vertical.outputs.is_empty());
-    }
-
-    #[test]
-    fn indexed_matrix_horzcat_records_dependencies() {
-        let interpreter = Interpreter::new(0, 100);
-        let plan = interpreter.plan();
-        let mut services = NoMechExecutionServices;
-        let execution = InterpreterExecution::new(&interpreter, &mut services);
-        let (first, first_cell) = scalar(1.0);
-        let (second, second_cell) = scalar(2.0);
-
-        let output = execute_initialized_indexed_compiler(
-            &execution,
-            &plan,
-            &MatrixHorzCat {},
-            vec![first, second],
+                .map(|dimension| {
+                    crate::literals::literal_usize(dimension, p).map(|value| {
+                        value.map_or(DimensionExpr::Hole, |value| {
+                            DimensionExpr::Constant(value as u64)
+                        })
+                    })
+                })
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+        }),
+        mech_core::nodes::Kind::Map(key, value) => Ok(SchemaBody::Map {
+            key: Box::new(schema_body_from_kind(key, p)?),
+            value: Box::new(schema_body_from_kind(value, p)?),
+            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+        }),
+        mech_core::nodes::Kind::Table((columns, rows)) => Ok(SchemaBody::Table {
+            columns: columns
+                .iter()
+                .map(|(name, kind)| {
+                    Ok(SchemaField {
+                        name: name.to_string(),
+                        schema: schema_body_from_kind(kind, p)?,
+                    })
+                })
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+            rows: crate::literals::literal_usize(rows, p)?
+                .map_or(CardinalitySpec::Dynamic { upper_bound: None }, |value| {
+                    CardinalitySpec::Exact(DimensionExpr::Constant(value as u64))
+                }),
+        }),
+        mech_core::nodes::Kind::Set(element, cardinality) => Ok(SchemaBody::Set {
+            element: Box::new(schema_body_from_kind(element, p)?),
+            cardinality: cardinality
+                .as_ref()
+                .map(|value| crate::literals::literal_usize(value, p))
+                .transpose()?
+                .flatten()
+                .map_or(CardinalitySpec::Dynamic { upper_bound: None }, |value| {
+                    CardinalitySpec::Exact(DimensionExpr::Constant(value as u64))
+                }),
+        }),
+        _ => Err(MechError::new(
+            CanonicalAggregateTypeInferenceFailure {
+                context: "kind annotation",
+            },
+            None,
         )
-        .unwrap();
-        let output_cell = output.reactive_cell_ids()[0];
-        let plan = plan.borrow();
-        let node = plan.node(0).unwrap();
-
-        assert_eq!(plan.len(), 1);
-        assert_eq!(
-            node.inputs
-                .iter()
-                .map(|dependency| dependency.cell)
-                .collect::<Vec<_>>(),
-            vec![first_cell, second_cell]
-        );
-        assert!(
-            node.inputs
-                .iter()
-                .all(|dependency| dependency.kind == ReactiveDependencyKind::Reactive)
-        );
-        assert_eq!(plan.reactive_consumers_for(first_cell), &[0]);
-        assert_eq!(plan.reactive_consumers_for(second_cell), &[0]);
-        assert!(node.outputs.contains(&output_cell));
-        assert!(
-            !node
-                .inputs
-                .iter()
-                .any(|dependency| dependency.cell == output_cell)
-        );
+        .with_compiler_loc()),
     }
+}
 
-    #[test]
-    fn indexed_matrix_vertcat_records_dependencies() {
-        let interpreter = Interpreter::new(0, 100);
-        let plan = interpreter.plan();
-        let mut services = NoMechExecutionServices;
-        let execution = InterpreterExecution::new(&interpreter, &mut services);
-        let (first, _) = scalar(1.0);
-        let (second, _) = scalar(2.0);
-        let first_row =
-            execute_initialized_indexed_compiler(&execution, &plan, &MatrixHorzCat {}, vec![first])
-                .unwrap();
-        let second_row = execute_initialized_indexed_compiler(
-            &execution,
-            &plan,
-            &MatrixHorzCat {},
-            vec![second],
-        )
-        .unwrap();
-        let first_cell = first_row.reactive_cell_ids()[0];
-        let second_cell = second_row.reactive_cell_ids()[0];
-
-        let output = execute_initialized_indexed_compiler(
-            &execution,
-            &plan,
-            &MatrixVertCat {},
-            vec![first_row, second_row],
-        )
-        .unwrap();
-        let output_cell = output.reactive_cell_ids()[0];
-        let plan = plan.borrow();
-        let node = plan.node(2).unwrap();
-
-        assert_eq!(
-            node.inputs
-                .iter()
-                .map(|dependency| dependency.cell)
-                .collect::<Vec<_>>(),
-            vec![first_cell, second_cell]
-        );
-        assert!(
-            node.inputs
-                .iter()
-                .all(|dependency| dependency.kind == ReactiveDependencyKind::Reactive)
-        );
-        assert_eq!(plan.reactive_consumers_for(first_cell), &[2]);
-        assert_eq!(plan.reactive_consumers_for(second_cell), &[2]);
-        assert!(node.outputs.contains(&output_cell));
-        assert!(
-            !node
-                .inputs
-                .iter()
-                .any(|dependency| dependency.cell == output_cell)
-        );
-    }
-
-    #[test]
-    fn indexed_matrix_literal_builds_dependency_chain() {
-        let tree = mech_syntax::parser::parse("[1.0 2.0; 3.0 4.0]").unwrap();
-        let mut interpreter = Interpreter::with_function_catalog(
-            0,
-            10_000,
-            crate::test_support::catalog::function_catalog(),
-        );
-        let output = interpreter.interpret(&tree).unwrap();
-
-        match output {
-            LegacyValue::MatrixF64(matrix) => {
-                assert_eq!(matrix.shape(), vec![2, 2]);
-                assert_eq!(matrix.as_vec(), vec![1.0, 3.0, 2.0, 4.0]);
+#[cfg(feature = "kind_annotation")]
+fn schema_body_from_scalar_name(name: &str, p: &InterpreterExecution<'_>) -> MResult<SchemaBody> {
+    Ok(match name.rsplit('/').next().unwrap_or(name) {
+        "u8" => SchemaBody::UnsignedInteger(IntegerWidth::W8),
+        "u16" => SchemaBody::UnsignedInteger(IntegerWidth::W16),
+        "u32" => SchemaBody::UnsignedInteger(IntegerWidth::W32),
+        "u64" => SchemaBody::UnsignedInteger(IntegerWidth::W64),
+        "u128" => SchemaBody::UnsignedInteger(IntegerWidth::W128),
+        "i8" => SchemaBody::SignedInteger(IntegerWidth::W8),
+        "i16" => SchemaBody::SignedInteger(IntegerWidth::W16),
+        "i32" => SchemaBody::SignedInteger(IntegerWidth::W32),
+        "i64" => SchemaBody::SignedInteger(IntegerWidth::W64),
+        "i128" => SchemaBody::SignedInteger(IntegerWidth::W128),
+        "f32" => SchemaBody::FloatingPoint(FloatWidth::W32),
+        "f64" => SchemaBody::FloatingPoint(FloatWidth::W64),
+        "c64" => SchemaBody::Complex(FloatWidth::W64),
+        "r64" => SchemaBody::Rational64,
+        "string" => SchemaBody::String,
+        "bool" => SchemaBody::Bool,
+        "id" => SchemaBody::Id,
+        "index" => SchemaBody::Index,
+        _ => {
+            let id = hash_str(name);
+            let state = p.state.borrow();
+            if let Some(schema) = state.kinds.get(&id) {
+                return Ok(schema.clone());
             }
-            other => panic!("expected f64 matrix literal, got {other:?}"),
+            let definition = state.enums.get(&id).ok_or_else(|| {
+                MechError::new(
+                    CanonicalAggregateTypeInferenceFailure {
+                        context: "named kind annotation",
+                    },
+                    Some(name.to_owned()),
+                )
+                .with_compiler_loc()
+            })?;
+            enum_schema(definition)?
         }
-        assert_matrix_literal_chain(&interpreter.plan());
+    })
+}
+
+#[cfg(all(feature = "tuple", feature = "atom"))]
+pub(crate) fn enum_schema(definition: &CanonicalEnumDefinition) -> MResult<SchemaBody> {
+    let path = source_nominal_path(&definition.name)?;
+    let variants = definition
+        .variants
+        .iter()
+        .map(|variant| EnumVariantSchema {
+            name: variant.name.clone(),
+            payload: variant.payload.clone(),
+        })
+        .collect::<Vec<_>>();
+    Ok(SchemaBody::Enum {
+        key: NominalKey::from_path(NominalKind::Enum, &path),
+        variants: variants.into_boxed_slice(),
+    })
+}
+
+#[cfg(any(feature = "kind_annotation", all(feature = "tuple", feature = "atom")))]
+fn source_nominal_path(name: &str) -> MResult<CanonicalNominalPath> {
+    Ok(CanonicalNominalPath::new(
+        name.split('/')
+            .filter(|segment| !segment.is_empty())
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+    )?)
+}
+
+#[derive(Debug, Clone)]
+pub struct CanonicalAggregateSourceAbsence {
+    pub context: &'static str,
+}
+
+impl MechErrorKind for CanonicalAggregateSourceAbsence {
+    fn name(&self) -> &str {
+        "CanonicalAggregateSourceAbsence"
+    }
+
+    fn message(&self) -> String {
+        format!("source absence is not a value in {}", self.context)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CanonicalAggregateSchemaMismatch {
+    pub context: &'static str,
+    pub expected: String,
+    pub actual: String,
+}
+
+impl MechErrorKind for CanonicalAggregateSchemaMismatch {
+    fn name(&self) -> &str {
+        "CanonicalAggregateSchemaMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "{} expected schema {}, found {}",
+            self.context, self.expected, self.actual
+        )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CanonicalAggregateTypeInferenceFailure {
+    pub context: &'static str,
+}
+
+impl MechErrorKind for CanonicalAggregateTypeInferenceFailure {
+    fn name(&self) -> &str {
+        "CanonicalAggregateTypeInferenceFailure"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "cannot infer a closed canonical schema for {}",
+            self.context
+        )
     }
 }
 
 #[cfg(all(
     test,
-    feature = "set",
     feature = "f64",
-    feature = "functions",
-    feature = "program",
-    feature = "semantic-compiler"
+    feature = "kind_annotation",
+    feature = "semantic-compiler",
+    feature = "table"
 ))]
-mod set_dependency_tests {
+mod canonical_kind_annotation_tests {
     use super::*;
 
-    fn scalar(value: f64) -> (LegacyValue, ReactiveCellId) {
-        let reference = Ref::new(value);
-        let cell = ReactiveCellId::new(reference.id());
-        (LegacyValue::F64(reference), cell)
-    }
-
-    fn set_members(value: &LegacyValue) -> Vec<ReactiveCellId> {
-        match value {
-            LegacyValue::Set(set) => set
-                .borrow()
-                .set
-                .iter()
-                .flat_map(LegacyValue::reactive_root_cell_ids)
-                .collect(),
-            other => panic!("expected set, found {:?}", other),
-        }
-    }
-
-    fn assert_structural_set_node(plan: &Plan, output: &LegacyValue) {
-        let output_cell = output.reactive_root_cell_ids()[0];
-        let member_cells = set_members(output);
-        let plan = plan.borrow();
-        let (node_id, node) = (0..plan.len())
-            .find_map(|node_id| {
-                let node = plan.node(node_id).unwrap();
-                node.outputs
-                    .contains(&output_cell)
-                    .then_some((node_id, node))
-            })
-            .expect("set structural node should be registered");
-        assert!(node.inputs.is_empty());
-        assert_eq!(node.outputs.as_slice(), &[output_cell]);
-        for member_cell in member_cells {
-            assert!(!node.outputs.contains(&member_cell));
-            assert!(!plan.reactive_consumers_for(member_cell).contains(&node_id));
-            assert!(!plan.sampled_consumers_for(member_cell).contains(&node_id));
-        }
-    }
-
     #[test]
-    fn set_define_registration_ignores_element_dependencies() {
-        let interpreter = Interpreter::new(0, 100);
-        let plan = interpreter.plan();
-        let mut services = NoMechExecutionServices;
-        let execution = InterpreterExecution::new(&interpreter, &mut services);
-        let (first, first_cell) = scalar(1.0);
-        let (second, second_cell) = scalar(2.0);
-        let output = execute_initialized_indexed_compiler(
-            &execution,
-            &plan,
-            &SetDefine {},
-            vec![first, second],
+    fn wildcard_table_column_uses_the_canonical_dynamic_schema() {
+        let tree = mech_syntax::parser::parse(
+            "value := | payload<*> amount<f64> |\n         | \"item\"     1           |\nvalue",
         )
         .unwrap();
-        let output_cell = output.reactive_root_cell_ids()[0];
-        let plan = plan.borrow();
-        let node = plan.node(0).unwrap();
-        assert_eq!(plan.len(), 1);
-        assert!(node.inputs.is_empty());
-        assert!(plan.reactive_consumers_for(first_cell).is_empty());
-        assert!(plan.reactive_consumers_for(second_cell).is_empty());
-        assert!(plan.sampled_consumers_for(first_cell).is_empty());
-        assert!(plan.sampled_consumers_for(second_cell).is_empty());
-        assert_eq!(node.outputs.as_slice(), &[output_cell]);
-        assert!(!node.outputs.contains(&first_cell));
-        assert!(!node.outputs.contains(&second_cell));
-    }
-
-    #[test]
-    fn source_set_literal_registers_structural_node() {
-        let tree = mech_syntax::parser::parse("{1.0, 2.0}").unwrap();
         let mut interpreter = Interpreter::with_function_catalog(
             0,
             10_000,
             crate::test_support::catalog::function_catalog(),
         );
-        let output = interpreter.interpret(&tree).unwrap();
-        assert_eq!(output.to_string(), "{\n  1,\n  2\n}");
-        assert_structural_set_node(&interpreter.plan(), &output);
+        let output = interpreter.interpret(&tree).unwrap().unwrap();
+        let SchemaBody::Table { columns, .. } = output.closed_schema_body().unwrap() else {
+            panic!("source table must retain its canonical table schema")
+        };
+        assert_eq!(columns.len(), 2);
+        assert_eq!(columns[0].name, "payload");
+        assert_eq!(columns[0].schema, SchemaBody::Dynamic);
+        assert_eq!(columns[1].name, "amount");
+        assert_eq!(
+            columns[1].schema,
+            SchemaBody::FloatingPoint(FloatWidth::W64)
+        );
     }
 }

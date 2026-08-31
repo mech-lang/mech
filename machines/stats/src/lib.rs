@@ -13,9 +13,6 @@ extern crate paste;
 
 use mech_core::*;
 
-#[cfg(feature = "source")]
-use paste::paste;
-
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
 #[cfg(feature = "vectord")]
@@ -173,40 +170,31 @@ macro_rules! impl_stats_unop {
                 + 'static
                 + Add<Output = T>
                 + AddAssign
-                + AsValueKind
+                + FunctionRuntimeType
                 + Zero
                 + One
                 + PartialEq
                 + PartialOrd,
             T: StatsCheckedAdd,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst + ConstElem,
-            Ref<$out_type>: ToValue,
-            $arg_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            T: CanonicalMatrixElementBacking + CompileConst + ConstElem,
+            $arg_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Unary(out, arg) => {
-                        let arg = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let out = out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new($struct_name { arg, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg) = invocation.expect_unary()?;
+                let arg: Ref<$arg_type> = arg.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new($struct_name { arg, out }))
             }
+
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -223,7 +211,9 @@ macro_rules! impl_stats_unop {
                 + PartialEq
                 + PartialOrd,
             T: StatsCheckedAdd,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 let mut next = self.out.borrow().clone();
@@ -234,8 +224,11 @@ macro_rules! impl_stats_unop {
                 *self.out.borrow_mut() = next;
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_STATS_REDUCTION_CONTRACT)
@@ -243,18 +236,14 @@ macro_rules! impl_stats_unop {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind,
+            T: CanonicalMatrixElementBacking + CompileConst + ConstElem + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_unop!(name, self.out, self.arg, ctx);
             }
         }

@@ -1,7 +1,7 @@
 use crate::intrinsics::IndexOutOfBoundsError;
 use crate::*;
 use std::cell::RefCell as StdRefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::ops::Deref;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::rc::Rc;
@@ -46,10 +46,10 @@ pub struct Interpreter {
     pub(crate) persistent_user_function_plan_depth: Ref<usize>,
     pub(crate) deferred_expression_solve_depth: Ref<usize>,
     pub code: Vec<MechSourceCode>,
-    pub out: LegacyValue,
-    pub out_values: Ref<HashMap<u64, LegacyValue>>,
+    pub out: Option<ValueCell>,
+    pub out_values: Ref<HashMap<u64, Option<ValueCell>>>,
     #[cfg(feature = "subscript_formula")]
-    pub string_access_live_values: Ref<std::collections::BTreeSet<usize>>,
+    pub string_access_live_values: Ref<std::collections::HashSet<CanonicalCellId>>,
     #[cfg(feature = "subscript_formula")]
     pub current_string_access_expression_live: Ref<bool>,
     pub inline_eval_counter: Ref<u64>,
@@ -215,7 +215,7 @@ impl SymbolTableCellCheckpoint {
     fn capture(
         target: &SymbolTableRef,
         interpreter_id: u64,
-        journal: &mut ValueStateJournal,
+        journal: &mut CanonicalStateJournal,
     ) -> MResult<Self> {
         let snapshot = {
             let table = target.try_borrow().map_err(|_| {
@@ -226,10 +226,10 @@ impl SymbolTableCellCheckpoint {
             })?;
             let snapshot = table.snapshot();
             for value in table.symbols.values() {
-                journal.capture_val_ref(value)?;
+                journal.capture_value_cell(value)?;
             }
             for value in table.mutable_variables.values() {
-                journal.capture_val_ref(value)?;
+                journal.capture_value_cell(value)?;
             }
             snapshot
         };
@@ -279,7 +279,7 @@ struct UserFunctionDefinitionCheckpoint {
     symbols_target: SymbolTableRef,
     symbols: SymbolTableSnapshot,
     symbol_dictionary_target: Ref<Dictionary>,
-    out_target: Ref<LegacyValue>,
+    out_target: ValueCell,
     plan_target: Plan,
     plan: PlanCheckpoint,
 }
@@ -379,13 +379,9 @@ impl UserFunctionsCheckpoint {
         Ok(())
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let mut values = Vec::new();
-        let mut seen_refs = HashSet::new();
+    fn capture_transaction_state(&self, journal: &mut CanonicalStateJournal) -> MResult<()> {
         for definition in &self.definitions {
-            if seen_refs.insert(definition.out_target.addr()) {
-                values.push(LegacyValue::MutableReference(definition.out_target.clone()));
-            }
+            journal.capture_value_cell(&definition.out_target)?;
             let symbols = definition
                 .symbols_target
                 .try_borrow()
@@ -395,14 +391,12 @@ impl UserFunctionsCheckpoint {
                 .values()
                 .chain(symbols.mutable_variables.values())
             {
-                if seen_refs.insert(value.addr()) {
-                    values.push(LegacyValue::MutableReference(value.clone()));
-                }
+                journal.capture_value_cell(value)?;
             }
             drop(symbols);
-            values.extend(definition.plan_target.transaction_state_values()?);
+            definition.plan_target.capture_transaction_state(journal)?;
         }
-        Ok(values)
+        Ok(())
     }
 }
 
@@ -426,11 +420,9 @@ struct ProgramStateCheckpoint {
     user_function_scope_depth: usize,
     #[cfg(feature = "functions")]
     compute_regions: Vec<ProgramComputeRegion>,
-    kinds: KindTable,
+    kinds: NamedSchemaTable,
     #[cfg(feature = "enum")]
     enums: EnumTable,
-    #[cfg(feature = "enum")]
-    enum_dictionaries: Vec<RefPayloadCheckpoint<Dictionary>>,
     #[cfg(feature = "invariant_define")]
     integrity_constraints: IntegrityConstraintTable,
     dictionary: RefPayloadCheckpoint<Dictionary>,
@@ -440,7 +432,7 @@ impl ProgramStateCheckpoint {
     fn capture(
         target: &Ref<ProgramState>,
         interpreter_id: u64,
-        journal: &mut ValueStateJournal,
+        journal: &mut CanonicalStateJournal,
     ) -> MResult<Self> {
         let state = target
             .try_borrow()
@@ -466,18 +458,14 @@ impl ProgramStateCheckpoint {
         #[cfg(feature = "functions")]
         let user_functions = UserFunctionsCheckpoint::capture(&state.user_functions)?;
         #[cfg(feature = "functions")]
-        for value in user_functions.transaction_state_values()? {
-            journal.capture_value(&value)?;
-        }
+        user_functions.capture_transaction_state(journal)?;
 
         #[cfg(feature = "functions")]
         let plan = state.plan.clone();
         #[cfg(feature = "functions")]
         checkpoint_preflight_plan_capture(&plan, interpreter_id)?;
         #[cfg(feature = "functions")]
-        for value in plan.transaction_state_values()? {
-            journal.capture_value(&value)?;
-        }
+        plan.capture_transaction_state(journal)?;
         #[cfg(feature = "functions")]
         let plan_checkpoint = plan.checkpoint();
         #[cfg(feature = "functions")]
@@ -487,29 +475,15 @@ impl ProgramStateCheckpoint {
 
         #[cfg(feature = "enum")]
         let enums = state.enums.clone();
-        #[cfg(feature = "enum")]
-        let mut enum_dictionaries = Vec::new();
-        #[cfg(feature = "enum")]
-        for enum_value in enums.values() {
-            enum_dictionaries.push(RefPayloadCheckpoint::capture(
-                &enum_value.names,
-                interpreter_id,
-            )?);
-            for (_, payload) in &enum_value.variants {
-                if let Some(payload) = payload {
-                    journal.capture_value(payload)?;
-                }
-            }
-        }
 
         #[cfg(feature = "invariant_define")]
         for constraint in state.integrity_constraints.values() {
-            journal.capture_val_ref(&constraint.result)?;
+            journal.capture_value_cell(&constraint.result)?;
             if let Some(lhs) = &constraint.lhs {
-                journal.capture_val_ref(lhs)?;
+                journal.capture_value_cell(lhs)?;
             }
             if let Some(rhs) = &constraint.rhs {
-                journal.capture_val_ref(rhs)?;
+                journal.capture_value_cell(rhs)?;
             }
         }
 
@@ -536,8 +510,6 @@ impl ProgramStateCheckpoint {
             kinds: state.kinds.clone(),
             #[cfg(feature = "enum")]
             enums,
-            #[cfg(feature = "enum")]
-            enum_dictionaries,
             #[cfg(feature = "invariant_define")]
             integrity_constraints: state.integrity_constraints.clone(),
             dictionary: RefPayloadCheckpoint::capture(&state.dictionary, interpreter_id)?,
@@ -556,10 +528,6 @@ impl ProgramStateCheckpoint {
         self.user_functions.preflight_restore()?;
         #[cfg(feature = "functions")]
         self.plan.preflight_rollback(&self.plan_checkpoint)?;
-        #[cfg(feature = "enum")]
-        for dictionary in &self.enum_dictionaries {
-            dictionary.preflight(interpreter_id)?;
-        }
         self.dictionary.preflight(interpreter_id)
     }
 
@@ -605,10 +573,6 @@ impl ProgramStateCheckpoint {
         self.user_functions.apply_restore_structure();
         #[cfg(feature = "functions")]
         self.plan.apply_rollback_structure(&self.plan_checkpoint);
-        #[cfg(feature = "enum")]
-        for dictionary in &self.enum_dictionaries {
-            dictionary.apply();
-        }
         self.dictionary.apply();
     }
 
@@ -650,10 +614,10 @@ struct InterpreterStructureCheckpoint {
     persistent_user_function_plan_depth: RefPayloadCheckpoint<usize>,
     deferred_expression_solve_depth: RefPayloadCheckpoint<usize>,
     code: Vec<MechSourceCode>,
-    out: LegacyValue,
-    out_values: RefPayloadCheckpoint<HashMap<u64, LegacyValue>>,
+    out: Option<ValueCell>,
+    out_values: RefPayloadCheckpoint<HashMap<u64, Option<ValueCell>>>,
     #[cfg(feature = "subscript_formula")]
-    string_access_live_values: RefPayloadCheckpoint<std::collections::BTreeSet<usize>>,
+    string_access_live_values: RefPayloadCheckpoint<std::collections::HashSet<CanonicalCellId>>,
     #[cfg(feature = "subscript_formula")]
     current_string_access_expression_live: RefPayloadCheckpoint<bool>,
     inline_eval_counter: RefPayloadCheckpoint<u64>,
@@ -671,7 +635,7 @@ struct InterpreterStructureCheckpoint {
 impl InterpreterStructureCheckpoint {
     fn capture(
         interpreter: &Interpreter,
-        journal: &mut ValueStateJournal,
+        journal: &mut CanonicalStateJournal,
         seen_children: &mut Vec<InterpreterRef>,
     ) -> MResult<Self> {
         let state = ProgramStateCheckpoint::capture(&interpreter.state, interpreter.id, journal)?;
@@ -680,11 +644,13 @@ impl InterpreterStructureCheckpoint {
             .plan
             .validate_checkpoint_turn_state(&interpreter.reactive_turn_state)?;
 
-        journal.capture_value(&interpreter.out)?;
+        if let Some(out) = &interpreter.out {
+            journal.capture_value_cell(out)?;
+        }
 
         let out_values = RefPayloadCheckpoint::capture(&interpreter.out_values, interpreter.id)?;
-        for value in out_values.payload.values() {
-            journal.capture_value(value)?;
+        for cell in out_values.payload.values().flatten() {
+            journal.capture_value_cell(cell)?;
         }
 
         let sub_interpreter_entries =
@@ -909,7 +875,7 @@ impl InterpreterStructureCheckpoint {
 
 struct InterpreterCheckpointData {
     structure: InterpreterStructureCheckpoint,
-    journal: ValueStateJournal,
+    journal: CanonicalStateJournal,
 }
 
 /// A process-local explicit savepoint for retained interpreter state.
@@ -1223,7 +1189,7 @@ impl Interpreter {
     }
 
     pub fn checkpoint(&self) -> MResult<InterpreterCheckpoint> {
-        let mut journal = ValueStateJournal::new();
+        let mut journal = CanonicalStateJournal::new();
         let mut seen_children = Vec::new();
         let structure =
             InterpreterStructureCheckpoint::capture(self, &mut journal, &mut seen_children)?;
@@ -1278,10 +1244,6 @@ impl Interpreter {
             state
                 .symbol_table
                 .borrow_mut()
-                .insert(ans_id, LegacyValue::Empty, false);
-            state
-                .symbol_table
-                .borrow_mut()
                 .dictionary
                 .borrow_mut()
                 .insert(ans_id, "ans".to_string());
@@ -1308,11 +1270,11 @@ impl Interpreter {
             #[cfg(feature = "functions")]
             persistent_user_function_plan_depth: Ref::new(0),
             deferred_expression_solve_depth: Ref::new(0),
-            out: LegacyValue::Empty,
+            out: None,
             sub_interpreters: Ref::new(HashMap::new()),
             out_values: Ref::new(HashMap::new()),
             #[cfg(feature = "subscript_formula")]
-            string_access_live_values: Ref::new(std::collections::BTreeSet::new()),
+            string_access_live_values: Ref::new(std::collections::HashSet::new()),
             #[cfg(feature = "subscript_formula")]
             current_string_access_expression_live: Ref::new(false),
             inline_eval_counter: Ref::new(0),
@@ -1406,14 +1368,27 @@ impl Interpreter {
         // print state
         output.push_str(&self.state.borrow().pretty_print());
 
-        output.push_str(&format!("Output Value: {}\n", self.out));
+        output.push_str(&format!(
+            "Output Value: {}\n",
+            match &self.out {
+                Some(cell) => format!("{:?}", cell.snapshot()),
+                None => "<absent>".to_string(),
+            }
+        ));
         output.push_str(&format!(
             "Number of Sub-Interpreters: {}\n",
             self.sub_interpreters.borrow().len()
         ));
         output.push_str("Output Values:\n");
         for (key, value) in self.out_values.borrow().iter() {
-            output.push_str(&format!("  {}: {}\n", key, value));
+            output.push_str(&format!(
+                "  {}: {}\n",
+                key,
+                match value {
+                    Some(cell) => format!("{:?}", cell.snapshot()),
+                    None => "<absent>".to_string(),
+                }
+            ));
         }
         output.push_str(&format!("Code Length: {}\n", self.code.len()));
         output
@@ -1512,7 +1487,7 @@ impl Interpreter {
     #[cfg(feature = "functions")]
     pub fn advance_reactive_turn(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
     ) -> MResult<ReactiveTurnOutcome> {
         let mut services = NoMechExecutionServices;
         self.advance_reactive_turn_with_services(dirty_cells, &mut services)
@@ -1521,7 +1496,7 @@ impl Interpreter {
     #[cfg(feature = "functions")]
     pub fn advance_reactive_turn_with_services(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {
         let checkpoint = self.reactive_turn_checkpoint()?;
@@ -1548,7 +1523,7 @@ impl Interpreter {
     #[cfg(feature = "functions")]
     pub fn advance_reactive_turn_participating(
         &mut self,
-        dirty_cells: &[ReactiveCellId],
+        dirty_cells: &[CanonicalCellId],
         participant: &mut ReactiveJournalParticipant<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {
@@ -1581,7 +1556,7 @@ impl Interpreter {
     }
 
     #[cfg(all(feature = "source", feature = "functions"))]
-    pub fn interpret(&mut self, tree: &Program) -> MResult<LegacyValue> {
+    pub fn interpret(&mut self, tree: &Program) -> MResult<Option<ValueCell>> {
         let mut services = NoMechExecutionServices;
         self.interpret_with_services(tree, &mut services)
     }
@@ -1591,7 +1566,7 @@ impl Interpreter {
         &mut self,
         tree: &Program,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<Option<ValueCell>> {
         self.code.push(MechSourceCode::Tree(tree.clone()));
         let result = catch_unwind(AssertUnwindSafe(|| {
             let execution = InterpreterExecution::new(self, services);
@@ -1623,8 +1598,24 @@ impl Interpreter {
         })??;
         // The interpreter output is the final source value, which may differ
         // from the last planned node (for example, `x := 1 + 2; 42`).
+        let result = retained_source_cell(result)?;
         self.out = result.clone();
         Ok(result)
+    }
+}
+
+#[cfg(all(feature = "source", feature = "functions"))]
+pub(crate) fn retained_source_cell(value: SpecializationInput) -> MResult<Option<ValueCell>> {
+    match value {
+        SpecializationInput::Absent => Ok(None),
+        SpecializationInput::Cell(cell) => Ok(Some(cell)),
+        SpecializationInput::MatrixAllSelection => Err(MechError::new(
+            CanonicalAggregateSourceAbsence {
+                context: "interpreter output",
+            },
+            None,
+        )
+        .with_compiler_loc()),
     }
 }
 
@@ -1752,21 +1743,12 @@ impl<'a> InterpreterExecution<'a> {
     }
 
     #[cfg(feature = "functions")]
-    pub fn specialize_visible_operation(
-        &self,
-        operation: OperationId,
-        arguments: &[LegacyValue],
-    ) -> MResult<Box<dyn MechFunction>> {
-        self.specialize_visible_operation_named(operation, None, arguments)
-    }
-
-    #[cfg(feature = "functions")]
-    pub(crate) fn specialize_visible_operation_named(
+    pub(crate) fn specialize_visible_invocation_named(
         &self,
         operation: OperationId,
         canonical_name: Option<&str>,
-        arguments: &[LegacyValue],
-    ) -> MResult<Box<dyn MechFunction>> {
+        invocation: &SpecializationInvocation,
+    ) -> MResult<SpecializedFunction> {
         let state = self.state.borrow();
         FunctionResolver::new(
             self.function_catalog(),
@@ -1774,7 +1756,7 @@ impl<'a> InterpreterExecution<'a> {
             &state.function_extensions,
             &state.user_functions,
         )
-        .specialize_operation_named(operation, canonical_name, arguments)
+        .specialize_operation_named(operation, canonical_name, invocation)
     }
 
     pub fn with_services<T>(

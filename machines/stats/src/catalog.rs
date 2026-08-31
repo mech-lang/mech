@@ -1,14 +1,23 @@
 use mech_core::{
-    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
-    RuntimeOutputAliasPolicy, function_shape_contract_violation,
+    FunctionCatalogBuilder, MResult, RuntimeFunctionContract, RuntimeOutputAliasPolicy, SchemaBody,
+    ValueCell, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
-use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
 #[cfg(all(feature = "source", feature = "sum"))]
 use crate::{StatsSumColumn, StatsSumRow};
+
+macro_rules! statistical_reduction_contract {
+    (sum_column) => {
+        validate_canonical_sum_column
+    };
+    (sum_row) => {
+        validate_canonical_sum_row
+    };
+}
 
 #[cfg(any(
     feature = "matrix1",
@@ -16,55 +25,74 @@ use crate::{StatsSumColumn, StatsSumRow};
     feature = "vector3",
     feature = "vector4",
     feature = "vectord",
-    all(feature = "matrixd", feature = "row_vectord")
+    all(feature = "row_vectord", feature = "matrixd")
 ))]
-fn validate_sum_column(args: &FunctionArgs) -> MResult<()> {
-    validate_statistical_reduction(args, true)
+fn validate_canonical_sum_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_canonical_statistical_reduction(output, inputs, true)
 }
 
-fn validate_sum_row(args: &FunctionArgs) -> MResult<()> {
-    validate_statistical_reduction(args, false)
+#[cfg(any(
+    feature = "matrix1",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+    feature = "row_vectord",
+    all(feature = "vectord", feature = "matrixd")
+))]
+fn validate_canonical_sum_row(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_canonical_statistical_reduction(output, inputs, false)
 }
 
-fn validate_statistical_reduction(args: &FunctionArgs, column: bool) -> MResult<()> {
+#[cfg(any(
+    feature = "matrix1",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "vectord",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+    feature = "row_vectord"
+))]
+fn validate_canonical_statistical_reduction(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+    column: bool,
+) -> MResult<()> {
     let contract = "statistical_reduction";
-    let output = args
-        .output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "output must be matrix-backed")
-        })?;
-    let input = args
-        .input_value(0)
-        .ok_or_else(|| function_shape_contract_violation(contract, "missing input"))?
-        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "input must be matrix-backed")
-        })?;
-    let expected = if column {
-        (input.rows, 1)
-    } else {
-        (1, input.cols)
-    };
-    if (output.rows, output.cols) != expected {
+    let [input] = inputs else {
         return Err(function_shape_contract_violation(
             contract,
-            format!(
-                "output is {}x{}, expected {}x{} for input {}x{}",
-                output.rows, output.cols, expected.0, expected.1, input.rows, input.cols,
-            ),
+            format!("expected 1 input, found {}", inputs.len()),
+        ));
+    };
+    let dimensions = |cell: &ValueCell, label: &str| -> MResult<(u64, u64)> {
+        let SchemaBody::Matrix { dimensions, .. } = cell.closed_schema_body()? else {
+            return Err(function_shape_contract_violation(
+                contract,
+                format!("{label} must be matrix-backed"),
+            ));
+        };
+        let [mech_core::DimensionExpr::Constant(rows), mech_core::DimensionExpr::Constant(columns)] =
+            dimensions.as_ref()
+        else {
+            return Err(function_shape_contract_violation(
+                contract,
+                format!("{label} dimensions must be resolved"),
+            ));
+        };
+        Ok((*rows, *columns))
+    };
+    let input = dimensions(input, "input")?;
+    let output = dimensions(output, "output")?;
+    let expected = if column { (input.0, 1) } else { (1, input.1) };
+    if output != expected {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("output is {output:?}, expected {expected:?} for input {input:?}"),
         ));
     }
     Ok(())
-}
-
-macro_rules! statistical_reduction_contract {
-    (sum_column) => {
-        validate_sum_column
-    };
-    (sum_row) => {
-        validate_sum_row
-    };
 }
 
 #[cfg(feature = "source")]
@@ -75,9 +103,9 @@ fn install_module_operation<T>(
     compiler: T,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
+    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -174,7 +202,7 @@ macro_rules! declare_stats_runtime_factory {
                 installer: [<install_ $factory:snake _ $scalar_token>],
                 name: concat!(stringify!($factory), "<", $scalar_name, ">"),
                 factory_type: crate::$module::$factory<$scalar>,
-                contract: RuntimeFunctionContract::custom(
+                contract: RuntimeFunctionContract::canonical_custom(
                     "statistical_reduction",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     statistical_reduction_contract!($module),
@@ -235,6 +263,57 @@ mod tests {
             assert_eq!(export.canonical_name, canonical_name);
             assert_eq!(export.exposure, FunctionExposure::ModuleOnly);
             assert_eq!(catalog.exports_for_operation(operation), [export.clone()]);
+        }
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "matrixd",
+        feature = "vectord",
+        feature = "row_vectord"
+    ))]
+    #[test]
+    fn source_reductions_bind_registered_factories_from_canonical_cells() {
+        use nalgebra::{DMatrix, DVector, RowDVector};
+
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        install_source(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let input = mech_core::ValueCell::from_exact_matrix_ref(
+            mech_core::Ref::new(DMatrix::from_row_slice(
+                2,
+                3,
+                &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
+            )),
+            2,
+            3,
+        )
+        .unwrap();
+        for (operation, output) in [
+            (
+                "stats/sum/column",
+                <DVector<f64> as mech_core::FunctionRuntimeType>::REPRESENTATION,
+            ),
+            (
+                "stats/sum/row",
+                <RowDVector<f64> as mech_core::FunctionRuntimeType>::REPRESENTATION,
+            ),
+        ] {
+            let invocation = mech_core::SpecializationInvocation::from_cells(
+                vec![input.clone()].into_boxed_slice(),
+            );
+            let mut context =
+                mech_core::SpecializationContext::for_invocation(&invocation, Some(&catalog))
+                    .unwrap();
+            let specialized = catalog
+                .specializer(OperationId::from_name(operation))
+                .unwrap()
+                .specializer
+                .specialize_invocation(&invocation, &mut context)
+                .unwrap();
+            assert_eq!(specialized.output().representation(), output);
+            specialized.instance().implementation().solve_result().unwrap();
         }
     }
 }

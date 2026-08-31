@@ -5,6 +5,8 @@ use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
 use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(any(feature = "seq", feature = "sneq"))]
+use mech_core::ValueCell;
 #[cfg(any(
     feature = "seq",
     feature = "sneq",
@@ -15,21 +17,21 @@ use mech_core::{FunctionCatalogBuilder, MResult};
 ))]
 use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 #[cfg(feature = "source")]
-use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
 #[cfg(feature = "source")]
-fn install_operation<T>(
+fn install_canonical_operation<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
     compiler: T,
     exposure: FunctionExposure,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
+    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -42,70 +44,70 @@ where
 #[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "eq")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/eq",
         crate::CompareEqual {},
         FunctionExposure::Prelude,
     )?;
     #[cfg(feature = "gt")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/gt",
         crate::CompareGreaterThan {},
         FunctionExposure::Prelude,
     )?;
     #[cfg(feature = "gte")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/gte",
         crate::CompareGreaterThanEqual {},
         FunctionExposure::Prelude,
     )?;
     #[cfg(feature = "lt")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/lt",
         crate::CompareLessThan {},
         FunctionExposure::Prelude,
     )?;
     #[cfg(feature = "lte")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/lte",
         crate::CompareLessThanEqual {},
         FunctionExposure::Prelude,
     )?;
     #[cfg(feature = "max")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/max",
         crate::CompareMax {},
         FunctionExposure::Internal,
     )?;
     #[cfg(feature = "min")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/min",
         crate::CompareMin {},
         FunctionExposure::Internal,
     )?;
     #[cfg(feature = "neq")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/neq",
         crate::CompareNotEqual {},
         FunctionExposure::Prelude,
     )?;
     #[cfg(feature = "seq")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/seq",
         crate::CompareStrictEqual {},
         FunctionExposure::Internal,
     )?;
     #[cfg(feature = "sneq")]
-    install_operation(
+    install_canonical_operation(
         builder,
         "compare/sneq",
         crate::CompareStrictNotEqual {},
@@ -172,7 +174,7 @@ declare_compare_binop_native_factories!(Min, "min");
 declare_compare_binop_native_factories!(NEQ, "neq");
 
 #[cfg(any(feature = "seq", feature = "sneq"))]
-fn validate_strict_comparison(_: &mech_core::FunctionArgs) -> MResult<()> {
+fn validate_strict_comparison_canonical(_: &ValueCell, _: &[ValueCell]) -> MResult<()> {
     Ok(())
 }
 
@@ -182,10 +184,10 @@ mech_core::declare_native_runtime_factory! {
     installer: install_strict_eq,
     name: "compare/seq",
     factory_type: crate::StrictEqValue,
-    contract: RuntimeFunctionContract::custom(
+    contract: RuntimeFunctionContract::canonical_custom(
         "strict_comparison",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_strict_comparison,
+        validate_strict_comparison_canonical,
     ),
     package: "mech-compare",
     crate_name: "mech_compare",
@@ -199,10 +201,10 @@ mech_core::declare_native_runtime_factory! {
     installer: install_strict_not_eq,
     name: "compare/sneq",
     factory_type: crate::StrictNotEqValue,
-    contract: RuntimeFunctionContract::custom(
+    contract: RuntimeFunctionContract::canonical_custom(
         "strict_comparison",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_strict_comparison,
+        validate_strict_comparison_canonical,
     ),
     package: "mech-compare",
     crate_name: "mech_compare",

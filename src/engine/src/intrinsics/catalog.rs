@@ -1,29 +1,35 @@
+#[cfg(all(feature = "semantic-compiler", feature = "set"))]
+use crate::intrinsics::constructors::SetDefine;
+#[cfg(feature = "matrix_horzcat")]
+use crate::intrinsics::constructors::ValueHorizontalConcatenation;
 #[cfg(feature = "matrix_comprehensions")]
 use crate::intrinsics::constructors::ValueMatrixComprehension;
 #[cfg(feature = "set")]
 use crate::intrinsics::constructors::ValueSet;
 #[cfg(feature = "set_comprehensions")]
 use crate::intrinsics::constructors::ValueSetComprehension;
+#[cfg(feature = "matrix_vertcat")]
+use crate::intrinsics::constructors::ValueVerticalConcatenation;
 #[cfg(all(feature = "semantic-compiler", feature = "variable_define"))]
 use crate::intrinsics::define::VarDefine;
+#[cfg(all(feature = "semantic-compiler", feature = "convert"))]
+use crate::literals::ConvertKind;
 #[cfg(any(
     feature = "semantic-compiler",
     feature = "set",
     feature = "invariant_define",
     feature = "set_comprehensions",
-    feature = "matrix_comprehensions"
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
 ))]
 use crate::*;
-#[cfg(feature = "matrix_comprehensions")]
-use mech_core::FunctionArgumentRole;
-#[cfg(feature = "semantic-compiler")]
-use mech_core::FunctionSpecializer;
 #[cfg(any(
     feature = "invariant_define",
     feature = "matrix_comprehensions",
     feature = "set_comprehensions"
 ))]
-use mech_core::{FunctionArgs, function_shape_contract_violation};
+use mech_core::function_shape_contract_violation;
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(all(
     feature = "semantic-compiler",
@@ -49,7 +55,7 @@ use std::sync::Arc;
         feature = "set"
     )
 ))]
-fn install_named<T>(
+fn install_canonical_named<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
     module: Option<&str>,
@@ -58,9 +64,9 @@ fn install_named<T>(
     compiler: T,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
+    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -71,43 +77,52 @@ where
 }
 
 #[cfg(feature = "semantic-compiler")]
-fn install_intrinsic<T>(
+fn install_canonical_intrinsic<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
     compiler: T,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
     builder
-        .insert_intrinsic_specializer(canonical_name, Arc::new(compiler))
+        .insert_canonical_intrinsic_specializer(canonical_name, Arc::new(compiler))
         .map(|_| ())
 }
 
 #[cfg(feature = "matrix_comprehensions")]
-fn validate_matrix_comprehension(args: &FunctionArgs) -> MResult<()> {
-    let contract = "matrix_comprehension";
-    args.output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "output must be matrix-backed")
-        })?;
-    Ok(())
+fn validate_matrix_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) -> MResult<()> {
+    match output.closed_schema_body()? {
+        SchemaBody::Matrix { .. } => Ok(()),
+        _ => Err(function_shape_contract_violation(
+            "matrix_comprehension",
+            "output must be matrix-backed",
+        )),
+    }
 }
 
 #[cfg(feature = "set_comprehensions")]
-fn validate_set_comprehension(_args: &FunctionArgs) -> MResult<()> {
-    Ok(())
+fn validate_set_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) -> MResult<()> {
+    match output.closed_schema_body()? {
+        SchemaBody::Set { .. } => Ok(()),
+        _ => Err(function_shape_contract_violation(
+            "set_comprehension",
+            "output must be set-backed",
+        )),
+    }
 }
 
 #[cfg(feature = "invariant_define")]
-fn validate_integrity_constraint_marker(args: &FunctionArgs) -> MResult<()> {
-    if args.input_count() == 6 {
+fn validate_integrity_constraint_marker_canonical(
+    _: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    if inputs.len() == 6 {
         Ok(())
     } else {
         Err(function_shape_contract_violation(
             "integrity_constraint_marker",
-            format!("expected 6 metadata inputs, found {}", args.input_count()),
+            format!("expected 6 metadata inputs, found {}", inputs.len()),
         ))
     }
 }
@@ -117,7 +132,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix_horzcat")]
     crate::intrinsics::horzcat::install_source_runtime(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
-    install_named(
+    install_canonical_named(
         builder,
         "matrix/comprehension",
         None,
@@ -126,7 +141,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         MatrixComprehensionDefine {},
     )?;
     #[cfg(feature = "matrix_horzcat")]
-    install_named(
+    install_canonical_named(
         builder,
         "matrix/horzcat",
         None,
@@ -135,7 +150,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         MatrixHorzCat {},
     )?;
     #[cfg(feature = "matrix_vertcat")]
-    install_named(
+    install_canonical_named(
         builder,
         "matrix/vertcat",
         None,
@@ -144,7 +159,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         MatrixVertCat {},
     )?;
     #[cfg(feature = "set_comprehensions")]
-    install_named(
+    install_canonical_named(
         builder,
         "set/comprehension",
         None,
@@ -153,55 +168,83 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         SetComprehensionDefine {},
     )?;
     #[cfg(feature = "set")]
-    install_named(
+    install_canonical_named(
         builder,
         "set/define",
         None,
         None,
         FunctionExposure::Prelude,
-        SetDefine {},
+        SetDefine,
     )?;
-
     #[cfg(feature = "table")]
     {
-        let table_specializers: [(&str, Arc<dyn FunctionSpecializer>); 6] = [
-            ("table/join", Arc::new(TableInnerJoin {})),
-            ("table/left-outer-join", Arc::new(TableLeftOuterJoin {})),
-            ("table/right-outer-join", Arc::new(TableRightOuterJoin {})),
-            ("table/full-outer-join", Arc::new(TableFullOuterJoin {})),
-            ("table/left-semi-join", Arc::new(TableLeftSemiJoin {})),
-            ("table/left-anti-join", Arc::new(TableLeftAntiJoin {})),
-        ];
-        for (canonical_name, compiler) in table_specializers {
-            let operation = builder.insert_specializer(canonical_name, compiler)?;
-            builder.insert_export(FunctionExport {
-                operation,
-                canonical_name: canonical_name.to_string(),
-                module: None,
-                item: None,
-                exposure: FunctionExposure::Internal,
-            })?;
-        }
+        install_canonical_named(
+            builder,
+            "table/join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableInnerJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/left-outer-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableLeftOuterJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/right-outer-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableRightOuterJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/full-outer-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableFullOuterJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/left-semi-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableLeftSemiJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/left-anti-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableLeftAntiJoin,
+        )?;
     }
 
     #[cfg(feature = "access")]
     {
-        install_intrinsic(builder, "access/scalar", AccessScalar {})?;
-        install_intrinsic(builder, "access/range", AccessRange {})?;
-        install_intrinsic(builder, "access/column", AccessColumn {})?;
-        install_intrinsic(builder, "access/swizzle", AccessSwizzle {})?;
+        install_canonical_intrinsic(builder, "access/scalar", AccessScalar {})?;
+        install_canonical_intrinsic(builder, "access/range", AccessRange {})?;
+        install_canonical_intrinsic(builder, "access/column", AccessColumn {})?;
+        install_canonical_intrinsic(builder, "access/swizzle", AccessSwizzle {})?;
     }
     #[cfg(feature = "assign")]
     {
-        install_intrinsic(builder, "assign", AssignValue {})?;
-        install_intrinsic(builder, "assign/column", AssignColumn {})?;
-        install_intrinsic(builder, "assign/add", AddAssignValue {})?;
+        install_canonical_intrinsic(builder, "assign", AssignValue {})?;
+        install_canonical_intrinsic(builder, "assign/column", AssignColumn {})?;
+        install_canonical_intrinsic(builder, "assign/add", AddAssignValue {})?;
     }
     #[cfg(feature = "convert")]
-    install_intrinsic(builder, "convert/kind", ConvertKind {})?;
+    install_canonical_intrinsic(builder, "convert/kind", ConvertKind)?;
     #[cfg(feature = "variable_define")]
-    install_intrinsic(builder, "var/define", VarDefine {})?;
-
+    install_canonical_intrinsic(builder, "var/define", VarDefine)?;
     Ok(())
 }
 
@@ -225,10 +268,10 @@ mech_core::declare_native_runtime_factory! {
     installer: install_integrity_constraint_marker,
     name: "integrity/constraint",
     factory_type: crate::intrinsics::define::BytecodeIntegrityConstraintMarker,
-    contract: RuntimeFunctionContract::custom(
+    contract: RuntimeFunctionContract::canonical_custom(
         "integrity_constraint_marker",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_integrity_constraint_marker,
+        validate_integrity_constraint_marker_canonical,
     ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_integrity_constraint_marker",
@@ -241,10 +284,10 @@ mech_core::declare_native_runtime_factory! {
     installer: install_set_comprehension,
     name: "set/comprehension",
     factory_type: ValueSetComprehension,
-    contract: RuntimeFunctionContract::custom(
+    contract: RuntimeFunctionContract::canonical_custom(
         "set_comprehension",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_set_comprehension,
+        validate_set_comprehension_canonical,
     ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_set_comprehension",
@@ -257,14 +300,42 @@ mech_core::declare_native_runtime_factory! {
     installer: install_matrix_comprehension,
     name: "matrix/comprehension",
     factory_type: ValueMatrixComprehension,
-    contract: RuntimeFunctionContract::custom(
+    contract: RuntimeFunctionContract::canonical_custom(
         "matrix_comprehension",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_matrix_comprehension,
+        validate_matrix_comprehension_canonical,
     ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_matrix_comprehension",
     extra_cargo_features: ["matrix_comprehensions"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "matrix_horzcat",
+    registration: register_value_horizontal_concatenation,
+    installer: install_value_horizontal_concatenation,
+    name: "matrix/horzcat",
+    factory_type: ValueHorizontalConcatenation,
+    contract: RuntimeFunctionContract::horizontal_concatenation(
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_value_horizontal_concatenation",
+    extra_cargo_features: ["matrix_horzcat"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "matrix_vertcat",
+    registration: register_value_vertical_concatenation,
+    installer: install_value_vertical_concatenation,
+    name: "matrix/vertcat",
+    factory_type: ValueVerticalConcatenation,
+    contract: RuntimeFunctionContract::vertical_concatenation(
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_value_vertical_concatenation",
+    extra_cargo_features: ["matrix_vertcat"],
 }
 
 pub fn install_runtime(
@@ -312,6 +383,10 @@ pub fn install_runtime(
     register_set_comprehension(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
     register_matrix_comprehension(builder)?;
+    #[cfg(feature = "matrix_horzcat")]
+    register_value_horizontal_concatenation(builder)?;
+    #[cfg(feature = "matrix_vertcat")]
+    register_value_vertical_concatenation(builder)?;
     #[cfg(feature = "invariant_define")]
     register_integrity_constraint_marker(builder)?;
 

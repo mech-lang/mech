@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // Or ------------------------------------------------------------------------
 
@@ -111,14 +109,4 @@ macro_rules! or_row_mat_op {
 
 impl_logic_fxns!(Or);
 
-#[cfg(feature = "source")]
-fn impl_or_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      Or,
-      (lhs_value, rhs_value),
-      Bool, bool, "bool";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(LogicOr, impl_or_fxn, "logic/or");
+impl_canonical_logic_binop_specializer!(LogicOr, or, Or, "logic/or");

@@ -1,9 +1,14 @@
-use crate::{ApplicationRequirement, EncodedConstant, LegacyValue, MResult, ValueKind};
+use crate::BytecodeValidationError;
+use crate::{
+    ApplicationRequirement, EncodedConstant, MResult, MechError, MechErrorKind, ValueCell,
+};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
 
-use super::{CompileConst, Register};
+#[cfg(feature = "matrix")]
+use super::CompiledMatrixLiteralElement;
+use super::{CompiledMatrixLiteral, Register};
 
 /// Canonical producer identity used when assigning bytecode registers.
 ///
@@ -13,9 +18,13 @@ use super::{CompileConst, Register};
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum BytecodeRegisterIdentity {
     Cell(usize),
+    /// Compiler-control absence is a register value in its own right. It is
+    /// distinct from canonical unit and from `Option(None)` and therefore
+    /// must not be reconstructed through an empty-value convention.
+    Absent,
     Typed {
         inner: Box<BytecodeRegisterIdentity>,
-        annotation: ValueKind,
+        annotation: crate::SchemaKey,
     },
     Ephemeral(usize),
 }
@@ -24,28 +33,9 @@ impl BytecodeRegisterIdentity {
     fn underlying_address(&self) -> usize {
         match self {
             Self::Cell(address) | Self::Ephemeral(address) => *address,
+            Self::Absent => usize::MAX,
             Self::Typed { inner, .. } => inner.underlying_address(),
         }
-    }
-}
-
-pub fn bytecode_register_identity(
-    value: &LegacyValue,
-    fallback: usize,
-) -> BytecodeRegisterIdentity {
-    match value {
-        LegacyValue::MutableReference(reference) => {
-            bytecode_register_identity(&reference.borrow(), reference.addr())
-        }
-        LegacyValue::Typed(value, annotation) => BytecodeRegisterIdentity::Typed {
-            inner: Box::new(bytecode_register_identity(value, fallback)),
-            annotation: annotation.clone(),
-        },
-        _ => value
-            .reactive_root_cell_ids()
-            .first()
-            .map(|cell| BytecodeRegisterIdentity::Cell(cell.get() as usize))
-            .unwrap_or(BytecodeRegisterIdentity::Ephemeral(fallback)),
     }
 }
 
@@ -55,6 +45,12 @@ pub trait BytecodeCompilerContext {
     }
 
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool);
+
+    /// Retains a canonical cell for the lifetime of this compilation so its
+    /// process-local storage identity cannot be recycled for another cell.
+    fn retain_canonical_cell(&mut self, _cell: &ValueCell) -> MResult<()> {
+        Ok(())
+    }
 
     /// Assign a register to a canonical logical value identity. Contexts that
     /// do not emit a bytecode register graph may retain pointer-only behavior;
@@ -66,19 +62,14 @@ pub trait BytecodeCompilerContext {
         self.register_for_ptr_with_initialization_status(identity.underlying_address())
     }
 
-    fn register_for_value_with_initialization_status(
+    /// Records the canonical schema carried by a register owned by a
+    /// [`ValueCell`]. Artifact construction prefers this authority over the
+    /// lossy runtime-type sidecar.
+    fn record_register_schema(
         &mut self,
-        value: &LegacyValue,
-        fallback: usize,
-    ) -> (Register, bool) {
-        self.register_for_identity_with_initialization_status(&bytecode_register_identity(
-            value, fallback,
-        ))
-    }
-
-    /// Records the exact semantic kind carried by a bytecode register.
-    /// Contexts that do not build semantic compilation metadata may ignore it.
-    fn record_register_kind(&mut self, _register: Register, _kind: ValueKind) -> MResult<()> {
+        _register: Register,
+        _schema: crate::SchemaBody,
+    ) -> MResult<()> {
         Ok(())
     }
 
@@ -92,14 +83,13 @@ pub trait BytecodeCompilerContext {
         Ok(())
     }
 
-    /// Preserve the semantic wrapper carried by a value while the compiler
-    /// follows its legacy reference identity to the underlying register.
-    /// Contexts that do not build semantic compilation metadata may ignore it.
-    fn override_next_register_kind(&mut self, _kind: ValueKind) -> MResult<()> {
+    /// Marks compiler-control absence. This is not canonical unit and has no
+    /// schema, but remains a real bytecode register for source construction.
+    fn record_absent_register(&mut self, _register: Register) -> MResult<()> {
         Ok(())
     }
 
-    fn record_register_constant_kind(
+    fn record_register_constant_schema(
         &mut self,
         _register: Register,
         _constant: u32,
@@ -115,6 +105,20 @@ pub trait BytecodeCompilerContext {
     /// use this hook to discard that provisional initializer before emitting
     /// the producer instruction.
     fn record_runtime_produced_register(&mut self, _register: Register) -> MResult<()> {
+        Ok(())
+    }
+
+    /// Reports whether an executable producer already owns this register.
+    /// Such values may be observed through the compiler API without being
+    /// reclassified as source matrix-literal construction.
+    fn register_is_runtime_produced(&self, _register: Register) -> bool {
+        false
+    }
+
+    /// Records deterministic, in-memory construction metadata for a generic
+    /// matrix literal. Contexts that do not build semantic artifacts may
+    /// ignore it.
+    fn record_matrix_literal(&mut self, _literal: CompiledMatrixLiteral) -> MResult<()> {
         Ok(())
     }
 
@@ -204,96 +208,303 @@ pub trait BytecodeCompilerContext {
     fn emit_resource_send(&mut self, requirement: u32, destination: Register, source: Register);
 }
 
-/// Resolves and, when necessary, initializes the register for one logical
-/// value. Composite values are reconstructed from child registers so their
-/// reactive topology is never replaced by a planning-time constant snapshot.
-pub fn compile_value_register(
-    value: &LegacyValue,
-    fallback: usize,
-    context: &mut dyn BytecodeCompilerContext,
-) -> MResult<Register> {
-    if let LegacyValue::MutableReference(reference) = value {
-        return compile_value_register(&reference.borrow(), reference.addr(), {
-            context.override_next_register_kind(value.kind())?;
-            context
-        });
-    }
-
-    let (register, initialize) =
-        context.register_for_value_with_initialization_status(value, fallback);
-    context.record_register_kind(register, value.kind())?;
-    if !initialize {
-        return Ok(register);
-    }
-
-    if let Some(children) = crate::bytecode_composite_children(value) {
-        let children = children
-            .iter()
-            .map(|child| compile_value_register(child, core::ptr::from_ref(child).addr(), context))
-            .collect::<MResult<Vec<_>>>()?;
-        let template = value.compile_const(context)?;
-        context.record_register_constant_metadata(register, template)?;
-        context.emit_composite_pack(register, template, children);
-    } else {
-        let constant = value.compile_const(context)?;
-        context.record_register_constant_metadata(register, constant)?;
-        context.emit_const_load(register, constant);
-    }
-    Ok(register)
+/// A compiler could not inspect the payload of an explicit value cell because
+/// another owner held an incompatible borrow.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ValueCellCompilerBorrowConflict {
+    pub phase: &'static str,
 }
 
-/// Resolves a value into the register owned by an explicit outer cell.
+impl MechErrorKind for ValueCellCompilerBorrowConflict {
+    fn name(&self) -> &str {
+        "ValueCellCompilerBorrowConflict"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "value cell payload is already mutably borrowed during {}",
+            self.phase,
+        )
+    }
+}
+
+fn value_cell_borrow_conflict(phase: &'static str) -> MechError {
+    MechError::new(ValueCellCompilerBorrowConflict { phase }, None).with_compiler_loc()
+}
+
+/// Resolves and, when necessary, initializes the register owned by `cell`.
 ///
-/// Generic declaration cells need to retain their own identity even when the
-/// value inside the cell is a reactive composite. The composite's children
-/// are still compiled by their canonical identities so `CompositePack`
-/// retains the live topology instead of freezing the planning-time payload.
-pub fn compile_value_register_for_ptr(
-    value: &LegacyValue,
-    pointer: usize,
+/// The cell is the outer register owner even when its current payload is a
+/// reactive composite. Composite children continue to use their canonical
+/// value identities so their live topology is retained.
+pub fn compile_value_cell_register(
+    cell: &ValueCell,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
-    let (register, initialize) = context.register_for_ptr_with_initialization_status(pointer);
-    context.record_register_kind(register, value.kind())?;
-    if !initialize {
-        return Ok(register);
+    if let Some(children) = cell.compiler_composite_children() {
+        return compile_value_cell_composite_register(cell, children, context);
     }
-
-    if let Some(children) = crate::bytecode_composite_children(value) {
-        let children = children
-            .iter()
-            .map(|child| compile_value_register(child, core::ptr::from_ref(child).addr(), context))
-            .collect::<MResult<Vec<_>>>()?;
-        let template = value.compile_const(context)?;
-        context.record_register_constant_metadata(register, template)?;
-        context.emit_composite_pack(register, template, children);
-    } else {
-        let constant = value.compile_const(context)?;
+    context.retain_canonical_cell(cell)?;
+    let (register, initialize) =
+        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    context.record_register_schema(register, cell.closed_schema_body()?)?;
+    if initialize {
+        let value = compiler_value_cell_snapshot(cell, "value-cell register compilation")?;
+        let encoded = crate::encode_canonical_constant(&value, cell.representation())?;
+        let constant = context.intern_constant(encoded)?;
         context.record_register_constant_metadata(register, constant)?;
         context.emit_const_load(register, constant);
     }
     Ok(register)
 }
 
-/// Resolves the register for a value whose payload will be produced by an
+/// Reserves the register owned by `cell` with the exact declaration-time
+/// canonical value that must seed mutable state.
+///
+/// Source planning executes before bytecode emission, so the live cell may
+/// already contain a later reactive value. Keeping the declaration snapshot
+/// explicit prevents that live value from replacing the state initializer.
+pub fn compile_value_cell_initializer_register(
+    cell: &ValueCell,
+    initial: &crate::Value,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    context.retain_canonical_cell(cell)?;
+    let encoded = crate::encode_canonical_constant(initial, cell.representation())?;
+    let (register, initialize) =
+        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    context.record_register_schema(register, cell.closed_schema_body()?)?;
+    let constant = context.intern_constant(encoded)?;
+    if initialize {
+        context.record_register_constant_metadata(register, constant)?;
+        context.emit_const_load(register, constant);
+    }
+    context.record_state_initializer(register, constant)?;
+    Ok(register)
+}
+
+/// Compiles a canonical composite cell from its live canonical child cells.
+///
+/// The encoded value is used only as the structural template. Child registers
+/// remain the executable payload authority, preserving reactive topology
+/// without reconstructing an erased aggregate.
+pub fn compile_value_cell_composite_register(
+    cell: &ValueCell,
+    children: &[ValueCell],
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    context.retain_canonical_cell(cell)?;
+    let value = compiler_value_cell_snapshot(cell, "composite value-cell compilation")?;
+    let encoded = crate::encode_canonical_composite_template(&value, cell.representation())?;
+    let (register, initialize) =
+        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    context.record_register_schema(register, cell.closed_schema_body()?)?;
+    if !initialize {
+        return Ok(register);
+    }
+    let children = children
+        .iter()
+        .map(|child| compile_value_cell_register(child, context))
+        .collect::<MResult<Vec<_>>>()?;
+    let template = context.intern_constant(encoded)?;
+    context.record_register_constant_metadata(register, template)?;
+    context.emit_composite_pack(register, template, children);
+    Ok(register)
+}
+
+/// Compiles a generic canonical matrix literal from live element cells and
+/// explicit source-absence positions. Bytecode v1 represents this as a
+/// `CompositePack` plus a matrix-literal sidecar rather than attempting to
+/// encode heterogeneous or optional matrix elements as one flat constant.
+#[cfg(feature = "matrix")]
+pub fn compile_value_cell_matrix_literal_register(
+    cell: &ValueCell,
+    rows: u32,
+    columns: u32,
+    elements: &[Option<ValueCell>],
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    context.retain_canonical_cell(cell)?;
+    let _ = compiler_value_cell_snapshot(cell, "matrix value-cell compilation")?;
+    let (register, initialize) =
+        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    let schema = cell.closed_schema_body()?;
+    context.record_register_schema(register, schema.clone())?;
+    if !initialize {
+        return Ok(register);
+    }
+    let crate::SchemaBody::Matrix { element, .. } = schema else {
+        return compiler_invariant("canonical matrix compiler received a non-matrix schema");
+    };
+    let mut descriptors = Vec::with_capacity(elements.len());
+    let mut children = Vec::with_capacity(elements.len());
+    for element in elements {
+        let (child, descriptor) = match element {
+            Some(element) => {
+                let child = compile_value_cell_register(element, context)?;
+                (
+                    child,
+                    CompiledMatrixLiteralElement::Value { register: child },
+                )
+            }
+            None => {
+                let child = compile_absent_register(context)?;
+                (
+                    child,
+                    CompiledMatrixLiteralElement::Empty { register: child },
+                )
+            }
+        };
+        children.push(child);
+        descriptors.push(descriptor);
+    }
+    context.record_matrix_literal(CompiledMatrixLiteral::new(
+        register,
+        rows,
+        columns,
+        descriptors.into_boxed_slice(),
+    )?)?;
+    let template = context.intern_constant(EncodedConstant {
+        runtime_type: crate::RuntimeType::Kind(crate::BytecodeKind::Matrix(
+            Box::new(if rows == 0 || columns == 0 {
+                crate::BytecodeKind::Any
+            } else {
+                bytecode_kind_from_schema(&element)?
+            }),
+            vec![rows as usize, columns as usize],
+        )),
+        alignment: 1,
+        bytes: Vec::new(),
+    })?;
+    context.record_register_constant_metadata(register, template)?;
+    context.emit_composite_pack(register, template, children);
+    Ok(register)
+}
+
+pub fn bytecode_kind_from_schema(schema: &crate::SchemaBody) -> MResult<crate::BytecodeKind> {
+    use crate::{BytecodeKind, FloatWidth, IntegerWidth, SchemaBody};
+
+    Ok(match schema {
+        SchemaBody::Bool => BytecodeKind::Scalar(crate::hash_str("bool")),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8) => {
+            BytecodeKind::Scalar(crate::hash_str("u8"))
+        }
+        SchemaBody::UnsignedInteger(IntegerWidth::W16) => {
+            BytecodeKind::Scalar(crate::hash_str("u16"))
+        }
+        SchemaBody::UnsignedInteger(IntegerWidth::W32) => {
+            BytecodeKind::Scalar(crate::hash_str("u32"))
+        }
+        SchemaBody::UnsignedInteger(IntegerWidth::W64) => {
+            BytecodeKind::Scalar(crate::hash_str("u64"))
+        }
+        SchemaBody::UnsignedInteger(IntegerWidth::W128) => {
+            BytecodeKind::Scalar(crate::hash_str("u128"))
+        }
+        SchemaBody::SignedInteger(IntegerWidth::W8) => BytecodeKind::Scalar(crate::hash_str("i8")),
+        SchemaBody::SignedInteger(IntegerWidth::W16) => {
+            BytecodeKind::Scalar(crate::hash_str("i16"))
+        }
+        SchemaBody::SignedInteger(IntegerWidth::W32) => {
+            BytecodeKind::Scalar(crate::hash_str("i32"))
+        }
+        SchemaBody::SignedInteger(IntegerWidth::W64) => {
+            BytecodeKind::Scalar(crate::hash_str("i64"))
+        }
+        SchemaBody::SignedInteger(IntegerWidth::W128) => {
+            BytecodeKind::Scalar(crate::hash_str("i128"))
+        }
+        SchemaBody::FloatingPoint(FloatWidth::W32) => BytecodeKind::Scalar(crate::hash_str("f32")),
+        SchemaBody::FloatingPoint(FloatWidth::W64) => BytecodeKind::Scalar(crate::hash_str("f64")),
+        SchemaBody::Complex(FloatWidth::W64) => BytecodeKind::Scalar(crate::hash_str("complex")),
+        SchemaBody::Rational64 => BytecodeKind::Scalar(crate::hash_str("rational")),
+        SchemaBody::String => BytecodeKind::Scalar(crate::hash_str("string")),
+        SchemaBody::Id => BytecodeKind::Id,
+        SchemaBody::Index => BytecodeKind::Index,
+        SchemaBody::Option(inner) => {
+            BytecodeKind::Option(Box::new(bytecode_kind_from_schema(inner)?))
+        }
+        SchemaBody::Tuple(elements) if elements.is_empty() => BytecodeKind::Empty,
+        _ => {
+            return compiler_invariant(format!(
+                "canonical matrix element schema {schema:?} has no bytecode-v1 kind"
+            ));
+        }
+    })
+}
+
+fn compiler_value_cell_snapshot(cell: &ValueCell, phase: &'static str) -> MResult<crate::Value> {
+    cell.snapshot().map_err(|error| {
+        if error.kind_as::<crate::ValueCellBorrowConflict>().is_some() {
+            value_cell_borrow_conflict(phase)
+        } else {
+            error
+        }
+    })
+}
+
+/// Compiles the source-control absence marker without conflating it with
+/// canonical unit or option absence.
+pub fn compile_absent_register(context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+    let (register, initialize) =
+        context.register_for_identity_with_initialization_status(&BytecodeRegisterIdentity::Absent);
+    context.record_absent_register(register)?;
+    if initialize {
+        let constant = context.intern_constant(EncodedConstant {
+            runtime_type: crate::RuntimeType::Empty,
+            alignment: 1,
+            bytes: Vec::new(),
+        })?;
+        context.record_register_constant_metadata(register, constant)?;
+        context.emit_const_load(register, constant);
+    }
+    Ok(register)
+}
+
+/// Resolves the register owned by a cell whose payload will be supplied by an
 /// executable instruction.
 ///
-/// Unlike `compile_value_register`, this records the register's semantic kind
-/// but deliberately emits no `ConstLoad` or `CompositePack`. The current value
-/// may be used to establish compile-time schema/type information; its payload
-/// is not part of the compiled program.
-pub fn compile_runtime_produced_register(
-    value: &LegacyValue,
-    fallback: usize,
+/// The current payload contributes semantic kind information only. No
+/// planning-time `ConstLoad` or `CompositePack` is emitted, and a provisional
+/// initializer for the same cell is discarded.
+pub fn compile_runtime_produced_value_cell_register(
+    cell: &ValueCell,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
-    if let LegacyValue::MutableReference(reference) = value {
-        context.override_next_register_kind(value.kind())?;
-        return compile_runtime_produced_register(&reference.borrow(), reference.addr(), context);
-    }
-
-    let (register, _) = context.register_for_value_with_initialization_status(value, fallback);
-    context.record_register_kind(register, value.kind())?;
+    context.retain_canonical_cell(cell)?;
+    let _ = compiler_value_cell_snapshot(cell, "runtime-produced value-cell compilation")?;
+    let (register, _) =
+        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    context.record_register_schema(register, cell.closed_schema_body()?)?;
     context.record_runtime_produced_register(register)?;
     Ok(register)
+}
+
+/// Resolves a runtime-produced canonical cell and emits an explicit seed used
+/// only by bytecode formats that require destination storage initialization.
+/// The executable producer remains authoritative for the register's value.
+pub fn compile_runtime_produced_value_cell_register_with_seed(
+    cell: &ValueCell,
+    seed: &crate::Value,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    if seed.schema_key() != cell.schema_key() {
+        return compiler_invariant("runtime-produced register seed has the wrong schema");
+    }
+    let register = compile_runtime_produced_value_cell_register(cell, context)?;
+    let encoded = crate::encode_canonical_exact_backing(seed, cell.representation())?;
+    let constant = context.intern_constant(encoded)?;
+    context.record_register_constant_metadata(register, constant)?;
+    context.emit_const_load(register, constant);
+    Ok(register)
+}
+
+fn compiler_invariant<T>(reason: impl Into<String>) -> MResult<T> {
+    Err(MechError::new(
+        BytecodeValidationError {
+            reason: reason.into(),
+        },
+        None,
+    )
+    .with_compiler_loc())
 }

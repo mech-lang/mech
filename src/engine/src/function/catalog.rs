@@ -11,13 +11,15 @@ pub fn install_intrinsic_runtime(builder: &mut FunctionCatalogBuilder) -> MResul
 }
 
 /// Installs the prebound dense-numeric resident factory surface. This is kept
-/// separate from both legacy runtime construction and source specialization.
+/// separate from direct runtime construction and source specialization.
 pub fn install_intrinsic_resident(
     #[cfg(feature = "resident-artifact")] builder: &mut FunctionCatalogBuilder,
     #[cfg(not(feature = "resident-artifact"))] _: &mut FunctionCatalogBuilder,
 ) -> MResult<()> {
     #[cfg(feature = "resident-artifact")]
     crate::resident::composite::install(builder)?;
+    #[cfg(feature = "resident-artifact")]
+    crate::resident::matrix_literal::install(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::numeric::install(builder)?;
     #[cfg(feature = "resident-artifact")]

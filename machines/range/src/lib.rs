@@ -13,26 +13,8 @@ pub mod __mech_native {
 extern crate nalgebra as na;
 extern crate paste;
 
-#[cfg(feature = "source")]
-use paste::paste;
-
-#[cfg(all(feature = "source", feature = "matrixd", not(feature = "matrix1")))]
-use nalgebra::DMatrix;
-#[cfg(all(feature = "source", feature = "matrix1"))]
-use nalgebra::Matrix1;
-#[cfg(all(feature = "source", feature = "row_vectord"))]
-use nalgebra::RowDVector;
-#[cfg(all(feature = "source", feature = "row_vector2"))]
-use nalgebra::RowVector2;
-#[cfg(all(feature = "source", feature = "row_vector3"))]
-use nalgebra::RowVector3;
-#[cfg(all(feature = "source", feature = "row_vector4"))]
-use nalgebra::RowVector4;
-
 #[cfg(feature = "range")]
 use num_traits::One;
-#[cfg(all(feature = "range", feature = "source"))]
-use num_traits::Zero;
 use std::fmt::Debug;
 use std::ops::*;
 
@@ -58,6 +40,10 @@ pub use self::exclusive_increment::*;
 pub use self::inclusive::*;
 #[cfg(feature = "inclusive")]
 pub use self::inclusive_increment::*;
+
+#[cfg(test)]
+mod port_tests;
+
 
 use mech_core::MechErrorKind;
 
@@ -86,6 +72,99 @@ impl MechErrorKind for RangeSizeOverflowError {
     fn message(&self) -> String {
         "Range size overflow".to_string()
     }
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(feature = "source")]
+macro_rules! bind_dynamic_binary_range {
+    ($factory:ident, $scalar:ty, $first:expr, $second:expr, $inclusive:expr) => {{
+        let inputs = vec![$first.cell()?.clone(), $second.cell()?.clone()].into_boxed_slice();
+        let size = $crate::catalog::canonical_range_size(&inputs, $inclusive, false)?;
+        let initial = *$first.try_ref::<$scalar>()?.borrow();
+        #[cfg(feature = "row_vectord")]
+        {
+            let output_ref = mech_core::Ref::new(nalgebra::RowDVector::<$scalar>::from_element(
+                size, initial,
+            ));
+            let output = mech_core::ValueCell::from_exact_matrix_ref(
+                output_ref,
+                1,
+                size,
+            )?;
+            return mech_core::SpecializedFunction::bind_factory::<
+                $factory<$scalar, nalgebra::RowDVector<$scalar>>,
+            >(output, inputs);
+        }
+        #[cfg(all(not(feature = "row_vectord"), feature = "matrixd"))]
+        {
+            let output_ref = mech_core::Ref::new(nalgebra::DMatrix::<$scalar>::from_element(
+                1, size, initial,
+            ));
+            let output = mech_core::ValueCell::from_exact_matrix_ref(
+                output_ref,
+                1,
+                size,
+            )?;
+            return mech_core::SpecializedFunction::bind_factory::<
+                $factory<$scalar, nalgebra::DMatrix<$scalar>>,
+            >(output, inputs);
+        }
+        #[cfg(all(not(feature = "matrixd"), not(feature = "row_vectord")))]
+        return Err(mech_core::function_shape_contract_violation(
+            "range_construction",
+            "source range construction requires a dynamic row or matrix backing",
+        ));
+    }};
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(feature = "source")]
+macro_rules! bind_dynamic_ternary_range {
+    ($factory:ident, $scalar:ty, $first:expr, $step:expr, $last:expr, $inclusive:expr) => {{
+        let inputs = vec![
+            $first.cell()?.clone(),
+            $step.cell()?.clone(),
+            $last.cell()?.clone(),
+        ]
+        .into_boxed_slice();
+        let size = $crate::catalog::canonical_range_size(&inputs, $inclusive, true)?;
+        let initial = *$first.try_ref::<$scalar>()?.borrow();
+        #[cfg(feature = "row_vectord")]
+        {
+            let output_ref = mech_core::Ref::new(nalgebra::RowDVector::<$scalar>::from_element(
+                size, initial,
+            ));
+            let output = mech_core::ValueCell::from_exact_matrix_ref(
+                output_ref,
+                1,
+                size,
+            )?;
+            return mech_core::SpecializedFunction::bind_factory::<
+                $factory<$scalar, nalgebra::RowDVector<$scalar>>,
+            >(output, inputs);
+        }
+        #[cfg(all(not(feature = "row_vectord"), feature = "matrixd"))]
+        {
+            let output_ref = mech_core::Ref::new(nalgebra::DMatrix::<$scalar>::from_element(
+                1, size, initial,
+            ));
+            let output = mech_core::ValueCell::from_exact_matrix_ref(
+                output_ref,
+                1,
+                size,
+            )?;
+            return mech_core::SpecializedFunction::bind_factory::<
+                $factory<$scalar, nalgebra::DMatrix<$scalar>>,
+            >(output, inputs);
+        }
+        #[cfg(all(not(feature = "matrixd"), not(feature = "row_vectord")))]
+        return Err(mech_core::function_shape_contract_violation(
+            "range_construction",
+            "source range construction requires a dynamic row or matrix backing",
+        ));
+    }};
 }
 
 #[macro_export]

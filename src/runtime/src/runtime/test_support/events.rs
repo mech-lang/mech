@@ -3,6 +3,10 @@ use super::super::MechRuntime;
 use crate::{RuntimeEvent, RuntimeEventKind};
 
 #[cfg(feature = "source")]
+#[allow(
+    dead_code,
+    reason = "shared test support is selected by feature-specific runtime suites"
+)]
 pub(crate) fn events_since(runtime: &MechRuntime, start: usize) -> Vec<RuntimeEvent> {
     let events = runtime.list_events(None).unwrap();
     events

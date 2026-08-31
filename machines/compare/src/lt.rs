@@ -1,9 +1,8 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // Less Than ------------------------------------------------------------------
 
+#[cfg(feature = "matrix")]
 macro_rules! lt_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -14,6 +13,7 @@ macro_rules! lt_scalar_lhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! lt_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -24,6 +24,7 @@ macro_rules! lt_scalar_rhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! lt_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -42,6 +43,7 @@ macro_rules! lt_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! lt_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -57,6 +59,7 @@ macro_rules! lt_mat_vec_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! lt_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -72,6 +75,7 @@ macro_rules! lt_vec_mat_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! lt_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -87,6 +91,7 @@ macro_rules! lt_mat_row_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! lt_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -104,27 +109,4 @@ macro_rules! lt_row_mat_op {
 
 impl_compare_fxns!(LT);
 
-#[cfg(feature = "source")]
-fn impl_lt_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      LT,
-      (lhs_value, rhs_value),
-      I8,   bool, "i8";
-      I16,  bool, "i16";
-      I32,  bool, "i32";
-      I64,  bool, "i64";
-      I128, bool, "i128";
-      U8,   bool, "u8";
-      U16,  bool, "u16";
-      U32,  bool, "u32";
-      U64,  bool, "u64";
-      U128, bool, "u128";
-      F32,  bool, "f32";
-      F64,  bool, "f64";
-      R64, bool, "rational";
-      C64, bool, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(CompareLessThan, impl_lt_fxn, "compare/lt");
+impl_canonical_numeric_compare_specializer!(CompareLessThan, lt, LT, "compare/lt");

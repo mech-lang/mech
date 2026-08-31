@@ -60,19 +60,15 @@ fn representative_non_scalar_families_build_catalogs_and_execute() {
                 .collect::<BTreeSet<_>>();
             assert_eq!(
                 names,
-                BTreeSet::from([
-                    "AddM2M2<f64>",
-                    "HorizontalConcatenateS2<f64>",
-                    "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>",
-                ])
+                BTreeSet::from(["AddMDMD<f64>", "matrix/horzcat", "matrix/vertcat",])
             );
             assert!(
                 catalog
-                    .contains("mech_engine::__mech_native::install_horizontal_concatenate_s2_f64")
+                    .contains("mech_engine::__mech_native::install_value_horizontal_concatenation")
             );
             assert!(
                 catalog
-                    .contains("mech_engine::__mech_native::install_vertical_concatenate_r2_r2_f64")
+                    .contains("mech_engine::__mech_native::install_value_vertical_concatenation")
             );
         }
 

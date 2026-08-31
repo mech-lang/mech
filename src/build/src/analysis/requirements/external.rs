@@ -2,8 +2,8 @@ use std::collections::BTreeSet;
 
 use mech_core::{
     ApplicationRequirement, BytecodeExternalContractResolver, BytecodeHostCallContract,
-    BytecodeResourceReadContract, BytecodeResourceWriteContract, LegacyValue, MResult, MechError,
-    ResourceIntent, validate_stable_value_update,
+    BytecodeResourceReadContract, BytecodeResourceWriteContract, MResult, MechError,
+    ResourceIntent, Value, ValueData, validate_stable_value_update,
 };
 use mech_runtime::{
     RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceWriteIntent,
@@ -152,10 +152,7 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
 }
 
 impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
-    fn validate_host_call(
-        &mut self,
-        contract: BytecodeHostCallContract<'_>,
-    ) -> MResult<LegacyValue> {
+    fn validate_host_call(&mut self, contract: BytecodeHostCallContract<'_>) -> MResult<Value> {
         let linkage = self
             .host_catalog
             .function(&contract.request.name)
@@ -189,8 +186,8 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                 format!(
                     "host function `{}` destination has seed kind {:?}, but trusted planning returns {:?}: {}",
                     contract.request.name,
-                    contract.output_seed.kind(),
-                    planned.kind(),
+                    contract.output_seed.data().kind(),
+                    planned.data().kind(),
                     error.display_message(),
                 ),
             )
@@ -215,7 +212,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
     fn validate_resource_read(
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<Value> {
         let (planned, owner, grant, driven_live) = {
             let owner = resolve_resource_owner(contract.request, &self.materialized)?;
             let configured_grants = self
@@ -279,12 +276,12 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
         &mut self,
         contract: BytecodeResourceWriteContract<'_>,
     ) -> MResult<()> {
-        if contract.output_seed != &LegacyValue::Empty {
+        if !matches!(contract.output_seed.data(), ValueData::Tuple(values) if values.is_empty()) {
             return Err(application_instruction_error(
                 contract.instruction,
                 format!(
                     "resource write/send destination must have an Empty seed, found {:?}",
-                    contract.output_seed.kind(),
+                    contract.output_seed.data().kind(),
                 ),
             ));
         }

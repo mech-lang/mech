@@ -3,10 +3,12 @@ use std::sync::Arc;
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{BytecodeCompilerContext, MechError, MechFunctionCompiler, Register};
 use mech_core::{
-    FunctionSpecializer, GuardFunctionSafety, LegacyValue, MResult, MechErrorKind, MechFunctionImpl,
+    CanonicalFunctionSpecializer, FunctionInstance, FunctionInvocation, GuardFunctionSafety,
+    MResult, MechErrorKind, MechFunctionImpl, SpecializationContext, SpecializationInput,
+    SpecializationInvocation, SpecializedFunction, Value, ValueCell,
 };
 
-pub type NativeClosure = dyn Fn(Vec<LegacyValue>) -> MResult<LegacyValue> + Send + Sync + 'static;
+pub type NativeClosure = dyn Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static;
 
 #[derive(Clone)]
 pub struct ClosureFunctionSpecializer {
@@ -17,7 +19,7 @@ pub struct ClosureFunctionSpecializer {
 impl ClosureFunctionSpecializer {
     pub fn new(
         name: impl Into<String>,
-        function: impl Fn(Vec<LegacyValue>) -> MResult<LegacyValue> + Send + Sync + 'static,
+        function: impl Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
     ) -> Self {
         Self {
             name: name.into(),
@@ -26,14 +28,32 @@ impl ClosureFunctionSpecializer {
     }
 }
 
-impl FunctionSpecializer for ClosureFunctionSpecializer {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn mech_core::MechFunction>> {
-        let value = (self.function)(arguments.to_vec())?;
-
-        Ok(Box::new(ClosureNativeFunction {
-            name: self.name.clone(),
-            value,
-        }))
+impl CanonicalFunctionSpecializer for ClosureFunctionSpecializer {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        let arguments = invocation
+            .inputs()
+            .iter()
+            .map(SpecializationInput::snapshot)
+            .collect::<MResult<Vec<_>>>()?;
+        let output = ValueCell::from_snapshot((self.function)(arguments)?)?;
+        let inputs = invocation
+            .inputs()
+            .iter()
+            .map(SpecializationInput::cell)
+            .map(|cell| cell.cloned())
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
+        let bound = FunctionInvocation::variadic(output, inputs);
+        Ok(SpecializedFunction::new(FunctionInstance::new(
+            Box::new(ClosureNativeFunction {
+                name: self.name.clone(),
+            }),
+            bound,
+        )))
     }
 
     fn guard_safety(&self) -> GuardFunctionSafety {
@@ -44,25 +64,16 @@ impl FunctionSpecializer for ClosureFunctionSpecializer {
 #[derive(Clone, Debug)]
 pub struct ClosureNativeFunction {
     name: String,
-    value: LegacyValue,
 }
 
 impl MechFunctionImpl for ClosureNativeFunction {
     fn solve_result(&self) -> MResult<()> {
-        // Pure closure functions are executed once during native function compilation.
+        // Pure closure functions are executed once during native function specialization.
         Ok(())
-    }
-
-    fn out(&self) -> LegacyValue {
-        self.value.clone()
     }
 
     fn to_string(&self) -> String {
         format!("ClosureNativeFunction::{}", self.name)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 

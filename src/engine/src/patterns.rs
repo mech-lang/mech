@@ -1,6 +1,6 @@
 use crate::*;
-#[cfg(feature = "matrix")]
-use mech_core::matrix::Matrix;
+#[cfg(feature = "enum")]
+use mech_core::snapshot::EnumDraft;
 use std::collections::HashMap;
 
 // Patterns
@@ -16,19 +16,19 @@ pub struct PatternBindingSpec {
     pub index: usize,
     pub id: u64,
     pub name: String,
-    pub kind: Option<ValueKind>,
+    pub schema: Option<SchemaBody>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PatternBinding {
     pub index: usize,
     pub id: u64,
     pub name: String,
-    pub kind: ValueKind,
-    pub value: LegacyValue,
+    pub schema: SchemaBody,
+    pub value: ValueCell,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PatternMatch {
     pub matched: bool,
     pub bindings: Vec<PatternBinding>,
@@ -56,7 +56,7 @@ pub enum CompiledPattern {
         binding_index: usize,
         id: u64,
         name: String,
-        expected_kind: Option<ValueKind>,
+        expected_schema: Option<SchemaBody>,
     },
     ExpressionValue {
         expression_index: usize,
@@ -71,12 +71,12 @@ pub enum CompiledPattern {
         suffix: Vec<CompiledPattern>,
     },
     EnumVariant {
-        enum_id: Option<u64>,
-        variant_id: u64,
+        enum_key: Option<NominalKey>,
+        variant_name: String,
         payload: Option<Box<CompiledPattern>>,
     },
     AtomTuple {
-        tag_id: u64,
+        tag_key: NominalKey,
         payload: Vec<CompiledPattern>,
     },
 }
@@ -90,14 +90,14 @@ impl CompiledPattern {
                     binding_index,
                     id,
                     name,
-                    expected_kind,
+                    expected_schema,
                 } => {
                     if specs.len() <= *binding_index {
                         specs.resize(*binding_index + 1, None);
                     }
                     match &mut specs[*binding_index] {
-                        Some(spec) if spec.kind.is_none() && expected_kind.is_some() => {
-                            spec.kind = expected_kind.clone();
+                        Some(spec) if spec.schema.is_none() && expected_schema.is_some() => {
+                            spec.schema = expected_schema.clone();
                         }
                         Some(_) => {}
                         slot @ None => {
@@ -105,7 +105,7 @@ impl CompiledPattern {
                                 index: *binding_index,
                                 id: *id,
                                 name: name.clone(),
-                                kind: expected_kind.clone(),
+                                schema: expected_schema.clone(),
                             });
                         }
                     }
@@ -246,6 +246,16 @@ struct PatternCompiler {
     next_expression: usize,
 }
 
+fn canonical_atom_key(name: &str) -> MResult<NominalKey> {
+    let path = CanonicalNominalPath::new(
+        name.split('/')
+            .filter(|segment| !segment.is_empty())
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+    )?;
+    Ok(NominalKey::from_path(NominalKind::Atom, &path))
+}
+
 impl PatternCompiler {
     fn error(&self, pattern: &Pattern, reason: impl Into<String>) -> MechError {
         MechError::new(
@@ -263,29 +273,29 @@ impl PatternCompiler {
         pattern: &Pattern,
         id: u64,
         name: String,
-        expected_kind: Option<&ValueKind>,
+        expected_schema: Option<&SchemaBody>,
     ) -> MResult<CompiledPattern> {
-        let expected_kind = expected_kind.map(ValueKind::deref_kind);
+        let expected_schema = expected_schema.cloned();
         if let Some(index) = self.binding_ids.get(&id).copied() {
-            let existing_kind = self.bindings[index].kind.clone();
-            match (&existing_kind, &expected_kind) {
+            let existing_schema = self.bindings[index].schema.clone();
+            match (&existing_schema, &expected_schema) {
                 (Some(existing), Some(expected)) if existing != expected => {
                     return Err(self.error(
                         pattern,
                         format!(
-                            "Repeated binding '{}' has incompatible kinds '{}' and '{}'.",
+                            "Repeated binding '{}' has incompatible schemas '{:?}' and '{:?}'.",
                             name, existing, expected
                         ),
                     ));
                 }
-                (None, Some(expected)) => self.bindings[index].kind = Some(expected.clone()),
+                (None, Some(expected)) => self.bindings[index].schema = Some(expected.clone()),
                 _ => {}
             }
             return Ok(CompiledPattern::Binding {
                 binding_index: index,
                 id,
                 name,
-                expected_kind,
+                expected_schema,
             });
         }
 
@@ -295,13 +305,13 @@ impl PatternCompiler {
             index,
             id,
             name: name.clone(),
-            kind: expected_kind.clone(),
+            schema: expected_schema.clone(),
         });
         Ok(CompiledPattern::Binding {
             binding_index: index,
             id,
             name,
-            expected_kind,
+            expected_schema,
         })
     }
 
@@ -317,38 +327,17 @@ impl PatternCompiler {
     fn compile(
         &mut self,
         pattern: &Pattern,
-        expected_kind: Option<&ValueKind>,
+        expected_schema: Option<&SchemaBody>,
         interpreter: &Interpreter,
     ) -> MResult<CompiledPattern> {
         match pattern {
             Pattern::Wildcard => Ok(CompiledPattern::Wildcard),
             Pattern::Expression(expression) => {
-                #[cfg(feature = "enum")]
                 if let Expression::Literal(Literal::Atom(atom)) = expression {
-                    if let Some(ValueKind::Enum(enum_id, _)) =
-                        expected_kind.map(ValueKind::deref_kind)
-                    {
-                        let variant_id = atom.name.hash();
-                        let enum_definition = interpreter
-                            .state
-                            .borrow()
-                            .enums
-                            .get(&enum_id)
-                            .cloned()
-                            .ok_or_else(|| {
-                                self.error(
-                                    pattern,
-                                    format!(
-                                        "Enum kind '{}' has no registered definition.",
-                                        enum_id
-                                    ),
-                                )
-                            })?;
-                        let declared_payload = enum_definition
-                            .variants
+                    if let Some(SchemaBody::Enum { key, variants }) = expected_schema {
+                        let variant = variants
                             .iter()
-                            .find(|(id, _)| *id == variant_id)
-                            .map(|(_, payload)| payload)
+                            .find(|variant| variant.name == atom.name.to_string())
                             .ok_or_else(|| {
                                 self.error(
                                     pattern,
@@ -358,15 +347,15 @@ impl PatternCompiler {
                                     ),
                                 )
                             })?;
-                        if declared_payload.is_some() {
+                        if variant.payload.is_some() {
                             return Err(self.error(
                                 pattern,
                                 "Enum variant pattern is missing its payload pattern.",
                             ));
                         }
                         return Ok(CompiledPattern::EnumVariant {
-                            enum_id: Some(enum_id),
-                            variant_id,
+                            enum_key: Some(*key),
+                            variant_name: atom.name.to_string(),
                             payload: None,
                         });
                     }
@@ -376,15 +365,15 @@ impl PatternCompiler {
                         pattern,
                         var.name.hash(),
                         var.name.to_string(),
-                        expected_kind,
+                        expected_schema,
                     )
                 } else {
                     Ok(self.compile_expression(expression))
                 }
             }
             Pattern::Tuple(tuple) => {
-                let expected_elements = match expected_kind.map(ValueKind::deref_kind) {
-                    Some(ValueKind::Tuple(elements)) => {
+                let expected_elements = match expected_schema {
+                    Some(SchemaBody::Tuple(elements)) => {
                         if elements.len() != tuple.0.len() {
                             return Err(self.error(
                 pattern,
@@ -400,7 +389,7 @@ impl PatternCompiler {
                     Some(kind) => {
                         return Err(self.error(
                             pattern,
-                            format!("Tuple pattern cannot match expected kind '{}'.", kind),
+                            format!("Tuple pattern cannot match expected schema '{kind:?}'."),
                         ));
                     }
                     None => None,
@@ -420,18 +409,22 @@ impl PatternCompiler {
                 Ok(CompiledPattern::Tuple { elements })
             }
             Pattern::Array(array) => {
-                let (element_kind, rest_kind) = match expected_kind.map(ValueKind::deref_kind) {
-                    Some(ValueKind::Matrix(element, _)) => {
-                        let element = *element;
+                let (element_schema, rest_schema) = match expected_schema {
+                    Some(SchemaBody::Matrix { element, .. }) => {
+                        let element = (**element).clone();
                         (
                             Some(element.clone()),
-                            Some(ValueKind::Matrix(Box::new(element), Vec::new())),
+                            Some(SchemaBody::Matrix {
+                                element: Box::new(element),
+                                dimensions: vec![DimensionExpr::Hole, DimensionExpr::Hole]
+                                    .into_boxed_slice(),
+                            }),
                         )
                     }
                     Some(kind) => {
                         return Err(self.error(
                             pattern,
-                            format!("Array pattern cannot match expected kind '{}'.", kind),
+                            format!("Array pattern cannot match expected schema '{kind:?}'."),
                         ));
                     }
                     None => (None, None),
@@ -439,7 +432,7 @@ impl PatternCompiler {
                 let prefix = array
                     .prefix
                     .iter()
-                    .map(|element| self.compile(element, element_kind.as_ref(), interpreter))
+                    .map(|element| self.compile(element, element_schema.as_ref(), interpreter))
                     .collect::<MResult<Vec<_>>>()?;
                 let spread = match &array.spread {
                     Some(spread) => Some(CompiledPatternArraySpread {
@@ -447,7 +440,7 @@ impl PatternCompiler {
                         binding: match &spread.binding {
                             Some(binding) => Some(Box::new(self.compile(
                                 binding,
-                                rest_kind.as_ref(),
+                                rest_schema.as_ref(),
                                 interpreter,
                             )?)),
                             None => None,
@@ -458,7 +451,7 @@ impl PatternCompiler {
                 let suffix = array
                     .suffix
                     .iter()
-                    .map(|element| self.compile(element, element_kind.as_ref(), interpreter))
+                    .map(|element| self.compile(element, element_schema.as_ref(), interpreter))
                     .collect::<MResult<Vec<_>>>()?;
                 Ok(CompiledPattern::Array {
                     prefix,
@@ -466,27 +459,11 @@ impl PatternCompiler {
                     suffix,
                 })
             }
-            Pattern::TupleStruct(tuple_struct) => match expected_kind.map(ValueKind::deref_kind) {
-                #[cfg(feature = "enum")]
-                Some(ValueKind::Enum(enum_id, _)) => {
-                    let enum_definition = interpreter
-                        .state
-                        .borrow()
-                        .enums
-                        .get(&enum_id)
-                        .cloned()
-                        .ok_or_else(|| {
-                        self.error(
-                            pattern,
-                            format!("Enum kind '{}' has no registered definition.", enum_id),
-                        )
-                    })?;
-                    let variant_id = tuple_struct.name.hash();
-                    let declared_payload = enum_definition
-                        .variants
+            Pattern::TupleStruct(tuple_struct) => match expected_schema {
+                Some(SchemaBody::Enum { key, variants }) => {
+                    let variant = variants
                         .iter()
-                        .find(|(id, _)| *id == variant_id)
-                        .map(|(_, payload)| payload.clone())
+                        .find(|variant| variant.name == tuple_struct.name.to_string())
                         .ok_or_else(|| {
                             self.error(
                                 pattern,
@@ -496,35 +473,28 @@ impl PatternCompiler {
                                 ),
                             )
                         })?;
-                    let payload = match (tuple_struct.patterns.as_slice(), declared_payload) {
-                        ([], None) => None,
-                        ([payload_pattern], Some(LegacyValue::Kind(payload_kind))) => {
-                            Some(Box::new(self.compile(
-                                payload_pattern,
-                                Some(&payload_kind),
-                                interpreter,
-                            )?))
-                        }
-                        _ => {
-                            return Err(self.error(
+                    let payload =
+                        match (tuple_struct.patterns.as_slice(), &variant.payload) {
+                            ([], None) => None,
+                            ([payload_pattern], Some(payload_schema)) => Some(Box::new(
+                                self.compile(payload_pattern, Some(payload_schema), interpreter)?,
+                            )),
+                            _ => {
+                                return Err(self.error(
                                 pattern,
                                 "Enum variant pattern payload arity does not match its definition.",
                             ));
-                        }
-                    };
+                            }
+                        };
                     Ok(CompiledPattern::EnumVariant {
-                        enum_id: Some(enum_id),
-                        variant_id,
+                        enum_key: Some(*key),
+                        variant_name: tuple_struct.name.to_string(),
                         payload,
                     })
                 }
-                #[cfg(not(feature = "enum"))]
-                Some(ValueKind::Enum(..)) => {
-                    Err(self.error(pattern, "Enum patterns are not enabled."))
-                }
-                Some(ValueKind::Tuple(kinds)) => {
-                    if kinds.len() != tuple_struct.patterns.len() + 1
-                        || !matches!(kinds.first(), Some(ValueKind::Atom(_, _)))
+                Some(SchemaBody::Tuple(schemas)) => {
+                    if schemas.len() != tuple_struct.patterns.len() + 1
+                        || !matches!(schemas.first(), Some(SchemaBody::Atom(_)))
                     {
                         return Err(self.error(
                 pattern,
@@ -534,20 +504,17 @@ impl PatternCompiler {
                     let payload = tuple_struct
                         .patterns
                         .iter()
-                        .zip(kinds.iter().skip(1))
-                        .map(|(payload, kind)| self.compile(payload, Some(kind), interpreter))
+                        .zip(schemas.iter().skip(1))
+                        .map(|(payload, schema)| self.compile(payload, Some(schema), interpreter))
                         .collect::<MResult<Vec<_>>>()?;
                     Ok(CompiledPattern::AtomTuple {
-                        tag_id: tuple_struct.name.hash(),
+                        tag_key: canonical_atom_key(&tuple_struct.name.to_string())?,
                         payload,
                     })
                 }
                 Some(kind) => Err(self.error(
                     pattern,
-                    format!(
-                        "Tagged tuple pattern cannot match expected kind '{}'.",
-                        kind
-                    ),
+                    format!("Tagged tuple pattern cannot match expected schema '{kind:?}'."),
                 )),
                 None => self.compile_untyped_tuple_struct(pattern, tuple_struct, interpreter),
             },
@@ -566,7 +533,7 @@ impl PatternCompiler {
             .map(|payload| self.compile(payload, None, interpreter))
             .collect::<MResult<Vec<_>>>()?;
         Ok(CompiledPattern::AtomTuple {
-            tag_id: tuple_struct.name.hash(),
+            tag_key: canonical_atom_key(&tuple_struct.name.to_string())?,
             payload,
         })
     }
@@ -574,10 +541,10 @@ impl PatternCompiler {
 
 pub fn compile_pattern(
     pattern: &Pattern,
-    expected_kind: Option<&ValueKind>,
+    expected_schema: Option<&SchemaBody>,
     interpreter: &Interpreter,
 ) -> MResult<CompiledPattern> {
-    PatternCompiler::default().compile(pattern, expected_kind, interpreter)
+    PatternCompiler::default().compile(pattern, expected_schema, interpreter)
 }
 
 enum PatternExpressionSource<'a, 'execution> {
@@ -585,12 +552,12 @@ enum PatternExpressionSource<'a, 'execution> {
         env: &'a Environment,
         interpreter: &'a InterpreterExecution<'execution>,
     },
-    Sampled(&'a [LegacyValue]),
+    Sampled(&'a [ValueCell]),
 }
 
 struct PatternMatchState<'a, 'execution> {
     binding_specs: Vec<PatternBindingSpec>,
-    proposed: Vec<Option<LegacyValue>>,
+    proposed: Vec<Option<ValueCell>>,
     expression_source: PatternExpressionSource<'a, 'execution>,
 }
 
@@ -599,13 +566,13 @@ impl PatternMatchState<'_, '_> {
         &self,
         expression_index: usize,
         expression_node: &Expression,
-    ) -> MResult<LegacyValue> {
+    ) -> MResult<ValueCell> {
         match &self.expression_source {
             PatternExpressionSource::Interpreter { env, interpreter } => {
                 // Expression patterns read the arm's outer environment. Proposed
                 // captures are intentionally invisible; capture-dependent
                 // conditions belong in an explicit arm guard.
-                expression(expression_node, Some(env), interpreter)
+                expression_cell(expression_node, Some(env), interpreter)
             }
             PatternExpressionSource::Sampled(values) => {
                 values.get(expression_index).cloned().ok_or_else(|| {
@@ -622,13 +589,13 @@ impl PatternMatchState<'_, '_> {
         }
     }
 
-    fn matches(&mut self, pattern: &CompiledPattern, value: &LegacyValue) -> MResult<bool> {
-        let value = deep_detach_value(value);
+    fn matches(&mut self, pattern: &CompiledPattern, value: &ValueCell) -> MResult<bool> {
+        let value = value.clone();
         match pattern {
             CompiledPattern::Wildcard => Ok(true),
             CompiledPattern::Binding { binding_index, .. } => {
                 if let Some(existing) = &self.proposed[*binding_index] {
-                    Ok(existing == &value)
+                    existing.snapshot_eq(&value)
                 } else {
                     self.proposed[*binding_index] = Some(value);
                     Ok(true)
@@ -638,25 +605,23 @@ impl PatternMatchState<'_, '_> {
                 expression_index,
                 expression,
             } => {
-                let expected =
-                    deep_detach_value(&self.expression_value(*expression_index, expression)?);
-                Ok(values_match(&expected, &value))
+                let expected = self.expression_value(*expression_index, expression)?;
+                values_match(&expected, &value)
             }
             #[cfg(feature = "tuple")]
             CompiledPattern::Tuple { elements } => {
-                if let LegacyValue::Tuple(tuple) = value {
-                    let tuple = tuple.borrow();
-                    if tuple.elements.len() != elements.len() {
+                let Some(values) = value.tuple_elements()? else {
+                    return Ok(false);
+                };
+                if values.len() != elements.len() {
+                    return Ok(false);
+                }
+                for (pattern, value) in elements.iter().zip(&values) {
+                    if !self.matches(pattern, value)? {
                         return Ok(false);
                     }
-                    for (pattern, value) in elements.iter().zip(tuple.elements.iter()) {
-                        if !self.matches(pattern, value)? {
-                            return Ok(false);
-                        }
-                    }
-                    return Ok(true);
                 }
-                Ok(false)
+                Ok(true)
             }
             #[cfg(not(feature = "tuple"))]
             CompiledPattern::Tuple { .. } => Ok(false),
@@ -666,7 +631,7 @@ impl PatternMatchState<'_, '_> {
                 spread,
                 suffix,
             } => {
-                let values = match matrix_like_values(&value) {
+                let values = match matrix_like_values(&value)? {
                     Some(values) => values,
                     None => return Ok(false),
                 };
@@ -689,7 +654,7 @@ impl PatternMatchState<'_, '_> {
                 }
                 if let Some(binding) = spread.as_ref().and_then(|spread| spread.binding.as_deref())
                 {
-                    let middle = capture_middle_matrix(&value, prefix.len(), suffix_start);
+                    let middle = capture_middle_matrix(&values, prefix.len(), suffix_start)?;
                     if !self.matches(binding, &middle)? {
                         return Ok(false);
                     }
@@ -700,63 +665,76 @@ impl PatternMatchState<'_, '_> {
             CompiledPattern::Array { .. } => Ok(false),
             #[cfg(feature = "enum")]
             CompiledPattern::EnumVariant {
-                enum_id,
-                variant_id,
+                enum_key,
+                variant_name,
                 payload,
             } => {
-                if let LegacyValue::Enum(enum_value) = value {
-                    let enum_value = enum_value.borrow();
-                    if enum_id.is_some_and(|expected| expected != enum_value.id)
-                        || enum_value.variants.len() != 1
-                    {
-                        return Ok(false);
-                    }
-                    let (actual_variant, actual_payload) = &enum_value.variants[0];
-                    if actual_variant != variant_id {
-                        return Ok(false);
-                    }
-                    return match (payload, actual_payload) {
-                        (None, None) => Ok(true),
-                        (Some(pattern), Some(value)) => self.matches(pattern, value),
-                        _ => Ok(false),
-                    };
+                let SchemaBody::Enum { key, variants } = value.closed_schema_body()? else {
+                    return Ok(false);
+                };
+                if enum_key.as_ref().is_some_and(|expected| expected != &key) {
+                    return Ok(false);
                 }
-                Ok(false)
+                let draft = value.snapshot()?.canonical_data_draft().map_err(|error| {
+                    MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+                })?;
+                let ValueDataDraft::Enum(actual) = draft else {
+                    unreachable!("validated enum schema retains enum data")
+                };
+                let Some(variant) = variants.get(actual.ordinal as usize) else {
+                    return Ok(false);
+                };
+                if &variant.name != variant_name {
+                    return Ok(false);
+                }
+                match (payload, variant.payload.as_ref(), actual.payload) {
+                    (None, None, None) => Ok(true),
+                    (Some(pattern), Some(schema), Some(data)) => self.matches(
+                        pattern,
+                        &ValueCell::from_schema_data(schema.clone(), *data)?,
+                    ),
+                    _ => Ok(false),
+                }
             }
             #[cfg(not(feature = "enum"))]
             CompiledPattern::EnumVariant { .. } => Ok(false),
             #[cfg(any(feature = "enum", all(feature = "tuple", feature = "atom")))]
-            CompiledPattern::AtomTuple { tag_id, payload } => {
+            CompiledPattern::AtomTuple { tag_key, payload } => {
                 #[cfg(feature = "enum")]
-                if let LegacyValue::Enum(enum_value) = &value {
-                    let enum_value = enum_value.borrow();
-                    if enum_value.variants.len() != 1 {
+                if let SchemaBody::Enum { variants, .. } = value.closed_schema_body()? {
+                    let draft = value.snapshot()?.canonical_data_draft().map_err(|error| {
+                        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+                    })?;
+                    let ValueDataDraft::Enum(actual) = draft else {
+                        unreachable!("validated enum schema retains enum data")
+                    };
+                    let Some(variant) = variants.get(actual.ordinal as usize) else {
+                        return Ok(false);
+                    };
+                    if &canonical_atom_key(&variant.name)? != tag_key {
                         return Ok(false);
                     }
-                    let (actual_variant, actual_payload) = &enum_value.variants[0];
-                    if actual_variant != tag_id {
-                        return Ok(false);
-                    }
-                    return match (payload.as_slice(), actual_payload) {
-                        ([], None) => Ok(true),
-                        ([pattern], Some(value)) => self.matches(pattern, value),
+                    return match (payload.as_slice(), variant.payload.as_ref(), actual.payload) {
+                        ([], None, None) => Ok(true),
+                        ([pattern], Some(schema), Some(data)) => self.matches(
+                            pattern,
+                            &ValueCell::from_schema_data(schema.clone(), *data)?,
+                        ),
                         _ => Ok(false),
                     };
                 }
                 #[cfg(all(feature = "tuple", feature = "atom"))]
-                if let LegacyValue::Tuple(tuple) = &value {
-                    let tuple = tuple.borrow();
-                    if tuple.elements.len() != payload.len() + 1 {
+                if let Some(values) = value.tuple_elements()? {
+                    if values.len() != payload.len() + 1 {
                         return Ok(false);
                     }
-                    let tag = deep_detach_value(&tuple.elements[0]);
-                    let LegacyValue::Atom(tag) = tag else {
+                    let SchemaBody::Atom(actual_tag) = values[0].closed_schema_body()? else {
                         return Ok(false);
                     };
-                    if tag.borrow().id() != *tag_id {
+                    if &actual_tag != tag_key {
                         return Ok(false);
                     }
-                    for (pattern, value) in payload.iter().zip(tuple.elements.iter().skip(1)) {
+                    for (pattern, value) in payload.iter().zip(values.iter().skip(1)) {
                         if !self.matches(pattern, value)? {
                             return Ok(false);
                         }
@@ -783,7 +761,9 @@ impl PatternMatchState<'_, '_> {
                     index: spec.index,
                     id: spec.id,
                     name: spec.name,
-                    kind: value.kind().deref_kind(),
+                    schema: value
+                        .closed_schema_body()
+                        .expect("matched canonical binding retains a valid schema"),
                     value,
                 })
             })
@@ -797,7 +777,7 @@ impl PatternMatchState<'_, '_> {
 
 pub fn match_compiled_pattern(
     pattern: &CompiledPattern,
-    value: &LegacyValue,
+    value: &ValueCell,
     env: &Environment,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<PatternMatch> {
@@ -810,7 +790,7 @@ pub fn match_compiled_pattern(
 /// earlier qualifier.
 pub fn match_compiled_pattern_with_environment_constraints(
     pattern: &CompiledPattern,
-    value: &LegacyValue,
+    value: &ValueCell,
     env: &Environment,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<PatternMatch> {
@@ -819,7 +799,7 @@ pub fn match_compiled_pattern_with_environment_constraints(
 
 fn match_compiled_pattern_with_environment(
     pattern: &CompiledPattern,
-    value: &LegacyValue,
+    value: &ValueCell,
     env: &Environment,
     interpreter: &InterpreterExecution<'_>,
     seed_existing_bindings: bool,
@@ -828,7 +808,7 @@ fn match_compiled_pattern_with_environment(
     let proposed = if seed_existing_bindings {
         specs
             .iter()
-            .map(|spec| env.get(&spec.id).map(deep_detach_value))
+            .map(|spec| env.get(&spec.id).cloned())
             .collect()
     } else {
         vec![None; specs.len()]
@@ -844,8 +824,8 @@ fn match_compiled_pattern_with_environment(
 
 pub fn match_compiled_pattern_with_values(
     pattern: &CompiledPattern,
-    value: &LegacyValue,
-    expression_values: &[LegacyValue],
+    value: &ValueCell,
+    expression_values: &[ValueCell],
 ) -> MResult<PatternMatch> {
     let specs = pattern.binding_specs();
     let mut state = PatternMatchState {
@@ -884,7 +864,7 @@ impl PatternBindingSink for EnvironmentBindingSink<'_> {
 
 pub fn pattern_matches_arguments(
     pattern: &Pattern,
-    args: &Vec<LegacyValue>,
+    args: &[ValueCell],
     env: &mut Environment,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<bool> {
@@ -896,7 +876,7 @@ pub fn pattern_matches_arguments(
     }
     #[cfg(feature = "tuple")]
     {
-        let arguments = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(args.clone())));
+        let arguments = ValueCell::tuple_from_cells(args)?;
         return pattern_matches_value(pattern, &arguments, env, interpreter);
     }
     #[cfg(not(feature = "tuple"))]
@@ -907,7 +887,7 @@ pub fn pattern_matches_arguments(
 
 pub fn pattern_matches_value(
     pattern: &Pattern,
-    value: &LegacyValue,
+    value: &ValueCell,
     env: &mut Environment,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<bool> {
@@ -933,24 +913,24 @@ pub fn pattern_to_value(
     pattern: &Pattern,
     env: &Environment,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     match pattern {
-        Pattern::Wildcard => Ok(LegacyValue::Empty),
-        Pattern::Expression(expr) => expression(expr, Some(env), p),
+        Pattern::Wildcard => Ok(ValueCell::unit()),
+        Pattern::Expression(expr) => expression_cell(expr, Some(env), p),
         #[cfg(feature = "tuple")]
         Pattern::Tuple(pattern_tuple) => {
             let mut values = Vec::with_capacity(pattern_tuple.0.len());
             for inner in &pattern_tuple.0 {
                 values.push(pattern_to_value(inner, env, p)?);
             }
-            return Ok(LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))));
+            return ValueCell::tuple_from_cells(&values);
         }
         #[cfg(feature = "matrix")]
         Pattern::Array(array) => {
             let mut values = Vec::new();
             for inner in &array.prefix {
                 let inner_value = pattern_to_value(inner, env, p)?;
-                if let Some(inner_values) = matrix_like_values(&inner_value) {
+                if let Some(inner_values) = matrix_like_values(&inner_value)? {
                     values.extend(inner_values);
                 } else {
                     values.push(inner_value);
@@ -959,7 +939,7 @@ pub fn pattern_to_value(
             if let Some(spread) = &array.spread {
                 if let Some(binding) = &spread.binding {
                     let bound = pattern_to_value(binding, env, p)?;
-                    if let Some(bound_values) = matrix_like_values(&bound) {
+                    if let Some(bound_values) = matrix_like_values(&bound)? {
                         values.extend(bound_values);
                     } else {
                         values.push(bound);
@@ -968,24 +948,24 @@ pub fn pattern_to_value(
             }
             for inner in &array.suffix {
                 let inner_value = pattern_to_value(inner, env, p)?;
-                if let Some(inner_values) = matrix_like_values(&inner_value) {
+                if let Some(inner_values) = matrix_like_values(&inner_value)? {
                     values.extend(inner_values);
                 } else {
                     values.push(inner_value);
                 }
             }
-            return Ok(build_row_matrix_from_values(values));
+            return ValueCell::dynamic_matrix_from_cells(1, values.len(), &values);
         }
         #[cfg(all(feature = "tuple", feature = "atom"))]
         Pattern::TupleStruct(pattern_tuple_struct) => {
             #[cfg(feature = "enum")]
             {
                 let variant_id = pattern_tuple_struct.name.hash();
-                if let Some((enum_id, enum_def)) = p.state.borrow().enums.iter().find(|(_, enm)| {
-                    enm.variants
-                        .iter()
-                        .any(|(known_variant, _)| *known_variant == variant_id)
-                }) {
+                if let Some((_enum_id, enum_def)) =
+                    p.state.borrow().enums.iter().find(|(_, enm)| {
+                        enm.variants.iter().any(|variant| variant.id == variant_id)
+                    })
+                {
                     let payload = if pattern_tuple_struct.patterns.len() == 1 {
                         Some(pattern_to_value(&pattern_tuple_struct.patterns[0], env, p)?)
                     } else if pattern_tuple_struct.patterns.is_empty() {
@@ -993,12 +973,22 @@ pub fn pattern_to_value(
                     } else {
                         return Err(MechError::new(FeatureNotEnabledError, Some("Enum tuple-struct patterns currently support zero or one payload value.".to_string())).with_compiler_loc());
                     };
-                    let enm = MechEnum {
-                        id: *enum_id,
-                        variants: vec![(variant_id, payload)],
-                        names: enum_def.names.clone(),
-                    };
-                    return Ok(LegacyValue::Enum(Ref::new(enm)));
+                    let schema = crate::structures::enum_schema(enum_def)?;
+                    let ordinal = enum_def
+                        .variants
+                        .iter()
+                        .position(|variant| variant.id == variant_id)
+                        .expect("matched enum variant remains present")
+                        as u32;
+                    let payload = payload
+                        .as_ref()
+                        .map(canonical_pattern_draft)
+                        .transpose()?
+                        .map(Box::new);
+                    return ValueCell::from_schema_data(
+                        schema,
+                        ValueDataDraft::Enum(EnumDraft { ordinal, payload }),
+                    );
                 }
             }
             let mut values = Vec::with_capacity(pattern_tuple_struct.patterns.len() + 1);
@@ -1007,25 +997,22 @@ pub fn pattern_to_value(
                     name: pattern_tuple_struct.name.clone(),
                 },
                 p,
-            ));
+            )?);
             for inner in &pattern_tuple_struct.patterns {
                 values.push(pattern_to_value(inner, env, p)?);
             }
-            return Ok(LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))));
+            return ValueCell::tuple_from_cells(&values);
         }
         #[cfg(not(all(feature = "tuple", feature = "matrix", feature = "atom")))]
         _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
     }
 }
 
-// Mutable reference unwrapper. Recursively follows LegacyValue::MutableReference
-// chains until it reaches a plain value, then clones it. Ensures the pattern
-// matcher always works on an owned, non-reference value.
-pub(crate) fn deep_detach_value(value: &LegacyValue) -> LegacyValue {
-    match value {
-        LegacyValue::MutableReference(reference) => deep_detach_value(&reference.borrow()),
-        _ => value.clone(),
-    }
+#[cfg(all(feature = "tuple", feature = "atom", feature = "enum"))]
+fn canonical_pattern_draft(value: &ValueCell) -> MResult<ValueDataDraft> {
+    value.snapshot()?.canonical_data_draft().map_err(|error| {
+        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+    })
 }
 
 // Variable id harvester. Recursively walks a pattern and pushes the hashed ids
@@ -1066,232 +1053,13 @@ fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
 }
 
 #[cfg(feature = "matrix")]
-fn capture_middle_matrix(value: &LegacyValue, start: usize, end: usize) -> LegacyValue {
-    let cols = end.saturating_sub(start);
-    match value {
-        #[cfg(feature = "matrix")]
-        LegacyValue::MatrixIndex(matrix) => LegacyValue::MatrixIndex(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "bool"))]
-        LegacyValue::MatrixBool(matrix) => LegacyValue::MatrixBool(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "u8"))]
-        LegacyValue::MatrixU8(matrix) => LegacyValue::MatrixU8(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "u16"))]
-        LegacyValue::MatrixU16(matrix) => LegacyValue::MatrixU16(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "u32"))]
-        LegacyValue::MatrixU32(matrix) => LegacyValue::MatrixU32(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "u64"))]
-        LegacyValue::MatrixU64(matrix) => LegacyValue::MatrixU64(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "u128"))]
-        LegacyValue::MatrixU128(matrix) => LegacyValue::MatrixU128(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "i8"))]
-        LegacyValue::MatrixI8(matrix) => LegacyValue::MatrixI8(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "i16"))]
-        LegacyValue::MatrixI16(matrix) => LegacyValue::MatrixI16(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "i32"))]
-        LegacyValue::MatrixI32(matrix) => LegacyValue::MatrixI32(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "i64"))]
-        LegacyValue::MatrixI64(matrix) => LegacyValue::MatrixI64(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "i128"))]
-        LegacyValue::MatrixI128(matrix) => LegacyValue::MatrixI128(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "f32"))]
-        LegacyValue::MatrixF32(matrix) => LegacyValue::MatrixF32(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "f64"))]
-        LegacyValue::MatrixF64(matrix) => LegacyValue::MatrixF64(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "string"))]
-        LegacyValue::MatrixString(matrix) => LegacyValue::MatrixString(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "rational"))]
-        LegacyValue::MatrixR64(matrix) => LegacyValue::MatrixR64(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(all(feature = "matrix", feature = "complex"))]
-        LegacyValue::MatrixC64(matrix) => LegacyValue::MatrixC64(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        #[cfg(feature = "matrix")]
-        LegacyValue::MatrixValue(matrix) => LegacyValue::MatrixValue(Matrix::from_vec(
-            matrix.as_vec()[start..end].to_vec(),
-            1,
-            cols,
-        )),
-        _ => {
-            let values = matrix_like_values(value).unwrap_or_default();
-            LegacyValue::MatrixValue(Matrix::from_vec(values[start..end].to_vec(), 1, cols))
-        }
-    }
-}
-
-// Used by the Array pattern arm to get a uniform element list regardless of the matrix's concrete numeric type.
-#[cfg(feature = "matrix")]
-pub(crate) fn matrix_like_values(value: &LegacyValue) -> Option<Vec<LegacyValue>> {
-    match value {
-        #[cfg(feature = "matrix")]
-        LegacyValue::MatrixIndex(matrix) => Some(
-            matrix
-                .as_vec()
-                .into_iter()
-                .map(|value| LegacyValue::Index(Ref::new(value)))
-                .collect(),
-        ),
-        #[cfg(all(feature = "matrix", feature = "bool"))]
-        LegacyValue::MatrixBool(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u8"))]
-        LegacyValue::MatrixU8(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u16"))]
-        LegacyValue::MatrixU16(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u32"))]
-        LegacyValue::MatrixU32(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u64"))]
-        LegacyValue::MatrixU64(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "u128"))]
-        LegacyValue::MatrixU128(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i8"))]
-        LegacyValue::MatrixI8(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i16"))]
-        LegacyValue::MatrixI16(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i32"))]
-        LegacyValue::MatrixI32(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i64"))]
-        LegacyValue::MatrixI64(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "i128"))]
-        LegacyValue::MatrixI128(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "f32"))]
-        LegacyValue::MatrixF32(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "f64"))]
-        LegacyValue::MatrixF64(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "string"))]
-        LegacyValue::MatrixString(matrix) => {
-            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
-        }
-        #[cfg(all(feature = "matrix", feature = "rational"))]
-        LegacyValue::MatrixR64(matrix) => Some(
-            matrix
-                .as_vec()
-                .into_iter()
-                .map(|value| value.to_value())
-                .collect(),
-        ),
-        #[cfg(all(feature = "matrix", feature = "complex"))]
-        LegacyValue::MatrixC64(matrix) => Some(
-            matrix
-                .as_vec()
-                .into_iter()
-                .map(|value| value.to_value())
-                .collect(),
-        ),
-        #[cfg(feature = "matrix")]
-        LegacyValue::MatrixValue(matrix) => Some(matrix.as_vec()),
-        _ => None,
-    }
+fn capture_middle_matrix(values: &[ValueCell], start: usize, end: usize) -> MResult<ValueCell> {
+    ValueCell::dynamic_matrix_from_cells(1, end.saturating_sub(start), &values[start..end])
 }
 
 #[cfg(feature = "matrix")]
-fn build_row_matrix_from_values(values: Vec<LegacyValue>) -> LegacyValue {
-    let cols = values.len();
-    #[cfg(feature = "u64")]
-    if values
-        .iter()
-        .all(|value| matches!(value, LegacyValue::U64(_)))
-    {
-        let data = values
-            .iter()
-            .map(|value| match value {
-                LegacyValue::U64(x) => *x.borrow(),
-                _ => unreachable!(),
-            })
-            .collect::<Vec<u64>>();
-        return LegacyValue::MatrixU64(Matrix::from_vec(data, 1, cols));
-    }
-    LegacyValue::MatrixValue(Matrix::from_vec(values, 1, cols))
+pub(crate) fn matrix_like_values(value: &ValueCell) -> MResult<Option<Vec<ValueCell>>> {
+    value.matrix_elements()
 }
 
 pub(crate) fn pattern_var_is_binding(var: &Var) -> bool {
@@ -1321,46 +1089,27 @@ fn extract_pattern_variable_from_term(factor: &Factor) -> Option<&Var> {
     }
 }
 
-// TODO: This needs to be expanded to handle all types.
-fn values_match(expected: &LegacyValue, actual: &LegacyValue) -> bool {
-    if expected == actual {
-        return true;
-    }
-    match (expected, actual) {
-        #[cfg(all(feature = "atom", feature = "enum"))]
-        (LegacyValue::Atom(atom), LegacyValue::Enum(enum_value))
-        | (LegacyValue::Enum(enum_value), LegacyValue::Atom(atom)) => {
-            let enum_value = enum_value.borrow();
-            return enum_value.variants.len() == 1
-                && enum_value.variants[0].0 == atom.borrow().id()
-                && enum_value.variants[0].1.is_none();
-        }
-        #[cfg(all(feature = "u64", feature = "f64"))]
-        (LegacyValue::F64(x), LegacyValue::U64(y)) => {
-            let x = *x.borrow();
-            return x.is_finite()
-                && x >= 0.0
-                && x.fract() == 0.0
-                && x < 18_446_744_073_709_551_616.0
-                && (x as u64) == *y.borrow();
-        }
-        #[cfg(all(feature = "u64", feature = "f64"))]
-        (LegacyValue::U64(x), LegacyValue::F64(y)) => {
-            let y = *y.borrow();
-            return y.is_finite()
-                && y >= 0.0
-                && y.fract() == 0.0
-                && y < 18_446_744_073_709_551_616.0
-                && *x.borrow() == (y as u64);
-        }
-        _ => {}
-    }
-    false
+fn values_match(expected: &ValueCell, actual: &ValueCell) -> MResult<bool> {
+    expected.snapshot_eq(actual)
 }
 
 #[cfg(all(test, feature = "tuple", feature = "u64"))]
 mod tests {
     use super::*;
+
+    fn u64_cell(value: u64) -> ValueCell {
+        ValueCell::from_exact(value).unwrap()
+    }
+
+    fn tuple(values: &[u64]) -> ValueCell {
+        ValueCell::tuple_from_cells(&values.iter().copied().map(u64_cell).collect::<Vec<_>>())
+            .unwrap()
+    }
+
+    fn assert_u64(cell: &ValueCell, expected: u64) {
+        let snapshot = cell.snapshot().unwrap();
+        assert!(matches!(snapshot.data(), ValueData::U64(actual) if *actual == expected));
+    }
 
     #[test]
     fn failed_compiled_match_returns_no_bindings_and_cannot_mutate_sink() {
@@ -1369,26 +1118,23 @@ mod tests {
             binding_index: 0,
             id,
             name: "x".to_string(),
-            expected_kind: Some(ValueKind::U64),
+            expected_schema: Some(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
         };
         let pattern = CompiledPattern::Tuple {
             elements: vec![binding.clone(), binding],
         };
-        let value = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
-            LegacyValue::U64(Ref::new(1)),
-            LegacyValue::U64(Ref::new(2)),
-        ])));
+        let value = tuple(&[1, 2]);
 
         let pattern_match = match_compiled_pattern_with_values(&pattern, &value, &[]).unwrap();
         assert!(!pattern_match.matched);
         assert!(pattern_match.bindings.is_empty());
 
         let mut env = Environment::new();
-        env.insert(id, LegacyValue::U64(Ref::new(9)));
+        env.insert(id, u64_cell(9));
         EnvironmentBindingSink::new(&mut env)
             .commit(&pattern_match)
             .unwrap();
-        assert_eq!(env.get(&id), Some(&LegacyValue::U64(Ref::new(9))));
+        assert_u64(env.get(&id).unwrap(), 9);
     }
 
     #[test]
@@ -1401,25 +1147,22 @@ mod tests {
                     binding_index: 0,
                     id: x_id,
                     name: "x".to_string(),
-                    expected_kind: Some(ValueKind::U64),
+                    expected_schema: Some(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
                 },
                 CompiledPattern::Binding {
                     binding_index: 1,
                     id: y_id,
                     name: "y".to_string(),
-                    expected_kind: Some(ValueKind::U64),
+                    expected_schema: Some(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
                 },
             ],
         };
         let interpreter = Interpreter::new(0, 10_000);
         let mut services = NoMechExecutionServices;
         let execution = InterpreterExecution::new(&interpreter, &mut services);
-        let mut env = Environment::from([(x_id, LegacyValue::U64(Ref::new(1)))]);
+        let mut env = Environment::from([(x_id, u64_cell(1))]);
 
-        let mismatch = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
-            LegacyValue::U64(Ref::new(2)),
-            LegacyValue::U64(Ref::new(3)),
-        ])));
+        let mismatch = tuple(&[2, 3]);
         let pattern_match = match_compiled_pattern_with_environment_constraints(
             &pattern, &mismatch, &env, &execution,
         )
@@ -1429,15 +1172,10 @@ mod tests {
         EnvironmentBindingSink::new(&mut env)
             .commit(&pattern_match)
             .unwrap();
-        assert_eq!(
-            env,
-            Environment::from([(x_id, LegacyValue::U64(Ref::new(1)))])
-        );
+        assert_eq!(env.len(), 1);
+        assert_u64(env.get(&x_id).unwrap(), 1);
 
-        let match_value = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
-            LegacyValue::U64(Ref::new(1)),
-            LegacyValue::U64(Ref::new(3)),
-        ])));
+        let match_value = tuple(&[1, 3]);
         let pattern_match = match_compiled_pattern_with_environment_constraints(
             &pattern,
             &match_value,
@@ -1449,8 +1187,8 @@ mod tests {
         EnvironmentBindingSink::new(&mut env)
             .commit(&pattern_match)
             .unwrap();
-        assert_eq!(env.get(&x_id), Some(&LegacyValue::U64(Ref::new(1))));
-        assert_eq!(env.get(&y_id), Some(&LegacyValue::U64(Ref::new(3))));
+        assert_u64(env.get(&x_id).unwrap(), 1);
+        assert_u64(env.get(&y_id).unwrap(), 3);
     }
 
     #[test]

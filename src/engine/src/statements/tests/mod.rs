@@ -26,6 +26,22 @@ mod activation_scope;
 
 #[cfg(all(
     test,
+    feature = "program",
+    feature = "functions",
+    feature = "variables",
+    feature = "variable_define",
+    feature = "variable_assign",
+    feature = "f64",
+    feature = "math_add",
+    feature = "assign",
+    feature = "matrix",
+    feature = "matrixd",
+    feature = "vectord"
+))]
+mod op_assign;
+
+#[cfg(all(
+    test,
     feature = "functions",
     feature = "variables",
     feature = "variable_define",
@@ -69,16 +85,3 @@ mod support;
     feature = "semantic-compiler",
 ))]
 mod variable_assign;
-
-#[cfg(all(
-    test,
-    feature = "functions",
-    feature = "variables",
-    feature = "variable_define",
-    feature = "variable_assign",
-    feature = "assign",
-    feature = "f64",
-    feature = "program",
-    feature = "semantic-compiler",
-))]
-mod op_assign;

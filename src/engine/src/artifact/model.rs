@@ -3,12 +3,14 @@ use core::ops::Range;
 use mech_core::{
     AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
     ConstantId, ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction,
-    InputId, IntegrityConstraintId, LegacyOpaqueOperationContract, LegacySnapshotError, MechError,
-    NodeId, OperationContractDeclaration, OperationContractError, OperationContractId,
+    InputId, IntegrityConstraintId, LegacyOpaqueOperationContract, MechError, NodeId,
+    OperationContractDeclaration, OperationContractError, OperationContractId,
     OperationContractTable, OperationContractTableBuilder, OutputId, PortDirection,
     ProgramRevision, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaId,
     SchemaTable, SemanticModelError, SnapshotValueError, validate_declaration,
 };
+
+use super::CompilerIrError;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComputeRegionDeclaration {
@@ -291,7 +293,7 @@ impl ProgramArtifactDraft {
 
     pub(super) fn attach_contracts(
         mut self,
-        declarations: &[Option<&'static OperationContractDeclaration>],
+        declarations: &[Option<&OperationContractDeclaration>],
     ) -> Result<Self, ArtifactBuildError> {
         if declarations.len() != self.nodes.len() {
             return Err(ArtifactBuildError::CompiledMetadataLengthMismatch {
@@ -443,6 +445,13 @@ pub enum ArtifactBuildError {
         table: &'static str,
         expected: usize,
         actual: usize,
+    },
+    MatrixLiteralMetadataMismatch {
+        output: u32,
+        reason: &'static str,
+    },
+    UnresolvedEmptyRegister {
+        register: u32,
     },
     InvalidDeclarationMarker {
         instruction: u32,
@@ -639,9 +648,9 @@ pub enum ArtifactBuildError {
     CombinationalCycle,
     Snapshot(SnapshotValueError),
     Semantic(SemanticModelError),
-    LegacySnapshot(LegacySnapshotError),
     CoreBytecode(MechError),
     OperationContract(OperationContractError),
+    CompilerIr(CompilerIrError),
 }
 
 impl From<SnapshotValueError> for ArtifactBuildError {
@@ -656,12 +665,6 @@ impl From<SemanticModelError> for ArtifactBuildError {
     }
 }
 
-impl From<LegacySnapshotError> for ArtifactBuildError {
-    fn from(error: LegacySnapshotError) -> Self {
-        Self::LegacySnapshot(error)
-    }
-}
-
 impl From<OperationContractError> for ArtifactBuildError {
     fn from(error: OperationContractError) -> Self {
         Self::OperationContract(error)
@@ -671,5 +674,11 @@ impl From<OperationContractError> for ArtifactBuildError {
 impl From<MechError> for ArtifactBuildError {
     fn from(error: MechError) -> Self {
         Self::CoreBytecode(error)
+    }
+}
+
+impl From<CompilerIrError> for ArtifactBuildError {
+    fn from(error: CompilerIrError) -> Self {
+        Self::CompilerIr(error)
     }
 }

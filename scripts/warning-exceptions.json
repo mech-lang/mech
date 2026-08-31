@@ -27,6 +27,114 @@
       "owner": "Mech core execution performance",
       "path": "src/core/benches/solve_result_overhead.rs",
       "reason": "boxed nodes model the dynamic execution graph whose overhead this benchmark measures"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when every supported profile enables at least one fixed matrix constructor.",
+      "lint": "unused_macros",
+      "occurrences": 1,
+      "owner": "Canonical comparison outputs",
+      "path": "machines/compare/src/lib.rs",
+      "reason": "fixed matrix constructors are feature-selected below"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when comparison no longer supports profiles without a concrete matrix storage feature.",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Canonical comparison outputs",
+      "path": "machines/compare/src/lib.rs",
+      "reason": "the fallback is reachable only in narrow matrix feature profiles"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when every supported profile enables at least one exact matrix constructor.",
+      "lint": "unused_macros",
+      "occurrences": 1,
+      "owner": "Canonical cell bindings",
+      "path": "src/core/src/cell_binding.rs",
+      "reason": "exact matrix constructors are feature-selected below"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when function matrix ports no longer support profiles without a concrete matrix storage feature.",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Canonical function ports",
+      "path": "src/core/src/function/argument.rs",
+      "reason": "the fallback is reachable only in narrow matrix feature profiles"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove with the four-input compatibility factory or when it becomes unconditional.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Matrix concatenation compatibility",
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "reason": "the four-input compatibility factory is selected only by native-plan and focused tests"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove with the frozen variadic bytecode factory or when the standard linked runtime catalog selects it.",
+      "lint": "dead_code",
+      "occurrences": 2,
+      "owner": "Matrix concatenation compatibility",
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "reason": "retained as a frozen bytecode factory outside the standard linked runtime catalog"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when structure dispatch no longer supports profiles with all structure variants disabled.",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Canonical structure dispatch",
+      "path": "src/engine/src/structures.rs",
+      "reason": "the fallback is reachable only in narrow structure feature profiles"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when matrix storage features can no longer be unified independently across runtime dependencies.",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Runtime host input boundary",
+      "path": "src/runtime/src/input.rs",
+      "reason": "dependency feature unification can expose matrix storage variants that this runtime profile did not enable"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when the shared capability probes are split into their selecting test modules.",
+      "lint": "dead_code",
+      "occurrences": 3,
+      "owner": "Runtime test support",
+      "path": "src/runtime/src/runtime/test_support/capabilities.rs",
+      "reason": "shared test support is selected by feature-specific runtime suites"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when the shared event helper is split into its selecting test modules.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Runtime test support",
+      "path": "src/runtime/src/runtime/test_support/events.rs",
+      "reason": "shared test support is selected by feature-specific runtime suites"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when the shared store probes are split into their selecting test modules.",
+      "lint": "dead_code",
+      "occurrences": 2,
+      "owner": "Runtime test support",
+      "path": "src/runtime/src/runtime/test_support/stores.rs",
+      "reason": "shared test support is selected by feature-specific runtime suites"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when all transaction regression profiles enable source support.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Runtime transaction tests",
+      "path": "src/runtime/src/store.rs",
+      "reason": "used by source-enabled transaction regression profiles"
     }
   ],
   "schema_version": 1

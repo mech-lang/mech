@@ -94,7 +94,7 @@ def validate_source_compiler(source: str) -> list[str]:
             failures.append(f"source compiler retains forbidden compatibility token {token}")
     for required in (
         "CompiledInstructionRole",
-        "register_kinds",
+        "register_schemas",
         "symbol_definitions",
         "return_register",
         "integrity_constraints",
@@ -124,22 +124,9 @@ def validate_source_compiler(source: str) -> list[str]:
         if obsolete in adapter:
             failures.append(f"source compiler adapter retains obsolete semantic guess {obsolete}")
 
-    legacy_context = function_body(
-        source, "impl LegacySemanticContext for CompilerLegacyContext"
-    )
-    if legacy_context is None:
-        failures.append("source compiler legacy semantic boundary is missing")
-    else:
-        for required in ("LegacyNamedKindUnresolved", "LegacyNominalUnresolved"):
-            if required not in legacy_context:
-                failures.append(
-                    f"source compiler must fail closed without canonical nominal identity: {required}"
-                )
-        for fabricated in ('"legacy".to_owned()', "NominalKey::from_path"):
-            if fabricated in legacy_context:
-                failures.append(
-                    f"source compiler fabricates durable nominal identity with {fabricated}"
-                )
+    for retired in ("LegacySemanticContext", "CompilerLegacyContext"):
+        if retired in source:
+            failures.append(f"source compiler retains retired semantic boundary {retired}")
     return failures
 
 
@@ -214,9 +201,6 @@ def run(root: Path = ROOT) -> list[str]:
     sections = (root / "src/core/src/program/bytecode/section.rs").read_text()
     sections += (root / "src/core/src/program/bytecode/header.rs").read_text()
     test = (root / "src/engine/tests/program_artifact_contract.rs").read_text()
-    source_test = (
-        root / "src/engine/src/program/bytecode_plan_topology_tests.rs"
-    ).read_text()
     program = (root / "src/engine/src/program/compiler_planning.rs").read_text()
     encoding = (root / "src/engine/src/artifact/encoding.rs").read_text()
     snapshot_data = (root / "src/core/src/snapshot/data.rs").read_text()
@@ -254,13 +238,17 @@ def run(root: Path = ROOT) -> list[str]:
         "artifact_b.revision()",
         "comparison-output.mec",
         "integrity-constraint.mec",
-        "artifact.constraints()",
+        "artifact_a.constraints()",
+    ):
+        if required not in program:
+            failures.append(f"ordinary-source artifact proof is missing {required}")
+    for required in (
         "IntegrityConstraintSchemaMismatch",
         "MissingRegisterKind",
         "MissingRegisterSource",
     ):
-        if required not in source_test:
-            failures.append(f"ordinary-source artifact proof is missing {required}")
+        if required not in test:
+            failures.append(f"malformed artifact regression proof is missing {required}")
     if 'b"mech-program-v1\\0"' not in encoding:
         failures.append("ProgramRevision domain separator changed")
     changed = changed_protected_paths(

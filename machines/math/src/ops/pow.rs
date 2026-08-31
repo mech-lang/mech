@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use num_traits::*;
 
 fn checked_runtime_pow<T: RuntimeCheckedPow>(lhs: T, rhs: T) -> MResult<T> {
@@ -148,15 +146,14 @@ macro_rules! impl_powop {
                 + DivAssign
                 + Pow<T, Output = T>
                 + RuntimeCheckedPow
-                + AsValueKind
+                + FunctionRuntimeType
                 + Zero
                 + One,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst + ConstElem,
-            Ref<$out_type>: ToValue,
-            $arg1_type: FunctionRuntimeType,
-            $arg2_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            T: CanonicalMatrixElementBacking + CompileConst + ConstElem,
+            $arg1_type: FunctionRuntimeType + FunctionPortBacking,
+            $arg2_type: FunctionRuntimeType + FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -164,27 +161,16 @@ macro_rules! impl_powop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let rhs: Ref<$arg2_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { lhs, rhs, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: 0,
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
+                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { lhs, rhs, out }))
             }
+
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -208,8 +194,9 @@ macro_rules! impl_powop {
                 + RuntimeCheckedPow
                 + Zero
                 + One,
-            Ref<$out_type>: ToValue,
-            $out_type: FunctionRuntimeType,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -218,8 +205,8 @@ macro_rules! impl_powop {
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(crate::ops::arithmetic_full_write_contract(
@@ -229,18 +216,21 @@ macro_rules! impl_powop {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind + RuntimeCheckedPow,
+            T: CanonicalMatrixElementBacking
+                + CompileConst
+                + ConstElem
+                + FunctionRuntimeType
+                + RuntimeCheckedPow,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
@@ -256,29 +246,6 @@ macro_rules! impl_math_fxns_pow {
 
 impl_math_fxns_pow!(Pow);
 
-#[cfg(all(test, feature = "u8"))]
-mod checked_arithmetic_tests {
-    use super::*;
-
-    #[test]
-    fn integer_exponentiation_rejects_reactive_overflow_and_retains_output() {
-        let rhs = Ref::new(1_u8);
-        let out = Ref::new(17_u8);
-        let function = PowSS {
-            lhs: Ref::new(20_u8),
-            rhs: rhs.clone(),
-            out: out.clone(),
-        };
-
-        function.solve_result().unwrap();
-        assert_eq!(*out.borrow(), 20);
-        *rhs.borrow_mut() = 2;
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
-        assert_eq!(*out.borrow(), 20);
-    }
-}
-
 #[cfg(all(feature = "rational", feature = "i32"))]
 #[derive(Debug)]
 pub struct PowRational {
@@ -286,6 +253,7 @@ pub struct PowRational {
     pub rhs: Ref<i32>,
     pub out: Ref<R64>,
 }
+
 #[cfg(all(feature = "rational", feature = "i32"))]
 impl MechFunctionFactory for PowRational {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -294,25 +262,15 @@ impl MechFunctionFactory for PowRational {
         FunctionValueRepresentation::I32,
     );
 
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<R64> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<i32> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<R64> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(Self { lhs, rhs, out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: 0,
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs: Ref<R64> = lhs.try_ref()?;
+        let rhs: Ref<i32> = rhs.try_ref()?;
+        let out: Ref<R64> = out.try_ref()?;
+        Ok(Box::new(Self { lhs, rhs, out }))
     }
 }
+
 #[cfg(all(feature = "rational", feature = "i32"))]
 impl MechFunctionImpl for PowRational {
     fn solve_result(&self) -> MResult<()> {
@@ -324,48 +282,91 @@ impl MechFunctionImpl for PowRational {
         };
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        self.out.to_value()
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_ref(&self.out))
     }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
 }
-#[cfg(all(feature = "rational", feature = "i32", feature = "semantic-compiler"))]
+
+#[cfg(all(
+    feature = "rational",
+    feature = "i32",
+    feature = "semantic-compiler"
+))]
 impl MechFunctionCompiler for PowRational {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("PowRational<{}>", R64::as_value_kind());
+        let name = format!(
+            "PowRational<{}>",
+            <R64 as FunctionRuntimeType>::REPRESENTATION
+        );
         compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 
-#[cfg(feature = "source")]
-fn impl_pow_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    match (&lhs_value, &rhs_value) {
-        #[cfg(all(feature = "rational", feature = "i32"))]
-        (LegacyValue::R64(lhs), LegacyValue::I32(rhs)) => {
-            return Ok(Box::new(PowRational {
-                lhs: lhs.clone(),
-                rhs: rhs.clone(),
-                out: Ref::new(R64::default()),
-            }));
-        }
-        _ => (),
+impl_canonical_registered_math_binop_specializer!(MathPow, "Pow");
+
+#[cfg(all(test, feature = "rational", feature = "i32"))]
+mod rational_port_tests {
+    use super::*;
+
+    #[test]
+    fn rational_factory_uses_mixed_exact_ports_and_typed_state() {
+        let output = ValueCell::from_exact(R64::default()).unwrap();
+        let output_alias = output.clone();
+        let function = PowRational::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            ValueCell::from_exact(R64::new(3, 2)).unwrap(),
+            ValueCell::from_exact(2_i32).unwrap(),
+        ))
+        .unwrap();
+
+        function.solve_result().unwrap();
+        assert!(output.same_cell(&output_alias));
+        assert_eq!(function.transaction_state_ports().unwrap().unwrap().len(), 1);
+        let snapshot = output.snapshot().unwrap();
+        assert!(matches!(
+            snapshot.data(),
+            ValueData::Rational64(value)
+                if value.numerator() == 9 && value.denominator() == 4
+        ));
+
+        assert!(PowRational::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact(R64::default()).unwrap(),
+            ValueCell::from_exact(R64::new(3, 2)).unwrap(),
+            ValueCell::from_exact(2_usize).unwrap(),
+        ))
+        .is_err());
     }
-    impl_binop_match_arms!(
-      Pow,
-      (lhs_value, rhs_value),
-      U8,   u8,   "u8";
-      U16,  u16,  "u16";
-      U32,  u32,  "u32";
-      F32,  f32,  "f32";
-      F64,  f64,  "f64";
-    )
 }
 
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(MathPow, impl_pow_fxn, "math/pow");
+#[cfg(all(test, feature = "u8"))]
+mod checked_power_tests {
+    use super::*;
+
+    #[test]
+    fn integer_power_rejects_overflow_without_publishing_partial_state() {
+        let rhs = Ref::new(1_u8);
+        let out = Ref::new(17_u8);
+        let function = PowSS {
+            lhs: Ref::new(20_u8),
+            rhs: rhs.clone(),
+            out: out.clone(),
+        };
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), 20);
+        *rhs.borrow_mut() = 2;
+        assert_eq!(
+            function.solve_result().unwrap_err().kind_name(),
+            "MathArithmeticOverflow"
+        );
+        assert_eq!(*out.borrow(), 20);
+    }
+}

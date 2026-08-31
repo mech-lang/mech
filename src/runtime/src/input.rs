@@ -1,20 +1,22 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
+#[cfg(any(feature = "f32", feature = "f64", feature = "matrix"))]
+use mech_core::ValueData;
+use mech_core::{MResult, MechError, MechErrorKind, Value, ValueCell};
 #[cfg(feature = "matrix")]
-use mech_core::structures::Matrix as ValueMatrix;
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
+use mech_core::{SchemaBody, snapshot::SequenceView, structures::Matrix as ValueMatrix};
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
 
 /// Detached host or compiler-initialization value.
 ///
-/// Matrix variants use Mech's column-major runtime order. Serialized
-/// `ProgramArtifact` matrix constants use canonical row-major order and must
-/// be translated by an executor when materialized into one of these values.
+/// Matrix variants use Mech's logical row-major order. Exact nalgebra
+/// backings are populated at this boundary without exposing their physical
+/// column-major layout to hosts.
 #[derive(Clone, Debug, PartialEq)]
 pub enum RuntimeHostInputValue {
-    Empty,
+    Unit,
     Bool(bool),
     String(String),
     U8(u8),
@@ -53,158 +55,94 @@ pub enum RuntimeHostInputValue {
 }
 
 impl RuntimeHostInputValue {
-    pub fn from_numeric_mech_value(value: &LegacyValue) -> MResult<Self> {
-        let value =
-            crate::host_arg_resolved("runtime compiler input", std::slice::from_ref(value), 0)?;
-        match value {
-            #[cfg(feature = "f32")]
-            LegacyValue::F32(value) => Ok(Self::F32(*value.borrow())),
-            #[cfg(feature = "f64")]
-            LegacyValue::F64(value) => Ok(Self::F64(*value.borrow())),
-            #[cfg(all(feature = "matrix", feature = "f32"))]
-            LegacyValue::MatrixF32(value) => Ok(Self::F32Matrix {
-                rows: value.rows(),
-                columns: value.cols(),
-                values: value.as_vec(),
-            }),
-            #[cfg(all(feature = "matrix", feature = "f64"))]
-            LegacyValue::MatrixF64(value) => Ok(Self::F64Matrix {
-                rows: value.rows(),
-                columns: value.cols(),
-                values: value.as_vec(),
-            }),
-            _ => Err(input_error(
-                "RuntimeNumericValueUnsupported",
-                format!(
-                    "compiler value kind `{}` cannot become a detached runtime input",
-                    value.kind()
-                ),
-            )),
-        }
-    }
-
-    pub fn into_mech_value(self) -> MResult<LegacyValue> {
-        match self {
-            RuntimeHostInputValue::Empty => Ok(LegacyValue::Empty),
+    /// Converts a detached host input into the canonical immutable value used
+    /// by execution, resource, and public host boundaries.
+    pub fn into_value(self) -> MResult<Value> {
+        let cell = match self {
+            RuntimeHostInputValue::Unit => ValueCell::unit(),
             #[cfg(feature = "bool")]
-            RuntimeHostInputValue::Bool(value) => Ok(LegacyValue::Bool(Ref::new(value))),
+            RuntimeHostInputValue::Bool(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "bool"))]
-            RuntimeHostInputValue::Bool(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "bool host input values require the `bool` feature",
-            )),
+            RuntimeHostInputValue::Bool(_) => {
+                return Err(input_error(
+                    "RuntimeHostInputValueUnsupported",
+                    "bool host input values require the `bool` feature",
+                ));
+            }
             #[cfg(feature = "string")]
-            RuntimeHostInputValue::String(value) => Ok(LegacyValue::String(Ref::new(value))),
+            RuntimeHostInputValue::String(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "string"))]
-            RuntimeHostInputValue::String(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "string host input values require the `string` feature",
-            )),
+            RuntimeHostInputValue::String(_) => {
+                return Err(input_error(
+                    "RuntimeHostInputValueUnsupported",
+                    "string host input values require the `string` feature",
+                ));
+            }
             #[cfg(feature = "u8")]
-            RuntimeHostInputValue::U8(value) => Ok(LegacyValue::U8(Ref::new(value))),
+            RuntimeHostInputValue::U8(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "u8"))]
-            RuntimeHostInputValue::U8(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "u8 host input values require the `u8` feature",
-            )),
+            RuntimeHostInputValue::U8(_) => return Err(unsupported_host_input("u8")),
             #[cfg(feature = "u16")]
-            RuntimeHostInputValue::U16(value) => Ok(LegacyValue::U16(Ref::new(value))),
+            RuntimeHostInputValue::U16(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "u16"))]
-            RuntimeHostInputValue::U16(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "u16 host input values require the `u16` feature",
-            )),
+            RuntimeHostInputValue::U16(_) => return Err(unsupported_host_input("u16")),
             #[cfg(feature = "u32")]
-            RuntimeHostInputValue::U32(value) => Ok(LegacyValue::U32(Ref::new(value))),
+            RuntimeHostInputValue::U32(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "u32"))]
-            RuntimeHostInputValue::U32(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "u32 host input values require the `u32` feature",
-            )),
+            RuntimeHostInputValue::U32(_) => return Err(unsupported_host_input("u32")),
             #[cfg(feature = "u64")]
-            RuntimeHostInputValue::U64(value) => Ok(LegacyValue::U64(Ref::new(value))),
+            RuntimeHostInputValue::U64(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "u64"))]
-            RuntimeHostInputValue::U64(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "u64 host input values require the `u64` feature",
-            )),
+            RuntimeHostInputValue::U64(_) => return Err(unsupported_host_input("u64")),
             #[cfg(feature = "u128")]
-            RuntimeHostInputValue::U128(value) => Ok(LegacyValue::U128(Ref::new(value))),
+            RuntimeHostInputValue::U128(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "u128"))]
-            RuntimeHostInputValue::U128(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "u128 host input values require the `u128` feature",
-            )),
+            RuntimeHostInputValue::U128(_) => return Err(unsupported_host_input("u128")),
             #[cfg(feature = "i8")]
-            RuntimeHostInputValue::I8(value) => Ok(LegacyValue::I8(Ref::new(value))),
+            RuntimeHostInputValue::I8(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "i8"))]
-            RuntimeHostInputValue::I8(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "i8 host input values require the `i8` feature",
-            )),
+            RuntimeHostInputValue::I8(_) => return Err(unsupported_host_input("i8")),
             #[cfg(feature = "i16")]
-            RuntimeHostInputValue::I16(value) => Ok(LegacyValue::I16(Ref::new(value))),
+            RuntimeHostInputValue::I16(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "i16"))]
-            RuntimeHostInputValue::I16(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "i16 host input values require the `i16` feature",
-            )),
+            RuntimeHostInputValue::I16(_) => return Err(unsupported_host_input("i16")),
             #[cfg(feature = "i32")]
-            RuntimeHostInputValue::I32(value) => Ok(LegacyValue::I32(Ref::new(value))),
+            RuntimeHostInputValue::I32(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "i32"))]
-            RuntimeHostInputValue::I32(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "i32 host input values require the `i32` feature",
-            )),
+            RuntimeHostInputValue::I32(_) => return Err(unsupported_host_input("i32")),
             #[cfg(feature = "i64")]
-            RuntimeHostInputValue::I64(value) => Ok(LegacyValue::I64(Ref::new(value))),
+            RuntimeHostInputValue::I64(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "i64"))]
-            RuntimeHostInputValue::I64(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "i64 host input values require the `i64` feature",
-            )),
+            RuntimeHostInputValue::I64(_) => return Err(unsupported_host_input("i64")),
             #[cfg(feature = "i128")]
-            RuntimeHostInputValue::I128(value) => Ok(LegacyValue::I128(Ref::new(value))),
+            RuntimeHostInputValue::I128(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "i128"))]
-            RuntimeHostInputValue::I128(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "i128 host input values require the `i128` feature",
-            )),
+            RuntimeHostInputValue::I128(_) => return Err(unsupported_host_input("i128")),
             #[cfg(feature = "f32")]
-            RuntimeHostInputValue::F32(value) => Ok(LegacyValue::F32(Ref::new(value))),
+            RuntimeHostInputValue::F32(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "f32"))]
-            RuntimeHostInputValue::F32(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "f32 host input values require the `f32` feature",
-            )),
+            RuntimeHostInputValue::F32(_) => return Err(unsupported_host_input("f32")),
             #[cfg(feature = "f64")]
-            RuntimeHostInputValue::F64(value) => Ok(LegacyValue::F64(Ref::new(value))),
+            RuntimeHostInputValue::F64(value) => ValueCell::from_exact(value)?,
             #[cfg(not(feature = "f64"))]
-            RuntimeHostInputValue::F64(_) => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "f64 host input values require the `f64` feature",
-            )),
-            RuntimeHostInputValue::Index(0) => Err(input_error(
-                "RuntimeHostInputValueInvalid",
-                "index host input values must be in 1..=max",
-            )),
-            RuntimeHostInputValue::Index(value) => Ok(LegacyValue::Index(Ref::new(value))),
+            RuntimeHostInputValue::F64(_) => return Err(unsupported_host_input("f64")),
+            RuntimeHostInputValue::Index(0) => {
+                return Err(input_error(
+                    "RuntimeHostInputValueInvalid",
+                    "index host input values must be in 1..=max",
+                ));
+            }
+            RuntimeHostInputValue::Index(value) => ValueCell::from_exact(value)?,
             #[cfg(feature = "matrix")]
             RuntimeHostInputValue::BoolMatrix {
                 rows,
                 columns,
                 values,
-            } => {
-                validate_matrix_input(rows, columns, values.len())?;
-                Ok(LegacyValue::MatrixBool(ValueMatrix::from_vec(
-                    values, rows, columns,
-                )))
-            }
+            } => exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?,
             #[cfg(not(feature = "matrix"))]
-            RuntimeHostInputValue::BoolMatrix { .. } => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "bool matrix host input values require the `matrix` feature",
-            )),
+            RuntimeHostInputValue::BoolMatrix { .. } => {
+                return Err(unsupported_host_input("bool matrix"));
+            }
             #[cfg(feature = "matrix")]
             RuntimeHostInputValue::IndexMatrix {
                 rows,
@@ -218,49 +156,210 @@ impl RuntimeHostInputValue {
                         "index matrix host input values must be in 1..=max",
                     ));
                 }
-                Ok(LegacyValue::MatrixIndex(ValueMatrix::from_vec(
-                    values, rows, columns,
-                )))
+                exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?
             }
             #[cfg(not(feature = "matrix"))]
-            RuntimeHostInputValue::IndexMatrix { .. } => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "index matrix host input values require the `matrix` feature",
-            )),
+            RuntimeHostInputValue::IndexMatrix { .. } => {
+                return Err(unsupported_host_input("index matrix"));
+            }
             #[cfg(all(feature = "matrix", feature = "f64"))]
             RuntimeHostInputValue::F64Matrix {
                 rows,
                 columns,
                 values,
-            } => {
-                validate_matrix_input(rows, columns, values.len())?;
-                Ok(LegacyValue::MatrixF64(ValueMatrix::from_vec(
-                    values, rows, columns,
-                )))
-            }
+            } => exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?,
             #[cfg(all(feature = "matrix", feature = "f32"))]
             RuntimeHostInputValue::F32Matrix {
                 rows,
                 columns,
                 values,
-            } => {
-                validate_matrix_input(rows, columns, values.len())?;
-                Ok(LegacyValue::MatrixF32(ValueMatrix::from_vec(
-                    values, rows, columns,
-                )))
-            }
+            } => exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?,
             #[cfg(not(all(feature = "matrix", feature = "f32")))]
-            RuntimeHostInputValue::F32Matrix { .. } => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "f32 matrix host input values require the `matrix` and `f32` features",
-            )),
+            RuntimeHostInputValue::F32Matrix { .. } => {
+                return Err(unsupported_host_input("f32 matrix"));
+            }
             #[cfg(not(all(feature = "matrix", feature = "f64")))]
-            RuntimeHostInputValue::F64Matrix { .. } => Err(input_error(
-                "RuntimeHostInputValueUnsupported",
-                "f64 matrix host input values require the `matrix` and `f64` features",
+            RuntimeHostInputValue::F64Matrix { .. } => {
+                return Err(unsupported_host_input("f64 matrix"));
+            }
+        };
+        cell.snapshot()
+    }
+
+    /// Detaches a canonical numeric scalar or matrix for host input queues.
+    pub fn from_numeric_value(value: &Value) -> MResult<Self> {
+        match value.data() {
+            #[cfg(feature = "f32")]
+            ValueData::F32(value) => Ok(Self::F32(value.to_f32())),
+            #[cfg(feature = "f64")]
+            ValueData::F64(value) => Ok(Self::F64(value.to_f64())),
+            #[cfg(feature = "matrix")]
+            ValueData::Matrix(matrix) => {
+                let schemas = value.schemas().ok_or_else(|| {
+                    input_error(
+                        "RuntimeNumericValueUnsupported",
+                        "canonical matrix input does not retain its schema table",
+                    )
+                })?;
+                let schema = schemas.entry(value.schema()).ok_or_else(|| {
+                    input_error(
+                        "RuntimeNumericValueUnsupported",
+                        "canonical matrix input schema is absent",
+                    )
+                })?;
+                let SchemaBody::Matrix { dimensions, .. } = schema.schema().body() else {
+                    return Err(input_error(
+                        "RuntimeNumericValueUnsupported",
+                        "canonical matrix payload has a non-matrix schema",
+                    ));
+                };
+                let [rows, columns] = dimensions.as_ref() else {
+                    return Err(input_error(
+                        "RuntimeNumericValueUnsupported",
+                        "runtime host matrices must have exactly two dimensions",
+                    ));
+                };
+                let rows =
+                    usize::try_from(value.shape().resolve_dimension(rows).map_err(|error| {
+                        input_error("RuntimeNumericValueUnsupported", format!("{error:?}"))
+                    })?)
+                    .map_err(|_| {
+                        input_error(
+                            "RuntimeNumericValueUnsupported",
+                            "matrix row count does not fit the host platform",
+                        )
+                    })?;
+                let columns =
+                    usize::try_from(value.shape().resolve_dimension(columns).map_err(|error| {
+                        input_error("RuntimeNumericValueUnsupported", format!("{error:?}"))
+                    })?)
+                    .map_err(|_| {
+                        input_error(
+                            "RuntimeNumericValueUnsupported",
+                            "matrix column count does not fit the host platform",
+                        )
+                    })?;
+                match matrix.elements() {
+                    #[cfg(feature = "f32")]
+                    SequenceView::F32(values) => Ok(Self::F32Matrix {
+                        rows,
+                        columns,
+                        values: values.iter().map(|value| value.to_f32()).collect(),
+                    }),
+                    #[cfg(feature = "f64")]
+                    SequenceView::F64(values) => Ok(Self::F64Matrix {
+                        rows,
+                        columns,
+                        values: values.iter().map(|value| value.to_f64()).collect(),
+                    }),
+                    _ => Err(input_error(
+                        "RuntimeNumericValueUnsupported",
+                        "canonical matrix element type is not a supported numeric host input",
+                    )),
+                }
+            }
+            _ => Err(input_error(
+                "RuntimeNumericValueUnsupported",
+                format!(
+                    "canonical value kind `{}` cannot become a detached runtime input",
+                    value.data().kind()
+                ),
             )),
         }
     }
+}
+
+#[cfg(not(all(
+    feature = "bool",
+    feature = "string",
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128",
+    feature = "f32",
+    feature = "f64",
+    feature = "matrix"
+)))]
+fn unsupported_host_input(name: &str) -> MechError {
+    input_error(
+        "RuntimeHostInputValueUnsupported",
+        format!("{name} host input values require the corresponding runtime feature"),
+    )
+}
+
+#[cfg(feature = "matrix")]
+fn exact_matrix_input<T>(matrix: ValueMatrix<T>, rows: usize, columns: usize) -> MResult<ValueCell>
+where
+    T: mech_core::CanonicalMatrixElementBacking,
+{
+    validate_matrix_input(rows, columns, rows.saturating_mul(columns))?;
+    macro_rules! exact {
+        ($reference:expr) => {
+            ValueCell::from_exact_matrix_ref($reference, rows, columns)
+        };
+    }
+    #[allow(
+        unreachable_patterns,
+        reason = "dependency feature unification can expose matrix storage variants that this runtime profile did not enable"
+    )]
+    match matrix {
+        #[cfg(feature = "matrix1")]
+        ValueMatrix::Matrix1(reference) => exact!(reference),
+        #[cfg(feature = "matrix2")]
+        ValueMatrix::Matrix2(reference) => exact!(reference),
+        #[cfg(feature = "matrix3")]
+        ValueMatrix::Matrix3(reference) => exact!(reference),
+        #[cfg(feature = "matrix4")]
+        ValueMatrix::Matrix4(reference) => exact!(reference),
+        #[cfg(feature = "matrix2x3")]
+        ValueMatrix::Matrix2x3(reference) => exact!(reference),
+        #[cfg(feature = "matrix3x2")]
+        ValueMatrix::Matrix3x2(reference) => exact!(reference),
+        #[cfg(feature = "row_vector2")]
+        ValueMatrix::RowVector2(reference) => exact!(reference),
+        #[cfg(feature = "row_vector3")]
+        ValueMatrix::RowVector3(reference) => exact!(reference),
+        #[cfg(feature = "row_vector4")]
+        ValueMatrix::RowVector4(reference) => exact!(reference),
+        #[cfg(feature = "vector2")]
+        ValueMatrix::Vector2(reference) => exact!(reference),
+        #[cfg(feature = "vector3")]
+        ValueMatrix::Vector3(reference) => exact!(reference),
+        #[cfg(feature = "vector4")]
+        ValueMatrix::Vector4(reference) => exact!(reference),
+        #[cfg(feature = "row_vectord")]
+        ValueMatrix::RowDVector(reference) => exact!(reference),
+        #[cfg(feature = "vectord")]
+        ValueMatrix::DVector(reference) => exact!(reference),
+        #[cfg(feature = "matrixd")]
+        ValueMatrix::DMatrix(reference) => exact!(reference),
+        _ => Err(input_error(
+            "RuntimeHostInputValueUnsupported",
+            "host matrix storage is unavailable in this runtime feature profile",
+        )),
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn host_input_matrix<T: mech_core::CanonicalMatrixElementBacking>(
+    values: Vec<T>,
+    rows: usize,
+    columns: usize,
+) -> MResult<ValueMatrix<T>> {
+    validate_matrix_input(rows, columns, values.len())?;
+    let mut physical = Vec::with_capacity(values.len());
+    for column in 0..columns {
+        for row in 0..rows {
+            physical.push(values[row * columns + column].clone());
+        }
+    }
+    Ok(ValueMatrix::from_vec(physical, rows, columns))
 }
 
 #[cfg(feature = "matrix")]
@@ -593,18 +692,128 @@ mod tests {
     }
 
     #[test]
+    fn explicit_unit_is_the_canonical_empty_tuple() {
+        let unit = RuntimeHostInputValue::Unit.into_value().unwrap();
+        assert!(matches!(unit.data(), mech_core::ValueData::Tuple(values) if values.is_empty()));
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f32", feature = "f64"))]
+    #[test]
+    fn nonsquare_numeric_matrices_round_trip_in_row_major_order() {
+        let f32_values = [
+            1.0_f32.to_bits(),
+            (-0.0_f32).to_bits(),
+            3.5_f32.to_bits(),
+            (-4.25_f32).to_bits(),
+            5.0_f32.to_bits(),
+            6.75_f32.to_bits(),
+        ];
+        let f32_original = RuntimeHostInputValue::F32Matrix {
+            rows: 2,
+            columns: 3,
+            values: f32_values.map(f32::from_bits).to_vec(),
+        }
+        .into_value()
+        .unwrap();
+        let f32_schema = f32_original.schema_key();
+        let f32_detached = RuntimeHostInputValue::from_numeric_value(&f32_original).unwrap();
+        let RuntimeHostInputValue::F32Matrix {
+            rows,
+            columns,
+            values,
+        } = &f32_detached
+        else {
+            panic!("f32 matrix did not detach as a matrix")
+        };
+        assert_eq!((*rows, *columns), (2, 3));
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            f32_values,
+        );
+        let f32_round_trip = f32_detached.into_value().unwrap();
+        assert_eq!(f32_round_trip.schema_key(), f32_schema);
+        assert_eq!(f32_round_trip.shape().parameter_values(), &[2, 3]);
+        let ValueData::Matrix(matrix) = f32_round_trip.data() else {
+            panic!("f32 round trip did not produce a matrix")
+        };
+        let SequenceView::F32(values) = matrix.elements() else {
+            panic!("f32 round trip changed its element schema")
+        };
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_f32().to_bits())
+                .collect::<Vec<_>>(),
+            f32_values,
+        );
+
+        let f64_values = [
+            1.0_f64.to_bits(),
+            (-0.0_f64).to_bits(),
+            3.5_f64.to_bits(),
+            (-4.25_f64).to_bits(),
+            5.0_f64.to_bits(),
+            6.75_f64.to_bits(),
+        ];
+        let f64_original = RuntimeHostInputValue::F64Matrix {
+            rows: 2,
+            columns: 3,
+            values: f64_values.map(f64::from_bits).to_vec(),
+        }
+        .into_value()
+        .unwrap();
+        let f64_schema = f64_original.schema_key();
+        let f64_detached = RuntimeHostInputValue::from_numeric_value(&f64_original).unwrap();
+        let RuntimeHostInputValue::F64Matrix {
+            rows,
+            columns,
+            values,
+        } = &f64_detached
+        else {
+            panic!("f64 matrix did not detach as a matrix")
+        };
+        assert_eq!((*rows, *columns), (2, 3));
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            f64_values,
+        );
+        let f64_round_trip = f64_detached.into_value().unwrap();
+        assert_eq!(f64_round_trip.schema_key(), f64_schema);
+        assert_eq!(f64_round_trip.shape().parameter_values(), &[2, 3]);
+        let ValueData::Matrix(matrix) = f64_round_trip.data() else {
+            panic!("f64 round trip did not produce a matrix")
+        };
+        let SequenceView::F64(values) = matrix.elements() else {
+            panic!("f64 round trip changed its element schema")
+        };
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_f64().to_bits())
+                .collect::<Vec<_>>(),
+            f64_values,
+        );
+    }
+
+    #[test]
     fn detached_indexes_are_one_based() {
-        assert!(RuntimeHostInputValue::Index(0).into_mech_value().is_err());
+        assert!(RuntimeHostInputValue::Index(0).into_value().is_err());
         assert!(
             RuntimeHostInputValue::IndexMatrix {
                 rows: 1,
                 columns: 2,
                 values: vec![1, 0],
             }
-            .into_mech_value()
+            .into_value()
             .is_err()
         );
-        assert!(RuntimeHostInputValue::Index(1).into_mech_value().is_ok());
+        assert!(RuntimeHostInputValue::Index(1).into_value().is_ok());
     }
 
     #[test]

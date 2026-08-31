@@ -1,26 +1,20 @@
-use crate::intrinsics::define::VarDefine;
-use crate::{FunctionSpecializer, LegacyValue, Plan, ReactiveCellId, Ref};
+use crate::Interpreter;
 
 #[test]
 fn var_define_registration_has_no_reactive_inputs() {
-    let plan = Plan::new();
-    let value = Ref::new(1.0);
-    let value_cell = ReactiveCellId::new(value.id());
-    let arguments = vec![
-        LegacyValue::F64(value),
-        LegacyValue::String(Ref::new("defined value".to_string())),
-        LegacyValue::Bool(Ref::new(false)),
-        LegacyValue::Bool(Ref::new(true)),
-    ];
-    let function = VarDefine {}.specialize(&arguments).unwrap();
-
-    plan.register_function(function, &[]).unwrap();
-
-    let plan_borrow = plan.borrow();
-    let node = plan_borrow.node(0).unwrap();
-    assert_eq!(plan_borrow.len(), 1);
-    assert!(node.inputs.is_empty());
-    assert!(plan_borrow.reactive_consumers.is_empty());
-    assert!(plan_borrow.sampled_consumers.is_empty());
-    assert!(node.outputs.contains(&value_cell));
+    let tree = mech_syntax::parser::parse("defined-value := 1.0; defined-value").unwrap();
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    let output_cell = output.reactive_cell_id();
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let definition = (0..plan.len())
+        .filter_map(|index| plan.node(index))
+        .find(|node| node.outputs.contains(&output_cell))
+        .expect("canonical variable definition registers its output");
+    assert!(definition.inputs.is_empty());
 }

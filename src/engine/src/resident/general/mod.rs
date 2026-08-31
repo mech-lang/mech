@@ -1190,7 +1190,14 @@ fn activate_internal(
         state.initialize(slot.artifact_id, value)?;
     }
     for materialization in plan.output_materializations.iter().copied() {
-        if let ResidentReadLocation::Constant(source) = materialization.source {
+        let declaration = &artifact.slots()[materialization.target.get() as usize];
+        if let Some(InitializerReference::Constant(constant)) = declaration.initializer {
+            let value = artifact
+                .constants()
+                .get(constant)
+                .ok_or(ResidentActivationError::InvalidSnapshotRepresentation)?;
+            state.initialize(materialization.target, value)?;
+        } else if let ResidentReadLocation::Constant(source) = materialization.source {
             state.initialize_from_arena(materialization.target, &activation, source);
         }
     }

@@ -32,7 +32,7 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
             "src/engine/src/program/compiler_planning.rs": "pub struct CompilerPlanningProgram;\n",
             "src/engine/src/artifact/encoding.rs": 'const DOMAIN: &[u8] = b"mech-program-v1\\0";\n',
             "src/runtime/src/runtime/program/compiler.rs": "use mech_core::LegacyValue;\n",
-            "src/runtime/src/runtime/program/external/value_adapter.rs": "use mech_core::LegacyValue;\n",
+            "src/runtime/src/runtime/program/external/value_adapter_tests.rs": "use mech_core::LegacyValue;\n",
             "src/runtime/src/runtime/program/value.rs": "use mech_core::LegacyValue;\n",
         }
         for relative, source in files.items():

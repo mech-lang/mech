@@ -7,11 +7,10 @@ use std::sync::LazyLock;
 use crate::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
-    ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction, InputPortLayout,
-    InputPortPolicy, LegacyValue, MResult, MechError, OperationContractDeclaration,
-    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueKind,
-    compare_application_requirements, compile_value_register, hash_str,
-    value_kind_from_runtime_type, write_bytecode,
+    CompiledMatrixLiteral, ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction,
+    InputPortLayout, InputPortPolicy, MResult, MechError, OperationContractDeclaration,
+    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueCell,
+    compare_application_requirements, hash_str, write_bytecode,
 };
 
 static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -50,10 +49,10 @@ pub enum CompiledNodeKind {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CompiledInstructionRole {
     Node(CompiledNodeKind),
-    /// The legacy runtime instruction used to retain current invariant
-    /// behavior. It must not become a `ProgramArtifact` node.
+    /// The bytecode-v1 marker instruction used to retain invariant metadata.
+    /// It must not become a `ProgramArtifact` node.
     IntegrityMarker,
-    /// Executable legacy variable-definition instruction whose semantic
+    /// Executable bytecode-v1 variable-definition instruction whose semantic
     /// declaration is already represented by symbol and slot metadata.
     DeclarationMarker,
 }
@@ -104,9 +103,11 @@ pub struct CompiledBytecode {
     pub instruction_operations: Vec<Option<String>>,
     /// Dense source-plan node identity, parallel to `program.instructions`.
     pub instruction_source_nodes: Vec<Option<u32>>,
-    /// Dense and parallel to the register space. `None` is permitted only for
-    /// registers that never participate in semantic artifact data.
-    pub register_kinds: Vec<Option<ValueKind>>,
+    /// Canonical schema authority for registers owned by canonical cells.
+    /// Dense and parallel to the register space.
+    pub register_schemas: Vec<Option<crate::SchemaBody>>,
+    /// Compiler-control absence registers, kept distinct from canonical unit.
+    pub absent_registers: BTreeSet<Register>,
     /// Exact current cardinality for map/set registers. Dense and parallel to
     /// the register space; other register families carry `None`.
     pub register_collection_cardinalities: Vec<Option<usize>>,
@@ -114,6 +115,9 @@ pub struct CompiledBytecode {
     /// register space. This is compilation sidecar metadata, not an
     /// executable instruction.
     pub register_state_initializers: Vec<Option<u32>>,
+    /// Generic matrix constructions keyed by their destination register.
+    /// This semantic sidecar is intentionally not serialized in bytecode v1.
+    pub matrix_literals: BTreeMap<Register, CompiledMatrixLiteral>,
     /// Exact first-definition order, unlike the canonically sorted symbol map.
     pub symbol_definitions: Vec<CompiledSymbolDefinition>,
     pub return_register: Register,
@@ -141,6 +145,8 @@ pub struct CompileCtx {
     reg_map: HashMap<BytecodeRegisterIdentity, Register>,
     symbols: BTreeMap<u64, Register>,
     symbol_ptrs: BTreeMap<u64, usize>,
+    retained_symbol_cells: BTreeMap<String, ValueCell>,
+    retained_value_cells: BTreeMap<usize, ValueCell>,
     dictionary: BTreeMap<u64, String>,
     runtime_function_names: BTreeMap<u64, String>,
     mutable_symbols: BTreeSet<u64>,
@@ -152,10 +158,12 @@ pub struct CompileCtx {
     instruction_contracts: Vec<Option<&'static OperationContractDeclaration>>,
     instruction_operations: Vec<Option<String>>,
     instruction_source_nodes: Vec<Option<u32>>,
-    register_kinds: BTreeMap<Register, ValueKind>,
+    register_schemas: BTreeMap<Register, crate::SchemaBody>,
+    absent_registers: BTreeSet<Register>,
     register_collection_cardinalities: BTreeMap<Register, usize>,
     register_state_initializers: BTreeMap<Register, u32>,
-    next_register_kind_override: Option<ValueKind>,
+    matrix_literals: BTreeMap<Register, CompiledMatrixLiteral>,
+    runtime_produced_registers: BTreeSet<Register>,
     symbol_definitions: Vec<CompiledSymbolDefinition>,
     current_node_kind: Option<CompiledNodeKind>,
     current_node_contract: Option<&'static OperationContractDeclaration>,
@@ -173,6 +181,8 @@ impl Default for CompileCtx {
             reg_map: HashMap::new(),
             symbols: BTreeMap::new(),
             symbol_ptrs: BTreeMap::new(),
+            retained_symbol_cells: BTreeMap::new(),
+            retained_value_cells: BTreeMap::new(),
             dictionary: BTreeMap::new(),
             runtime_function_names: BTreeMap::new(),
             mutable_symbols: BTreeSet::new(),
@@ -184,10 +194,12 @@ impl Default for CompileCtx {
             instruction_contracts: Vec::new(),
             instruction_operations: Vec::new(),
             instruction_source_nodes: Vec::new(),
-            register_kinds: BTreeMap::new(),
+            register_schemas: BTreeMap::new(),
+            absent_registers: BTreeSet::new(),
             register_collection_cardinalities: BTreeMap::new(),
             register_state_initializers: BTreeMap::new(),
-            next_register_kind_override: None,
+            matrix_literals: BTreeMap::new(),
+            runtime_produced_registers: BTreeSet::new(),
             symbol_definitions: Vec::new(),
             current_node_kind: None,
             current_node_contract: None,
@@ -210,52 +222,44 @@ impl CompileCtx {
         *self = Self::default();
     }
 
-    /// Resolve an interpreted value to the register that carries its identity.
-    ///
-    /// Planned outputs reuse their producer register. A final value that was
-    /// not part of the plan (for example, a trailing literal) is materialized
-    /// exactly once so `Return` still represents the source block's result.
-    pub fn resolve_value_register(&mut self, value: &LegacyValue) -> MResult<Register> {
-        let fallback = std::ptr::from_ref(value).addr();
-        let register = compile_value_register(value, fallback, self)?;
-        let kind = value.kind();
-        self.record_register_kind_exact(register, kind)?;
-        Ok(register)
+    /// Retains the explicit outer cell that owns a source symbol until its
+    /// declaration step supplies the canonical producer register.
+    pub fn retain_compiler_symbol_cell(&mut self, name: &str, cell: &ValueCell) -> MResult<()> {
+        if let Some(existing) = self.retained_symbol_cells.get(name) {
+            if !existing.same_cell(cell) {
+                return invalid(format!(
+                    "compiler symbol {name:?} has conflicting retained value cells",
+                ));
+            }
+            return Ok(());
+        }
+        self.retained_symbol_cells
+            .insert(name.to_owned(), cell.clone());
+        self.retain_compiler_value_cell(cell)?;
+        Ok(())
     }
 
-    fn record_register_kind_exact(&mut self, register: Register, kind: ValueKind) -> MResult<()> {
-        if let Some(existing) = self.register_kinds.get(&register).cloned() {
-            if existing != kind {
-                match (&existing, &kind) {
-                    (existing, ValueKind::Reference(incoming)) if existing == incoming.as_ref() => {
-                        self.register_kinds.insert(register, kind);
-                    }
-                    (ValueKind::Reference(existing), incoming) if existing.as_ref() == incoming => {
-                    }
-                    (
-                        ValueKind::Table(existing_columns, existing_rows),
-                        ValueKind::Table(incoming_columns, incoming_rows),
-                    ) if existing_columns == incoming_columns
-                        && (*existing_rows == 0 || *incoming_rows == 0) =>
-                    {
-                        // A zero row count is the source compiler's dynamic
-                        // table shape. Once planning materializes the final
-                        // output, retain the concrete row count on the same
-                        // producer register.
-                        if *incoming_rows != 0 {
-                            self.register_kinds.insert(register, kind);
-                        }
-                    }
-                    _ => {
-                        return invalid(format!(
-                            "register {register} has existing ValueKind {existing:?}, incoming ValueKind {kind:?}",
-                        ));
-                    }
-                }
+    /// Retains a canonical compiler-owned cell. The cell's opaque storage
+    /// identity is already the complete bytecode register identity; no
+    /// payload inspection or compatibility projection is required.
+    pub fn retain_compiler_value_cell(&mut self, cell: &ValueCell) -> MResult<()> {
+        let identity = cell.compiler_identity();
+        if let Some(existing) = self.retained_value_cells.get(&identity) {
+            if !existing.same_cell(cell) {
+                return invalid(
+                    "canonical compiler cell identity was recycled during one compilation",
+                );
             }
-        } else {
-            self.register_kinds.insert(register, kind);
+            return Ok(());
         }
+        self.retained_value_cells.insert(identity, cell.clone());
+        Ok(())
+    }
+
+    /// Retained symbols are associated directly when their canonical
+    /// declaration is defined. This hook is a no-op for callers that finish
+    /// association eagerly.
+    pub fn associate_retained_symbol_cells_with_existing_value_registers(&mut self) -> MResult<()> {
         Ok(())
     }
 
@@ -505,16 +509,18 @@ impl CompileCtx {
         let mut instruction_source_nodes = self.instruction_source_nodes.clone();
         instruction_source_nodes.push(None);
 
-        let mut register_kinds = vec![None; self.next_register as usize];
-        for (register, kind) in &self.register_kinds {
-            let target = register_kinds.get_mut(*register as usize).ok_or_else(|| {
-                invalid::<()>(format!(
-                    "recorded register kind {register} is outside register count {}",
-                    self.next_register,
-                ))
-                .unwrap_err()
-            })?;
-            *target = Some(kind.clone());
+        let mut register_schemas = vec![None; self.next_register as usize];
+        for (register, schema) in &self.register_schemas {
+            let target = register_schemas
+                .get_mut(*register as usize)
+                .ok_or_else(|| {
+                    invalid::<()>(format!(
+                        "recorded register schema {register} is outside register count {}",
+                        self.next_register,
+                    ))
+                    .unwrap_err()
+                })?;
+            *target = Some(schema.clone());
         }
         let mut register_collection_cardinalities = vec![None; self.next_register as usize];
         for (register, cardinality) in &self.register_collection_cardinalities {
@@ -567,9 +573,11 @@ impl CompileCtx {
             instruction_contracts,
             instruction_operations,
             instruction_source_nodes,
-            register_kinds,
+            register_schemas,
+            absent_registers: self.absent_registers.clone(),
             register_collection_cardinalities,
             register_state_initializers,
+            matrix_literals: self.matrix_literals.clone(),
             symbol_definitions: self.symbol_definitions.clone(),
             return_register,
             integrity_constraints: self.integrity_constraints.clone(),
@@ -618,6 +626,7 @@ impl CompileCtx {
                         "conflicting bytecode symbol definition for {name:?}",
                     ));
                 }
+                self.associate_retained_symbol_cell(name, register)?;
                 return Ok(());
             }
 
@@ -627,14 +636,9 @@ impl CompileCtx {
             if mutable {
                 self.mutable_symbols.insert(symbol_id);
             }
+            self.associate_retained_symbol_cell(name, register)?;
         }
 
-        if let Some(kind) = self.register_kinds.get(&register).cloned()
-            && !matches!(kind, ValueKind::Reference(_))
-        {
-            self.register_kinds
-                .insert(register, ValueKind::Reference(Box::new(kind)));
-        }
         let ordinal = u32::try_from(self.symbol_definitions.len())
             .map_err(|_| invalid::<()>("symbol definition ordinal exceeds u32").unwrap_err())?;
         self.symbol_definitions.push(CompiledSymbolDefinition {
@@ -645,6 +649,24 @@ impl CompileCtx {
             root_visible,
             ordinal,
         });
+        Ok(())
+    }
+
+    fn associate_retained_symbol_cell(&mut self, name: &str, register: Register) -> MResult<()> {
+        let Some(cell) = self.retained_symbol_cells.get(name) else {
+            return Ok(());
+        };
+        let address = cell.compiler_identity();
+        let identity = BytecodeRegisterIdentity::Cell(address);
+        if let Some(existing) = self.reg_map.get(&identity) {
+            if *existing != register {
+                return invalid(format!(
+                    "compiler symbol {name:?} retained cell already owns register {existing}, incoming register {register}",
+                ));
+            }
+            return Ok(());
+        }
+        self.reg_map.insert(identity, register);
         Ok(())
     }
 
@@ -681,7 +703,12 @@ impl BytecodeCompilerContext for CompileCtx {
     }
 
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool) {
-        self.register_for_identity(BytecodeRegisterIdentity::Cell(pointer))
+        let outer_identity = BytecodeRegisterIdentity::Cell(pointer);
+        self.register_for_identity(outer_identity)
+    }
+
+    fn retain_canonical_cell(&mut self, cell: &ValueCell) -> MResult<()> {
+        self.retain_compiler_value_cell(cell)
     }
 
     fn register_for_identity_with_initialization_status(
@@ -691,9 +718,31 @@ impl BytecodeCompilerContext for CompileCtx {
         self.register_for_identity(identity.clone())
     }
 
-    fn record_register_kind(&mut self, register: Register, kind: ValueKind) -> MResult<()> {
-        let kind = self.next_register_kind_override.take().unwrap_or(kind);
-        self.record_register_kind_exact(register, kind)
+    fn record_register_schema(
+        &mut self,
+        register: Register,
+        schema: crate::SchemaBody,
+    ) -> MResult<()> {
+        if let Some(existing) = self.register_schemas.get(&register) {
+            if existing != &schema {
+                return invalid(format!(
+                    "register {register} has conflicting canonical schemas {existing:?} and {schema:?}",
+                ));
+            }
+        } else {
+            self.register_schemas.insert(register, schema);
+        }
+        Ok(())
+    }
+
+    fn record_absent_register(&mut self, register: Register) -> MResult<()> {
+        if self.register_schemas.contains_key(&register) {
+            return invalid(format!(
+                "register {register} cannot be both canonical and source-absent",
+            ));
+        }
+        self.absent_registers.insert(register);
+        Ok(())
     }
 
     fn record_register_constant_metadata(
@@ -725,22 +774,20 @@ impl BytecodeCompilerContext for CompileCtx {
         Ok(())
     }
 
-    fn override_next_register_kind(&mut self, kind: ValueKind) -> MResult<()> {
-        if self.next_register_kind_override.is_none() {
-            self.next_register_kind_override = Some(kind);
-        }
-        Ok(())
-    }
-
-    fn record_register_constant_kind(&mut self, register: Register, constant: u32) -> MResult<()> {
+    fn record_register_constant_schema(
+        &mut self,
+        register: Register,
+        constant: u32,
+    ) -> MResult<()> {
         let encoded = self
             .pending_constants
             .get(constant as usize)
             .ok_or_else(|| {
                 invalid::<()>(format!("constant index {constant} is out of range")).unwrap_err()
             })?;
-        let kind = value_kind_from_runtime_type(&encoded.runtime_type)?;
-        self.record_register_kind_exact(register, kind)?;
+        let schema =
+            crate::program::bytecode::constants::runtime_schema_body(&encoded.runtime_type)?;
+        self.record_register_schema(register, schema)?;
         self.record_register_constant_metadata(register, constant)
     }
 
@@ -770,10 +817,55 @@ impl BytecodeCompilerContext for CompileCtx {
             ));
         }
         let Some((index, constant)) = initializers.first().copied() else {
+            self.matrix_literals.remove(&register);
+            self.runtime_produced_registers.insert(register);
             return Ok(());
         };
         self.remove_instruction(index);
         self.remove_constant_if_unreferenced(constant);
+        self.matrix_literals.remove(&register);
+        self.runtime_produced_registers.insert(register);
+        Ok(())
+    }
+
+    fn register_is_runtime_produced(&self, register: Register) -> bool {
+        self.runtime_produced_registers.contains(&register)
+    }
+
+    fn record_matrix_literal(&mut self, literal: CompiledMatrixLiteral) -> MResult<()> {
+        if literal.output >= self.next_register {
+            return invalid(format!(
+                "matrix literal output register {} is outside register count {}",
+                literal.output, self.next_register,
+            ));
+        }
+        if let Some(element) = literal
+            .elements
+            .iter()
+            .find(|element| element.register() >= self.next_register)
+        {
+            return invalid(format!(
+                "matrix literal element register {} is outside register count {}",
+                element.register(),
+                self.next_register,
+            ));
+        }
+        if self.runtime_produced_registers.contains(&literal.output) {
+            return invalid(format!(
+                "runtime-produced register {} has no executable matrix literal construction",
+                literal.output,
+            ));
+        }
+        if let Some(existing) = self.matrix_literals.get(&literal.output) {
+            if existing != &literal {
+                return invalid(format!(
+                    "matrix literal output register {} has conflicting descriptors",
+                    literal.output,
+                ));
+            }
+            return Ok(());
+        }
+        self.matrix_literals.insert(literal.output, literal);
         Ok(())
     }
 
@@ -823,11 +915,12 @@ impl BytecodeCompilerContext for CompileCtx {
     }
 
     fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32> {
-        if let Some(index) = self
-            .pending_constants
-            .iter()
-            .position(|candidate| candidate == &constant)
-        {
+        if let Some(index) = self.pending_constants.iter().position(|candidate| {
+            candidate.runtime_type == constant.runtime_type && candidate.bytes == constant.bytes
+        }) {
+            self.pending_constants[index].alignment = self.pending_constants[index]
+                .alignment
+                .max(constant.alignment);
             return u32::try_from(index)
                 .map_err(|_| invalid::<()>("constant index exceeds u32").unwrap_err());
         }
@@ -1188,572 +1281,4 @@ fn invalid<T>(reason: impl Into<String>) -> MResult<T> {
         None,
     )
     .with_compiler_loc())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{
-        AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExecutionHostFunctionRequest,
-        ExecutionResourceRequest, ExternalInteraction, InputPortLayout, InputPortPolicy,
-        OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ResourceDelivery,
-        ResourceIntent, RuntimeType, ShapeRule,
-    };
-
-    fn f64_constant(value: f64) -> EncodedConstant {
-        EncodedConstant {
-            runtime_type: RuntimeType::F64,
-            alignment: 8,
-            bytes: value.to_bits().to_le_bytes().to_vec(),
-        }
-    }
-
-    fn allocate_registers(context: &mut CompileCtx, count: usize) -> Vec<Register> {
-        (0..count)
-            .map(|pointer| {
-                context
-                    .register_for_ptr_with_initialization_status(pointer)
-                    .0
-            })
-            .collect()
-    }
-
-    fn initialize_registers(context: &mut CompileCtx, registers: &[Register]) -> u32 {
-        let constant = context.intern_constant(f64_constant(0.0)).unwrap();
-        for register in registers {
-            context.emit_const_load(*register, constant);
-        }
-        constant
-    }
-
-    fn host_requirement(name: &str) -> ApplicationRequirement {
-        ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
-            name: name.to_owned(),
-        })
-    }
-
-    fn resource_requirement(base_uri: &str) -> ApplicationRequirement {
-        ApplicationRequirement::Resource(ExecutionResourceRequest {
-            base_uri: base_uri.to_owned(),
-            path: "value".to_owned(),
-            context_name: "ctx".to_owned(),
-            operation: "read".to_owned(),
-            intent: ResourceIntent::Read,
-            delivery: ResourceDelivery::Snapshot,
-        })
-    }
-
-    #[test]
-    fn pointer_registers_are_initialized_once() {
-        let mut context = CompileCtx::new();
-        let (first, initializes_first) = context.register_for_ptr_with_initialization_status(100);
-        let (same, initializes_same) = context.register_for_ptr_with_initialization_status(100);
-        let (second, initializes_second) = context.register_for_ptr_with_initialization_status(200);
-
-        assert_eq!(first, same);
-        assert_ne!(first, second);
-        assert!(initializes_first);
-        assert!(!initializes_same);
-        assert!(initializes_second);
-
-        context.clear();
-        assert_eq!(
-            context.register_for_ptr_with_initialization_status(100),
-            (0, true),
-        );
-    }
-
-    #[test]
-    fn runtime_producer_discards_an_earlier_planning_seed() {
-        let value = LegacyValue::F64(crate::Ref::new(7.0));
-        let fallback = std::ptr::from_ref(&value).addr();
-        let mut context = CompileCtx::new();
-        let seeded = compile_value_register(&value, fallback, &mut context).unwrap();
-
-        let produced =
-            crate::compile_runtime_produced_register(&value, fallback, &mut context).unwrap();
-        let requirement = context
-            .intern_requirement(resource_requirement("test://provider"))
-            .unwrap();
-        context.emit_resource_read(requirement, produced);
-        let compiled = context.finish_program(produced).unwrap();
-
-        assert_eq!(seeded, produced);
-        assert!(compiled.program.constants.is_empty());
-        assert!(!compiled.program.instructions.iter().any(|instruction| {
-            matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == produced)
-        }));
-        assert!(compiled.program.instructions.iter().any(|instruction| {
-            matches!(instruction, BytecodeInstruction::ResourceRead { dst, .. } if *dst == produced)
-        }));
-    }
-
-    #[test]
-    fn runtime_producer_keeps_a_seed_constant_used_by_another_register() {
-        let produced_value = LegacyValue::F64(crate::Ref::new(7.0));
-        let retained_value = LegacyValue::F64(crate::Ref::new(7.0));
-        let produced_fallback = std::ptr::from_ref(&produced_value).addr();
-        let retained_fallback = std::ptr::from_ref(&retained_value).addr();
-        let mut context = CompileCtx::new();
-        let produced =
-            compile_value_register(&produced_value, produced_fallback, &mut context).unwrap();
-        let retained =
-            compile_value_register(&retained_value, retained_fallback, &mut context).unwrap();
-
-        crate::compile_runtime_produced_register(&produced_value, produced_fallback, &mut context)
-            .unwrap();
-        let requirement = context
-            .intern_requirement(resource_requirement("test://provider"))
-            .unwrap();
-        context.emit_resource_read(requirement, produced);
-        let compiled = context.finish_program(produced).unwrap();
-
-        assert_eq!(compiled.program.constants.len(), 1);
-        assert!(compiled.program.instructions.iter().any(|instruction| {
-            matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == retained)
-        }));
-        assert!(!compiled.program.instructions.iter().any(|instruction| {
-            matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == produced)
-        }));
-    }
-
-    #[test]
-    fn typed_wrappers_do_not_share_registers_with_bare_values() {
-        for typed_first in [false, true] {
-            let scalar = crate::Ref::new(7.0);
-            let bare = LegacyValue::F64(scalar.clone());
-            let typed = LegacyValue::Typed(
-                Box::new(LegacyValue::F64(scalar)),
-                crate::ValueKind::Option(Box::new(crate::ValueKind::F64)),
-            );
-            let typed_clone = typed.clone();
-            let mut context = CompileCtx::new();
-
-            let (first, second) = if typed_first {
-                (
-                    context.resolve_value_register(&typed).unwrap(),
-                    context.resolve_value_register(&bare).unwrap(),
-                )
-            } else {
-                (
-                    context.resolve_value_register(&bare).unwrap(),
-                    context.resolve_value_register(&typed).unwrap(),
-                )
-            };
-            assert_ne!(first, second);
-            assert_eq!(
-                context.resolve_value_register(&typed_clone).unwrap(),
-                if typed_first { first } else { second },
-            );
-
-            let parsed = ParsedProgram::from_bytes(&context.finish(second).unwrap()).unwrap();
-            assert_eq!(parsed.constants.len(), 2);
-            assert!(
-                parsed
-                    .constants
-                    .iter()
-                    .any(|constant| parsed.types[constant.type_id as usize] == RuntimeType::F64)
-            );
-            assert!(parsed.constants.iter().any(|constant| {
-                parsed.types[constant.type_id as usize]
-                    == RuntimeType::Option(Box::new(RuntimeType::F64))
-            }));
-            assert_eq!(
-                parsed
-                    .instructions
-                    .iter()
-                    .filter(|instruction| matches!(
-                        instruction,
-                        BytecodeInstruction::ConstLoad { .. }
-                    ))
-                    .count(),
-                1,
-            );
-            assert_eq!(
-                parsed
-                    .instructions
-                    .iter()
-                    .filter(|instruction| matches!(
-                        instruction,
-                        BytecodeInstruction::CompositePack { .. }
-                    ))
-                    .count(),
-                1,
-            );
-        }
-    }
-
-    #[test]
-    fn complete_typed_annotations_are_part_of_register_identity() {
-        let scalar = crate::Ref::new(7.0);
-        let inner = Box::new(BytecodeRegisterIdentity::Cell(scalar.id() as usize));
-        let option_f64 = BytecodeRegisterIdentity::Typed {
-            inner: inner.clone(),
-            annotation: crate::ValueKind::Option(Box::new(crate::ValueKind::F64)),
-        };
-        let option_u64 = BytecodeRegisterIdentity::Typed {
-            inner,
-            annotation: crate::ValueKind::Option(Box::new(crate::ValueKind::U64)),
-        };
-        let mut context = CompileCtx::new();
-
-        let f64_register = context
-            .register_for_identity_with_initialization_status(&option_f64)
-            .0;
-        let u64_register = context
-            .register_for_identity_with_initialization_status(&option_u64)
-            .0;
-
-        assert_ne!(f64_register, u64_register);
-        assert_eq!(
-            context
-                .register_for_identity_with_initialization_status(&option_f64)
-                .0,
-            f64_register,
-        );
-    }
-
-    #[test]
-    fn mutable_references_reuse_their_producer_register() {
-        for mutable_first in [false, true] {
-            let scalar = crate::Ref::new(7.0);
-            let bare = LegacyValue::F64(scalar.clone());
-            let mutable = LegacyValue::MutableReference(crate::Ref::new(LegacyValue::F64(scalar)));
-            let mut context = CompileCtx::new();
-
-            let (first, second) = if mutable_first {
-                (
-                    context.resolve_value_register(&mutable).unwrap(),
-                    context.resolve_value_register(&bare).unwrap(),
-                )
-            } else {
-                (
-                    context.resolve_value_register(&bare).unwrap(),
-                    context.resolve_value_register(&mutable).unwrap(),
-                )
-            };
-
-            assert_eq!(first, second);
-            let parsed = ParsedProgram::from_bytes(&context.finish(second).unwrap()).unwrap();
-            assert_eq!(parsed.constants.len(), 1);
-        }
-    }
-
-    #[test]
-    fn conflicting_register_kinds_report_both_exact_kinds() {
-        let mut context = CompileCtx::new();
-        let register = allocate_registers(&mut context, 1)[0];
-        context
-            .record_register_kind(register, ValueKind::F64)
-            .unwrap();
-
-        let error = context
-            .record_register_kind(register, ValueKind::Bool)
-            .unwrap_err();
-        let message = format!("{error:?}");
-
-        assert!(
-            message.contains(&format!("register {register}")),
-            "{message}"
-        );
-        assert!(message.contains("existing ValueKind F64"), "{message}");
-        assert!(message.contains("incoming ValueKind Bool"), "{message}");
-    }
-
-    #[test]
-    fn composite_values_are_lowered_from_child_registers() {
-        let scalar = crate::Ref::new(7.0);
-        let bare = LegacyValue::F64(scalar.clone());
-        let tuple = LegacyValue::Tuple(crate::Ref::new(crate::MechTuple::from_vec(vec![
-            LegacyValue::F64(scalar.clone()),
-            LegacyValue::F64(scalar),
-        ])));
-        let mut context = CompileCtx::new();
-
-        let scalar_register = context.resolve_value_register(&bare).unwrap();
-        let tuple_register = context.resolve_value_register(&tuple).unwrap();
-        let parsed = ParsedProgram::from_bytes(&context.finish(tuple_register).unwrap()).unwrap();
-
-        assert!(parsed.instructions.iter().any(|instruction| matches!(
-            instruction,
-            BytecodeInstruction::CompositePack { dst, children, .. }
-                if *dst == tuple_register
-                    && children == &[scalar_register, scalar_register]
-        )));
-        assert!(!parsed.instructions.iter().any(|instruction| matches!(
-            instruction,
-            BytecodeInstruction::ConstLoad { dst, .. } if *dst == tuple_register
-        )));
-    }
-
-    #[test]
-    fn composite_helpers_inside_register_steps_are_combinational() {
-        let mut context = CompileCtx::new();
-        let registers = allocate_registers(&mut context, 2);
-        context.begin_plan_node(CompiledNodeKind::Register).unwrap();
-        context.emit_composite_pack(registers[0], 0, vec![registers[1]]);
-        context.emit_unop(1, registers[0], registers[1]);
-        context.end_plan_node();
-
-        assert_eq!(
-            context.instruction_roles,
-            vec![
-                Some(CompiledInstructionRole::Node(
-                    CompiledNodeKind::Combinational
-                )),
-                Some(CompiledInstructionRole::Node(CompiledNodeKind::Register)),
-            ]
-        );
-    }
-
-    #[test]
-    fn semantic_contracts_and_source_nodes_are_parallel_to_instructions() {
-        let declaration = Box::leak(Box::new(OperationContractDeclaration {
-            inputs: InputPortLayout::Fixed(
-                vec![InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                }]
-                .into_boxed_slice(),
-            ),
-            outputs: vec![OutputPortPolicy {
-                access: AccessMode::Write,
-                delivery: DeliveryMode::Signal,
-                construction: OutputConstruction::FullWrite {
-                    shape: ShapeRule::Declared,
-                },
-                alias: AliasPolicy::NoAlias,
-                change_detection: ChangeDetectionPolicy::ExactScalar,
-            }]
-            .into_boxed_slice(),
-            interaction: ExternalInteraction::Pure,
-        }));
-        let mut context = CompileCtx::new();
-        let registers = allocate_registers(&mut context, 2);
-        initialize_registers(&mut context, &registers);
-        context
-            .begin_plan_node_with_contract(CompiledNodeKind::Combinational, Some(declaration))
-            .unwrap();
-        context.emit_unop(1, registers[1], registers[0]);
-        context.end_plan_node();
-
-        let compiled = context.finish_program(registers[1]).unwrap();
-        assert_eq!(
-            compiled.instruction_contracts.len(),
-            compiled.program.instructions.len()
-        );
-        assert_eq!(
-            compiled.instruction_operations.len(),
-            compiled.program.instructions.len()
-        );
-        assert_eq!(
-            compiled.instruction_source_nodes.len(),
-            compiled.program.instructions.len()
-        );
-        assert_eq!(compiled.instruction_contracts[2], Some(&*declaration));
-        assert_eq!(compiled.instruction_source_nodes[2], Some(0));
-        assert_eq!(compiled.instruction_contracts[3], None);
-        assert_eq!(compiled.instruction_source_nodes[3], None);
-    }
-
-    #[test]
-    fn constants_are_interned_and_self_validated() {
-        let mut context = CompileCtx::new();
-        let register = allocate_registers(&mut context, 1)[0];
-        let first = context.intern_constant(f64_constant(3.0)).unwrap();
-        let duplicate = context.intern_constant(f64_constant(3.0)).unwrap();
-        assert_eq!(first, duplicate);
-        context.emit_const_load(register, first);
-
-        let parsed = ParsedProgram::from_bytes(&context.finish(register).unwrap()).unwrap();
-        assert_eq!(parsed.constants.len(), 1);
-        assert_eq!(parsed.decode_constants().unwrap().len(), 1);
-        assert_eq!(
-            parsed.instructions,
-            vec![
-                BytecodeInstruction::ConstLoad {
-                    dst: register,
-                    constant: first,
-                },
-                BytecodeInstruction::Return { src: register },
-            ],
-        );
-    }
-
-    #[test]
-    fn finish_orders_constants_by_first_instruction_reference() {
-        let mut context = CompileCtx::new();
-        let registers = allocate_registers(&mut context, 2);
-        let skipped = context.intern_constant(f64_constant(1.0)).unwrap();
-        let first = context.intern_constant(f64_constant(2.0)).unwrap();
-        let second = context.intern_constant(f64_constant(3.0)).unwrap();
-        assert_eq!((skipped, first, second), (0, 1, 2));
-        context.emit_const_load(registers[0], second);
-        context.emit_const_load(registers[1], first);
-
-        let compiled = context.finish_program(registers[1]).unwrap();
-        assert_eq!(
-            compiled.program.constants,
-            vec![f64_constant(3.0), f64_constant(2.0)]
-        );
-        assert!(matches!(
-            compiled.program.instructions[0],
-            BytecodeInstruction::ConstLoad { constant: 0, .. }
-        ));
-        assert!(matches!(
-            compiled.program.instructions[1],
-            BytecodeInstruction::ConstLoad { constant: 1, .. }
-        ));
-    }
-
-    #[test]
-    fn symbol_and_dictionary_order_is_deterministic() {
-        fn compile(reverse: bool) -> Vec<u8> {
-            let mut context = CompileCtx::new();
-            let registers = allocate_registers(&mut context, 2);
-            initialize_registers(&mut context, &registers);
-            let definitions = [
-                (10usize, registers[0], "alpha", false),
-                (20usize, registers[1], "omega", true),
-            ];
-            for index in if reverse { [1, 0] } else { [0, 1] } {
-                let (pointer, register, name, mutable) = definitions[index];
-                context
-                    .define_symbol(pointer, register, name, mutable)
-                    .unwrap();
-            }
-            context.finish(registers[0]).unwrap()
-        }
-
-        assert_eq!(compile(false), compile(true));
-    }
-
-    #[test]
-    fn conflicting_and_empty_symbols_are_rejected() {
-        let mut context = CompileCtx::new();
-        let registers = allocate_registers(&mut context, 2);
-        assert!(context.define_symbol(1, registers[0], "", false).is_err());
-        context
-            .define_symbol(1, registers[0], "answer", false)
-            .unwrap();
-        assert!(
-            context
-                .define_symbol(2, registers[1], "answer", false)
-                .is_err()
-        );
-        context
-            .define_local_symbol(2, registers[1], "answer", false)
-            .unwrap();
-        assert_eq!(
-            context.symbols.get(&hash_str("answer")),
-            Some(&registers[0])
-        );
-        assert_eq!(context.symbol_definitions.len(), 2);
-        assert!(context.symbol_definitions[0].root_visible);
-        assert!(!context.symbol_definitions[1].root_visible);
-    }
-
-    #[test]
-    fn requirements_are_canonicalized_and_instruction_indexes_are_remapped() {
-        fn compile(resource_first: bool) -> Vec<u8> {
-            let mut context = CompileCtx::new();
-            let registers = allocate_registers(&mut context, 2);
-            initialize_registers(&mut context, &registers[..1]);
-            let host = host_requirement("cli/stdout");
-            let resource = resource_requirement("context://input");
-            let (host_id, resource_id) = if resource_first {
-                let resource_id = context.intern_requirement(resource).unwrap();
-                let host_id = context.intern_requirement(host).unwrap();
-                (host_id, resource_id)
-            } else {
-                let host_id = context.intern_requirement(host).unwrap();
-                let resource_id = context.intern_requirement(resource).unwrap();
-                (host_id, resource_id)
-            };
-            context.emit_host_call(host_id, registers[0], Vec::new());
-            context.emit_resource_read(resource_id, registers[1]);
-            context.finish(registers[1]).unwrap()
-        }
-
-        let resource_first = compile(true);
-        assert_eq!(resource_first, compile(false));
-        let parsed = ParsedProgram::from_bytes(&resource_first).unwrap();
-        assert!(matches!(
-            parsed.requirements[0],
-            ApplicationRequirement::HostFunction(_)
-        ));
-        assert!(matches!(
-            parsed.instructions[1],
-            BytecodeInstruction::HostCall { requirement: 0, .. }
-        ));
-        assert!(matches!(
-            parsed.instructions[2],
-            BytecodeInstruction::ResourceRead { requirement: 1, .. }
-        ));
-    }
-
-    #[test]
-    fn finish_appends_one_final_return_and_is_repeatable() {
-        let mut context = CompileCtx::new();
-        let register = allocate_registers(&mut context, 1)[0];
-        let constant = initialize_registers(&mut context, &[register]);
-        let first = context.finish(register).unwrap();
-        let second = context.finish(register).unwrap();
-        assert_eq!(first, second);
-
-        let parsed = ParsedProgram::from_bytes(&first).unwrap();
-        assert_eq!(
-            parsed.instructions,
-            vec![
-                BytecodeInstruction::ConstLoad {
-                    dst: register,
-                    constant,
-                },
-                BytecodeInstruction::Return { src: register },
-            ],
-        );
-    }
-
-    #[test]
-    fn all_instruction_shapes_round_trip() {
-        let mut context = CompileCtx::new();
-        let registers = allocate_registers(&mut context, 8);
-        initialize_registers(&mut context, &registers[..7]);
-        let host = context
-            .intern_requirement(host_requirement("cli/stdout"))
-            .unwrap();
-        let resource = context
-            .intern_requirement(resource_requirement("context://input"))
-            .unwrap();
-
-        context.emit_nullop(1, registers[0]);
-        context.emit_unop(2, registers[1], registers[0]);
-        context.emit_binop(3, registers[2], registers[0], registers[1]);
-        context.emit_ternop(4, registers[3], registers[0], registers[1], registers[2]);
-        context.emit_quadop(
-            5,
-            registers[4],
-            registers[0],
-            registers[1],
-            registers[2],
-            registers[3],
-        );
-        context.emit_varop(6, registers[5], registers[..5].to_vec());
-        context.emit_host_call(host, registers[5], registers[..2].to_vec());
-        context.emit_resource_read(resource, registers[7]);
-        context.emit_resource_write(resource, registers[5], registers[7]);
-        context.emit_resource_send(resource, registers[6], registers[5]);
-
-        let parsed = ParsedProgram::from_bytes(&context.finish(registers[6]).unwrap()).unwrap();
-        assert_eq!(parsed.instructions.len(), 18);
-        assert_eq!(
-            parsed.instructions.last(),
-            Some(&BytecodeInstruction::Return { src: registers[6] }),
-        );
-    }
-
-    #[test]
-    fn finish_rejects_out_of_range_return_register() {
-        assert!(CompileCtx::new().finish(0).is_err());
-    }
 }

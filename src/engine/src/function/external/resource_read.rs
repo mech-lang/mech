@@ -1,10 +1,9 @@
-use crate::apply_stable_value_update;
 use mech_core::{
     AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExecutionResourceRequest,
-    ExternalInteraction, InitialSolvePolicy, InputPortLayout, LegacyValue, MResult, MechError,
-    MechErrorKind, MechExecutionServices, MechFunctionImpl, NoMechExecutionServices,
+    ExternalInteraction, FunctionStatePort, InitialSolvePolicy, InputPortLayout, MResult,
+    MechError, MechErrorKind, MechExecutionServices, MechFunctionImpl, NoMechExecutionServices,
     ObservationContract, ObservationReplayPolicy, OperationContractDeclaration, OutputConstruction,
-    OutputPortPolicy, ReactiveSolveStatus, ResourceDelivery, ShapeRule, ValRef,
+    OutputPortPolicy, ReactiveSolveStatus, Ref, ResourceDelivery, ShapeRule, Value, ValueCell,
 };
 use std::sync::LazyLock;
 
@@ -33,9 +32,10 @@ use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCom
 pub struct ExternalResourceReadFunction {
     pub interpreter_id: u64,
     pub request: ExecutionResourceRequest,
-    pub output: ValRef,
+    pub output: ValueCell,
     pub initial_solve_policy: InitialSolvePolicy,
     pub semantic_contract: Option<&'static OperationContractDeclaration>,
+    initialized: Ref<usize>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -57,28 +57,28 @@ impl MechErrorKind for ExternalResourceReadUninitializedValue {
 }
 
 impl ExternalResourceReadFunction {
-    fn apply_read_result(&self, result: LegacyValue) -> MResult<()> {
-        let uninitialized = {
-            let output = self.output.borrow();
-            matches!(&*output, LegacyValue::Empty)
-        };
-
-        if uninitialized {
-            if matches!(result, LegacyValue::Empty) {
-                return Err(MechError::new(
-                    ExternalResourceReadUninitializedValue {
-                        request: self.request.clone(),
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-
-            *self.output.borrow_mut() = result;
-            return Ok(());
+    pub fn new(
+        interpreter_id: u64,
+        request: ExecutionResourceRequest,
+        output: ValueCell,
+        initialized: bool,
+        initial_solve_policy: InitialSolvePolicy,
+        semantic_contract: Option<&'static OperationContractDeclaration>,
+    ) -> Self {
+        Self {
+            interpreter_id,
+            request,
+            output,
+            initial_solve_policy,
+            semantic_contract,
+            initialized: Ref::new(usize::from(initialized)),
         }
+    }
 
-        apply_stable_value_update(self.output.clone(), result).map(|_| ())
+    fn apply_read_result(&self, result: Value) -> MResult<()> {
+        self.output.replace(&result)?;
+        *self.initialized.borrow_mut() = 1;
+        Ok(())
     }
 
     fn solve_with_services(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
@@ -121,14 +121,19 @@ impl MechFunctionImpl for ExternalResourceReadFunction {
         &self,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<()> {
+        if *self.initialized.borrow() == 0 {
+            return Err(MechError::new(
+                ExternalResourceReadUninitializedValue {
+                    request: self.request.clone(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
         if self.request.delivery == ResourceDelivery::Live {
             services.bind_live_resource(self.interpreter_id, &self.request, self.output.clone())?;
         }
         Ok(())
-    }
-
-    fn out(&self) -> LegacyValue {
-        self.output.borrow().clone()
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -136,8 +141,8 @@ impl MechFunctionImpl for ExternalResourceReadFunction {
             .or(Some(&RESOURCE_OBSERVATION_CONTRACT))
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(vec![LegacyValue::MutableReference(self.output.clone())])
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_ref(&self.initialized)]))
     }
 
     fn to_string(&self) -> String {
@@ -147,6 +152,10 @@ impl MechFunctionImpl for ExternalResourceReadFunction {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ExternalResourceReadFunction {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = super::compile_runtime_produced_external_output(&self.output, context)?;
         let requirement =

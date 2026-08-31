@@ -2,7 +2,15 @@ use super::support::{
     cell, distinct_assignment_graph_shape, expected_distinct_assignment_shape, register,
     register_node_id_for_output, root_cell, set_value, symbol, value,
 };
-use crate::{Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState};
+use crate::{Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState, ValueData};
+
+fn scalar(cell: &crate::ValueCell) -> f64 {
+    let snapshot = cell.snapshot().unwrap();
+    let ValueData::F64(value) = snapshot.data() else {
+        panic!("expected f64 output, got {snapshot:?}")
+    };
+    value.to_f64()
+}
 
 #[cfg(feature = "math_add_assign")]
 #[test]
@@ -14,8 +22,8 @@ fn whole_add_assignment_registers_state_node() {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
-    assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    assert_eq!(scalar(&output), 3.0);
     assert_eq!(
         distinct_assignment_graph_shape(&interpreter, "x", "y"),
         expected_distinct_assignment_shape()
@@ -32,8 +40,8 @@ fn whole_add_assignment_alias_is_sampled_once() {
         10_000,
         crate::test_support::catalog::function_catalog(),
     );
-    let output = interpreter.interpret(&tree).unwrap();
-    assert_eq!(*output.as_f64().unwrap().borrow(), 4.0);
+    let output = interpreter.interpret(&tree).unwrap().unwrap();
+    assert_eq!(scalar(&output), 4.0);
     let x_cell = root_cell(&symbol(&interpreter, "x"));
     let node_id = register_node_id_for_output(&interpreter, x_cell);
     let plan = interpreter.plan();

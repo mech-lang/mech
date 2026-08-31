@@ -32,6 +32,25 @@ pub struct Schema {
     body: SchemaBody,
 }
 
+/// Declares whether an aggregate extent is fixed by its schema or may vary
+/// while preserving the same semantic schema and cell identity.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CardinalitySpec {
+    Exact(DimensionExpr),
+    Dynamic { upper_bound: Option<DimensionExpr> },
+}
+
+/// General name for an exact or dynamic aggregate extent. The cardinality
+/// alias remains available for source compatibility with the first set slice.
+pub type ExtentSpec = CardinalitySpec;
+
+impl From<DimensionExpr> for CardinalitySpec {
+    fn from(value: DimensionExpr) -> Self {
+        Self::Exact(value)
+    }
+}
+
 impl SchemaDraft {
     pub fn finalize(self) -> Result<Schema, SemanticModelError> {
         validation::finalize_schema(self)
@@ -42,7 +61,7 @@ impl SchemaDraft {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SchemaBody {
     /// A self-describing value whose concrete schema and shape are carried by
-    /// the value itself. This is the instantiable semantic form of a legacy
+    /// the value itself. This is the instantiable semantic form of a source
     /// wildcard (`*`) inside heterogeneous aggregates such as table columns.
     Dynamic,
     Bool,
@@ -68,16 +87,16 @@ pub enum SchemaBody {
     },
     Table {
         columns: Box<[SchemaField]>,
-        rows: DimensionExpr,
+        rows: ExtentSpec,
     },
     Set {
         element: Box<SchemaBody>,
-        cardinality: DimensionExpr,
+        cardinality: CardinalitySpec,
     },
     Map {
         key: Box<SchemaBody>,
         value: Box<SchemaBody>,
-        cardinality: DimensionExpr,
+        cardinality: ExtentSpec,
     },
     ReifiedType,
 }

@@ -154,7 +154,7 @@ fn encode_schema_body(body: &SchemaBody) -> Box<[u8]> {
         SchemaBody::Table { columns, rows } => {
             writer.write_u8(0x10);
             encode_fields(&mut writer, columns);
-            writer.write_node(&encode_normalized_dimension(rows));
+            writer.write_node(&encode_extent(rows));
         }
         SchemaBody::Set {
             element,
@@ -162,7 +162,7 @@ fn encode_schema_body(body: &SchemaBody) -> Box<[u8]> {
         } => {
             writer.write_u8(0x11);
             writer.write_node(&encode_schema_body(element));
-            writer.write_node(&encode_normalized_dimension(cardinality));
+            writer.write_node(&encode_extent(cardinality));
         }
         SchemaBody::Map {
             key,
@@ -172,9 +172,31 @@ fn encode_schema_body(body: &SchemaBody) -> Box<[u8]> {
             writer.write_u8(0x12);
             writer.write_node(&encode_schema_body(key));
             writer.write_node(&encode_schema_body(value));
-            writer.write_node(&encode_normalized_dimension(cardinality));
+            writer.write_node(&encode_extent(cardinality));
         }
         SchemaBody::ReifiedType => writer.write_u8(0x13),
+    }
+    writer.finish()
+}
+
+fn encode_extent(extent: &crate::ExtentSpec) -> Box<[u8]> {
+    match extent {
+        crate::ExtentSpec::Exact(value) => encode_normalized_dimension(value).into_boxed_slice(),
+        dynamic @ crate::ExtentSpec::Dynamic { .. } => encode_dynamic_extent(dynamic),
+    }
+}
+
+fn encode_dynamic_extent(cardinality: &crate::ExtentSpec) -> Box<[u8]> {
+    let mut writer = CanonicalWriter::new();
+    match cardinality {
+        crate::CardinalitySpec::Exact(_) => unreachable!("exact cardinality uses the v1 encoding"),
+        crate::CardinalitySpec::Dynamic { upper_bound: None } => writer.write_u8(0x80),
+        crate::CardinalitySpec::Dynamic {
+            upper_bound: Some(value),
+        } => {
+            writer.write_u8(0x81);
+            writer.write_node(&encode_normalized_dimension(value));
+        }
     }
     writer.finish()
 }

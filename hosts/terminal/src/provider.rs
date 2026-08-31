@@ -6,15 +6,15 @@ use std::{
 
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
-    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
-    MechErrorKind, OperationContractDeclaration, Ref,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult, MechError, MechErrorKind,
+    OperationContractDeclaration, Value, ValueData,
 };
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
-    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadNotPlannable,
-    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
-    RuntimeResourceWriteRequest, materialize_host_manifest,
+    RuntimeHostInputValue, RuntimeHostInstallation, RuntimeResourceProvider,
+    RuntimeResourceReadNotPlannable, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
 };
 
 static CLI_OUTPUT_EFFECT_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
@@ -146,7 +146,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         ]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if self.matches_base(&request.base_uri, "env") {
             validate_env_key(&request.path)?;
             let value = self
@@ -163,7 +163,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                         None,
                     )
                 })?;
-            Ok(LegacyValue::String(Ref::new(value)))
+            RuntimeHostInputValue::String(value).into_value()
         } else if self.matches_base(&request.base_uri, "stdout")
             || self.matches_base(&request.base_uri, "stderr")
         {
@@ -176,10 +176,10 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         }
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if self.matches_base(&request.base_uri, "env") {
             validate_env_key(&request.path)?;
-            return Ok(LegacyValue::String(Ref::new(String::new())));
+            return RuntimeHostInputValue::String(String::new()).into_value();
         }
         Err(MechError::new(
             RuntimeResourceReadNotPlannable {
@@ -235,13 +235,13 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
             "line" => "\n",
             _ => unreachable!("cli stdout/stderr path validated by preflight_write"),
         };
-        let LegacyValue::String(value) = request.value else {
+        let ValueData::String(value) = request.value.data() else {
             return Err(cli_error(
                 request.base_uri,
                 "stdout/stderr sends require a scalar string payload",
             ));
         };
-        let text = value.borrow().clone() + suffix;
+        let text = value.to_string() + suffix;
         let stream = if self.matches_base(&request.base_uri, "stdout") {
             CliOutputStream::Stdout
         } else {
@@ -265,7 +265,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
             operation: request.operation,
             intent: request.intent,
         })?;
-        if !matches!(request.value, LegacyValue::String(_)) {
+        if !matches!(request.value.data(), ValueData::String(_)) {
             return Err(cli_error(
                 request.base_uri,
                 "stdout/stderr sends require a scalar string payload",

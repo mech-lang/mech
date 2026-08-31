@@ -1,10 +1,10 @@
 use mech_console::{ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
 use mech_core::{
-    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, LegacyValue,
+    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement,
 };
 use mech_runtime::{
-    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeHostFactory, RuntimeResourceProvider,
-    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeHostFactory, RuntimeHostInputValue,
+    RuntimeResourceProvider, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
 };
 
 fn deliver(
@@ -29,7 +29,9 @@ fn provider_writes_line_to_backend() {
             path: "line".to_string(),
             context_name: "out".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: LegacyValue::from("hello".to_string()),
+            value: RuntimeHostInputValue::String("hello".to_string())
+                .into_value()
+                .unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
         },
     );
@@ -46,7 +48,9 @@ fn provider_rejects_unknown_path() {
             path: "text".to_string(),
             context_name: "out".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: LegacyValue::from("hello".to_string()),
+            value: RuntimeHostInputValue::String("hello".to_string())
+                .into_value()
+                .unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
         })
         .unwrap_err();

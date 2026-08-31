@@ -86,15 +86,14 @@ pub fn section_compute_placement(section: &Section) -> MResult<Option<ComputePla
 // ----------------------------------------------------------------------------
 
 #[cfg(feature = "symbol_table")]
-fn update_ans_symbol(value: &LegacyValue, p: &InterpreterExecution<'_>) {
-    let resolved_value = match value {
-        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
-        _ => value.clone(),
+fn update_ans_symbol(value: &SpecializationInput, p: &InterpreterExecution<'_>) {
+    let Ok(resolved_value) = value.cell().cloned() else {
+        return;
     };
     let ans_id = hash_str("ans");
     let symbols = p.symbols();
     let mut symbols_brrw = symbols.borrow_mut();
-    symbols_brrw.insert(ans_id, resolved_value, false);
+    symbols_brrw.insert_cell(ans_id, resolved_value, false);
     symbols_brrw
         .dictionary
         .borrow_mut()
@@ -104,7 +103,7 @@ fn update_ans_symbol(value: &LegacyValue, p: &InterpreterExecution<'_>) {
         .insert(ans_id, "ans".to_string());
 }
 
-pub fn program(program: &Program, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+pub fn program(program: &Program, p: &InterpreterExecution<'_>) -> MResult<SpecializationInput> {
     if let Some(title) = &program.title {
         for (import, comment) in &title.imports {
             module_import_runtime(import, p)?;
@@ -116,19 +115,19 @@ pub fn program(program: &Program, p: &InterpreterExecution<'_>) -> MResult<Legac
     body(&program.body, p)
 }
 
-pub fn body(body: &Body, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
-    let mut result = Ok(LegacyValue::Empty);
+pub fn body(body: &Body, p: &InterpreterExecution<'_>) -> MResult<SpecializationInput> {
+    let mut result = Ok(SpecializationInput::Absent);
     for sec in &body.sections {
         result = Ok(section(&sec, p)?);
     }
     result
 }
 
-pub fn section(section: &Section, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+pub fn section(section: &Section, p: &InterpreterExecution<'_>) -> MResult<SpecializationInput> {
     #[cfg(feature = "functions")]
     let plan_start = p.plan_len();
     let compute = section_compute_placement(section)?;
-    let mut result = Ok(LegacyValue::Empty);
+    let mut result = Ok(SpecializationInput::Absent);
     for el in &section.elements {
         result = Ok(section_element(&el, p)?);
     }
@@ -147,9 +146,9 @@ pub fn section(section: &Section, p: &InterpreterExecution<'_>) -> MResult<Legac
 pub fn section_element(
     element: &SectionElement,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<SpecializationInput> {
     let mut hasher = DefaultHasher::new();
-    let mut out = LegacyValue::Empty;
+    let mut out = SpecializationInput::Absent;
     match element {
         SectionElement::Prompt(x) => x.hash(&mut hasher),
         SectionElement::InfoBlock(x) => x.hash(&mut hasher),
@@ -185,7 +184,7 @@ pub fn section_element(
         #[cfg(feature = "functions")]
         SectionElement::FencedMechCode(block) => {
             if block.config.disabled == true {
-                return Ok(LegacyValue::Empty);
+                return Ok(SpecializationInput::Absent);
             }
             let code_id = block.config.namespace;
             if code_id == 0 {
@@ -194,7 +193,10 @@ pub fn section_element(
                 // so we can reference it later.
                 let out_id = crate::program::fenced_document_output_id(block)
                     .expect("an executable fenced block has an output identity");
-                p.out_values.borrow_mut().insert(out_id, out.clone());
+                p.out_values.borrow_mut().insert(
+                    out_id,
+                    crate::interpreter::retained_source_cell(out.clone())?,
+                );
             } else {
                 let mut sub_interpreters = p.sub_interpreters.borrow_mut();
 
@@ -213,7 +215,10 @@ pub fn section_element(
                 // so we can reference it later.
                 let out_id = crate::program::fenced_document_output_id(block)
                     .expect("an executable fenced block has an output identity");
-                pp.out_values.borrow_mut().insert(out_id, out.clone());
+                pp.out_values.borrow_mut().insert(
+                    out_id,
+                    crate::interpreter::retained_source_cell(out.clone())?,
+                );
                 // A named fence is a scoped evaluator, but its returned value is
                 // still the latest document result. Mirror it into the parent
                 // `ans` projection so the document-boundary capture observes the
@@ -231,9 +236,12 @@ pub fn section_element(
                     Ok(val) => val,
                     _ => continue,
                 };
-                p.out_values.borrow_mut().insert(code_id, value.clone());
+                p.out_values.borrow_mut().insert(
+                    code_id,
+                    crate::interpreter::retained_source_cell(value.clone())?,
+                );
             }
-            return Ok(LegacyValue::Empty);
+            return Ok(SpecializationInput::Absent);
         }
         SectionElement::Footnote(x) => x.hash(&mut hasher),
         SectionElement::Paragraph(x) => {
@@ -242,7 +250,10 @@ pub fn section_element(
                     Ok(val) => val,
                     _ => continue,
                 };
-                p.out_values.borrow_mut().insert(code_id, value.clone());
+                p.out_values.borrow_mut().insert(
+                    code_id,
+                    crate::interpreter::retained_source_cell(value.clone())?,
+                );
             }
         }
         SectionElement::Grammar(x) => x.hash(&mut hasher),
@@ -254,7 +265,10 @@ pub fn section_element(
                             Ok(val) => val,
                             _ => continue,
                         };
-                        p.out_values.borrow_mut().insert(code_id, value.clone());
+                        p.out_values.borrow_mut().insert(
+                            code_id,
+                            crate::interpreter::retained_source_cell(value.clone())?,
+                        );
                     }
                 }
             }
@@ -262,7 +276,7 @@ pub fn section_element(
         }
         SectionElement::QuoteBlock(x) => x.hash(&mut hasher),
         SectionElement::ThematicBreak => {
-            return Ok(LegacyValue::Empty);
+            return Ok(SpecializationInput::Absent);
         }
         SectionElement::List(x) => x.hash(&mut hasher),
         SectionElement::SuccessBlock(x) => x.hash(&mut hasher),
@@ -274,7 +288,10 @@ pub fn section_element(
                             Ok(val) => val,
                             _ => continue,
                         };
-                        p.out_values.borrow_mut().insert(code_id, value.clone());
+                        p.out_values.borrow_mut().insert(
+                            code_id,
+                            crate::interpreter::retained_source_cell(value.clone())?,
+                        );
                     }
                 }
             }
@@ -296,9 +313,16 @@ pub fn section_element(
                     section(&mika_section.elements, execution)
                 })?;
             }
-            return Ok(LegacyValue::Atom(Ref::new(MechAtom::from_name(
-                &m.to_string(),
-            ))));
+            let name = m.to_string();
+            let path = CanonicalNominalPath::new(
+                name.split('/')
+                    .filter(|segment| !segment.is_empty())
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>(),
+            )?;
+            let key = NominalKey::from_path(NominalKind::Atom, &path);
+            return ValueCell::from_schema_data(SchemaBody::Atom(key), ValueDataDraft::Atom)
+                .map(SpecializationInput::Cell);
         }
         x => {
             return Err(MechError::new(
@@ -310,7 +334,8 @@ pub fn section_element(
         }
     };
     let hash = hasher.finish();
-    Ok(LegacyValue::Id(hash))
+    ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash))
+        .map(SpecializationInput::Cell)
 }
 
 #[cfg(test)]
@@ -395,8 +420,8 @@ fn eval_fenced_code_block(
     interpreter: &InterpreterExecution<'_>,
     #[cfg(feature = "string")] isolate_errors: bool,
     #[cfg(not(feature = "string"))] _: bool,
-) -> MResult<LegacyValue> {
-    let mut out = LegacyValue::Empty;
+) -> MResult<SpecializationInput> {
+    let mut out = SpecializationInput::Absent;
     for (c, cmmnt) in code {
         match mech_code(c, interpreter) {
             Ok(value) if crate::program::code_is_program_value(c) => out = value,
@@ -404,7 +429,8 @@ fn eval_fenced_code_block(
             Err(err) => {
                 #[cfg(feature = "string")]
                 if isolate_errors {
-                    return Ok(LegacyValue::String(Ref::new(err.full_chain_message())));
+                    return ValueCell::from_exact(err.full_chain_message())
+                        .map(SpecializationInput::Cell);
                 }
                 return Err(err);
             }
@@ -415,7 +441,8 @@ fn eval_fenced_code_block(
                 Err(err) => {
                     #[cfg(feature = "string")]
                     if isolate_errors {
-                        return Ok(LegacyValue::String(Ref::new(err.full_chain_message())));
+                        return ValueCell::from_exact(err.full_chain_message())
+                            .map(SpecializationInput::Cell);
                     }
                     return Err(err);
                 }
@@ -447,7 +474,7 @@ fn mika_interpreter_id(parent_id: u64, mika: &Mika, section: &Option<MikaSection
 pub fn paragraph_element(
     element: &ParagraphElement,
     p: &InterpreterExecution<'_>,
-) -> MResult<(u64, LegacyValue)> {
+) -> MResult<(u64, SpecializationInput)> {
     let result = match element {
         ParagraphElement::EvalInlineMechCode(expr) => {
             let code_id = inline_eval_id(p);
@@ -455,7 +482,7 @@ pub fn paragraph_element(
                 Ok(val) => (code_id, val),
                 // Inline document expressions are opportunistic: unresolved
                 // values remain empty and can be evaluated on a later pass.
-                Err(_) => (code_id, LegacyValue::Empty),
+                Err(_) => (code_id, SpecializationInput::Absent),
             }
         }
         _ => {
@@ -467,16 +494,19 @@ pub fn paragraph_element(
     Ok(result)
 }
 
-pub fn comment(cmmt: &Comment, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+pub fn comment(cmmt: &Comment, p: &InterpreterExecution<'_>) -> MResult<SpecializationInput> {
     let par = &cmmt.paragraph;
     for el in par.elements.iter() {
         let (code_id, value) = match paragraph_element(&el, p) {
             Ok(val) => val,
             _ => continue,
         };
-        p.out_values.borrow_mut().insert(code_id, value.clone());
+        p.out_values.borrow_mut().insert(
+            code_id,
+            crate::interpreter::retained_source_cell(value.clone())?,
+        );
     }
-    Ok(LegacyValue::Empty)
+    Ok(SpecializationInput::Absent)
 }
 
 #[cfg(feature = "functions")]
@@ -504,7 +534,7 @@ fn is_context_export(p: &InterpreterExecution<'_>, module: &str, item: &str) -> 
 pub fn module_import_runtime(
     import: &ModuleImport,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<SpecializationInput> {
     let module = import.module.to_string();
     match import.kind {
         ModuleImportKind::Module => {
@@ -518,7 +548,7 @@ pub fn module_import_runtime(
                 .with_compiler_loc());
             }
             load_module(p, &module)?;
-            Ok(LegacyValue::Empty)
+            Ok(SpecializationInput::Absent)
         }
         ModuleImportKind::Item => {
             let item = import.item.as_ref().ok_or_else(|| {
@@ -542,7 +572,7 @@ pub fn module_import_runtime(
                     p.bind_context_export(alias, &module, &item)?;
                 }
             }
-            Ok(LegacyValue::Empty)
+            Ok(SpecializationInput::Absent)
         }
         ModuleImportKind::Glob => {
             if import.alias.is_some() {
@@ -570,7 +600,7 @@ pub fn module_import_runtime(
         ).with_compiler_loc());
             }
             import_module_glob(p, &module)?;
-            Ok(LegacyValue::Empty)
+            Ok(SpecializationInput::Absent)
         }
         ModuleImportKind::Group => {
             let group_items = import.group_items.as_ref().ok_or_else(|| {
@@ -590,38 +620,40 @@ pub fn module_import_runtime(
                 }
             }
             import_module_group(p, &module, &items)?;
-            Ok(LegacyValue::Empty)
+            Ok(SpecializationInput::Absent)
         }
     }
 }
 
-pub fn mech_code(code: &MechCode, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+pub fn mech_code(code: &MechCode, p: &InterpreterExecution<'_>) -> MResult<SpecializationInput> {
     let out = match &code {
-        MechCode::ActivationScope(scope) => activation_scope(scope, p),
+        MechCode::ActivationScope(scope) => {
+            activation_scope(scope, p).map(SpecializationInput::Cell)
+        }
         MechCode::Expression(expr) => expression(&expr, None, p),
         MechCode::Statement(stmt) => {
             #[cfg(feature = "subscript_formula")]
             reset_current_string_access_expression_live(p);
-            statement(&stmt, None, p)
+            statement(&stmt, None, p).map(SpecializationInput::Cell)
         }
         #[cfg(feature = "functions")]
         MechCode::Import(import) => module_import_runtime(import, p),
         #[cfg(feature = "state_machines")]
         MechCode::FsmSpecification(fsm_spec) => {
             crate::state_machines::register_fsm_specification(fsm_spec, p)?;
-            Ok(LegacyValue::Empty)
+            Ok(SpecializationInput::Absent)
         }
         #[cfg(not(feature = "state_machines"))]
-        MechCode::FsmSpecification(_) => Ok(LegacyValue::Empty),
+        MechCode::FsmSpecification(_) => Ok(SpecializationInput::Absent),
         #[cfg(feature = "state_machines")]
         MechCode::FsmImplementation(fsm_impl) => {
             crate::state_machines::register_fsm_implementation(fsm_impl, p)?;
-            Ok(LegacyValue::Empty)
+            Ok(SpecializationInput::Absent)
         }
         #[cfg(feature = "functions")]
         MechCode::FunctionDefine(fxn_def) => {
             function_define(&fxn_def, p)?;
-            Ok(LegacyValue::Empty)
+            Ok(SpecializationInput::Absent)
         }
         MechCode::Comment(cmmt) => comment(&cmmt, p),
         x => Err(MechError::new(FeatureNotEnabledError, None)
@@ -761,7 +793,7 @@ fn activation_trigger_cells(
     scope: &ActivationScope,
     var: &Var,
     p: &InterpreterExecution<'_>,
-) -> MResult<Vec<ReactiveCellId>> {
+) -> MResult<Vec<CanonicalCellId>> {
     let trigger = {
         let state = p.state.borrow();
         state.get_symbol(var.name.hash())
@@ -770,19 +802,14 @@ fn activation_trigger_cells(
         MechError::new(ActivationTriggerMustBeStableReference, None)
             .with_tokens(scope.trigger.tokens())
     })?;
-    let cells = trigger.borrow().reactive_root_cell_ids();
-    if cells.is_empty() {
-        return Err(MechError::new(ActivationTriggerMustBeStableReference, None)
-            .with_tokens(scope.trigger.tokens()));
-    }
-    Ok(cells)
+    Ok(vec![trigger.reactive_cell_id()])
 }
 #[cfg(not(all(feature = "functions", feature = "symbol_table")))]
 fn activation_trigger_cells(
     scope: &ActivationScope,
     _var: &Var,
     _p: &InterpreterExecution<'_>,
-) -> MResult<Vec<ReactiveCellId>> {
+) -> MResult<Vec<CanonicalCellId>> {
     Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens()))
 }
 
@@ -790,8 +817,8 @@ fn activation_trigger_cells(
 fn elaborate_activation_scope(
     scope: &ActivationScope,
     p: &InterpreterExecution<'_>,
-    trigger_cells: Vec<ReactiveCellId>,
-) -> MResult<LegacyValue> {
+    trigger_cells: Vec<CanonicalCellId>,
+) -> MResult<ValueCell> {
     match &scope.body {
         ActivationBody::Block(body) => {
             let plan = p.plan();
@@ -804,11 +831,11 @@ fn elaborate_activation_scope(
                 trigger_cells,
                 crate::activation::activation_scope_entry_cells(p),
             );
-            let result = (|| -> MResult<LegacyValue> {
+            let result = (|| -> MResult<ValueCell> {
                 for (code, _) in body {
                     mech_code(code, p)?;
                 }
-                Ok(LegacyValue::Empty)
+                Ok(ValueCell::unit())
             })();
             plan.pop_activation_registration_scope();
             match result {
@@ -829,7 +856,7 @@ fn elaborate_activation_scope(
                     .state
                     .borrow()
                     .get_symbol(var.name.hash())
-                    .map(|value| value.borrow().clone()),
+                    .map(|value| value.clone()),
                 _ => None,
             }
             .ok_or_else(|| {
@@ -850,12 +877,12 @@ fn elaborate_activation_scope(
 fn elaborate_activation_scope(
     scope: &ActivationScope,
     _p: &InterpreterExecution<'_>,
-    _trigger_cells: Vec<ReactiveCellId>,
-) -> MResult<LegacyValue> {
+    _trigger_cells: Vec<CanonicalCellId>,
+) -> MResult<ValueCell> {
     Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens()))
 }
 
-fn activation_scope(scope: &ActivationScope, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+fn activation_scope(scope: &ActivationScope, p: &InterpreterExecution<'_>) -> MResult<ValueCell> {
     let var = match &scope.trigger {
         Expression::Var(var) => var,
         _ => {

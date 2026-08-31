@@ -260,7 +260,8 @@ pub struct ResidentSnapshotOutput {
     pub schema: SchemaId,
     pub schema_key: SchemaKey,
     pub shape: ShapeInstance,
-    pub cardinality: usize,
+    pub exact_cardinality: Option<usize>,
+    pub maximum_cardinality: Option<usize>,
 }
 
 impl core::fmt::Debug for BoundResidentKernel {

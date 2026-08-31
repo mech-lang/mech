@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration};
+use mech_core::{MResult, MechError, MechErrorKind, OperationContractDeclaration, Value};
 
 use crate::extension::catch_extension;
 #[cfg(any(test, feature = "runtime"))]
@@ -37,30 +37,30 @@ pub struct RuntimeResourceWritePreflightRequest {
     pub intent: RuntimeResourceWriteIntent,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct RuntimeResourceWriteRequest {
     pub base_uri: String,
     pub path: String,
     pub context_name: String,
     pub operation: RuntimeCapabilityOperation,
-    pub value: LegacyValue,
+    pub value: Value,
     pub intent: RuntimeResourceWriteIntent,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct RuntimeResidentResourceWriteRequest {
     pub base_uri: String,
     pub path: String,
     pub context_name: String,
     pub operation: RuntimeCapabilityOperation,
-    pub value: LegacyValue,
+    pub value: Value,
     pub intent: RuntimeResourceWriteIntent,
     pub effect_id: crate::RuntimeEffectId,
     pub idempotency_key: String,
 }
 
 impl RuntimeResidentResourceWriteRequest {
-    pub fn into_legacy_request(self) -> RuntimeResourceWriteRequest {
+    pub fn into_request(self) -> RuntimeResourceWriteRequest {
         RuntimeResourceWriteRequest {
             base_uri: self.base_uri,
             path: self.path,
@@ -103,7 +103,7 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
         Vec::new()
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         Err(MechError::new(
             RuntimeResourceReadNotPlannable {
                 scheme: self.scheme().to_string(),
@@ -114,7 +114,7 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
         ))
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue>;
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         Err(MechError::new(
@@ -162,7 +162,7 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
         &self,
         request: RuntimeResidentResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
-        self.prepare_write(request.into_legacy_request())
+        self.prepare_write(request.into_request())
     }
 }
 
@@ -239,7 +239,7 @@ impl RuntimeResidentProviderBinding {
         )
     }
 
-    pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         invoke_extension(
             format!("resource provider `{}`", self.scheme),
             "read",
@@ -429,7 +429,7 @@ impl RuntimeResourceRegistry {
     }
 
     #[cfg(any(test, feature = "runtime"))]
-    pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
             return Err(MechError::new(
@@ -446,7 +446,7 @@ impl RuntimeResourceRegistry {
     }
 
     #[cfg(feature = "resident-routing-source")]
-    pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
             return Err(MechError::new(
@@ -506,7 +506,7 @@ impl RuntimeResourceRegistry {
 
 #[derive(Clone, Debug, Default)]
 pub struct InMemoryDocsProvider {
-    documents: Arc<Mutex<HashMap<String, HashMap<String, LegacyValue>>>>,
+    documents: Arc<Mutex<HashMap<String, HashMap<String, Value>>>>,
 }
 
 impl InMemoryDocsProvider {
@@ -518,7 +518,7 @@ impl InMemoryDocsProvider {
         &mut self,
         base_uri: impl Into<String>,
         path: impl Into<String>,
-        value: LegacyValue,
+        value: Value,
     ) -> MResult<()> {
         let base_uri = base_uri.into();
         let path = path.into();
@@ -554,13 +554,13 @@ impl InMemoryDocsProvider {
         mut self,
         base_uri: impl Into<String>,
         path: impl Into<String>,
-        value: LegacyValue,
+        value: Value,
     ) -> MResult<Self> {
         self.insert(base_uri, path, value)?;
         Ok(self)
     }
 
-    fn snapshot_value(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn snapshot_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         let documents = self
             .documents
             .lock()
@@ -583,7 +583,7 @@ impl InMemoryDocsProvider {
                 None,
             ));
         };
-        value.try_deep_snapshot()
+        Ok(value.clone())
     }
 }
 
@@ -611,11 +611,11 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
             .then(crate::prepare_commit_compensate_contract)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.snapshot_value(request)
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         // In-memory documents are deterministic build inputs. Planning reads a
         // detached snapshot directly from the configured document set without
         // entering the provider's runtime `read` operation.
@@ -686,11 +686,11 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
 
 #[derive(Debug)]
 struct InMemoryDocsWriteEffect {
-    documents: Arc<Mutex<HashMap<String, HashMap<String, LegacyValue>>>>,
+    documents: Arc<Mutex<HashMap<String, HashMap<String, Value>>>>,
     base_uri: String,
     path: String,
-    value: LegacyValue,
-    previous: Option<LegacyValue>,
+    value: Value,
+    previous: Option<Value>,
     base_existed: bool,
     applied: bool,
 }
@@ -1062,11 +1062,20 @@ impl MechErrorKind for RuntimeResourceCapabilityDenied {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::Ref;
+    use mech_core::ValueCell;
     use std::sync::{
         Arc,
         atomic::{AtomicUsize, Ordering},
     };
+
+    fn assert_same_value(left: &Value, right: &Value) {
+        let left_schemas = left.schemas().unwrap();
+        let right_schemas = right.schemas().unwrap();
+        assert!(
+            left.snapshot_eq(&left_schemas, right, &right_schemas)
+                .unwrap()
+        );
+    }
 
     #[derive(Debug)]
     struct DefaultPlanningProvider {
@@ -1078,9 +1087,9 @@ mod tests {
             "default-plan"
         }
 
-        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
             self.reads.fetch_add(1, Ordering::SeqCst);
-            Ok(LegacyValue::F64(Ref::new(1.0)))
+            ValueCell::from_exact(1.0_f64)?.snapshot()
         }
     }
 
@@ -1123,8 +1132,8 @@ mod tests {
             self.groups.clone()
         }
 
-        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-            Ok(LegacyValue::Empty)
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+            ValueCell::unit().snapshot()
         }
     }
 
@@ -1225,8 +1234,8 @@ mod tests {
         );
     }
 
-    fn bool_value(value: bool) -> LegacyValue {
-        LegacyValue::Bool(Ref::new(value))
+    fn bool_value(value: bool) -> Value {
+        ValueCell::from_exact(value).unwrap().snapshot().unwrap()
     }
 
     fn write_request(path: &str, value: bool) -> RuntimeResourceWriteRequest {
@@ -1272,7 +1281,7 @@ mod tests {
             vec!["panic://provider".to_string()]
         }
 
-        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
             panic!("deliberate provider read panic");
         }
 
@@ -1320,9 +1329,9 @@ mod tests {
         assert!(observed.read(read_request("intro/enabled")).is_err());
 
         runtime.commit_runtime_transaction(&mut context).unwrap();
-        assert_eq!(
-            observed.read(read_request("intro/enabled")).unwrap(),
-            bool_value(true),
+        assert_same_value(
+            &observed.read(read_request("intro/enabled")).unwrap(),
+            &bool_value(true),
         );
     }
 
@@ -1348,9 +1357,9 @@ mod tests {
             .abort_runtime_transaction(&mut context, "discard docs write")
             .unwrap();
 
-        assert_eq!(
-            observed.read(read_request("intro/enabled")).unwrap(),
-            bool_value(false),
+        assert_same_value(
+            &observed.read(read_request("intro/enabled")).unwrap(),
+            &bool_value(false),
         );
     }
 
@@ -1383,9 +1392,9 @@ mod tests {
 
         assert!(runtime.commit_runtime_transaction(&mut context).is_err());
 
-        assert_eq!(
-            observed.read(read_request("intro/enabled")).unwrap(),
-            bool_value(false),
+        assert_same_value(
+            &observed.read(read_request("intro/enabled")).unwrap(),
+            &bool_value(false),
         );
         assert!(observed.read(read_request("intro/created")).is_err());
 
@@ -1408,9 +1417,9 @@ mod tests {
             .write_resource(write_request("intro/enabled", true))
             .unwrap();
 
-        assert_eq!(
-            observed.read(read_request("intro/enabled")).unwrap(),
-            bool_value(true),
+        assert_same_value(
+            &observed.read(read_request("intro/enabled")).unwrap(),
+            &bool_value(true),
         );
     }
 

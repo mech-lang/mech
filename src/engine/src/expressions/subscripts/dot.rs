@@ -1,77 +1,52 @@
-use super::super::environment::expression_solves_deferred;
-use super::super::registration::register_initialized_expression_function;
-use super::catalog_access_function;
-use crate::{InterpreterExecution, LegacyValue, MResult, Subscript, ValueKind, real};
+use super::execute_access_function;
+use crate::{
+    InterpreterExecution, MResult, SchemaBody, SpecializationInput, Subscript, ValueCell, real,
+};
+use mech_core::snapshot::ValueDataDraft;
 
 pub(super) fn access(
-    sbscrpt: &Subscript,
-    val: &LegacyValue,
+    subscript: &Subscript,
+    value: &ValueCell,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let plan = p.plan();
-    match sbscrpt {
+) -> MResult<ValueCell> {
+    match subscript {
         #[cfg(feature = "table")]
-        Subscript::Dot(x) => {
-            let key = x.hash();
-            let fxn_input: Vec<LegacyValue> = vec![val.clone(), LegacyValue::Id(key)];
-            #[cfg(feature = "record")]
-            if matches!(val.deref_kind(), ValueKind::Record(..)) {
-                let function = catalog_access_function(p, "access/column", &fxn_input)?;
-                return register_initialized_expression_function(&plan, function, &[]);
-            }
-            let new_fxn = catalog_access_function(p, "access/column", &fxn_input)?;
-            if !expression_solves_deferred(p) {
-                new_fxn.solve_result()?;
-            }
-            let res = new_fxn.out();
-            plan.borrow_mut().push(new_fxn);
-            return Ok(res);
+        Subscript::Dot(identifier) => {
+            let key =
+                ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(identifier.hash()))?;
+            execute_access_function(
+                p,
+                "access/column",
+                vec![
+                    SpecializationInput::Cell(value.clone()),
+                    SpecializationInput::Cell(key),
+                ],
+            )
         }
-        Subscript::DotInt(x) => {
-            let mut fxn_input = vec![val.clone()];
-            let result = real(&x.clone(), p)?;
-            fxn_input.push(result.as_index()?);
-            match val.deref_kind() {
-                #[cfg(feature = "matrix")]
-                ValueKind::Matrix(..) => {
-                    let new_fxn = catalog_access_function(p, "access/scalar", &fxn_input)?;
-                    if !expression_solves_deferred(p) {
-                        new_fxn.solve_result()?;
-                    }
-                    let res = new_fxn.out();
-                    plan.borrow_mut().push(new_fxn);
-                    return Ok(res);
-                }
-                #[cfg(feature = "tuple")]
-                ValueKind::Tuple(..) => {
-                    let function = catalog_access_function(p, "access/scalar", &fxn_input)?;
-                    return register_initialized_expression_function(&plan, function, &[]);
-                }
-                /*ValueKind::Record(_) => {
-                  let new_fxn = RecordAccessScalar{}.specialize(&fxn_input)?;
-                  new_fxn.solve_result()?;
-                  let res = new_fxn.out();
-                  plan.borrow_mut().push(new_fxn);
-                  return Ok(res);
-                },*/
-                _ => todo!("Implement access for dot int"),
-            }
+        Subscript::DotInt(number) => {
+            let index = real(number, p)?;
+            let index =
+                crate::intrinsics::access::matrix::canonical_reactive_scalar_index(index, p)?;
+            execute_access_function(
+                p,
+                "access/scalar",
+                vec![
+                    SpecializationInput::Cell(value.clone()),
+                    SpecializationInput::Cell(index),
+                ],
+            )
         }
         #[cfg(feature = "swizzle")]
-        Subscript::Swizzle(x) => {
-            let mut keys = x
-                .iter()
-                .map(|x| LegacyValue::Id(x.hash()))
-                .collect::<Vec<LegacyValue>>();
-            let mut fxn_input: Vec<LegacyValue> = vec![val.clone()];
-            fxn_input.append(&mut keys);
-            let new_fxn = catalog_access_function(p, "access/swizzle", &fxn_input)?;
-            if !expression_solves_deferred(p) {
-                new_fxn.solve_result()?;
+        Subscript::Swizzle(identifiers) => {
+            let mut inputs = Vec::with_capacity(identifiers.len() + 1);
+            inputs.push(SpecializationInput::Cell(value.clone()));
+            for identifier in identifiers {
+                inputs.push(SpecializationInput::Cell(ValueCell::from_schema_data(
+                    SchemaBody::Id,
+                    ValueDataDraft::Id(identifier.hash()),
+                )?));
             }
-            let res = new_fxn.out();
-            plan.borrow_mut().push(new_fxn);
-            return Ok(res);
+            execute_access_function(p, "access/swizzle", inputs)
         }
         _ => unreachable!(),
     }

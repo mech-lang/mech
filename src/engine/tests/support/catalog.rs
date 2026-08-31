@@ -43,8 +43,42 @@ pub(crate) fn function_catalog() -> Arc<FunctionCatalog> {
 
 #[cfg(test)]
 mod test_operations {
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    use mech_core::snapshot::F64Bits;
     use mech_core::*;
     use std::sync::Arc;
+
+    fn canonical_input(
+        invocation: &SpecializationInvocation,
+        index: usize,
+        message: &str,
+    ) -> MResult<ValueCell> {
+        invocation
+            .input(index)
+            .ok_or_else(|| test_operation_error(message))?
+            .cell()
+            .cloned()
+    }
+
+    fn exact_ref<T: FunctionPortBacking>(cell: &ValueCell) -> MResult<Ref<T>> {
+        FunctionInvocation::nullary(cell.clone())
+            .expect_nullary()?
+            .try_ref()
+    }
+
+    fn specialized_function(
+        implementation: Box<dyn MechFunction>,
+        output: ValueCell,
+        inputs: Vec<ValueCell>,
+    ) -> SpecializedFunction {
+        let invocation = match inputs.as_slice() {
+            [] => FunctionInvocation::nullary(output),
+            [input] => FunctionInvocation::unary(output, input.clone()),
+            [first, second] => FunctionInvocation::binary(output, first.clone(), second.clone()),
+            _ => FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
+        };
+        SpecializedFunction::new(FunctionInstance::new(implementation, invocation))
+    }
 
     #[derive(Clone, Copy, Debug)]
     enum BinaryArithmetic {
@@ -75,12 +109,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::F64(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<mech_core::FunctionStatePort<'_>> {
+            Some(mech_core::FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -97,19 +127,31 @@ mod test_operations {
 
     struct BinaryArithmeticSpecializer(BinaryArithmetic);
 
-    impl FunctionSpecializer for BinaryArithmeticSpecializer {
-        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            let [lhs, rhs] = arguments else {
+    impl CanonicalFunctionSpecializer for BinaryArithmeticSpecializer {
+        fn specialize_invocation(
+            &self,
+            invocation: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
+            if invocation.len() != 2 {
                 return Err(test_operation_error(
                     "binary arithmetic expects two arguments",
                 ));
-            };
-            Ok(Box::new(BinaryArithmeticFunction {
+            }
+            let lhs = canonical_input(invocation, 0, "binary arithmetic expects a lhs")?;
+            let rhs = canonical_input(invocation, 1, "binary arithmetic expects a rhs")?;
+            let output = ValueCell::from_exact(0.0_f64)?;
+            let function = BinaryArithmeticFunction {
                 operation: self.0,
-                lhs: lhs.as_f64()?,
-                rhs: rhs.as_f64()?,
-                out: Ref::new(0.0),
-            }))
+                lhs: exact_ref(&lhs)?,
+                rhs: exact_ref(&rhs)?,
+                out: exact_ref(&output)?,
+            };
+            Ok(specialized_function(
+                Box::new(function),
+                output,
+                vec![lhs, rhs],
+            ))
         }
     }
 
@@ -125,12 +167,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::F64(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -147,15 +185,26 @@ mod test_operations {
 
     struct NegateSpecializer;
 
-    impl FunctionSpecializer for NegateSpecializer {
-        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            let [input] = arguments else {
+    impl CanonicalFunctionSpecializer for NegateSpecializer {
+        fn specialize_invocation(
+            &self,
+            invocation: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
+            if invocation.len() != 1 {
                 return Err(test_operation_error("negation expects one argument"));
+            }
+            let input = canonical_input(invocation, 0, "negation expects an input")?;
+            let output = ValueCell::from_exact(0.0_f64)?;
+            let function = NegateFunction {
+                input: exact_ref(&input)?,
+                out: exact_ref(&output)?,
             };
-            Ok(Box::new(NegateFunction {
-                input: input.as_f64()?,
-                out: Ref::new(0.0),
-            }))
+            Ok(specialized_function(
+                Box::new(function),
+                output,
+                vec![input],
+            ))
         }
     }
 
@@ -172,30 +221,26 @@ mod test_operations {
     #[derive(Debug)]
     struct ComparisonFunction {
         operation: Comparison,
-        lhs: LegacyValue,
-        rhs: LegacyValue,
+        lhs: ValueCell,
+        rhs: ValueCell,
         out: Ref<bool>,
     }
 
     impl MechFunctionImpl for ComparisonFunction {
         fn solve_result(&self) -> MResult<()> {
             *self.out.borrow_mut() = match self.operation {
-                Comparison::Equal => values_equal(&self.lhs, &self.rhs),
-                Comparison::NotEqual => !values_equal(&self.lhs, &self.rhs),
-                Comparison::Less => numeric_pair(&self.lhs, &self.rhs, |a, b| a < b),
-                Comparison::Greater => numeric_pair(&self.lhs, &self.rhs, |a, b| a > b),
-                Comparison::LessEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a <= b),
-                Comparison::GreaterEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a >= b),
+                Comparison::Equal => canonical_values_equal(&self.lhs, &self.rhs)?,
+                Comparison::NotEqual => !canonical_values_equal(&self.lhs, &self.rhs)?,
+                Comparison::Less => numeric_pair(&self.lhs, &self.rhs, |a, b| a < b)?,
+                Comparison::Greater => numeric_pair(&self.lhs, &self.rhs, |a, b| a > b)?,
+                Comparison::LessEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a <= b)?,
+                Comparison::GreaterEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a >= b)?,
             };
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Bool(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -212,17 +257,29 @@ mod test_operations {
 
     struct ComparisonSpecializer(Comparison);
 
-    impl FunctionSpecializer for ComparisonSpecializer {
-        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            let [lhs, rhs] = arguments else {
+    impl CanonicalFunctionSpecializer for ComparisonSpecializer {
+        fn specialize_invocation(
+            &self,
+            invocation: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
+            if invocation.len() != 2 {
                 return Err(test_operation_error("comparison expects two arguments"));
-            };
-            Ok(Box::new(ComparisonFunction {
+            }
+            let lhs = canonical_input(invocation, 0, "comparison expects a lhs")?;
+            let rhs = canonical_input(invocation, 1, "comparison expects a rhs")?;
+            let output = ValueCell::from_exact(false)?;
+            let function = ComparisonFunction {
                 operation: self.0,
                 lhs: lhs.clone(),
                 rhs: rhs.clone(),
-                out: Ref::new(false),
-            }))
+                out: exact_ref(&output)?,
+            };
+            Ok(specialized_function(
+                Box::new(function),
+                output,
+                vec![lhs, rhs],
+            ))
         }
 
         fn guard_safety(&self) -> GuardFunctionSafety {
@@ -257,12 +314,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Bool(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -279,19 +332,31 @@ mod test_operations {
 
     struct BooleanSpecializer(BooleanOperation);
 
-    impl FunctionSpecializer for BooleanSpecializer {
-        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            let [lhs, rhs] = arguments else {
+    impl CanonicalFunctionSpecializer for BooleanSpecializer {
+        fn specialize_invocation(
+            &self,
+            invocation: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
+            if invocation.len() != 2 {
                 return Err(test_operation_error(
                     "boolean operation expects two arguments",
                 ));
-            };
-            Ok(Box::new(BooleanFunction {
+            }
+            let lhs = canonical_input(invocation, 0, "boolean operation expects a lhs")?;
+            let rhs = canonical_input(invocation, 1, "boolean operation expects a rhs")?;
+            let output = ValueCell::from_exact(false)?;
+            let function = BooleanFunction {
                 operation: self.0,
-                lhs: lhs.as_bool()?,
-                rhs: rhs.as_bool()?,
-                out: Ref::new(false),
-            }))
+                lhs: exact_ref(&lhs)?,
+                rhs: exact_ref(&rhs)?,
+                out: exact_ref(&output)?,
+            };
+            Ok(specialized_function(
+                Box::new(function),
+                output,
+                vec![lhs, rhs],
+            ))
         }
 
         fn guard_safety(&self) -> GuardFunctionSafety {
@@ -311,12 +376,8 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Bool(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -333,15 +394,26 @@ mod test_operations {
 
     struct NotSpecializer;
 
-    impl FunctionSpecializer for NotSpecializer {
-        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            let [input] = arguments else {
+    impl CanonicalFunctionSpecializer for NotSpecializer {
+        fn specialize_invocation(
+            &self,
+            invocation: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
+            if invocation.len() != 1 {
                 return Err(test_operation_error("boolean not expects one argument"));
+            }
+            let input = canonical_input(invocation, 0, "boolean not expects an input")?;
+            let output = ValueCell::from_exact(false)?;
+            let function = NotFunction {
+                input: exact_ref(&input)?,
+                out: exact_ref(&output)?,
             };
-            Ok(Box::new(NotFunction {
-                input: input.as_bool()?,
-                out: Ref::new(false),
-            }))
+            Ok(specialized_function(
+                Box::new(function),
+                output,
+                vec![input],
+            ))
         }
 
         fn guard_safety(&self) -> GuardFunctionSafety {
@@ -362,6 +434,10 @@ mod test_operations {
             Ok(())
         }
 
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_ref(&self.sink))
+        }
+
         fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
             let next = *self.sink.borrow() + *self.source.borrow();
             Ok(Box::new(ReactiveRegisterWrite::new(
@@ -371,16 +447,8 @@ mod test_operations {
             )))
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::F64(self.sink.clone())
-        }
-
         fn reactive_node_kind(&self) -> ReactiveNodeKind {
             ReactiveNodeKind::Register
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(self.reactive_output_values())
         }
 
         fn to_string(&self) -> String {
@@ -397,37 +465,150 @@ mod test_operations {
 
     struct AddAssignSpecializer;
 
-    impl FunctionSpecializer for AddAssignSpecializer {
-        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            let [sink, source] = arguments else {
+    impl CanonicalFunctionSpecializer for AddAssignSpecializer {
+        fn specialize_invocation(
+            &self,
+            invocation: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
+            if invocation.len() != 2 {
                 return Err(test_operation_error("add assignment expects two arguments"));
+            }
+            let sink = canonical_input(invocation, 0, "add assignment expects a sink")?;
+            let source = canonical_input(invocation, 1, "add assignment expects a source")?;
+            let function = AddAssignFunction {
+                sink: exact_ref(&sink)?,
+                source: exact_ref(&source)?,
             };
-            Ok(Box::new(AddAssignFunction {
-                sink: sink.as_f64()?,
-                source: source.as_f64()?,
-            }))
+            Ok(specialized_function(
+                Box::new(function),
+                sink.clone(),
+                vec![sink, source],
+            ))
         }
     }
 
-    fn values_equal(lhs: &LegacyValue, rhs: &LegacyValue) -> bool {
-        match (lhs, rhs) {
-            (LegacyValue::MutableReference(lhs), rhs) => values_equal(&lhs.borrow(), rhs),
-            (lhs, LegacyValue::MutableReference(rhs)) => values_equal(lhs, &rhs.borrow()),
-            (LegacyValue::Typed(lhs, _), rhs) => values_equal(lhs, rhs),
-            (lhs, LegacyValue::Typed(rhs, _)) => values_equal(lhs, rhs),
-            _ => lhs == rhs,
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    #[derive(Debug)]
+    struct InclusiveRangeFunction {
+        start: Ref<f64>,
+        terminal: Ref<f64>,
+        output: ValueCell,
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    impl MechFunctionImpl for InclusiveRangeFunction {
+        fn solve_result(&self) -> MResult<()> {
+            let start = *self.start.borrow() as usize;
+            let terminal = *self.terminal.borrow() as usize;
+            let elements = (start..=terminal)
+                .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value as f64)))
+                .collect::<Vec<_>>();
+            let next = self.output.rebuild_matrix_drafts(
+                vec![elements.len() as u64, 1].into_boxed_slice(),
+                elements.into_boxed_slice(),
+            )?;
+            self.output.replace(&next)
+        }
+
+        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+            Some(FunctionStatePort::from_cell(&self.output))
+        }
+
+        fn to_string(&self) -> String {
+            "TestInclusiveRange".to_string()
+        }
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "matrix",
+        feature = "range_inclusive",
+        feature = "semantic-compiler"
+    ))]
+    impl MechFunctionCompiler for InclusiveRangeFunction {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    struct InclusiveRangeSpecializer;
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    impl CanonicalFunctionSpecializer for InclusiveRangeSpecializer {
+        fn specialize_invocation(
+            &self,
+            invocation: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
+            if invocation.len() != 2 {
+                return Err(test_operation_error(
+                    "inclusive range expects two arguments",
+                ));
+            }
+            let start = canonical_input(invocation, 0, "inclusive range expects a start")?;
+            let terminal = canonical_input(invocation, 1, "inclusive range expects a terminal")?;
+            let output = ValueCell::dynamic_matrix(
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                vec![0, 1].into_boxed_slice(),
+                Box::new([]),
+            )?;
+            let function =
+                Self::function(exact_ref(&start)?, exact_ref(&terminal)?, output.clone());
+            function.solve_result()?;
+            Ok(specialized_function(
+                Box::new(function),
+                output,
+                vec![start, terminal],
+            ))
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    impl InclusiveRangeSpecializer {
+        fn function(
+            start: Ref<f64>,
+            terminal: Ref<f64>,
+            output: ValueCell,
+        ) -> InclusiveRangeFunction {
+            InclusiveRangeFunction {
+                start,
+                terminal,
+                output,
+            }
         }
     }
 
     fn numeric_pair(
-        lhs: &LegacyValue,
-        rhs: &LegacyValue,
+        lhs: &ValueCell,
+        rhs: &ValueCell,
         compare: impl FnOnce(f64, f64) -> bool,
-    ) -> bool {
-        match (lhs.as_f64(), rhs.as_f64()) {
-            (Ok(lhs), Ok(rhs)) => compare(*lhs.borrow(), *rhs.borrow()),
-            _ => false,
+    ) -> MResult<bool> {
+        let lhs = exact_ref::<f64>(&lhs)?;
+        let rhs = exact_ref::<f64>(&rhs)?;
+        Ok(compare(*lhs.borrow(), *rhs.borrow()))
+    }
+
+    fn canonical_values_equal(lhs: &ValueCell, rhs: &ValueCell) -> MResult<bool> {
+        let lhs = lhs.snapshot()?;
+        let rhs = rhs.snapshot()?;
+        if lhs.schema_key() != rhs.schema_key() || lhs.shape() != rhs.shape() {
+            return Ok(false);
         }
+        let lhs_schemas = lhs
+            .schemas()
+            .ok_or_else(|| test_operation_error("lhs snapshot has no schema arena"))?;
+        let rhs_schemas = rhs
+            .schemas()
+            .ok_or_else(|| test_operation_error("rhs snapshot has no schema arena"))?;
+        let lhs = lhs
+            .canonical_snapshot_bytes(lhs_schemas.as_ref())
+            .map_err(|error| test_operation_error(&format!("invalid lhs snapshot: {error:?}")))?;
+        let rhs = rhs
+            .canonical_snapshot_bytes(rhs_schemas.as_ref())
+            .map_err(|error| test_operation_error(&format!("invalid rhs snapshot: {error:?}")))?;
+        Ok(lhs == rhs)
     }
 
     fn test_operation_error(message: &str) -> MechError {
@@ -447,12 +628,12 @@ mod test_operations {
             ("math/mul", BinaryArithmetic::Multiply),
             ("math/div", BinaryArithmetic::Divide),
         ] {
-            builder.insert_intrinsic_specializer(
+            builder.insert_canonical_intrinsic_specializer(
                 name,
                 Arc::new(BinaryArithmeticSpecializer(operation)),
             )?;
         }
-        builder.insert_intrinsic_specializer("math/neg", Arc::new(NegateSpecializer))?;
+        builder.insert_canonical_intrinsic_specializer("math/neg", Arc::new(NegateSpecializer))?;
 
         for (name, operation) in [
             ("compare/eq", Comparison::Equal),
@@ -462,8 +643,10 @@ mod test_operations {
             ("compare/lte", Comparison::LessEqual),
             ("compare/gte", Comparison::GreaterEqual),
         ] {
-            builder
-                .insert_intrinsic_specializer(name, Arc::new(ComparisonSpecializer(operation)))?;
+            builder.insert_canonical_intrinsic_specializer(
+                name,
+                Arc::new(ComparisonSpecializer(operation)),
+            )?;
         }
 
         for (name, operation) in [
@@ -471,10 +654,21 @@ mod test_operations {
             ("logic/or", BooleanOperation::Or),
             ("logic/xor", BooleanOperation::Xor),
         ] {
-            builder.insert_intrinsic_specializer(name, Arc::new(BooleanSpecializer(operation)))?;
+            builder.insert_canonical_intrinsic_specializer(
+                name,
+                Arc::new(BooleanSpecializer(operation)),
+            )?;
         }
-        builder.insert_intrinsic_specializer("logic/not", Arc::new(NotSpecializer))?;
-        builder.insert_intrinsic_specializer("math/add-assign", Arc::new(AddAssignSpecializer))?;
+        builder.insert_canonical_intrinsic_specializer("logic/not", Arc::new(NotSpecializer))?;
+        builder.insert_canonical_intrinsic_specializer(
+            "math/add-assign",
+            Arc::new(AddAssignSpecializer),
+        )?;
+        #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+        builder.insert_canonical_intrinsic_specializer(
+            "range/inclusive",
+            Arc::new(InclusiveRangeSpecializer),
+        )?;
         Ok(())
     }
 }
@@ -502,9 +696,23 @@ mod tests {
         feature = "f64"
     ))]
     use mech_core::{
-        FunctionExport, FunctionExposure, FunctionSpecializer, LegacyValue, MechFunction,
-        MechFunctionImpl, Ref,
+        CanonicalFunctionSpecializer, FunctionExport, FunctionExposure, FunctionInstance,
+        FunctionInvocation, FunctionPortBacking, MechFunctionImpl, Ref, SpecializationContext,
+        SpecializationInvocation, SpecializedFunction, ValueCell,
     };
+
+    #[cfg(all(
+        feature = "program",
+        feature = "source",
+        feature = "formulas",
+        feature = "math_add",
+        feature = "f64"
+    ))]
+    fn exact_ref<T: FunctionPortBacking>(cell: &ValueCell) -> MResult<Ref<T>> {
+        FunctionInvocation::nullary(cell.clone())
+            .expect_nullary()?
+            .try_ref()
+    }
 
     #[cfg(all(
         feature = "program",
@@ -532,12 +740,8 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> LegacyValue {
-            LegacyValue::F64(self.out.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(Vec::new())
+        fn primary_output_state_port(&self) -> Option<mech_core::FunctionStatePort<'_>> {
+            Some(mech_core::FunctionStatePort::from_ref(&self.out))
         }
 
         fn to_string(&self) -> String {
@@ -575,17 +779,27 @@ mod tests {
         feature = "math_add",
         feature = "f64"
     ))]
-    impl FunctionSpecializer for TestAddSpecializer {
-        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-            let [LegacyValue::F64(lhs), LegacyValue::F64(rhs)] = arguments else {
+    impl CanonicalFunctionSpecializer for TestAddSpecializer {
+        fn specialize_invocation(
+            &self,
+            invocation: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
+            let [lhs, rhs] = invocation.inputs() else {
                 panic!("test math/add expects two f64 arguments");
             };
-            let out = Ref::new(*lhs.borrow() + *rhs.borrow());
-            Ok(Box::new(TestAddFunction {
-                lhs: lhs.clone(),
-                rhs: rhs.clone(),
-                out,
-            }))
+            let lhs = lhs.cell()?.clone();
+            let rhs = rhs.cell()?.clone();
+            let output = ValueCell::from_exact(0.0_f64)?;
+            let function = TestAddFunction {
+                lhs: exact_ref(&lhs)?,
+                rhs: exact_ref(&rhs)?,
+                out: exact_ref(&output)?,
+            };
+            Ok(SpecializedFunction::new(FunctionInstance::new(
+                Box::new(function),
+                FunctionInvocation::binary(output, lhs, rhs),
+            )))
         }
     }
 
@@ -709,7 +923,7 @@ mod tests {
     fn supplied_custom_catalog_executes_math_add() {
         let mut builder = FunctionCatalogBuilder::new();
         let operation = builder
-            .insert_specializer("math/add", Arc::new(TestAddSpecializer))
+            .insert_canonical_specializer("math/add", Arc::new(TestAddSpecializer))
             .unwrap();
         builder
             .insert_export(FunctionExport {
@@ -726,11 +940,12 @@ mod tests {
             catalog,
         );
 
-        let output = program.plan_source_for_test("1.0 + 2.0").unwrap();
-
-        let LegacyValue::F64(output) = output else {
-            panic!("custom math/add must return f64");
-        };
+        let output = program.plan_source_for_test("1.0 + 2.0").unwrap().unwrap();
+        let output = FunctionInvocation::nullary(output)
+            .expect_nullary()
+            .unwrap()
+            .try_ref::<f64>()
+            .unwrap();
         assert_eq!(*output.borrow(), 3.0);
     }
 }

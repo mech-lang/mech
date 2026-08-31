@@ -6,7 +6,7 @@ use crate::{
     RuntimeResourceKey, RuntimeResourceProvider, RuntimeResourceReadRequest,
     RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, RuntimeValueSnapshot, TransactionId,
 };
-use mech_core::{LegacyValue, MResult, MechError};
+use mech_core::{MResult, MechError, Value};
 use std::sync::Arc;
 
 impl MechRuntime {
@@ -139,7 +139,7 @@ impl MechRuntime {
 
         self.validate_resource_transaction_scope(context, "write_resource_with_context")?;
 
-        request.value = request.value.try_deep_snapshot()?;
+        request.value = request.value.clone();
         self.authorize_resource_with_context(context, &request.operation, &key)?;
         let staged_resource = if request.intent == RuntimeResourceWriteIntent::Assign {
             Some((
@@ -215,16 +215,14 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         request: RuntimeResourceReadRequest,
     ) -> MResult<RuntimeValueSnapshot> {
-        self.read_resource_with_context_map(context, request, |value| {
-            RuntimeValueSnapshot::try_capture(&value)
-        })
+        self.read_resource_with_context_map(context, request, RuntimeValueSnapshot::from_value)
     }
 
     fn read_resource_with_context_map<T>(
         &mut self,
         context: &mut RuntimeContext,
         mut request: RuntimeResourceReadRequest,
-        finish: impl FnOnce(LegacyValue) -> MResult<T>,
+        finish: impl FnOnce(Value) -> MResult<T>,
     ) -> MResult<T> {
         self.validate_context_for_runtime(context)?;
         let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;

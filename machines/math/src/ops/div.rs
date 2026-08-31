@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Div ------------------------------------------------------------------------
@@ -101,7 +99,8 @@ macro_rules! impl_checked_div_binop {
                 + PartialOrd
                 + ConstElem
                 + CompileConst
-                + AsValueKind
+                + CanonicalMatrixElementBacking
+                + FunctionRuntimeType
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -123,7 +122,7 @@ macro_rules! impl_checked_div_binop {
                 + 'static
                 + PartialEq
                 + PartialOrd
-                + AsValueKind
+                + FunctionRuntimeType
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -135,10 +134,9 @@ macro_rules! impl_checked_div_binop {
                 + Zero
                 + One
                 + RuntimeCheckedDiv,
-            Ref<$out_type>: ToValue,
-            $arg1_type: FunctionRuntimeType,
-            $arg2_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            $arg1_type: FunctionRuntimeType + FunctionPortBacking,
+            $arg2_type: FunctionRuntimeType + FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -146,27 +144,16 @@ macro_rules! impl_checked_div_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let rhs: Ref<$arg2_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { lhs, rhs, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
+                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { lhs, rhs, out }))
             }
+
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -190,8 +177,9 @@ macro_rules! impl_checked_div_binop {
                 + Zero
                 + One
                 + RuntimeCheckedDiv,
-            Ref<$out_type>: ToValue,
-            $out_type: FunctionRuntimeType,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -200,8 +188,8 @@ macro_rules! impl_checked_div_binop {
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(super::arithmetic_full_write_contract(
@@ -211,18 +199,21 @@ macro_rules! impl_checked_div_binop {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: ConstElem + CompileConst + AsValueKind + RuntimeCheckedDiv,
+            T: CanonicalMatrixElementBacking
+                + ConstElem
+                + CompileConst
+                + FunctionRuntimeType
+                + RuntimeCheckedDiv,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
@@ -366,27 +357,4 @@ mod tests {
     }
 }
 
-#[cfg(feature = "source")]
-fn impl_div_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      Div,
-      (lhs_value, rhs_value),
-      I8,   i8,   "i8";
-      I16,  i16,  "i16";
-      I32,  i32,  "i32";
-      I64,  i64,  "i64";
-      I128, i128, "i128";
-      U8,   u8,   "u8";
-      U16,  u16,  "u16";
-      U32,  u32,  "u32";
-      U64,  u64,  "u64";
-      U128, u128, "u128";
-      F32,  f32,  "f32";
-      F64,  f64,  "f64";
-      R64, R64, "rational";
-      C64, C64, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(MathDiv, impl_div_fxn, "math/div");
+impl_canonical_registered_math_binop_specializer!(MathDiv, "Div");

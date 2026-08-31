@@ -90,7 +90,6 @@ use nalgebra::Vector3;
 #[cfg(feature = "vector4")]
 use nalgebra::Vector4;
 
-use paste::paste;
 
 #[cfg(feature = "runtime")]
 pub mod catalog;
@@ -130,13 +129,12 @@ macro_rules! impl_string_binop {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: std::fmt::Debug + Clone + Sync + Send + 'static + AsValueKind + Concat,
+            T: std::fmt::Debug + Clone + Sync + Send + 'static + FunctionRuntimeType + Concat,
             #[cfg(feature = "semantic-compiler")]
-            T: ConstElem + CompileConst,
-            Ref<$out_type>: ToValue,
-            $arg1_type: FunctionRuntimeType,
-            $arg2_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst,
+            $arg1_type: FunctionPortBacking,
+            $arg2_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -144,43 +142,34 @@ macro_rules! impl_string_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let rhs: Ref<$arg2_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { lhs, rhs, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
+                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { lhs, rhs, out }))
             }
+
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: std::fmt::Debug + Clone + Sync + Send + 'static + Concat,
-            Ref<$out_type>: ToValue,
-            $out_type: FunctionRuntimeType,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
+            $out_type: FunctionStateBacking,
         {
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+            }
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
                 let rhs_ptr = self.rhs.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
-            }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some($crate::string_binary_full_write_contract(
@@ -190,18 +179,14 @@ macro_rules! impl_string_binop {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: ConstElem + CompileConst + AsValueKind,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }

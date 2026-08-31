@@ -10,10 +10,7 @@ use mech_engine::{
     ProgramArtifact, SlotRole,
 };
 
-use crate::{
-    ElementwiseLowering, ElementwiseOperation, display_operation, elementwise_lowering,
-    turn_required_nodes,
-};
+use crate::{ElementwiseLowering, display_operation, elementwise_lowering, turn_required_nodes};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ComputeExecutionTarget {
@@ -432,13 +429,8 @@ fn classify_node(
             format!("{operation} has no GPU lowering"),
         );
     }
-    let host_proven_concatenation = matches!(
-        lowered_operation,
-        Some(
-            ElementwiseLowering::Apply(ElementwiseOperation::Identity)
-                | ElementwiseLowering::Concat2
-        )
-    );
+    let host_proven_concatenation =
+        matches!(lowered_operation, Some(ElementwiseLowering::Concatenate(_)));
     if !host_proven_concatenation && !contract_supported(artifact, node, false) {
         return (
             ComputeExecutionTarget::Cpu,

@@ -1702,9 +1702,12 @@ display := b + 10
     #[test]
     fn retained_selection_tokens_preserve_snapshot_and_ans_identity() {
         let mut session = ResidentReplSession::new(NeverBuild);
-        let snapshot =
-            RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(mech_core::Ref::new(42.0)))
-                .unwrap();
+        let snapshot = RuntimeValueSnapshot::from_value(
+            crate::RuntimeHostInputValue::F64(42.0)
+                .into_value()
+                .unwrap(),
+        )
+        .unwrap();
         let token = session
             .retain_selection("answer", snapshot.clone(), None)
             .unwrap();
@@ -1723,12 +1726,14 @@ display := b + 10
     #[test]
     fn retained_selection_tokens_can_refresh_without_changing_public_identity() {
         let mut session = ResidentReplSession::new(NeverBuild);
-        let initial =
-            RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(mech_core::Ref::new(1.0)))
-                .unwrap();
-        let refreshed =
-            RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(mech_core::Ref::new(2.0)))
-                .unwrap();
+        let initial = RuntimeValueSnapshot::from_value(
+            crate::RuntimeHostInputValue::F64(1.0).into_value().unwrap(),
+        )
+        .unwrap();
+        let refreshed = RuntimeValueSnapshot::from_value(
+            crate::RuntimeHostInputValue::F64(2.0).into_value().unwrap(),
+        )
+        .unwrap();
         let token = session.retain_selection("ans", initial, None).unwrap();
 
         session

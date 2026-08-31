@@ -1,8 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
-#[cfg(feature = "source")]
-use num_traits::*;
 
 // Cbrt ------------------------------------------------------------------------
 
@@ -48,46 +44,4 @@ impl_math_unop!(MathCbrt, f32, cbrtf);
 #[cfg(feature = "f64")]
 impl_math_unop!(MathCbrt, f64, cbrt);
 
-#[cfg(feature = "source")]
-fn impl_cbrt_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_urnop_match_arms2!(
-      MathCbrt,
-      lhs_value,
-      F32 => MatrixF32, F32, f32::zero(), "f32";
-      F64 => MatrixF64, F64, f64::zero(), "f64";
-    )
-}
-
-#[cfg(feature = "source")]
-pub struct MathCbrt {}
-
-#[cfg(feature = "source")]
-impl FunctionSpecializer for MathCbrt {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let input = arguments[0].clone();
-        match impl_cbrt_fxn(input.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match input {
-                LegacyValue::MutableReference(input) => impl_cbrt_fxn(input.borrow().clone()),
-                x => Err(MechError::new(
-                    UnhandledFunctionArgumentKind1 {
-                        arg: x.kind(),
-                        fxn_name: "math/cbrt".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
+impl_canonical_math_float_unop_specializer!(MathCbrt, MathCbrt, "math/cbrt");

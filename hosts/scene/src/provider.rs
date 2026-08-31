@@ -1,9 +1,10 @@
 use std::sync::{Arc, LazyLock, Mutex};
 
+use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
-    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult,
-    OperationContractDeclaration,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
+    OperationContractDeclaration, SchemaBody, Value, ValueData,
 };
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
@@ -274,10 +275,10 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
     fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(resource_observation_contract())
     }
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.pointer_value(request)
     }
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.pointer_value(request)
     }
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -344,7 +345,7 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
 }
 
 impl<B: SceneBackend> SceneResourceProvider<B> {
-    fn pointer_value(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn pointer_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if request.base_uri != self.base() || !POINTER_PATHS.contains(&request.path.as_str()) {
             return Err(scene_error(
                 "SceneResourceProvider",
@@ -360,9 +361,9 @@ impl<B: SceneBackend> SceneResourceProvider<B> {
                 columns: 1,
                 values: vec![0.0, 0.0],
             }
-            .into_mech_value()
+            .into_value()
         } else {
-            RuntimeHostInputValue::F64(0.0).into_mech_value()
+            RuntimeHostInputValue::F64(0.0).into_value()
         }
     }
 }
@@ -447,17 +448,50 @@ impl<B: SceneBackend> RuntimeHostFactory for SceneHostFactory<B> {
 }
 
 pub fn scene_snapshot_from_points(
-    value: &LegacyValue,
+    value: &Value,
     settings: &SceneHostSettings,
 ) -> MResult<SceneSnapshot> {
-    let LegacyValue::MatrixF64(matrix) = value else {
+    let ValueData::Matrix(matrix) = value.data() else {
         return Err(scene_error(
             "ScenePoints",
             "scene points must be a dense f64 matrix",
         ));
     };
-    let rows = matrix.rows();
-    let columns = matrix.cols();
+    let schemas = value.schemas().ok_or_else(|| {
+        scene_error(
+            "ScenePoints",
+            "canonical scene points have no schema context",
+        )
+    })?;
+    let entry = schemas
+        .entry(value.schema())
+        .ok_or_else(|| scene_error("ScenePoints", "canonical scene point schema is absent"))?;
+    let SchemaBody::Matrix { dimensions, .. } = entry.schema().body() else {
+        return Err(scene_error(
+            "ScenePoints",
+            "scene points must have a matrix schema",
+        ));
+    };
+    let [rows, columns] = dimensions.as_ref() else {
+        return Err(scene_error(
+            "ScenePoints",
+            "scene points must have a two-dimensional shape",
+        ));
+    };
+    let rows = usize::try_from(value.shape().resolve_dimension(rows).map_err(|error| {
+        scene_error(
+            "ScenePoints",
+            format!("scene point row count could not be resolved: {error:?}"),
+        )
+    })?)
+    .map_err(|_| scene_error("ScenePoints", "scene point row count is too large"))?;
+    let columns = usize::try_from(value.shape().resolve_dimension(columns).map_err(|error| {
+        scene_error(
+            "ScenePoints",
+            format!("scene point column count could not be resolved: {error:?}"),
+        )
+    })?)
+    .map_err(|_| scene_error("ScenePoints", "scene point column count is too large"))?;
     if rows == 0 {
         return Err(scene_error("ScenePoints", "scene points must not be empty"));
     }
@@ -467,11 +501,16 @@ pub fn scene_snapshot_from_points(
             format!("scene points must have exactly 2 columns; got {columns}"),
         ));
     }
-    let values = matrix.as_vec();
+    let SequenceView::F64(values) = matrix.elements() else {
+        return Err(scene_error(
+            "ScenePoints",
+            "scene points must contain only f64 values",
+        ));
+    };
     let mut circles = Vec::with_capacity(rows);
     for row in 0..rows {
-        let x = values[row];
-        let y = values[rows + row];
+        let x = values[row * columns].to_f64();
+        let y = values[row * columns + 1].to_f64();
         if !x.is_finite() || !y.is_finite() {
             return Err(scene_error(
                 "ScenePoints",

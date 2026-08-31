@@ -1,16 +1,28 @@
 #[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
-    ActivationRegistrationScope, MechFunctionImpl, PatternActivationRegistration, Plan,
-    ReactiveDependency, ReactiveDependencyKind, ReactiveNodeKind, ReactivePlan,
-    ReactivePlanFunction, ReactiveTurnState, reactive_function_identity,
+    ActivationRegistrationScope, FunctionInstance, FunctionInvocation, MechFunctionImpl,
+    PatternActivationRegistration, Plan, ReactiveDependency, ReactiveDependencyKind,
+    ReactiveNodeKind, ReactivePlan, ReactivePlanFunction, ReactiveTurnState,
+    reactive_function_identity,
 };
-use super::support::TestFunction;
+use super::support::{TestFunction, index};
 #[cfg(feature = "f64")]
-use super::support::reg;
+use super::support::{f64_cell, reg};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{LegacyValue, MResult, ReactiveCellId, Ref, ToValue};
+use crate::{CanonicalCellId, MResult, Ref, ValueCell};
+
+fn register(plan: &mut ReactivePlan, function: TestFunction, inputs: Vec<ValueCell>) -> usize {
+    plan.register_instance_with_activation(
+        FunctionInstance::new(
+            Box::new(function),
+            FunctionInvocation::variadic(ValueCell::unit(), inputs.into_boxed_slice()),
+        ),
+        None,
+    )
+    .unwrap()
+}
 
 struct RetainedZstFunction;
 
@@ -18,15 +30,8 @@ impl MechFunctionImpl for RetainedZstFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::Empty
-    }
     fn to_string(&self) -> String {
         "retained-zst".into()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -39,24 +44,17 @@ impl MechFunctionCompiler for RetainedZstFunction {
 
 #[test]
 fn reactive_plan_rollback_truncates_nodes_and_rebuilds_consumers() {
-    let reactive_input = LegacyValue::Index(Ref::new(1));
-    let sampled_input = LegacyValue::Index(Ref::new(2));
-    let reactive_cell = reactive_input.reactive_root_cell_ids()[0];
-    let sampled_cell = sampled_input.reactive_root_cell_ids()[0];
+    let (reactive_input, reactive_cell) = index(1);
+    let (sampled_input, sampled_cell) = index(2);
     let mut plan = ReactivePlan::new();
-    let base = plan
-        .register(Box::new(TestFunction::new("base")), &[reactive_input])
-        .unwrap();
+    let base = register(&mut plan, TestFunction::new("base"), vec![reactive_input]);
     let checkpoint = plan.checkpoint();
-    let tail = plan
-        .register(
-            Box::new(
-                TestFunction::new("tail")
-                    .with_dependency_kinds(Some(vec![ReactiveDependencyKind::Sampled])),
-            ),
-            &[sampled_input],
-        )
-        .unwrap();
+    let tail = register(
+        &mut plan,
+        TestFunction::new("tail")
+            .with_dependency_kinds(Some(vec![ReactiveDependencyKind::Sampled])),
+        vec![sampled_input],
+    );
     plan.rollback(checkpoint).unwrap();
     assert_eq!(plan.len(), 1);
     assert_eq!(plan.nodes[0].id, base);
@@ -84,15 +82,15 @@ fn reactive_plan_rollback_truncates_nodes_and_rebuilds_consumers() {
 
 #[test]
 fn plan_rollback_restores_full_structure_and_rebuilds_consumers() {
-    let input = LegacyValue::Index(Ref::new(1));
-    let original_cell = input.reactive_root_cell_ids()[0];
-    let replacement_cell = ReactiveCellId::new(99);
-    let sampled_cell = ReactiveCellId::new(100);
+    let (input, original_cell) = index(1);
+    let replacement_cell = CanonicalCellId::new(99);
+    let sampled_cell = CanonicalCellId::new(100);
     let plan = Plan::new();
-    let base = plan
-        .borrow_mut()
-        .register(Box::new(TestFunction::new("base")), &[input])
-        .unwrap();
+    let base = register(
+        &mut plan.borrow_mut(),
+        TestFunction::new("base"),
+        vec![input],
+    );
     plan.push_activation_registration_scope_with_sampled_cells(
         vec![original_cell],
         vec![sampled_cell],
@@ -155,8 +153,8 @@ fn plan_rollback_restores_full_structure_and_rebuilds_consumers() {
 fn plan_rollback_restores_activation_registration_depth() {
     let plan = Plan::new();
     let checkpoint = plan.checkpoint();
-    plan.push_activation_registration_scope(vec![ReactiveCellId::new(1)]);
-    plan.push_activation_registration_scope(vec![ReactiveCellId::new(2)]);
+    plan.push_activation_registration_scope(vec![CanonicalCellId::new(1)]);
+    plan.push_activation_registration_scope(vec![CanonicalCellId::new(2)]);
     assert_eq!(plan.activation_registration_depth(), 2);
     plan.rollback(checkpoint).unwrap();
     assert_eq!(plan.activation_registration_depth(), 0);
@@ -168,7 +166,7 @@ fn plan_rollback_rejects_removed_node_without_partial_restore() {
     plan.add_function(Box::new(TestFunction::new("retained")));
     let checkpoint = plan.checkpoint();
     plan.borrow_mut().nodes.pop();
-    plan.push_activation_registration_scope(vec![ReactiveCellId::new(1)]);
+    plan.push_activation_registration_scope(vec![CanonicalCellId::new(1)]);
 
     let error = plan.rollback(checkpoint).unwrap_err();
 
@@ -188,7 +186,7 @@ fn plan_rollback_rejects_replaced_function_without_partial_restore() {
         reactive.nodes[node_id].function =
             ReactivePlanFunction::new(Box::new(TestFunction::new("replacement")));
     }
-    plan.push_activation_registration_scope(vec![ReactiveCellId::new(1)]);
+    plan.push_activation_registration_scope(vec![CanonicalCellId::new(1)]);
 
     let error = plan.rollback(checkpoint).unwrap_err();
 
@@ -231,7 +229,7 @@ fn checkpoint_validation_accepts_duplicate_registers_from_retried_failed_turn() 
         let mut reactive = plan.borrow_mut();
         reg(&mut reactive, input.clone(), sink, true)
     };
-    let dirty = input.to_value().reactive_root_cell_ids();
+    let dirty = [f64_cell(input).reactive_cell_id()];
     let mut state = ReactiveTurnState::default();
 
     assert!(plan.advance_reactive_turn(&mut state, &dirty).is_err());

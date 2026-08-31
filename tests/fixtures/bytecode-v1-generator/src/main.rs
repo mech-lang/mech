@@ -204,7 +204,7 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             source_file: None,
             source: None,
             construction: Some(
-                "authoritative BytecodeProgram containing atom, enum, tuple, record, map, set, table, option-none, option-some, reference, and kind constants",
+                "authoritative BytecodeProgram containing tuple, record, map, set, table, option-none, option-some, reference, and kind constants; nominal constants are rejected without a semantic resolver",
             ),
             runtime_functions: Vec::new(),
             bytes: composites,
@@ -649,20 +649,6 @@ fn canonical_composites() -> AppResult<Vec<u8>> {
     let mut present_option = vec![1];
     append_child_payload(&mut present_option, &[8]);
 
-    let enum_name = "status";
-    let variant_name = "ready";
-    let enum_id = hash_str(enum_name);
-    let variant_id = hash_str(variant_name);
-    let mut enumeration = 1_u32.to_le_bytes().to_vec();
-    enumeration.extend_from_slice(&variant_id.to_le_bytes());
-    enumeration.extend_from_slice(&(variant_name.len() as u32).to_le_bytes());
-    enumeration.extend_from_slice(variant_name.as_bytes());
-    enumeration.push(1);
-    append_child_payload(&mut enumeration, &[1, 0]);
-    append_child_payload(&mut enumeration, &[10]);
-
-    let atom_name = "alpha";
-    let atom_id = hash_str(atom_name);
     constructed_program(
         vec![
             EncodedConstant {
@@ -721,23 +707,7 @@ fn canonical_composites() -> AppResult<Vec<u8>> {
                 bytes: present_option,
             },
             EncodedConstant {
-                runtime_type: RuntimeType::Atom {
-                    id: atom_id,
-                    name: atom_name.to_owned(),
-                },
-                alignment: 1,
-                bytes: Vec::new(),
-            },
-            EncodedConstant {
-                runtime_type: RuntimeType::Enum {
-                    id: enum_id,
-                    name: enum_name.to_owned(),
-                },
-                alignment: 4,
-                bytes: enumeration,
-            },
-            EncodedConstant {
-                runtime_type: RuntimeType::Kind(mech_core::kind::Kind::Scalar(hash_str("u8"))),
+                runtime_type: RuntimeType::Kind(mech_core::BytecodeKind::Scalar(hash_str("u8"))),
                 alignment: 1,
                 bytes: Vec::new(),
             },

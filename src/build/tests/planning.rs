@@ -15,12 +15,11 @@ use mech_build::{
 use mech_build::{NativeHostLinkage, NativeTargetFamily};
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
-    EncodedConstant, ExecutionHostFunctionRequest, FunctionArgs, FunctionArgumentRole,
-    FunctionCatalog, FunctionCatalogBuilder, FunctionRuntimeType, FunctionValueRepresentation,
-    LegacyValue, MResult, MatrixStorage, MechFunction, MechFunctionCompiler, MechFunctionFactory,
-    MechFunctionImpl, NativeFunctionLinkage, Ref, Register, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, ToValue,
-    hash_str, write_bytecode,
+    EncodedConstant, ExecutionHostFunctionRequest, FunctionCatalog, FunctionCatalogBuilder,
+    FunctionInvocation, FunctionRuntimeType, FunctionValueRepresentation, MResult, MatrixStorage,
+    MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
+    NativeFunctionLinkage, Ref, Register, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, hash_str, write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use sha2::{Digest, Sha256};
@@ -87,7 +86,7 @@ impl RuntimeResourceProvider for PlanningCliResourceProvider {
             .collect()
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         unreachable!("native planning does not execute resource access")
     }
 
@@ -415,26 +414,26 @@ fn scalar_add_resolves_only_the_exact_scalar_installer() {
 }
 
 #[test]
-fn fixed_matrix_add_resolves_the_exact_fixed_matrix_installer() {
+fn fixed_profile_matrix_add_resolves_the_canonical_dynamic_installer() {
     let plan = assert_owner_runtime_function(
         OwnerProfile::Fixed,
         "fixed-matrix-add-f64.mecb",
         "fixed",
-        "AddM2M2<f64>",
-        "mech_math::__mech_native::install_add_m2m2_f64",
+        "AddMDMD<f64>",
+        "mech_math::__mech_native::install_add_mdmd_f64",
         "mech-math",
     );
     assert!(plan.engine_features.iter().any(|feature| feature == "bool"));
     assert!(
         plan.engine_features
             .iter()
-            .any(|feature| feature == "vector2")
+            .any(|feature| feature == "vectord")
     );
     assert!(plan.core_features.iter().all(|feature| feature != "bool"));
     assert!(
         plan.core_features
             .iter()
-            .all(|feature| feature != "vector2")
+            .all(|feature| feature != "vectord")
     );
 }
 
@@ -456,8 +455,8 @@ fn variadic_horzcat_resolves_the_exact_variadic_installer() {
         OwnerProfile::Standard,
         "variadic-horzcat-f64.mecb",
         "variadic",
-        "HorizontalConcatenateRDN<f64>",
-        "mech_engine::__mech_native::install_horizontal_concatenate_rdn_f64",
+        "matrix/horzcat",
+        "mech_engine::__mech_native::install_value_horizontal_concatenation",
         "mech-engine",
     );
 }
@@ -511,7 +510,7 @@ fn unknown_runtime_ids_fail_before_generation() {
 
 #[derive(Debug)]
 struct PlanningFunction {
-    output: Ref<f64>,
+    _output: Ref<f64>,
 }
 
 impl MechFunctionImpl for PlanningFunction {
@@ -519,16 +518,8 @@ impl MechFunctionImpl for PlanningFunction {
         Ok(())
     }
 
-    fn out(&self) -> LegacyValue {
-        self.output.to_value()
-    }
-
     fn to_string(&self) -> String {
         "PlanningFunction".into()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -542,13 +533,11 @@ impl MechFunctionFactory for PlanningFunction {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<f64 as FunctionRuntimeType>::REPRESENTATION);
 
-    fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match arguments {
-            FunctionArgs::Nullary(output) => Ok(Box::new(PlanningFunction {
-                output: output.try_function_ref(FunctionArgumentRole::Output)?,
-            })),
-            _ => unreachable!(),
-        }
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let output = invocation.expect_nullary()?;
+        Ok(Box::new(PlanningFunction {
+            _output: output.try_ref()?,
+        }))
     }
 }
 
@@ -613,7 +602,7 @@ fn malicious_matrix_relations_and_aliases_fail_without_materializing_a_project()
             FunctionValueRepresentation::AnyValue,
         );
 
-        fn new(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        fn new_invocation(_invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
             panic!("malformed matrix relations must fail before factory construction")
         }
     }
@@ -871,20 +860,14 @@ fn unrelated_program_types_do_not_become_machine_features() {
 }
 
 #[test]
-fn enum_inline_payload_types_select_native_decode_features() {
-    let plan = plan(&enum_with_f64_payload_bytecode());
-
-    for features in [&plan.core_features, &plan.engine_features] {
-        assert!(features.iter().any(|feature| feature == "enum"));
-        assert!(features.iter().any(|feature| feature == "f64"));
-    }
-    let core = plan
-        .packages
-        .iter()
-        .find(|package| package.package == "mech-core")
-        .unwrap();
-    assert!(core.cargo_features.iter().any(|feature| feature == "enum"));
-    assert!(core.cargo_features.iter().any(|feature| feature == "f64"));
+fn enum_inline_payloads_require_an_authoritative_complete_schema() {
+    let error = enum_with_f64_payload_bytecode().unwrap_err();
+    assert!(
+        error
+            .kind_message()
+            .contains("authoritative complete enum schema"),
+        "{error:?}"
+    );
 }
 
 #[test]
@@ -1024,7 +1007,7 @@ fn runtime_nullary_bytecode_with_constant(function: u64, output: EncodedConstant
     .unwrap()
 }
 
-fn enum_with_f64_payload_bytecode() -> Vec<u8> {
+fn enum_with_f64_payload_bytecode() -> MResult<Vec<u8>> {
     let enum_name = "measurement";
     let variant_name = "reading";
     let mut bytes = 1_u32.to_le_bytes().to_vec();
@@ -1061,7 +1044,6 @@ fn enum_with_f64_payload_bytecode() -> Vec<u8> {
         dictionary: BTreeMap::new(),
         requirements: Vec::new(),
     })
-    .unwrap()
 }
 
 fn host_function_only_bytecode(name: &str) -> Vec<u8> {

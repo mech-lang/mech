@@ -891,7 +891,7 @@ fn config_string_list(value: Option<&ConfigValue>, field: &'static str) -> MResu
 mod tests {
     use super::*;
     use crate::BrowserResourceKind;
-    use mech_core::LegacyValue;
+    use mech_core::Value;
     use mech_runtime::{
         ConfigProfileOptions, RuntimeHostFactory, RuntimeHostInstallation, RuntimeResourceProvider,
         RuntimeResourceReadRequest, materialize_host_manifest, parse_config_document,
@@ -1617,7 +1617,7 @@ config := {
             vec![format!("browser://{}/dom", self.instance)]
         }
 
-        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
             panic!("configuration construction does not execute providers")
         }
     }

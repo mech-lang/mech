@@ -552,10 +552,7 @@ fn symbol_values(
                     vec![
                         symbol.name,
                         symbol.value.kind().to_string(),
-                        symbol
-                            .value
-                            .to_value()
-                            .format_preview_inline(value_element_limit),
+                        symbol.value.format_repl_inline(value_element_limit),
                     ]
                 })
                 .collect(),
@@ -584,7 +581,7 @@ fn integrity_constraint_values(
                 vec![
                     name,
                     value.kind().to_string(),
-                    value.to_value().format_preview_inline(value_element_limit),
+                    value.format_repl_inline(value_element_limit),
                 ]
             })
             .collect(),
@@ -659,9 +656,9 @@ mod tests {
 
     #[test]
     fn symbol_tables_align_opaque_selection_tokens_with_rows() {
-        let value = crate::RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(
-            mech_core::Ref::new(7.0),
-        ))
+        let value = crate::RuntimeValueSnapshot::from_value(
+            crate::RuntimeHostInputValue::F64(7.0).into_value().unwrap(),
+        )
         .unwrap();
         let content = symbol_values(
             vec![ResidentSymbolInspection {

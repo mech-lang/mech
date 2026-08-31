@@ -141,14 +141,18 @@ impl MatrixAccessSelection {
 }
 
 fn matrix_access_selection(
-    value: &LegacyValue,
+    value: &ValueCell,
     upper: usize,
     input_index: usize,
 ) -> MResult<MatrixAccessSelection> {
     let contract = "matrix_access";
-    match value {
-        LegacyValue::Index(value) => {
-            let found = *value.borrow();
+    let snapshot = match value.snapshot() {
+        Ok(snapshot) => snapshot,
+        Err(_) => return Ok(MatrixAccessSelection::All),
+    };
+    match snapshot.data() {
+        ValueData::Index(value) => {
+            let found = *value as usize;
             if found == 0 || found > upper {
                 return Err(function_shape_contract_violation(
                     contract,
@@ -157,44 +161,84 @@ fn matrix_access_selection(
             }
             Ok(MatrixAccessSelection::Scalar)
         }
-        LegacyValue::IndexAll => Ok(MatrixAccessSelection::All),
-        LegacyValue::MatrixIndex(value) => {
-            let indices = value.as_vec();
-            if let Some(found) = indices
-                .iter()
-                .copied()
-                .find(|value| *value == 0 || *value > upper)
-            {
-                return Err(function_shape_contract_violation(
+        ValueData::Matrix(_) => {
+            let elements = value.matrix_elements()?.ok_or_else(|| {
+                function_shape_contract_violation(
                     contract,
-                    format!("input {input_index} index {found} is outside 1..={upper}"),
-                ));
+                    format!("input {input_index} matrix selector has no elements"),
+                )
+            })?;
+            if elements.first().is_some_and(|element| {
+                matches!(
+                    element.snapshot().map(|value| value.data().clone()),
+                    Ok(ValueData::Bool(_))
+                )
+            }) {
+                if elements.len() != upper {
+                    return Err(function_shape_contract_violation(
+                        contract,
+                        format!(
+                            "input {input_index} logical mask has {} elements, expected {upper}",
+                            elements.len(),
+                        ),
+                    ));
+                }
+                let mut selected = 0;
+                for element in elements.iter() {
+                    if matches!(element.snapshot()?.data(), ValueData::Bool(true)) {
+                        selected += 1;
+                    }
+                }
+                return Ok(MatrixAccessSelection::Logical(selected));
             }
-            Ok(MatrixAccessSelection::Explicit(indices.len()))
-        }
-        #[cfg(feature = "bool")]
-        LegacyValue::MatrixBool(value) => {
-            let mask = value.as_vec();
-            if mask.len() != upper {
-                return Err(function_shape_contract_violation(
-                    contract,
-                    format!(
-                        "input {input_index} logical mask has {} elements, expected {upper}",
-                        mask.len(),
-                    ),
-                ));
+            for element in elements.iter() {
+                let snapshot = element.snapshot()?;
+                let ValueData::Index(found) = snapshot.data() else {
+                    return Err(function_shape_contract_violation(
+                        contract,
+                        format!("input {input_index} matrix selector must contain indices"),
+                    ));
+                };
+                let found = *found as usize;
+                if found == 0 || found > upper {
+                    return Err(function_shape_contract_violation(
+                        contract,
+                        format!("input {input_index} index {found} is outside 1..={upper}"),
+                    ));
+                }
             }
-            Ok(MatrixAccessSelection::Logical(
-                mask.into_iter().filter(|selected| *selected).count(),
-            ))
+            Ok(MatrixAccessSelection::Explicit(elements.len()))
         }
         _ => Err(function_shape_contract_violation(
             contract,
-            format!(
-                "input {input_index} must be a scalar index, index vector, logical mask, or all-index selector"
-            ),
+            format!("input {input_index} must be a scalar index, index vector, or logical mask"),
         )),
     }
+}
+
+fn matrix_descriptor(value: &ValueCell) -> MResult<Option<FunctionMatrixDescriptor>> {
+    let FunctionValueRepresentation::Matrix { storage, .. } = value.representation() else {
+        return Ok(None);
+    };
+    let SchemaBody::Matrix { dimensions, .. } = value.closed_schema_body()? else {
+        return Ok(None);
+    };
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        unreachable!("closed matrix dimensions are constant")
+    };
+    let representation = match storage {
+        FunctionMatrixStoragePattern::Exact(representation) => representation,
+        FunctionMatrixStoragePattern::AnyStorage => FunctionMatrixRepresentation::MatrixD,
+    };
+    Ok(Some(FunctionMatrixDescriptor {
+        representation,
+        rows: *rows as usize,
+        cols: *columns as usize,
+    }))
 }
 
 fn matrix_access_binary_output_shape(
@@ -240,20 +284,32 @@ fn matrix_access_binary_output_shape(
 
 fn matrix_access_binary_upper_bound(
     source: FunctionMatrixDescriptor,
-    selector: &LegacyValue,
+    selector: &ValueCell,
     output: Option<FunctionMatrixDescriptor>,
 ) -> MResult<usize> {
     use FunctionMatrixRepresentation::*;
 
-    match (selector, output.map(|descriptor| descriptor.representation)) {
-        (LegacyValue::Index(_), Some(VectorD)) => Ok(source.cols),
+    let snapshot = match selector.snapshot() {
+        Ok(snapshot) => snapshot,
+        Err(_) => {
+            return source.rows.checked_mul(source.cols).ok_or_else(|| {
+                function_shape_contract_violation(
+                    "matrix_access",
+                    "source element count overflowed",
+                )
+            });
+        }
+    };
+    match (
+        snapshot.data(),
+        output.map(|descriptor| descriptor.representation),
+    ) {
+        (ValueData::Index(_), Some(VectorD)) => Ok(source.cols),
         (
-            LegacyValue::Index(_),
+            ValueData::Index(_),
             Some(RowVector2 | RowVector3 | RowVector4 | RowVectorD | Matrix1),
         )
-        | (LegacyValue::MatrixIndex(_), Some(MatrixD)) => Ok(source.rows),
-        #[cfg(feature = "bool")]
-        (LegacyValue::MatrixBool(_), Some(MatrixD)) => Ok(source.rows),
+        | (ValueData::Matrix(_), Some(MatrixD)) => Ok(source.rows),
         _ => source.rows.checked_mul(source.cols).ok_or_else(|| {
             function_shape_contract_violation("matrix_access", "source element count overflowed")
         }),
@@ -261,26 +317,25 @@ fn matrix_access_binary_upper_bound(
 }
 
 fn validate_matrix_access_contract_impl(
-    args: &FunctionArgs,
+    output_value: &ValueCell,
+    inputs: &[ValueCell],
     require_exact_output_shape: bool,
 ) -> MResult<()> {
     let contract = "matrix_access";
-    let source_value = args
-        .input_value(0)
+    let source_value = inputs
+        .first()
         .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?;
-    let source = source_value
-        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "input 0 must be matrix-backed")
-        })?;
-    let output_value = args.output_value();
-    let output = output_value.function_matrix_descriptor(FunctionArgumentRole::Output)?;
-    let output_shape = output_value.shape();
-    let output_shape = output_shape.as_slice();
-    let (expected_rows, expected_cols) = match args.input_count() {
+    let source = matrix_descriptor(source_value)?.ok_or_else(|| {
+        function_shape_contract_violation(contract, "input 0 must be matrix-backed")
+    })?;
+    let output = matrix_descriptor(output_value)?;
+    let output_shape = output
+        .map(|descriptor| (descriptor.rows, descriptor.cols))
+        .unwrap_or((1, 1));
+    let (expected_rows, expected_cols) = match inputs.len() {
         2 => {
-            let selector = args
-                .input_value(1)
+            let selector = inputs
+                .get(1)
                 .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?;
             let upper = matrix_access_binary_upper_bound(source, selector, output)?;
             let selection = matrix_access_selection(selector, upper, 1)?;
@@ -288,7 +343,7 @@ fn validate_matrix_access_contract_impl(
         }
         3 => {
             let rows = matrix_access_selection(
-                args.input_value(1).ok_or_else(|| {
+                inputs.get(1).ok_or_else(|| {
                     function_shape_contract_violation(contract, "missing input 1")
                 })?,
                 source.rows,
@@ -296,7 +351,7 @@ fn validate_matrix_access_contract_impl(
             )?
             .count(source.rows);
             let cols = matrix_access_selection(
-                args.input_value(2).ok_or_else(|| {
+                inputs.get(2).ok_or_else(|| {
                     function_shape_contract_violation(contract, "missing input 2")
                 })?,
                 source.cols,
@@ -312,161 +367,182 @@ fn validate_matrix_access_contract_impl(
             ));
         }
     };
-    if output_shape.len() != 2 {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!("output has invalid shape {output_shape:?}"),
-        ));
-    }
     if require_exact_output_shape
-        && (output_shape[0] != expected_rows || output_shape[1] != expected_cols)
+        && (output_shape.0 != expected_rows || output_shape.1 != expected_cols)
     {
         return Err(function_shape_contract_violation(
             contract,
             format!(
                 "output is {}x{}, selected indices require {expected_rows}x{expected_cols}",
-                output_shape[0], output_shape[1],
+                output_shape.0, output_shape.1,
             ),
         ));
     }
     Ok(())
 }
 
-fn validate_matrix_access_contract(args: &FunctionArgs) -> MResult<()> {
-    validate_matrix_access_contract_impl(args, true)
+fn validate_matrix_access_contract(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    let has_logical_selector = inputs.iter().skip(1).any(|input| {
+        input
+            .matrix_elements()
+            .ok()
+            .flatten()
+            .is_some_and(|elements| {
+                elements.first().is_some_and(|element| {
+                    matches!(
+                        element.snapshot().map(|value| value.data().clone()),
+                        Ok(ValueData::Bool(_))
+                    )
+                })
+            })
+    });
+    validate_matrix_access_contract_impl(output, inputs, !has_logical_selector)
 }
 
-fn validate_matrix_access_all_range_contract(args: &FunctionArgs) -> MResult<()> {
+fn validate_matrix_access_all_range_contract(
+    output_value: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
     let contract = "matrix_access_all_range";
-    if args.input_count() != 2 {
+    if inputs.len() != 2 {
         return Err(function_shape_contract_violation(
             contract,
             format!(
                 "expected 2 inputs including the source, found {}",
-                args.input_count(),
+                inputs.len(),
             ),
         ));
     }
-    let source = args
-        .input_value(0)
-        .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?
-        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "input 0 must be matrix-backed")
-        })?;
+    let source = matrix_descriptor(
+        inputs
+            .first()
+            .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?,
+    )?
+    .ok_or_else(|| function_shape_contract_violation(contract, "input 0 must be matrix-backed"))?;
     let columns = matrix_access_selection(
-        args.input_value(1)
+        inputs
+            .get(1)
             .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?,
         source.cols,
         1,
     )?
     .count(source.cols);
-    let output_shape = args.output_value().shape();
-    if output_shape.as_slice() != [source.rows, columns] {
+    let output_shape = matrix_descriptor(output_value)?
+        .map(|descriptor| (descriptor.rows, descriptor.cols))
+        .unwrap_or((1, 1));
+    if output_shape != (source.rows, columns) {
         return Err(function_shape_contract_violation(
             contract,
             format!(
                 "output is {}x{}, selected columns require {}x{}",
-                output_shape.first().copied().unwrap_or(0),
-                output_shape.get(1).copied().unwrap_or(0),
-                source.rows,
-                columns,
+                output_shape.0, output_shape.1, source.rows, columns,
             ),
         ));
     }
     Ok(())
 }
 
-fn validate_matrix_access_runtime_contract(args: &FunctionArgs) -> MResult<()> {
-    // Logical-index kernels intentionally resize dynamic outputs as the number
-    // of selected entries changes. Numeric selectors cannot resize their fixed
-    // output representation and must continue matching exactly on every solve.
-    #[cfg(feature = "bool")]
-    let has_logical_selector = (1..args.input_count())
-        .any(|index| matches!(args.input_value(index), Some(LegacyValue::MatrixBool(_))));
-    #[cfg(not(feature = "bool"))]
-    let has_logical_selector = false;
-    validate_matrix_access_contract_impl(args, !has_logical_selector)
+fn validate_matrix_access_all_elements_contract(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    let source = inputs
+        .first()
+        .ok_or_else(|| function_shape_contract_violation("matrix_access", "missing input 0"))?;
+    let source = matrix_descriptor(source)?.ok_or_else(|| {
+        function_shape_contract_violation("matrix_access", "input 0 must be matrix-backed")
+    })?;
+    let expected = source.rows.saturating_mul(source.cols);
+    let output_shape = matrix_descriptor(output)?
+        .map(|descriptor| (descriptor.rows, descriptor.cols))
+        .unwrap_or((1, 1));
+    if output_shape != (expected, 1) {
+        return Err(function_shape_contract_violation(
+            "matrix_access",
+            format!("output has shape {output_shape:?}, expected {expected}x1"),
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(all(test, feature = "u8", feature = "matrixd", feature = "vectord"))]
 mod matrix_access_contract_tests {
     use super::*;
 
-    fn matrix(rows: usize, cols: usize) -> LegacyValue {
-        LegacyValue::MatrixU8(Matrix::DMatrix(Ref::new(DMatrix::from_element(
-            rows, cols, 0,
-        ))))
+    fn matrix(rows: usize, cols: usize) -> ValueCell {
+        ValueCell::from_exact_matrix_ref(
+            Ref::new(DMatrix::<u8>::from_element(rows, cols, 0)),
+            rows,
+            cols,
+        )
+        .unwrap()
     }
 
-    fn indices(values: Vec<usize>) -> LegacyValue {
-        LegacyValue::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(values))))
+    fn indices(values: Vec<usize>) -> ValueCell {
+        let len = values.len();
+        ValueCell::from_exact_matrix_ref(Ref::new(DVector::from_vec(values)), len, 1).unwrap()
     }
 
-    fn vector(len: usize) -> LegacyValue {
-        LegacyValue::MatrixU8(Matrix::DVector(Ref::new(DVector::from_element(len, 0))))
+    fn vector(len: usize) -> ValueCell {
+        ValueCell::from_exact_matrix_ref(Ref::new(DVector::<u8>::from_element(len, 0)), len, 1)
+            .unwrap()
+    }
+
+    fn index(value: usize) -> ValueCell {
+        ValueCell::from_exact(value).unwrap()
     }
 
     #[test]
     fn exact_contract_rejects_linear_output_with_wrong_selected_length() {
-        let result = validate_matrix_access_contract(&FunctionArgs::Binary(
-            vector(1),
-            matrix(2, 2),
-            indices(vec![1, 2, 3]),
-        ));
+        let result =
+            validate_matrix_access_contract(&vector(1), &[matrix(2, 2), indices(vec![1, 2, 3])]);
 
         assert!(result.is_err());
     }
 
     #[test]
     fn exact_contract_checks_scalar_column_against_column_count() {
-        let result = validate_matrix_access_contract(&FunctionArgs::Binary(
-            vector(2),
-            matrix(2, 2),
-            LegacyValue::Index(Ref::new(3)),
-        ));
+        let result = validate_matrix_access_contract(&vector(2), &[matrix(2, 2), index(3)]);
 
         assert!(result.is_err());
     }
 
     #[test]
     fn exact_contract_rejects_two_dimensional_output_with_wrong_orientation() {
-        let result = validate_matrix_access_contract(&FunctionArgs::Ternary(
-            matrix(1, 6),
-            matrix(3, 3),
-            indices(vec![1, 2]),
-            indices(vec![1, 2, 3]),
-        ));
+        let result = validate_matrix_access_contract(
+            &matrix(1, 6),
+            &[matrix(3, 3), indices(vec![1, 2]), indices(vec![1, 2, 3])],
+        );
 
         assert!(result.is_err());
     }
 
     #[test]
     fn all_range_contract_rejects_selected_row_orientation() {
-        let result = validate_matrix_access_all_range_contract(&FunctionArgs::Binary(
-            matrix(2, 4),
-            matrix(3, 4),
-            indices(vec![1, 2]),
-        ));
+        let result = validate_matrix_access_all_range_contract(
+            &matrix(2, 4),
+            &[matrix(3, 4), indices(vec![1, 2])],
+        );
 
         assert!(result.is_err());
     }
 
     #[test]
     fn reactive_numeric_selector_cannot_outgrow_fixed_output() {
-        let source = Ref::new(DMatrix::from_row_slice(2, 2, &[10, 20, 30, 40]));
-        let ixes = Ref::new(DVector::from_vec(vec![1, 2]));
-        let out = Ref::new(DVector::from_element(2, 0));
-        let function = Access1DVDMD::<u8> {
-            source,
-            ixes: ixes.clone(),
-            out: out.clone(),
-        };
+        let source = Ref::new(DMatrix::from_row_slice(2, 2, &[10_u8, 20, 30, 40]));
+        let ixes = Ref::new(DVector::from_vec(vec![1_usize, 2]));
+        let out = Ref::new(DVector::from_element(2, 0_u8));
+        let function = Access1DVDMD::<u8>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(source, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(ixes.clone(), 2, 1).unwrap(),
+        ))
+        .unwrap();
 
         function.solve_result().unwrap();
         assert_eq!(out.borrow().as_slice(), &[10, 30]);
 
-        *ixes.borrow_mut() = DVector::from_vec(vec![1, 2, 3]);
+        *ixes.borrow_mut() = DVector::from_vec(vec![1_usize, 2, 3]);
         assert!(function.solve_result().is_err());
         assert_eq!(out.borrow().as_slice(), &[10, 30]);
     }
@@ -474,14 +550,12 @@ mod matrix_access_contract_tests {
     #[cfg(feature = "bool")]
     #[test]
     fn exact_contract_rejects_logical_mask_with_wrong_axis_length() {
-        let mask =
-            LegacyValue::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(vec![true]))));
-        let result = validate_matrix_access_contract(&FunctionArgs::Ternary(
-            matrix(1, 2),
-            matrix(2, 2),
-            mask,
-            LegacyValue::IndexAll,
-        ));
+        let mask = ValueCell::from_exact_matrix_ref(Ref::new(DVector::from_vec(vec![true])), 1, 1)
+            .unwrap();
+        let result = validate_matrix_access_contract(
+            &matrix(1, 2),
+            &[matrix(2, 2), mask, indices(vec![1, 2])],
+        );
 
         assert!(result.is_err());
     }
@@ -489,14 +563,15 @@ mod matrix_access_contract_tests {
     #[cfg(feature = "bool")]
     #[test]
     fn reactive_logical_linear_selection_regrows_from_empty() {
-        let source = Ref::new(DVector::from_vec(vec![10, 20, 30]));
+        let source = Ref::new(DVector::from_vec(vec![10_u8, 20, 30]));
         let ixes = Ref::new(DVector::from_vec(vec![true, false, true]));
-        let out = Ref::new(DVector::from_element(2, 0));
-        let function = Access1DVDbVD::<u8> {
-            source,
-            ixes: ixes.clone(),
-            out: out.clone(),
-        };
+        let out = Ref::new(DVector::from_element(2, 0_u8));
+        let function = Access1DVDbVD::<u8>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(source, 3, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(ixes.clone(), 3, 1).unwrap(),
+        ))
+        .unwrap();
 
         function.solve_result().unwrap();
         assert_eq!(out.borrow().as_slice(), &[10, 30]);
@@ -513,14 +588,15 @@ mod matrix_access_contract_tests {
     #[cfg(feature = "bool")]
     #[test]
     fn reactive_logical_matrix_selection_regrows_from_empty() {
-        let source = Ref::new(DMatrix::from_row_slice(3, 2, &[10, 11, 20, 21, 30, 31]));
+        let source = Ref::new(DMatrix::from_row_slice(3, 2, &[10_u8, 11, 20, 21, 30, 31]));
         let ixes = Ref::new(DVector::from_vec(vec![true, false, true]));
-        let out = Ref::new(DMatrix::from_element(2, 2, 0));
-        let function = Access2DVDbAMD::<u8> {
-            source,
-            ixes: ixes.clone(),
-            out: out.clone(),
-        };
+        let out = Ref::new(DMatrix::from_element(2, 2, 0_u8));
+        let function = Access2DVDbAMD::<u8>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(source, 3, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(ixes.clone(), 3, 1).unwrap(),
+        ))
+        .unwrap();
 
         function.solve_result().unwrap();
         assert_eq!(
@@ -536,107 +612,6 @@ mod matrix_access_contract_tests {
         function.solve_result().unwrap();
         assert_eq!(*out.borrow(), DMatrix::from_row_slice(1, 2, &[20, 21]));
     }
-}
-
-// Access ---------------------------------------------------------------------
-
-#[macro_export]
-macro_rules! impl_access_fxn_new {
-    ($op:tt, $fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {{
-        let mut res: MResult<_> = Err(MechError::new(
-            GenericError {
-                msg: "No matching type found".to_string(),
-            },
-            None,
-        ));
-
-        #[cfg(feature = "row_vector2")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, RowVector2, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "row_vector3")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, RowVector3, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "row_vector4")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, RowVector4, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "vector2")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Vector2, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "vector3")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Vector3, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "vector4")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Vector4, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix1")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix1, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix2")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix2, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix3")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix3, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix4")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix4, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix2x3")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix2x3, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrix3x2")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, Matrix3x2, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "matrixd")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, DMatrix, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "row_vectord")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, RowDVector, &$arg, $value_kind, $value_string));
-        }
-
-        #[cfg(feature = "vectord")]
-        {
-            res = res.or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string));
-        }
-
-        let &(ref source, ref ixes) = &$arg;
-        res.map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxesMono {
-                    arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()),
-                    fxn_name: stringify!($fxn_name).to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-    }};
 }
 
 macro_rules! access_1d {
@@ -824,18 +799,24 @@ macro_rules! impl_access_fxn {
             source: Ref<$arg_type>,
             ixes: Ref<$ix_type>,
             out: Ref<$out_type>,
+            invocation: FunctionInvocation,
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + FunctionRuntimeType
+                + CanonicalMatrixElementBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            Ref<$arg_type>: ToValue,
-            Ref<$ix_type>: ToValue,
-            Ref<$out_type>: ToValue,
-            $arg_type: FunctionRuntimeType,
-            $ix_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            T: CompileConst + CanonicalMatrixElementBacking,
+            $arg_type: FunctionPortBacking,
+            $ix_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -843,52 +824,39 @@ macro_rules! impl_access_fxn {
                 <$ix_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let n: Ref<$arg_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let k: Ref<$ix_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new($struct_name {
-                            source: n,
-                            ixes: k,
-                            out,
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, source, ixes) = invocation.expect_binary()?;
+                let source: Ref<$arg_type> = source.try_ref()?;
+                let ixes: Ref<$ix_type> = ixes.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new($struct_name {
+                    source,
+                    ixes,
+                    out,
+                    invocation,
+                }))
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            Ref<$arg_type>: ToValue,
-            Ref<$ix_type>: ToValue,
-            Ref<$out_type>: ToValue,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
-                validate_matrix_access_runtime_contract(&FunctionArgs::Binary(
-                    self.out.to_value(),
-                    self.source.to_value(),
-                    self.ixes.to_value(),
-                ))?;
+                validate_matrix_access_contract(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?;
                 let source_ptr = self.source.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 solve_access_1d!($op, source_ptr, self.ixes, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&$contract)
@@ -896,19 +864,119 @@ macro_rules! impl_access_fxn {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_binop!(name, self.out, self.source, self.ixes, ctx);
+            }
+        }
+    };
+}
+
+macro_rules! impl_access_all_fxn {
+    ($struct_name:ident, $arg_type:ty, $out_type:ty, $contract:ident) => {
+        #[derive(Debug)]
+        struct $struct_name<T> {
+            source: Ref<$arg_type>,
+            out: Ref<$out_type>,
+            invocation: FunctionInvocation,
+        }
+
+        impl<T> MechFunctionFactory for $struct_name<T>
+        where
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + FunctionRuntimeType
+                + CanonicalMatrixElementBacking,
+            #[cfg(feature = "semantic-compiler")]
+            T: CompileConst + CanonicalMatrixElementBacking,
+            $arg_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
+        {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg_type as FunctionRuntimeType>::REPRESENTATION,
+                FunctionValueRepresentation::AnyValue,
+            );
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, source, _all) = invocation.expect_binary()?;
+                let source: Ref<$arg_type> = source.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new($struct_name {
+                    source,
+                    out,
+                    invocation,
+                }))
+            }
+        }
+
+        impl<T> MechFunctionImpl for $struct_name<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            $out_type: FunctionStateBacking,
+        {
+            fn solve_result(&self) -> MResult<()> {
+                validate_matrix_access_all_elements_contract(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?;
+                access_1d_all!(self.source.as_ptr(), self.out.as_mut_ptr());
+                Ok(())
+            }
+
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+            }
+
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&$contract)
+            }
+
+            fn to_string(&self) -> String {
+                format!("{self:#?}")
+            }
+        }
+
+        #[cfg(feature = "semantic-compiler")]
+        impl<T> MechFunctionCompiler for $struct_name<T>
+        where
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+        {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let out = compile_register_brrw!(self.out, ctx);
+                let source = compile_register_brrw!(self.source, ctx);
+                let all = self
+                    .invocation
+                    .input(1)
+                    .expect("all-selection input")
+                    .value()
+                    .compile_register(ctx)?;
+                let function = ctx.function_id(&format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                ))?;
+                ctx.emit_binop(function, out, source, all);
+                Ok(out)
             }
         }
     };
@@ -922,20 +990,25 @@ macro_rules! impl_access_fxn2 {
             ix1: Ref<$ix1_type>,
             ix2: Ref<$ix2_type>,
             out: Ref<$out_type>,
+            invocation: FunctionInvocation,
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + FunctionRuntimeType
+                + CanonicalMatrixElementBacking,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst,
-            Ref<$arg_type>: ToValue,
-            Ref<$ix1_type>: ToValue,
-            Ref<$ix2_type>: ToValue,
-            Ref<$out_type>: ToValue,
-            $arg_type: FunctionRuntimeType,
-            $ix1_type: FunctionRuntimeType,
-            $ix2_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            T: CompileConst + CanonicalMatrixElementBacking,
+            $arg_type: FunctionPortBacking,
+            $ix1_type: FunctionPortBacking,
+            $ix2_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -944,50 +1017,31 @@ macro_rules! impl_access_fxn2 {
                 <$ix2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<$arg_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ix1: Ref<$ix1_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let ix2: Ref<$ix2_type> =
-                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new($struct_name {
-                            source,
-                            ix1,
-                            ix2,
-                            out,
-                        }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 3,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, source, ix1, ix2) = invocation.expect_ternary()?;
+                let source: Ref<$arg_type> = source.try_ref()?;
+                let ix1: Ref<$ix1_type> = ix1.try_ref()?;
+                let ix2: Ref<$ix2_type> = ix2.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new($struct_name {
+                    source,
+                    ix1,
+                    ix2,
+                    out,
+                    invocation,
+                }))
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            Ref<$arg_type>: ToValue,
-            Ref<$ix1_type>: ToValue,
-            Ref<$ix2_type>: ToValue,
-            Ref<$out_type>: ToValue,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
-                validate_matrix_access_runtime_contract(&FunctionArgs::Ternary(
-                    self.out.to_value(),
-                    self.source.to_value(),
-                    self.ix1.to_value(),
-                    self.ix2.to_value(),
-                ))?;
+                validate_matrix_access_contract(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?;
                 let source_ptr = self.source.as_ptr();
                 let ix1_ptr = self.ix1.as_ptr();
                 let ix2_ptr = self.ix2.as_ptr();
@@ -995,8 +1049,11 @@ macro_rules! impl_access_fxn2 {
                 $op!(source_ptr, ix1_ptr, ix2_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&$contract)
@@ -1004,18 +1061,18 @@ macro_rules! impl_access_fxn2 {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind,
+            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_ternop!(name, self.out, self.source, self.ix1, self.ix2, ctx);
             }
         }
@@ -1063,6 +1120,41 @@ macro_rules! impl_access_fxn_shape_without_matrix1 {
           impl_access_fxn!([<$name R4>],   RowVector4<T>, $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "row_vectord")]
           impl_access_fxn!([<$name RD>],   RowDVector<T>, $ix_type, $out_type, $fxn, $contract);
+        }
+    };
+}
+
+macro_rules! impl_access_all_fxn_shape_without_matrix1 {
+    ($name:ident, $out_type:ty, $contract:ident) => {
+        paste! {
+          #[cfg(feature = "matrix2")]
+          impl_access_all_fxn!([<$name M2>],   Matrix2<T>,    $out_type, $contract);
+          #[cfg(feature = "matrix3")]
+          impl_access_all_fxn!([<$name M3>],   Matrix3<T>,    $out_type, $contract);
+          #[cfg(feature = "matrix4")]
+          impl_access_all_fxn!([<$name M4>],   Matrix4<T>,    $out_type, $contract);
+          #[cfg(feature = "matrix2x3")]
+          impl_access_all_fxn!([<$name M2x3>], Matrix2x3<T>,  $out_type, $contract);
+          #[cfg(feature = "matrix3x2")]
+          impl_access_all_fxn!([<$name M3x2>], Matrix3x2<T>,  $out_type, $contract);
+          #[cfg(feature = "matrixd")]
+          impl_access_all_fxn!([<$name MD>],   DMatrix<T>,    $out_type, $contract);
+          #[cfg(feature = "vector2")]
+          impl_access_all_fxn!([<$name V2>],   Vector2<T>,    $out_type, $contract);
+          #[cfg(feature = "vector3")]
+          impl_access_all_fxn!([<$name V3>],   Vector3<T>,    $out_type, $contract);
+          #[cfg(feature = "vector4")]
+          impl_access_all_fxn!([<$name V4>],   Vector4<T>,    $out_type, $contract);
+          #[cfg(feature = "vectord")]
+          impl_access_all_fxn!([<$name VD>],   DVector<T>,    $out_type, $contract);
+          #[cfg(feature = "row_vector2")]
+          impl_access_all_fxn!([<$name R2>],   RowVector2<T>, $out_type, $contract);
+          #[cfg(feature = "row_vector3")]
+          impl_access_all_fxn!([<$name R3>],   RowVector3<T>, $out_type, $contract);
+          #[cfg(feature = "row_vector4")]
+          impl_access_all_fxn!([<$name R4>],   RowVector4<T>, $out_type, $contract);
+          #[cfg(feature = "row_vectord")]
+          impl_access_all_fxn!([<$name RD>],   RowDVector<T>, $out_type, $contract);
         }
     };
 }
@@ -1222,11 +1314,9 @@ impl_access_fxn_shape!(
 );
 
 // x[:]
-impl_access_fxn_shape_without_matrix1!(
+impl_access_all_fxn_shape_without_matrix1!(
     Access1DA,
-    LegacyValue,
     DVector<T>,
-    access_1d_all,
     PURE_BINARY_ALL_ELEMENTS_CONTRACT
 );
 
@@ -1359,554 +1449,14 @@ impl_access_fxn_shape2!(
     PURE_TERNARY_LOGICAL_ROWS_SCALAR_COLUMN_CONTRACT
 );
 
-macro_rules! impl_access_match_arms {
-    ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
-        paste! {
-          [<impl_access_ $macro_name _match_arms>]!(
-            $fxn_name,
-            $arg,
-            Bool => MatrixBool, bool, bool::default(), "bool";
-            I8   => MatrixI8,   i8,   i8::default(),  "i8";
-            I16  => MatrixI16,  i16,  i16::default(), "i16";
-            I32  => MatrixI32,  i32,  i32::default(), "i32";
-            I64  => MatrixI64,  i64,  i64::default(), "i64";
-            I128 => MatrixI128, i128, i128::default(), "i128";
-            U8   => MatrixU8,   u8,   u8::default(), "u8";
-            U16  => MatrixU16,  u16,  u16::default(), "u16";
-            U32  => MatrixU32,  u32,  u32::default(), "u32";
-            U64  => MatrixU64,  u64,  u64::default(), "u64";
-            U128 => MatrixU128, u128, u128::default(), "u128";
-            F32  => MatrixF32,  f32,  f32::default(), "f32";
-            F64  => MatrixF64,  f64,  f64::default(), "f64";
-            String => MatrixString, String, String::default(), "string";
-            C64 => MatrixC64, C64, C64::default(), "complex";
-            R64 => MatrixR64, R64, R64::default(), "rational";
-          )
-        }
-    };
-}
-
-// x[1] -----------------------------------------------------------------------
-
-macro_rules! impl_access_scalar_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          $(
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector4(input)), [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name R4>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector3(input)), [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name R3>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector2(input)), [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name R2>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector4(input)),    [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name V4>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector3(input)),    [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name V3>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector2(input)),    [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name V2>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)),    [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name M4>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)),    [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name M3>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)),    [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name M2>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix1"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix1(input)),    [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name M1>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)),  [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name M2x3>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)),  [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name M3x2>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (LegacyValue::$matrix_kind(Matrix::RowDVector(input)), [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name RD>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (LegacyValue::$matrix_kind(Matrix::DVector(input)),    [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name VD>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)),    [LegacyValue::Index(ix)]) => {
-              Ok(Box::new([<$fxn_name MD>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
-            },
-          )+
-        )+
-        (src, ix) => Err(MechError::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
-      }
-    }
-  }
-}
-
-fn impl_access_scalar_fxn(
-    lhs_value: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_access_match_arms!(Access1DS, scalar, (lhs_value, ixes.as_slice()))
-}
-
-#[derive(Debug)]
-struct MatrixAccessScalarValueF {
-    source: Matrix<LegacyValue>,
-    ix: Ref<usize>,
-    out: Ref<LegacyValue>,
-    element_kind: ValueKind,
-}
-
-impl MechFunctionImpl for MatrixAccessScalarValueF {
-    fn solve_result(&self) -> MResult<()> {
-        let ix = *self.ix.borrow();
-        let value = self.source.index1d(ix);
-        *self.out.borrow_mut() = match &self.element_kind {
-            ValueKind::Option(_) => LegacyValue::Typed(Box::new(value), self.element_kind.clone()),
-            _ => value,
-        };
-        Ok(())
-    }
-    fn out(&self) -> LegacyValue {
-        self.out.borrow().clone()
-    }
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(vec![LegacyValue::MutableReference(self.out.clone())])
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-
-#[cfg(all(test, feature = "functions", feature = "matrixd"))]
-mod matrix_access_scalar_value_transaction_tests {
-    use super::*;
-
-    #[test]
-    fn transaction_state_retains_scalar_value_access_outer_output_ref() {
-        let out = Ref::new(LegacyValue::Empty);
-        let function = MatrixAccessScalarValueF {
-            source: Matrix::from_vec(vec![LegacyValue::Empty], 1, 1),
-            ix: Ref::new(1),
-            out: out.clone(),
-            element_kind: ValueKind::Any,
-        };
-
-        let values = function.transaction_state_values().unwrap();
-        assert_eq!(values.len(), 1);
-        match &values[0] {
-            LegacyValue::MutableReference(root) => assert_eq!(root.addr(), out.addr()),
-            other => panic!("expected mutable-reference transaction root, got {other:?}"),
-        }
-    }
-}
-
-#[cfg(feature = "semantic-compiler")]
-impl MechFunctionCompiler for MatrixAccessScalarValueF {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0, 0];
-        registers[0] = compile_register_brrw!(self.out, ctx);
-        registers[1] = compile_register!(self.source, ctx);
-        registers[2] = compile_register_brrw!(self.ix, ctx);
-        ctx.emit_binop(
-            hash_str("MatrixAccessScalarValueF"),
-            registers[0],
-            registers[1],
-            registers[2],
-        );
-        Ok(registers[0])
-    }
-}
-
-pub struct MatrixAccessScalar {}
-impl FunctionSpecializer for MatrixAccessScalar {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let ixes = arguments[1..].to_vec();
-        let mat = arguments[0].clone();
-        if let (LegacyValue::MatrixValue(source), [LegacyValue::Index(ix)]) =
-            (mat.clone(), ixes.as_slice())
-        {
-            let element_kind = match mat.kind() {
-                ValueKind::Matrix(elem, _) => (*elem).clone(),
-                _ => ValueKind::Any,
-            };
-            let init = match &element_kind {
-                ValueKind::Option(_) => {
-                    LegacyValue::Typed(Box::new(LegacyValue::Empty), element_kind.clone())
-                }
-                _ => LegacyValue::Empty,
-            };
-            return Ok(Box::new(MatrixAccessScalarValueF {
-                source,
-                ix: ix.clone(),
-                out: Ref::new(init),
-                element_kind,
-            }));
-        }
-        match impl_access_scalar_fxn(mat.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (mat, ixes) {
-                (LegacyValue::MutableReference(lhs), rhs_value) => {
-                    impl_access_scalar_fxn(lhs.borrow().clone(), rhs_value.clone())
-                }
-                (src, ix) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessScalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1,2] ---------------------------------------------------------------------
-
-macro_rules! impl_access_scalar_scalar_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          $(
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector4(input)), [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name R4>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector3(input)), [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name R3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector2(input)), [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name R2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector4(input)),    [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name V4>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector3(input)),    [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name V3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector2(input)),    [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name V2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)),    [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name M4>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)),    [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name M3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)),    [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name M2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)),  [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name M2x3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)),  [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name M3x2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (LegacyValue::$matrix_kind(Matrix::RowDVector(input)), [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name RD>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (LegacyValue::$matrix_kind(Matrix::DVector(input)),    [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name VD>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)),    [LegacyValue::Index(ix1),LegacyValue::Index(ix2)]) => {
-              Ok(Box::new([<$fxn_name MD>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
-            },
-          )+
-        )+
-        (src, ix) => Err(MechError::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
-      }
-    }
-  }
-}
-
-fn impl_access_scalar_scalar_fxn(
-    lhs_value: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_access_match_arms!(Access2DSS, scalar_scalar, (lhs_value, ixes.as_slice()))
-}
-
-pub struct MatrixAccessScalarScalar {}
-impl FunctionSpecializer for MatrixAccessScalarScalar {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 2 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let ixes = arguments[1..].to_vec();
-        let mat = arguments[0].clone();
-        match impl_access_scalar_scalar_fxn(mat.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (mat, ixes) {
-                (LegacyValue::MutableReference(lhs), rhs_value) => {
-                    impl_access_scalar_scalar_fxn(lhs.borrow().clone(), rhs_value.clone())
-                }
-                (src, ix) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessScalarScalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1..3] --------------------------------------------------------------------
-
-macro_rules! impl_access_range_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          $(
-            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector4(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])     => {
-              Ok(Box::new(Access1DVDbR4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector3(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])     => {
-              Ok(Box::new(Access1DVDbR3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector2(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])     => {
-              Ok(Box::new(Access1DVDbR2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::RowDVector(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])     => {
-              Ok(Box::new(Access1DVDbRD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-
-            // --
-
-            #[cfg(all(feature = $value_string, feature = "vector4", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector4(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbV4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector3(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbV3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector2(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbV2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vectord", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::DVector(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbVD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-
-            // --
-
-            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix1(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbM1{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDbMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-
-            // --
-
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector4(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDR4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector3(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDR3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector2(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDR2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (LegacyValue::$matrix_kind(Matrix::RowDVector(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDRD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-
-            // --
-
-            #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector4(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDV4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector3(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDV3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector2(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDV2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (LegacyValue::$matrix_kind(Matrix::DVector(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDVD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-
-            // --
-
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix1"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix1(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDM1{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))]) => {
-              Ok(Box::new(Access1DVDM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))]) => {
-              Ok(Box::new(Access1DVDM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))])  => {
-              Ok(Box::new(Access1DVDMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
-            },
-          )+
-        )+
-        (src, ix) => Err(MechError::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
-      }
-    }
-  }
-}
-
-fn impl_access_range_fxn(
-    lhs_value: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_access_match_arms!(Access1DR, range, (lhs_value, ixes.as_slice()))
-}
-
-pub struct MatrixAccessRange {}
-impl FunctionSpecializer for MatrixAccessRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let ixes = arguments[1..].to_vec();
-        let mat = arguments[0].clone();
-        match impl_access_range_fxn(mat.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (mat, ixes) {
-                (LegacyValue::MutableReference(lhs), rhs_value) => {
-                    impl_access_range_fxn(lhs.borrow().clone(), rhs_value.clone())
-                }
-                (src, ix) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessRange".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1..3,1..3] ---------------------------------------------------------------
-
 macro_rules! access_2d_range_range_vbb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
         let mut sink_rix = 0;
         let mut sink_cix = 0;
         for r in 0..($ix1).len() {
-            if ($ix1)[r] == true {
+            if ($ix1)[r] {
                 for c in 0..($ix2).len() {
-                    if ($ix2)[c] == true {
+                    if ($ix2)[c] {
                         ($sink)[(sink_rix, sink_cix)] = ($source)[(r, c)].clone();
                         sink_cix += 1;
                     }
@@ -1942,7 +1492,7 @@ macro_rules! access_2d_range_range_vub {
         for r in 0..($ix1).len() {
             let row = ($ix1)[r] - 1;
             for c in 0..($ix2).len() {
-                if ($ix2)[c] == true {
+                if ($ix2)[c] {
                     ($sink)[(sink_rix, sink_cix)] = ($source)[(row, c)].clone();
                     sink_cix += 1;
                 }
@@ -1958,7 +1508,7 @@ macro_rules! access_2d_range_range_vbu {
         let mut sink_rix = 0;
         let mut sink_cix = 0;
         for r in 0..($ix1).len() {
-            if ($ix1)[r] == true {
+            if ($ix1)[r] {
                 for c in 0..($ix2).len() {
                     let col = ($ix2)[c] - 1;
                     ($sink)[(sink_rix, sink_cix)] = ($source)[(r, col)].clone();
@@ -1971,499 +1521,10 @@ macro_rules! access_2d_range_range_vbu {
     };
 }
 
-macro_rules! impl_access_range_range_arms {
-  ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
-    paste!{
-      match $arg {
-        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)),[LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))]) => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name VUU>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(ix1.borrow().len(), ix2.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "row_vectord", feature = "logical_indexing"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)),[LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::DVector(ix2))]) => {
-          let rows = ix1.borrow().iter().filter(|x| **x).count();
-          let cols = ix2.borrow().iter().filter(|x| **x).count();
-          match (cols, rows) {
-            #[cfg(feature = "matrixd")]
-            (1, 1) => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(1, 1, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-            #[cfg(feature = "vectord")]
-            (1, _) => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DVector::from_element(rows, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-            #[cfg(feature = "row_vectord")]
-            (_, 1) => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(RowDVector::from_element(cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-            #[cfg(feature = "matrixd")]
-            _ => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(rows, cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-          }
-        },
-        #[cfg(all(feature = $value_string, feature = "vectord", feature = "logical_indexing"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)),[LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::DVector(ix2))]) => {
-          let cols = ix2.borrow().iter().filter(|x| **x).count();
-          let rows = ix1.borrow().len();
-          match (cols, rows) {
-            #[cfg(feature = "matrixd")]
-            (1, 1) => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(1, 1, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-            #[cfg(feature = "vectord")]
-            (1, _) => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DVector::from_element(rows, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-            #[cfg(feature = "row_vectord")]
-            (_, 1) => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(RowDVector::from_element(cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-            #[cfg(feature = "matrixd")]
-            _ => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(rows, cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-          }
-        },
-         #[cfg(all(feature = $value_string, feature = "vectord", feature = "logical_indexing"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)),[LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))]) => {
-          let cols = ix2.borrow().len();
-          let rows = ix1.borrow().iter().filter(|x| **x).count();
-          match (cols, rows) {
-            #[cfg(feature = "matrixd")]
-            (1, 1) => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(1, 1, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-            #[cfg(feature = "vectord")]
-            (1, _) => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DVector::from_element(rows, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-            #[cfg(feature = "row_vectord")]
-            (_, 1) => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(RowDVector::from_element(cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-            #[cfg(feature = "matrixd")]
-            _ => {
-              box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(rows, cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-            },
-          }
-        }
-        (src, ix) => Err(MechError::new(
-          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()},
-          None).with_compiler_loc()
-        ),
-      }
-    }
-  }
-}
-
 impl_range_range_fxn_v!(Access2DRRVBB, access_2d_range_range_vbb, bool, bool);
 impl_range_range_fxn_v!(Access2DRRVBU, access_2d_range_range_vbu, bool, usize);
 impl_range_range_fxn_v!(Access2DRRVUU, access_2d_range_range_vuu, usize, usize);
 impl_range_range_fxn_v!(Access2DRRVUB, access_2d_range_range_vub, usize, bool);
-
-fn matrix_access_range_range_fxn(
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (source.clone(), ixes.as_slice());
-    impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, u8, "u8")
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, u16, "u16")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, u32, "u32")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, u64, "u64")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, u128, "u128")
-        })
-        .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i8, "i8"))
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i16, "i16")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i32, "i32")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i64, "i64")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i128, "i128")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, f32, "f32")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, f64, "f64")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(
-                impl_access_range_range_arms,
-                Access2DRR,
-                arg,
-                R64,
-                "rational"
-            )
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(
-                impl_access_range_range_arms,
-                Access2DRR,
-                arg,
-                C64,
-                "complex"
-            )
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, bool, "bool")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(
-                impl_access_range_range_arms,
-                Access2DRR,
-                arg,
-                String,
-                "string"
-            )
-        })
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxesMono {
-                    arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()),
-                    fxn_name: "MatrixAccessRangeRange".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAccessRangeRange {}
-impl FunctionSpecializer for MatrixAccessRangeRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let source: LegacyValue = arguments[0].clone();
-        let ixes = arguments[1..].to_vec();
-        match matrix_access_range_range_fxn(source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match source {
-                LegacyValue::MutableReference(source) => {
-                    matrix_access_range_range_fxn(source.borrow().clone(), ixes.clone())
-                }
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessRangeRange".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[:] -----------------------------------------------------------------------
-
-macro_rules! impl_access_all_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-            $(
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector4(input)), [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAR4  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector3(input)), [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAR3  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::RowVector2(input)), [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAR2  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector4(input)),    [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAV4  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector3(input)),    [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAV3  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::Vector2(input)),    [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAV2  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (LegacyValue::$matrix_kind(Matrix::RowDVector(input)), [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DARD  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (LegacyValue::$matrix_kind(Matrix::DVector(input)),    [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAVD  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)),    [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAM4  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)),    [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAM3  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)),    [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAM2  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)),  [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAM3x2{source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)),  [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAM2x3{source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)),    [LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access1DAMD  {source: input.clone(), ixes: Ref::new(LegacyValue::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
-            },
-          )+
-        )+
-        (src, ix) => Err(MechError::new(
-          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()},
-          None).with_compiler_loc()
-        ),
-      }
-    }
-  }
-}
-
-fn impl_access_all_fxn(
-    lhs_value: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_access_match_arms!(Access1DA, all, (lhs_value, ixes.as_slice()))
-}
-
-pub struct MatrixAccessAll {}
-impl FunctionSpecializer for MatrixAccessAll {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let ixes = arguments[1..].to_vec();
-        let mat = arguments[0].clone();
-        match impl_access_all_fxn(mat.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (mat, ixes) {
-                (LegacyValue::MutableReference(lhs), rhs_value) => {
-                    impl_access_all_fxn(lhs.borrow().clone(), rhs_value.clone())
-                }
-                (src, ix) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessAll".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[:,2] ---------------------------------------------------------------------
-
-macro_rules! impl_access_all_scalar_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-            $(
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)),    [LegacyValue::IndexAll,LegacyValue::Index(ix)]) => {
-              Ok(Box::new(Access2DASM4  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)),    [LegacyValue::IndexAll,LegacyValue::Index(ix)]) => {
-              Ok(Box::new(Access2DASM3  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)),    [LegacyValue::IndexAll,LegacyValue::Index(ix)]) => {
-              Ok(Box::new(Access2DASM2  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)),  [LegacyValue::IndexAll,LegacyValue::Index(ix)]) => {
-              Ok(Box::new(Access2DASM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)),  [LegacyValue::IndexAll,LegacyValue::Index(ix)]) => {
-              Ok(Box::new(Access2DASM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)),    [LegacyValue::IndexAll,LegacyValue::Index(ix)]) => {
-              Ok(Box::new(Access2DASMD  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
-            },
-          )+
-        )+
-        (src, ix) => Err(MechError::new(
-          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()},
-          None).with_compiler_loc()
-        ),
-      }
-    }
-  }
-}
-
-fn impl_access_all_scalar_fxn(
-    lhs_value: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_access_match_arms!(Access2DAS, all_scalar, (lhs_value, ixes.as_slice()))
-}
-
-pub struct MatrixAccessAllScalar {}
-impl FunctionSpecializer for MatrixAccessAllScalar {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 2 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let ixes = arguments[1..].to_vec();
-        let mat = arguments[0].clone();
-        match impl_access_all_scalar_fxn(mat.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (mat, ixes) {
-                (LegacyValue::MutableReference(lhs), rhs_value) => {
-                    impl_access_all_scalar_fxn(lhs.borrow().clone(), rhs_value.clone())
-                }
-                (src, ix) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessAllScalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[2,:] ---------------------------------------------------------------------
-
-macro_rules! impl_access_scalar_all_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-            $(
-            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "row_vector4"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)), [LegacyValue::Index(ix),LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DSAM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(RowVector4::from_element($default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "row_vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)), [LegacyValue::Index(ix),LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DSAM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(RowVector3::from_element($default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "row_vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)), [LegacyValue::Index(ix),LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DSAM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(RowVector2::from_element($default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "matrix1"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix1(input)), [LegacyValue::Index(ix),LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DSAM1{source: input.clone(), ixes: ix.clone(), out: Ref::new(Matrix1::from_element($default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "row_vector2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)), [LegacyValue::Index(ix),LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DSAM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(RowVector2::from_element($default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "row_vector3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)), [LegacyValue::Index(ix),LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DSAM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(RowVector3::from_element($default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "row_vectord"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)), [LegacyValue::Index(ix),LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DSAMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(RowDVector::from_element(input.borrow().ncols(),$default)) }))
-            },
-          )+
-        )+
-        (src, ix) => Err(MechError::new(
-          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()},
-          None).with_compiler_loc()
-        ),
-      }
-    }
-  }
-}
-
-fn impl_access_scalar_all_fxn(
-    lhs_value: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_access_match_arms!(Access2DSA, scalar_all, (lhs_value, ixes.as_slice()))
-}
-
-pub struct MatrixAccessScalarAll {}
-impl FunctionSpecializer for MatrixAccessScalarAll {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 2 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let ixes = arguments[1..].to_vec();
-        let mat = arguments[0].clone();
-        match impl_access_scalar_all_fxn(mat.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (mat, ixes) {
-                (LegacyValue::MutableReference(lhs), rhs_value) => {
-                    impl_access_scalar_all_fxn(lhs.borrow().clone(), rhs_value.clone())
-                }
-                (mat, ix) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (mat.kind(), ix.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessScalarAll".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[:,1..3] ---------------------------------------------------------------------
 
 macro_rules! assign_2d_all_range_v {
     ($source:expr, $ix:expr, $sink:expr) => {{
@@ -2484,7 +1545,7 @@ macro_rules! assign_2d_all_range_vb {
     ($source:expr, $ix:expr, $sink:expr) => {{
         let mut sink_col_ix = 0;
         for i in 0..(*$source).ncols() {
-            if $ix[i] == true {
+            if $ix[i] {
                 let mut sink_col = ($sink).column_mut(sink_col_ix);
                 let src_col = ($source).column(i);
                 for (dst, src) in sink_col.iter_mut().zip(src_col.iter()) {
@@ -2494,69 +1555,6 @@ macro_rules! assign_2d_all_range_vb {
             }
         }
     }};
-}
-
-macro_rules! impl_access_all_range_arms {
-  ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
-    paste!{
-      match $arg {
-        // All Vector
-        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))]) if source.borrow().nrows() == 1 => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))]) => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vector2"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector2(ix))]) if source.borrow().nrows() == 1 => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector2"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector2(ix))]) => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vector3"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector3(ix))]) if source.borrow().nrows() == 1 => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector3"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector3(ix))]) => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vector4"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))]) if source.borrow().nrows() == 1 => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector4"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))]) => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        // All Bool Vector
-        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))]) if source.borrow().nrows() == 1 => {
-          let cols = ix.borrow().iter().filter(|&&b| b).count();
-          box_mech_fxn(Ok(Box::new([<$fxn_name VB>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing", feature = "vectord"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))]) if ix.borrow().iter().filter(|&&b| b).count() == 1 && source.borrow().nrows() != 1 => {
-          box_mech_fxn(Ok(Box::new([<$fxn_name VB>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DVector::from_element(source.borrow().nrows(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing", feature = "vectord"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))]) => {
-          let cols = ix.borrow().iter().filter(|&&b| b).count();
-          box_mech_fxn(Ok(Box::new([<$fxn_name VB>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-        },
-        (sink, ix) => {
-          Err(MechError::new(
-            UnhandledFunctionArgumentIxesMono{arg: (sink.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()},
-            None).with_compiler_loc()
-          )
-        }
-      }
-    }
-  }
 }
 
 impl_all_fxn_v!(
@@ -2571,411 +1569,6 @@ impl_all_fxn_v!(
     bool,
     PURE_BINARY_ALL_ROWS_LOGICAL_COLUMNS_CONTRACT
 );
-
-fn matrix_access_all_range_fxn(
-    source: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    let arg = (source.clone(), ixes.as_slice());
-    impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, u8, "u8")
-        .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, u16, "u16"))
-        .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, u32, "u32"))
-        .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, u64, "u64"))
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, u128, "u128")
-        })
-        .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i8, "i8"))
-        .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i16, "i16"))
-        .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i32, "i32"))
-        .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i64, "i64"))
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i128, "i128")
-        })
-        .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, f32, "f32"))
-        .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, f64, "f64"))
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, R64, "rational")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, C64, "complex")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, bool, "bool")
-        })
-        .or_else(|_| {
-            impl_access_fxn_new!(
-                impl_access_all_range_arms,
-                Access2DAR,
-                arg,
-                String,
-                "string"
-            )
-        })
-        .map_err(|_| {
-            MechError::new(
-                UnhandledFunctionArgumentIxesMono {
-                    arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()),
-                    fxn_name: "MatrixAccessAllRange".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
-}
-
-pub struct MatrixAccessAllRange {}
-impl FunctionSpecializer for MatrixAccessAllRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 1 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let source: LegacyValue = arguments[0].clone();
-        let ixes = arguments[1..].to_vec();
-        match matrix_access_all_range_fxn(source.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match source {
-                LegacyValue::MutableReference(source) => {
-                    matrix_access_all_range_fxn(source.borrow().clone(), ixes.clone())
-                }
-                x => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (x.kind(), ixes.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessAllRange".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1..3,:] ---------------------------------------------------------------------
-
-macro_rules! impl_access_range_all_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          $(
-            // Vector All
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDAM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDAM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDAM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDAM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDAM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDAMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            // Bool Vector All
-            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDbAM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDbAM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDbAM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDbAM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDbAM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll]) => {
-              Ok(Box::new(Access2DVDbAMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) }))
-            },
-          )+
-        )+
-        (src, ixes) => Err(MechError::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeAll".to_string()}, None).with_compiler_loc()),
-      }
-    }
-  }
-}
-
-fn impl_access_range_all_fxn(
-    lhs_value: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_access_match_arms!(Access2DRA, range_all, (lhs_value, ixes.as_slice()))
-}
-
-pub struct MatrixAccessRangeAll {}
-impl FunctionSpecializer for MatrixAccessRangeAll {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 2 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let ixes = arguments[1..].to_vec();
-        let mat = arguments[0].clone();
-        match impl_access_range_all_fxn(mat.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (mat.clone(), ixes.clone()) {
-                (LegacyValue::MutableReference(lhs), rhs_value) => {
-                    impl_access_range_all_fxn(lhs.borrow().clone(), rhs_value.clone())
-                }
-                (src, ixes) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (src.kind(), ixes.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessRangeAll".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[1..3,2] ---------------------------------------------------------------------
-
-macro_rules! impl_access_range_scalar_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-            $(
-            // Vector Scalar
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)),   [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDSM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)),   [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDSM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)),   [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDSM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDSM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDSM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)),   [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDSMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            // Bool Vector Scalar
-            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)),   [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDbSM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)),   [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDbSM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)),   [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDbSM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDbSM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDbSM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)),   [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)]) => {
-              Ok(Box::new(Access2DVDbSMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
-            },)+
-        )+
-        (src, ixes) => Err(MechError::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeRange".to_string()}, None).with_compiler_loc()),
-      }
-    }
-  }
-}
-
-fn impl_access_range_scalar_fxn(
-    lhs_value: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_access_match_arms!(Access2DRS, range_scalar, (lhs_value, ixes.as_slice()))
-}
-
-pub struct MatrixAccessRangeScalar {}
-impl FunctionSpecializer for MatrixAccessRangeScalar {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 2 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let ixes = arguments[1..].to_vec();
-        let mat = arguments[0].clone();
-        match impl_access_range_scalar_fxn(mat.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (mat, ixes) {
-                (LegacyValue::MutableReference(lhs), rhs_value) => {
-                    impl_access_range_scalar_fxn(lhs.borrow().clone(), rhs_value.clone())
-                }
-                (src, ixs) => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (src.kind(), ixs.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessRangeScalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
-
-// x[2,1..3] ---------------------------------------------------------------------
-
-macro_rules! impl_access_scalar_range_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          $(
-            // Scalar Vector
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)),   [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)),   [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)),   [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)),   [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            // Bool Scalar Vector
-            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix4(input)),   [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDbM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3(input)),   [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDbM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2(input)),   [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDbM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(input)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDbM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(input)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDbM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },
-            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (LegacyValue::$matrix_kind(Matrix::DMatrix(input)),   [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))]) => {
-              Ok(Box::new(Access2DSVDbMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
-            },)+
-        )+
-        (src,ix) => Err(MechError::new(UnhandledFunctionArgumentIxesMono{ arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
-      }
-    }
-  }
-}
-
-fn impl_access_scalar_range_fxn(
-    lhs_value: LegacyValue,
-    ixes: Vec<LegacyValue>,
-) -> MResult<Box<dyn MechFunction>> {
-    impl_access_match_arms!(Access2DSR, scalar_range, (lhs_value, ixes.as_slice()))
-}
-
-pub struct MatrixAccessScalarRange {}
-
-impl FunctionSpecializer for MatrixAccessScalarRange {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() <= 2 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let ixes = arguments[1..].to_vec();
-        let mat = arguments[0].clone();
-        match impl_access_scalar_range_fxn(mat.clone(), ixes.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (mat.clone(), ixes.clone()) {
-                (LegacyValue::MutableReference(lhs), rhs_value) => {
-                    impl_access_scalar_range_fxn(lhs.borrow().clone(), rhs_value.clone())
-                }
-                _ => Err(MechError::new(
-                    UnhandledFunctionArgumentIxesMono {
-                        arg: (mat.kind(), ixes.iter().map(|x| x.kind()).collect()),
-                        fxn_name: "MatrixAccessScalarRange".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
-    }
-}
 
 // Runtime catalog -----------------------------------------------------------
 
@@ -3043,7 +1636,7 @@ macro_rules! declare_access_typed_scalar {
                 installer: [<install_ $factory:snake _ $scalar:lower>],
                 name: concat!(stringify!($factory), "<", $runtime_name, ">"),
                 factory_type: $factory<$scalar>,
-                contract: RuntimeFunctionContract::custom(
+                contract: RuntimeFunctionContract::canonical_custom(
                     "matrix_access",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_matrix_access_contract,
@@ -3245,7 +1838,7 @@ macro_rules! declare_access_range_range_scalar {
                     $ix1<$ix1_scalar>,
                     $ix2<$ix2_scalar>,
                 >,
-                contract: RuntimeFunctionContract::custom(
+                contract: RuntimeFunctionContract::canonical_custom(
                     "matrix_access",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_matrix_access_contract,
@@ -3325,7 +1918,7 @@ macro_rules! declare_access_all_range_scalar {
                     $input<$scalar>,
                     $ix<$ix_scalar>,
                 >,
-                contract: RuntimeFunctionContract::custom(
+                contract: RuntimeFunctionContract::canonical_custom(
                     "matrix_access_all_range",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_matrix_access_all_range_contract,
@@ -3976,243 +2569,304 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 declare_matrix_selection_contract!(PURE_UNARY_INDEX_CONVERSION_CONTRACT, 1, "scalar-index");
 
 #[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
-macro_rules! define_reactive_scalar_index {
-    ($name:ident, $source_type:ty, $runtime_name:literal) => {
-        #[derive(Debug)]
-        struct $name {
-            source: Ref<$source_type>,
-            out: Ref<usize>,
-        }
-
-        impl $name {
-            fn from_source(source: Ref<$source_type>) -> MResult<Self> {
-                let value = (*source.borrow()).to_portable_index().ok_or_else(|| {
-                    MechError::new(
-                        CannotConvertToTypeError {
-                            target_type: "portable index",
-                        },
-                        None,
-                    )
-                })? as usize;
-                Ok(Self {
-                    source,
-                    out: Ref::new(value),
-                })
-            }
-        }
-
-        impl MechFunctionImpl for $name {
-            fn solve_result(&self) -> MResult<()> {
-                *self.out.borrow_mut() =
-                    (*self.source.borrow()).to_portable_index().ok_or_else(|| {
-                        MechError::new(
-                            CannotConvertToTypeError {
-                                target_type: "portable index",
-                            },
-                            None,
-                        )
-                    })? as usize;
-                Ok(())
-            }
-
-            fn out(&self) -> LegacyValue {
-                LegacyValue::Index(self.out.clone())
-            }
-
-            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                Some(&PURE_UNARY_INDEX_CONVERSION_CONTRACT)
-            }
-
-            fn semantic_operation_name(&self) -> Option<&str> {
-                Some("access/index")
-            }
-
-            fn to_string(&self) -> String {
-                format!("{self:#?}")
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
-            }
-        }
-
-        impl MechFunctionCompiler for $name {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                compile_unop!($runtime_name, self.out, self.source, ctx);
-            }
-        }
-    };
+#[derive(Debug)]
+struct CanonicalScalarIndex {
+    source: ValueCell,
+    output: ValueCell,
+    runtime_operation: u64,
 }
 
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "u8"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexU8, u8, "ReactiveScalarIndex<u8>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "u16"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexU16, u16, "ReactiveScalarIndex<u16>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "u32"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexU32, u32, "ReactiveScalarIndex<u32>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "u64"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexU64, u64, "ReactiveScalarIndex<u64>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "u128"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexU128, u128, "ReactiveScalarIndex<u128>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "i8"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexI8, i8, "ReactiveScalarIndex<i8>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "i16"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexI16, i16, "ReactiveScalarIndex<i16>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "i32"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexI32, i32, "ReactiveScalarIndex<i32>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "i64"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexI64, i64, "ReactiveScalarIndex<i64>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "i128"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexI128, i128, "ReactiveScalarIndex<i128>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "f32"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexF32, f32, "ReactiveScalarIndex<f32>");
-#[cfg(all(
-    feature = "subscript_formula",
-    feature = "semantic-compiler",
-    feature = "f64"
-))]
-define_reactive_scalar_index!(ReactiveScalarIndexF64, f64, "ReactiveScalarIndex<f64>");
 #[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
-define_reactive_scalar_index!(
-    ReactiveScalarIndexUsize,
-    usize,
-    "ReactiveScalarIndex<usize>"
-);
+impl MechFunctionImpl for CanonicalScalarIndex {
+    fn solve_result(&self) -> MResult<()> {
+        let index = canonical_portable_index(&self.source)?;
+        self.output
+            .replace(&ValueCell::from_exact(index)?.snapshot()?)
+    }
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(&self.output))
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_cell(&self.output)]))
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_UNARY_INDEX_CONVERSION_CONTRACT)
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some("access/index")
+    }
+
+    fn to_string(&self) -> String {
+        "CanonicalScalarIndex".to_owned()
+    }
+}
 
 #[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
-macro_rules! append_reactive_scalar_index {
-    ($plan:expr, $source:expr, $function_type:ident) => {{
-        let function = $function_type::from_source($source)?;
-        let output = function.out();
-        $plan.borrow_mut().push(Box::new(function));
+impl MechFunctionCompiler for CanonicalScalarIndex {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.source.clone(), self.output.clone()]
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = compile_value_cell_register(&self.output, context)?;
+        let source = compile_value_cell_register(&self.source, context)?;
+        context.emit_unop(self.runtime_operation, output, source);
         Ok(output)
-    }};
+    }
 }
 
 #[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
-fn append_reactive_scalar_index_for_value(
-    value: &LegacyValue,
-    plan: &Plan,
-) -> MResult<LegacyValue> {
-    let value = crate::patterns::deep_detach_value(value);
-    match &value {
-        LegacyValue::Index(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexUsize)
-        }
-        #[cfg(feature = "bool")]
-        LegacyValue::Bool(_) => Ok(value.clone()),
+fn canonical_portable_index(value: &ValueCell) -> MResult<usize> {
+    let snapshot = value.snapshot()?;
+    let value = match snapshot.data() {
+        ValueData::Index(value) => value.to_portable_index(),
         #[cfg(feature = "u8")]
-        LegacyValue::U8(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU8)
-        }
+        ValueData::U8(value) => value.to_portable_index(),
         #[cfg(feature = "u16")]
-        LegacyValue::U16(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU16)
-        }
+        ValueData::U16(value) => value.to_portable_index(),
         #[cfg(feature = "u32")]
-        LegacyValue::U32(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU32)
-        }
+        ValueData::U32(value) => value.to_portable_index(),
         #[cfg(feature = "u64")]
-        LegacyValue::U64(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU64)
-        }
+        ValueData::U64(value) => value.to_portable_index(),
         #[cfg(feature = "u128")]
-        LegacyValue::U128(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU128)
-        }
+        ValueData::U128(value) => value.to_portable_index(),
         #[cfg(feature = "i8")]
-        LegacyValue::I8(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI8)
-        }
+        ValueData::I8(value) => value.to_portable_index(),
         #[cfg(feature = "i16")]
-        LegacyValue::I16(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI16)
-        }
+        ValueData::I16(value) => value.to_portable_index(),
         #[cfg(feature = "i32")]
-        LegacyValue::I32(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI32)
-        }
+        ValueData::I32(value) => value.to_portable_index(),
         #[cfg(feature = "i64")]
-        LegacyValue::I64(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI64)
-        }
+        ValueData::I64(value) => value.to_portable_index(),
         #[cfg(feature = "i128")]
-        LegacyValue::I128(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI128)
-        }
+        ValueData::I128(value) => value.to_portable_index(),
         #[cfg(feature = "f32")]
-        LegacyValue::F32(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexF32)
-        }
+        ValueData::F32(value) => value.to_f32().to_portable_index(),
         #[cfg(feature = "f64")]
-        LegacyValue::F64(source) => {
-            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexF64)
-        }
-        _ => value.as_index(),
+        ValueData::F64(value) => value.to_f64().to_portable_index(),
+        _ => None,
     }
+    .ok_or_else(|| {
+        MechError::new(
+            CannotConvertToTypeError {
+                target_type: "portable index",
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    Ok(value as usize)
 }
 
 #[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
-pub(crate) fn reactive_scalar_index(
-    value: &LegacyValue,
-    execution: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let plan = execution.plan();
-    let cells = value.reactive_cell_ids();
-    let produced_by_plan = {
-        let plan = plan.borrow();
-        (0..plan.len()).any(|index| {
-            plan.node(index)
-                .is_some_and(|node| node.outputs.iter().any(|output| cells.contains(output)))
-        })
+fn canonical_scalar_index_runtime_operation(
+    representation: FunctionValueRepresentation,
+) -> MResult<u64> {
+    let name = match representation {
+        FunctionValueRepresentation::Index => "ReactiveScalarIndex<usize>",
+        #[cfg(feature = "u8")]
+        FunctionValueRepresentation::U8 => "ReactiveScalarIndex<u8>",
+        #[cfg(feature = "u16")]
+        FunctionValueRepresentation::U16 => "ReactiveScalarIndex<u16>",
+        #[cfg(feature = "u32")]
+        FunctionValueRepresentation::U32 => "ReactiveScalarIndex<u32>",
+        #[cfg(feature = "u64")]
+        FunctionValueRepresentation::U64 => "ReactiveScalarIndex<u64>",
+        #[cfg(feature = "u128")]
+        FunctionValueRepresentation::U128 => "ReactiveScalarIndex<u128>",
+        #[cfg(feature = "i8")]
+        FunctionValueRepresentation::I8 => "ReactiveScalarIndex<i8>",
+        #[cfg(feature = "i16")]
+        FunctionValueRepresentation::I16 => "ReactiveScalarIndex<i16>",
+        #[cfg(feature = "i32")]
+        FunctionValueRepresentation::I32 => "ReactiveScalarIndex<i32>",
+        #[cfg(feature = "i64")]
+        FunctionValueRepresentation::I64 => "ReactiveScalarIndex<i64>",
+        #[cfg(feature = "i128")]
+        FunctionValueRepresentation::I128 => "ReactiveScalarIndex<i128>",
+        #[cfg(feature = "f32")]
+        FunctionValueRepresentation::F32 => "ReactiveScalarIndex<f32>",
+        #[cfg(feature = "f64")]
+        FunctionValueRepresentation::F64 => "ReactiveScalarIndex<f64>",
+        _ => {
+            return Err(MechError::new(
+                CannotConvertToTypeError {
+                    target_type: "portable index",
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
     };
-    if !crate::expressions::string_access_input_is_live(value, execution) && !produced_by_plan {
-        return value.as_index();
+    Ok(hash_str(name))
+}
+
+/// Converts a canonical scalar selector into a live canonical index cell.
+/// Boolean selectors and already-indexed cells remain unchanged.
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
+pub(crate) fn canonical_reactive_scalar_index(
+    value: ValueCell,
+    execution: &InterpreterExecution<'_>,
+) -> MResult<ValueCell> {
+    if matches!(
+        value.representation(),
+        FunctionValueRepresentation::Bool | FunctionValueRepresentation::Index
+    ) {
+        return Ok(value);
     }
-    append_reactive_scalar_index_for_value(value, &plan)
+    let runtime_operation = canonical_scalar_index_runtime_operation(value.representation())?;
+    let output = ValueCell::from_exact(canonical_portable_index(&value)?)?;
+    let instance = FunctionInstance::new(
+        Box::new(CanonicalScalarIndex {
+            source: value.clone(),
+            output: output.clone(),
+            runtime_operation,
+        }),
+        FunctionInvocation::unary(output.clone(), value),
+    );
+    if !execution.plan().activation_registration_active() {
+        instance.solve_result()?;
+    }
+    execution.plan().register_instance(instance)?;
+    Ok(output)
+}
+
+#[cfg(all(feature = "subscript_range", feature = "semantic-compiler"))]
+#[derive(Debug)]
+struct CanonicalIndexMatrix {
+    source: ValueCell,
+    output: ValueCell,
+}
+
+#[cfg(all(feature = "subscript_range", feature = "semantic-compiler"))]
+impl MechFunctionImpl for CanonicalIndexMatrix {
+    fn solve_result(&self) -> MResult<()> {
+        let (rows, columns) = canonical_matrix_dimensions(&self.source)?;
+        let elements = self
+            .source
+            .matrix_elements()?
+            .ok_or_else(|| {
+                MechError::new(
+                    CannotConvertToTypeError {
+                        target_type: "portable index matrix",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?
+            .iter()
+            .map(canonical_portable_index)
+            .map(|value| value.map(|value| ValueDataDraft::Index(value as u64)))
+            .collect::<MResult<Vec<_>>>()?;
+        let next = self.output.rebuild_matrix_drafts(
+            vec![rows.saturating_mul(columns) as u64, 1].into_boxed_slice(),
+            elements.into_boxed_slice(),
+        )?;
+        self.output.replace(&next)
+    }
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(&self.output))
+    }
+
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        Ok(Some(vec![FunctionStatePort::from_cell(&self.output)]))
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_UNARY_INDEX_CONVERSION_CONTRACT)
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some("access/index")
+    }
+
+    fn to_string(&self) -> String {
+        "CanonicalIndexMatrix".to_owned()
+    }
+}
+
+#[cfg(all(feature = "subscript_range", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for CanonicalIndexMatrix {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.source.clone(), self.output.clone()]
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = compile_value_cell_register(&self.output, context)?;
+        let source = compile_value_cell_register(&self.source, context)?;
+        context.emit_unop(hash_str("access/index"), output, source);
+        Ok(output)
+    }
+}
+
+#[cfg(all(feature = "subscript_range", feature = "semantic-compiler"))]
+fn canonical_matrix_dimensions(value: &ValueCell) -> MResult<(usize, usize)> {
+    let SchemaBody::Matrix { dimensions, .. } = value.closed_schema_body()? else {
+        return Err(MechError::new(
+            CannotConvertToTypeError {
+                target_type: "portable index matrix",
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        return Err(MechError::new(
+            CannotConvertToTypeError {
+                target_type: "closed matrix dimensions",
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    Ok((*rows as usize, *columns as usize))
+}
+
+#[cfg(all(feature = "subscript_range", feature = "semantic-compiler"))]
+pub(crate) fn canonical_reactive_index_matrix(
+    value: ValueCell,
+    execution: &InterpreterExecution<'_>,
+) -> MResult<ValueCell> {
+    let (rows, columns) = canonical_matrix_dimensions(&value)?;
+    let elements = value
+        .matrix_elements()?
+        .ok_or_else(|| {
+            MechError::new(
+                CannotConvertToTypeError {
+                    target_type: "portable index matrix",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?
+        .iter()
+        .map(canonical_portable_index)
+        .map(|value| value.map(|value| ValueDataDraft::Index(value as u64)))
+        .collect::<MResult<Vec<_>>>()?;
+    let output = ValueCell::dynamic_matrix(
+        SchemaBody::Index,
+        vec![rows.saturating_mul(columns) as u64, 1].into_boxed_slice(),
+        elements.into_boxed_slice(),
+    )?;
+    let instance = FunctionInstance::new(
+        Box::new(CanonicalIndexMatrix {
+            source: value.clone(),
+            output: output.clone(),
+        }),
+        FunctionInvocation::unary(output.clone(), value),
+    );
+    if !execution.plan().activation_registration_active() {
+        instance.solve_result()?;
+    }
+    execution.plan().register_instance(instance)?;
+    Ok(output)
 }

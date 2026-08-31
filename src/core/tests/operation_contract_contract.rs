@@ -759,7 +759,7 @@ fn same_as_input_checks_nested_table_column_shapes() {
                     schema: column_schema,
                 }]
                 .into_boxed_slice(),
-                rows: DimensionExpr::Constant(4),
+                rows: DimensionExpr::Constant(4).into(),
             },
         }
         .finalize()

@@ -1,16 +1,19 @@
 use super::{Environment, factor};
-use crate::{InterpreterExecution, LegacyValue, MResult, OperationId, RangeExpression, RangeOp};
+use crate::{
+    InterpreterExecution, MResult, OperationId, RangeExpression, RangeOp, SpecializationInvocation,
+    ValueCell,
+};
 
 pub fn range(
     rng: &RangeExpression,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     use super::registration::register_initialized_expression_function;
     let plan = p.plan();
     let start = factor(&rng.start, env, p)?;
     let terminal = factor(&rng.terminal, env, p)?;
-    let (function, arguments) = match &rng.increment {
+    let function = match &rng.increment {
         Some((_, increment)) => {
             let step = factor(increment, env, p)?;
             let arguments = vec![start, step, terminal];
@@ -22,12 +25,14 @@ pub fn range(
                 #[cfg(not(all(feature = "range_exclusive", feature = "range_inclusive")))]
                 _ => unreachable!(),
             };
-            let function = p.specialize_visible_operation_named(
+            let invocation =
+                SpecializationInvocation::from_cells(arguments.clone().into_boxed_slice());
+            let function = p.specialize_visible_invocation_named(
                 OperationId::from_name(canonical_name),
                 Some(canonical_name),
-                &arguments,
+                &invocation,
             )?;
-            (function, arguments)
+            function
         }
         None => {
             let arguments = vec![start, terminal];
@@ -39,13 +44,15 @@ pub fn range(
                 #[cfg(not(all(feature = "range_exclusive", feature = "range_inclusive")))]
                 _ => unreachable!(),
             };
-            let function = p.specialize_visible_operation_named(
+            let invocation =
+                SpecializationInvocation::from_cells(arguments.clone().into_boxed_slice());
+            let function = p.specialize_visible_invocation_named(
                 OperationId::from_name(canonical_name),
                 Some(canonical_name),
-                &arguments,
+                &invocation,
             )?;
-            (function, arguments)
+            function
         }
     };
-    register_initialized_expression_function(&plan, function, &arguments)
+    register_initialized_expression_function(&plan, function)
 }

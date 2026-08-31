@@ -65,7 +65,7 @@ baselib = ["bool", "string",
     ]
 
 semantic-compiler = ["program"]
-compiler = ["semantic-compiler"]
+compiler = ["semantic-compiler", "functions"]
 program = ["crc32fast", "byteorder"]
 native-plan = ["functions"]
 native-link = []
@@ -191,11 +191,6 @@ optional = true
 
 [dev-dependencies]
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
-
-[[bench]]
-name = "value_state_journal"
-harness = false
-required-features = ["baselib"]
 
 [[bench]]
 name = "solve_result_overhead"

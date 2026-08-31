@@ -17,7 +17,7 @@ pub struct IntegrityConstraintEvaluation {
     pub expression: String,
     pub passed: bool,
     pub reason: Option<IntegrityConstraintFailureReason>,
-    pub evaluated_kind: Option<ValueKind>,
+    pub evaluated_schema: Option<SchemaBody>,
     pub actual: Option<String>,
     pub operator: Option<FormulaOperator>,
     pub expected: Option<String>,
@@ -31,7 +31,7 @@ pub struct IntegrityConstraintViolation {
     pub name: String,
     pub expression: String,
     pub reason: IntegrityConstraintFailureReason,
-    pub evaluated_kind: Option<ValueKind>,
+    pub evaluated_schema: Option<SchemaBody>,
     pub actual: Option<String>,
     pub operator: Option<FormulaOperator>,
     pub expected: Option<String>,
@@ -64,7 +64,7 @@ impl IntegrityConstraintReport {
                     name: evaluation.name.clone(),
                     expression: evaluation.expression.clone(),
                     reason,
-                    evaluated_kind: evaluation.evaluated_kind.clone(),
+                    evaluated_schema: evaluation.evaluated_schema.clone(),
                     actual: evaluation.actual.clone(),
                     operator: evaluation.operator.clone(),
                     expected: evaluation.expected.clone(),
@@ -144,7 +144,7 @@ impl MechErrorKind for IntegrityConstraintRegistryBorrowConflict {
 }
 
 struct ResolvedIntegrityValue {
-    kind: ValueKind,
+    schema: SchemaBody,
     scalar_bool: Option<bool>,
     formatted: String,
 }
@@ -268,11 +268,7 @@ fn evaluate_constraint(
     interpreter_id: u64,
     constraint: &IntegrityConstraint,
 ) -> IntegrityConstraintEvaluation {
-    let resolved = constraint
-        .result
-        .try_borrow()
-        .map_err(|_| ())
-        .and_then(|value| resolve_value(&value));
+    let resolved = resolve_cell(&constraint.result);
     match resolved {
         Err(()) => constraint_evaluation(
             interpreter_id,
@@ -288,7 +284,7 @@ fn evaluate_constraint(
             constraint,
             true,
             None,
-            Some(resolved.kind),
+            Some(resolved.schema),
             Some("true".to_string()),
             Some("true".to_string()),
         ),
@@ -305,7 +301,7 @@ fn evaluate_constraint(
                 constraint,
                 false,
                 Some(IntegrityConstraintFailureReason::EvaluatedFalse),
-                Some(resolved.kind),
+                Some(resolved.schema),
                 actual,
                 expected,
             )
@@ -315,7 +311,7 @@ fn evaluate_constraint(
             constraint,
             false,
             Some(IntegrityConstraintFailureReason::ExpectedBool),
-            Some(resolved.kind),
+            Some(resolved.schema),
             Some(resolved.formatted),
             Some("scalar bool true".to_string()),
         ),
@@ -327,7 +323,7 @@ fn constraint_evaluation(
     constraint: &IntegrityConstraint,
     passed: bool,
     reason: Option<IntegrityConstraintFailureReason>,
-    evaluated_kind: Option<ValueKind>,
+    evaluated_schema: Option<SchemaBody>,
     actual: Option<String>,
     expected: Option<String>,
 ) -> IntegrityConstraintEvaluation {
@@ -338,7 +334,7 @@ fn constraint_evaluation(
         expression: constraint.expression.clone(),
         passed,
         reason,
-        evaluated_kind,
+        evaluated_schema,
         actual,
         operator: constraint.operator.clone(),
         expected,
@@ -346,213 +342,47 @@ fn constraint_evaluation(
     }
 }
 
-fn format_operand(operand: Option<&ValRef>) -> Option<String> {
+fn format_operand(operand: Option<&ValueCell>) -> Option<String> {
     let operand = operand?;
-    let value = operand.try_borrow().ok()?;
-    resolve_value(&value)
+    resolve_cell(operand)
         .ok()
         .map(|resolved| resolved.formatted)
 }
 
-fn resolve_value(value: &LegacyValue) -> Result<ResolvedIntegrityValue, ()> {
-    match value {
-        LegacyValue::MutableReference(reference) => {
-            let value = reference.try_borrow().map_err(|_| ())?;
-            resolve_value(&value)
-        }
-        LegacyValue::Typed(value, _) => resolve_value(value),
-        #[cfg(any(feature = "bool", feature = "variable_define"))]
-        LegacyValue::Bool(value) => {
-            let value = *value.try_borrow().map_err(|_| ())?;
-            Ok(ResolvedIntegrityValue {
-                kind: ValueKind::Bool,
-                scalar_bool: Some(value),
-                formatted: value.to_string(),
-            })
-        }
-        _ => Ok(ResolvedIntegrityValue {
-            kind: stable_value_kind(value)?,
-            scalar_bool: None,
-            formatted: stable_value_string(value)?,
-        }),
-    }
+fn resolve_cell(cell: &ValueCell) -> Result<ResolvedIntegrityValue, ()> {
+    let value = cell.snapshot().map_err(|_| ())?;
+    let schema = cell.closed_schema_body().map_err(|_| ())?;
+    let scalar_bool = match value.data() {
+        ValueData::Bool(value) => Some(*value),
+        _ => None,
+    };
+    let formatted = stable_value_string(value.data(), &schema);
+    Ok(ResolvedIntegrityValue {
+        schema,
+        scalar_bool,
+        formatted,
+    })
 }
 
-fn stable_value_string(value: &LegacyValue) -> Result<String, ()> {
+fn stable_value_string(value: &ValueData, schema: &SchemaBody) -> String {
     match value {
-        #[cfg(feature = "u8")]
-        LegacyValue::U8(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "u16")]
-        LegacyValue::U16(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "u32")]
-        LegacyValue::U32(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "u64")]
-        LegacyValue::U64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "u128")]
-        LegacyValue::U128(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "i8")]
-        LegacyValue::I8(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "i16")]
-        LegacyValue::I16(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "i32")]
-        LegacyValue::I32(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "i64")]
-        LegacyValue::I64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "i128")]
-        LegacyValue::I128(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "f32")]
-        LegacyValue::F32(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "f64")]
-        LegacyValue::F64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(any(feature = "string", feature = "variable_define"))]
-        LegacyValue::String(value) => Ok(format!("\"{}\"", value.try_borrow().map_err(|_| ())?)),
-        #[cfg(feature = "complex")]
-        LegacyValue::C64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "rational")]
-        LegacyValue::R64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        #[cfg(feature = "atom")]
-        LegacyValue::Atom(value) => {
-            let atom = value.try_borrow().map_err(|_| ())?;
-            let dictionary = atom.0.1.try_borrow().map_err(|_| ())?;
-            let name = dictionary
-                .get(&atom.0.0)
-                .cloned()
-                .unwrap_or_else(|| atom.0.0.to_string());
-            Ok(format!(":{name}"))
-        }
-        LegacyValue::Id(value) => Ok(value.to_string()),
-        LegacyValue::Index(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        LegacyValue::Empty => Ok("_".to_string()),
-        LegacyValue::EmptyKind(kind) => Ok(format!("<{}>", kind)),
-        LegacyValue::Kind(kind) => Ok(format!("<{}>", kind)),
-        LegacyValue::IndexAll => Ok(":".to_string()),
-        _ => Ok(format!("<{}>", stable_value_kind(value)?)),
+        ValueData::U8(value) => value.to_string(),
+        ValueData::U16(value) => value.to_string(),
+        ValueData::U32(value) => value.to_string(),
+        ValueData::U64(value) => value.to_string(),
+        ValueData::U128(value) => value.to_string(),
+        ValueData::I8(value) => value.to_string(),
+        ValueData::I16(value) => value.to_string(),
+        ValueData::I32(value) => value.to_string(),
+        ValueData::I64(value) => value.to_string(),
+        ValueData::I128(value) => value.to_string(),
+        ValueData::F32(value) => value.to_f32().to_string(),
+        ValueData::F64(value) => value.to_f64().to_string(),
+        ValueData::Bool(value) => value.to_string(),
+        ValueData::String(value) => format!("\"{value}\""),
+        ValueData::Id(value) | ValueData::Index(value) => value.to_string(),
+        _ => format!("<{schema:?}>"),
     }
-}
-
-fn stable_value_kind(value: &LegacyValue) -> Result<ValueKind, ()> {
-    macro_rules! scalar_kind {
-        ($feature:literal, $variant:ident, $kind:ident) => {
-            #[cfg(feature = $feature)]
-            if matches!(value, LegacyValue::$variant(_)) {
-                return Ok(ValueKind::$kind);
-            }
-        };
-    }
-    scalar_kind!("complex", C64, C64);
-    scalar_kind!("rational", R64, R64);
-    scalar_kind!("u8", U8, U8);
-    scalar_kind!("u16", U16, U16);
-    scalar_kind!("u32", U32, U32);
-    scalar_kind!("u64", U64, U64);
-    scalar_kind!("u128", U128, U128);
-    scalar_kind!("i8", I8, I8);
-    scalar_kind!("i16", I16, I16);
-    scalar_kind!("i32", I32, I32);
-    scalar_kind!("i64", I64, I64);
-    scalar_kind!("i128", I128, I128);
-    scalar_kind!("f32", F32, F32);
-    scalar_kind!("f64", F64, F64);
-    #[cfg(any(feature = "string", feature = "variable_define"))]
-    if matches!(value, LegacyValue::String(_)) {
-        return Ok(ValueKind::String);
-    }
-    #[cfg(any(feature = "bool", feature = "variable_define"))]
-    if matches!(value, LegacyValue::Bool(_)) {
-        return Ok(ValueKind::Bool);
-    }
-    #[cfg(feature = "atom")]
-    if let LegacyValue::Atom(value) = value {
-        let atom = value.try_borrow().map_err(|_| ())?;
-        let dictionary = atom.0.1.try_borrow().map_err(|_| ())?;
-        let name = dictionary
-            .get(&atom.0.0)
-            .cloned()
-            .unwrap_or_else(|| atom.0.0.to_string());
-        return Ok(ValueKind::Atom(atom.0.0, name));
-    }
-
-    macro_rules! matrix_kind {
-        ($feature:literal, $variant:ident, $kind:ident) => {
-            #[cfg(all(feature = "matrix", feature = $feature))]
-            if matches!(value, LegacyValue::$variant(_)) {
-                return Ok(ValueKind::Matrix(Box::new(ValueKind::$kind), Vec::new()));
-            }
-        };
-    }
-    #[cfg(feature = "matrix")]
-    if matches!(value, LegacyValue::MatrixIndex(_)) {
-        return Ok(ValueKind::Matrix(Box::new(ValueKind::Index), Vec::new()));
-    }
-    matrix_kind!("bool", MatrixBool, Bool);
-    matrix_kind!("u8", MatrixU8, U8);
-    matrix_kind!("u16", MatrixU16, U16);
-    matrix_kind!("u32", MatrixU32, U32);
-    matrix_kind!("u64", MatrixU64, U64);
-    matrix_kind!("u128", MatrixU128, U128);
-    matrix_kind!("i8", MatrixI8, I8);
-    matrix_kind!("i16", MatrixI16, I16);
-    matrix_kind!("i32", MatrixI32, I32);
-    matrix_kind!("i64", MatrixI64, I64);
-    matrix_kind!("i128", MatrixI128, I128);
-    matrix_kind!("f32", MatrixF32, F32);
-    matrix_kind!("f64", MatrixF64, F64);
-    matrix_kind!("string", MatrixString, String);
-    matrix_kind!("rational", MatrixR64, R64);
-    matrix_kind!("complex", MatrixC64, C64);
-    #[cfg(feature = "matrix")]
-    if matches!(value, LegacyValue::MatrixValue(_)) {
-        return Ok(ValueKind::Matrix(Box::new(ValueKind::Any), Vec::new()));
-    }
-    #[cfg(feature = "set")]
-    if matches!(value, LegacyValue::Set(_)) {
-        return Ok(ValueKind::Set(Box::new(ValueKind::Any), None));
-    }
-    #[cfg(feature = "map")]
-    if matches!(value, LegacyValue::Map(_)) {
-        return Ok(ValueKind::Map(
-            Box::new(ValueKind::Any),
-            Box::new(ValueKind::Any),
-        ));
-    }
-    #[cfg(feature = "record")]
-    if matches!(value, LegacyValue::Record(_)) {
-        return Ok(ValueKind::Record(Vec::new()));
-    }
-    #[cfg(feature = "table")]
-    if matches!(value, LegacyValue::Table(_)) {
-        return Ok(ValueKind::Table(Vec::new(), 0));
-    }
-    #[cfg(feature = "tuple")]
-    if matches!(value, LegacyValue::Tuple(_)) {
-        return Ok(ValueKind::Tuple(Vec::new()));
-    }
-    #[cfg(feature = "enum")]
-    if let LegacyValue::Enum(value) = value {
-        let enum_value = value.try_borrow().map_err(|_| ())?;
-        let dictionary = enum_value.names.try_borrow().map_err(|_| ())?;
-        let name = dictionary
-            .get(&enum_value.id)
-            .cloned()
-            .unwrap_or_else(|| enum_value.id.to_string());
-        return Ok(ValueKind::Enum(enum_value.id, name));
-    }
-    if let LegacyValue::MutableReference(reference) = value {
-        let value = reference.try_borrow().map_err(|_| ())?;
-        return stable_value_kind(&value);
-    }
-    if let LegacyValue::Typed(_, kind) | LegacyValue::EmptyKind(kind) | LegacyValue::Kind(kind) =
-        value
-    {
-        return Ok(kind.clone());
-    }
-    if matches!(value, LegacyValue::IndexAll) {
-        return Ok(ValueKind::Empty);
-    }
-
-    // The defining crate knows about value variants enabled through feature
-    // unification even when this crate cannot name them.
-    Ok(value.kind())
 }
 
 #[cfg(all(test, feature = "source"))]
@@ -568,17 +398,6 @@ mod tests {
         );
         program.plan_source_for_test(source).unwrap();
         program
-    }
-
-    fn set_constraint_result(program: &CompilerPlanningProgram, name: &str, result: LegacyValue) {
-        program
-            .interpreter
-            .state
-            .borrow_mut()
-            .integrity_constraints
-            .get_mut(&hash_str(name))
-            .unwrap()
-            .result = Ref::new(result);
     }
 
     #[test]
@@ -609,7 +428,10 @@ mod tests {
             failure.reason,
             IntegrityConstraintFailureReason::ExpectedBool,
         );
-        assert_eq!(failure.evaluated_kind, Some(ValueKind::F64));
+        assert_eq!(
+            failure.evaluated_schema,
+            Some(SchemaBody::FloatingPoint(FloatWidth::W64))
+        );
         assert_eq!(failure.actual.as_deref(), Some("42"));
     }
 
@@ -638,38 +460,6 @@ mod tests {
         assert_eq!(failures.evaluations.len(), 2);
         assert_eq!(failures.evaluations[0].name, "first!");
         assert_eq!(failures.evaluations[1].name, "second!");
-    }
-
-    #[test]
-    fn typed_and_mutable_reference_results_are_resolved() {
-        for (wrapped, passes) in [
-            (
-                LegacyValue::Typed(Box::new(LegacyValue::Bool(Ref::new(true))), ValueKind::Bool),
-                true,
-            ),
-            (
-                LegacyValue::Typed(
-                    Box::new(LegacyValue::Bool(Ref::new(false))),
-                    ValueKind::Bool,
-                ),
-                false,
-            ),
-            (
-                LegacyValue::MutableReference(Ref::new(LegacyValue::Bool(Ref::new(true)))),
-                true,
-            ),
-            (
-                LegacyValue::MutableReference(Ref::new(LegacyValue::Bool(Ref::new(false)))),
-                false,
-            ),
-        ] {
-            let program = program_with_constraint("wrapped! := true");
-            set_constraint_result(&program, "wrapped!", wrapped);
-            let report = program.integrity_constraint_report().unwrap();
-            assert_eq!(report.checked, 1);
-            assert_eq!(report.evaluations[0].passed, passes);
-            assert_eq!(report.violations.is_empty(), passes);
-        }
     }
 
     #[test]
@@ -782,6 +572,11 @@ mod tests {
             .unwrap()
             .result
             .clone();
+        let result = FunctionInvocation::nullary(result)
+            .expect_nullary()
+            .unwrap()
+            .try_ref::<bool>()
+            .unwrap();
         let _borrow = result.borrow_mut();
 
         let report = program.integrity_constraint_report().unwrap();
@@ -791,7 +586,7 @@ mod tests {
             report.violations[0].reason,
             IntegrityConstraintFailureReason::BorrowConflict,
         );
-        assert_eq!(report.violations[0].evaluated_kind, None);
+        assert_eq!(report.violations[0].evaluated_schema, None);
     }
 
     #[test]
@@ -807,6 +602,11 @@ mod tests {
             .unwrap()
             .lhs
             .clone()
+            .unwrap();
+        let lhs = FunctionInvocation::nullary(lhs)
+            .expect_nullary()
+            .unwrap()
+            .try_ref::<f64>()
             .unwrap();
         let _borrow = lhs.borrow_mut();
 

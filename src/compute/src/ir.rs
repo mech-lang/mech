@@ -74,15 +74,36 @@ impl ElementwiseOperation {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ElementwiseLowering {
     Apply(ElementwiseOperation),
-    Concat2,
+    Concatenate(ConcatenationAxis),
 }
 
 impl ElementwiseLowering {
-    pub const fn arity(self) -> usize {
+    pub const fn fixed_arity(self) -> Option<usize> {
         match self {
-            Self::Apply(operation) => operation.arity(),
-            Self::Concat2 => 2,
+            Self::Apply(operation) => Some(operation.arity()),
+            Self::Concatenate(_) => None,
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ConcatenationAxis {
+    Horizontal,
+    Vertical,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ConcatenationInput {
+    pub source: ArtifactSource,
+    pub rows: u64,
+    pub columns: u64,
+}
+
+impl ConcatenationInput {
+    pub fn elements(self) -> u64 {
+        self.rows
+            .checked_mul(self.columns)
+            .expect("validated concatenation input element count")
     }
 }
 
@@ -94,31 +115,27 @@ pub enum ElementwiseInstruction {
         output: CellSlotId,
         elements: u64,
     },
-    Concat2 {
-        left: ArtifactSource,
-        right: ArtifactSource,
+    Concatenate {
+        axis: ConcatenationAxis,
+        inputs: Box<[ConcatenationInput]>,
         output: CellSlotId,
-        left_elements: u64,
-        right_elements: u64,
+        rows: u64,
+        columns: u64,
     },
 }
 
 impl ElementwiseInstruction {
     pub const fn output(&self) -> CellSlotId {
         match self {
-            Self::Apply { output, .. } | Self::Concat2 { output, .. } => *output,
+            Self::Apply { output, .. } | Self::Concatenate { output, .. } => *output,
         }
     }
 
     pub fn elements(&self) -> u64 {
         match self {
             Self::Apply { elements, .. } => *elements,
-            Self::Concat2 {
-                left_elements,
-                right_elements,
-                ..
-            } => left_elements
-                .checked_add(*right_elements)
+            Self::Concatenate { rows, columns, .. } => rows
+                .checked_mul(*columns)
                 .expect("validated concatenation element count"),
         }
     }
@@ -126,23 +143,50 @@ impl ElementwiseInstruction {
     pub fn concat_source_at(&self, index: u64) -> Option<(ArtifactSource, u64, u64)> {
         match self {
             Self::Apply { .. } => None,
-            Self::Concat2 {
-                left,
-                right,
-                left_elements,
-                right_elements,
+            Self::Concatenate {
+                axis,
+                inputs,
+                rows,
+                columns,
                 ..
             } => {
-                if index < *left_elements {
-                    Some((*left, index, *left_elements))
-                } else {
-                    let right_index = index - *left_elements;
-                    (right_index < *right_elements).then_some((
-                        *right,
-                        right_index,
-                        *right_elements,
-                    ))
+                if index >= rows.checked_mul(*columns)? {
+                    return None;
                 }
+                let output_row = index / columns;
+                let output_column = index % columns;
+                let mut row_offset = 0;
+                let mut column_offset = 0;
+                for input in inputs {
+                    let selected = match axis {
+                        ConcatenationAxis::Horizontal => {
+                            let selected = output_column < column_offset + input.columns;
+                            if selected {
+                                let local_column = output_column - column_offset;
+                                let local_index = output_row
+                                    .checked_mul(input.columns)?
+                                    .checked_add(local_column)?;
+                                return Some((input.source, local_index, input.elements()));
+                            }
+                            column_offset += input.columns;
+                            selected
+                        }
+                        ConcatenationAxis::Vertical => {
+                            let selected = output_row < row_offset + input.rows;
+                            if selected {
+                                let local_row = output_row - row_offset;
+                                let local_index = local_row
+                                    .checked_mul(input.columns)?
+                                    .checked_add(output_column)?;
+                                return Some((input.source, local_index, input.elements()));
+                            }
+                            row_offset += input.rows;
+                            selected
+                        }
+                    };
+                    debug_assert!(!selected);
+                }
+                None
             }
         }
     }
@@ -196,8 +240,12 @@ pub fn elementwise_lowering(operation: &OperationReference) -> Option<Elementwis
             UnaryOperation::Ceil,
         ))),
         "math/atan2" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Atan2)),
-        "matrix/horzcat" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Identity)),
-        "matrix/vertcat" => Some(ElementwiseLowering::Concat2),
+        "matrix/horzcat" => Some(ElementwiseLowering::Concatenate(
+            ConcatenationAxis::Horizontal,
+        )),
+        "matrix/vertcat" => Some(ElementwiseLowering::Concatenate(
+            ConcatenationAxis::Vertical,
+        )),
         _ => None,
     }
 }
@@ -287,7 +335,15 @@ mod tests {
         );
         assert_eq!(
             elementwise_lowering(&operation("matrix/vertcat")),
-            Some(ElementwiseLowering::Concat2)
+            Some(ElementwiseLowering::Concatenate(
+                ConcatenationAxis::Vertical
+            ))
+        );
+        assert_eq!(
+            elementwise_lowering(&operation("matrix/horzcat")),
+            Some(ElementwiseLowering::Concatenate(
+                ConcatenationAxis::Horizontal
+            ))
         );
         assert_eq!(
             elementwise_lowering(&operation("math/ceil")),
@@ -308,41 +364,69 @@ mod tests {
         let ceil = ElementwiseOperation::Unary(UnaryOperation::Ceil);
         assert_eq!(ceil.apply(&[0.25]), 1.0);
         assert_eq!(ceil.apply(&[0.0]), 0.0);
-        let concatenation = ElementwiseInstruction::Concat2 {
-            left: ArtifactSource::Slot(CellSlotId::new(0)),
-            right: ArtifactSource::Slot(CellSlotId::new(1)),
+        let concatenation = ElementwiseInstruction::Concatenate {
+            axis: ConcatenationAxis::Horizontal,
+            inputs: vec![
+                ConcatenationInput {
+                    source: ArtifactSource::Slot(CellSlotId::new(0)),
+                    rows: 2,
+                    columns: 1,
+                },
+                ConcatenationInput {
+                    source: ArtifactSource::Slot(CellSlotId::new(1)),
+                    rows: 2,
+                    columns: 2,
+                },
+            ]
+            .into_boxed_slice(),
             output: CellSlotId::new(2),
-            left_elements: 2,
-            right_elements: 3,
+            rows: 2,
+            columns: 3,
         };
-        assert_eq!(concatenation.elements(), 5);
+        assert_eq!(concatenation.elements(), 6);
         assert_eq!(
             concatenation.concat_source_at(1),
+            Some((ArtifactSource::Slot(CellSlotId::new(1)), 0, 4))
+        );
+        assert_eq!(
+            concatenation.concat_source_at(3),
             Some((ArtifactSource::Slot(CellSlotId::new(0)), 1, 2))
         );
         assert_eq!(
-            concatenation.concat_source_at(2),
-            Some((ArtifactSource::Slot(CellSlotId::new(1)), 0, 3))
+            concatenation.concat_source_at(5),
+            Some((ArtifactSource::Slot(CellSlotId::new(1)), 3, 4))
         );
-        assert_eq!(
-            concatenation.concat_source_at(4),
-            Some((ArtifactSource::Slot(CellSlotId::new(1)), 2, 3))
-        );
-        assert_eq!(concatenation.concat_source_at(5), None);
+        assert_eq!(concatenation.concat_source_at(6), None);
     }
 
     #[test]
-    fn equal_concatenation_still_uses_its_declared_split() {
-        let concatenation = ElementwiseInstruction::Concat2 {
-            left: ArtifactSource::Slot(CellSlotId::new(0)),
-            right: ArtifactSource::Slot(CellSlotId::new(1)),
+    fn vertical_concatenation_uses_row_offsets() {
+        let concatenation = ElementwiseInstruction::Concatenate {
+            axis: ConcatenationAxis::Vertical,
+            inputs: vec![
+                ConcatenationInput {
+                    source: ArtifactSource::Slot(CellSlotId::new(0)),
+                    rows: 1,
+                    columns: 2,
+                },
+                ConcatenationInput {
+                    source: ArtifactSource::Slot(CellSlotId::new(1)),
+                    rows: 2,
+                    columns: 2,
+                },
+            ]
+            .into_boxed_slice(),
             output: CellSlotId::new(2),
-            left_elements: 2,
-            right_elements: 2,
+            rows: 3,
+            columns: 2,
         };
         assert_eq!(
             concatenation.concat_source_at(2),
-            Some((ArtifactSource::Slot(CellSlotId::new(1)), 0, 2))
+            Some((ArtifactSource::Slot(CellSlotId::new(1)), 0, 4))
+        );
+        assert_eq!(
+            concatenation.concat_source_at(5),
+            Some((ArtifactSource::Slot(CellSlotId::new(1)), 3, 4))
         );
     }
 }

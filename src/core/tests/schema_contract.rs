@@ -53,7 +53,7 @@ fn duplicate_names_and_non_keyable_collection_members_fail() {
                 },
             ]
             .into_boxed_slice(),
-            rows: DimensionExpr::Constant(0),
+            rows: DimensionExpr::Constant(0).into(),
         },
         SchemaBody::Enum {
             key: nominal_key(1),
@@ -83,12 +83,12 @@ fn duplicate_names_and_non_keyable_collection_members_fail() {
     for body in [
         SchemaBody::Set {
             element: Box::new(SchemaBody::Complex(FloatWidth::W64)),
-            cardinality: DimensionExpr::Constant(1),
+            cardinality: DimensionExpr::Constant(1).into(),
         },
         SchemaBody::Map {
             key: Box::new(SchemaBody::Complex(FloatWidth::W32)),
             value: Box::new(SchemaBody::Bool),
-            cardinality: DimensionExpr::Constant(1),
+            cardinality: DimensionExpr::Constant(1).into(),
         },
     ] {
         assert!(matches!(
@@ -197,7 +197,7 @@ fn enum_record_and_table_order_is_semantic_and_preserved() {
             },
         ]
         .into_boxed_slice(),
-        rows: DimensionExpr::Constant(1),
+        rows: DimensionExpr::Constant(1).into(),
     });
     let table_right = schema(SchemaBody::Table {
         columns: vec![
@@ -211,7 +211,7 @@ fn enum_record_and_table_order_is_semantic_and_preserved() {
             },
         ]
         .into_boxed_slice(),
-        rows: DimensionExpr::Constant(1),
+        rows: DimensionExpr::Constant(1).into(),
     });
     assert_ne!(table_left.canonical_bytes(), table_right.canonical_bytes());
 }
@@ -298,7 +298,7 @@ fn finalized_schemas_remove_unused_parameters_and_reject_holes() {
             dimension_parameters: Vec::new().into_boxed_slice(),
             body: SchemaBody::Table {
                 columns: Vec::new().into_boxed_slice(),
-                rows: DimensionExpr::Hole,
+                rows: DimensionExpr::Hole.into(),
             },
         }
         .finalize(),
@@ -528,7 +528,8 @@ fn cardinality_and_extent_evaluation_are_checked() {
                     DimensionExpr::Constant(2),
                 ]
                 .into_boxed_slice(),
-            ),
+            )
+            .into(),
         },
     }
     .finalize()

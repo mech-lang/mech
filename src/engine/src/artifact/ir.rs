@@ -1,7 +1,7 @@
-use mech_core::snapshot::SnapshotValidationContext;
+use mech_core::snapshot::{OptionDraft, SnapshotValidationContext};
 use mech_core::{
-    CellSlotId, ConstantId, ConstantStore, DimensionExpr, LegacyValue, SchemaBody, SchemaDraft,
-    SchemaId, SchemaTable, SnapshotValueError, Value, ValueDataDraft, ValueDraft,
+    CellSlotId, ConstantId, ConstantStore, DimensionExpr, SchemaBody, SchemaDraft, SchemaId,
+    SchemaTable, SnapshotValueError, Value, ValueDataDraft, ValueDraft,
 };
 
 use super::snapshot::data_draft;
@@ -35,40 +35,36 @@ pub enum SelectionIR {
 
 #[derive(Debug)]
 pub enum CompilerIrError {
-    PseudoValueNotCompilerIr,
     UnknownSchema {
         schema: SchemaId,
     },
     UnknownConstant {
         constant: ConstantId,
     },
-    MatrixSchemaRequired {
-        schema: SchemaId,
-    },
+    MatrixLiteralSchemaNotMatrix,
     DynamicMatrixSchemaUnsupported {
-        schema: SchemaId,
-    },
-    MatrixLiteralRankMismatch {
         schema: SchemaId,
     },
     MatrixLiteralShapeMismatch {
         expected_rows: u64,
         expected_columns: u64,
-        found_rows: u64,
-        found_columns: u64,
+        actual_elements: usize,
+    },
+    MatrixLiteralSchemaShapeMismatch {
+        ir_rows: u64,
+        ir_columns: u64,
     },
     MatrixLiteralCardinalityOverflow,
-    MatrixLiteralElementCount {
-        expected: u64,
-        found: usize,
-    },
-    LegacyMatrixLiteralRank {
-        rank: usize,
-    },
-    MatrixLiteralElementNotConstant {
+    EmptyMatrixLiteralElementRequiresOption {
         index: usize,
     },
     HeterogeneousMatrixLiteral {
+        index: usize,
+    },
+    UnresolvedMatrixLiteralElement {
+        index: usize,
+    },
+    DynamicEmptyMatrixLiteralUnsupported {
         index: usize,
     },
     MatrixLiteralElementUnsupported {
@@ -83,57 +79,15 @@ impl From<SnapshotValueError> for CompilerIrError {
     }
 }
 
-/// Moves legacy parser pseudo-values into compiler-only IR.
-///
-/// Ordinary runtime values must be inserted into `ConstantStore` first and
-/// represented by `ExpressionIR::Constant`; they are deliberately rejected
-/// here.
-pub fn compiler_ir_from_legacy_pseudo_value(
-    value: &LegacyValue,
-) -> Result<ExpressionIR, CompilerIrError> {
-    match value {
-        LegacyValue::Empty => Ok(ExpressionIR::Empty),
-        LegacyValue::IndexAll => Ok(ExpressionIR::Selection(SelectionIR::All)),
-        _ => Err(CompilerIrError::PseudoValueNotCompilerIr),
-    }
-}
-
-/// Moves the legacy heterogeneous matrix container into compiler-only literal
-/// IR. Elements have already been lowered to expressions; only the source
-/// matrix's deterministic rank-2 shape is retained.
-#[cfg(feature = "matrix")]
-pub fn matrix_literal_ir_from_legacy(
-    value: &LegacyValue,
-    elements: Box<[ExpressionIR]>,
-) -> Result<MatrixLiteralIR, CompilerIrError> {
-    let LegacyValue::MatrixValue(matrix) = value else {
-        return Err(CompilerIrError::PseudoValueNotCompilerIr);
-    };
-    let shape = matrix.shape();
-    let [rows, columns] = shape.as_slice() else {
-        return Err(CompilerIrError::LegacyMatrixLiteralRank { rank: shape.len() });
-    };
-    let rows =
-        u64::try_from(*rows).map_err(|_| CompilerIrError::MatrixLiteralCardinalityOverflow)?;
-    let columns =
-        u64::try_from(*columns).map_err(|_| CompilerIrError::MatrixLiteralCardinalityOverflow)?;
-    let expected = rows
-        .checked_mul(columns)
-        .ok_or(CompilerIrError::MatrixLiteralCardinalityOverflow)?;
-    if usize::try_from(expected).ok() != Some(elements.len()) {
-        return Err(CompilerIrError::MatrixLiteralElementCount {
-            expected,
-            found: elements.len(),
-        });
-    }
-    Ok(MatrixLiteralIR {
-        rows,
-        columns,
-        elements,
-    })
-}
-
 impl MatrixLiteralIR {
+    pub fn contains_slots(&self) -> bool {
+        self.elements.iter().any(expression_contains_slot)
+    }
+
+    pub fn contains_empty(&self) -> bool {
+        self.elements.iter().any(expression_contains_empty)
+    }
+
     /// Resolves a fully constant, homogeneous matrix literal into one final
     /// immutable matrix snapshot.
     ///
@@ -156,31 +110,33 @@ impl MatrixLiteralIR {
             dimensions,
         } = schema_definition.body()
         else {
-            return Err(CompilerIrError::MatrixSchemaRequired { schema });
+            return Err(CompilerIrError::MatrixLiteralSchemaNotMatrix);
         };
+        let expected_elements = self
+            .rows
+            .checked_mul(self.columns)
+            .ok_or(CompilerIrError::MatrixLiteralCardinalityOverflow)?;
+        if usize::try_from(expected_elements).ok() != Some(self.elements.len()) {
+            return Err(CompilerIrError::MatrixLiteralShapeMismatch {
+                expected_rows: self.rows,
+                expected_columns: self.columns,
+                actual_elements: self.elements.len(),
+            });
+        }
         let [
             DimensionExpr::Constant(expected_rows),
             DimensionExpr::Constant(expected_columns),
         ] = dimensions.as_ref()
         else {
-            return Err(CompilerIrError::MatrixLiteralRankMismatch { schema });
+            return Err(CompilerIrError::MatrixLiteralSchemaShapeMismatch {
+                ir_rows: self.rows,
+                ir_columns: self.columns,
+            });
         };
         if (*expected_rows, *expected_columns) != (self.rows, self.columns) {
-            return Err(CompilerIrError::MatrixLiteralShapeMismatch {
-                expected_rows: *expected_rows,
-                expected_columns: *expected_columns,
-                found_rows: self.rows,
-                found_columns: self.columns,
-            });
-        }
-        let expected = self
-            .rows
-            .checked_mul(self.columns)
-            .ok_or(CompilerIrError::MatrixLiteralCardinalityOverflow)?;
-        if usize::try_from(expected).ok() != Some(self.elements.len()) {
-            return Err(CompilerIrError::MatrixLiteralElementCount {
-                expected,
-                found: self.elements.len(),
+            return Err(CompilerIrError::MatrixLiteralSchemaShapeMismatch {
+                ir_rows: self.rows,
+                ir_columns: self.columns,
             });
         }
 
@@ -191,23 +147,66 @@ impl MatrixLiteralIR {
         .finalize()
         .map_err(|error| CompilerIrError::Snapshot(error.into()))?;
         let expected_key = element_schema.key();
+        let option_element = match element_schema.body() {
+            SchemaBody::Option(element) => Some(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: (**element).clone(),
+                }
+                .finalize()
+                .map_err(|error| CompilerIrError::Snapshot(error.into()))?,
+            ),
+            _ => None,
+        };
         let mut values = Vec::with_capacity(self.elements.len());
         for (index, expression) in self.elements.iter().enumerate() {
-            let ExpressionIR::Constant(constant) = expression else {
-                return Err(CompilerIrError::MatrixLiteralElementNotConstant { index });
-            };
-            let value = constants
-                .get(*constant)
-                .ok_or(CompilerIrError::UnknownConstant {
-                    constant: *constant,
-                })?;
-            if value.schema_key() != expected_key {
-                return Err(CompilerIrError::HeterogeneousMatrixLiteral { index });
+            match expression {
+                ExpressionIR::Empty => {
+                    if option_element.is_none() {
+                        return Err(CompilerIrError::EmptyMatrixLiteralElementRequiresOption {
+                            index,
+                        });
+                    }
+                    values.push(ValueDataDraft::Option(OptionDraft {
+                        present: false,
+                        value: None,
+                    }));
+                }
+                ExpressionIR::Constant(constant) => {
+                    let value =
+                        constants
+                            .get(*constant)
+                            .ok_or(CompilerIrError::UnknownConstant {
+                                constant: *constant,
+                            })?;
+                    if value.schema_key() == expected_key {
+                        values.push(
+                            data_draft(value.data(), element_schema.body()).ok_or(
+                                CompilerIrError::MatrixLiteralElementUnsupported { index },
+                            )?,
+                        );
+                    } else if let Some(option_element) = &option_element {
+                        if value.schema_key() != option_element.key() {
+                            return Err(CompilerIrError::HeterogeneousMatrixLiteral { index });
+                        }
+                        values.push(ValueDataDraft::Option(OptionDraft {
+                            present: true,
+                            value: Some(Box::new(
+                                data_draft(value.data(), option_element.body()).ok_or(
+                                    CompilerIrError::MatrixLiteralElementUnsupported { index },
+                                )?,
+                            )),
+                        }));
+                    } else {
+                        return Err(CompilerIrError::HeterogeneousMatrixLiteral { index });
+                    }
+                }
+                ExpressionIR::Slot(_)
+                | ExpressionIR::MatrixLiteral(_)
+                | ExpressionIR::Selection(_) => {
+                    return Err(CompilerIrError::UnresolvedMatrixLiteralElement { index });
+                }
             }
-            values.push(
-                data_draft(value.data(), element_schema.body())
-                    .ok_or(CompilerIrError::MatrixLiteralElementUnsupported { index })?,
-            );
         }
 
         Ok(ValueDraft {
@@ -216,5 +215,38 @@ impl MatrixLiteralIR {
             data: ValueDataDraft::Matrix(values.into_boxed_slice()),
         }
         .finalize(&SnapshotValidationContext::new(schemas))?)
+    }
+}
+
+fn expression_contains_slot(expression: &ExpressionIR) -> bool {
+    match expression {
+        ExpressionIR::Slot(_) => true,
+        ExpressionIR::MatrixLiteral(literal) => literal.contains_slots(),
+        ExpressionIR::Selection(selection) => {
+            selection_contains(selection, expression_contains_slot)
+        }
+        ExpressionIR::Empty | ExpressionIR::Constant(_) => false,
+    }
+}
+
+fn expression_contains_empty(expression: &ExpressionIR) -> bool {
+    match expression {
+        ExpressionIR::Empty => true,
+        ExpressionIR::MatrixLiteral(literal) => literal.contains_empty(),
+        ExpressionIR::Selection(selection) => {
+            selection_contains(selection, expression_contains_empty)
+        }
+        ExpressionIR::Constant(_) | ExpressionIR::Slot(_) => false,
+    }
+}
+
+fn selection_contains(selection: &SelectionIR, predicate: fn(&ExpressionIR) -> bool) -> bool {
+    match selection {
+        SelectionIR::All => false,
+        SelectionIR::Index(index) => predicate(index),
+        SelectionIR::Range { start, end, step } => [start, end, step]
+            .into_iter()
+            .flatten()
+            .any(|expression| predicate(expression)),
     }
 }

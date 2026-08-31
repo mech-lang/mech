@@ -66,6 +66,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["matrix"], "multiply", bind_matmul)?;
     register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
     register(builder, &["core"], "assign", bind_semantic_assign)?;
+    register(
+        builder,
+        &["core", "assign"],
+        "indexed-axis",
+        bind_indexed_assign,
+    )?;
     register(builder, &["range"], "exclusive", bind_range_exclusive)?;
     register(
         builder,
@@ -1466,17 +1472,79 @@ fn bind_horizontal(
 fn bind_matrix_comprehension(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    if !request.inputs.is_empty() {
-        return bind_horizontal(request);
+    validate_build(
+        request,
+        request.inputs.len(),
+        &["matrix", "concatenate"],
+        "horizontal-output",
+    )?;
+    if (request.output.shape.len() == Some(0)
+        || (request.inputs.len() == 1
+            && request.inputs[0].kind == ResidentValueKind::Snapshot
+            && request.inputs[0].shape == ResidentShape::SCALAR
+            && request.output.kind == ResidentValueKind::Snapshot
+            && request.output.shape == ResidentShape::SCALAR))
+        && request.inputs.iter().all(|input| {
+            (input.shape.len() == Some(0)
+                || (input.kind == ResidentValueKind::Snapshot
+                    && input.shape == ResidentShape::SCALAR))
+                && input.kind == request.output.kind
+        })
+    {
+        let kernel = bound(
+            retain_empty_matrix_comprehension,
+            Vec::<u64>::new().into_boxed_slice(),
+        )?;
+        return if request.output.kind == ResidentValueKind::Snapshot {
+            Ok(kernel.with_snapshot_schemas(request.schemas.clone()))
+        } else {
+            Ok(kernel)
+        };
     }
-    validate_build(request, 0, &["matrix", "concatenate"], "horizontal-output")?;
-    if request.output.shape.len() != Some(0) {
+    if request.inputs.is_empty() {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(
-        retain_empty_matrix_comprehension,
-        Vec::<u64>::new().into_boxed_slice(),
-    )
+    bind_horizontal(request)
+}
+
+fn bind_indexed_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_rmw(request, 3, RegionPolicy::IndexedAxis { axis: 0 })?;
+    let [base, source, selector] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let output_len = request
+        .output
+        .shape
+        .len()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let source_len = source
+        .shape
+        .len()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let selector_len = selector
+        .shape
+        .len()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if base.kind != source.kind
+        || base.kind != request.output.kind
+        || base.shape != request.output.shape
+        || !matches!(
+            selector.kind,
+            ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
+        )
+        || (selector.kind == ResidentValueKind::Bool && selector_len != output_len)
+        || (source_len != 1 && source_len != output_len && source_len > selector_len)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let kernel = bound(indexed_assign, vec![output_len as u64].into_boxed_slice())?;
+    if request.output.kind == ResidentValueKind::Snapshot {
+        Ok(kernel.with_snapshot_schemas(request.schemas.clone()))
+    } else {
+        Ok(kernel)
+    }
 }
 
 fn bind_vertical(
@@ -1730,9 +1798,8 @@ fn bind_scalar_index(
             request.inputs[0].kind,
             ResidentValueKind::F64 | ResidentValueKind::Index | ResidentValueKind::Snapshot
         )
-        || request.inputs[0].shape != ResidentShape::SCALAR
         || request.output.kind != ResidentValueKind::Index
-        || request.output.shape != ResidentShape::SCALAR
+        || request.output.shape.len() != request.inputs[0].shape.len()
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -2151,12 +2218,36 @@ fn hold_state(
 }
 
 fn retain_empty_matrix_comprehension(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    if !inputs.is_empty() {
-        return Err(ResidentKernelError::InvalidInput);
+    if inputs.len() == 1 && input(inputs, 0)?.is_empty() && output.len() == 0 {
+        return Ok(false);
+    }
+    if inputs.len() == 1 {
+        let (ResidentValueRef::Snapshot([source]), ResidentValueMut::Snapshot([target])) =
+            (input(inputs, 0)?, output)
+        else {
+            return Err(ResidentKernelError::InvalidShape);
+        };
+        let schemas = kernel
+            .snapshot_schemas()
+            .ok_or(ResidentKernelError::InvalidInput)?;
+        let equal = match (source, target.as_ref()) {
+            (None, None) => true,
+            (Some(source), Some(target)) => source
+                .language_eq(schemas, target, schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+            _ => false,
+        };
+        target.clone_from(source);
+        return Ok(!equal);
+    }
+    for index in 0..inputs.len() {
+        if !input(inputs, index)?.is_empty() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
     }
     match output {
         ResidentValueMut::Bool(values) if values.is_empty() => Ok(false),
@@ -2164,6 +2255,113 @@ fn retain_empty_matrix_comprehension(
         ResidentValueMut::F64(values) if values.is_empty() => Ok(false),
         ResidentValueMut::String(values) if values.is_empty() => Ok(false),
         ResidentValueMut::Snapshot(values) if values.is_empty() => Ok(false),
+        _ => Err(ResidentKernelError::InvalidShape),
+    }
+}
+
+fn indexed_assign(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let output_len = kernel.parameters()[0] as usize;
+    if output.len() != output_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let selector = input(inputs, 1)?;
+    let positions = match selector {
+        ResidentValueRef::Bool(values) if values.len() == output_len => values
+            .iter()
+            .enumerate()
+            .filter_map(|(index, include)| (*include != 0).then_some(index))
+            .collect::<Vec<_>>(),
+        ResidentValueRef::Index(values) => values
+            .iter()
+            .map(|index| checked_one_based(*index, output_len))
+            .collect::<Result<Vec<_>, _>>()?,
+        ResidentValueRef::F64(values) => values
+            .iter()
+            .map(|index| {
+                if !index.is_finite() || index.fract() != 0.0 || *index < 1.0 {
+                    return Err(ResidentKernelError::InvalidInput);
+                }
+                checked_one_based(*index as u64, output_len)
+            })
+            .collect::<Result<Vec<_>, _>>()?,
+        _ => return Err(ResidentKernelError::InvalidShape),
+    };
+    let source = input(inputs, 0)?;
+    let source_index = |ordinal: usize, position: usize| {
+        if source.len() == 1 {
+            0
+        } else if source.len() == output_len {
+            position
+        } else {
+            ordinal
+        }
+    };
+    if source.len() != 1 && source.len() != output_len && source.len() != positions.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    match (source, output) {
+        (ResidentValueRef::Bool(source), ResidentValueMut::Bool(output)) => {
+            let mut changed = false;
+            for (ordinal, position) in positions.into_iter().enumerate() {
+                let next = source[source_index(ordinal, position)];
+                changed |= output[position] != next;
+                output[position] = next;
+            }
+            Ok(changed)
+        }
+        (ResidentValueRef::Index(source), ResidentValueMut::Index(output)) => {
+            let mut changed = false;
+            for (ordinal, position) in positions.into_iter().enumerate() {
+                let next = source[source_index(ordinal, position)];
+                changed |= output[position] != next;
+                output[position] = next;
+            }
+            Ok(changed)
+        }
+        (ResidentValueRef::F64(source), ResidentValueMut::F64(output)) => {
+            let mut changed = false;
+            for (ordinal, position) in positions.into_iter().enumerate() {
+                let next = source[source_index(ordinal, position)];
+                changed |= output[position].to_bits() != next.to_bits();
+                output[position] = next;
+            }
+            Ok(changed)
+        }
+        (ResidentValueRef::String(source), ResidentValueMut::String(output)) => {
+            let mut changed = false;
+            for (ordinal, position) in positions.into_iter().enumerate() {
+                let next = &source[source_index(ordinal, position)];
+                changed |= output[position] != *next;
+                output[position].clone_from(next);
+            }
+            Ok(changed)
+        }
+        (ResidentValueRef::Snapshot(source), ResidentValueMut::Snapshot(output)) => {
+            let schemas = kernel
+                .snapshot_schemas()
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            let mut changed = false;
+            for (ordinal, position) in positions.into_iter().enumerate() {
+                let next = &source[source_index(ordinal, position)];
+                let equal = match (next, &output[position]) {
+                    (None, None) => true,
+                    (Some(next), Some(current)) => next
+                        .language_eq(schemas, current, schemas)
+                        .map_err(|_| ResidentKernelError::InvalidInput)?,
+                    _ => false,
+                };
+                changed |= !equal;
+                output[position].clone_from(next);
+            }
+            Ok(changed)
+        }
         _ => Err(ResidentKernelError::InvalidShape),
     }
 }
@@ -3363,45 +3561,47 @@ fn scalar_index(
     if inputs.len() != 1 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let next = match inputs.get(0).ok_or(ResidentKernelError::InvalidInput)? {
-        ResidentValueRef::F64([value]) => value
-            .to_portable_index()
-            .ok_or(ResidentKernelError::InvalidInput)?,
-        ResidentValueRef::Index([value]) => value
-            .to_portable_index()
-            .ok_or(ResidentKernelError::InvalidInput)?,
-        ResidentValueRef::Snapshot([Some(value)]) => match value.data() {
-            ValueData::U8(value) => value.to_portable_index(),
-            ValueData::U16(value) => value.to_portable_index(),
-            ValueData::U32(value) => value.to_portable_index(),
-            ValueData::U64(value) => value.to_portable_index(),
-            ValueData::U128(value) => value.to_portable_index(),
-            ValueData::I8(value) => value.to_portable_index(),
-            ValueData::I16(value) => value.to_portable_index(),
-            ValueData::I32(value) => value.to_portable_index(),
-            ValueData::I64(value) => value.to_portable_index(),
-            ValueData::I128(value) => value.to_portable_index(),
-            ValueData::F32(value) => value.to_f32().to_portable_index(),
-            ValueData::F64(value) => value.to_f64().to_portable_index(),
-            ValueData::Index(value) => value.to_portable_index(),
-            _ => return Err(ResidentKernelError::InvalidInput),
-        }
-        .ok_or(ResidentKernelError::InvalidInput)?,
-        ResidentValueRef::F64(_) | ResidentValueRef::Index(_) | ResidentValueRef::Snapshot(_) => {
-            return Err(ResidentKernelError::InvalidShape);
-        }
-        ResidentValueRef::Bool(_) | ResidentValueRef::String(_) => {
-            return Err(ResidentKernelError::InvalidInput);
-        }
-    };
+    let input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
     let ResidentValueMut::Index(output) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let [target] = output else {
+    if input.len() != output.len() {
         return Err(ResidentKernelError::InvalidShape);
-    };
-    let changed = *target != next;
-    *target = next;
+    }
+    let mut changed = false;
+    for (ordinal, target) in output.iter_mut().enumerate() {
+        let next = match input {
+            ResidentValueRef::F64(values) => values[ordinal].to_portable_index(),
+            ResidentValueRef::Index(values) => values[ordinal].to_portable_index(),
+            ResidentValueRef::Snapshot(values) => {
+                let value = values[ordinal]
+                    .as_ref()
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                match value.data() {
+                    ValueData::U8(value) => value.to_portable_index(),
+                    ValueData::U16(value) => value.to_portable_index(),
+                    ValueData::U32(value) => value.to_portable_index(),
+                    ValueData::U64(value) => value.to_portable_index(),
+                    ValueData::U128(value) => value.to_portable_index(),
+                    ValueData::I8(value) => value.to_portable_index(),
+                    ValueData::I16(value) => value.to_portable_index(),
+                    ValueData::I32(value) => value.to_portable_index(),
+                    ValueData::I64(value) => value.to_portable_index(),
+                    ValueData::I128(value) => value.to_portable_index(),
+                    ValueData::F32(value) => value.to_f32().to_portable_index(),
+                    ValueData::F64(value) => value.to_f64().to_portable_index(),
+                    ValueData::Index(value) => value.to_portable_index(),
+                    _ => return Err(ResidentKernelError::InvalidInput),
+                }
+            }
+            ResidentValueRef::Bool(_) | ResidentValueRef::String(_) => {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+        }
+        .ok_or(ResidentKernelError::InvalidInput)?;
+        changed |= *target != next;
+        *target = next;
+    }
     Ok(changed)
 }
 

@@ -2,8 +2,8 @@
 use crate::ProgramCompiler;
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{
-    ExternalInteraction, LegacyValue, ParsedProgram, Ref, ResolvedOperationContract,
-    TransactionalEffectProtocol, TransactionalExternalContract,
+    ExternalInteraction, ParsedProgram, ResolvedOperationContract, TransactionalEffectProtocol,
+    TransactionalExternalContract, Value, ValueCell,
 };
 #[cfg(feature = "semantic-compiler")]
 use mech_engine::decode_program_artifact_sections;
@@ -49,7 +49,7 @@ impl RuntimeResourceProvider for PlanningWriteProvider {
         vec![PLANNING_WRITE_BASE_URI.to_string()]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
         panic!("planning write fixture must not read {request:?}")
     }
 
@@ -143,18 +143,18 @@ impl RuntimeResourceProvider for ExecutionModeReadProvider {
         vec![MODE_READ_BASE_URI.to_string()]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
         assert_eq!(request.base_uri, MODE_READ_BASE_URI);
         assert_eq!(request.path, "value");
         self.counters.resource_reads.fetch_add(1, Ordering::SeqCst);
-        Ok(LegacyValue::F64(Ref::new(22.0)))
+        ValueCell::from_exact(22.0_f64)?.snapshot()
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
         assert_eq!(request.base_uri, MODE_READ_BASE_URI);
         assert_eq!(request.path, "value");
         self.counters.resource_plans.fetch_add(1, Ordering::SeqCst);
-        Ok(LegacyValue::F64(Ref::new(11.0)))
+        ValueCell::from_exact(11.0_f64)?.snapshot()
     }
 }
 

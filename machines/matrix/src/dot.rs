@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // MatMul ---------------------------------------------------------------------
 
@@ -78,109 +76,30 @@ impl_dot!(DotVDVD, DVector<T>, DVector<T>, T);
 impl_dot!(DotRDRD, RowDVector<T>, RowDVector<T>, T);
 
 #[cfg(feature = "source")]
-macro_rules! impl_dot_match_arms {
-  ($arg:expr, $($lhs_type:tt, $($matrix_kind:tt, $target_type:tt, $value_string:tt),+);+ $(;)?) => {
-    match $arg {
-      $(
-        $(
-          #[cfg(feature = $value_string)]
-          (LegacyValue::$lhs_type(lhs), LegacyValue::$lhs_type(rhs)) => Ok(Box::new(DotScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+pub struct MatrixDot;
 
-          #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector2"))]
-          (LegacyValue::$matrix_kind(Matrix::Vector2(lhs)), LegacyValue::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new(DotV2V2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-          #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "row_vector2"))]
-          (LegacyValue::$matrix_kind(Matrix::RowVector2(lhs)), LegacyValue::$matrix_kind(Matrix::RowVector2(rhs))) => Ok(Box::new(DotR2R2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-
-          #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector3"))]
-          (LegacyValue::$matrix_kind(Matrix::Vector3(lhs)), LegacyValue::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new(DotV3V3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-          #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "row_vector3"))]
-          (LegacyValue::$matrix_kind(Matrix::RowVector3(lhs)), LegacyValue::$matrix_kind(Matrix::RowVector3(rhs))) => Ok(Box::new(DotR3R3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-
-          #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector4"))]
-          (LegacyValue::$matrix_kind(Matrix::Vector4(lhs)), LegacyValue::$matrix_kind(Matrix::Vector4(rhs))) => Ok(Box::new(DotV4V4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-          #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "row_vector4"))]
-          (LegacyValue::$matrix_kind(Matrix::RowVector4(lhs)), LegacyValue::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new(DotR4R4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-
-          #[cfg(all(feature = $value_string, feature = "matrix1", feature = "matrix1"))]
-          (LegacyValue::$matrix_kind(Matrix::Matrix1(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix1(rhs))) => Ok(Box::new(DotM1M1 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-          #[cfg(all(feature = $value_string, feature = "matrix2", feature = "matrix2"))]
-          (LegacyValue::$matrix_kind(Matrix::Matrix2(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new(DotM2M2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-          #[cfg(all(feature = $value_string, feature = "matrix3", feature = "matrix3"))]
-          (LegacyValue::$matrix_kind(Matrix::Matrix3(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix3(rhs))) => Ok(Box::new(DotM3M3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-          #[cfg(all(feature = $value_string, feature = "matrix4", feature = "matrix4"))]
-          (LegacyValue::$matrix_kind(Matrix::Matrix4(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix4(rhs))) => Ok(Box::new(DotM4M4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
-          #[cfg(all(feature = $value_string, feature = "matrixd", feature = "matrixd"))]
-          (LegacyValue::$matrix_kind(Matrix::DMatrix(lhs)), LegacyValue::$matrix_kind(Matrix::DMatrix(rhs))) => {
-            let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
-            let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
-            if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(
-                MechError::new(
-                  DimensionMismatch { dims: vec![lhs_rows, lhs_cols, rhs_rows, rhs_cols] },
-                  None
-                ).with_compiler_loc()
-              );
-            }
-            Ok(Box::new(DotMDMD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
-          },
-          #[cfg(all(feature = $value_string, feature = "vectord", feature = "vectord"))]
-          (LegacyValue::$matrix_kind(Matrix::DVector(lhs)), LegacyValue::$matrix_kind(Matrix::DVector(rhs))) => {
-            let lhs_len = {lhs.borrow().len()};
-            let rhs_len = {rhs.borrow().len()};
-            if lhs_len != rhs_len {
-              return Err(MechError::new(
-                DimensionMismatch { dims: vec![lhs_len, rhs_len] },
-                None
-              ).with_compiler_loc());
-            }
-            Ok(Box::new(DotVDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
-          },
-          #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "row_vectord"))]
-          (LegacyValue::$matrix_kind(Matrix::RowDVector(lhs)), LegacyValue::$matrix_kind(Matrix::RowDVector(rhs))) => {
-            let lhs_len = {lhs.borrow().len()};
-            let rhs_len = {rhs.borrow().len()};
-            if lhs_len != rhs_len {
-              return Err(MechError::new(
-                DimensionMismatch { dims: vec![lhs_len, rhs_len] },
-                None
-              ).with_compiler_loc());
-            }
-            Ok(Box::new(DotRDRD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
-          },
-        )+
-      )+
-      (arg1,arg2) => Err(MechError::new(
-          UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
-          None
-        ).with_compiler_loc()
-      ),
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for MatrixDot {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 2 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: invocation.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let lhs = invocation.input(0).expect("validated dot lhs");
+        let rhs = invocation.input(1).expect("validated dot rhs");
+        context.bind_runtime_factory_derived_output("Dot", None, &[lhs, rhs])
     }
-  }
 }
-
-#[cfg(feature = "source")]
-fn impl_dot_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_dot_match_arms!(
-      (lhs_value, rhs_value),
-      I8,   MatrixI8,   i8,   "i8";
-      I16,  MatrixI16,  i16,  "i16";
-      I32,  MatrixI32,  i32,  "i32";
-      I64,  MatrixI64,  i64,  "i64";
-      I128, MatrixI128, i128, "i128";
-      U8,   MatrixU8,   u8,   "u8";
-      U16,  MatrixU16,  u16,  "u16";
-      U32,  MatrixU32,  u32,  "u32";
-      U64,  MatrixU64,  u64,  "u64";
-      U128, MatrixU128, u128, "u128";
-      F32,  MatrixF32,  f32,  "f32";
-      F64,  MatrixF64,  f64,  "f64";
-      R64, MatrixR64, R64, "rational";
-      C64, MatrixC64, C64, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(MatrixDot, impl_dot_fxn, "matrix/dot");
 
 #[cfg(all(test, feature = "u8", feature = "vector2"))]
 mod checked_dot_tests {
@@ -199,10 +118,112 @@ mod checked_dot_tests {
 
         function.solve_result().unwrap();
         assert_eq!(*out.borrow(), 200);
-        *rhs.borrow_mut() = Vector2::new(2, 2);
+        with_reactive_journal_participant(|mut participant| {
+            participant.capture_function_state(&function)?;
+            *rhs.borrow_mut() = Vector2::new(2, 2);
 
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
+            assert_eq!(*out.borrow(), 200);
+            *out.borrow_mut() = 19;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
         assert_eq!(*out.borrow(), 200);
+    }
+}
+
+#[cfg(all(
+    test,
+    feature = "runtime",
+    feature = "f64",
+    feature = "vector2",
+    feature = "matrixd"
+))]
+mod canonical_port_tests {
+    use super::*;
+
+    fn f64_value(cell: &ValueCell) -> f64 {
+        let snapshot = cell.snapshot().unwrap();
+        let ValueData::F64(value) = snapshot.data() else {
+            panic!("expected f64 dot output")
+        };
+        value.to_f64()
+    }
+
+    #[test]
+    fn scalar_fixed_and_dynamic_dot_products_use_exact_ports() {
+        let scalar_out = ValueCell::from_exact(0.0_f64).unwrap();
+        let scalar_alias = scalar_out.clone();
+        let scalar = DotScalar::<f64>::new_invocation(FunctionInvocation::binary(
+            scalar_out.clone(),
+            ValueCell::from_exact(2.5_f64).unwrap(),
+            ValueCell::from_exact(4.0_f64).unwrap(),
+        ))
+        .unwrap();
+        scalar.solve_result().unwrap();
+        assert_eq!(f64_value(&scalar_out), 10.0);
+        assert!(scalar_out.same_cell(&scalar_alias));
+
+        let fixed_out = ValueCell::from_exact(0.0_f64).unwrap();
+        DotV2V2::<f64>::new_invocation(FunctionInvocation::binary(
+            fixed_out.clone(),
+            ValueCell::from_exact_matrix_ref(Ref::new(Vector2::new(1.0, 2.0)), 2, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(Ref::new(Vector2::new(3.0, 4.0)), 2, 1).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(f64_value(&fixed_out), 11.0);
+
+        let dynamic_out = ValueCell::from_exact(0.0_f64).unwrap();
+        DotMDMD::<f64>::new_invocation(FunctionInvocation::binary(
+            dynamic_out.clone(),
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0])),
+                2,
+                2,
+            )
+            .unwrap(),
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(DMatrix::from_row_slice(2, 2, &[2.0, 0.0, 1.0, 2.0])),
+                2,
+                2,
+            )
+            .unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(f64_value(&dynamic_out), 13.0);
+
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(scalar.as_ref())?;
+            scalar_out.replace(&ValueCell::from_exact(-1.0_f64)?.snapshot()?)?;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(f64_value(&scalar_out), 10.0);
+    }
+
+    #[test]
+    fn dot_rejects_wrong_exact_type_and_layout() {
+        let rhs = ValueCell::from_exact_matrix_ref(Ref::new(Vector2::new(1.0, 2.0)), 2, 1)
+            .unwrap();
+        assert!(DotV2V2::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact(0.0_f64).unwrap(),
+            ValueCell::from_exact(1.0_f64).unwrap(),
+            rhs.clone(),
+        ))
+        .is_err());
+        assert!(DotV2V2::<f64>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact(0.0_f64).unwrap(),
+            rhs,
+        ))
+        .is_err());
     }
 }

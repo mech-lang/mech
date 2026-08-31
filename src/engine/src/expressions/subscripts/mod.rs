@@ -1,8 +1,10 @@
 use super::variables::{addressed_identifier_hash, addressed_identifier_name};
-use super::{Environment, InvalidIndexKindError, factor, range};
-use crate::{InterpreterExecution, LegacyValue, MResult, MechError, Slice, Subscript, ToValue};
-#[cfg(all(feature = "subscript", feature = "access"))]
-use crate::{MechFunction, OperationId};
+use super::{Environment, factor, range};
+use crate::{
+    FunctionMatrixElement, FunctionValueRepresentation, InterpreterExecution, MResult, MechError,
+    OperationId, Slice, SpecializationInput, SpecializationInvocation, SpecializedFunction,
+    Subscript, ValueCell,
+};
 
 #[cfg(all(feature = "subscript", feature = "access"))]
 mod brace;
@@ -17,13 +19,24 @@ mod string;
 fn catalog_access_function(
     p: &InterpreterExecution<'_>,
     canonical_name: &str,
-    arguments: &[LegacyValue],
-) -> MResult<Box<dyn MechFunction>> {
-    p.specialize_visible_operation_named(
+    arguments: &[SpecializationInput],
+) -> MResult<SpecializedFunction> {
+    let invocation = SpecializationInvocation::new(arguments.to_vec().into_boxed_slice());
+    p.specialize_visible_invocation_named(
         OperationId::from_name(canonical_name),
         Some(canonical_name),
-        arguments,
+        &invocation,
     )
+}
+
+#[cfg(all(feature = "subscript", feature = "access"))]
+fn execute_access_function(
+    p: &InterpreterExecution<'_>,
+    canonical_name: &str,
+    arguments: Vec<SpecializationInput>,
+) -> MResult<ValueCell> {
+    let specialized = catalog_access_function(p, canonical_name, &arguments)?;
+    crate::execute_bound_specialized_function(specialized, &arguments, p)
 }
 
 #[cfg(feature = "subscript_formula")]
@@ -39,111 +52,60 @@ pub fn slice(
     slc: &Slice,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let id = addressed_identifier_hash(&slc.name, &slc.context);
     let name = addressed_identifier_name(&slc.name, &slc.context);
-    let val: LegacyValue = if let Some(env) = env {
-        if let Some(val) = env.get(&id) {
-            val.clone()
-        } else {
-            // fallback to global symbols
-            {
-                let symbols = p.symbols();
-                let symbols_brrw = symbols.borrow();
-                match symbols_brrw.get(id) {
-                    Some(val) => match symbols_brrw.get_mutable(id) {
-                        Some(_) => LegacyValue::MutableReference(val.clone()),
-                        None => val.borrow().clone(),
-                    },
-                    None => {
-                        return Err(MechError::new(
-                            super::UndefinedVariableError {
-                                id,
-                                name: name.clone(),
-                            },
-                            None,
-                        )
-                        .with_compiler_loc()
-                        .with_tokens(slc.tokens()));
-                    }
-                }
-            }
-        }
+    let mut value = if let Some(value) = env.and_then(|environment| environment.get(&id)) {
+        value.clone()
     } else {
         let symbols = p.symbols();
-        let symbols_brrw = symbols.borrow();
-        match symbols_brrw.get(id) {
-            Some(val) => match symbols_brrw.get_mutable(id) {
-                Some(_) => LegacyValue::MutableReference(val.clone()),
-                None => val.borrow().clone(),
-            },
-            None => {
-                return Err(MechError::new(
-                    super::UndefinedVariableError {
-                        id,
-                        name: name.clone(),
-                    },
-                    None,
-                )
+        symbols.borrow().get(id).ok_or_else(|| {
+            MechError::new(super::UndefinedVariableError { id, name }, None)
                 .with_compiler_loc()
-                .with_tokens(slc.tokens()));
-            }
-        }
+                .with_tokens(slc.tokens())
+        })?
     };
-    let mut v = val;
-    for s in &slc.subscript {
-        v = subscript(s, &v, env, p)?;
+    for selector in &slc.subscript {
+        value = subscript(selector, &value, env, p)?;
     }
-    Ok(v)
+    Ok(value)
 }
 
 #[cfg(feature = "subscript_formula")]
 pub fn subscript_formula(
-    sbscrpt: &Subscript,
+    subscript: &Subscript,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    match sbscrpt {
-        Subscript::Formula(fctr) => factor(fctr, env, p),
+) -> MResult<ValueCell> {
+    match subscript {
+        Subscript::Formula(factor_expression) => factor(factor_expression, env, p),
         _ => unreachable!(),
     }
 }
 
 #[cfg(feature = "subscript_formula")]
 pub fn subscript_formula_ix(
-    sbscrpt: &Subscript,
+    subscript: &Subscript,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    match sbscrpt {
-        Subscript::Formula(fctr) => {
-            let result = factor(fctr, env, p)?;
-            subscript_formula_index(&result, p)
-        }
-        _ => unreachable!(),
-    }
+) -> MResult<ValueCell> {
+    let value = subscript_formula(subscript, env, p)?;
+    subscript_formula_index(&value, p)
 }
 
 #[cfg(feature = "subscript_range")]
 pub fn subscript_range(
-    sbscrpt: &Subscript,
+    subscript: &Subscript,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    match sbscrpt {
-        Subscript::Range(rng) => {
-            let result = range(rng, env, p)?;
-            match result.as_vecusize() {
-                Ok(v) => Ok(v.to_value()),
-                Err(_) => Err(MechError::new(
-                    InvalidIndexKindError {
-                        kind: result.kind(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-                .with_tokens(rng.tokens())),
-            }
+) -> MResult<ValueCell> {
+    match subscript {
+        Subscript::Range(range_expression) => {
+            let value = range(range_expression, env, p)?;
+            #[cfg(feature = "matrix")]
+            return crate::intrinsics::access::matrix::canonical_reactive_index_matrix(value, p);
+            #[cfg(not(feature = "matrix"))]
+            return subscript_formula_index(&value, p);
         }
         _ => unreachable!(),
     }
@@ -151,31 +113,48 @@ pub fn subscript_range(
 
 #[cfg(all(feature = "subscript", feature = "access"))]
 pub fn subscript(
-    sbscrpt: &Subscript,
-    val: &LegacyValue,
+    subscript: &Subscript,
+    value: &ValueCell,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    match sbscrpt {
+) -> MResult<ValueCell> {
+    match subscript {
         #[cfg(feature = "table")]
-        Subscript::Dot(_) => dot::access(sbscrpt, val, p),
-        Subscript::DotInt(_) => dot::access(sbscrpt, val, p),
+        Subscript::Dot(_) => dot::access(subscript, value, p),
+        Subscript::DotInt(_) => dot::access(subscript, value, p),
         #[cfg(feature = "swizzle")]
-        Subscript::Swizzle(_) => dot::access(sbscrpt, val, p),
-        Subscript::Brace(_) => brace::access(sbscrpt, val, env, p),
+        Subscript::Swizzle(_) => dot::access(subscript, value, p),
+        Subscript::Brace(_) => brace::access(subscript, value, env, p),
         #[cfg(feature = "subscript_slice")]
-        Subscript::Bracket(_) => bracket::access(sbscrpt, val, env, p),
+        Subscript::Bracket(_) => bracket::access(subscript, value, env, p),
         _ => unreachable!(),
     }
 }
 
 #[cfg(feature = "subscript_formula")]
 fn subscript_formula_index(
-    value: &LegacyValue,
+    value: &ValueCell,
     execution: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     #[cfg(feature = "matrix")]
-    return crate::intrinsics::access::matrix::reactive_scalar_index(value, execution);
+    {
+        if let FunctionValueRepresentation::Matrix { element, .. } = value.representation() {
+            if matches!(
+                element,
+                FunctionMatrixElement::Bool | FunctionMatrixElement::Index
+            ) {
+                return Ok(value.clone());
+            }
+            return crate::intrinsics::access::matrix::canonical_reactive_index_matrix(
+                value.clone(),
+                execution,
+            );
+        }
+        return crate::intrinsics::access::matrix::canonical_reactive_scalar_index(
+            value.clone(),
+            execution,
+        );
+    }
     #[cfg(not(feature = "matrix"))]
-    return value.as_index();
+    return Ok(value.clone());
 }

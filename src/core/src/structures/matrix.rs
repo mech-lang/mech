@@ -1,9 +1,9 @@
 use crate::*;
 
 #[cfg(feature = "no_std")]
-use core::{any::Any, cell};
+use core::any::Any;
 #[cfg(not(feature = "no_std"))]
-use std::{any::Any, cell};
+use std::any::Any;
 
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
@@ -84,7 +84,6 @@ macro_rules! impl_to_matrix {
 
 impl_to_matrix!(usize);
 
-impl_to_matrix!(LegacyValue);
 #[cfg(feature = "bool")]
 impl_to_matrix!(bool);
 #[cfg(feature = "u8")]
@@ -123,41 +122,6 @@ pub trait ToIndex: Clone {
 }
 
 pub type MechMatrix<T> = Matrix<T>;
-
-/// Exact backing form retained across a detached matrix snapshot recipe.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum MatrixStorageForm {
-    #[cfg(feature = "row_vector4")]
-    RowVector4,
-    #[cfg(feature = "row_vector3")]
-    RowVector3,
-    #[cfg(feature = "row_vector2")]
-    RowVector2,
-    #[cfg(feature = "vector4")]
-    Vector4,
-    #[cfg(feature = "vector3")]
-    Vector3,
-    #[cfg(feature = "vector2")]
-    Vector2,
-    #[cfg(feature = "matrix4")]
-    Matrix4,
-    #[cfg(feature = "matrix3")]
-    Matrix3,
-    #[cfg(feature = "matrix2")]
-    Matrix2,
-    #[cfg(feature = "matrix1")]
-    Matrix1,
-    #[cfg(feature = "matrix3x2")]
-    Matrix3x2,
-    #[cfg(feature = "matrix2x3")]
-    Matrix2x3,
-    #[cfg(feature = "vectord")]
-    DVector,
-    #[cfg(feature = "row_vectord")]
-    RowDVector,
-    #[cfg(feature = "matrixd")]
-    DMatrix,
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix<T> {
@@ -202,7 +166,7 @@ pub trait CopyMat<T> {
     fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize) -> usize;
     #[cfg(feature = "matrixd")]
     fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
-    fn addr(&self) -> usize;
+    fn reactive_cell_id(&self) -> CanonicalCellId;
     #[cfg(feature = "semantic-compiler")]
     fn compile_const_mat(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32>;
 }
@@ -259,8 +223,8 @@ macro_rules! copy_mat {
                 }
                 src_rows
             }
-            fn addr(&self) -> usize {
-                self.addr()
+            fn reactive_cell_id(&self) -> CanonicalCellId {
+                Ref::reactive_cell_id(self)
             }
             #[cfg(feature = "semantic-compiler")]
             fn compile_const_mat(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
@@ -623,7 +587,12 @@ impl<T> Matrix<T>
 where
     T: Clone + 'static,
     #[cfg(feature = "semantic-compiler")]
-    T: CompileConst + ConstElem + AsValueKind + Debug + PartialEq,
+    T: CompileConst
+        + ConstElem
+        + FunctionRuntimeType
+        + CanonicalMatrixElementBacking
+        + Debug
+        + PartialEq,
 {
     pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
         match self {
@@ -659,180 +628,14 @@ where
             Matrix::DMatrix(x) => Box::new(x.clone()),
         }
     }
+
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_const_mat(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        self.get_copyable_matrix().compile_const_mat(context)
+    }
 }
 
 impl<T: 'static> Matrix<T> {
-    /// Returns the exact shared backing handle without changing its storage
-    /// class or element type.
-    #[cfg(feature = "functions")]
-    pub(crate) fn exact_ref_any(&self) -> &dyn Any {
-        match self {
-            #[cfg(feature = "row_vector4")]
-            Matrix::RowVector4(x) => x,
-            #[cfg(feature = "row_vector3")]
-            Matrix::RowVector3(x) => x,
-            #[cfg(feature = "row_vector2")]
-            Matrix::RowVector2(x) => x,
-            #[cfg(feature = "vector4")]
-            Matrix::Vector4(x) => x,
-            #[cfg(feature = "vector3")]
-            Matrix::Vector3(x) => x,
-            #[cfg(feature = "vector2")]
-            Matrix::Vector2(x) => x,
-            #[cfg(feature = "matrix4")]
-            Matrix::Matrix4(x) => x,
-            #[cfg(feature = "matrix3")]
-            Matrix::Matrix3(x) => x,
-            #[cfg(feature = "matrix2")]
-            Matrix::Matrix2(x) => x,
-            #[cfg(feature = "matrix1")]
-            Matrix::Matrix1(x) => x,
-            #[cfg(feature = "matrix3x2")]
-            Matrix::Matrix3x2(x) => x,
-            #[cfg(feature = "matrix2x3")]
-            Matrix::Matrix2x3(x) => x,
-            #[cfg(feature = "vectord")]
-            Matrix::DVector(x) => x,
-            #[cfg(feature = "row_vectord")]
-            Matrix::RowDVector(x) => x,
-            #[cfg(feature = "matrixd")]
-            Matrix::DMatrix(x) => x,
-        }
-    }
-
-    pub(crate) fn exact_runtime_representation_name(&self) -> String {
-        match self {
-            #[cfg(feature = "row_vector4")]
-            Matrix::RowVector4(_) => core::any::type_name::<Ref<RowVector4<T>>>().to_string(),
-            #[cfg(feature = "row_vector3")]
-            Matrix::RowVector3(_) => core::any::type_name::<Ref<RowVector3<T>>>().to_string(),
-            #[cfg(feature = "row_vector2")]
-            Matrix::RowVector2(_) => core::any::type_name::<Ref<RowVector2<T>>>().to_string(),
-            #[cfg(feature = "vector4")]
-            Matrix::Vector4(_) => core::any::type_name::<Ref<Vector4<T>>>().to_string(),
-            #[cfg(feature = "vector3")]
-            Matrix::Vector3(_) => core::any::type_name::<Ref<Vector3<T>>>().to_string(),
-            #[cfg(feature = "vector2")]
-            Matrix::Vector2(_) => core::any::type_name::<Ref<Vector2<T>>>().to_string(),
-            #[cfg(feature = "matrix4")]
-            Matrix::Matrix4(_) => core::any::type_name::<Ref<Matrix4<T>>>().to_string(),
-            #[cfg(feature = "matrix3")]
-            Matrix::Matrix3(_) => core::any::type_name::<Ref<Matrix3<T>>>().to_string(),
-            #[cfg(feature = "matrix2")]
-            Matrix::Matrix2(_) => core::any::type_name::<Ref<Matrix2<T>>>().to_string(),
-            #[cfg(feature = "matrix1")]
-            Matrix::Matrix1(_) => core::any::type_name::<Ref<Matrix1<T>>>().to_string(),
-            #[cfg(feature = "matrix3x2")]
-            Matrix::Matrix3x2(_) => core::any::type_name::<Ref<Matrix3x2<T>>>().to_string(),
-            #[cfg(feature = "matrix2x3")]
-            Matrix::Matrix2x3(_) => core::any::type_name::<Ref<Matrix2x3<T>>>().to_string(),
-            #[cfg(feature = "vectord")]
-            Matrix::DVector(_) => core::any::type_name::<Ref<DVector<T>>>().to_string(),
-            #[cfg(feature = "row_vectord")]
-            Matrix::RowDVector(_) => core::any::type_name::<Ref<RowDVector<T>>>().to_string(),
-            #[cfg(feature = "matrixd")]
-            Matrix::DMatrix(_) => core::any::type_name::<Ref<DMatrix<T>>>().to_string(),
-        }
-    }
-
-    pub(crate) fn try_clone_parts(&self) -> Result<(Vec<T>, usize, usize), cell::BorrowError>
-    where
-        T: Clone,
-    {
-        macro_rules! clone_parts {
-            ($matrix:expr) => {{
-                let matrix = $matrix.try_borrow()?;
-                Ok((matrix.as_slice().to_vec(), matrix.nrows(), matrix.ncols()))
-            }};
-        }
-
-        match self {
-            #[cfg(feature = "row_vector4")]
-            Matrix::RowVector4(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "row_vector3")]
-            Matrix::RowVector3(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "row_vector2")]
-            Matrix::RowVector2(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "vector4")]
-            Matrix::Vector4(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "vector3")]
-            Matrix::Vector3(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "vector2")]
-            Matrix::Vector2(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "matrix4")]
-            Matrix::Matrix4(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "matrix3")]
-            Matrix::Matrix3(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "matrix2")]
-            Matrix::Matrix2(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "matrix1")]
-            Matrix::Matrix1(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "matrix3x2")]
-            Matrix::Matrix3x2(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "matrix2x3")]
-            Matrix::Matrix2x3(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "vectord")]
-            Matrix::DVector(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "row_vectord")]
-            Matrix::RowDVector(matrix) => clone_parts!(matrix),
-            #[cfg(feature = "matrixd")]
-            Matrix::DMatrix(matrix) => clone_parts!(matrix),
-        }
-    }
-
-    /// Rebuilds a detached matrix without changing its concrete storage class.
-    ///
-    /// Shape-based construction intentionally prefers fixed-size storage when
-    /// the corresponding feature is enabled. Snapshotting cannot use that
-    /// policy: changing a `DMatrix` into a `Matrix2`, for example, invalidates
-    /// the exact runtime factory contract associated with the value.
-    pub(crate) fn rebuild_with_same_storage(
-        &self,
-        elements: Vec<T>,
-        #[cfg(feature = "matrixd")] rows: usize,
-        #[cfg(not(feature = "matrixd"))] _: usize,
-        #[cfg(feature = "matrixd")] cols: usize,
-        #[cfg(not(feature = "matrixd"))] _: usize,
-    ) -> Matrix<T>
-    where
-        T: Debug + Clone + PartialEq + 'static,
-    {
-        match self {
-            #[cfg(feature = "row_vector4")]
-            Matrix::RowVector4(_) => Matrix::RowVector4(Ref::new(RowVector4::from_vec(elements))),
-            #[cfg(feature = "row_vector3")]
-            Matrix::RowVector3(_) => Matrix::RowVector3(Ref::new(RowVector3::from_vec(elements))),
-            #[cfg(feature = "row_vector2")]
-            Matrix::RowVector2(_) => Matrix::RowVector2(Ref::new(RowVector2::from_vec(elements))),
-            #[cfg(feature = "vector4")]
-            Matrix::Vector4(_) => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
-            #[cfg(feature = "vector3")]
-            Matrix::Vector3(_) => Matrix::Vector3(Ref::new(Vector3::from_vec(elements))),
-            #[cfg(feature = "vector2")]
-            Matrix::Vector2(_) => Matrix::Vector2(Ref::new(Vector2::from_vec(elements))),
-            #[cfg(feature = "matrix4")]
-            Matrix::Matrix4(_) => Matrix::Matrix4(Ref::new(Matrix4::from_vec(elements))),
-            #[cfg(feature = "matrix3")]
-            Matrix::Matrix3(_) => Matrix::Matrix3(Ref::new(Matrix3::from_vec(elements))),
-            #[cfg(feature = "matrix2")]
-            Matrix::Matrix2(_) => Matrix::Matrix2(Ref::new(Matrix2::from_vec(elements))),
-            #[cfg(feature = "matrix1")]
-            Matrix::Matrix1(_) => Matrix::Matrix1(Ref::new(Matrix1::from_vec(elements))),
-            #[cfg(feature = "matrix3x2")]
-            Matrix::Matrix3x2(_) => Matrix::Matrix3x2(Ref::new(Matrix3x2::from_vec(elements))),
-            #[cfg(feature = "matrix2x3")]
-            Matrix::Matrix2x3(_) => Matrix::Matrix2x3(Ref::new(Matrix2x3::from_vec(elements))),
-            #[cfg(feature = "vectord")]
-            Matrix::DVector(_) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
-            #[cfg(feature = "row_vectord")]
-            Matrix::RowDVector(_) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
-            #[cfg(feature = "matrixd")]
-            Matrix::DMatrix(_) => {
-                Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, elements)))
-            }
-        }
-    }
-
     pub fn addr(&self) -> usize {
         match self {
             #[cfg(feature = "matrix1")]
@@ -867,102 +670,49 @@ impl<T: 'static> Matrix<T> {
             Matrix::DMatrix(x) => x.addr(),
         }
     }
+
+    /// Returns the logical reactive identity shared by clones of this matrix
+    /// handle, independent of its allocation address.
+    pub fn reactive_cell_id(&self) -> crate::CanonicalCellId {
+        match self {
+            #[cfg(feature = "matrix1")]
+            Matrix::Matrix1(x) => x.reactive_cell_id(),
+            #[cfg(feature = "matrix2")]
+            Matrix::Matrix2(x) => x.reactive_cell_id(),
+            #[cfg(feature = "matrix3")]
+            Matrix::Matrix3(x) => x.reactive_cell_id(),
+            #[cfg(feature = "matrix4")]
+            Matrix::Matrix4(x) => x.reactive_cell_id(),
+            #[cfg(feature = "matrix2x3")]
+            Matrix::Matrix2x3(x) => x.reactive_cell_id(),
+            #[cfg(feature = "matrix3x2")]
+            Matrix::Matrix3x2(x) => x.reactive_cell_id(),
+            #[cfg(feature = "vector2")]
+            Matrix::Vector2(x) => x.reactive_cell_id(),
+            #[cfg(feature = "vector3")]
+            Matrix::Vector3(x) => x.reactive_cell_id(),
+            #[cfg(feature = "vector4")]
+            Matrix::Vector4(x) => x.reactive_cell_id(),
+            #[cfg(feature = "row_vector2")]
+            Matrix::RowVector2(x) => x.reactive_cell_id(),
+            #[cfg(feature = "row_vector3")]
+            Matrix::RowVector3(x) => x.reactive_cell_id(),
+            #[cfg(feature = "row_vector4")]
+            Matrix::RowVector4(x) => x.reactive_cell_id(),
+            #[cfg(feature = "vectord")]
+            Matrix::DVector(x) => x.reactive_cell_id(),
+            #[cfg(feature = "row_vectord")]
+            Matrix::RowDVector(x) => x.reactive_cell_id(),
+            #[cfg(feature = "matrixd")]
+            Matrix::DMatrix(x) => x.reactive_cell_id(),
+        }
+    }
 }
 
 impl<T> Matrix<T>
 where
     T: Debug + Clone + PartialEq + 'static,
 {
-    pub(crate) fn storage_form(&self) -> MatrixStorageForm {
-        match self {
-            #[cfg(feature = "row_vector4")]
-            Matrix::RowVector4(_) => MatrixStorageForm::RowVector4,
-            #[cfg(feature = "row_vector3")]
-            Matrix::RowVector3(_) => MatrixStorageForm::RowVector3,
-            #[cfg(feature = "row_vector2")]
-            Matrix::RowVector2(_) => MatrixStorageForm::RowVector2,
-            #[cfg(feature = "vector4")]
-            Matrix::Vector4(_) => MatrixStorageForm::Vector4,
-            #[cfg(feature = "vector3")]
-            Matrix::Vector3(_) => MatrixStorageForm::Vector3,
-            #[cfg(feature = "vector2")]
-            Matrix::Vector2(_) => MatrixStorageForm::Vector2,
-            #[cfg(feature = "matrix4")]
-            Matrix::Matrix4(_) => MatrixStorageForm::Matrix4,
-            #[cfg(feature = "matrix3")]
-            Matrix::Matrix3(_) => MatrixStorageForm::Matrix3,
-            #[cfg(feature = "matrix2")]
-            Matrix::Matrix2(_) => MatrixStorageForm::Matrix2,
-            #[cfg(feature = "matrix1")]
-            Matrix::Matrix1(_) => MatrixStorageForm::Matrix1,
-            #[cfg(feature = "matrix3x2")]
-            Matrix::Matrix3x2(_) => MatrixStorageForm::Matrix3x2,
-            #[cfg(feature = "matrix2x3")]
-            Matrix::Matrix2x3(_) => MatrixStorageForm::Matrix2x3,
-            #[cfg(feature = "vectord")]
-            Matrix::DVector(_) => MatrixStorageForm::DVector,
-            #[cfg(feature = "row_vectord")]
-            Matrix::RowDVector(_) => MatrixStorageForm::RowDVector,
-            #[cfg(feature = "matrixd")]
-            Matrix::DMatrix(_) => MatrixStorageForm::DMatrix,
-        }
-    }
-
-    pub(crate) fn from_storage_form(
-        storage: MatrixStorageForm,
-        elements: Vec<T>,
-        rows: usize,
-        cols: usize,
-    ) -> Matrix<T> {
-        assert_eq!(elements.len(), rows.saturating_mul(cols));
-        match storage {
-            #[cfg(feature = "row_vector4")]
-            MatrixStorageForm::RowVector4 => {
-                Matrix::RowVector4(Ref::new(RowVector4::from_vec(elements)))
-            }
-            #[cfg(feature = "row_vector3")]
-            MatrixStorageForm::RowVector3 => {
-                Matrix::RowVector3(Ref::new(RowVector3::from_vec(elements)))
-            }
-            #[cfg(feature = "row_vector2")]
-            MatrixStorageForm::RowVector2 => {
-                Matrix::RowVector2(Ref::new(RowVector2::from_vec(elements)))
-            }
-            #[cfg(feature = "vector4")]
-            MatrixStorageForm::Vector4 => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
-            #[cfg(feature = "vector3")]
-            MatrixStorageForm::Vector3 => Matrix::Vector3(Ref::new(Vector3::from_vec(elements))),
-            #[cfg(feature = "vector2")]
-            MatrixStorageForm::Vector2 => Matrix::Vector2(Ref::new(Vector2::from_vec(elements))),
-            #[cfg(feature = "matrix4")]
-            MatrixStorageForm::Matrix4 => Matrix::Matrix4(Ref::new(Matrix4::from_vec(elements))),
-            #[cfg(feature = "matrix3")]
-            MatrixStorageForm::Matrix3 => Matrix::Matrix3(Ref::new(Matrix3::from_vec(elements))),
-            #[cfg(feature = "matrix2")]
-            MatrixStorageForm::Matrix2 => Matrix::Matrix2(Ref::new(Matrix2::from_vec(elements))),
-            #[cfg(feature = "matrix1")]
-            MatrixStorageForm::Matrix1 => Matrix::Matrix1(Ref::new(Matrix1::from_vec(elements))),
-            #[cfg(feature = "matrix3x2")]
-            MatrixStorageForm::Matrix3x2 => {
-                Matrix::Matrix3x2(Ref::new(Matrix3x2::from_vec(elements)))
-            }
-            #[cfg(feature = "matrix2x3")]
-            MatrixStorageForm::Matrix2x3 => {
-                Matrix::Matrix2x3(Ref::new(Matrix2x3::from_vec(elements)))
-            }
-            #[cfg(feature = "vectord")]
-            MatrixStorageForm::DVector => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
-            #[cfg(feature = "row_vectord")]
-            MatrixStorageForm::RowDVector => {
-                Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements)))
-            }
-            #[cfg(feature = "matrixd")]
-            MatrixStorageForm::DMatrix => {
-                Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, elements)))
-            }
-        }
-    }
-
     /// Returns whether `replace_payload_from` can update this matrix without
     /// replacing its reactive root.
     pub fn can_replace_payload_from(
@@ -1628,168 +1378,6 @@ where
         }
     }
 }
-
-macro_rules! impl_to_value_for_matrix {
-    ($t:ty, $variant:ident) => {
-        impl ToValue for Matrix<$t> {
-            fn to_value(&self) -> LegacyValue {
-                LegacyValue::$variant(self.clone())
-            }
-        }
-    };
-}
-
-impl_to_value_for_matrix!(LegacyValue, MatrixValue);
-#[cfg(feature = "f64")]
-impl_to_value_for_matrix!(f64, MatrixF64);
-#[cfg(feature = "f32")]
-impl_to_value_for_matrix!(f32, MatrixF32);
-#[cfg(feature = "i8")]
-impl_to_value_for_matrix!(i8, MatrixI8);
-#[cfg(feature = "i16")]
-impl_to_value_for_matrix!(i16, MatrixI16);
-#[cfg(feature = "i32")]
-impl_to_value_for_matrix!(i32, MatrixI32);
-#[cfg(feature = "i64")]
-impl_to_value_for_matrix!(i64, MatrixI64);
-#[cfg(feature = "i128")]
-impl_to_value_for_matrix!(i128, MatrixI128);
-#[cfg(feature = "u8")]
-impl_to_value_for_matrix!(u8, MatrixU8);
-#[cfg(feature = "u16")]
-impl_to_value_for_matrix!(u16, MatrixU16);
-#[cfg(feature = "u32")]
-impl_to_value_for_matrix!(u32, MatrixU32);
-#[cfg(feature = "u64")]
-impl_to_value_for_matrix!(u64, MatrixU64);
-#[cfg(feature = "u128")]
-impl_to_value_for_matrix!(u128, MatrixU128);
-#[cfg(feature = "bool")]
-impl_to_value_for_matrix!(bool, MatrixBool);
-#[cfg(feature = "string")]
-impl_to_value_for_matrix!(String, MatrixString);
-#[cfg(feature = "complex")]
-impl_to_value_for_matrix!(C64, MatrixC64);
-#[cfg(feature = "rational")]
-impl_to_value_for_matrix!(R64, MatrixR64);
-
-macro_rules! to_value_ndmatrix {
-  ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty, $type_string:tt),+ $(,)?) => {
-    $(
-      #[cfg(all(feature = "matrix", feature = $type_string))]
-      impl ToValue for Ref<$nd_matrix_kind<$base_type>> {
-        fn to_value(&self) -> LegacyValue {
-          LegacyValue::$matrix_kind(Matrix::<$base_type>::$nd_matrix_kind(self.clone()))
-        }
-      }
-    )+
-  };}
-
-macro_rules! impl_to_value_matrix {
-    ($matrix_kind:ident) => {
-        to_value_ndmatrix!(
-            $matrix_kind,
-            MatrixIndex,
-            usize,
-            "matrix",
-            $matrix_kind,
-            MatrixBool,
-            bool,
-            "bool",
-            $matrix_kind,
-            MatrixI8,
-            i8,
-            "i8",
-            $matrix_kind,
-            MatrixI16,
-            i16,
-            "i16",
-            $matrix_kind,
-            MatrixI32,
-            i32,
-            "i32",
-            $matrix_kind,
-            MatrixI64,
-            i64,
-            "i64",
-            $matrix_kind,
-            MatrixI128,
-            i128,
-            "i128",
-            $matrix_kind,
-            MatrixU8,
-            u8,
-            "u8",
-            $matrix_kind,
-            MatrixU16,
-            u16,
-            "u16",
-            $matrix_kind,
-            MatrixU32,
-            u32,
-            "u32",
-            $matrix_kind,
-            MatrixU64,
-            u64,
-            "u64",
-            $matrix_kind,
-            MatrixU128,
-            u128,
-            "u128",
-            $matrix_kind,
-            MatrixF32,
-            f32,
-            "f32",
-            $matrix_kind,
-            MatrixF64,
-            f64,
-            "f64",
-            $matrix_kind,
-            MatrixString,
-            String,
-            "string",
-            $matrix_kind,
-            MatrixR64,
-            R64,
-            "rational",
-            $matrix_kind,
-            MatrixC64,
-            C64,
-            "complex",
-        );
-    };
-}
-
-#[cfg(feature = "matrix2x3")]
-impl_to_value_matrix!(Matrix2x3);
-#[cfg(feature = "matrix3x2")]
-impl_to_value_matrix!(Matrix3x2);
-#[cfg(feature = "matrix1")]
-impl_to_value_matrix!(Matrix1);
-#[cfg(feature = "matrix2")]
-impl_to_value_matrix!(Matrix2);
-#[cfg(feature = "matrix3")]
-impl_to_value_matrix!(Matrix3);
-#[cfg(feature = "matrix4")]
-impl_to_value_matrix!(Matrix4);
-#[cfg(feature = "vector2")]
-impl_to_value_matrix!(Vector2);
-#[cfg(feature = "vector3")]
-impl_to_value_matrix!(Vector3);
-#[cfg(feature = "vector4")]
-impl_to_value_matrix!(Vector4);
-#[cfg(feature = "row_vector2")]
-impl_to_value_matrix!(RowVector2);
-#[cfg(feature = "row_vector3")]
-impl_to_value_matrix!(RowVector3);
-#[cfg(feature = "row_vector4")]
-impl_to_value_matrix!(RowVector4);
-#[cfg(feature = "row_vectord")]
-impl_to_value_matrix!(RowDVector);
-#[cfg(feature = "vectord")]
-impl_to_value_matrix!(DVector);
-#[cfg(feature = "matrixd")]
-impl_to_value_matrix!(DMatrix);
 
 // Errors
 

@@ -76,10 +76,17 @@ class FullWorkflowContractTests(unittest.TestCase):
                     )
                 )
 
-    def test_value_system_contract_is_permanent_and_unwaived(self):
-        block = job_block(FULL, "architecture-contracts")
-        self.assertIn("scripts/check-value-system-contract.py", block)
-        self.assertNotIn("allow-only-c0-gate-b-evidence-stale", block)
+    def test_value_system_absence_and_permanent_contracts_are_unwaived(self):
+        static = job_block(CI, "static-contracts")
+        architecture = job_block(FULL, "architecture-contracts")
+        permanent = "python3 scripts/check-value-system-contract.py"
+        absence = "python3 scripts/check-no-retired-value-system.py"
+
+        for block in (static, architecture):
+            self.assertIn(permanent, block)
+            self.assertIn(absence, block)
+            self.assertNotIn("generate-value-system-inventory.py", block)
+            self.assertNotIn("continue-on-error", block)
 
     def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):
         block = job_block(FULL, "architecture-contracts")
@@ -132,6 +139,19 @@ class FullWorkflowContractTests(unittest.TestCase):
         profiles = tuple(re.findall(r"- ([a-z0-9-]+)", matrix.group("rows")))
         self.assertEqual(profiles[0], "full")
         self.assertNotIn("standard", profiles)
+        self.assertNotIn("extended-math", profiles)
+        self.assertEqual(
+            tuple(profile for profile in profiles if profile.startswith("extended-math-")),
+            (
+                "extended-math-shard-unsigned-small",
+                "extended-math-shard-unsigned-wide",
+                "extended-math-shard-signed-small",
+                "extended-math-shard-signed-wide",
+                "extended-math-shard-float",
+                "extended-math-shard-complex",
+                "extended-math-shard-rational",
+            ),
+        )
 
     def test_distribution_size_profiles_are_authoritative_and_deterministic(self):
         completed = subprocess.run(

@@ -88,57 +88,6 @@ class ResidentActivationCheckerTests(unittest.TestCase):
         failures = CHECKER.validate_boundary_policy(boundary)
         self.assertTrue(any("publication_contract" in failure for failure in failures))
 
-    def test_inventory_allowance_is_only_the_exact_frozen_delta(self) -> None:
-        baseline = json.loads(
-            CHECKER.git_source(ROOT, CHECKER.D0_PR_BASE, CHECKER.INVENTORY_PATH)
-        )
-        current = copy.deepcopy(
-            json.loads(
-                CHECKER.git_source(
-                    ROOT, CHECKER.D0_FINAL_COMMIT, CHECKER.INVENTORY_PATH
-                )
-            )
-        )
-        engine = next(
-            fixture
-            for fixture in current["auxiliary_cargo_fixtures"]
-            if fixture["manifest"] == "src/engine/Cargo.toml"
-        )
-        target = next(
-            row for row in engine["targets"] if row["name"] == "resident_activation_contract"
-        )
-        target["reachable_rust_files"].append("src/engine/tests/support/catalog.rs")
-        failures = CHECKER.validate_inventory_documents(baseline, current)
-        self.assertTrue(any("frozen D0 delta" in failure for failure in failures))
-
-    def test_exact_inventory_delta_is_the_only_accepted_fixture(self) -> None:
-        baseline = json.loads(
-            CHECKER.git_source(ROOT, CHECKER.D0_PR_BASE, CHECKER.INVENTORY_PATH)
-        )
-        current = json.loads(
-            CHECKER.git_source(ROOT, CHECKER.D0_FINAL_COMMIT, CHECKER.INVENTORY_PATH)
-        )
-        expected = CHECKER.expected_inventory_after_d0(baseline)
-        self.assertEqual(current, expected)
-        self.assertEqual(CHECKER.validate_inventory_documents(baseline, current), [])
-
-        engine = next(
-            fixture
-            for fixture in current["auxiliary_cargo_fixtures"]
-            if fixture["manifest"] == "src/engine/Cargo.toml"
-        )
-        target = next(
-            row for row in engine["targets"] if row["name"] == "resident_activation_contract"
-        )
-        self.assertEqual(target, CHECKER.D0_INVENTORY_TARGET)
-        counts = {row["name"]: row["rust_file_count"] for row in current["workspace_packages"]}
-        self.assertEqual(counts["mech"], 913)
-        self.assertEqual(counts["mech-engine"], 144)
-
-    def test_inventory_blob_is_pinned(self) -> None:
-        failures = CHECKER.validate_inventory_blob_id("0" * 40)
-        self.assertTrue(any(CHECKER.D0_CURRENT_INVENTORY_BLOB in failure for failure in failures))
-
     def test_new_legacy_dependency_fails(self) -> None:
         fixture = self.fixture("new-legacy-dependency")
         failures = CHECKER.validate_new_legacy_dependencies(

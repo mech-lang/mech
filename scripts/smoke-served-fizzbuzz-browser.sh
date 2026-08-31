@@ -73,6 +73,7 @@ assert_fizzbuzz_dom() {
   python3 - "$dom_file" <<'PY'
 from html.parser import HTMLParser
 from pathlib import Path
+import re
 import sys
 
 class Node:
@@ -162,6 +163,13 @@ cells = [
     for node in walk(y_output)
     if node.tag in {"td", "th"} and text(node).strip()
 ]
+if not cells:
+    canonical = next(
+        (node for node in walk(y_output) if "mech-value" in classes(node)),
+        None,
+    )
+    if canonical is not None:
+        cells = re.findall(r'"((?:\\.|[^"\\])*)"', text(canonical))
 expected = [
     "1", "2", "✨", "4", "🐝", "✨", "7", "8",
     "✨", "🐝", "11", "✨", "13", "14", "✨🐝",

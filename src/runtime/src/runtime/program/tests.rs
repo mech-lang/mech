@@ -5,11 +5,11 @@ use std::sync::{
 };
 use std::time::Duration;
 
-use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{
-    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
-    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult,
-    OperationContractDeclaration, ParsedProgram, Ref, ValueData, hash_str,
+    AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
+    ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
+    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData, hash_str,
+    snapshot::SequenceView,
 };
 use mech_engine::{
     __resident::ResidentStorageClass, ArtifactSource, BindingDeclaration, ProgramArtifactDraft,
@@ -42,6 +42,49 @@ fn runtime() -> crate::MechRuntime {
         .input_driver(ResidentTestInputDriver)
         .build()
         .unwrap()
+}
+
+fn canonical_f64(value: &Value) -> f64 {
+    let ValueData::F64(value) = value.data() else {
+        panic!("expected canonical f64, got {value:?}")
+    };
+    value.to_f64()
+}
+
+fn canonical_matrix_shape(value: &Value) -> (usize, usize) {
+    let schemas = value.schemas().expect("canonical matrix retains schemas");
+    let SchemaBody::Matrix { dimensions, .. } = schemas
+        .entry(value.schema())
+        .expect("canonical matrix schema exists")
+        .schema()
+        .body()
+    else {
+        panic!("expected canonical matrix schema")
+    };
+    let [rows, columns] = dimensions.as_ref() else {
+        panic!("runtime matrix must have two dimensions")
+    };
+    (
+        value.shape().resolve_dimension(rows).unwrap() as usize,
+        value.shape().resolve_dimension(columns).unwrap() as usize,
+    )
+}
+
+fn canonical_f64_matrix(value: &Value) -> Vec<f64> {
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("expected canonical f64 matrix, got {value:?}")
+    };
+    match matrix.elements() {
+        SequenceView::F64(values) => values.iter().map(|value| value.to_f64()).collect(),
+        SequenceView::Values(values) => values
+            .iter()
+            .map(|value| match value {
+                ValueData::F64(value) => value.to_f64(),
+                other => panic!("expected f64 matrix element, got {other:?}"),
+            })
+            .collect(),
+        other => panic!("expected f64 matrix storage, got {other:?}"),
+    }
 }
 
 #[derive(Debug)]
@@ -131,7 +174,7 @@ struct PlanningObservationProvider {
 
 #[derive(Debug)]
 struct TypedObservationProvider {
-    planned: LegacyValue,
+    planned: Value,
 }
 
 impl RuntimeResourceProvider for TypedObservationProvider {
@@ -147,11 +190,11 @@ impl RuntimeResourceProvider for TypedObservationProvider {
         Some(crate::resource_observation_contract())
     }
 
-    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        self.planned.try_deep_snapshot()
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        Ok(self.planned.clone())
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         panic!("typed resident host packets must not re-read the provider")
     }
 }
@@ -179,24 +222,24 @@ impl RuntimeResourceProvider for IndependentObservationProvider {
         Some(crate::resource_observation_contract())
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.value(&request)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.reads.fetch_add(1, Ordering::SeqCst);
         self.value(&request)
     }
 }
 
 impl IndependentObservationProvider {
-    fn value(&self, request: &RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn value(&self, request: &RuntimeResourceReadRequest) -> MResult<Value> {
         let bits = match request.base_uri.as_str() {
             "test://clock/fast" => self.fast_bits.load(Ordering::SeqCst),
             "test://clock/slow" => self.slow_bits.load(Ordering::SeqCst),
             other => panic!("unexpected independent observation URI {other}"),
         };
-        Ok(LegacyValue::F64(Ref::new(f64::from_bits(bits))))
+        ValueCell::from_exact(f64::from_bits(bits))?.snapshot()
     }
 }
 
@@ -213,18 +256,14 @@ impl RuntimeResourceProvider for PlanningObservationProvider {
         Some(crate::resource_observation_contract())
     }
 
-    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.plans.fetch_add(1, Ordering::SeqCst);
-        Ok(LegacyValue::F64(Ref::new(f64::from_bits(
-            self.value_bits.load(Ordering::SeqCst),
-        ))))
+        ValueCell::from_exact(f64::from_bits(self.value_bits.load(Ordering::SeqCst)))?.snapshot()
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.reads.fetch_add(1, Ordering::SeqCst);
-        Ok(LegacyValue::F64(Ref::new(f64::from_bits(
-            self.value_bits.load(Ordering::SeqCst),
-        ))))
+        ValueCell::from_exact(f64::from_bits(self.value_bits.load(Ordering::SeqCst)))?.snapshot()
     }
 }
 
@@ -317,7 +356,7 @@ impl RuntimeResourceProvider for ProductSceneProvider {
             && matches!(self.contract, ProductSceneContract::IdempotentRetry)
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         panic!("the deterministic scene is write-only")
     }
 
@@ -362,65 +401,101 @@ impl RuntimeResourceProvider for ProductSceneProvider {
     }
 }
 
-fn product_scene_points(path: &str, value: &LegacyValue) -> Vec<f64> {
-    if let LegacyValue::MutableReference(reference) = value {
-        return product_scene_points(path, &reference.borrow());
-    }
+fn product_scene_points(path: &str, value: &Value) -> Vec<f64> {
+    let schemas = value.schemas().expect("scene value retains schemas");
+    let schema = schemas
+        .entry(value.schema())
+        .expect("scene value schema exists")
+        .schema()
+        .body();
     if path == "replace" {
-        let LegacyValue::Record(scene) = value else {
+        let (SchemaBody::Record(fields), ValueData::Record(scene)) = (schema, value.data()) else {
             panic!("scene replacement must be a record, got {value:?}")
         };
-        let scene = scene.borrow();
-        let point_sets = scene
-            .get(&hash_str("point-sets"))
+        let index = fields
+            .iter()
+            .position(|field| field.name == "point-sets")
             .expect("public N-body scene point-sets");
-        return product_scene_point_set_positions(point_sets);
+        return product_scene_point_set_positions(&fields[index].schema, &scene.fields()[index]);
     }
-    product_scene_matrix_values(value)
+    product_scene_matrix_values(schema, value.data())
 }
 
-fn product_scene_point_set_positions(value: &LegacyValue) -> Vec<f64> {
-    if let LegacyValue::MutableReference(reference) = value {
-        return product_scene_point_set_positions(&reference.borrow());
+fn product_scene_point_set_positions(schema: &SchemaBody, value: &ValueData) -> Vec<f64> {
+    if let (SchemaBody::Table { columns, rows }, ValueData::Table(table)) = (schema, value) {
+        assert!(matches!(
+            rows,
+            mech_core::CardinalitySpec::Exact(mech_core::DimensionExpr::Constant(1))
+        ));
+        let index = columns
+            .iter()
+            .position(|field| field.name == "positions")
+            .expect("public N-body point-set positions");
+        let SequenceView::Values(values) = table
+            .column(index)
+            .expect("scene point-set positions column")
+        else {
+            panic!("scene point-set positions must retain canonical values")
+        };
+        let [value] = values else {
+            panic!("scene point-set table must contain exactly one row")
+        };
+        return product_scene_matrix_values(&columns[index].schema, value);
     }
-    let point_set = match value {
-        LegacyValue::Record(record) => record.clone(),
-        LegacyValue::Tuple(tuple) if tuple.borrow().elements.len() == 1 => {
-            let tuple = tuple.borrow();
-            let LegacyValue::Record(record) = tuple.elements[0].as_ref() else {
+    let (schema, value) = match (schema, value) {
+        (SchemaBody::Record(fields), ValueData::Record(record)) => (fields.as_ref(), record),
+        (SchemaBody::Tuple(elements), ValueData::Tuple(values)) if values.len() == 1 => {
+            let SchemaBody::Record(fields) = &elements[0] else {
                 panic!("scene point-set tuple must contain a record")
             };
-            record.clone()
+            let ValueData::Record(record) = &values[0] else {
+                panic!("scene point-set tuple must contain record data")
+            };
+            (fields.as_ref(), record)
         }
-        LegacyValue::Table(table) if table.borrow().rows == 1 => Ref::new(
-            table
-                .borrow()
-                .get_record(1)
-                .expect("scene point-set table row"),
-        ),
         other => panic!("scene point-sets must contain one record, got {other:?}"),
     };
-    let point_set = point_set.borrow();
-    product_scene_matrix_values(
-        point_set
-            .get(&hash_str("positions"))
-            .expect("public N-body point-set positions"),
-    )
+    let index = schema
+        .iter()
+        .position(|field| field.name == "positions")
+        .expect("public N-body point-set positions");
+    product_scene_matrix_values(&schema[index].schema, &value.fields()[index])
 }
 
-fn product_scene_matrix_values(value: &LegacyValue) -> Vec<f64> {
-    if let LegacyValue::MutableReference(reference) = value {
-        return product_scene_matrix_values(&reference.borrow());
-    }
-    match value {
-        LegacyValue::MatrixF64(matrix) => matrix.as_vec(),
-        LegacyValue::MatrixValue(matrix) => matrix
-            .as_vec()
-            .into_iter()
-            .map(|value| *value.as_f64().unwrap().borrow())
-            .collect(),
+fn product_scene_matrix_values(schema: &SchemaBody, value: &ValueData) -> Vec<f64> {
+    let row_major: Vec<f64> = match value {
+        ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::F64(values) => values.iter().map(|value| value.to_f64()).collect(),
+            SequenceView::Values(values) => values
+                .iter()
+                .map(|value| match value {
+                    ValueData::F64(value) => value.to_f64(),
+                    other => panic!("scene points must contain f64 values, got {other:?}"),
+                })
+                .collect(),
+            other => panic!("scene points must be an f64 matrix, got {other:?}"),
+        },
         other => panic!("scene points must be an f64 matrix, got {other:?}"),
+    };
+    let SchemaBody::Matrix { dimensions, .. } = schema else {
+        panic!("scene points must retain a matrix schema, got {schema:?}")
+    };
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        panic!("scene point dimensions must be closed, got {dimensions:?}")
+    };
+    let (rows, columns) = (*rows as usize, *columns as usize);
+    assert_eq!(row_major.len(), rows * columns);
+    let mut column_major = Vec::with_capacity(row_major.len());
+    for column in 0..columns {
+        for row in 0..rows {
+            column_major.push(row_major[row * columns + column]);
+        }
     }
+    column_major
 }
 
 #[derive(Debug)]
@@ -540,14 +615,14 @@ impl RuntimeResourceProvider for ProductTimerProvider {
         Some(crate::resource_observation_contract())
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         assert_eq!(request.path, "tick");
-        Ok(LegacyValue::F64(Ref::new(0.0)))
+        ValueCell::from_exact(0.0_f64)?.snapshot()
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         assert_eq!(request.path, "tick");
-        Ok(LegacyValue::F64(Ref::new(0.0)))
+        ValueCell::from_exact(0.0_f64)?.snapshot()
     }
 }
 
@@ -830,7 +905,6 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
     assert!(
         interactive_loaded
             .initial_value
-            .to_value()
             .format_canonical_inline()
             .contains("✨🐝"),
         "interactive loading must select the final ordinary result after formatted-document outputs"
@@ -915,10 +989,7 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         .unwrap()
         .unwrap()
         .into_value();
-    assert!(
-        matches!(inline, LegacyValue::F64(ref value) if *value.borrow() == 42.0),
-        "the first published output must retain the evaluated inline value: {inline:?}"
-    );
+    assert_eq!(canonical_f64(&inline), 42.0);
 }
 
 #[test]
@@ -933,13 +1004,12 @@ fn interactive_program_output_is_the_final_statement_without_a_fenced_output() {
         .expect("factorial must publish its final statement");
 
     assert_eq!(runtime.output_name(output_id).as_deref(), Some("res"));
-    assert_eq!(loaded.initial_value.to_value().to_string(), "120");
+    assert_eq!(loaded.initial_value.to_string(), "120");
     assert_eq!(
         runtime
             .output_value(output_id)
             .unwrap()
             .unwrap()
-            .to_value()
             .to_string(),
         "120"
     );
@@ -981,7 +1051,7 @@ fn activation_only_compilation_preserves_the_artifact_without_retaining_bytecode
 }
 
 #[test]
-fn static_initialization_returns_detached_column_major_matrix_values() {
+fn static_initialization_returns_detached_row_major_matrix_values() {
     let tree = mech_syntax::parse("matrix := [1f32 2f32; 3f32 4f32]").unwrap();
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
@@ -996,7 +1066,7 @@ fn static_initialization_returns_detached_column_major_matrix_values() {
         Some(RuntimeHostInputValue::F32Matrix {
             rows: 2,
             columns: 2,
-            values: vec![1.0, 3.0, 2.0, 4.0],
+            values: vec![1.0, 2.0, 3.0, 4.0],
         })
     );
 
@@ -1008,7 +1078,7 @@ fn static_initialization_returns_detached_column_major_matrix_values() {
         RuntimeHostInputValue::F32Matrix {
             rows: 2,
             columns: 2,
-            values: vec![1.0, 3.0, 2.0, 4.0],
+            values: vec![1.0, 2.0, 3.0, 4.0],
         }
     );
 }
@@ -1082,7 +1152,7 @@ fn matrix_declaration_defaults_become_typed_live_inputs() {
         RuntimeHostInputValue::F32Matrix {
             rows: 2,
             columns: 2,
-            values: vec![1.0, 3.0, 2.0, 4.0],
+            values: vec![1.0, 2.0, 3.0, 4.0],
         }
     );
     assert!(product.artifact().bindings().iter().any(|binding| {
@@ -1538,10 +1608,7 @@ fn literal_scalar_output_is_published_without_fake_state() {
         )
         .unwrap();
     assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
-    assert!(matches!(
-        loaded.initial_value.to_value(),
-        LegacyValue::F64(value) if *value.borrow() == 42.0
-    ));
+    assert_eq!(canonical_f64(loaded.initial_value.value()), 42.0);
     let ActiveProgramExecution::ResidentPure(execution) = &source_runtime.active_program else {
         panic!("literal source must own a resident instance")
     };
@@ -1559,10 +1626,7 @@ fn literal_scalar_output_is_published_without_fake_state() {
         .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     assert_eq!(loaded.info.program_revision, Some(revision));
-    assert!(matches!(
-        loaded.initial_value.to_value(),
-        LegacyValue::F64(value) if *value.borrow() == 42.0
-    ));
+    assert_eq!(canonical_f64(loaded.initial_value.value()), 42.0);
 }
 
 #[test]
@@ -1575,10 +1639,7 @@ fn computed_scalar_output_is_materialized_during_activation() {
         )
         .unwrap();
     assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
-    assert!(matches!(
-        loaded.initial_value.to_value(),
-        LegacyValue::F64(value) if *value.borrow() == 42.0
-    ));
+    assert_eq!(canonical_f64(loaded.initial_value.value()), 42.0);
 }
 
 #[test]
@@ -1637,8 +1698,8 @@ fn literal_bool_and_matrix_outputs_are_published() {
         )
         .unwrap();
     assert!(matches!(
-        loaded.initial_value.to_value(),
-        LegacyValue::Bool(value) if *value.borrow()
+        loaded.initial_value.value().data(),
+        ValueData::Bool(true)
     ));
 
     let mut matrix = runtime();
@@ -1648,11 +1709,11 @@ fn literal_bool_and_matrix_outputs_are_published() {
             crate::ResidentDurabilityPolicy::Volatile,
         )
         .unwrap();
-    let LegacyValue::MatrixF64(value) = loaded.initial_value.to_value() else {
-        panic!("matrix output must retain its f64 matrix representation")
-    };
-    assert_eq!((value.rows(), value.cols()), (2, 2));
-    assert_eq!(value.as_vec(), [1.0, 3.0, 2.0, 4.0]);
+    assert_eq!(canonical_matrix_shape(loaded.initial_value.value()), (2, 2));
+    assert_eq!(
+        canonical_f64_matrix(loaded.initial_value.value()),
+        [1.0, 2.0, 3.0, 4.0]
+    );
 }
 
 #[test]
@@ -1690,11 +1751,11 @@ trail
 
     for loaded in [source, bytecode] {
         assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
-        let LegacyValue::MatrixF64(matrix) = loaded.initial_value.to_value() else {
-            panic!("compact resident trail must remain an f64 matrix")
-        };
-        assert_eq!((matrix.rows(), matrix.cols()), (3, 2));
-        assert_eq!(matrix.as_vec(), [1.0, 1.0, 7.0, 2.0, 2.0, 8.0]);
+        assert_eq!(canonical_matrix_shape(loaded.initial_value.value()), (3, 2));
+        assert_eq!(
+            canonical_f64_matrix(loaded.initial_value.value()),
+            [1.0, 2.0, 1.0, 2.0, 7.0, 8.0]
+        );
     }
 }
 
@@ -1726,11 +1787,12 @@ empty
 
     for loaded in [source, bytecode] {
         assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
-        let LegacyValue::MatrixIndex(matrix) = loaded.initial_value.to_value() else {
-            panic!("empty comprehension must use the canonical empty resident matrix carrier")
-        };
-        assert_eq!((matrix.rows(), matrix.cols()), (0, 0));
-        assert!(matrix.as_vec().is_empty());
+        assert_eq!(canonical_matrix_shape(loaded.initial_value.value()), (0, 0));
+        assert!(matches!(
+            loaded.initial_value.value().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::F64(values) if values.is_empty())
+        ));
     }
 }
 
@@ -1795,12 +1857,8 @@ values
         .unwrap();
     runtime.drain_resident_host_inputs(1).unwrap();
 
-    let LegacyValue::MatrixF64(values) = runtime.root_symbol_value("values").unwrap().into_value()
-    else {
-        panic!("live comprehension output must remain an f64 matrix")
-    };
     assert_eq!(
-        values.as_vec(),
+        canonical_f64_matrix(runtime.root_symbol_value("values").unwrap().value()),
         [3.0, 3.0, 3.0],
         "operations inside the comprehension must execute on every accepted turn",
     );
@@ -1874,6 +1932,59 @@ output
         execution.coordinator.instance().output_borrow(0),
         Some(ResidentValueBorrow::F64 { values, .. }) if values == [9.0]
     ));
+}
+
+#[test]
+fn snapshot_backed_output_is_absent_until_its_first_external_publication() {
+    const SOURCE: &str = r#"
+@typed := test://typed/value{:read(data)}
+sample := @typed/data
+sample
+"#;
+
+    let mut runtime = runtime();
+    runtime
+        .register_resource_provider(Box::new(TypedObservationProvider {
+            planned: ValueCell::from_exact(0.0_f32).unwrap().snapshot().unwrap(),
+        }))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_027),
+            subject,
+            "test://typed/value/data",
+            ["read"],
+        )))
+        .unwrap();
+
+    let loaded = runtime
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(loaded.route, RuntimeProgramRoute::ResidentExternal);
+    assert!(loaded.initial_value.is_empty());
+    assert!(runtime.program_output_value().unwrap().is_none());
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://typed/value", "data").unwrap(),
+            crate::RuntimeHostInputValue::F32(3.0),
+        ))
+        .unwrap();
+    assert!(matches!(
+        runtime.drain_resident_host_inputs(1).unwrap().turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+
+    let output = runtime
+        .program_output_value()
+        .unwrap()
+        .expect("the accepted turn publishes the snapshot-backed matrix");
+    let ValueData::F32(value) = output.value().data() else {
+        panic!("expected the published f32 value, got {output:?}")
+    };
+    assert_eq!(value.to_f32().to_bits(), 3.0_f32.to_bits());
 }
 
 #[test]
@@ -1956,7 +2067,7 @@ selected
 
 #[cfg(feature = "compiler_default")]
 fn assert_dynamic_scalar_selector_round_trip(
-    planned: LegacyValue,
+    planned: crate::RuntimeHostInputValue,
     source_packet: crate::RuntimeHostInputValue,
     bytecode_packet: crate::RuntimeHostInputValue,
 ) {
@@ -1967,7 +2078,7 @@ selected := values[1,@typed/data]
 selected
 "#;
 
-    let configured_runtime = |planned: LegacyValue| {
+    let configured_runtime = |planned: Value| {
         let mut runtime = runtime();
         runtime
             .register_resource_provider(Box::new(TypedObservationProvider { planned }))
@@ -1984,7 +2095,8 @@ selected
         runtime
     };
 
-    let planned_for_bytecode = planned.try_deep_snapshot().unwrap();
+    let planned = planned.into_value().unwrap();
+    let planned_for_bytecode = planned.clone();
     let mut source = configured_runtime(planned);
     source
         .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
@@ -2033,7 +2145,7 @@ fn dynamic_matrix_selectors_preserve_every_supported_scalar_kind() {
     macro_rules! assert_kind {
         ($value:ident, $planned:expr, $source:expr, $bytecode:expr) => {
             assert_dynamic_scalar_selector_round_trip(
-                LegacyValue::$value(Ref::new($planned)),
+                crate::RuntimeHostInputValue::$value($planned),
                 crate::RuntimeHostInputValue::$value($source),
                 crate::RuntimeHostInputValue::$value($bytecode),
             );
@@ -2070,7 +2182,7 @@ selected
         let mut runtime = runtime();
         runtime
             .register_resource_provider(Box::new(TypedObservationProvider {
-                planned: LegacyValue::U64(Ref::new(planned)),
+                planned: ValueCell::from_exact(planned).unwrap().snapshot().unwrap(),
             }))
             .unwrap();
         let subject = runtime.runtime_context().unwrap().subject;
@@ -2132,13 +2244,17 @@ selected
     ));
 }
 
-fn assert_typed_observation_round_trip(planned: LegacyValue, packet: crate::RuntimeHostInputValue) {
+fn assert_typed_observation_round_trip(
+    planned: crate::RuntimeHostInputValue,
+    packet: crate::RuntimeHostInputValue,
+) {
     const SOURCE: &str = r#"
 @typed := test://typed/value{:read(data)}
 @typed/data
 "#;
 
-    let planned_for_bytecode = planned.try_deep_snapshot().unwrap();
+    let planned = planned.into_value().unwrap();
+    let planned_for_bytecode = planned.clone();
     let mut source = runtime();
     source
         .register_resource_provider(Box::new(TypedObservationProvider { planned }))
@@ -2216,19 +2332,23 @@ fn assert_typed_observation_round_trip(planned: LegacyValue, packet: crate::Runt
 #[test]
 fn resident_observation_profile_covers_scalars_and_dense_matrices() {
     assert_typed_observation_round_trip(
-        LegacyValue::Bool(Ref::new(false)),
+        crate::RuntimeHostInputValue::Bool(false),
         crate::RuntimeHostInputValue::Bool(true),
     );
     assert_typed_observation_round_trip(
-        LegacyValue::Index(Ref::new(1)),
+        crate::RuntimeHostInputValue::Index(1),
         crate::RuntimeHostInputValue::Index(7),
     );
     assert_typed_observation_round_trip(
-        LegacyValue::F64(Ref::new(0.0)),
+        crate::RuntimeHostInputValue::F64(0.0),
         crate::RuntimeHostInputValue::F64(7.5),
     );
     assert_typed_observation_round_trip(
-        LegacyValue::MatrixBool(ValueMatrix::from_vec(vec![false; 4], 2, 2)),
+        crate::RuntimeHostInputValue::BoolMatrix {
+            rows: 2,
+            columns: 2,
+            values: vec![false; 4],
+        },
         crate::RuntimeHostInputValue::BoolMatrix {
             rows: 2,
             columns: 2,
@@ -2236,7 +2356,11 @@ fn resident_observation_profile_covers_scalars_and_dense_matrices() {
         },
     );
     assert_typed_observation_round_trip(
-        LegacyValue::MatrixIndex(ValueMatrix::from_vec(vec![1; 4], 2, 2)),
+        crate::RuntimeHostInputValue::IndexMatrix {
+            rows: 2,
+            columns: 2,
+            values: vec![1; 4],
+        },
         crate::RuntimeHostInputValue::IndexMatrix {
             rows: 2,
             columns: 2,
@@ -2244,7 +2368,11 @@ fn resident_observation_profile_covers_scalars_and_dense_matrices() {
         },
     );
     assert_typed_observation_round_trip(
-        LegacyValue::MatrixF64(ValueMatrix::from_vec(vec![0.0; 4], 2, 2)),
+        crate::RuntimeHostInputValue::F64Matrix {
+            rows: 2,
+            columns: 2,
+            values: vec![0.0; 4],
+        },
         crate::RuntimeHostInputValue::F64Matrix {
             rows: 2,
             columns: 2,
@@ -2684,8 +2812,8 @@ fn production_scalar_string_source_loads_residently_without_fallback() {
 
     assert_eq!(outcome.route, RuntimeProgramRoute::ResidentPure);
     assert!(matches!(
-        outcome.initial_value.to_value(),
-        LegacyValue::String(_)
+        outcome.initial_value.value().data(),
+        ValueData::String(_)
     ));
     assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
 }
@@ -2975,13 +3103,8 @@ state
         ));
     }
 
-    let state = runtime
-        .root_symbol_value("state")
-        .unwrap()
-        .into_value()
-        .as_f64()
-        .unwrap();
-    assert_eq!(*state.borrow(), 2.0);
+    let state = runtime.root_symbol_value("state").unwrap();
+    assert_eq!(canonical_f64(state.value()), 2.0);
 }
 
 #[test]
@@ -3994,16 +4117,13 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
     );
     let mut mercury = vec![raw.mercury_state()];
 
-    let published_energy = |runtime: &crate::MechRuntime| match runtime
-        .program_output_value()
-        .unwrap()
-        .expect("N-body publishes total energy")
-        .into_value()
-    {
-        LegacyValue::MatrixF64(value) if (value.rows(), value.cols()) == (1, 1) => {
-            value.as_vec()[0]
-        }
-        value => panic!("N-body energy must be a 1-by-1 f64 matrix, got {value:?}"),
+    let published_energy = |runtime: &crate::MechRuntime| {
+        let value = runtime
+            .program_output_value()
+            .unwrap()
+            .expect("N-body publishes total energy");
+        assert_eq!(canonical_matrix_shape(value.value()), (1, 1));
+        canonical_f64_matrix(value.value())[0]
     };
     let expected_initial_energy = raw.energy();
     raw.advance(0.002);

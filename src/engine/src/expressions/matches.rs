@@ -4,20 +4,23 @@ use super::MatchNonExhaustiveError;
 use super::MatchNonExhaustiveVariantsError;
 use super::{
     Environment, InvalidGuardExpressionError, MatchArmKindMismatchError, MatchNoArmMatchedError,
-    expression,
+    expression, expression_cell,
 };
 #[cfg(feature = "matrix")]
 use crate::CannotConvertToTypeError;
 #[cfg(feature = "enum")]
 use crate::Literal;
 #[cfg(feature = "enum")]
-use crate::MechEnum;
+use crate::hash_str;
 use crate::{
-    Expression, InterpreterExecution, LegacyValue, MResult, MatchArm, MatchExpression, MechError,
-    Pattern, Ref, Token, ValueKind,
+    Expression, FunctionValueRepresentation, InterpreterExecution, MResult, MatchArm,
+    MatchExpression, MechError, Pattern, SpecializationInput, Token, ValueCell, ValueData,
 };
 #[cfg(feature = "matrix")]
-use mech_core::matrix::Matrix;
+use crate::{SchemaBody, ValueCellSnapshotFailure};
+use mech_core::snapshot::SequenceView;
+#[cfg(feature = "matrix")]
+use mech_core::snapshot::{OptionDraft, ValueDataDraft};
 #[cfg(feature = "enum")]
 use std::collections::HashSet;
 
@@ -25,13 +28,29 @@ pub fn match_expression(
     match_expr: &MatchExpression,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
+) -> MResult<ValueCell> {
     let source = expression(&match_expr.source, env, p)?;
-    let detached_source = match &source {
-        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
-        _ => source.clone(),
-    };
     let mut base_env = env.cloned().unwrap_or_default();
+    let SpecializationInput::Cell(detached_source) = source else {
+        if let Some(arm) = match_expr
+            .arms
+            .iter()
+            .find(|arm| matches!(arm.pattern, Pattern::Wildcard))
+        {
+            if arm
+                .guard
+                .as_ref()
+                .map(|guard| guard_expression_true(guard, &base_env, p))
+                .transpose()?
+                .unwrap_or(true)
+            {
+                return expression_cell(&arm.expression, Some(&base_env), p);
+            }
+        }
+        return Err(MechError::new(MatchNoArmMatchedError, None)
+            .with_compiler_loc()
+            .with_tokens(match_expr.source.tokens()));
+    };
     if let Expression::Var(var) = &match_expr.source {
         base_env.insert(var.name.hash(), detached_source.clone());
     }
@@ -64,7 +83,7 @@ pub fn match_expression(
                 .with_tokens(match_expr.source.tokens()));
         }
     }
-    if value_contains_empty(&detached_source) && !has_identity_wildcard_coalesce_arms(match_expr) {
+    if value_contains_empty(&detached_source)? && !has_identity_wildcard_coalesce_arms(match_expr) {
         if let Some(arm) = match_expr
             .arms
             .iter()
@@ -75,7 +94,7 @@ pub fn match_expression(
                 None => true,
             };
             if passed_guard {
-                return expression(&arm.expression, Some(&base_env), p);
+                return expression_cell(&arm.expression, Some(&base_env), p);
             }
         }
     }
@@ -100,7 +119,7 @@ pub fn match_expression(
         };
         if passed_guard {
             #[cfg(feature = "matrix")]
-            if value_contains_empty(&detached_source) && is_identity_option_matrix_arm(arm) {
+            if value_contains_empty(&detached_source)? && is_identity_option_matrix_arm(arm) {
                 if let Some(wildcard_arm) = match_expr
                     .arms
                     .iter()
@@ -111,18 +130,19 @@ pub fn match_expression(
                         None => true,
                     };
                     if wildcard_passed {
-                        let fallback = expression(&wildcard_arm.expression, Some(&base_env), p)?;
+                        let fallback =
+                            expression_cell(&wildcard_arm.expression, Some(&base_env), p)?;
                         let coalesced =
                             coalesce_option_matrix_with_fallback(&detached_source, &fallback)?;
                         return Ok(coalesced);
                     }
                 }
             }
-            let output = expression(&arm.expression, Some(&guard_env), p)?;
+            let output = expression_cell(&arm.expression, Some(&guard_env), p)?;
             match_validate_arm_kinds(
                 match_expr,
                 arm_ix,
-                &output.kind(),
+                output.representation(),
                 &detached_source,
                 &base_env,
                 p,
@@ -139,34 +159,12 @@ pub fn match_expression(
 #[cfg(feature = "enum")]
 fn infer_missing_enum_match_patterns(
     match_expr: &MatchExpression,
-    source: &LegacyValue,
+    source: &ValueCell,
     p: &InterpreterExecution<'_>,
 ) -> Option<(String, Vec<String>)> {
-    let (source_enum_id, source_tag) = match source {
-        LegacyValue::Enum(enum_value) => {
-            let enum_brrw = enum_value.borrow();
-            if enum_brrw.variants.len() != 1 {
-                (Some(enum_brrw.id), None)
-            } else {
-                (Some(enum_brrw.id), Some(enum_brrw.variants[0].0))
-            }
-        }
-        #[cfg(feature = "atom")]
-        LegacyValue::Atom(atom) => (None, Some(atom.borrow().id())),
-        #[cfg(all(feature = "tuple", feature = "atom"))]
-        LegacyValue::Tuple(tuple_val) => {
-            let tuple_brrw = tuple_val.borrow();
-            match tuple_brrw.elements.first() {
-                Some(tag) => match tag.as_ref() {
-                    LegacyValue::Atom(atom) => (None, Some(atom.borrow().id())),
-                    _ => (None, None),
-                },
-                None => (None, None),
-            }
-        }
-        _ => (None, None),
+    let SchemaBody::Enum { key, variants } = source.closed_schema_body().ok()? else {
+        return None;
     };
-    let source_tag = source_tag?;
 
     let mut arm_tags: HashSet<u64> = HashSet::new();
     for arm in &match_expr.arms {
@@ -185,50 +183,32 @@ fn infer_missing_enum_match_patterns(
         return None;
     }
 
-    let state_brrw = p.state.borrow();
-    let enum_def = if let Some(enum_id) = source_enum_id {
-        state_brrw.enums.get(&enum_id)?
-    } else {
-        let candidates: Vec<&MechEnum> = state_brrw
-            .enums
-            .values()
-            .filter(|enm| {
-                let variant_ids: HashSet<u64> = enm.variants.iter().map(|(id, _)| *id).collect();
-                variant_ids.contains(&source_tag) && arm_tags.is_subset(&variant_ids)
-            })
-            .collect();
-        if candidates.len() != 1 {
-            return None;
-        }
-        candidates[0]
-    };
-    let variant_ids: HashSet<u64> = enum_def.variants.iter().map(|(id, _)| *id).collect();
-    let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).cloned().collect();
-    let names_brrw = enum_def.names.borrow();
-    let missing_patterns = enum_def
-        .variants
+    let state = p.state.borrow();
+    let enum_def = state.enums.values().find(|definition| {
+        matches!(
+            crate::structures::enum_schema(definition),
+            Ok(SchemaBody::Enum { key: candidate, .. }) if candidate == key
+        )
+    })?;
+    let missing_patterns = variants
         .iter()
-        .filter(|(id, _)| missing_ids.contains(id))
-        .map(|(id, payload_kind)| {
-            let variant_name = names_brrw
-                .get(id)
-                .cloned()
-                .unwrap_or_else(|| id.to_string());
-            if payload_kind.is_some() {
-                format!(":{}(…)", variant_name)
+        .filter(|variant| !arm_tags.contains(&hash_str(&variant.name)))
+        .map(|variant| {
+            if variant.payload.is_some() {
+                format!(":{}(…)", variant.name)
             } else {
-                format!(":{}", variant_name)
+                format!(":{}", variant.name)
             }
         })
         .collect::<Vec<String>>();
-    Some((enum_def.name(), missing_patterns))
+    Some((enum_def.name.clone(), missing_patterns))
 }
 
 fn match_validate_arm_kinds(
     match_expr: &MatchExpression,
     matched_arm_ix: usize,
-    matched_kind: &ValueKind,
-    source: &LegacyValue,
+    matched_kind: FunctionValueRepresentation,
+    source: &ValueCell,
     base_env: &Environment,
     p: &InterpreterExecution<'_>,
 ) -> MResult<()> {
@@ -254,12 +234,12 @@ fn match_validate_arm_kinds(
         if !passed_guard {
             continue;
         }
-        let arm_value = expression(&arm.expression, Some(&arm_env), p)?;
-        let arm_kind = arm_value.kind();
-        if arm_kind != *matched_kind {
+        let arm_value = expression_cell(&arm.expression, Some(&arm_env), p)?;
+        let arm_kind = arm_value.representation();
+        if arm_kind != matched_kind {
             return Err(MechError::new(
                 MatchArmKindMismatchError {
-                    expected: matched_kind.clone(),
+                    expected: matched_kind,
                     found: arm_kind,
                 },
                 None,
@@ -277,10 +257,10 @@ fn validate_match_arm_output_kinds(
     env: &Environment,
     p: &InterpreterExecution<'_>,
 ) -> MResult<()> {
-    let mut expected: Option<ValueKind> = None;
+    let mut expected: Option<FunctionValueRepresentation> = None;
     for arm in &match_expr.arms {
-        let arm_kind = match expression(&arm.expression, Some(env), p) {
-            Ok(value) => value.kind(),
+        let arm_kind = match expression_cell(&arm.expression, Some(env), p) {
+            Ok(value) => value.representation(),
             Err(_) => continue,
         };
         if let Some(expected_kind) = &expected {
@@ -307,27 +287,26 @@ fn guard_expression_true(
     env: &Environment,
     p: &InterpreterExecution<'_>,
 ) -> MResult<bool> {
-    let guard_result = expression(guard, Some(env), p)?;
+    let guard_result = expression_cell(guard, Some(env), p)?;
     let flag = validate_guard_expression_result(guard_result, guard.tokens())?;
-    let result = *flag.borrow();
-    Ok(result)
+    Ok(matches!(flag.snapshot()?.data(), ValueData::Bool(true)))
 }
 
 pub(crate) fn validate_guard_expression_result(
-    guard_result: LegacyValue,
+    guard_result: ValueCell,
     tokens: Vec<Token>,
-) -> MResult<Ref<bool>> {
-    match guard_result {
-        #[cfg(feature = "bool")]
-        LegacyValue::Bool(flag) => Ok(flag),
-        _ => Err(MechError::new(
+) -> MResult<ValueCell> {
+    if matches!(guard_result.snapshot()?.data(), ValueData::Bool(_)) {
+        Ok(guard_result)
+    } else {
+        Err(MechError::new(
             InvalidGuardExpressionError {
-                found: guard_result.kind(),
+                found: guard_result.representation(),
             },
             None,
         )
         .with_compiler_loc()
-        .with_tokens(tokens)),
+        .with_tokens(tokens))
     }
 }
 
@@ -351,90 +330,105 @@ fn has_identity_wildcard_coalesce_arms(match_expr: &MatchExpression) -> bool {
 
 #[cfg(feature = "matrix")]
 fn coalesce_option_matrix_with_fallback(
-    source: &LegacyValue,
-    fallback: &LegacyValue,
-) -> MResult<LegacyValue> {
-    let source_kind = source.kind();
-    if let ValueKind::Option(inner_kind) = source_kind.clone() {
-        let raw = match source {
-            LegacyValue::Typed(inner, _) => inner.as_ref().clone(),
-            value => value.clone(),
-        };
-        let candidate = match raw {
-            LegacyValue::Empty | LegacyValue::EmptyKind(_) => fallback.clone(),
-            value => value,
-        };
-        return candidate.convert_to(inner_kind.as_ref()).ok_or_else(|| {
-            MechError::new(
-                CannotConvertToTypeError {
-                    target_type: "requested type",
-                },
-                None,
-            )
-            .with_compiler_loc()
-        });
-    }
-    let (inner_kind, shape) = match source_kind {
-        ValueKind::Matrix(element_kind, shape) => match *element_kind {
-            ValueKind::Option(inner) => (*inner, shape),
-            _ => return Ok(source.clone()),
-        },
-        _ => return Ok(source.clone()),
-    };
-    let values = match crate::patterns::matrix_like_values(source) {
-        Some(values) => values,
-        None => return Ok(source.clone()),
-    };
-    let fill_value = fallback.convert_to(&inner_kind).ok_or_else(|| {
-        MechError::new(
-            CannotConvertToTypeError {
-                target_type: "requested type",
-            },
-            None,
-        )
-        .with_compiler_loc()
-    })?;
-    let converted_values = values
-        .into_iter()
-        .map(|value| {
-            let raw = match value {
-                LegacyValue::Empty | LegacyValue::EmptyKind(_) => fill_value.clone(),
-                other => other,
-            };
-            raw.convert_to(&inner_kind).ok_or_else(|| {
-                MechError::new(
+    source: &ValueCell,
+    fallback: &ValueCell,
+) -> MResult<ValueCell> {
+    let fallback_schema = fallback.closed_schema_body()?;
+    let fallback_draft = fallback
+        .snapshot()?
+        .canonical_data_draft()
+        .map_err(|error| {
+            MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+        })?;
+    match source.closed_schema_body()? {
+        SchemaBody::Option(inner) => {
+            if fallback_schema != *inner {
+                return Err(MechError::new(
                     CannotConvertToTypeError {
-                        target_type: "requested type",
+                        target_type: "option element schema",
                     },
                     None,
                 )
-                .with_compiler_loc()
-            })
-        })
-        .collect::<MResult<Vec<LegacyValue>>>()?;
-    Ok(LegacyValue::MatrixValue(Matrix::from_vec(
-        converted_values,
-        shape[0],
-        shape[1],
-    )))
+                .with_compiler_loc());
+            }
+            let draft = source.snapshot()?.canonical_data_draft().map_err(|error| {
+                MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+            })?;
+            let ValueDataDraft::Option(option) = draft else {
+                unreachable!("validated option schema retains option data")
+            };
+            ValueCell::from_schema_data(
+                *inner,
+                option.value.map(|value| *value).unwrap_or(fallback_draft),
+            )
+        }
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => {
+            let SchemaBody::Option(inner) = *element else {
+                return Ok(source.clone());
+            };
+            if fallback_schema != *inner {
+                return Err(MechError::new(
+                    CannotConvertToTypeError {
+                        target_type: "option matrix element schema",
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            let draft = source.snapshot()?.canonical_data_draft().map_err(|error| {
+                MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+            })?;
+            let ValueDataDraft::Matrix(values) = draft else {
+                unreachable!("validated matrix schema retains matrix data")
+            };
+            let values = values
+                .into_vec()
+                .into_iter()
+                .map(|value| match value {
+                    ValueDataDraft::Option(OptionDraft { value, .. }) => Ok(value
+                        .map(|value| *value)
+                        .unwrap_or_else(|| fallback_draft.clone())),
+                    _ => Err(MechError::new(
+                        CannotConvertToTypeError {
+                            target_type: "option matrix element",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            let concrete = dimensions
+                .iter()
+                .map(|dimension| match dimension {
+                    crate::DimensionExpr::Constant(value) => Ok(*value),
+                    _ => unreachable!("closed matrix schema has concrete dimensions"),
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            ValueCell::dynamic_matrix(
+                *inner,
+                concrete.into_boxed_slice(),
+                values.into_boxed_slice(),
+            )
+        }
+        _ => Ok(source.clone()),
+    }
 }
 
-fn value_contains_empty(value: &LegacyValue) -> bool {
-    match value {
-        LegacyValue::Empty | LegacyValue::EmptyKind(_) => true,
-        #[cfg(feature = "matrix")]
-        LegacyValue::MatrixValue(matrix) => matrix
-            .as_vec()
-            .iter()
-            .any(|value| value_contains_empty(value)),
-        #[cfg(feature = "tuple")]
-        LegacyValue::Tuple(tuple) => tuple
-            .borrow()
-            .elements
-            .iter()
-            .any(|value| value_contains_empty(value.as_ref())),
-        LegacyValue::Typed(value, _) => value_contains_empty(value),
-        LegacyValue::MutableReference(reference) => value_contains_empty(&reference.borrow()),
-        _ => false,
+fn value_contains_empty(value: &ValueCell) -> MResult<bool> {
+    fn contains(data: &ValueData) -> bool {
+        match data {
+            ValueData::Option(None) => true,
+            ValueData::Option(Some(value)) => contains(value),
+            ValueData::Tuple(values) => values.iter().any(contains),
+            ValueData::Matrix(matrix) => match matrix.elements() {
+                SequenceView::Values(values) => values.iter().any(contains),
+                _ => false,
+            },
+            _ => false,
+        }
     }
+    Ok(contains(value.snapshot()?.data()))
 }

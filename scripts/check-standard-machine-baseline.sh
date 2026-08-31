@@ -94,11 +94,11 @@ check_profile() {
     *) echo "$machine $profile omitted its runtime layer" >&2; exit 1 ;;
   esac
   case "$profile" in
-    runtime | runtime_default)
+    runtime | standard_runtime)
       required=""
       forbidden="$source_feature|$compiler_feature|$core_compiler_feature"
       ;;
-    source | source_default)
+    source | standard_source)
       required="$source_feature"
       forbidden="$compiler_feature|$core_compiler_feature"
       ;;
@@ -106,7 +106,7 @@ check_profile() {
       required="$compiler_feature|$core_compiler_feature"
       forbidden="$source_feature"
       ;;
-    source+compiler | compiler_default)
+    source+compiler | standard_compiler)
       required="$source_feature|$compiler_feature|$core_compiler_feature"
       forbidden=""
       ;;
@@ -160,9 +160,9 @@ check_machine() {
   check_profile "$machine" source "source,$operation_features"
   check_profile "$machine" compiler "compiler,$operation_features"
   check_profile "$machine" source+compiler "source,compiler,$operation_features"
-  check_profile "$machine" runtime_default runtime_default
-  check_profile "$machine" source_default source_default
-  check_profile "$machine" compiler_default compiler_default
+  check_profile "$machine" standard_runtime standard_runtime
+  check_profile "$machine" standard_source standard_source
+  check_profile "$machine" standard_compiler standard_compiler
 
   rm -rf "$scratch/$machine-target"
 }

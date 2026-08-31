@@ -1,19 +1,19 @@
 use crate::{
-    ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, Interpreter, LegacyValue,
-    MResult, MechError, MechExecutionServices, ResourceDelivery, ResourceIntent, ValRef,
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, Interpreter, MResult,
+    MechError, MechExecutionServices, ResourceDelivery, ResourceIntent, Value, ValueCell,
 };
 
 #[derive(Default)]
 struct RecordingContextServices {
-    writes: Vec<(ExecutionResourceRequest, LegacyValue)>,
+    writes: Vec<(ExecutionResourceRequest, Value)>,
 }
 
 impl MechExecutionServices for RecordingContextServices {
     fn invoke_host_function(
         &mut self,
         _request: &ExecutionHostFunctionRequest,
-        _arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue> {
+        _arguments: &[Value],
+    ) -> MResult<Value> {
         Err(MechError::new(
             GenericError {
                 msg: "unexpected host call".to_string(),
@@ -22,7 +22,7 @@ impl MechExecutionServices for RecordingContextServices {
         ))
     }
 
-    fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+    fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<Value> {
         Err(MechError::new(
             GenericError {
                 msg: "unexpected resource read".to_string(),
@@ -31,11 +31,7 @@ impl MechExecutionServices for RecordingContextServices {
         ))
     }
 
-    fn write_resource(
-        &mut self,
-        request: &ExecutionResourceRequest,
-        value: &LegacyValue,
-    ) -> MResult<()> {
+    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()> {
         self.writes.push((request.clone(), value.clone()));
         Ok(())
     }
@@ -44,7 +40,7 @@ impl MechExecutionServices for RecordingContextServices {
         &mut self,
         _interpreter_id: u64,
         _request: &ExecutionResourceRequest,
-        _target: ValRef,
+        _target: ValueCell,
     ) -> MResult<()> {
         Err(MechError::new(
             GenericError {
@@ -122,5 +118,7 @@ fn context_send_request_bytes_are_unchanged() {
             delivery: ResourceDelivery::Snapshot,
         }
     );
-    assert_eq!(*services.writes[0].1.as_f64().unwrap().borrow(), 7.0);
+    assert!(
+        matches!(services.writes[0].1.data(), mech_core::ValueData::F64(value) if value.to_f64() == 7.0)
+    );
 }

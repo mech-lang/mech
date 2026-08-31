@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // Greater Than ---------------------------------------------------------------
 
@@ -112,13 +110,282 @@ macro_rules! concat_row_mat_op {
 impl_string_fxns!(Concat);
 
 #[cfg(feature = "source")]
-fn impl_concat_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      Concat,
-      (lhs_value, rhs_value),
-      String, String, "string";
+fn specialize_concat_factory<F>(
+    lhs: &SpecializationInput,
+    rhs: &SpecializationInput,
+) -> MResult<SpecializedFunction>
+where
+    F: MechFunctionFactory,
+{
+    let output = [lhs, rhs]
+        .into_iter()
+        .find(|input| input.representation() == Some(F::SIGNATURE.output))
+        .ok_or_else(|| {
+            MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Output,
+                    expected: format!("input template matching {:?}", F::SIGNATURE.output),
+                    found: format!("{:?} and {:?}", lhs.representation(), rhs.representation()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?
+        .cell()?
+        .detached_clone()?;
+    SpecializedFunction::bind_factory::<F>(
+        output,
+        vec![lhs.cell()?.clone(), rhs.cell()?.clone()].into_boxed_slice(),
     )
 }
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __try_string_concat_factory {
+    (($lhs:ident, $rhs:ident), $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        mech_core::paste::paste! {
+            if let RuntimeFunctionInputs::Binary(expected_lhs, expected_rhs) =
+                <$crate::[<$lib $suffix>]<$scalar> as MechFunctionFactory>::SIGNATURE.inputs
+                && $lhs.representation() == Some(expected_lhs)
+                && $rhs.representation() == Some(expected_rhs)
+            {
+                return $crate::concat::specialize_concat_factory::<
+                    $crate::[<$lib $suffix>]<$scalar>
+                >($lhs, $rhs);
+            }
+        }
+    };
+}
+
 #[cfg(feature = "source")]
-impl_mech_binop_fxn!(StringConcat, impl_concat_fxn, "string/concat");
+pub struct StringConcat;
+
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for StringConcat {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        _context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 2 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: invocation.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let lhs = invocation.input(0).expect("validated concat lhs");
+        let rhs = invocation.input(1).expect("validated concat rhs");
+        mech_core::for_each_canonical_binop_factory!(
+            crate::__try_string_concat_factory,
+            (lhs, rhs),
+            Concat,
+            String,
+            "string",
+            string
+        );
+        Err(MechError::new(
+            FunctionArgumentTypeMismatch {
+                role: FunctionArgumentRole::Input(0),
+                expected: "supported String scalar or matrix inputs".into(),
+                found: format!("{:?} and {:?}", lhs.representation(), rhs.representation()),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+#[cfg(all(test, feature = "string"))]
+mod scalar_port_tests {
+    use super::*;
+
+    fn string_value(cell: &ValueCell) -> String {
+        let snapshot = cell.snapshot().unwrap();
+        let ValueData::String(value) = snapshot.data() else {
+            panic!("expected canonical string output")
+        };
+        value.to_string()
+    }
+
+    #[test]
+    fn scalar_concat_uses_exact_canonical_ports_and_state() {
+        let output = ValueCell::from_exact(String::new()).unwrap();
+        let alias = output.clone();
+        let function = ConcatSS::<String>::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            ValueCell::from_exact("left".to_string()).unwrap(),
+            ValueCell::from_exact("-right".to_string()).unwrap(),
+        ))
+        .unwrap();
+        function.solve_result().unwrap();
+        assert_eq!(string_value(&output), "left-right");
+        assert!(output.same_cell(&alias));
+        assert_eq!(
+            function.reactive_output_cell_ids(),
+            vec![output.reactive_cell_id()]
+        );
+
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            output.replace(&ValueCell::from_exact("changed".to_string())?.snapshot()?)?;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(string_value(&output), "left-right");
+
+        assert!(ConcatSS::<String>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact(String::new()).unwrap(),
+            ValueCell::from_exact("wrong-layout".to_string()).unwrap(),
+        ))
+        .is_err());
+        assert!(ConcatSS::<String>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact(String::new()).unwrap(),
+            ValueCell::from_exact("left".to_string()).unwrap(),
+            ValueCell::from_exact(1_usize).unwrap(),
+        ))
+        .is_err());
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn source_specialization_keeps_concat_behavior() {
+        let invocation = SpecializationInvocation::from_cells(
+            vec![
+                ValueCell::from_exact("source".to_string()).unwrap(),
+                ValueCell::from_exact("-path".to_string()).unwrap(),
+            ]
+            .into_boxed_slice(),
+        );
+        let mut context = SpecializationContext::for_invocation(&invocation, None).unwrap();
+        let function = StringConcat {}
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap()
+            .into_instance();
+        function.solve_result().unwrap();
+        assert!(matches!(
+            function.output().snapshot().unwrap().data(),
+            ValueData::String(value) if value.as_ref() == "source-path"
+        ));
+    }
+}
+
+#[cfg(all(test, feature = "string", feature = "matrix2", feature = "matrixd"))]
+mod fixed_matrix_port_tests {
+    use super::*;
+
+    #[test]
+    fn fixed_concat_preserves_storage_and_rejects_dynamic_inputs() {
+        let lhs = Ref::new(Matrix2::new(
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ));
+        let rhs = Ref::new(Matrix2::from_element("!".to_string()));
+        let out = Ref::new(Matrix2::from_element(String::new()));
+        let alias = out.clone();
+        let function = ConcatM2M2::<String>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(lhs, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(rhs, 2, 2).unwrap(),
+        ))
+        .unwrap();
+        function.solve_result().unwrap();
+        assert!(out.same_handle(&alias));
+        assert_eq!(
+            *out.borrow(),
+            Matrix2::new(
+                "a!".to_string(),
+                "b!".to_string(),
+                "c!".to_string(),
+                "d!".to_string(),
+            )
+        );
+
+        let wrong = Ref::new(DMatrix::from_element(2, 2, "x".to_string()));
+        assert!(ConcatM2M2::<String>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(Matrix2::from_element(String::new())),
+                2,
+                2,
+            )
+            .unwrap(),
+            ValueCell::from_exact_matrix_ref(wrong, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(Matrix2::from_element("y".to_string())),
+                2,
+                2,
+            )
+            .unwrap(),
+        ))
+        .is_err());
+    }
+}
+
+#[cfg(all(
+    test,
+    feature = "string",
+    feature = "matrixd",
+    feature = "vectord",
+    feature = "row_vectord"
+))]
+mod dynamic_matrix_port_tests {
+    use super::*;
+
+    fn matrix(values: &[&str]) -> DMatrix<String> {
+        DMatrix::from_row_slice(
+            2,
+            2,
+            &values
+                .iter()
+                .map(|value| (*value).to_string())
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    #[test]
+    fn dynamic_broadcast_orientation_and_shape_rollback_are_canonical() {
+        let matrix_ref = Ref::new(matrix(&["a", "b", "c", "d"]));
+        let vector = Ref::new(DVector::from_vec(vec!["v1".to_string(), "v2".to_string()]));
+        let row = Ref::new(RowDVector::from_vec(vec!["r1".to_string(), "r2".to_string()]));
+
+        let vector_out = Ref::new(DMatrix::from_element(2, 2, String::new()));
+        let vector_cell = ValueCell::from_exact_matrix_ref(vector_out.clone(), 2, 2).unwrap();
+        let vector_function = ConcatMDVD::<String>::new_invocation(FunctionInvocation::binary(
+            vector_cell.clone(),
+            ValueCell::from_exact_matrix_ref(matrix_ref.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(vector, 2, 1).unwrap(),
+        ))
+        .unwrap();
+        vector_function.solve_result().unwrap();
+        assert_eq!(*vector_out.borrow(), matrix(&["av1", "bv1", "cv2", "dv2"]));
+
+        let row_out = Ref::new(DMatrix::from_element(2, 2, String::new()));
+        ConcatMDRD::<String>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(row_out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(matrix_ref, 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(row, 1, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(*row_out.borrow(), matrix(&["ar1", "br2", "cr1", "dr2"]));
+
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(vector_function.as_ref())?;
+            *vector_out.borrow_mut() = DMatrix::from_element(1, 3, "changed".to_string());
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(vector_out.borrow().shape(), (2, 2));
+        assert_eq!(*vector_out.borrow(), matrix(&["av1", "bv1", "cv2", "dv2"]));
+    }
+}

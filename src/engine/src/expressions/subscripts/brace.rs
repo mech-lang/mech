@@ -1,74 +1,32 @@
-use super::super::environment::expression_solves_deferred;
-use super::{Environment, catalog_access_function, subscript_formula, subscript_range};
-use crate::{InterpreterExecution, LegacyValue, MResult, Subscript};
+use super::{Environment, execute_access_function, subscript_formula, subscript_range};
+use crate::{InterpreterExecution, MResult, SpecializationInput, Subscript, ValueCell};
 
 pub(super) fn access(
-    sbscrpt: &Subscript,
-    val: &LegacyValue,
+    subscript: &Subscript,
+    value: &ValueCell,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<LegacyValue> {
-    let plan = p.plan();
-    match sbscrpt {
-        Subscript::Brace(subs) => {
-            let mut fxn_input = vec![val.clone()];
-            match &subs[..] {
-                #[cfg(feature = "subscript_formula")]
-                [Subscript::Formula(_)] => {
-                    let result = subscript_formula(&subs[0], env, p)?;
-                    let shape = result.shape();
-                    fxn_input.push(result);
-                    match shape[..] {
-                        [1, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/scalar",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "subscript_range")]
-                        [_, 1] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        #[cfg(feature = "subscript_range")]
-                        [1, _] => {
-                            plan.borrow_mut().push(catalog_access_function(
-                                p,
-                                "access/range",
-                                &fxn_input,
-                            )?);
-                        }
-                        _ => todo!(),
-                    }
-                }
-                #[cfg(feature = "subscript_range")]
-                [Subscript::Range(_)] => {
-                    let result = subscript_range(&subs[0], env, p)?;
-                    fxn_input.push(result);
-                    plan.borrow_mut()
-                        .push(catalog_access_function(p, "access/range", &fxn_input)?);
-                }
-                /*[Subscript::All] => {
-                  fxn_input.push(LegacyValue::IndexAll);
-                  #[cfg(feature = "matrix")]
-                  plan.borrow_mut().push(MapAccessAll{}.specialize(&fxn_input)?);
-                },*/
-                _ => {
-                    todo!("Implement brace subscript")
-                }
-            }
-            let plan_brrw = plan.borrow();
-            let new_fxn = &plan_brrw.last().unwrap();
-            if !expression_solves_deferred(p) {
-                new_fxn.solve_result()?;
-            }
-            let res = new_fxn.out();
-            return Ok(res);
+) -> MResult<ValueCell> {
+    let Subscript::Brace(subscripts) = subscript else {
+        unreachable!()
+    };
+    let mut inputs = vec![SpecializationInput::Cell(value.clone())];
+    let operation = match subscripts.as_slice() {
+        #[cfg(feature = "subscript_formula")]
+        [selector @ Subscript::Formula(_)] => {
+            inputs.push(SpecializationInput::Cell(subscript_formula(
+                selector, env, p,
+            )?));
+            "access/scalar"
         }
-        _ => unreachable!(),
-    }
+        #[cfg(feature = "subscript_range")]
+        [selector @ Subscript::Range(_)] => {
+            inputs.push(SpecializationInput::Cell(subscript_range(
+                selector, env, p,
+            )?));
+            "access/range"
+        }
+        _ => unimplemented!("brace access layout"),
+    };
+    execute_access_function(p, operation, inputs)
 }

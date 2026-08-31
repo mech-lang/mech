@@ -9,6 +9,15 @@ pub mod __mech_native {
 }
 
 use mech_core::*;
+
+#[cfg(any(
+    feature = "membership",
+    feature = "modify",
+    feature = "operations",
+    feature = "relations",
+    feature = "setdata"
+))]
+mod canonical;
 #[cfg(any(
     feature = "union",
     feature = "element_of",
@@ -86,22 +95,9 @@ pub use self::relations::*;
 #[cfg(all(feature = "setdata", feature = "size", feature = "u64"))]
 pub use self::setdata::*;
 
-// ----------------------------------------------------------------------------
-// Set Library
-// ----------------------------------------------------------------------------
+#[cfg(test)]
+mod port_tests;
 
-#[cfg(any(
-    feature = "element_of",
-    feature = "not_element_of",
-    feature = "insert",
-    feature = "remove"
-))]
-fn normalize_set_element(value: LegacyValue) -> LegacyValue {
-    match value {
-        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
-        value => value,
-    }
-}
 
 #[macro_export]
 macro_rules! impl_set_fxns {

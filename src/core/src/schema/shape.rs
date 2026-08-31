@@ -162,14 +162,14 @@ fn evaluate_body_extents(body: &SchemaBody, values: &[u64]) -> Result<(), Semant
             for column in columns {
                 evaluate_body_extents(&column.schema, values)?;
             }
-            evaluate_dimension(rows, values)?;
+            evaluate_extent(rows, values)?;
         }
         SchemaBody::Set {
             element,
             cardinality,
         } => {
             evaluate_body_extents(element, values)?;
-            evaluate_dimension(cardinality, values)?;
+            evaluate_extent(cardinality, values)?;
         }
         SchemaBody::Map {
             key,
@@ -178,7 +178,7 @@ fn evaluate_body_extents(body: &SchemaBody, values: &[u64]) -> Result<(), Semant
         } => {
             evaluate_body_extents(key, values)?;
             evaluate_body_extents(value, values)?;
-            evaluate_dimension(cardinality, values)?;
+            evaluate_extent(cardinality, values)?;
         }
         SchemaBody::Bool
         | SchemaBody::Dynamic
@@ -192,6 +192,19 @@ fn evaluate_body_extents(body: &SchemaBody, values: &[u64]) -> Result<(), Semant
         | SchemaBody::Index
         | SchemaBody::Atom(_)
         | SchemaBody::ReifiedType => {}
+    }
+    Ok(())
+}
+
+fn evaluate_extent(extent: &crate::ExtentSpec, values: &[u64]) -> Result<(), SemanticModelError> {
+    match extent {
+        crate::ExtentSpec::Exact(value)
+        | crate::ExtentSpec::Dynamic {
+            upper_bound: Some(value),
+        } => {
+            evaluate_dimension(value, values)?;
+        }
+        crate::ExtentSpec::Dynamic { upper_bound: None } => {}
     }
     Ok(())
 }

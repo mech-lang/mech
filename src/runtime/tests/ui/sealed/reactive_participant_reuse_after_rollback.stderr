@@ -1,11 +1,11 @@
 error[E0382]: borrow of moved value: `participant`
- --> tests/ui/sealed/reactive_participant_reuse_after_rollback.rs:9:7
+ --> tests/ui/sealed/reactive_participant_reuse_after_rollback.rs:8:7
   |
-7 |     |mut participant| {
+6 |     |mut participant| {
   |      --------------- move occurs because `participant` has type `ReactiveJournalParticipant<'_>`, which does not implement the `Copy` trait
-8 |       participant.apply_restore_before();
+7 |       participant.apply_restore_before();
   |                   ---------------------- `participant` moved due to this method call
-9 |       participant.capture_value(&LegacyValue::Empty)?;
+8 |       participant.capture_value_cell(&cell)?;
   |       ^^^^^^^^^^^ value borrowed here after move
   |
 note: `ReactiveJournalParticipant::<'_>::apply_restore_before` takes ownership of the receiver `self`, which moves `participant`

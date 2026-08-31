@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // Xor ------------------------------------------------------------------------
 macro_rules! xor_op {
@@ -103,14 +101,4 @@ macro_rules! xor_row_mat_op {
 
 impl_logic_fxns!(Xor);
 
-#[cfg(feature = "source")]
-fn impl_xor_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_match_arms!(
-      Xor,
-      (lhs_value, rhs_value),
-      Bool, bool, "bool";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(LogicXor, impl_xor_fxn, "logic/xor");
+impl_canonical_logic_binop_specializer!(LogicXor, xor, Xor, "logic/xor");

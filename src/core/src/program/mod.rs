@@ -25,19 +25,33 @@ pub use self::symbol_table::*;
 // ----------------------------------------------------------------------------
 
 pub type Dictionary = HashMap<u64, String>;
-pub type KindTable = HashMap<u64, ValueKind>;
+pub type NamedSchemaTable = HashMap<u64, SchemaBody>;
 #[cfg(feature = "enum")]
-pub type EnumTable = HashMap<u64, MechEnum>;
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CanonicalEnumVariant {
+    pub id: u64,
+    pub name: String,
+    pub payload: Option<SchemaBody>,
+}
+#[cfg(feature = "enum")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CanonicalEnumDefinition {
+    pub id: u64,
+    pub name: String,
+    pub variants: Box<[CanonicalEnumVariant]>,
+}
+#[cfg(feature = "enum")]
+pub type EnumTable = HashMap<u64, CanonicalEnumDefinition>;
 #[cfg(feature = "invariant_define")]
 #[derive(Clone, Debug)]
 pub struct IntegrityConstraint {
     pub id: u64,
     pub name: String,
     pub expression: String,
-    pub result: ValRef,
-    pub lhs: Option<ValRef>,
+    pub result: ValueCell,
+    pub lhs: Option<ValueCell>,
     pub operator: Option<FormulaOperator>,
-    pub rhs: Option<ValRef>,
+    pub rhs: Option<ValueCell>,
     pub tokens: Vec<Token>,
 }
 #[cfg(feature = "invariant_define")]

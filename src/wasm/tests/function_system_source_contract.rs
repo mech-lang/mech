@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use mech_core::{LegacyValue, OperationId, RuntimeFunctionId};
+use mech_core::{OperationId, RuntimeFunctionId, ValueData};
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder, RuntimeValueSnapshot};
 use mech_stdlib::source_catalog;
 use mech_wasm as _;
@@ -59,25 +59,17 @@ fn corpus() -> SourceCorpus {
     corpus
 }
 
-fn dereference(value: LegacyValue) -> LegacyValue {
-    match value {
-        LegacyValue::MutableReference(reference) => dereference(reference.borrow().clone()),
-        LegacyValue::Typed(value, _) => dereference(*value),
-        value => value,
-    }
-}
-
 fn assert_expected(case: &SourceCase, snapshot: RuntimeValueSnapshot) {
-    let actual = dereference(snapshot.into_value());
+    let actual = snapshot.value().data();
     match (&case.expected, actual) {
         (
             ExpectedValue::F64 {
                 value: expected,
                 tolerance,
             },
-            LegacyValue::F64(actual),
+            ValueData::F64(actual),
         ) => {
-            let actual = *actual.borrow();
+            let actual = actual.to_f64();
             let tolerance = tolerance.unwrap_or(0.0);
             assert!(
                 (actual - expected).abs() <= tolerance,
@@ -85,18 +77,17 @@ fn assert_expected(case: &SourceCase, snapshot: RuntimeValueSnapshot) {
                 case.name
             );
         }
-        (ExpectedValue::Bool { value: expected }, LegacyValue::Bool(actual)) => {
+        (ExpectedValue::Bool { value: expected }, ValueData::Bool(actual)) => {
             assert_eq!(
-                *actual.borrow(),
-                *expected,
+                *actual, *expected,
                 "source case `{}` returned the wrong bool",
                 case.name
             );
         }
-        (ExpectedValue::String { value: expected }, LegacyValue::String(actual)) => {
+        (ExpectedValue::String { value: expected }, ValueData::String(actual)) => {
             assert_eq!(
-                &*actual.borrow(),
-                expected,
+                actual.as_ref(),
+                expected.as_str(),
                 "source case `{}` returned the wrong string",
                 case.name
             );
@@ -109,11 +100,11 @@ fn assert_expected(case: &SourceCase, snapshot: RuntimeValueSnapshot) {
 }
 
 fn assert_f64_snapshot(snapshot: RuntimeValueSnapshot, expected: f64) {
-    let actual = dereference(snapshot.into_value());
-    let LegacyValue::F64(actual) = actual else {
-        panic!("expected f64 {expected}, got {actual:?}");
+    let value = snapshot.value().data();
+    let ValueData::F64(actual) = value else {
+        panic!("expected f64 {expected}, got {value:?}");
     };
-    assert_eq!(*actual.borrow(), expected);
+    assert_eq!(actual.to_f64(), expected);
 }
 
 fn browser_runtime_builder() -> RuntimeBuilder {

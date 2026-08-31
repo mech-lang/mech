@@ -2,10 +2,10 @@ use mech_core::snapshot::{
     F64Bits, MatrixValue, rebuild_composite_snapshot, wrap_resident_dynamic_data,
 };
 use mech_core::{
-    AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    DimensionExpr, ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
+    DeliveryMode, DimensionExpr, ExternalInteraction, FunctionCatalogBuilder, MResult,
+    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
+    ResidentKernelInputs, ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
     ResolvedOperationContract, SchemaBody, ShapeInstance, ShapeRule, ValueData,
 };
 use std::sync::Arc;
@@ -23,6 +23,7 @@ struct DynamicChildPlan {
     schema_id: mech_core::SchemaId,
     schema_key: mech_core::SchemaKey,
     shape: ShapeInstance,
+    schemas: Arc<mech_core::SchemaTable>,
     body: SchemaBody,
 }
 
@@ -34,8 +35,28 @@ struct CompositePackPlan {
 
 #[derive(Clone, Debug)]
 struct CompositeTablePlan {
-    rows: DimensionExpr,
+    rows: CardinalitySpec,
     row_count: usize,
+}
+
+fn cardinality_accepts(
+    cardinality: &CardinalitySpec,
+    row_count: usize,
+    shape: &ShapeInstance,
+) -> bool {
+    let Ok(row_count) = u64::try_from(row_count) else {
+        return false;
+    };
+    match cardinality {
+        CardinalitySpec::Exact(expected) => {
+            shape.resolve_dimension(expected).ok() == Some(row_count)
+        }
+        CardinalitySpec::Dynamic { upper_bound } => upper_bound.as_ref().is_none_or(|maximum| {
+            shape
+                .resolve_dimension(maximum)
+                .is_ok_and(|value| row_count <= value)
+        }),
+    }
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -84,7 +105,7 @@ fn composite_child_schemas(
         )),
         SchemaBody::Table { columns, rows } => {
             if columns.is_empty() {
-                let DimensionExpr::Constant(row_count) = rows else {
+                let CardinalitySpec::Exact(DimensionExpr::Constant(row_count)) = rows else {
                     return None;
                 };
                 let row_count = usize::try_from(*row_count).ok()?;
@@ -102,8 +123,16 @@ fn composite_child_schemas(
                 return None;
             }
             let row_count = child_count / columns.len();
-            if matches!(rows, DimensionExpr::Constant(expected) if usize::try_from(*expected).ok() != Some(row_count))
-            {
+            let statically_accepted = match rows {
+                CardinalitySpec::Exact(DimensionExpr::Constant(expected)) => {
+                    usize::try_from(*expected).ok() == Some(row_count)
+                }
+                CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Constant(maximum)),
+                } => usize::try_from(*maximum).is_ok_and(|maximum| row_count <= maximum),
+                _ => true,
+            };
+            if !statically_accepted {
                 return None;
             }
             let expected = columns
@@ -145,6 +174,7 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
                         schema_id: input.schema_id,
                         schema_key: input.schema_key,
                         shape: input.shape_instance.clone(),
+                        schemas: Arc::new(request.schemas.clone()),
                         body: input_schema.body().clone(),
                     }),
                 })
@@ -318,9 +348,10 @@ fn composite_shapes_match_template(shape: &ShapeInstance, plan: &CompositePackPl
             && u32::try_from(columns).ok() == Some(child.shape.columns)
     });
     matrices_match
-        && plan.table.as_ref().is_none_or(|table| {
-            shape.resolve_dimension(&table.rows).ok() == u64::try_from(table.row_count).ok()
-        })
+        && plan
+            .table
+            .as_ref()
+            .is_none_or(|table| cardinality_accepts(&table.rows, table.row_count, shape))
 }
 
 fn canonical_matrix_elements<T, U>(
@@ -395,6 +426,7 @@ fn composite_child_data(
             dynamic.schema_id,
             dynamic.schema_key,
             dynamic.shape.clone(),
+            Arc::clone(&dynamic.schemas),
             &dynamic.body,
             data,
         ),
@@ -548,7 +580,7 @@ mod tests {
                 },
             ]
             .into_boxed_slice(),
-            rows: DimensionExpr::Constant(2),
+            rows: CardinalitySpec::Exact(DimensionExpr::Constant(2)),
         };
         let (children, table) = composite_child_schemas(&body, 4).unwrap();
         assert_eq!(

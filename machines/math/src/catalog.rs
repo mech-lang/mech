@@ -45,9 +45,13 @@ use mech_core::{FunctionCatalogBuilder, MResult};
 ))]
 use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 #[cfg(all(feature = "op_assign", feature = "matrix"))]
-use mech_core::{FunctionArgs, FunctionArgumentRole, function_shape_contract_violation};
+use mech_core::{
+    DimensionExpr, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
+};
+#[cfg(all(feature = "op_assign", feature = "matrix"))]
+use mech_core::snapshot::SequenceView;
 #[cfg(feature = "source")]
-use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(all(feature = "op_assign", feature = "matrixd"))]
 use nalgebra::DMatrix;
 #[cfg(all(feature = "op_assign", feature = "vectord"))]
@@ -107,44 +111,58 @@ use crate::logarithm::log10::*;
 use crate::op_assign::*;
 
 #[cfg(all(feature = "op_assign", feature = "matrix"))]
-fn validate_op_assign_slice(args: &FunctionArgs) -> MResult<()> {
+fn validate_canonical_op_assign_slice(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     let contract = "op_assign_slice";
-    let output = args
-        .output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| {
-            function_shape_contract_violation(contract, "output must be matrix-backed")
-        })?;
-    let output_elements = output.rows.saturating_mul(output.cols);
-    for input_index in 0..args.input_count() {
-        let input_value = args
-            .input_value(input_index)
-            .expect("input index is bounded");
-        let validate_indices = |indices: Vec<usize>| -> MResult<()> {
-            for index in indices {
-                if index == 0 || index > output_elements {
-                    return Err(function_shape_contract_violation(
-                        contract,
-                        format!(
-                            "input {input_index} contains index {index}, expected 1..={output_elements}",
-                        ),
-                    ));
-                }
-            }
-            Ok(())
-        };
-        match input_value {
-            mech_core::LegacyValue::Index(index) => validate_indices(vec![*index.borrow()])?,
-            mech_core::LegacyValue::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
-            mech_core::LegacyValue::MutableReference(reference) => match &*reference.borrow() {
-                mech_core::LegacyValue::Index(index) => validate_indices(vec![*index.borrow()])?,
-                mech_core::LegacyValue::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
-                _ => {}
-            },
-            _ => {}
+    let SchemaBody::Matrix { dimensions, .. } = output.closed_schema_body()? else {
+        return Err(function_shape_contract_violation(
+            contract,
+            "output must be matrix-backed",
+        ));
+    };
+    let [DimensionExpr::Constant(rows), DimensionExpr::Constant(columns)] = dimensions.as_ref()
+    else {
+        return Err(function_shape_contract_violation(
+            contract,
+            "output matrix dimensions must be resolved",
+        ));
+    };
+    let output_elements = rows.saturating_mul(*columns);
+    let Some(index_cell) = inputs.last() else {
+        return Err(function_shape_contract_violation(
+            contract,
+            "indexed assignment is missing its index input",
+        ));
+    };
+    let snapshot = index_cell.snapshot()?;
+    let validate_index = |index: u64| -> MResult<()> {
+        if index == 0 || index > output_elements {
+            return Err(function_shape_contract_violation(
+                contract,
+                format!("index {index} is outside the valid 1..={output_elements} range"),
+            ));
         }
+        Ok(())
+    };
+    match snapshot.data() {
+        ValueData::Index(index) => validate_index(*index),
+        ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::Index(indices) => {
+                for index in indices {
+                    validate_index(*index)?;
+                }
+                Ok(())
+            }
+            SequenceView::Bool(_) => Ok(()),
+            _ => Err(function_shape_contract_violation(
+                contract,
+                "index matrix must contain index or boolean elements",
+            )),
+        },
+        _ => Err(function_shape_contract_violation(
+            contract,
+            "index input must be an index scalar or matrix",
+        )),
     }
-    Ok(())
 }
 #[cfg(feature = "div")]
 use crate::ops::div::*;
@@ -214,7 +232,7 @@ use crate::trig::tan::*;
 use crate::trig::tanh::*;
 
 #[cfg(feature = "source")]
-pub(crate) fn install_source_specializer<T>(
+pub(crate) fn install_canonical_source_specializer<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &'static str,
     module: Option<&'static str>,
@@ -223,9 +241,9 @@ pub(crate) fn install_source_specializer<T>(
     specializer: T,
 ) -> MResult<()>
 where
-    T: FunctionSpecializer + 'static,
+    T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_specializer(canonical_name, Arc::new(specializer))?;
+    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(specializer))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -250,9 +268,9 @@ where
         feature = "sub_assign"
     )
 ))]
-macro_rules! install_prelude {
+macro_rules! install_canonical_prelude {
     ($builder:expr, $name:literal, $compiler:expr) => {
-        install_source_specializer(
+        install_canonical_source_specializer(
             $builder,
             $name,
             None,
@@ -316,7 +334,7 @@ macro_rules! install_prelude {
 ))]
 macro_rules! install_math_module {
     ($builder:expr, $name:literal, $item:literal, $compiler:expr) => {
-        install_source_specializer(
+        install_canonical_source_specializer(
             $builder,
             $name,
             Some("math"),
@@ -350,9 +368,10 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     crate::install_math_add_source(builder)?;
     #[cfg(feature = "add_assign")]
     {
-        install_prelude!(builder, "math/add-assign", crate::AddAssignMath {});
-        install_prelude!(builder, "math/add-assign/range", crate::AddAssignRange {});
-        install_prelude!(
+        install_add_assign_source_runtime(builder)?;
+        install_canonical_prelude!(builder, "math/add-assign", crate::AddAssignMath {});
+        install_canonical_prelude!(builder, "math/add-assign/range", crate::AddAssignRange {});
+        install_canonical_prelude!(
             builder,
             "math/add-assign/range-all",
             crate::AddAssignRangeAll {}
@@ -401,12 +420,13 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_math_module!(builder, "math/csc", "csc", crate::MathCsc {});
 
     #[cfg(feature = "div")]
-    install_prelude!(builder, "math/div", crate::MathDiv {});
+    install_canonical_prelude!(builder, "math/div", crate::MathDiv {});
     #[cfg(feature = "div_assign")]
     {
-        install_prelude!(builder, "math/div-assign", crate::DivAssignValue {});
-        install_prelude!(builder, "math/div-assign/range", crate::DivAssignRange {});
-        install_prelude!(
+        install_div_assign_source_runtime(builder)?;
+        install_canonical_prelude!(builder, "math/div-assign", crate::DivAssignValue {});
+        install_canonical_prelude!(builder, "math/div-assign/range", crate::DivAssignRange {});
+        install_canonical_prelude!(
             builder,
             "math/div-assign/range-all",
             crate::DivAssignRangeAll {}
@@ -433,24 +453,28 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_math_module!(builder, "math/log2", "log2", crate::MathLog2 {});
 
     #[cfg(feature = "mod")]
-    install_prelude!(builder, "math/mod", crate::MathMod {});
+    install_canonical_prelude!(builder, "math/mod", crate::MathMod {});
     #[cfg(feature = "mul")]
-    install_prelude!(builder, "math/mul", crate::MathMul {});
+    install_canonical_prelude!(builder, "math/mul", crate::MathMul {});
     #[cfg(feature = "mul_assign")]
     {
+        install_mul_assign_source_runtime(builder)?;
         // The baseline contains these two range forms, but no named
         // `math/mul-assign` source specializer.
         builder
-            .insert_intrinsic_specializer("math/mul-assign", Arc::new(crate::MulAssignValue {}))?;
-        install_prelude!(builder, "math/mul-assign/range", crate::MulAssignRange {});
-        install_prelude!(
+            .insert_canonical_intrinsic_specializer(
+                "math/mul-assign",
+                Arc::new(crate::MulAssignValue {}),
+            )?;
+        install_canonical_prelude!(builder, "math/mul-assign/range", crate::MulAssignRange {});
+        install_canonical_prelude!(
             builder,
             "math/mul-assign/range-all",
             crate::MulAssignRangeAll {}
         );
     }
     #[cfg(feature = "neg")]
-    install_prelude!(builder, "math/neg", crate::MathNegate {});
+    install_canonical_prelude!(builder, "math/neg", crate::MathNegate {});
 
     #[cfg(feature = "nextafter")]
     install_math_module!(
@@ -460,7 +484,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         crate::MathNextafter {}
     );
     #[cfg(feature = "pow")]
-    install_prelude!(builder, "math/pow", crate::MathPow {});
+    install_canonical_prelude!(builder, "math/pow", crate::MathPow {});
     #[cfg(feature = "remainder")]
     install_math_module!(
         builder,
@@ -489,12 +513,13 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_math_module!(builder, "math/sqrt", "sqrt", crate::MathSqrt {});
 
     #[cfg(feature = "sub")]
-    install_prelude!(builder, "math/sub", crate::MathSub {});
+    install_canonical_prelude!(builder, "math/sub", crate::MathSub {});
     #[cfg(feature = "sub_assign")]
     {
-        install_prelude!(builder, "math/sub-assign", crate::SubAssignValue {});
-        install_prelude!(builder, "math/sub-assign/range", crate::SubAssignRange {});
-        install_prelude!(
+        install_sub_assign_source_runtime(builder)?;
+        install_canonical_prelude!(builder, "math/sub-assign", crate::SubAssignValue {});
+        install_canonical_prelude!(builder, "math/sub-assign/range", crate::SubAssignRange {});
+        install_canonical_prelude!(
             builder,
             "math/sub-assign/range-all",
             crate::SubAssignRangeAll {}
@@ -964,6 +989,14 @@ macro_rules! for_each_op_assign_index_shape {
 }
 
 #[cfg(feature = "op_assign")]
+macro_rules! for_each_canonical_op_assign_index_shape {
+    ($callback:ident, $context:tt) => {
+        for_each_op_assign_index_shape!($callback, $context);
+        $callback!($context; RowDVector; "row_vectord");
+    };
+}
+
+#[cfg(feature = "op_assign")]
 macro_rules! for_each_op_assign_vector_range_source {
     ($callback:ident, $context:tt) => {
         $callback!($context; feature = "matrix1"; Matrix1; "matrix1"; Matrix1; "matrix1");
@@ -981,6 +1014,35 @@ macro_rules! for_each_op_assign_vector_range_source {
         $callback!($context; feature = "row_vector2"; RowVector2; "row_vector2"; Vector2; "vector2");
         $callback!($context; feature = "row_vector3"; RowVector3; "row_vector3"; Vector3; "vector3");
         $callback!($context; feature = "row_vector4"; RowVector4; "row_vector4"; Vector4; "vector4");
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! for_each_source_only_op_assign_vector_range_source {
+    ($callback:ident, $context:tt) => {
+        $callback!($context; all(feature = "matrix1", feature = "row_vectord"); Matrix1; "matrix1"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "matrix2", feature = "vector4", feature = "row_vectord"); Matrix2; "matrix2"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "matrix3", feature = "row_vectord"); Matrix3; "matrix3"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "matrix4", feature = "row_vectord"); Matrix4; "matrix4"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "matrix2x3", feature = "row_vectord"); Matrix2x3; "matrix2x3"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "matrix3x2", feature = "row_vectord"); Matrix3x2; "matrix3x2"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "matrixd", feature = "row_vectord"); DMatrix; "matrixd"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "vectord", feature = "row_vectord"); DVector; "vectord"; RowDVector; "row_vectord");
+        $callback!($context; feature = "row_vectord"; RowDVector; "row_vectord"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "vector2", feature = "row_vectord"); Vector2; "vector2"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "vector3", feature = "row_vectord"); Vector3; "vector3"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "vector4", feature = "row_vectord"); Vector4; "vector4"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "row_vector2", feature = "row_vectord"); RowVector2; "row_vector2"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "row_vector3", feature = "row_vectord"); RowVector3; "row_vector3"; RowDVector; "row_vectord");
+        $callback!($context; all(feature = "row_vector4", feature = "row_vectord"); RowVector4; "row_vector4"; RowDVector; "row_vectord");
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! for_each_canonical_op_assign_vector_range_source {
+    ($callback:ident, $context:tt) => {
+        for_each_op_assign_vector_range_source!($callback, $context);
+        for_each_source_only_op_assign_vector_range_source!($callback, $context);
     };
 }
 
@@ -1024,18 +1086,18 @@ macro_rules! declare_op_assign_vv {
 
 #[cfg(feature = "op_assign")]
 macro_rules! declare_op_assign_range_s {
-    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $index:ident; $index_feature:literal) => {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident; $index_scalar:ty); $index:ident; $index_feature:literal) => {
         mech_core::paste::paste! {
             mech_core::declare_native_runtime_factory! {
                 cfg: all(feature = $operation_feature, feature = $scalar_cfg, feature = $sink_feature, feature = $index_feature),
                 registration: [<register_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>],
                 installer: [<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>],
                 name: concat!(stringify!($operation), stringify!($family), "<", $scalar_name, stringify!($sink), stringify!($index), ">"),
-                factory_type: [<$operation $family>]<$scalar, $sink<$scalar>, $index<usize>>,
-                contract: RuntimeFunctionContract::custom(
+                factory_type: [<$operation $family>]<$scalar, $sink<$scalar>, $index<$index_scalar>>,
+                contract: RuntimeFunctionContract::canonical_custom(
                     "op_assign_slice",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
-                    validate_op_assign_slice,
+                    validate_canonical_op_assign_slice,
                 ),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>])),
@@ -1047,18 +1109,18 @@ macro_rules! declare_op_assign_range_s {
 
 #[cfg(feature = "op_assign")]
 macro_rules! declare_op_assign_range_v {
-    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $source_cfg:meta; $source:ident; $source_feature:literal; $index:ident; $index_feature:literal) => {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident; $index_scalar:ty); $source_cfg:meta; $source:ident; $source_feature:literal; $index:ident; $index_feature:literal) => {
         mech_core::paste::paste! {
             mech_core::declare_native_runtime_factory! {
                 cfg: all(feature = $operation_feature, feature = $scalar_cfg, feature = $sink_feature, $source_cfg),
                 registration: [<register_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>],
                 installer: [<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>],
                 name: concat!(stringify!($operation), stringify!($family), "<", $scalar_name, stringify!($sink), stringify!($source), stringify!($index), ">"),
-                factory_type: [<$operation $family>]<$scalar, $sink<$scalar>, $source<$scalar>, $index<usize>>,
-                contract: RuntimeFunctionContract::custom(
+                factory_type: [<$operation $family>]<$scalar, $sink<$scalar>, $source<$scalar>, $index<$index_scalar>>,
+                contract: RuntimeFunctionContract::canonical_custom(
                     "op_assign_slice",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
-                    validate_op_assign_slice,
+                    validate_canonical_op_assign_slice,
                 ),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>])),
@@ -1071,10 +1133,14 @@ macro_rules! declare_op_assign_range_v {
 #[cfg(feature = "op_assign")]
 macro_rules! declare_op_assign_ranges_for_sink {
     (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal); $sink:ident; $sink_feature:literal; $_sink_name:literal) => {
-        for_each_op_assign_index_shape!(declare_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRS));
-        for_each_op_assign_vector_range_source!(declare_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRV));
-        for_each_op_assign_index_shape!(declare_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAS));
-        for_each_op_assign_vector_range_source!(declare_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAV));
+        for_each_canonical_op_assign_index_shape!(declare_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRS; usize));
+        for_each_canonical_op_assign_index_shape!(declare_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRB; bool));
+        for_each_canonical_op_assign_vector_range_source!(declare_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRV; usize));
+        for_each_canonical_op_assign_vector_range_source!(declare_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRVB; bool));
+        for_each_canonical_op_assign_index_shape!(declare_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAS; usize));
+        for_each_canonical_op_assign_index_shape!(declare_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRASB; bool));
+        for_each_canonical_op_assign_vector_range_source!(declare_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAV; usize));
+        for_each_canonical_op_assign_vector_range_source!(declare_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAVB; bool));
     };
 }
 
@@ -1164,6 +1230,20 @@ macro_rules! register_op_assign_ranges_for_sink {
     };
 }
 
+#[cfg(all(feature = "op_assign", feature = "source"))]
+macro_rules! register_source_op_assign_ranges_for_sink {
+    (($builder:ident; $operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal); $sink:ident; $sink_feature:literal; $_sink_name:literal) => {
+        register_op_assign_range_s!(($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRS); RowDVector; "row_vectord");
+        for_each_canonical_op_assign_index_shape!(register_op_assign_range_s, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRB));
+        for_each_source_only_op_assign_vector_range_source!(register_op_assign_range_v, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRV));
+        for_each_canonical_op_assign_vector_range_source!(register_op_assign_range_v, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRVB));
+        register_op_assign_range_s!(($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAS); RowDVector; "row_vectord");
+        for_each_canonical_op_assign_index_shape!(register_op_assign_range_s, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRASB));
+        for_each_source_only_op_assign_vector_range_source!(register_op_assign_range_v, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAV));
+        for_each_canonical_op_assign_vector_range_source!(register_op_assign_range_v, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAVB));
+    };
+}
+
 #[cfg(feature = "op_assign")]
 macro_rules! register_op_assign_value_for_scalar {
     (($builder:ident; $operation:ident; $operation_feature:literal); i128; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
@@ -1188,6 +1268,14 @@ macro_rules! register_op_assign_range_for_scalar {
     };
 }
 
+#[cfg(all(feature = "op_assign", feature = "source"))]
+macro_rules! register_source_op_assign_range_for_scalar {
+    (($builder:ident; $operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        #[cfg(feature = $scalar_cfg)]
+        for_each_op_assign_shape!(register_source_op_assign_ranges_for_sink, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+    };
+}
+
 #[cfg(feature = "op_assign")]
 macro_rules! install_native_op_assign_runtime_factories {
     ($builder:ident, $operation:ident; $operation_feature:literal) => {{
@@ -1195,6 +1283,34 @@ macro_rules! install_native_op_assign_runtime_factories {
         for_each_op_assign_range_scalar!(register_op_assign_range_for_scalar, ($builder; $operation; $operation_feature));
         Ok::<(), mech_core::MechError>(())
     }};
+}
+
+#[cfg(all(feature = "op_assign", feature = "source"))]
+macro_rules! install_source_op_assign_runtime_factories {
+    ($builder:ident, $operation:ident; $operation_feature:literal) => {{
+        for_each_op_assign_range_scalar!(register_source_op_assign_range_for_scalar, ($builder; $operation; $operation_feature));
+        Ok::<(), mech_core::MechError>(())
+    }};
+}
+
+#[cfg(all(feature = "source", feature = "add_assign"))]
+fn install_add_assign_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    install_source_op_assign_runtime_factories!(builder, Add; "add_assign")
+}
+
+#[cfg(all(feature = "source", feature = "div_assign"))]
+fn install_div_assign_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    install_source_op_assign_runtime_factories!(builder, Div; "div_assign")
+}
+
+#[cfg(all(feature = "source", feature = "mul_assign"))]
+fn install_mul_assign_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    install_source_op_assign_runtime_factories!(builder, Mul; "mul_assign")
+}
+
+#[cfg(all(feature = "source", feature = "sub_assign"))]
+fn install_sub_assign_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    install_source_op_assign_runtime_factories!(builder, Sub; "sub_assign")
 }
 
 #[cfg(all(feature = "op_assign", feature = "native-link"))]
@@ -1232,10 +1348,14 @@ macro_rules! export_op_assign_range_v {
 #[cfg(all(feature = "op_assign", feature = "native-link"))]
 macro_rules! export_op_assign_ranges_for_sink {
     (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal); $sink:ident; $sink_feature:literal; $_sink_name:literal) => {
-        for_each_op_assign_index_shape!(export_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRS));
-        for_each_op_assign_vector_range_source!(export_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRV));
-        for_each_op_assign_index_shape!(export_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAS));
-        for_each_op_assign_vector_range_source!(export_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAV));
+        for_each_canonical_op_assign_index_shape!(export_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRS));
+        for_each_canonical_op_assign_index_shape!(export_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRB));
+        for_each_canonical_op_assign_vector_range_source!(export_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRV));
+        for_each_canonical_op_assign_vector_range_source!(export_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRVB));
+        for_each_canonical_op_assign_index_shape!(export_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAS));
+        for_each_canonical_op_assign_index_shape!(export_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRASB));
+        for_each_canonical_op_assign_vector_range_source!(export_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAV));
+        for_each_canonical_op_assign_vector_range_source!(export_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAVB));
     };
 }
 
@@ -1748,42 +1868,6 @@ mod tests {
     use super::*;
     use mech_core::{FunctionCatalog, OperationId, RuntimeFunctionId};
     use std::collections::BTreeSet;
-
-    #[cfg(all(feature = "op_assign", feature = "u8", feature = "vectord"))]
-    #[test]
-    fn op_assign_contract_rejects_zero_and_out_of_range_index_payloads() {
-        for indices in [vec![0usize], vec![3usize]] {
-            let args = FunctionArgs::Binary(
-                mech_core::LegacyValue::MatrixU8(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
-                    DVector::from_vec(vec![1u8, 2]),
-                ))),
-                mech_core::LegacyValue::U8(mech_core::Ref::new(1)),
-                mech_core::LegacyValue::MatrixIndex(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
-                    DVector::from_vec(indices),
-                ))),
-            );
-            let error = validate_op_assign_slice(&args).unwrap_err();
-            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
-        }
-    }
-
-    #[cfg(all(feature = "op_assign", feature = "u8", feature = "matrix"))]
-    #[test]
-    fn op_assign_contract_allows_one_source_row_per_repeated_destination_index() {
-        let args = FunctionArgs::Binary(
-            mech_core::LegacyValue::MatrixU8(mech_core::matrix::Matrix::DMatrix(
-                mech_core::Ref::new(DMatrix::zeros(2, 2)),
-            )),
-            mech_core::LegacyValue::MatrixU8(mech_core::matrix::Matrix::DMatrix(
-                mech_core::Ref::new(DMatrix::zeros(3, 2)),
-            )),
-            mech_core::LegacyValue::MatrixIndex(mech_core::matrix::Matrix::DVector(
-                mech_core::Ref::new(DVector::from_vec(vec![1usize, 2, 1])),
-            )),
-        );
-
-        validate_op_assign_slice(&args).unwrap();
-    }
 
     #[cfg(all(
         feature = "native-plan",

@@ -1,20 +1,18 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{
-    LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration, Ref,
-};
+use mech_core::{MResult, MechError, MechErrorKind, OperationContractDeclaration, Value};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeCompensatableEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
-    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-    materialize_host_manifest,
+    RuntimeHostInputValue, RuntimeHostInstallation, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest, materialize_host_manifest,
 };
 
 #[derive(Clone, Debug, Default)]
 pub struct RobotArmState {
-    pub position: Option<LegacyValue>,
-    pub gripper: Option<LegacyValue>,
+    pub position: Option<Value>,
+    pub gripper: Option<Value>,
     pub last_command: Option<String>,
 }
 
@@ -62,7 +60,7 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
             .then(mech_runtime::prepare_commit_compensate_contract)
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         Err(MechError::new(
             NativeResourceReadNotPlannable {
                 base_uri: request.base_uri,
@@ -72,7 +70,7 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
         ))
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if !self.matches_base(&request.base_uri, "state") {
             return Err(robot_error(request.base_uri, "only state can be read"));
         }
@@ -81,13 +79,18 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
             .lock()
             .map_err(|_| robot_error(request.base_uri.clone(), "robot state lock poisoned"))?;
         match request.path.as_str() {
-            "position" => Ok(state.position.clone().unwrap_or(LegacyValue::Empty)),
-            "gripper" => Ok(state.gripper.clone().unwrap_or(LegacyValue::Empty)),
-            "last-command" => Ok(state
-                .last_command
+            "position" => state
+                .position
                 .clone()
-                .map(|s| LegacyValue::String(Ref::new(s)))
-                .unwrap_or(LegacyValue::Empty)),
+                .ok_or_else(|| robot_state_unavailable(&request.base_uri, &request.path)),
+            "gripper" => state
+                .gripper
+                .clone()
+                .ok_or_else(|| robot_state_unavailable(&request.base_uri, &request.path)),
+            "last-command" => match state.last_command.clone() {
+                Some(value) => RuntimeHostInputValue::String(value).into_value(),
+                None => Err(robot_state_unavailable(&request.base_uri, &request.path)),
+            },
             _ => Err(robot_error(
                 request.base_uri,
                 format!("unsupported robot state path `{}`", request.path),
@@ -161,7 +164,7 @@ struct RobotCommandEffect {
     base_uri: String,
     operation: String,
     path: String,
-    value: LegacyValue,
+    value: Value,
     previous: Option<RobotArmState>,
     applied: bool,
 }
@@ -194,7 +197,7 @@ impl RuntimeCompensatableEffect for RobotCommandEffect {
                 state.last_command = Some("grip".to_string());
             }
             ("home", "home") => {
-                state.position = Some(LegacyValue::Empty);
+                state.position = None;
                 state.last_command = Some("home".to_string());
             }
             (operation, path) => Err(robot_error(
@@ -300,6 +303,34 @@ fn robot_error(resource: String, reason: impl Into<String>) -> MechError {
         None,
     )
 }
+
+fn robot_state_unavailable(base_uri: &str, path: &str) -> MechError {
+    MechError::new(
+        RobotArmResourceUnavailable {
+            resource: format!("{base_uri}/{path}"),
+        },
+        None,
+    )
+}
+
+#[derive(Debug, Clone)]
+pub struct RobotArmResourceUnavailable {
+    pub resource: String,
+}
+
+impl MechErrorKind for RobotArmResourceUnavailable {
+    fn name(&self) -> &str {
+        "RobotArmResourceUnavailable"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "robot state resource `{}` is not initialized",
+            self.resource
+        )
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct RobotArmResourceProviderError {
     pub resource: String,
@@ -317,10 +348,10 @@ impl MechErrorKind for RobotArmResourceProviderError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_runtime::{RuntimeCapabilityOperation, RuntimeResourceProvider};
+    use mech_runtime::{RuntimeCapabilityOperation, RuntimeResourceProvider, value_bool};
 
-    fn bool_value(value: bool) -> LegacyValue {
-        LegacyValue::Bool(Ref::new(value))
+    fn bool_value(value: bool) -> Value {
+        value_bool(value)
     }
 
     fn apply_write(
@@ -384,6 +415,25 @@ mod tests {
         let mut provider = RobotArmResourceProvider::new("arm");
         for (operation, path) in [("move", "move"), ("grip", "grip"), ("home", "home")] {
             apply_write(&mut provider, send_request(operation, path)).unwrap();
+        }
+        let state = provider.state.lock().unwrap();
+        assert!(state.position.is_none());
+        assert_eq!(state.last_command.as_deref(), Some("home"));
+    }
+
+    #[test]
+    fn missing_robot_state_is_unavailable_instead_of_unit() {
+        let provider = RobotArmResourceProvider::new("arm");
+        for path in ["position", "gripper", "last-command"] {
+            let error = provider
+                .read(RuntimeResourceReadRequest {
+                    base_uri: "robot://arm/state".to_owned(),
+                    path: path.to_owned(),
+                    context_name: "state".to_owned(),
+                })
+                .unwrap_err();
+            assert_eq!(error.kind_name(), "RobotArmResourceUnavailable");
+            assert!(error.display_message().contains(path));
         }
     }
 

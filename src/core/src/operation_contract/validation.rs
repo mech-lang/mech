@@ -528,8 +528,8 @@ fn schema_bodies_have_same_shape(input: &SchemaBody, output: &SchemaBody) -> boo
                 cardinality: output_cardinality,
                 ..
             },
-        )
-        | (
+        ) => input_cardinality == output_cardinality,
+        (
             SchemaBody::Map {
                 cardinality: input_cardinality,
                 ..

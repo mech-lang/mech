@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant,
-    ExecutionHostFunctionRequest, ExecutionResourceRequest, FunctionCatalog, LegacyValue, MResult,
-    ParsedProgram, Ref, ResourceDelivery, ResourceIntent, RuntimeType, write_bytecode,
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, FunctionCatalog, MResult,
+    ParsedProgram, ResourceDelivery, ResourceIntent, RuntimeType, Value, ValueCell, write_bytecode,
 };
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig, LogLevel,
@@ -306,11 +306,11 @@ impl RuntimeResourceProvider for TestResourceProvider {
         self.groups.clone()
     }
 
-    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::String(Ref::new("planned".to_owned())))
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        ValueCell::from_exact("planned".to_owned())?.snapshot()
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         unreachable!("resource access is not executed during native planning")
     }
 

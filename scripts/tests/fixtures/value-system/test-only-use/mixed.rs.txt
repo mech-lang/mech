@@ -1,4 +1,0 @@
-#[cfg(any(test, feature = "runtime"))]
-fn production(value: ValRef) {
-    let _ = value;
-}

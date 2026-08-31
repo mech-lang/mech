@@ -4,8 +4,9 @@ use super::super::registration::{
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{
-    InitialSolvePolicy, LegacyValue, MResult, MechError, MechErrorKind, MechFunction,
-    MechFunctionImpl, Plan, ReactiveCellId, ReactiveDependencyKind, Ref,
+    CanonicalCellId, FunctionInstance, FunctionInvocation, InitialSolvePolicy, MResult, MechError,
+    MechErrorKind, MechFunction, MechFunctionImpl, Plan, ReactiveDependencyKind,
+    SpecializedFunction, ValueCell,
 };
 use std::sync::{
     Arc,
@@ -13,7 +14,6 @@ use std::sync::{
 };
 
 struct IndexedExpressionTestFunction {
-    output: LegacyValue,
     solve_calls: Arc<AtomicUsize>,
     initial_solve_policy: InitialSolvePolicy,
 }
@@ -32,7 +32,6 @@ impl MechErrorKind for InitialExpressionSolveFailure {
 }
 
 struct FailingInitialExpressionFunction {
-    output: LegacyValue,
     solve_result_calls: Arc<AtomicUsize>,
 }
 
@@ -42,16 +41,8 @@ impl MechFunctionImpl for FailingInitialExpressionFunction {
         Err(MechError::new(InitialExpressionSolveFailure, None))
     }
 
-    fn out(&self) -> LegacyValue {
-        self.output.clone()
-    }
-
     fn to_string(&self) -> String {
         "failing-initial-expression".to_owned()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -68,20 +59,12 @@ impl MechFunctionImpl for IndexedExpressionTestFunction {
         Ok(())
     }
 
-    fn out(&self) -> LegacyValue {
-        self.output.clone()
-    }
-
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
         self.initial_solve_policy
     }
 
     fn to_string(&self) -> String {
         "indexed-expression-test".to_string()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
     }
 }
 
@@ -92,26 +75,35 @@ impl MechFunctionCompiler for IndexedExpressionTestFunction {
     }
 }
 
-fn scalar(value: f64) -> (LegacyValue, ReactiveCellId) {
-    let reference = Ref::new(value);
-    let cell = ReactiveCellId::new(reference.id());
-    (LegacyValue::F64(reference), cell)
+fn scalar(value: f64) -> (ValueCell, CanonicalCellId) {
+    let value = ValueCell::from_exact(value).unwrap();
+    let cell = value.reactive_cell_id();
+    (value, cell)
 }
 
-fn function(output: LegacyValue, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
+fn function(calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
     Box::new(IndexedExpressionTestFunction {
-        output,
         solve_calls: calls,
         initial_solve_policy: InitialSolvePolicy::Solve,
     })
 }
 
-fn preserving_function(output: LegacyValue, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
+fn preserving_function(calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
     Box::new(IndexedExpressionTestFunction {
-        output,
         solve_calls: calls,
         initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
     })
+}
+
+fn specialized(
+    implementation: Box<dyn MechFunction>,
+    output: ValueCell,
+    inputs: Vec<ValueCell>,
+) -> SpecializedFunction {
+    SpecializedFunction::new(FunctionInstance::new(
+        implementation,
+        FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
+    ))
 }
 
 #[test]
@@ -124,14 +116,13 @@ fn indexed_expression_registration_records_dependencies() {
     let calls = Arc::new(AtomicUsize::new(0));
     let result = register_initialized_expression_function(
         &plan,
-        function(output, calls.clone()),
-        &[first, second, third],
+        specialized(function(calls.clone()), output, vec![first, second, third]),
     )
     .unwrap();
     let plan_borrow = plan.borrow();
     let node = plan_borrow.node(0).unwrap();
     assert_eq!(calls.load(Ordering::SeqCst), 1);
-    assert_eq!(result.reactive_cell_ids(), vec![out]);
+    assert_eq!(result.reactive_cell_id(), out);
     assert_eq!(
         node.inputs.iter().map(|d| d.cell).collect::<Vec<_>>(),
         vec![a, b, c]
@@ -157,8 +148,7 @@ fn indexed_expression_registration_deduplicates_aliases() {
     let calls = Arc::new(AtomicUsize::new(0));
     register_initialized_expression_function(
         &plan,
-        function(output, calls.clone()),
-        &[input.clone(), input],
+        specialized(function(calls.clone()), output, vec![input.clone(), input]),
     )
     .unwrap();
     let plan = plan.borrow();
@@ -176,13 +166,12 @@ fn indexed_expression_registration_preserves_planned_output_when_requested() {
 
     let result = register_initialized_expression_function(
         &plan,
-        preserving_function(output, calls.clone()),
-        &[input],
+        specialized(preserving_function(calls.clone()), output, vec![input]),
     )
     .unwrap();
 
     assert_eq!(calls.load(Ordering::SeqCst), 0);
-    assert_eq!(result.reactive_cell_ids(), vec![output_cell]);
+    assert_eq!(result.reactive_cell_id(), output_cell);
     assert_eq!(plan.len(), 1);
 }
 
@@ -195,11 +184,13 @@ fn indexed_expression_registration_propagates_initial_solve_errors() {
 
     let error = register_initialized_expression_function(
         &plan,
-        Box::new(FailingInitialExpressionFunction {
+        specialized(
+            Box::new(FailingInitialExpressionFunction {
+                solve_result_calls: solve_result_calls.clone(),
+            }),
             output,
-            solve_result_calls: solve_result_calls.clone(),
-        }),
-        &[input],
+            vec![input],
+        ),
     )
     .unwrap_err();
 
@@ -218,12 +209,19 @@ fn binary_term_batch_registration_preserves_order_and_edges() {
     let (final_out, fc) = scalar(5.0);
     let first = Arc::new(AtomicUsize::new(0));
     let second = Arc::new(AtomicUsize::new(0));
-    let f1 = function(mid.clone(), first.clone());
-    let f2 = function(final_out, second.clone());
+    let f1 = function(first.clone());
+    let f2 = function(second.clone());
     f1.solve_result().unwrap();
     f2.solve_result().unwrap();
 
-    register_expression_function_batch(&plan, vec![(f1, vec![a, b]), (f2, vec![mid, c])]).unwrap();
+    register_expression_function_batch(
+        &plan,
+        vec![
+            specialized(f1, mid.clone(), vec![a, b]),
+            specialized(f2, final_out, vec![mid, c]),
+        ],
+    )
+    .unwrap();
     let plan = plan.borrow();
     assert_eq!(plan.len(), 2);
     assert_eq!(

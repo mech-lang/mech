@@ -3,8 +3,6 @@ use crate::*;
 use libm::atan2;
 #[cfg(feature = "f32")]
 use libm::atan2f;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 
 // Atan2 ------------------------------------------------------------------------
 
@@ -62,34 +60,28 @@ macro_rules! impl_two_arg_fxn {
             arg2: Ref<$kind2>,
             out: Ref<$out_kind>,
         }
-        impl MechFunctionFactory for $struct_name {
+        impl MechFunctionFactory for $struct_name
+        where
+            $kind1: FunctionPortBacking,
+            $kind2: FunctionPortBacking,
+            $out_kind: FunctionStateBacking,
+        {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_kind as FunctionRuntimeType>::REPRESENTATION,
                 <$kind1 as FunctionRuntimeType>::REPRESENTATION,
                 <$kind2 as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let arg1: Ref<$kind1> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let arg2: Ref<$kind2> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_kind> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new($struct_name { arg1, arg2, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2) = invocation.expect_binary()?;
+                let arg1: Ref<$kind1> = arg1.try_ref()?;
+                let arg2: Ref<$kind2> = arg2.try_ref()?;
+                let out: Ref<$out_kind> = out.try_ref()?;
+                Ok(Box::new($struct_name { arg1, arg2, out }))
             }
+
         }
         impl MechFunctionImpl for $struct_name {
             fn solve_result(&self) -> MResult<()> {
@@ -99,8 +91,8 @@ macro_rules! impl_two_arg_fxn {
                 $op!(arg1_ptr, arg2_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(crate::ops::arithmetic_full_write_contract(
@@ -110,9 +102,8 @@ macro_rules! impl_two_arg_fxn {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -192,125 +183,42 @@ impl_two_arg_fxn!(Atan2F32, f32, f32, f32, atan2f_op);
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(Atan2F64, f64, f64, f64, atan2_op);
 
-#[macro_export]
-macro_rules! impl_binop_atan2 {
-  ($fxn:ident, $arg1:expr, $arg2:expr, $($t:ident, $zero_fn:expr, $feat:tt);+ $(;)?) => {
-    paste! {
-      match ($arg1, $arg2) {
-        $(
-          // Scalar
-          #[cfg(feature = $feat)]
-          (LegacyValue::$t(arg1), LegacyValue::$t(arg2)) => Ok(Box::new([<$fxn $t>]{arg1, arg2, out: Ref::new($zero_fn)})),
+impl_canonical_math_same_type_binop_specializer!(MathAtan2, Atan2, "math/atan2");
 
-          // Fixed matrices
-          #[cfg(all(feature = "matrix1", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::Matrix1(arg1)), LegacyValue::[<Matrix $t>](Matrix::Matrix1(arg2))) =>
-            Ok(Box::new([<$fxn M1 $t>]{arg1, arg2, out: Ref::new(Matrix1::from_element($zero_fn))})),
-          #[cfg(all(feature = "matrix2", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::Matrix2(arg1)), LegacyValue::[<Matrix $t>](Matrix::Matrix2(arg2))) =>
-            Ok(Box::new([<$fxn M2 $t>]{arg1, arg2, out: Ref::new(Matrix2::from_element($zero_fn))})),
-          #[cfg(all(feature = "matrix3", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::Matrix3(arg1)), LegacyValue::[<Matrix $t>](Matrix::Matrix3(arg2))) =>
-            Ok(Box::new([<$fxn M3 $t>]{arg1, arg2, out: Ref::new(Matrix3::from_element($zero_fn))})),
-          #[cfg(all(feature = "matrix4", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::Matrix4(arg1)), LegacyValue::[<Matrix $t>](Matrix::Matrix4(arg2))) =>
-            Ok(Box::new([<$fxn M4 $t>]{arg1, arg2, out: Ref::new(Matrix4::from_element($zero_fn))})),
+#[cfg(all(test, feature = "runtime", feature = "f64"))]
+mod canonical_port_tests {
+    use super::*;
 
-          // Fixed vectors
-          #[cfg(all(feature = "vector2", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::Vector2(arg1)), LegacyValue::[<Matrix $t>](Matrix::Vector2(arg2))) =>
-            Ok(Box::new([<$fxn V2 $t>]{arg1, arg2, out: Ref::new(Vector2::from_element($zero_fn))})),
-          #[cfg(all(feature = "vector3", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::Vector3(arg1)), LegacyValue::[<Matrix $t>](Matrix::Vector3(arg2))) =>
-            Ok(Box::new([<$fxn V3 $t>]{arg1, arg2, out: Ref::new(Vector3::from_element($zero_fn))})),
-          #[cfg(all(feature = "vector4", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::Vector4(arg1)), LegacyValue::[<Matrix $t>](Matrix::Vector4(arg2))) =>
-            Ok(Box::new([<$fxn V4 $t>]{arg1, arg2, out: Ref::new(Vector4::from_element($zero_fn))})),
+    #[test]
+    fn scalar_atan2_uses_exact_ports_and_typed_state() {
+        let output = ValueCell::from_exact(0.0_f64).unwrap();
+        let alias = output.clone();
+        let function = Atan2F64::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            ValueCell::from_exact(1.0_f64).unwrap(),
+            ValueCell::from_exact(1.0_f64).unwrap(),
+        ))
+        .unwrap();
+        function.solve_result().unwrap();
+        let value = output.snapshot().unwrap();
+        let ValueData::F64(value) = value.data() else {
+            panic!("expected f64 atan2 output")
+        };
+        assert!((value.to_f64() - core::f64::consts::FRAC_PI_4).abs() < f64::EPSILON);
+        assert!(output.same_cell(&alias));
 
-          // Fixed row vectors
-          #[cfg(all(feature = "row_vector2", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::RowVector2(arg1)), LegacyValue::[<Matrix $t>](Matrix::RowVector2(arg2))) =>
-            Ok(Box::new([<$fxn R2 $t>]{arg1, arg2, out: Ref::new(RowVector2::from_element($zero_fn))})),
-          #[cfg(all(feature = "row_vector3", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::RowVector3(arg1)), LegacyValue::[<Matrix $t>](Matrix::RowVector3(arg2))) =>
-            Ok(Box::new([<$fxn R3 $t>]{arg1, arg2, out: Ref::new(RowVector3::from_element($zero_fn))})),
-          #[cfg(all(feature = "row_vector4", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::RowVector4(arg1)), LegacyValue::[<Matrix $t>](Matrix::RowVector4(arg2))) =>
-            Ok(Box::new([<$fxn R4 $t>]{arg1, arg2, out: Ref::new(RowVector4::from_element($zero_fn))})),
-
-          // Dynamic vectors
-          #[cfg(all(feature = "vectord", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::DVector(arg1)), LegacyValue::[<Matrix $t>](Matrix::DVector(arg2))) =>
-            Ok(Box::new([<$fxn VD $t>]{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(), $zero_fn))})),
-          #[cfg(all(feature = "row_vectord", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::RowDVector(arg1)), LegacyValue::[<Matrix $t>](Matrix::RowDVector(arg2))) =>
-            Ok(Box::new([<$fxn RD $t>]{arg1: arg1.clone(), arg2, out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(), $zero_fn))})),
-
-          // Dynamic matrices
-          #[cfg(all(feature = "matrixd", feature = $feat))]
-          (LegacyValue::[<Matrix $t>](Matrix::DMatrix(arg1)), LegacyValue::[<Matrix $t>](Matrix::DMatrix(arg2))) => {
-            let rows = arg1.borrow().nrows();
-            let cols = arg1.borrow().ncols();
-            Ok(Box::new([<$fxn MD $t>]{arg1, arg2, out: Ref::new(DMatrix::from_element(rows, cols, $zero_fn))}))
-          },
-        )+
-        (arg1,arg2) => Err(MechError::new(
-            UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
-            None
-          ).with_compiler_loc()
-        ),
-      }
-    }
-  }
-}
-
-#[cfg(feature = "source")]
-pub fn impl_atan2_fxn(arg1_value: LegacyValue, arg2_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_binop_atan2!(Atan2, arg1_value, arg2_value,
-      F32, f32::default(), "f32";
-      F64, f64::default(), "f64";
-    )
-}
-
-#[cfg(feature = "source")]
-pub struct MathAtan2 {}
-
-#[cfg(feature = "source")]
-impl FunctionSpecializer for MathAtan2 {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 2 {
-            return Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 1,
-                    found: arguments.len(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let arg1 = arguments[0].clone();
-        let arg2 = arguments[1].clone();
-        match impl_atan2_fxn(arg1.clone(), arg2.clone()) {
-            Ok(fxn) => Ok(fxn),
-            Err(_) => match (arg1, arg2) {
-                (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
-                    impl_atan2_fxn(arg1.borrow().clone(), arg2.borrow().clone())
-                }
-                (LegacyValue::MutableReference(arg1), arg2) => {
-                    impl_atan2_fxn(arg1.borrow().clone(), arg2.clone())
-                }
-                (arg1, LegacyValue::MutableReference(arg2)) => {
-                    impl_atan2_fxn(arg1.clone(), arg2.borrow().clone())
-                }
-                (arg1, arg2) => Err(MechError::new(
-                    UnhandledFunctionArgumentKind2 {
-                        arg: (arg1.kind(), arg2.kind()),
-                        fxn_name: "math/atan2".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
-        }
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            output.replace(&ValueCell::from_exact(99.0_f64)?.snapshot()?)?;
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        let restored = output.snapshot().unwrap();
+        let ValueData::F64(restored) = restored.data() else {
+            panic!("expected restored f64 atan2 output")
+        };
+        assert!((restored.to_f64() - core::f64::consts::FRAC_PI_4).abs() < f64::EPSILON);
     }
 }

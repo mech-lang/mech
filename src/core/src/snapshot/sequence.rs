@@ -56,6 +56,38 @@ pub enum SequenceView<'a> {
     Values(&'a [ValueData]),
 }
 
+impl SequenceView<'_> {
+    pub fn len(self) -> usize {
+        match self {
+            Self::U8(values) => values.len(),
+            Self::U16(values) => values.len(),
+            Self::U32(values) => values.len(),
+            Self::U64(values) => values.len(),
+            Self::U128(values) => values.len(),
+            Self::I8(values) => values.len(),
+            Self::I16(values) => values.len(),
+            Self::I32(values) => values.len(),
+            Self::I64(values) => values.len(),
+            Self::I128(values) => values.len(),
+            Self::F32(values) => values.len(),
+            Self::F64(values) => values.len(),
+            Self::Complex32(values) => values.len(),
+            Self::Complex64(values) => values.len(),
+            Self::Rational64(values) => values.len(),
+            Self::Bool(values) => values.len(),
+            Self::String(values) => values.len(),
+            Self::Id(values) => values.len(),
+            Self::Index(values) => values.len(),
+            Self::Unit(len) => usize::try_from(len).unwrap_or(usize::MAX),
+            Self::Values(values) => values.len(),
+        }
+    }
+
+    pub fn is_empty(self) -> bool {
+        self.len() == 0
+    }
+}
+
 impl SequenceStorage {
     pub(super) fn from_values(schema: &SchemaBody, values: Vec<ValueData>) -> Self {
         macro_rules! pack {
@@ -204,5 +236,37 @@ impl SequenceStorage {
                 Self::Values(values.into_boxed_slice())
             }
         })
+    }
+
+    pub(super) fn to_values(&self) -> Vec<ValueData> {
+        macro_rules! unpack {
+            ($values:expr, $variant:ident) => {
+                $values.iter().cloned().map(ValueData::$variant).collect()
+            };
+        }
+
+        match self {
+            Self::U8(values) => unpack!(values, U8),
+            Self::U16(values) => unpack!(values, U16),
+            Self::U32(values) => unpack!(values, U32),
+            Self::U64(values) => unpack!(values, U64),
+            Self::U128(values) => unpack!(values, U128),
+            Self::I8(values) => unpack!(values, I8),
+            Self::I16(values) => unpack!(values, I16),
+            Self::I32(values) => unpack!(values, I32),
+            Self::I64(values) => unpack!(values, I64),
+            Self::I128(values) => unpack!(values, I128),
+            Self::F32(values) => unpack!(values, F32),
+            Self::F64(values) => unpack!(values, F64),
+            Self::Complex32(values) => unpack!(values, Complex32),
+            Self::Complex64(values) => unpack!(values, Complex64),
+            Self::Rational64(values) => unpack!(values, Rational64),
+            Self::Bool(values) => unpack!(values, Bool),
+            Self::String(values) => values.iter().cloned().map(ValueData::String).collect(),
+            Self::Id(values) => unpack!(values, Id),
+            Self::Index(values) => unpack!(values, Index),
+            Self::Unit(count) => (0..*count).map(|_| ValueData::Atom).collect(),
+            Self::Values(values) => values.to_vec(),
+        }
     }
 }

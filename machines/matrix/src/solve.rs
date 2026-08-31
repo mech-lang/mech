@@ -1,6 +1,4 @@
 use crate::*;
-#[cfg(all(feature = "matrix", feature = "source"))]
-use mech_core::matrix::Matrix;
 use nalgebra::ComplexField;
 use num_traits::{One, Zero};
 
@@ -41,7 +39,7 @@ macro_rules! impl_binop_solve {
                 + PartialEq
                 + PartialOrd
                 + ComplexField
-                + AsValueKind
+                + FunctionRuntimeType
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -54,7 +52,8 @@ macro_rules! impl_binop_solve {
                 + One
                 + ConstElem
                 + CompileConst
-                + AsValueKind,
+                + CanonicalMatrixElementBacking
+                + FunctionRuntimeType,
             #[cfg(not(feature = "semantic-compiler"))]
             T: Copy
                 + Debug
@@ -66,7 +65,7 @@ macro_rules! impl_binop_solve {
                 + PartialEq
                 + PartialOrd
                 + ComplexField
-                + AsValueKind
+                + FunctionRuntimeType
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -77,10 +76,9 @@ macro_rules! impl_binop_solve {
                 + DivAssign
                 + Zero
                 + One,
-            Ref<$out_type>: ToValue,
-            $arg1_type: FunctionRuntimeType,
-            $arg2_type: FunctionRuntimeType,
-            $out_type: FunctionRuntimeType,
+            $arg1_type: FunctionPortBacking,
+            $arg2_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -88,27 +86,16 @@ macro_rules! impl_binop_solve {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-                match args {
-                    FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> =
-                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let rhs: Ref<$arg2_type> =
-                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                        let out: Ref<$out_type> =
-                            out.try_function_ref(FunctionArgumentRole::Output)?;
-                        Ok(Box::new(Self { lhs, rhs, out }))
-                    }
-                    _ => Err(MechError::new(
-                        IncorrectNumberOfArguments {
-                            expected: 2,
-                            found: args.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                }
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
+                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
+                let out: Ref<$out_type> = out.try_ref()?;
+                Ok(Box::new(Self { lhs, rhs, out }))
             }
+
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -132,7 +119,9 @@ macro_rules! impl_binop_solve {
                 + DivAssign
                 + Zero
                 + One,
-            Ref<$out_type>: ToValue,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
+            $out_type: FunctionStateBacking,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -141,24 +130,23 @@ macro_rules! impl_binop_solve {
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> LegacyValue {
-                self.out.to_value()
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_ref(&self.out))
+            }
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
-            }
-
-            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-                Ok(self.reactive_output_values())
             }
         }
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: ConstElem + CompileConst + AsValueKind,
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
@@ -196,128 +184,179 @@ impl_solve!(MatrixSolveMDMD, DMatrix<T>, DMatrix<T>, DMatrix<T>);
 impl_solve!(MatrixSolveM2M2x3, Matrix2<T>, Matrix2x3<T>, Matrix2x3<T>);
 
 #[cfg(all(test, feature = "f64", feature = "matrixd", feature = "vectord"))]
-mod tests {
+mod canonical_port_tests {
     use super::*;
 
     #[test]
-    fn singular_matrix_is_a_structured_error_on_reactive_resolve() {
+    fn vector_and_matrix_rhs_use_exact_ports() {
+        let lhs = Ref::new(DMatrix::from_row_slice(2, 2, &[4.0, 1.0, 2.0, 3.0]));
+        let vector_rhs = Ref::new(DVector::from_vec(vec![9.0, 8.0]));
+        let vector_out = Ref::new(DVector::<f64>::zeros(2));
+        MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(vector_out.clone(), 2, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(lhs.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(vector_rhs, 2, 1).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+
+        let matrix_rhs = Ref::new(DMatrix::<f64>::identity(2, 2));
+        let matrix_out = Ref::new(DMatrix::<f64>::zeros(2, 2));
+        MatrixSolveMDMD::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(matrix_out.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(lhs.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(matrix_rhs.clone(), 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        let residual = lhs.borrow().clone() * matrix_out.borrow().clone();
+        assert!((residual - matrix_rhs.borrow().clone()).norm() < 1.0e-12);
+    }
+
+    #[test]
+    fn singular_resolve_is_atomic_and_checkpointed() {
         let lhs = Ref::new(DMatrix::identity(2, 2));
         let rhs = Ref::new(DVector::from_vec(vec![3.0, 4.0]));
         let out = Ref::new(DVector::from_element(2, -1.0));
-        let function = MatrixSolveMDVD {
-            lhs: lhs.clone(),
-            rhs,
-            out: out.clone(),
-        };
-
+        let alias = out.clone();
+        let function = MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
+            ValueCell::from_exact_matrix_ref(lhs.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(rhs, 2, 1).unwrap(),
+        ))
+        .unwrap();
         function.solve_result().unwrap();
         let previous = out.borrow().clone();
-        *lhs.borrow_mut() = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 2.0, 4.0]);
 
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MatrixSolveSingular");
+        with_reactive_journal_participant(|mut participant| -> MResult<()> {
+            participant.capture_function_state(function.as_ref())?;
+            *lhs.borrow_mut() = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 2.0, 4.0]);
+            assert_eq!(
+                function.solve_result().unwrap_err().kind_name(),
+                "MatrixSolveSingular"
+            );
+            assert_eq!(*out.borrow(), previous);
+            *out.borrow_mut() = DVector::from_vec(vec![99.0]);
+            participant.preflight_restore_before()?;
+            participant.apply_restore_before();
+            Ok(())
+        })
+        .unwrap();
+        assert!(out.same_handle(&alias));
         assert_eq!(*out.borrow(), previous);
     }
 
     #[test]
-    fn matrix_right_hand_side_is_solved_in_one_operation() {
-        let lhs = Ref::new(DMatrix::from_row_slice(2, 2, &[4.0, 1.0, 2.0, 3.0]));
-        let rhs = Ref::new(DMatrix::from_row_slice(
+    fn solve_rejects_wrong_rhs_representation_and_layout() {
+        let lhs = ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::<f64>::identity(2, 2)), 2, 2)
+            .unwrap();
+        let wrong_rhs = ValueCell::from_exact_matrix_ref(
+            Ref::new(DMatrix::<f64>::identity(2, 2)),
             2,
-            3,
-            &[9.0, 1.0, 5.0, 8.0, 7.0, 2.0],
-        ));
-        let out = Ref::new(DMatrix::zeros(2, 3));
-        let function = MatrixSolveMDMD {
-            lhs: lhs.clone(),
-            rhs: rhs.clone(),
-            out: out.clone(),
-        };
+            2,
+        )
+        .unwrap();
+        let output = ValueCell::from_exact_matrix_ref(Ref::new(DVector::<f64>::zeros(2)), 2, 1)
+            .unwrap();
+        assert!(MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::binary(
+            output.clone(),
+            lhs.clone(),
+            wrong_rhs,
+        ))
+        .is_err());
+        assert!(MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::unary(output, lhs))
+            .is_err());
+    }
+}
 
-        function.solve_result().unwrap();
+#[cfg(all(test, feature = "f64", feature = "matrix2", feature = "matrix2x3"))]
+mod fixed_port_tests {
+    use super::*;
 
-        let residual = lhs.borrow().clone() * out.borrow().clone() - rhs.borrow().clone();
-        assert!(residual.norm() < 1.0e-12);
+    #[test]
+    fn fixed_matrix_rhs_uses_exact_ports() {
+        let rhs = Ref::new(Matrix2x3::new(1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0));
+        let out = Ref::new(Matrix2x3::<f64>::zeros());
+        MatrixSolveM2M2x3::<f64>::new_invocation(FunctionInvocation::binary(
+            ValueCell::from_exact_matrix_ref(out.clone(), 2, 3).unwrap(),
+            ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::identity()), 2, 2)
+                .unwrap(),
+            ValueCell::from_exact_matrix_ref(rhs.clone(), 2, 3).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(*out.borrow(), *rhs.borrow());
     }
 }
 
 #[cfg(feature = "source")]
-macro_rules! impl_solve_match_arms {
-  ($arg:expr, $($($matrix_kind:tt, $target_type:tt, $value_string:tt),+);+ $(;)?) => {
-    match $arg {
-      $(
-        $(
-          #[cfg(all(feature = $value_string, feature = "matrixd"))]
-          (LegacyValue::$matrix_kind(Matrix::DMatrix(lhs)), LegacyValue::$matrix_kind(Matrix::DMatrix(rhs))) => {
-            let (a_rows, a_cols) = lhs.borrow().shape();
-            let (b_rows, b_cols) = rhs.borrow().shape();
-            if a_rows != a_cols || a_rows != b_rows {
-              return Err(MechError::new(
-                DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
-                Some("Matrix solve requires a square coefficient matrix whose rows match the right-hand side".to_string())
-              ).with_compiler_loc());
-            }
-            Ok(Box::new(MatrixSolveMDMD {
-              lhs: lhs.clone(),
-              rhs: rhs.clone(),
-              out: Ref::new(DMatrix::from_element(a_rows, b_cols, $target_type::zero())),
-            }))
-          },
-          #[cfg(all(feature = $value_string, feature = "matrix2", feature = "matrix2x3"))]
-          (LegacyValue::$matrix_kind(Matrix::Matrix2(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix2x3(rhs))) => {
-            Ok(Box::new(MatrixSolveM2M2x3 {
-              lhs: lhs.clone(),
-              rhs: rhs.clone(),
-              out: Ref::new(Matrix2x3::from_element($target_type::zero())),
-            }))
-          },
-          #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
-          (LegacyValue::$matrix_kind(Matrix::DMatrix(lhs)), LegacyValue::$matrix_kind(Matrix::DVector(rhs))) => {
-            let (a_rows, a_cols) = lhs.borrow().shape();
-            let (b_rows, b_cols) = rhs.borrow().shape();
-            if b_cols != 1 {
-              return Err(MechError::new(
-                DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
-                Some("Right-hand side must be a vector (1 column)".to_string())
-              ).with_compiler_loc());
-            }
-            if a_rows != a_cols || a_rows != b_rows {
-              return Err(MechError::new(
-                DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
-                Some("Matrix solve requires a square coefficient matrix whose rows match the right-hand side".to_string())
-              ).with_compiler_loc());
-            }
-            Ok(Box::new(MatrixSolveMDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DVector::from_element(a_rows, $target_type::zero())) }))
-          },
-          #[cfg(feature = $value_string)]
-          (LegacyValue::$matrix_kind(lhs), LegacyValue::$matrix_kind(rhs)) => {
-            let lhs_shape = lhs.shape();
-            let rhs_shape = rhs.shape();
+pub struct MatrixSolve;
+
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for MatrixSolve {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        if invocation.len() != 2 {
             return Err(MechError::new(
-              DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rhs_shape[0], rhs_shape[1]] },
-              Some("Matrix solve is not implemented for this pair of matrix representations".to_string())
-            ).with_compiler_loc());
-          }
-        )+
-      )+
-      (arg1,arg2) => Err(MechError::new(
-        UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
-        Some("Unsupported types for matrix solve".to_string())
-      ).with_compiler_loc()),
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: invocation.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let lhs = invocation.input(0).expect("validated solve lhs");
+        let rhs = invocation.input(1).expect("validated solve rhs");
+        let lhs_shape = lhs.matrix_descriptor()?.ok_or_else(|| {
+            MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Input(0),
+                    expected: "matrix coefficient input".into(),
+                    found: format!("{:?}", lhs.representation()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let rhs_shape = rhs.matrix_descriptor()?.ok_or_else(|| {
+            MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Input(1),
+                    expected: "matrix right-hand side".into(),
+                    found: format!("{:?}", rhs.representation()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        if lhs_shape.rows != lhs_shape.cols || lhs_shape.rows != rhs_shape.rows {
+            return Err(MechError::new(
+                DimensionMismatch {
+                    dims: vec![
+                        lhs_shape.rows,
+                        lhs_shape.cols,
+                        rhs_shape.rows,
+                        rhs_shape.cols,
+                    ],
+                },
+                Some(
+                    "Matrix solve requires a square coefficient matrix whose rows match the right-hand side"
+                        .into(),
+                ),
+            )
+            .with_compiler_loc());
+        }
+        context.bind_runtime_factory_derived_output(
+            "MatrixSolve",
+            Some((rhs_shape.rows, rhs_shape.cols)),
+            &[lhs, rhs],
+        )
     }
-  }
 }
-
-#[cfg(feature = "source")]
-fn impl_solve_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
-    impl_solve_match_arms!(
-      (lhs_value, rhs_value),
-      MatrixF32,  f32,  "f32";
-      MatrixF64,  f64,  "f64";
-      //R64, MatrixR64, R64, "rational";
-      //C64, MatrixC64, C64, "complex";
-    )
-}
-
-#[cfg(feature = "source")]
-impl_mech_binop_fxn!(MatrixSolve, impl_solve_fxn, "matrix/solve");

@@ -1,8 +1,10 @@
 # Immutable value semantics and migration contract
 
-This document defines the semantic value model and the boundary for migrating
-the current mutable value system. It is normative. Gate C0 does not implement
-the model and must not change production value or execution behavior.
+This document records the semantic value model and the completed migration
+from the former mutable universal value system. The canonical model is
+normative. Sections describing the staged C0–C4 transition are retained as
+historical design rationale; the compatibility types and adapters they name
+were removed by the final cutover.
 
 ## Semantic layers
 
@@ -561,7 +563,10 @@ rollback entry, journal entry, or mutable producer. A literal must not receive
 a mutable cell merely because a legacy machine interface expects `Ref<T>`.
 `ConstantStore` is not implemented in C0.
 
-## Temporary dual-value boundary
+## Historical dual-value boundary
+
+This boundary no longer exists. The following rules governed the transition
+and explain why no reverse conversion or compatibility alias survives.
 
 The transition names are normative:
 
@@ -664,7 +669,10 @@ classification fails the C0 contract. A separate frozen projection fixes the
 target of each exact occurrence, so two otherwise-applicable destinations
 cannot be swapped without explicit contract drift.
 
-## Reserved conversion boundaries
+## Retired conversion boundaries
+
+The reserved adapter locations below were temporary migration coordinates.
+They no longer exist; new code must use canonical snapshots and cells directly.
 
 The following future locations are reserved:
 
@@ -682,7 +690,11 @@ Legacy adapters are the only modules that may mention both `LegacyValue` and
 fail the architecture contract. New engine artifact modules must not accept
 `LegacyValue`.
 
-## Legacy growth boundary
+## Historical growth boundary
+
+The shrink-only inventory described below was removed after reaching zero.
+`scripts/check-no-retired-value-system.py` is now the permanent exact-symbol
+and path absence contract.
 
 The Gate A legacy-boundary manifest remains authoritative. Approved production
 uses may disappear and occurrence counts may shrink, but new paths and count

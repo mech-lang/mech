@@ -1,11 +1,12 @@
 #[cfg(all(test, feature = "functions", feature = "symbol_table", feature = "f64"))]
 mod checkpoint_tests {
     use super::super::super::{
-        Dictionary, ExtensionFunctionId, FunctionBinding, FunctionCatalogBuilder, FunctionDefine,
-        FunctionDefinition, FunctionExport, FunctionExposure, FunctionExtensionEntry,
-        FunctionSpecializer, Interpreter, LegacyValue, MResult, MechFunction, MechSourceCode,
-        ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
-        RuntimeContextBinding, ValRef, ValueStateBorrowConflict, hash_str,
+        CanonicalCellId, CanonicalFunctionSpecializer, CellAccess, Dictionary, ExtensionFunctionId,
+        FunctionBinding, FunctionCatalogBuilder, FunctionDefine, FunctionDefinition,
+        FunctionExport, FunctionExposure, FunctionExtensionEntry, FunctionInvocation, Interpreter,
+        MResult, MechSourceCode, ModuleManifestCatalog, OperationId, ProgramState, Ref,
+        RuntimeContextBinding, SpecializationContext, SpecializationInvocation,
+        SpecializedFunction, ValueCell, ValueCellBorrowConflict, hash_str,
         internal_pattern_value_identifier,
     };
     use std::collections::HashMap;
@@ -16,14 +17,14 @@ mod checkpoint_tests {
     #[cfg(feature = "state_machines")]
     use super::super::super::{FsmImplementation, FsmSpecification, Pattern};
 
-    fn f64_value(value: &Ref<f64>) -> LegacyValue {
-        LegacyValue::F64(value.clone())
-    }
-
     struct CheckpointSpecializer(u8);
 
-    impl FunctionSpecializer for CheckpointSpecializer {
-        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+    impl CanonicalFunctionSpecializer for CheckpointSpecializer {
+        fn specialize_invocation(
+            &self,
+            _: &SpecializationInvocation,
+            _: &mut SpecializationContext<'_>,
+        ) -> MResult<SpecializedFunction> {
             unreachable!("checkpoint store tests do not specialize marker {}", self.0)
         }
     }
@@ -42,19 +43,20 @@ mod checkpoint_tests {
         )
     }
 
-    fn index_payload(value: &Ref<LegacyValue>) -> usize {
-        let value = value.borrow();
-        let LegacyValue::Index(index) = &*value else {
+    fn index_payload(value: &ValueCell) -> usize {
+        let value = value.snapshot().unwrap();
+        let super::super::super::ValueData::Index(index) = value.data() else {
             panic!("expected retained index value, got {value:?}")
         };
-        *index.borrow()
+        usize::try_from(*index).unwrap()
     }
 
-    fn install_scalar(interpreter: &Interpreter, name: &str, value: f64) -> (ValRef, Ref<f64>) {
-        let backing = Ref::new(value);
+    fn install_scalar(interpreter: &Interpreter, name: &str, value: f64) -> (ValueCell, Ref<f64>) {
+        let cell = ValueCell::from_exact(value).unwrap();
+        let backing = exact_f64(&cell);
         let id = hash_str(name);
         let symbols = interpreter.symbols();
-        let cell = symbols.borrow_mut().insert(id, f64_value(&backing), true);
+        let cell = symbols.borrow_mut().insert_cell(id, cell, true);
         symbols
             .borrow()
             .dictionary
@@ -63,12 +65,29 @@ mod checkpoint_tests {
         (cell, backing)
     }
 
+    fn exact_f64(cell: &ValueCell) -> Ref<f64> {
+        FunctionInvocation::unary(ValueCell::unit(), cell.clone())
+            .input(0)
+            .unwrap()
+            .try_ref::<f64>()
+            .unwrap()
+    }
+
+    #[cfg(feature = "invariant_define")]
+    fn exact_bool(cell: &ValueCell) -> Ref<bool> {
+        FunctionInvocation::unary(ValueCell::unit(), cell.clone())
+            .input(0)
+            .unwrap()
+            .try_ref::<bool>()
+            .unwrap()
+    }
+
     #[cfg(feature = "math_add")]
     #[test]
     fn catalog_identity_and_function_environment_survive_children_clear_and_restore() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_specializer("math/add", Arc::new(CheckpointSpecializer(1)))
+            .insert_canonical_specializer("math/add", Arc::new(CheckpointSpecializer(1)))
             .unwrap();
         let operation = OperationId::from_name("math/add");
         builder
@@ -113,7 +132,6 @@ mod checkpoint_tests {
                 .insert_or_replace(empty_user_function(user_name))
                 .unwrap();
         }
-
         let cloned = interpreter.clone();
         assert!(Arc::ptr_eq(cloned.function_catalog(), &catalog));
 
@@ -211,7 +229,7 @@ mod checkpoint_tests {
         let mut interpreter = Interpreter::new(43, 100);
         let canonical_name = "host/read";
         let extension = ExtensionFunctionId::from_name(canonical_name);
-        let original: Arc<dyn FunctionSpecializer> = Arc::new(CheckpointSpecializer(1));
+        let original: Arc<dyn CanonicalFunctionSpecializer> = Arc::new(CheckpointSpecializer(1));
         {
             let mut state = interpreter.state.borrow_mut();
             state
@@ -230,10 +248,18 @@ mod checkpoint_tests {
                 .bind_extension(canonical_name, "read", extension)
                 .unwrap();
         }
+        let original_canonical = interpreter
+            .state
+            .borrow()
+            .function_extensions
+            .entry(extension)
+            .unwrap()
+            .specializer
+            .clone();
 
         let catalog = Arc::clone(interpreter.function_catalog());
         let checkpoint = interpreter.checkpoint().unwrap();
-        let replacement: Arc<dyn FunctionSpecializer> = Arc::new(CheckpointSpecializer(2));
+        let replacement: Arc<dyn CanonicalFunctionSpecializer> = Arc::new(CheckpointSpecializer(2));
         let added_name = "dynamic-host/write";
         let added = ExtensionFunctionId::from_name(added_name);
         {
@@ -261,6 +287,14 @@ mod checkpoint_tests {
                 .bind_extension(added_name, "write", added)
                 .unwrap();
         }
+        let replacement_canonical = interpreter
+            .state
+            .borrow()
+            .function_extensions
+            .entry(extension)
+            .unwrap()
+            .specializer
+            .clone();
 
         interpreter.restore(checkpoint).unwrap();
 
@@ -272,7 +306,7 @@ mod checkpoint_tests {
                 .entry(extension)
                 .unwrap()
                 .specializer,
-            &original,
+            &original_canonical,
         ));
         assert!(!Arc::ptr_eq(
             &state
@@ -280,7 +314,7 @@ mod checkpoint_tests {
                 .entry(extension)
                 .unwrap()
                 .specializer,
-            &replacement,
+            &replacement_canonical,
         ));
         assert_eq!(
             state
@@ -308,11 +342,11 @@ mod checkpoint_tests {
         let function_name = "user/checkpoint";
         let added_name = "user/added-after-checkpoint";
         let symbol_id = hash_str("retained");
-        let definition = empty_user_function(function_name);
-        *definition.out.borrow_mut() = LegacyValue::Index(Ref::new(10));
-        let symbol = definition.symbols.borrow_mut().insert(
+        let mut definition = empty_user_function(function_name);
+        definition.out = ValueCell::from_exact(10_usize).unwrap();
+        let symbol = definition.symbols.borrow_mut().insert_cell(
             symbol_id,
-            LegacyValue::Index(Ref::new(20)),
+            ValueCell::from_exact(20_usize).unwrap(),
             true,
         );
         let original_symbol_dictionary = definition.symbols.borrow().dictionary.clone();
@@ -321,7 +355,7 @@ mod checkpoint_tests {
             .insert(symbol_id, "retained".to_string());
         definition
             .plan
-            .push_activation_registration_scope(vec![ReactiveCellId::new(1)]);
+            .push_activation_registration_scope(vec![CanonicalCellId::new(1)]);
         let original_symbols = definition.symbols.clone();
         let original_out = definition.out.clone();
         let original_plan = definition.plan.clone();
@@ -335,15 +369,19 @@ mod checkpoint_tests {
 
         let checkpoint = interpreter.checkpoint().unwrap();
 
-        *original_out.borrow_mut() = LegacyValue::Index(Ref::new(99));
-        *symbol.borrow_mut() = LegacyValue::Index(Ref::new(98));
+        original_out
+            .replace(&ValueCell::from_exact(99_usize).unwrap().snapshot().unwrap())
+            .unwrap();
+        symbol
+            .replace(&ValueCell::from_exact(98_usize).unwrap().snapshot().unwrap())
+            .unwrap();
         {
             let mut symbols = original_symbols.borrow_mut();
             symbols.symbols.clear();
             symbols.mutable_variables.clear();
             symbols.dictionary = Ref::new(Dictionary::new());
         }
-        original_plan.push_activation_registration_scope(vec![ReactiveCellId::new(2)]);
+        original_plan.push_activation_registration_scope(vec![CanonicalCellId::new(2)]);
         {
             let mut state = interpreter.state.borrow_mut();
             state
@@ -361,12 +399,15 @@ mod checkpoint_tests {
         let state = interpreter.state.borrow();
         assert!(state.user_functions.resolve_name(added_name).is_none());
         let restored = state.user_functions.resolve_name(function_name).unwrap();
-        assert_eq!(restored.symbols.addr(), original_symbols.addr());
-        assert_eq!(restored.out.addr(), original_out.addr());
-        assert_eq!(restored.plan.0.addr(), original_plan.0.addr());
-        assert_eq!(
-            restored.symbols.borrow().dictionary.addr(),
-            original_symbol_dictionary.addr(),
+        assert!(restored.symbols.same_handle(&original_symbols));
+        assert!(restored.out.same_cell(&original_out));
+        assert!(restored.plan.0.same_handle(&original_plan.0));
+        assert!(
+            restored
+                .symbols
+                .borrow()
+                .dictionary
+                .same_handle(&original_symbol_dictionary)
         );
         assert_eq!(restored.plan.checkpoint(), original_plan_checkpoint);
         assert_eq!(index_payload(&restored.out), 10);
@@ -377,7 +418,7 @@ mod checkpoint_tests {
             .get(&symbol_id)
             .unwrap()
             .clone();
-        assert_eq!(restored_symbol.addr(), symbol.addr());
+        assert!(restored_symbol.same_cell(&symbol));
         assert_eq!(index_payload(&restored_symbol), 20);
         assert_eq!(
             restored
@@ -417,7 +458,7 @@ mod checkpoint_tests {
         let error = interpreter.restore(checkpoint).unwrap_err();
 
         assert_eq!(error.kind_name(), "UserFunctionsCheckpointBorrowConflict");
-        assert_eq!(
+        assert!(
             interpreter
                 .state
                 .borrow()
@@ -425,8 +466,7 @@ mod checkpoint_tests {
                 .resolve_name(function_name)
                 .unwrap()
                 .symbols
-                .addr(),
-            replacement_symbols.addr(),
+                .same_handle(&replacement_symbols)
         );
         drop(held_symbols);
     }
@@ -435,14 +475,14 @@ mod checkpoint_tests {
     fn interpreter_checkpoint_restores_private_state_and_recursive_child_identity() {
         let mut root = Interpreter::new(1, 100);
         let (symbol_cell, symbol_backing) = install_scalar(&root, "kept", 1.0);
-        let symbol_cell_address = symbol_cell.addr();
-        let symbol_backing_address = symbol_backing.addr();
-        let symbol_backing_identity = ReactiveCellId::new(symbol_backing.id());
-        root.out = f64_value(&symbol_backing);
+        let original_symbol_cell = symbol_cell.clone();
+        let symbol_backing_alias = symbol_backing.clone();
+        let symbol_backing_identity = symbol_backing.reactive_cell_id();
+        root.out = Some(symbol_cell.clone());
         root.code.push(MechSourceCode::String("before".to_string()));
         root.out_values
             .borrow_mut()
-            .insert(hash_str("out"), f64_value(&symbol_backing));
+            .insert(hash_str("out"), Some(symbol_cell.clone()));
         *root.inline_eval_counter.borrow_mut() = 4;
         *root.persistent_user_function_plan_depth.borrow_mut() = 2;
         *root.deferred_expression_solve_depth.borrow_mut() = 3;
@@ -483,9 +523,9 @@ mod checkpoint_tests {
             );
         }
         #[cfg(feature = "invariant_define")]
-        let invariant_result = Ref::new(LegacyValue::Bool(Ref::new(true)));
+        let invariant_result = ValueCell::from_exact(true).unwrap();
         #[cfg(feature = "invariant_define")]
-        let invariant_rhs = Ref::new(LegacyValue::F64(Ref::new(2.0)));
+        let invariant_rhs = ValueCell::from_exact(2.0).unwrap();
         #[cfg(feature = "invariant_define")]
         {
             let invariant_id = hash_str("checkpoint-invariant");
@@ -505,20 +545,20 @@ mod checkpoint_tests {
             );
         }
 
-        let state_address = root.state.addr();
-        let symbols_address = root.symbols().addr();
-        let symbol_dictionary_address = root.symbols().borrow().dictionary.addr();
-        let out_values_address = root.out_values.addr();
-        let inline_counter_address = root.inline_eval_counter.addr();
-        let context_bindings_address = root.context_bindings.addr();
-        let module_manifests_address = root.module_manifests.addr();
+        let state_alias = root.state.clone();
+        let symbols_alias = root.symbols();
+        let symbol_dictionary_alias = root.symbols().borrow().dictionary.clone();
+        let out_values_alias = root.out_values.clone();
+        let inline_counter_alias = root.inline_eval_counter.clone();
+        let context_bindings_alias = root.context_bindings.clone();
+        let module_manifests_alias = root.module_manifests.clone();
         #[cfg(feature = "trace")]
-        let trace_events_address = root.trace_events.addr();
+        let trace_events_alias = root.trace_events.clone();
         #[cfg(feature = "state_machines")]
-        let user_state_machines_address = root.user_state_machines.addr();
+        let user_state_machines_alias = root.user_state_machines.clone();
         #[cfg(feature = "state_machines")]
-        let user_state_machine_specs_address = root.user_state_machine_specs.addr();
-        let sub_interpreters_address = root.sub_interpreters.addr();
+        let user_state_machine_specs_alias = root.user_state_machine_specs.clone();
+        let sub_interpreters_alias = root.sub_interpreters.clone();
 
         let child_id = 2;
         let grandchild_id = 3;
@@ -528,13 +568,13 @@ mod checkpoint_tests {
         let (_grandchild_cell, grandchild_backing) =
             install_scalar(&grandchild, "grandchild", 30.0);
         let grandchild_ref = Ref::new(Box::new(grandchild));
-        let grandchild_handle_address = grandchild_ref.addr();
+        let grandchild_handle_alias = grandchild_ref.clone();
         child
             .sub_interpreters
             .borrow_mut()
             .insert(grandchild_id, grandchild_ref);
         let child_ref = Ref::new(Box::new(child));
-        let child_handle_address = child_ref.addr();
+        let child_handle_alias = child_ref.clone();
         root.sub_interpreters
             .borrow_mut()
             .insert(child_id, child_ref);
@@ -544,7 +584,7 @@ mod checkpoint_tests {
         root.id = 99;
         root.max_steps = 999;
         root.code.push(MechSourceCode::String("after".to_string()));
-        root.out = LegacyValue::Empty;
+        root.out = None;
         root.state = Ref::new(ProgramState::new());
         root.out_values = Ref::new(HashMap::new());
         root.inline_eval_counter = Ref::new(99);
@@ -568,12 +608,8 @@ mod checkpoint_tests {
         *grandchild_backing.borrow_mut() = 31.0;
         #[cfg(feature = "invariant_define")]
         {
-            if let LegacyValue::Bool(value) = &*invariant_result.borrow() {
-                *value.borrow_mut() = false;
-            }
-            if let LegacyValue::F64(value) = &*invariant_rhs.borrow() {
-                *value.borrow_mut() = 99.0;
-            }
+            *exact_bool(&invariant_result).borrow_mut() = false;
+            *exact_f64(&invariant_rhs).borrow_mut() = 99.0;
         }
 
         let removed_child = root
@@ -599,11 +635,11 @@ mod checkpoint_tests {
         let held = symbol_backing.borrow();
         let error = root.restore(checkpoint.clone()).unwrap_err();
         assert_eq!(
-            error.kind_as::<ValueStateBorrowConflict>().unwrap().phase,
-            "restore-before"
+            error.kind_as::<ValueCellBorrowConflict>().unwrap().access,
+            CellAccess::Replace
         );
         assert_eq!(root.id, 99);
-        assert_ne!(root.state.addr(), state_address);
+        assert!(!root.state.same_handle(&state_alias));
         assert!(root.sub_interpreters.borrow().contains_key(&999));
         assert!(!root.sub_interpreters.borrow().contains_key(&child_id));
         assert_eq!(*held, 11.0);
@@ -613,16 +649,18 @@ mod checkpoint_tests {
 
         assert_eq!(root.id, 1);
         assert_eq!(root.max_steps, 100);
-        assert_eq!(root.state.addr(), state_address);
-        assert_eq!(root.symbols().addr(), symbols_address);
-        assert_eq!(
-            root.symbols().borrow().dictionary.addr(),
-            symbol_dictionary_address
+        assert!(root.state.same_handle(&state_alias));
+        assert!(root.symbols().same_handle(&symbols_alias));
+        assert!(
+            root.symbols()
+                .borrow()
+                .dictionary
+                .same_handle(&symbol_dictionary_alias)
         );
-        assert_eq!(root.out_values.addr(), out_values_address);
-        assert_eq!(root.inline_eval_counter.addr(), inline_counter_address);
-        assert_eq!(root.context_bindings.addr(), context_bindings_address);
-        assert_eq!(root.module_manifests.addr(), module_manifests_address);
+        assert!(root.out_values.same_handle(&out_values_alias));
+        assert!(root.inline_eval_counter.same_handle(&inline_counter_alias));
+        assert!(root.context_bindings.same_handle(&context_bindings_alias));
+        assert!(root.module_manifests.same_handle(&module_manifests_alias));
         assert_eq!(*root.module_manifests.borrow(), original_manifests);
         assert_eq!(
             root.context_bindings
@@ -636,14 +674,17 @@ mod checkpoint_tests {
         {
             assert!(root.trace);
             assert!(!root.trace_to_stdout);
-            assert_eq!(root.trace_events.addr(), trace_events_address);
+            assert!(root.trace_events.same_handle(&trace_events_alias));
         }
         #[cfg(feature = "state_machines")]
         {
-            assert_eq!(root.user_state_machines.addr(), user_state_machines_address);
-            assert_eq!(
-                root.user_state_machine_specs.addr(),
-                user_state_machine_specs_address,
+            assert!(
+                root.user_state_machines
+                    .same_handle(&user_state_machines_alias)
+            );
+            assert!(
+                root.user_state_machine_specs
+                    .same_handle(&user_state_machine_specs_alias)
             );
             assert!(
                 root.user_state_machines
@@ -668,23 +709,12 @@ mod checkpoint_tests {
                 constraint.operator,
                 Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual,)),
             );
-            assert_eq!(constraint.result.addr(), invariant_result.addr());
-            assert_eq!(
-                constraint.rhs.as_ref().unwrap().addr(),
-                invariant_rhs.addr()
-            );
-            if let LegacyValue::Bool(value) = &*constraint.result.borrow() {
-                assert!(*value.borrow());
-            } else {
-                panic!("restored constraint result must remain bool");
-            }
-            if let LegacyValue::F64(value) = &*constraint.rhs.as_ref().unwrap().borrow() {
-                assert_eq!(*value.borrow(), 2.0);
-            } else {
-                panic!("restored constraint rhs must remain f64");
-            }
+            assert!(constraint.result.same_cell(&invariant_result));
+            assert!(constraint.rhs.as_ref().unwrap().same_cell(&invariant_rhs));
+            assert!(*exact_bool(&constraint.result).borrow());
+            assert_eq!(*exact_f64(constraint.rhs.as_ref().unwrap()).borrow(), 2.0);
         }
-        assert_eq!(root.sub_interpreters.addr(), sub_interpreters_address);
+        assert!(root.sub_interpreters.same_handle(&sub_interpreters_alias));
         assert_eq!(
             root.code,
             vec![MechSourceCode::String("before".to_string())]
@@ -692,12 +722,9 @@ mod checkpoint_tests {
         assert_eq!(*root.inline_eval_counter.borrow(), 4);
         assert_eq!(*root.persistent_user_function_plan_depth.borrow(), 2);
         assert_eq!(*root.deferred_expression_solve_depth.borrow(), 3);
-        assert_eq!(symbol_cell.addr(), symbol_cell_address);
-        assert_eq!(symbol_backing.addr(), symbol_backing_address);
-        assert_eq!(
-            ReactiveCellId::new(symbol_backing.id()),
-            symbol_backing_identity
-        );
+        assert!(symbol_cell.same_cell(&original_symbol_cell));
+        assert!(symbol_backing.same_handle(&symbol_backing_alias));
+        assert_eq!(symbol_backing.reactive_cell_id(), symbol_backing_identity);
         assert_eq!(*symbol_backing.borrow(), 1.0);
         assert!(root.sub_interpreters.borrow().get(&999).is_none());
 
@@ -707,7 +734,7 @@ mod checkpoint_tests {
             .get(&child_id)
             .cloned()
             .unwrap();
-        assert_eq!(restored_child.addr(), child_handle_address);
+        assert!(restored_child.same_handle(&child_handle_alias));
         let restored_grandchild = {
             let child = restored_child.borrow();
             assert_eq!(child.id, child_id);
@@ -719,7 +746,7 @@ mod checkpoint_tests {
                 .cloned()
                 .unwrap()
         };
-        assert_eq!(restored_grandchild.addr(), grandchild_handle_address);
+        assert!(restored_grandchild.same_handle(&grandchild_handle_alias));
         let grandchild = restored_grandchild.borrow();
         assert_eq!(grandchild.id, grandchild_id);
         assert_eq!(*grandchild_backing.borrow(), 30.0);
