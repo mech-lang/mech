@@ -298,6 +298,11 @@ one shared 0--60 million-turns/s axis:
 
 ![Parallel EKF cross-language throughput](apple-m1-simd-cross-language-2026-08-30.svg)
 
+The checked-only view is available separately for reviews that require every
+row to retain the integrity policy:
+
+![Parallel EKF checked throughput](apple-m1-checked-cross-language-2026-08-30.svg)
+
 | Control | Validation | Million EKF-turns/s |
 | --- | --- | ---: |
 | Rust fixed-shape scalar | unchecked | 16.80 |
@@ -319,4 +324,31 @@ To regenerate the chart from a new run:
 
 ```text
 python3 plot.py results/apple-m1-simd-cross-language-2026-08-30.json results/apple-m1-simd-cross-language-2026-08-30.svg
+python3 plot.py --checked-only results/apple-m1-simd-cross-language-2026-08-30.json results/apple-m1-checked-cross-language-2026-08-30.svg
 ```
+
+## What "checked-fast" means
+
+The Rust control currently has ordinary `checked` and `unchecked` modes. It
+does not have a Rust-specific `checked-fast` mode because that would be a new
+floating-point policy, not a free compiler switch. The Mech checked-fast path
+keeps candidate validation, rollback, and fault reporting, but permits a
+small set of arithmetic simplifications that are only valid under finite
+inputs. It is **not** equivalent to applying unrestricted `-ffast-math`.
+
+Unrestricted fast math can reassociate operations, contract multiplies and
+adds, treat NaNs or infinities as impossible, change signed-zero behavior, and
+replace transcendental functions with lower-accuracy approximations. In this
+EKF, those changes can alter a residual, make a covariance fail symmetry or
+positivity, or worse, hide an exceptional operand (for example, replacing
+`0 * NaN` with `0`) before the integrity check sees it. A checked wrapper does
+not make those arithmetic transformations safe by itself.
+
+A defensible checked-fast policy is possible: validate all external and state
+inputs before entering the fast region, restrict transformations to proofs
+that hold for finite operands, retain the candidate finite/diagonal/symmetry
+checks, and fall back to strict recomputation when the fast candidate fails.
+The fallback must be armed before publication, and the fast path must not
+silently erase NaN/Inf evidence. That policy is the next step if we want a
+Rust checked-fast row; the current chart deliberately reports the measured
+Rust checked row instead of inventing one.
