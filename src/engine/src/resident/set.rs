@@ -1,14 +1,10 @@
-use mech_core::snapshot::{
-    SnapshotValidationContext, ValueDataDraft, ValueDraft, build_f64_set_snapshot,
-    build_f64_set_snapshot_after_remove, f64_set_snapshot_contains,
-};
+use mech_core::snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
-    DeliveryMode, ExternalInteraction, FloatWidth, FunctionCatalogBuilder, MResult,
-    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
-    ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
-    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, SetValueRelation,
-    ShapeInstance, ShapeRule, ValueData,
+    DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
+    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
+    ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedOperationContract, SchemaBody, SetValueRelation, ShapeInstance, ShapeRule, ValueData,
 };
 
 const MAX_CARTESIAN_PRODUCT_OUTPUT_CARDINALITY: usize = 65_536;
@@ -130,14 +126,6 @@ fn validate_binary_contract(
     Ok(())
 }
 
-fn is_f64_set(schema: Option<&mech_core::Schema>) -> bool {
-    matches!(
-        schema.map(|schema| schema.body()),
-        Some(SchemaBody::Set { element, .. })
-            if element.as_ref() == &SchemaBody::FloatingPoint(FloatWidth::W64)
-    )
-}
-
 fn is_set(schema: Option<&mech_core::Schema>) -> bool {
     matches!(
         schema.map(mech_core::Schema::body),
@@ -161,6 +149,22 @@ fn set_element_schema_matches(
                 .get(element)
                 .is_some_and(|actual| actual.body() == expected)
         })
+}
+
+fn set_element_bodies_match(
+    schemas: &mech_core::SchemaTable,
+    left: mech_core::SchemaId,
+    right: mech_core::SchemaId,
+) -> bool {
+    let element = |schema| {
+        schemas.get(schema).and_then(|schema| match schema.body() {
+            SchemaBody::Set { element, .. } => Some(element.as_ref()),
+            _ => None,
+        })
+    };
+    element(left)
+        .zip(element(right))
+        .is_some_and(|(left, right)| left == right)
 }
 
 fn bind_union(
@@ -378,11 +382,10 @@ fn bind_membership(
         request.inputs[0].schema_id,
         request.inputs[1].schema_id,
     );
-    if request.inputs[0].kind != ResidentValueKind::F64
-        || request.inputs[0].shape != ResidentShape::SCALAR
+    if request.inputs[0].shape != ResidentShape::SCALAR
         || request.inputs[1].kind != ResidentValueKind::Snapshot
         || request.inputs[1].shape != ResidentShape::SCALAR
-        || !is_f64_set(request.schemas.get(request.inputs[1].schema_id))
+        || !is_set(request.schemas.get(request.inputs[1].schema_id))
         || request.output.kind != ResidentValueKind::Bool
         || request.output.shape != ResidentShape::SCALAR
     {
@@ -401,12 +404,16 @@ fn bind_mutation(
     validate_binary_contract(request, ChangeDetectionPolicy::KernelReported)?;
     if request.inputs[0].kind != ResidentValueKind::Snapshot
         || request.inputs[0].shape != ResidentShape::SCALAR
-        || request.inputs[1].kind != ResidentValueKind::F64
         || request.inputs[1].shape != ResidentShape::SCALAR
         || request.output.kind != ResidentValueKind::Snapshot
         || request.output.shape != ResidentShape::SCALAR
-        || !is_f64_set(request.schemas.get(request.inputs[0].schema_id))
-        || !is_f64_set(request.schemas.get(request.output.schema_id))
+        || !is_set(request.schemas.get(request.inputs[0].schema_id))
+        || !is_set(request.schemas.get(request.output.schema_id))
+        || !set_element_bodies_match(
+            request.schemas,
+            request.inputs[0].schema_id,
+            request.output.schema_id,
+        )
         || !set_element_schema_matches(
             request.schemas,
             request.inputs[1].schema_id,
@@ -708,18 +715,23 @@ fn set_size(
     write_changed_snapshot(kernel, output, next)
 }
 
-fn element_of(
-    _kernel: &BoundResidentKernel,
+fn scalar_element_draft(
     inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    let Some(ResidentValueRef::F64([element])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(1) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let next = f64_set_snapshot_contains(set, *element).ok_or(ResidentKernelError::InvalidInput)?;
+    index: usize,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match inputs.get(index) {
+        Some(ResidentValueRef::Bool([value])) => Ok(ValueDataDraft::Bool(*value != 0)),
+        Some(ResidentValueRef::Index([value])) => Ok(ValueDataDraft::Index(*value)),
+        Some(ResidentValueRef::F64([value])) => Ok(ValueDataDraft::F64(F64Bits::from_f64(*value))),
+        Some(ResidentValueRef::String([value])) => Ok(ValueDataDraft::String(value.clone())),
+        Some(ResidentValueRef::Snapshot([Some(value)])) => value
+            .canonical_data_draft()
+            .map_err(|_| ResidentKernelError::InvalidInput),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn write_membership(output: ResidentValueMut<'_>, next: bool) -> Result<bool, ResidentKernelError> {
     let ResidentValueMut::Bool([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
@@ -727,6 +739,18 @@ fn element_of(
     let changed = *target != next;
     *target = next;
     Ok(changed)
+}
+
+fn element_of(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let element = scalar_element_draft(inputs, 0)?;
+    let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(1) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    write_membership(output, set_element_drafts(set)?.contains(&element))
 }
 
 fn element_of_schema_mismatch(
@@ -753,21 +777,11 @@ fn not_element_of(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let Some(ResidentValueRef::F64([element])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
+    let element = scalar_element_draft(inputs, 0)?;
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(1) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let next =
-        !f64_set_snapshot_contains(set, *element).ok_or(ResidentKernelError::InvalidInput)?;
-    let ResidentValueMut::Bool([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let next = u8::from(next);
-    let changed = *target != next;
-    *target = next;
-    Ok(changed)
+    write_membership(output, !set_element_drafts(set)?.contains(&element))
 }
 
 fn not_element_of_schema_mismatch(
@@ -786,45 +800,6 @@ fn not_element_of_schema_mismatch(
     Ok(changed)
 }
 
-fn f64_set_values(value: &mech_core::snapshot::Value) -> Option<Vec<f64>> {
-    let ValueData::Set(set) = value.data() else {
-        return None;
-    };
-    set.elements()
-        .iter()
-        .map(|element| match element.data() {
-            ValueData::F64(value) => Some(value.to_f64()),
-            _ => None,
-        })
-        .collect()
-}
-
-fn snapshots_equal(left: &mech_core::snapshot::Value, right: &mech_core::snapshot::Value) -> bool {
-    left.schema() == right.schema()
-        && left.schema_key() == right.schema_key()
-        && left.shape() == right.shape()
-        && f64_set_values(left).is_some_and(|left_values| {
-            f64_set_values(right).is_some_and(|right_values| {
-                left_values.len() == right_values.len()
-                    && left_values
-                        .iter()
-                        .zip(right_values)
-                        .all(|(left, right)| left.to_bits() == right.to_bits())
-            })
-        })
-}
-
-fn write_snapshot(
-    target: &mut Option<mech_core::snapshot::Value>,
-    next: mech_core::snapshot::Value,
-) -> bool {
-    let changed = target
-        .as_ref()
-        .is_none_or(|current| !snapshots_equal(current, &next));
-    *target = Some(next);
-    changed
-}
-
 fn insert(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -833,31 +808,13 @@ fn insert(
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let Some(ResidentValueRef::F64([element])) = inputs.get(1) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let mut values = f64_set_values(set).ok_or(ResidentKernelError::InvalidInput)?;
-    values.push(*element);
-    let metadata = kernel
-        .snapshot_output()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    let next = build_f64_set_snapshot(
-        metadata.schema,
-        metadata.schema_key,
-        metadata.shape.clone(),
-        schemas,
-        metadata.exact_cardinality,
-        metadata.maximum_cardinality,
-        &values,
-    )
-    .ok_or(ResidentKernelError::InvalidOutput)?;
-    let ResidentValueMut::Snapshot([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    Ok(write_snapshot(target, next))
+    let element = scalar_element_draft(inputs, 1)?;
+    let mut elements = set_element_drafts(set)?;
+    if !elements.contains(&element) {
+        elements.push(element);
+    }
+    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
+    write_changed_snapshot(kernel, output, next)
 }
 
 fn remove(
@@ -868,35 +825,19 @@ fn remove(
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let Some(ResidentValueRef::F64([element])) = inputs.get(1) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let metadata = kernel
-        .snapshot_output()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    let next = build_f64_set_snapshot_after_remove(
-        metadata.schema,
-        metadata.schema_key,
-        metadata.shape.clone(),
-        schemas,
-        metadata.exact_cardinality,
-        metadata.maximum_cardinality,
-        set,
-        *element,
-    )
-    .ok_or(ResidentKernelError::InvalidOutput)?;
-    let ResidentValueMut::Snapshot([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    Ok(write_snapshot(target, next))
+    let element = scalar_element_draft(inputs, 1)?;
+    let elements = set_element_drafts(set)?
+        .into_iter()
+        .filter(|candidate| candidate != &element)
+        .collect::<Vec<_>>();
+    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
+    write_changed_snapshot(kernel, output, next)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_core::FloatWidth;
 
     fn schema(body: SchemaBody) -> mech_core::Schema {
         mech_core::SchemaDraft {

@@ -23,25 +23,36 @@ fn canonical_matrix_dimensions(cell: &ValueCell) -> MResult<Option<(usize, usize
 }
 
 #[cfg(feature = "matrix")]
-fn validate_assign_matrix_sizes(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+fn matrix_element_count(cell: &ValueCell) -> MResult<Option<usize>> {
+    Ok(canonical_matrix_dimensions(cell)?.map(|(rows, columns)| rows.saturating_mul(columns)))
+}
+
+#[cfg(feature = "matrix")]
+fn assign_selector_cardinality(inputs: &[ValueCell], input_index: usize) -> MResult<usize> {
     let contract = "assign_slice";
-    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
-        function_shape_contract_violation(contract, "output must be matrix-backed")
+    let selector = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(contract, format!("missing selector input {input_index}"))
     })?;
-    let output_len = rows.saturating_mul(columns);
-    for (index, input) in inputs.iter().enumerate() {
-        if let Some((input_rows, input_columns)) = canonical_matrix_dimensions(input)?
-            && input_rows.saturating_mul(input_columns) > output_len
-        {
-            return Err(function_shape_contract_violation(
-                contract,
-                format!(
-                    "matrix input {index} has {} elements, output has {}",
-                    input_rows.saturating_mul(input_columns),
-                    output_len,
-                ),
-            ));
-        }
+    Ok(matrix_element_count(selector)?.unwrap_or(1))
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_source_cardinality(inputs: &[ValueCell], required: usize) -> MResult<()> {
+    let contract = "assign_slice";
+    let source = inputs.first().ok_or_else(|| {
+        function_shape_contract_violation(contract, "missing assignment source input 0")
+    })?;
+    let Some(actual) = matrix_element_count(source)? else {
+        // Scalar sources broadcast across the selected cells.
+        return Ok(());
+    };
+    if actual < required {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "matrix assignment source has {actual} elements, selected layout requires at least {required}"
+            ),
+        ));
     }
     Ok(())
 }
@@ -166,64 +177,120 @@ fn validate_assign_logical_mask(
 
 #[cfg(feature = "matrix")]
 fn validate_assign_whole(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_linear(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
-    validate_assign_index(output, inputs, 1, AssignIndexAxis::Linear)
+    validate_assign_index(output, inputs, 1, AssignIndexAxis::Linear)?;
+    validate_assign_source_cardinality(inputs, assign_selector_cardinality(inputs, 1)?)
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_logical_linear(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
-    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Linear)
+    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Linear)?;
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_row_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
     validate_assign_index(output, inputs, 1, AssignIndexAxis::Row)?;
-    validate_assign_index(output, inputs, 2, AssignIndexAxis::Column)
+    validate_assign_index(output, inputs, 2, AssignIndexAxis::Column)?;
+    let required = assign_selector_cardinality(inputs, 1)?
+        .saturating_mul(assign_selector_cardinality(inputs, 2)?);
+    validate_assign_source_cardinality(inputs, required)
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_row(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
-    validate_assign_index(output, inputs, 1, AssignIndexAxis::Row)
+    validate_assign_index(output, inputs, 1, AssignIndexAxis::Row)?;
+    let (_, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    let selector_len = assign_selector_cardinality(inputs, 1)?;
+    let selector_is_scalar = matrix_element_count(&inputs[1])?.is_none();
+    let source_columns = inputs
+        .first()
+        .map(canonical_matrix_dimensions)
+        .transpose()?
+        .flatten()
+        .map(|(_, source_columns)| source_columns);
+    let required = if selector_is_scalar {
+        columns
+    } else if source_columns == Some(1) {
+        selector_len
+    } else {
+        columns
+    };
+    validate_assign_source_cardinality(inputs, required)
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
-    validate_assign_index(output, inputs, 1, AssignIndexAxis::Column)
+    validate_assign_index(output, inputs, 1, AssignIndexAxis::Column)?;
+    let (rows, _) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    let selector_len = assign_selector_cardinality(inputs, 1)?;
+    let selector_is_scalar = matrix_element_count(&inputs[1])?.is_none();
+    let source_rows = inputs
+        .first()
+        .map(canonical_matrix_dimensions)
+        .transpose()?
+        .flatten()
+        .map(|(source_rows, _)| source_rows);
+    let required = if selector_is_scalar {
+        rows
+    } else if source_rows == Some(1) {
+        selector_len
+    } else {
+        rows.saturating_mul(selector_len)
+    };
+    validate_assign_source_cardinality(inputs, required)
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_logical_row(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
-    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)
+    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)?;
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_logical_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
-    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Column)
+    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Column)?;
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_logical_row_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
     validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)?;
-    validate_assign_index(output, inputs, 2, AssignIndexAxis::Column)
+    validate_assign_index(output, inputs, 2, AssignIndexAxis::Column)?;
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_row_logical_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
     validate_assign_index(output, inputs, 1, AssignIndexAxis::Row)?;
-    validate_assign_logical_mask(output, inputs, 2, AssignIndexAxis::Column)
+    validate_assign_logical_mask(output, inputs, 2, AssignIndexAxis::Column)?;
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
 }
 
 #[cfg(feature = "matrix")]
@@ -231,9 +298,12 @@ fn validate_assign_logical_row_logical_column(
     output: &ValueCell,
     inputs: &[ValueCell],
 ) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
     validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)?;
-    validate_assign_logical_mask(output, inputs, 2, AssignIndexAxis::Column)
+    validate_assign_logical_mask(output, inputs, 2, AssignIndexAxis::Column)?;
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
 }
 
 #[cfg(feature = "matrix")]
@@ -1868,7 +1938,11 @@ macro_rules! for_each_matrix_assignment_factory {
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            ($context, RuntimeOutputAliasPolicy::AllowInputAlias, Linear),
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                Linear
+            ),
             install_legacy_impl_assign_scalar_arms,
             Assign1D
         );
@@ -1877,7 +1951,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 LogicalLinear
             ),
             install_legacy_impl_assign_scalar_arms_b,
@@ -1886,7 +1960,11 @@ macro_rules! for_each_matrix_assignment_factory {
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            ($context, RuntimeOutputAliasPolicy::AllowInputAlias, Linear),
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                Linear
+            ),
             install_legacy_impl_set_range_arms,
             Assign1DR
         );
@@ -1895,7 +1973,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 LogicalLinear
             ),
             install_legacy_impl_set_range_arms_b,
@@ -1917,7 +1995,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 RowColumn
             ),
             install_legacy_impl_assign_scalar_scalar_arms,
@@ -1926,14 +2004,18 @@ macro_rules! for_each_matrix_assignment_factory {
         $all_types!(
             install_legacy_direct,
             $emit,
-            ($context, RuntimeOutputAliasPolicy::AllowInputAlias, Column),
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                Column
+            ),
             install_legacy_impl_assign_all_scalar_arms,
             Assign2DAS
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            ($context, RuntimeOutputAliasPolicy::AllowInputAlias, Row),
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_assign_scalar_all_arms,
             Assign2DSA
         );
@@ -1942,7 +2024,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 RowColumn
             ),
             install_legacy_impl_assign_range_scalar_arms,
@@ -1953,7 +2035,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 LogicalRowColumn
             ),
             install_legacy_impl_assign_range_scalar_arms_b,
@@ -1964,7 +2046,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 RowColumn
             ),
             install_legacy_impl_assign_scalar_range_arms,
@@ -1975,7 +2057,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 RowLogicalColumn
             ),
             install_legacy_impl_assign_scalar_range_arms_b,
@@ -1986,7 +2068,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 RowColumn
             ),
             install_legacy_impl_assign_range_range_arms,
@@ -1997,7 +2079,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 LogicalRowLogicalColumn
             ),
             install_legacy_impl_assign_range_range_arms_b,
@@ -2008,7 +2090,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 LogicalRowColumn
             ),
             install_legacy_impl_assign_range_range_arms_bu,
@@ -2021,7 +2103,7 @@ macro_rules! for_each_matrix_assignment_factory {
             $emit,
             (
                 $context,
-                RuntimeOutputAliasPolicy::AllowInputAlias,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
                 RowLogicalColumn
             ),
             install_legacy_impl_assign_range_range_arms_ub,
@@ -2520,6 +2602,15 @@ mod tests {
         ValueCell::from_exact(7_u8).unwrap()
     }
 
+    fn vector_source(values: &[u8]) -> ValueCell {
+        ValueCell::from_exact_matrix_ref(
+            Ref::new(DVector::from_column_slice(values)),
+            values.len(),
+            1,
+        )
+        .unwrap()
+    }
+
     fn indices(values: &[usize]) -> ValueCell {
         ValueCell::from_exact_matrix_ref(
             Ref::new(DVector::from_column_slice(values)),
@@ -2583,6 +2674,26 @@ mod tests {
     }
 
     #[test]
+    fn assignment_source_cardinality_tracks_selected_cells_only() {
+        let selected = indices(&[1, 2, 3]);
+        let error =
+            validate_assign_linear(&output(), &[vector_source(&[10, 20]), selected.clone()])
+                .unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        assert!(
+            error
+                .kind_message()
+                .contains("source has 2 elements, selected layout requires at least 3")
+        );
+
+        validate_assign_linear(&output(), &[vector_source(&[10, 20, 30]), selected]).unwrap();
+
+        // Scalar sources broadcast, so selector cardinality is not bounded by the
+        // sink cardinality when every selected index is valid.
+        validate_assign_linear(&output(), &[source(), indices(&[1, 1, 2, 2, 3, 3, 6, 6])]).unwrap();
+    }
+
+    #[test]
     fn installed_factories_enforce_every_assignment_index_layout() {
         let mut builder = FunctionCatalogBuilder::new();
         install_runtime(&mut builder).unwrap();
@@ -2593,6 +2704,16 @@ mod tests {
                 .runtime_entry(RuntimeFunctionId::from_name(name))
                 .unwrap_or_else(|| panic!("installed assignment factory {name}"))
         };
+
+        let aliased_vector = vector_source(&[1, 2, 3]);
+        let error = entry("Assign1DRV<u8DVectorDVectorDVector>")
+            .validate_invocation(&FunctionInvocation::binary(
+                aliased_vector.clone(),
+                aliased_vector,
+                indices(&[1, 2, 3]),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("alias"));
 
         entry("Set1DAS<u8DMatrix>")
             .validate_invocation(&FunctionInvocation::unary(output(), source()))

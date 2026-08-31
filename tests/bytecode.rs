@@ -319,6 +319,65 @@ fn ordinary_set_elements_round_trip_through_bytecode() -> MResult<()> {
 }
 
 #[test]
+fn snapshot_backed_set_elements_round_trip_through_bytecode() -> MResult<()> {
+    let (_, inserted) = run_compiled_source("set/insert({1<u8>, 2<u8>}, 3<u8>)")?;
+    let inserted = inserted
+        .set_view()
+        .expect("u8 set/insert must return a canonical set");
+    assert!(
+        inserted
+            .elements()
+            .iter()
+            .any(|element| matches!(element.data(), ValueData::U8(3)))
+    );
+
+    let (_, removed) = run_compiled_source("set/remove({1<u8>, 2<u8>}, 1<u8>)")?;
+    let removed = removed
+        .set_view()
+        .expect("u8 set/remove must return a canonical set");
+    assert_eq!(removed.elements().len(), 1);
+    assert!(matches!(removed.elements()[0].data(), ValueData::U8(2)));
+
+    let (_, member) = run_compiled_source("2<u8> ∈ {1<u8>, 2<u8>}")?;
+    assert_bool(&member, true);
+    let (_, not_member) = run_compiled_source("3<u8> ∉ {1<u8>, 2<u8>}")?;
+    assert_bool(&not_member, true);
+    Ok(())
+}
+
+#[test]
+fn matrix_dot_and_solve_activate_through_declared_residents() -> MResult<()> {
+    let (_, dot) = run_compiled_source("[1 2 3] · [4 5 6]")?;
+    assert_f64(&dot, 32.0);
+
+    let (_, solution) = run_compiled_source("[4 1; 2 3] \\ [9; 8]")?;
+    assert_f64_matrix(&solution, &[1.9, 1.4], 2, 1);
+
+    #[cfg(feature = "distribution-full")]
+    {
+        let (_, dot) = run_compiled_source("[1f32 2f32] · [3f32 4f32]")?;
+        assert_f32(&dot, 11.0, 1.0e-5);
+
+        let (_, solution) = run_compiled_source("[4f32 1f32; 2f32 3f32] \\ [9f32; 8f32]")?;
+        let matrix = solution
+            .matrix_view()
+            .expect("f32 matrix solve returns a matrix");
+        let SequenceView::F32(values) = matrix.elements() else {
+            panic!("f32 matrix solve must preserve f32 elements");
+        };
+        assert!(
+            (values[0].to_f32() - 1.9).abs() < 1.0e-5,
+            "unexpected f32 solution: {values:?}"
+        );
+        assert!(
+            (values[1].to_f32() - 1.4).abs() < 1.0e-5,
+            "unexpected f32 solution: {values:?}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
 #[cfg(feature = "distribution-full")]
 fn complete_set_surface_activates_through_bytecode_v1() -> MResult<()> {
     for (source, cardinality) in [

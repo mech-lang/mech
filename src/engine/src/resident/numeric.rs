@@ -2,7 +2,7 @@
 use crate::portable_index::PORTABLE_INDEX_MAX;
 use crate::portable_index::ToPortableIndex;
 use mech_core::snapshot::{
-    F32Bits, SequenceView, SnapshotValidationContext, ValueDataDraft, ValueDraft,
+    F32Bits, F64Bits, SequenceView, SnapshotValidationContext, ValueDataDraft, ValueDraft,
 };
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
@@ -11,6 +11,8 @@ use mech_core::{
     ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
     ResolvedOperationContract, SchemaBody, ShapeContractReference, ShapeRule, ValueData,
 };
+
+const MAX_MATRIX_SOLVE_WORK: usize = 16_777_216;
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     // ProgramArtifact nodes carry semantic identities. These factories select
@@ -72,6 +74,8 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_matrix_comprehension,
     )?;
     register(builder, &["matrix"], "multiply", bind_matmul)?;
+    register(builder, &["matrix"], "dot", bind_matrix_dot)?;
+    register(builder, &["matrix"], "solve", bind_matrix_solve)?;
     register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
     register(builder, &["core"], "assign", bind_hold_state)?;
     register(
@@ -1755,6 +1759,201 @@ fn bind_matmul(
         ]
         .into_boxed_slice(),
     )
+}
+
+fn dot_element_schema(body: &SchemaBody) -> &SchemaBody {
+    match body {
+        SchemaBody::Matrix { element, .. } => element,
+        body => body,
+    }
+}
+
+fn is_dot_numeric_schema(body: &SchemaBody) -> bool {
+    matches!(
+        body,
+        SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
+    )
+}
+
+fn bind_matrix_dot(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::ExactScalar,
+    )?;
+    let [left, right] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let left_schema = request
+        .schemas
+        .get(left.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let right_schema = request
+        .schemas
+        .get(right.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let left_element = dot_element_schema(left_schema.body());
+    let right_element = dot_element_schema(right_schema.body());
+    if left_schema.body() != right_schema.body()
+        || left_element != right_element
+        || left_element != output_schema.body()
+        || !is_dot_numeric_schema(left_element)
+        || left.shape != right.shape
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    match (left.kind, right.kind, request.output.kind) {
+        (ResidentValueKind::F64, ResidentValueKind::F64, ResidentValueKind::F64) => {
+            bound(matrix_dot_f64, Vec::<u64>::new().into_boxed_slice())
+        }
+        (ResidentValueKind::Snapshot, ResidentValueKind::Snapshot, ResidentValueKind::Snapshot)
+            if left.shape == ResidentShape::SCALAR =>
+        {
+            Ok(
+                bound(matrix_dot_snapshot, Vec::<u64>::new().into_boxed_slice())?
+                    .with_snapshot_output(ResidentSnapshotOutput {
+                        schema: request.output.schema_id,
+                        schema_key: request.output.schema_key,
+                        shape: request.output.shape_instance.clone(),
+                        exact_cardinality: None,
+                        maximum_cardinality: None,
+                    })
+                    .with_snapshot_schemas(request.schemas.clone()),
+            )
+        }
+        _ => Err(ResidentKernelBindError::UnsupportedLayout),
+    }
+}
+
+fn declared_matrix_dimensions(
+    request: &ResidentKernelBindRequest<'_>,
+    layout: &mech_core::ResidentPortLayout,
+) -> Result<(usize, usize), ResidentKernelBindError> {
+    let schema = request
+        .schemas
+        .get(layout.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let SchemaBody::Matrix { dimensions, .. } = schema.body() else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let [rows, columns] = dimensions.as_ref() else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let rows = layout
+        .shape_instance
+        .resolve_dimension(rows)
+        .ok()
+        .and_then(|value| usize::try_from(value).ok())
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let columns = layout
+        .shape_instance
+        .resolve_dimension(columns)
+        .ok()
+        .and_then(|value| usize::try_from(value).ok())
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    Ok((rows, columns))
+}
+
+fn matrix_solve_work(rows: usize, right_columns: usize) -> Option<usize> {
+    rows.checked_mul(rows).and_then(|square| {
+        rows.checked_add(right_columns)
+            .and_then(|width| square.checked_mul(width))
+    })
+}
+
+fn bind_matrix_solve(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::SameAsInput { input: 1 },
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    let [coefficients, right] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let (rows, columns) = declared_matrix_dimensions(request, coefficients)?;
+    let (right_rows, right_columns) = declared_matrix_dimensions(request, right)?;
+    let (output_rows, output_columns) = declared_matrix_dimensions(request, &request.output)?;
+    let coefficient_schema = request
+        .schemas
+        .get(coefficients.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let right_schema = request
+        .schemas
+        .get(right.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let (
+        SchemaBody::Matrix {
+            element: coefficient_element,
+            ..
+        },
+        SchemaBody::Matrix {
+            element: right_element,
+            ..
+        },
+        SchemaBody::Matrix {
+            element: output_element,
+            ..
+        },
+    ) = (
+        coefficient_schema.body(),
+        right_schema.body(),
+        output_schema.body(),
+    )
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if rows != columns
+        || right_rows != rows
+        || (output_rows, output_columns) != (right_rows, right_columns)
+        || coefficient_element != right_element
+        || coefficient_element != output_element
+        || !matches!(
+            coefficient_element.as_ref(),
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
+        )
+        || matrix_solve_work(rows, right_columns).is_none_or(|work| work > MAX_MATRIX_SOLVE_WORK)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let parameters = vec![rows as u64, right_columns as u64].into_boxed_slice();
+    match (coefficients.kind, right.kind, request.output.kind) {
+        (ResidentValueKind::F64, ResidentValueKind::F64, ResidentValueKind::F64) => {
+            bound(matrix_solve_f64, parameters)
+        }
+        (ResidentValueKind::Snapshot, ResidentValueKind::Snapshot, ResidentValueKind::Snapshot)
+            if coefficients.shape == ResidentShape::SCALAR
+                && right.shape == ResidentShape::SCALAR
+                && request.output.shape == ResidentShape::SCALAR =>
+        {
+            Ok(bound(matrix_solve_f32_snapshot, parameters)?
+                .with_snapshot_output(ResidentSnapshotOutput {
+                    schema: request.output.schema_id,
+                    schema_key: request.output.schema_key,
+                    shape: request.output.shape_instance.clone(),
+                    exact_cardinality: None,
+                    maximum_cardinality: None,
+                })
+                .with_snapshot_schemas(request.schemas.clone()))
+        }
+        _ => Err(ResidentKernelBindError::UnsupportedLayout),
+    }
 }
 
 fn bind_all_rows_columns(
@@ -3773,6 +3972,394 @@ fn matrix_multiply(
     }))
 }
 
+fn matrix_dot_f64(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let left = f64_input(inputs, 0)?;
+    let right = f64_input(inputs, 1)?;
+    let output = f64_output(output)?;
+    let [target] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    if left.len() != right.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let next = left
+        .iter()
+        .zip(right)
+        .map(|(left, right)| left * right)
+        .sum::<f64>();
+    let changed = target.to_bits() != next.to_bits();
+    *target = next;
+    Ok(changed)
+}
+
+fn numeric_zero(body: &SchemaBody) -> Result<ValueDataDraft, ResidentKernelError> {
+    use mech_core::IntegerWidth;
+    match body {
+        SchemaBody::UnsignedInteger(IntegerWidth::W8) => Ok(ValueDataDraft::U8(0)),
+        SchemaBody::UnsignedInteger(IntegerWidth::W16) => Ok(ValueDataDraft::U16(0)),
+        SchemaBody::UnsignedInteger(IntegerWidth::W32) => Ok(ValueDataDraft::U32(0)),
+        SchemaBody::UnsignedInteger(IntegerWidth::W64) => Ok(ValueDataDraft::U64(0)),
+        SchemaBody::UnsignedInteger(IntegerWidth::W128) => Ok(ValueDataDraft::U128(0)),
+        SchemaBody::SignedInteger(IntegerWidth::W8) => Ok(ValueDataDraft::I8(0)),
+        SchemaBody::SignedInteger(IntegerWidth::W16) => Ok(ValueDataDraft::I16(0)),
+        SchemaBody::SignedInteger(IntegerWidth::W32) => Ok(ValueDataDraft::I32(0)),
+        SchemaBody::SignedInteger(IntegerWidth::W64) => Ok(ValueDataDraft::I64(0)),
+        SchemaBody::SignedInteger(IntegerWidth::W128) => Ok(ValueDataDraft::I128(0)),
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
+            Ok(ValueDataDraft::F32(F32Bits::from_f32(0.0)))
+        }
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
+            Ok(ValueDataDraft::F64(F64Bits::from_f64(0.0)))
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+macro_rules! checked_numeric_binary {
+    ($left:expr, $right:expr, $method:ident) => {
+        match ($left, $right) {
+            (ValueDataDraft::U8(left), ValueDataDraft::U8(right)) => {
+                left.$method(right).map(ValueDataDraft::U8)
+            }
+            (ValueDataDraft::U16(left), ValueDataDraft::U16(right)) => {
+                left.$method(right).map(ValueDataDraft::U16)
+            }
+            (ValueDataDraft::U32(left), ValueDataDraft::U32(right)) => {
+                left.$method(right).map(ValueDataDraft::U32)
+            }
+            (ValueDataDraft::U64(left), ValueDataDraft::U64(right)) => {
+                left.$method(right).map(ValueDataDraft::U64)
+            }
+            (ValueDataDraft::U128(left), ValueDataDraft::U128(right)) => {
+                left.$method(right).map(ValueDataDraft::U128)
+            }
+            (ValueDataDraft::I8(left), ValueDataDraft::I8(right)) => {
+                left.$method(right).map(ValueDataDraft::I8)
+            }
+            (ValueDataDraft::I16(left), ValueDataDraft::I16(right)) => {
+                left.$method(right).map(ValueDataDraft::I16)
+            }
+            (ValueDataDraft::I32(left), ValueDataDraft::I32(right)) => {
+                left.$method(right).map(ValueDataDraft::I32)
+            }
+            (ValueDataDraft::I64(left), ValueDataDraft::I64(right)) => {
+                left.$method(right).map(ValueDataDraft::I64)
+            }
+            (ValueDataDraft::I128(left), ValueDataDraft::I128(right)) => {
+                left.$method(right).map(ValueDataDraft::I128)
+            }
+            _ => None,
+        }
+    };
+}
+
+fn numeric_multiply(
+    left: ValueDataDraft,
+    right: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match (left, right) {
+        (ValueDataDraft::F32(left), ValueDataDraft::F32(right)) => Ok(ValueDataDraft::F32(
+            F32Bits::from_f32(left.to_f32() * right.to_f32()),
+        )),
+        (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
+            F64Bits::from_f64(left.to_f64() * right.to_f64()),
+        )),
+        (left, right) => {
+            checked_numeric_binary!(left, right, checked_mul).ok_or(ResidentKernelError::Arithmetic)
+        }
+    }
+}
+
+fn numeric_add(
+    left: ValueDataDraft,
+    right: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match (left, right) {
+        (ValueDataDraft::F32(left), ValueDataDraft::F32(right)) => Ok(ValueDataDraft::F32(
+            F32Bits::from_f32(left.to_f32() + right.to_f32()),
+        )),
+        (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
+            F64Bits::from_f64(left.to_f64() + right.to_f64()),
+        )),
+        (left, right) => {
+            checked_numeric_binary!(left, right, checked_add).ok_or(ResidentKernelError::Arithmetic)
+        }
+    }
+}
+
+fn snapshot_numeric_elements(
+    value: &mech_core::Value,
+) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
+    match value
+        .canonical_data_draft()
+        .map_err(|_| ResidentKernelError::InvalidInput)?
+    {
+        ValueDataDraft::Matrix(elements) => Ok(elements.into_vec()),
+        scalar => Ok(vec![scalar]),
+    }
+}
+
+fn write_snapshot_data(
+    kernel: &BoundResidentKernel,
+    output: ResidentValueMut<'_>,
+    data: ValueDataDraft,
+) -> Result<bool, ResidentKernelError> {
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let next = ValueDraft {
+        schema: metadata.schema,
+        shape_values: metadata
+            .shape
+            .parameter_values()
+            .to_vec()
+            .into_boxed_slice(),
+        data,
+    }
+    .finalize(&SnapshotValidationContext::new(schemas))
+    .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    if next.schema_key() != metadata.schema_key {
+        return Err(ResidentKernelError::InvalidOutput);
+    }
+    let ResidentValueMut::Snapshot([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let changed = match target.as_ref() {
+        Some(current) => !current
+            .language_eq(schemas, &next, schemas)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?,
+        None => true,
+    };
+    *target = Some(next);
+    Ok(changed)
+}
+
+fn matrix_dot_snapshot(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let (
+        Some(ResidentValueRef::Snapshot([Some(left)])),
+        Some(ResidentValueRef::Snapshot([Some(right)])),
+    ) = (inputs.get(0), inputs.get(1))
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let left = snapshot_numeric_elements(left)?;
+    let right = snapshot_numeric_elements(right)?;
+    if left.len() != right.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let output_schema = schemas
+        .get(metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let mut next = numeric_zero(output_schema.body())?;
+    for (left, right) in left.into_iter().zip(right) {
+        next = numeric_add(next, numeric_multiply(left, right)?)?;
+    }
+    write_snapshot_data(kernel, output, next)
+}
+
+trait ResidentSolveFloat:
+    Copy
+    + PartialEq
+    + PartialOrd
+    + std::ops::Sub<Output = Self>
+    + std::ops::Mul<Output = Self>
+    + std::ops::Div<Output = Self>
+{
+    fn zero() -> Self;
+    fn abs(self) -> Self;
+    fn is_finite(self) -> bool;
+}
+
+impl ResidentSolveFloat for f32 {
+    fn zero() -> Self {
+        0.0
+    }
+
+    fn abs(self) -> Self {
+        self.abs()
+    }
+
+    fn is_finite(self) -> bool {
+        self.is_finite()
+    }
+}
+
+impl ResidentSolveFloat for f64 {
+    fn zero() -> Self {
+        0.0
+    }
+
+    fn abs(self) -> Self {
+        self.abs()
+    }
+
+    fn is_finite(self) -> bool {
+        self.is_finite()
+    }
+}
+
+fn solve_dense<T: ResidentSolveFloat>(
+    mut coefficients: Vec<T>,
+    mut right: Vec<T>,
+    rows: usize,
+    right_columns: usize,
+) -> Result<Vec<T>, ResidentKernelError> {
+    if coefficients.len() != rows.saturating_mul(rows)
+        || right.len() != rows.saturating_mul(right_columns)
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    for pivot_column in 0..rows {
+        let mut pivot_row = pivot_column;
+        let mut pivot_abs = coefficients[pivot_row + pivot_column * rows].abs();
+        for row in pivot_column + 1..rows {
+            let candidate = coefficients[row + pivot_column * rows].abs();
+            if candidate > pivot_abs {
+                pivot_row = row;
+                pivot_abs = candidate;
+            }
+        }
+        if pivot_abs == T::zero() || !pivot_abs.is_finite() {
+            return Err(ResidentKernelError::Arithmetic);
+        }
+        if pivot_row != pivot_column {
+            for column in 0..rows {
+                coefficients.swap(pivot_row + column * rows, pivot_column + column * rows);
+            }
+            for column in 0..right_columns {
+                right.swap(pivot_row + column * rows, pivot_column + column * rows);
+            }
+        }
+        let pivot = coefficients[pivot_column + pivot_column * rows];
+        for column in pivot_column..rows {
+            let index = pivot_column + column * rows;
+            coefficients[index] = coefficients[index] / pivot;
+        }
+        for column in 0..right_columns {
+            let index = pivot_column + column * rows;
+            right[index] = right[index] / pivot;
+        }
+        for row in 0..rows {
+            if row == pivot_column {
+                continue;
+            }
+            let factor = coefficients[row + pivot_column * rows];
+            if factor == T::zero() {
+                continue;
+            }
+            for column in pivot_column..rows {
+                let index = row + column * rows;
+                let pivot_index = pivot_column + column * rows;
+                coefficients[index] = coefficients[index] - factor * coefficients[pivot_index];
+            }
+            for column in 0..right_columns {
+                let index = row + column * rows;
+                let pivot_index = pivot_column + column * rows;
+                right[index] = right[index] - factor * right[pivot_index];
+            }
+        }
+    }
+    if right.iter().any(|value| !value.is_finite()) {
+        return Err(ResidentKernelError::Arithmetic);
+    }
+    Ok(right)
+}
+
+fn matrix_solve_f64(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let [rows, right_columns] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let rows = *rows as usize;
+    let right_columns = *right_columns as usize;
+    let next = solve_dense(
+        f64_input(inputs, 0)?.to_vec(),
+        f64_input(inputs, 1)?.to_vec(),
+        rows,
+        right_columns,
+    )?;
+    let output = f64_output(output)?;
+    if output.len() != next.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let changed = output
+        .iter()
+        .zip(&next)
+        .any(|(current, next)| current.to_bits() != next.to_bits());
+    output.copy_from_slice(&next);
+    Ok(changed)
+}
+
+fn matrix_solve_f32_snapshot(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let [rows, right_columns] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let (
+        Some(ResidentValueRef::Snapshot([Some(coefficients)])),
+        Some(ResidentValueRef::Snapshot([Some(right)])),
+    ) = (inputs.get(0), inputs.get(1))
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let rows = *rows as usize;
+    let right_columns = *right_columns as usize;
+    let canonical_coefficients =
+        f32_snapshot_values(coefficients).ok_or(ResidentKernelError::InvalidInput)?;
+    let canonical_right = f32_snapshot_values(right).ok_or(ResidentKernelError::InvalidInput)?;
+    let to_column_major = |values: &[f32], columns: usize| {
+        (0..columns)
+            .flat_map(|column| (0..rows).map(move |row| values[row * columns + column]))
+            .collect::<Vec<_>>()
+    };
+    let next = solve_dense(
+        to_column_major(&canonical_coefficients, rows),
+        to_column_major(&canonical_right, right_columns),
+        rows,
+        right_columns,
+    )?;
+    let canonical_next = (0..rows)
+        .flat_map(|row| {
+            let next = &next;
+            (0..right_columns).map(move |column| next[row + column * rows])
+        })
+        .collect::<Vec<_>>();
+    write_snapshot_data(
+        kernel,
+        output,
+        ValueDataDraft::Matrix(
+            canonical_next
+                .into_iter()
+                .map(|value| ValueDataDraft::F32(F32Bits::from_f32(value)))
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ),
+    )
+}
+
 fn all_rows_columns(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -4811,6 +5398,62 @@ mod tests {
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut wrong_shape)),
             Err(ResidentKernelError::InvalidShape)
+        );
+    }
+
+    #[test]
+    fn matrix_dot_and_solve_residents_use_column_major_layouts() {
+        let left = [1.0, 2.0, 3.0];
+        let right = [4.0, 5.0, 6.0];
+        let inputs = [ResidentValueRef::F64(&left), ResidentValueRef::F64(&right)];
+        let mut dot = [0.0];
+        let kernel = BoundResidentKernel::new(matrix_dot_f64, Box::new([]));
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut dot)),
+            Ok(true)
+        );
+        assert_eq!(dot, [32.0]);
+
+        let coefficients = [4.0, 2.0, 1.0, 3.0];
+        let right = [9.0, 8.0];
+        let inputs = [
+            ResidentValueRef::F64(&coefficients),
+            ResidentValueRef::F64(&right),
+        ];
+        let mut solution = [0.0; 2];
+        let kernel = BoundResidentKernel::new(matrix_solve_f64, vec![2, 1].into_boxed_slice());
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut solution)),
+            Ok(true)
+        );
+        assert!((solution[0] - 1.9).abs() < 1.0e-12);
+        assert!((solution[1] - 1.4).abs() < 1.0e-12);
+
+        let singular_coefficients = [1.0, 2.0, 2.0, 4.0];
+        let singular_right = [1.0, 2.0];
+        let singular_inputs = [
+            ResidentValueRef::F64(&singular_coefficients),
+            ResidentValueRef::F64(&singular_right),
+        ];
+        let mut unchanged = [7.0, 8.0];
+        assert_eq!(
+            kernel.execute(
+                &Inputs(&singular_inputs),
+                ResidentValueMut::F64(&mut unchanged),
+            ),
+            Err(ResidentKernelError::Arithmetic)
+        );
+        assert_eq!(unchanged, [7.0, 8.0]);
+        assert!(matrix_solve_work(255, 1).is_some_and(|work| work <= MAX_MATRIX_SOLVE_WORK));
+        assert!(matrix_solve_work(256, 1).is_some_and(|work| work > MAX_MATRIX_SOLVE_WORK));
+        assert_eq!(matrix_solve_work(usize::MAX, 1), None);
+
+        assert_eq!(
+            numeric_add(
+                ValueDataDraft::U8(1),
+                numeric_multiply(ValueDataDraft::U8(2), ValueDataDraft::U8(3)).unwrap(),
+            ),
+            Ok(ValueDataDraft::U8(7))
         );
     }
 

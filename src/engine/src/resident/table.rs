@@ -4,8 +4,11 @@ use mech_core::{
     ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
     ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
     ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, ShapeRule, ValueCell,
+    ResolvedOperationContract, SchemaBody, ShapeRule, ValueCell, ValueData,
 };
+
+const MAX_TABLE_JOIN_COMPARISONS: usize = 65_536;
+const MAX_TABLE_JOIN_OUTPUT_ROWS: usize = 65_536;
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     builder.insert_resident_factory(["table"], "join", bind_inner)?;
@@ -131,6 +134,36 @@ fn bind_left_anti(
     bind(request, JoinMode::LeftAnti)
 }
 
+fn table_rows(value: &mech_core::snapshot::Value) -> Result<usize, ResidentKernelError> {
+    let ValueData::Table(table) = value.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    Ok(table.column(0).map_or(0, |column| column.len()))
+}
+
+fn validate_join_bounds(
+    mode: JoinMode,
+    left_rows: usize,
+    right_rows: usize,
+) -> Result<(), ResidentKernelError> {
+    let comparisons = left_rows
+        .checked_mul(right_rows)
+        .filter(|count| *count <= MAX_TABLE_JOIN_COMPARISONS)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    match mode {
+        JoinMode::Inner => Some(comparisons),
+        JoinMode::LeftOuter => comparisons.checked_add(left_rows),
+        JoinMode::RightOuter => comparisons.checked_add(right_rows),
+        JoinMode::FullOuter => comparisons
+            .checked_add(left_rows)
+            .and_then(|count| count.checked_add(right_rows)),
+        JoinMode::LeftSemi | JoinMode::LeftAnti => Some(left_rows),
+    }
+    .filter(|count| *count <= MAX_TABLE_JOIN_OUTPUT_ROWS)
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok(())
+}
+
 fn table_join(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -152,6 +185,7 @@ fn table_join(
         Some(value) if value == JoinMode::LeftAnti as u64 => JoinMode::LeftAnti,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
+    validate_join_bounds(mode, table_rows(left)?, table_rows(right)?)?;
     let left =
         ValueCell::from_snapshot(left.clone()).map_err(|_| ResidentKernelError::InvalidInput)?;
     let right =
@@ -179,4 +213,22 @@ fn table_join(
     };
     *target = Some(next);
     Ok(changed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resident_join_bounds_work_and_output_before_materialization() {
+        assert_eq!(validate_join_bounds(JoinMode::Inner, 256, 256), Ok(()));
+        assert_eq!(
+            validate_join_bounds(JoinMode::Inner, 257, 257),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(
+            validate_join_bounds(JoinMode::FullOuter, 0, 65_537),
+            Err(ResidentKernelError::InvalidShape)
+        );
+    }
 }
