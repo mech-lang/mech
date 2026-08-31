@@ -27,6 +27,8 @@ pub fn install_intrinsic_resident(
     crate::resident::numeric::install(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::set::install(builder)?;
+    #[cfg(all(feature = "resident-artifact", feature = "table"))]
+    crate::resident::table::install(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::text::install(builder)?;
     Ok(())

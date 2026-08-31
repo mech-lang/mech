@@ -277,6 +277,11 @@ mod tests {
             schema_key: schemas.entry(schema).unwrap().key(),
             kind,
             shape,
+            shape_instance: schemas
+                .get(schema)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
         }
     }
 

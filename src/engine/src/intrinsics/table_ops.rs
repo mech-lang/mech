@@ -32,7 +32,7 @@ static PURE_TABLE_JOIN_CONTRACT: LazyLock<OperationContractDeclaration> =
     });
 
 #[derive(Clone, Copy, Debug)]
-enum JoinMode {
+pub(crate) enum JoinMode {
     Inner,
     LeftOuter,
     RightOuter,
@@ -131,7 +131,7 @@ fn rows_match(
         .all(|(left, right)| lhs.value(*left, lhs_row) == rhs.value(*right, rhs_row))
 }
 
-fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> MResult<ValueCell> {
+pub(crate) fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> MResult<ValueCell> {
     let lhs = CanonicalTable::from_cell(lhs)?;
     let rhs = CanonicalTable::from_cell(rhs)?;
     let common = lhs

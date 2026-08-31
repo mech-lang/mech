@@ -1,11 +1,14 @@
 #[cfg(test)]
 use crate::portable_index::PORTABLE_INDEX_MAX;
 use crate::portable_index::ToPortableIndex;
+use mech_core::snapshot::{
+    F32Bits, SequenceView, SnapshotValidationContext, ValueDataDraft, ValueDraft,
+};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction, RegionPolicy,
     ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
     ResolvedOperationContract, SchemaBody, ShapeContractReference, ShapeRule, ValueData,
 };
 
@@ -50,7 +53,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["logic"], "xor", bind_bool_xor)?;
     register(builder, &["logic"], "not", bind_bool_not)?;
     register(builder, &["compare"], "eq", bind_semantic_equal)?;
-    register(builder, &["compare"], "neq", bind_f64_not_equal)?;
+    register(builder, &["compare"], "neq", bind_semantic_not_equal)?;
     register(builder, &["compare"], "lt", bind_f64_less)?;
     register(builder, &["compare"], "lte", bind_f64_less_equal)?;
     register(builder, &["compare"], "gt", bind_f64_greater)?;
@@ -690,42 +693,88 @@ fn bind_math_copysign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_copysign)
+        .or_else(|_| bind_binary_f32_snapshot(request, math_copysign_f32))
 }
 
 fn bind_math_fdim(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, math_fdim)
+    bind_binary(request, math_fdim).or_else(|_| bind_binary_f32_snapshot(request, math_fdim_f32))
 }
 
 fn bind_math_fmod(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, math_fmod)
+    bind_binary(request, math_fmod).or_else(|_| bind_binary_f32_snapshot(request, math_fmod_f32))
 }
 
 fn bind_math_nextafter(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_nextafter)
+        .or_else(|_| bind_binary_f32_snapshot(request, math_nextafter_f32))
 }
 
 fn bind_math_remainder(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_remainder)
+        .or_else(|_| bind_binary_f32_snapshot(request, math_remainder_f32))
 }
 
 fn bind_math_bessel_jn(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_bessel_jn)
+        .or_else(|_| bind_binary_f32_snapshot(request, math_bessel_jn_f32))
 }
 
 fn bind_math_bessel_yn(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_bessel_yn)
+        .or_else(|_| bind_binary_f32_snapshot(request, math_bessel_yn_f32))
+}
+
+fn bind_binary_f32_snapshot(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let change = match output_schema.body() {
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => ChangeDetectionPolicy::ExactScalar,
+        SchemaBody::Matrix { element, .. }
+            if element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) =>
+        {
+            ChangeDetectionPolicy::KernelReported
+        }
+        _ => return Err(ResidentKernelBindError::UnsupportedLayout),
+    };
+    validate_full_write(request, 2, ShapeRule::Declared, change)?;
+    require_kind(
+        request,
+        &[ResidentValueKind::Snapshot, ResidentValueKind::Snapshot],
+        ResidentValueKind::Snapshot,
+    )?;
+    if request.output.shape != ResidentShape::SCALAR
+        || request.inputs.iter().any(|input| {
+            input.shape != ResidentShape::SCALAR || input.schema_key != request.output.schema_key
+        })
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(bound(executor, Vec::<u64>::new())?
+        .with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape: request.output.shape_instance.clone(),
+            exact_cardinality: None,
+            maximum_cardinality: None,
+        })
+        .with_snapshot_schemas(request.schemas.clone()))
 }
 
 fn bind_sub(
@@ -802,6 +851,39 @@ fn bind_semantic_equal(
     bind_f64_equal(request)
         .or_else(|_| bind_f64_vector_equal(request))
         .or_else(|_| super::text::bind_string_equal(request))
+        .or_else(|_| bind_snapshot_equality(request, snapshot_equal))
+}
+
+fn bind_snapshot_equality(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::ExactScalar,
+    )?;
+    require_kind(
+        request,
+        &[ResidentValueKind::Snapshot, ResidentValueKind::Snapshot],
+        ResidentValueKind::Bool,
+    )?;
+    if request.output.shape != ResidentShape::SCALAR
+        || request
+            .inputs
+            .iter()
+            .any(|input| input.shape != ResidentShape::SCALAR)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(bound(executor, Vec::<u64>::new())?.with_snapshot_schemas(request.schemas.clone()))
+}
+
+fn bind_semantic_not_equal(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_not_equal(request).or_else(|_| bind_snapshot_equality(request, snapshot_not_equal))
 }
 
 fn bind_f64_vector_equal(
@@ -2552,6 +2634,158 @@ fn math_bessel_yn(
     })
 }
 
+fn math_copysign_f32(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f32_snapshot(kernel, inputs, output, libm::copysignf)
+}
+
+fn math_fdim_f32(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f32_snapshot(kernel, inputs, output, libm::fdimf)
+}
+
+fn math_fmod_f32(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f32_snapshot(kernel, inputs, output, libm::fmodf)
+}
+
+fn math_nextafter_f32(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f32_snapshot(kernel, inputs, output, libm::nextafterf)
+}
+
+fn math_remainder_f32(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f32_snapshot(kernel, inputs, output, libm::remainderf)
+}
+
+fn math_bessel_jn_f32(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f32_snapshot(kernel, inputs, output, |order, value| {
+        libm::jnf(order as i32, value)
+    })
+}
+
+fn math_bessel_yn_f32(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f32_snapshot(kernel, inputs, output, |order, value| {
+        libm::ynf(order as i32, value)
+    })
+}
+
+fn f32_snapshot_values(value: &mech_core::Value) -> Option<Vec<f32>> {
+    match value.data() {
+        ValueData::F32(value) => Some(vec![value.to_f32()]),
+        ValueData::Matrix(matrix) => {
+            let SequenceView::F32(values) = matrix.elements() else {
+                return None;
+            };
+            Some(values.iter().map(|value| value.to_f32()).collect())
+        }
+        _ => None,
+    }
+}
+
+fn binary_f32_snapshot(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+    operation: impl Fn(f32, f32) -> f32,
+) -> Result<bool, ResidentKernelError> {
+    let (
+        Some(ResidentValueRef::Snapshot([Some(left)])),
+        Some(ResidentValueRef::Snapshot([Some(right)])),
+    ) = (inputs.get(0), inputs.get(1))
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let left = f32_snapshot_values(left).ok_or(ResidentKernelError::InvalidInput)?;
+    let right = f32_snapshot_values(right).ok_or(ResidentKernelError::InvalidInput)?;
+    if left.len() != right.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let values = left
+        .into_iter()
+        .zip(right)
+        .map(|(left, right)| operation(left, right))
+        .collect::<Vec<_>>();
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schema = schemas
+        .get(metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let data = match schema.body() {
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
+            let [value] = values.as_slice() else {
+                return Err(ResidentKernelError::InvalidShape);
+            };
+            ValueDataDraft::F32(F32Bits::from_f32(*value))
+        }
+        SchemaBody::Matrix { element, .. }
+            if element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) =>
+        {
+            ValueDataDraft::Matrix(
+                values
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F32(F32Bits::from_f32(value)))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            )
+        }
+        _ => return Err(ResidentKernelError::InvalidOutput),
+    };
+    let next = ValueDraft {
+        schema: metadata.schema,
+        shape_values: metadata
+            .shape
+            .parameter_values()
+            .to_vec()
+            .into_boxed_slice(),
+        data,
+    }
+    .finalize(&SnapshotValidationContext::new(schemas))
+    .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    if next.schema_key() != metadata.schema_key {
+        return Err(ResidentKernelError::InvalidOutput);
+    }
+    let ResidentValueMut::Snapshot([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let changed = match target.as_ref() {
+        Some(current) => !current
+            .language_eq(schemas, &next, schemas)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?,
+        None => true,
+    };
+    *target = Some(next);
+    Ok(changed)
+}
+
 fn binary_f64(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -2874,6 +3108,41 @@ fn strict_value_equal(
         }
         _ => false,
     })
+}
+
+fn snapshot_value_equal(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let (ResidentValueRef::Snapshot([Some(left)]), ResidentValueRef::Snapshot([Some(right)])) =
+        (input(inputs, 0)?, input(inputs, 1)?)
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    left.snapshot_eq(schemas, right, schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)
+}
+
+fn snapshot_equal(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_bool(output, snapshot_value_equal(kernel, inputs)?)
+}
+
+fn snapshot_not_equal(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_bool(output, !snapshot_value_equal(kernel, inputs)?)
 }
 
 fn strict_equal(

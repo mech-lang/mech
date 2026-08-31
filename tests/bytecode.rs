@@ -38,6 +38,17 @@ fn assert_f64(value: &Value, expected: f64) {
     );
 }
 
+fn assert_f32(value: &Value, expected: f32, tolerance: f32) {
+    let ValueData::F32(actual) = value.data() else {
+        panic!("expected canonical f32, got {:?}", value.data());
+    };
+    assert!(
+        (actual.to_f32() - expected).abs() <= tolerance,
+        "expected canonical f32 {expected}, got {}",
+        actual.to_f32(),
+    );
+}
+
 fn assert_bool(value: &Value, expected: bool) {
     assert!(matches!(value.data(), ValueData::Bool(actual) if *actual == expected));
 }
@@ -74,6 +85,20 @@ fn assert_f64_matrix(value: &Value, expected: &[f64], rows: u64, columns: u64) {
         actual
             .iter()
             .map(|element| element.to_f64())
+            .collect::<Vec<_>>(),
+        expected,
+    );
+}
+
+fn assert_f32_matrix(value: &Value, expected: &[f32]) {
+    let matrix = value.matrix_view().expect("expected canonical matrix");
+    let SequenceView::F32(actual) = matrix.elements() else {
+        panic!("expected canonical f32 matrix");
+    };
+    assert_eq!(
+        actual
+            .iter()
+            .map(|element| element.to_f32())
             .collect::<Vec<_>>(),
         expected,
     );
@@ -179,6 +204,48 @@ fn completed_math_lowerings_activate_and_execute_through_bytecode_v1() -> MResul
 }
 
 #[test]
+#[cfg(feature = "distribution-full")]
+fn completed_f32_math_lowerings_activate_for_scalars_and_matrices() -> MResult<()> {
+    for (source, expected, tolerance) in [
+        ("+> math\nmath/copysign(3f32, 2f32)", 3.0, 0.0),
+        ("+> math\nmath/fdim(5f32, 3f32)", 2.0, 0.0),
+        ("+> math\nmath/fmod(5.3<f32>, 2f32)", 1.3, 1.0e-5),
+        (
+            "+> math\nmath/nextafter(1f32, 2f32)",
+            f32::from_bits(1.0f32.to_bits() + 1),
+            0.0,
+        ),
+        ("+> math\nmath/remainder(5.3<f32>, 2f32)", -0.7, 1.0e-5),
+        ("+> math\nmath/bessel/jn(2f32, 1f32)", 0.114_903_49, 1.0e-5),
+        ("+> math\nmath/bessel/yn(2f32, 1f32)", -1.650_682_6, 1.0e-5),
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        assert_f32(&value, expected, tolerance);
+    }
+
+    for source in [
+        "+> math\nmath/copysign([3f32 3f32], [2f32 2f32])",
+        "+> math\nmath/fdim([5f32 5f32], [3f32 3f32])",
+        "+> math\nmath/fmod([5.3<f32> 5.3<f32>], [2f32 2f32])",
+        "+> math\nmath/nextafter([1f32 1f32], [2f32 2f32])",
+        "+> math\nmath/remainder([5.3<f32> 5.3<f32>], [2f32 2f32])",
+        "+> math\nmath/bessel/jn([2f32 2f32], [1f32 1f32])",
+        "+> math\nmath/bessel/yn([2f32 2f32], [1f32 1f32])",
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        let matrix = value.matrix_view().expect("f32 lowering returns a matrix");
+        let SequenceView::F32(elements) = matrix.elements() else {
+            panic!("f32 lowering returned the wrong matrix element kind");
+        };
+        assert_eq!(elements.len(), 2, "{source}");
+    }
+
+    let (_, value) = run_compiled_source("+> math\nmath/copysign([3f32 4f32], [2f32 2f32])")?;
+    assert_f32_matrix(&value, &[3.0, 4.0]);
+    Ok(())
+}
+
+#[test]
 fn dynamic_strict_equality_round_trips_through_bytecode() -> MResult<()> {
     let (parsed, value) = run_compiled_source("x := 1 + [4 5 6]\nx === [5 6 7]")?;
     assert_bool(&value, true);
@@ -246,6 +313,45 @@ fn ordinary_set_elements_round_trip_through_bytecode() -> MResult<()> {
     assert_bool(&member, true);
     let (_, not_member) = run_compiled_source("4 ∉ {1, 2, 3}")?;
     assert_bool(&not_member, true);
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn complete_set_surface_activates_through_bytecode_v1() -> MResult<()> {
+    for (source, cardinality) in [
+        ("set/union({1, 2}, {2, 3})", 3),
+        ("set/intersection({1, 2}, {2, 3})", 1),
+        ("set/difference({1, 2}, {2, 3})", 1),
+        ("{1, 2} Δ {2, 3}", 2),
+        ("set/powerset({1, 2})", 4),
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        assert_eq!(
+            value
+                .set_view()
+                .unwrap_or_else(|| panic!("{source} did not return a set"))
+                .elements()
+                .len(),
+            cardinality,
+            "{source}",
+        );
+    }
+
+    for (source, expected) in [
+        ("set/disjoint({1}, {2})", true),
+        ("set/equals({1, 2}, {2, 1})", true),
+        ("{1} ⊊ {1, 2}", true),
+        ("{1, 2} ⊋ {1}", true),
+        ("{1} ⊂ {1, 2}", true),
+        ("{1, 2} ⊃ {1}", true),
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        assert_bool(&value, expected);
+    }
+
+    let (_, value) = run_compiled_source("set/size({1, 2, 3})")?;
+    assert!(matches!(value.data(), ValueData::U64(3)));
     Ok(())
 }
 
@@ -366,7 +472,7 @@ fn tuple_source_constant_is_encoded_by_bytecode_v1() -> MResult<()> {
 }
 
 #[test]
-fn outer_join_option_columns_compile_through_bytecode_v1() -> MResult<()> {
+fn all_table_joins_activate_through_bytecode_v1() -> MResult<()> {
     let source = r#"
 a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
 b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
@@ -374,8 +480,7 @@ x := a ⟗ b
 x
 "#;
 
-    let bytecode = compile_source(source)?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    let (parsed, value) = run_compiled_source(source)?;
 
     parsed.decode_constants()?;
     assert!(parsed.types.iter().any(|runtime_type| {
@@ -384,5 +489,17 @@ x
             RuntimeType::Option(inner) if **inner == RuntimeType::U8
         )
     }));
+    assert!(value.table_view().is_some());
+
+    for operator in ["⋈", "⟕", "⟖", "⟗", "⋉", "▷"] {
+        let source = format!(
+            "a := |id<u64> x<u8>| 1 10 | 2 20 |\nb := |id<u64> y<u8>| 2 30 | 3 40 |\na {operator} b"
+        );
+        let (_, value) = run_compiled_source(&source)?;
+        assert!(
+            value.table_view().is_some(),
+            "table join {operator} did not return a canonical table",
+        );
+    }
     Ok(())
 }

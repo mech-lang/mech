@@ -15,6 +15,8 @@ pub(crate) mod matrix_literal;
 pub(crate) mod numeric;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod set;
+#[cfg(all(feature = "resident-artifact", feature = "table"))]
+pub(crate) mod table;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod text;
 mod workspace;

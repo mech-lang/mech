@@ -10,12 +10,12 @@ use mech_core::{
     EffectDeliveryPolicy, EncodedConstant, ExecutionResourceRequest, ExternalInteraction,
     FloatWidth, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr,
     NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
-    OperationContractDeclaration, OperationContractId, OperationContractTable,
-    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, RegionPolicy,
-    ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, ResourceDelivery,
-    ResourceIntent, RuntimeType, SchemaBody, SchemaDraft, SchemaField, SchemaHandle,
-    SchemaTableBuilder, ShapeContractReference, ShapeRule, Value, ValueCell, ValueData,
-    ValueDataDraft, ValueDraft, compile_value_cell_matrix_literal_register,
+    OperationContractDeclaration, OperationContractError, OperationContractId,
+    OperationContractTable, OperationContractTableBuilder, OutputConstruction, OutputPortPolicy,
+    RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort,
+    ResourceDelivery, ResourceIntent, RuntimeType, SchemaBody, SchemaDraft, SchemaField,
+    SchemaHandle, SchemaTableBuilder, ShapeContractReference, ShapeRule, Value, ValueCell,
+    ValueData, ValueDataDraft, ValueDraft, compile_value_cell_matrix_literal_register,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
         MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SequenceView,
@@ -1668,6 +1668,52 @@ fn one_entry_operation_contract_table(contract: &[u8]) -> Vec<u8> {
     table.extend_from_slice(&u32::try_from(contract.len()).unwrap().to_le_bytes());
     table.extend_from_slice(contract);
     table
+}
+
+#[test]
+fn bytecode_v1_rejects_pre_r1_experimental_schema_only_contracts() {
+    let data = fixture_data();
+    let artifact = build_both(&data, scalar_add(&data)).0;
+    let node = &artifact.nodes()[0];
+    let ResolvedOperationContract::Declared(contract) = artifact
+        .contracts()
+        .get(node.contract)
+        .expect("scalar-add contract")
+    else {
+        unreachable!()
+    };
+    let input_schemas = contract
+        .inputs
+        .iter()
+        .map(|input| input.schema)
+        .collect::<Vec<_>>();
+    let output_schemas = contract
+        .outputs
+        .iter()
+        .map(|output| output.schema)
+        .collect::<Vec<_>>();
+    let mut experimental = vec![1, 1];
+    experimental.extend_from_slice(&(input_schemas.len() as u32).to_le_bytes());
+    for schema in &input_schemas {
+        experimental.extend_from_slice(&schema.get().to_le_bytes());
+    }
+    experimental.extend_from_slice(&(output_schemas.len() as u32).to_le_bytes());
+    for schema in &output_schemas {
+        experimental.extend_from_slice(&schema.get().to_le_bytes());
+    }
+    let mut sections = encode_program_artifact_sections(&artifact).unwrap();
+    sections.operation_contracts = one_entry_operation_contract_table(&experimental);
+
+    assert!(matches!(
+        decode_program_artifact_sections(&sections),
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::OperationContract(
+                OperationContractError::InvalidCanonicalEncoding {
+                    reason: "unknown operation-contract tag"
+                }
+            )
+        ))
+    ));
 }
 
 fn decode_with_mutated_operation_contract(

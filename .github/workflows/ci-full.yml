@@ -43,6 +43,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  r1-artifact-closure:
+    name: R1 artifact closure (${{ matrix.representative }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        representative:
+          - standard-native
+          - nbody
+          - particles
+          - ekf
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - name: Checkout exact validation head
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+      - name: Build and inspect representative artifacts
+        run: python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}
+
   architecture-contracts:
     name: Architecture contract qualification
     runs-on: ubuntu-latest

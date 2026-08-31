@@ -1405,7 +1405,10 @@ fn decode_set(
     Ok(DecodedDraft {
         body: SchemaBody::Set {
             element: Box::new(element_body.unwrap_or(runtime_schema_body(element_type)?)),
-            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(count as u64)),
+            cardinality: match max_len {
+                Some(_) => CardinalitySpec::Exact(DimensionExpr::Constant(count as u64)),
+                None => CardinalitySpec::Dynamic { upper_bound: None },
+            },
         },
         data: ValueDataDraft::Set(values.into_boxed_slice()),
         named_kinds: named,
@@ -1699,9 +1702,10 @@ pub(crate) fn runtime_schema_body(ty: &RuntimeType) -> MResult<SchemaBody> {
         },
         RuntimeType::Set { element, max_len } => SchemaBody::Set {
             element: Box::new(runtime_schema_body(element)?),
-            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(u64::from(
-                max_len.unwrap_or(0),
-            ))),
+            cardinality: max_len
+                .map_or(CardinalitySpec::Dynamic { upper_bound: None }, |maximum| {
+                    CardinalitySpec::Exact(DimensionExpr::Constant(u64::from(maximum)))
+                }),
         },
         RuntimeType::Table { columns, .. } => SchemaBody::Table {
             columns: columns

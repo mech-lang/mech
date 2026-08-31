@@ -29,6 +29,10 @@ class R1CompatibilityClosureTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("pub struct Canonical;\n", encoding="utf-8")
+        for relative, markers in CHECKER.ARTIFACT_COMPLETENESS_PROOFS:
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("\n".join(markers) + "\n", encoding="utf-8")
         return root
 
     def test_canonical_tree_passes(self):
@@ -43,6 +47,11 @@ class R1CompatibilityClosureTests(unittest.TestCase):
             "compile_legacy_bytecode_program_artifact",
             "compile_source_frozen_v1",
             "compile_frozen_v1_program_product",
+            "ImportedOperationContractRow",
+            "LegacyOperationContractResolver",
+            "LegacyContractMetadataUnavailable",
+            "import_program_artifact_bytecode_v1",
+            "import_program_artifact_sections_v1",
         ):
             with self.subTest(symbol=symbol):
                 root = self.fixture()
@@ -98,6 +107,14 @@ class R1CompatibilityClosureTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("retired\n", encoding="utf-8")
         self.assertTrue(any("path exists" in item for item in CHECKER.failures(root)))
+
+    def test_missing_artifact_completeness_proof_fails(self):
+        root = self.fixture()
+        relative, _ = CHECKER.ARTIFACT_COMPLETENESS_PROOFS[0]
+        (root / relative).write_text("proof removed\n", encoding="utf-8")
+        self.assertTrue(
+            any("artifact-completeness proof" in item for item in CHECKER.failures(root))
+        )
 
 
 if __name__ == "__main__":

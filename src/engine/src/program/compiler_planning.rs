@@ -1026,6 +1026,7 @@ mod tests {
     ))]
     #[test]
     fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> MResult<()> {
+        let mut executable_node_count = 0;
         for source in [
             include_str!("../../tests/fixtures/program-artifact/scalar-alias.mec"),
             include_str!("../../tests/fixtures/program-artifact/state-register.mec"),
@@ -1043,7 +1044,13 @@ mod tests {
 
             assert_ordinary_source_artifact_parity(artifact_a, &artifact_b);
             assert!(!artifact_a.schemas().is_empty());
+            executable_node_count += artifact_a.nodes().len();
+            assert!(artifact_a.nodes().iter().all(|node| matches!(
+                artifact_a.contracts().get(node.contract),
+                Some(mech_core::ResolvedOperationContract::Declared(_))
+            )));
         }
+        assert!(executable_node_count > 0);
         Ok(())
     }
 

@@ -69,7 +69,6 @@
       "fdim",
       "floor",
       "fmod",
-      "hypot",
       "j0",
       "j1",
       "jn",
@@ -258,7 +257,7 @@
     "vectord",
     "web_host"
   ],
-  "source_specializer_count": 119,
-  "surface_digest": "e2325e9449480142d5b03fcc0101763c9276fdd5ead422dbf3b3cafece8c5233",
+  "source_specializer_count": 120,
+  "surface_digest": "b092ea386ea293f04f558f158ec4da74707c94bcef423b28fc2a237141241892",
   "surface_digest_algorithm": "sha256-canonical-selected-cargo-surface-v1"
 }

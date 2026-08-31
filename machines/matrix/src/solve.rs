@@ -2,6 +2,35 @@ use crate::*;
 use nalgebra::ComplexField;
 use num_traits::{One, Zero};
 
+static PURE_MATRIX_SOLVE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 1 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+});
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MatrixSolveSingular;
 
@@ -135,6 +164,11 @@ macro_rules! impl_binop_solve {
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+            }
+            fn semantic_operation_contract(
+                &self,
+            ) -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_MATRIX_SOLVE_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)

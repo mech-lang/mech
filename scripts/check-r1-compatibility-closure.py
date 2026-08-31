@@ -21,6 +21,60 @@ RETIRED_PATHS = (
     "machines/math/docs/trig/sincos.mec",
 )
 
+ARTIFACT_COMPLETENESS_PROOFS = (
+    (
+        "scripts/check-r1-artifact-closure.py",
+        (
+            '"standard-native"',
+            '"nbody"',
+            '"particles"',
+            '"ekf"',
+        ),
+    ),
+    (
+        ".github/workflows/ci-full.yml",
+        (
+            "r1-artifact-closure",
+            "scripts/check-r1-artifact-closure.py ${{ matrix.representative }}",
+        ),
+    ),
+    (
+        "src/wasm/src/project.rs",
+        (
+            "ekf_scene_advances_on_every_resident_timer_packet",
+            "prepared.coordinator.contracts().get(node.contract)",
+        ),
+    ),
+    (
+        "tests/fixtures/d2-contract-generator/src/main.rs",
+        (
+            "every n-body operation must carry a declared contract",
+            "ResolvedOperationContract::Declared",
+        ),
+    ),
+    (
+        "hosts/gpu/tests/particle_source.rs",
+        (
+            "particle_arithmetic_reaches_artifact_with_declared_contracts",
+            "artifact.contracts().get(node.contract)",
+        ),
+    ),
+    (
+        "src/engine/src/program/compiler_planning.rs",
+        (
+            "ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1",
+            "artifact_a.contracts().get(node.contract)",
+        ),
+    ),
+    (
+        "tests/mech_build.rs",
+        (
+            "assert_bytecode_artifact_is_fully_declared",
+            "distribution_source_bytecode_native_canary",
+        ),
+    ),
+)
+
 RUST_RULES = (
     (
         ("src", "machines", "hosts"),
@@ -28,7 +82,9 @@ RUST_RULES = (
             r"\b(?:LegacyOpaqueOperationContract|RuntimeResidentResourceWriteRequest|"
             r"prepare_resident_write|RuntimeOperationIdentity|"
             r"compile_legacy_bytecode_program_artifact|compile_source_frozen_v1|"
-            r"compile_frozen_v1_program_product)\b"
+            r"compile_frozen_v1_program_product|ImportedOperationContractRow|"
+            r"LegacyOperationContractResolver|LegacyContractMetadataUnavailable|"
+            r"import_program_artifact_bytecode_v1|import_program_artifact_sections_v1)\b"
         ),
         "retired compatibility symbol",
     ),
@@ -76,6 +132,18 @@ def failures(root: Path) -> list[str]:
         )
         if path.is_file() or populated_directory:
             found.append(f"retired compatibility path exists: {relative}")
+
+    for relative, markers in ARTIFACT_COMPLETENESS_PROOFS:
+        path = root / relative
+        if not path.is_file():
+            found.append(f"artifact-completeness proof is missing: {relative}")
+            continue
+        source = path.read_text(encoding="utf-8")
+        for marker in markers:
+            if marker not in source:
+                found.append(
+                    f"artifact-completeness proof {relative} lost {marker}"
+                )
 
     for roots, pattern, label in RUST_RULES:
         for path in files_under(root, roots, ".rs"):

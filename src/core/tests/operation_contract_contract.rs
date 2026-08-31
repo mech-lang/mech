@@ -161,11 +161,27 @@ fn canonical_bytes_round_trip_every_contract_family() {
     let contracts = [declared(ChangeDetectionPolicy::SemanticHash)];
     for contract in contracts {
         let bytes = contract.canonical_bytes().unwrap();
+        assert_eq!(bytes[0], 1, "bytecode-v1 contracts retain encoding v1");
         assert_eq!(
             ResolvedOperationContract::from_canonical_bytes(&bytes).unwrap(),
             contract,
         );
     }
+}
+
+#[test]
+fn pre_r1_schema_only_contract_tag_is_rejected() {
+    let experimental = vec![
+        1, 1, // bytecode-v1 contract version and unsupported experimental tag
+        1, 0, 0, 0, 3, 0, 0, 0, // one input schema: 3
+        1, 0, 0, 0, 4, 0, 0, 0, // one output schema: 4
+    ];
+    assert!(matches!(
+        ResolvedOperationContract::from_canonical_bytes(&experimental),
+        Err(OperationContractError::InvalidCanonicalEncoding {
+            reason: "unknown operation-contract tag"
+        })
+    ));
 }
 
 #[test]

@@ -66,7 +66,7 @@ use std::ops::*;
 
 #[cfg(any(feature = "dot", feature = "matmul", feature = "solve"))]
 use std::fmt::Display;
-#[cfg(feature = "matmul")]
+#[cfg(any(feature = "dot", feature = "matmul", feature = "solve"))]
 use std::sync::LazyLock;
 
 #[cfg(any(feature = "dot", feature = "matmul"))]
@@ -252,14 +252,14 @@ fn checked_matrix_mul<T: RuntimeMatrixArithmetic>(
     })
 }
 
-#[cfg(feature = "matmul")]
+#[cfg(any(feature = "dot", feature = "matmul"))]
 static PURE_SCALAR_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_product_contract(false));
 #[cfg(feature = "matmul")]
 static PURE_MATRIX_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_product_contract(true));
 
-#[cfg(feature = "matmul")]
+#[cfg(any(feature = "dot", feature = "matmul"))]
 fn pure_product_contract(matrix: bool) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
@@ -297,11 +297,12 @@ fn pure_product_contract(matrix: bool) -> OperationContractDeclaration {
     }
 }
 
-#[cfg(feature = "matmul")]
+#[cfg(any(feature = "dot", feature = "matmul"))]
 fn product_contract(
     output: FunctionValueRepresentation,
 ) -> &'static OperationContractDeclaration {
     match output {
+        #[cfg(feature = "matmul")]
         FunctionValueRepresentation::Matrix { .. } => &PURE_MATRIX_PRODUCT_CONTRACT,
         _ => &PURE_SCALAR_PRODUCT_CONTRACT,
     }

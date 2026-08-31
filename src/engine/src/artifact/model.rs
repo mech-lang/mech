@@ -435,6 +435,7 @@ pub enum ArtifactBuildError {
     },
     MissingOperationContract {
         node: NodeId,
+        operation: OperationReference,
     },
     MatrixLiteralMetadataMismatch {
         output: u32,

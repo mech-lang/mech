@@ -2145,6 +2145,7 @@ fn compile_executable_program_artifact_from_semantics(
                 .as_ref()
                 .ok_or(ArtifactBuildError::MissingOperationContract {
                     node: NodeId::new(node as u32),
+                    operation: source.nodes[node].operation.clone(),
                 })
         })
         .collect::<Result<Vec<_>, _>>()?;
