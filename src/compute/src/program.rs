@@ -61,6 +61,17 @@ impl ComputeProgram {
         self
     }
 
+    /// Returns a copy of a fixed-shape program without integrity constraints.
+    /// This is used only by explicit unchecked execution modes; the original
+    /// program and its checked storage plan remain unchanged.
+    pub fn without_integrity_constraints(mut self) -> Self {
+        if let Some(mut storage) = self.fixed_shape_storage.take() {
+            storage.constraints = Box::default();
+            self.fixed_shape_storage = Some(storage);
+        }
+        self
+    }
+
     pub fn interface(&self) -> &ComputeRegionInterface {
         &self.interface
     }

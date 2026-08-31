@@ -140,6 +140,32 @@ All 27 package tests passed, including the three injected integrity failures
 and GPU publication retention. The generated WGSL shrank from 13,908 to
 11,733 bytes as dead constraint arithmetic disappeared.
 
+## Explicit unchecked GPU path
+
+The benchmark now has a separate opt-in unchecked artifact. Calling
+`FixedShapeKernel::without_integrity_constraints` removes the three source
+predicates from the generated WGSL and removes the atomic fault binding. The
+native session exposes two distinct measurements:
+
+- `dispatch_turns(1)` is the one-turn, host-driven loop. It still waits for
+  completion after every submission, but it performs no predicate or fault
+  work on the device.
+- `dispatch_turns(120)` on the same unchecked artifact batches 120 ordinary
+  dispatches into one command submission. This isolates command/state traffic
+  from validation without changing the one-turn kernel.
+- `prepare_resident_unchecked_fused(..., turns)` plus
+  `dispatch_unchecked_fused()` loads each lane once, advances the configured
+  number of turns in device-local state, and writes the final state once. It
+  uses one command submission and has no rollback boundary.
+
+Both paths are checked against the generic CPU lowering before timing. On the
+Apple M1, a 100,000-filter sanity run measured approximately `62 M/s` for the
+unchecked one-turn loop and `3,900 M/s` when 120 unchecked turns were fused
+inside one device invocation. The latter is deliberately reported as a
+batched/device-resident result; it is not a one-turn kernel comparison. The
+checked path remains the reference for per-turn publication and retains the
+previous estimate on an invalid candidate.
+
 GPU one-turn samples ranged from `47.859` to `62.495 M/s`; per-turn host
 synchronization still dominates and makes this too noisy to attribute the
 median change to device predicate lowering. Raw samples, command parameters,

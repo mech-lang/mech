@@ -278,6 +278,209 @@ fn scalar_computation_wgsl(computation: &ScalarComputation) -> String {
     }
 }
 
+enum FastWgslInstruction {
+    Alias(ScalarOperand),
+    Expression(String),
+}
+
+fn resolve_fast_operand(
+    mut operand: ScalarOperand,
+    aliases: &BTreeMap<usize, ScalarOperand>,
+) -> ScalarOperand {
+    let mut seen = BTreeSet::new();
+    while let ScalarOperand::Register(register) = operand {
+        if !seen.insert(register) {
+            break;
+        }
+        let Some(next) = aliases.get(&register).copied() else {
+            break;
+        };
+        operand = next;
+    }
+    operand
+}
+
+fn fast_operand_wgsl(operand: ScalarOperand, aliases: &BTreeMap<usize, ScalarOperand>) -> String {
+    scalar_operand_wgsl(resolve_fast_operand(operand, aliases))
+}
+
+fn fast_wgsl_instruction(
+    computation: &ScalarComputation,
+    aliases: &BTreeMap<usize, ScalarOperand>,
+) -> FastWgslInstruction {
+    match computation {
+        ScalarComputation::Copy(input) => {
+            FastWgslInstruction::Alias(resolve_fast_operand(*input, aliases))
+        }
+        ScalarComputation::Negate(input) => {
+            let input = resolve_fast_operand(*input, aliases);
+            match input {
+                ScalarOperand::Constant(value) => {
+                    FastWgslInstruction::Alias(ScalarOperand::Constant(-value))
+                }
+                _ => FastWgslInstruction::Expression(format!("-({})", scalar_operand_wgsl(input))),
+            }
+        }
+        ScalarComputation::Absolute(input) => {
+            let input = resolve_fast_operand(*input, aliases);
+            match input {
+                ScalarOperand::Constant(value) => {
+                    FastWgslInstruction::Alias(ScalarOperand::Constant(value.abs()))
+                }
+                _ => {
+                    FastWgslInstruction::Expression(format!("abs({})", scalar_operand_wgsl(input)))
+                }
+            }
+        }
+        ScalarComputation::Elementwise { operation, inputs } => {
+            let inputs = inputs
+                .iter()
+                .map(|input| resolve_fast_operand(*input, aliases))
+                .collect::<Vec<_>>();
+            match operation {
+                ElementwiseOperation::Identity => FastWgslInstruction::Alias(inputs[0]),
+                ElementwiseOperation::Binary(operation) => {
+                    if let Some(alias) = simplify_fast_binary(*operation, inputs[0], inputs[1]) {
+                        FastWgslInstruction::Alias(alias)
+                    } else {
+                        FastWgslInstruction::Expression(format!(
+                            "({})",
+                            super::wgsl_elementwise_expression(
+                                ElementwiseOperation::Binary(*operation),
+                                &inputs
+                                    .iter()
+                                    .map(|input| scalar_operand_wgsl(*input))
+                                    .collect::<Vec<_>>(),
+                            )
+                        ))
+                    }
+                }
+                ElementwiseOperation::Unary(operation) => {
+                    if let ScalarOperand::Constant(value) = inputs[0] {
+                        FastWgslInstruction::Alias(ScalarOperand::Constant(operation.apply(value)))
+                    } else {
+                        FastWgslInstruction::Expression(super::wgsl_elementwise_expression(
+                            ElementwiseOperation::Unary(*operation),
+                            &[scalar_operand_wgsl(inputs[0])],
+                        ))
+                    }
+                }
+                ElementwiseOperation::Atan2 => {
+                    if let (ScalarOperand::Constant(left), ScalarOperand::Constant(right)) =
+                        (inputs[0], inputs[1])
+                    {
+                        FastWgslInstruction::Alias(ScalarOperand::Constant(left.atan2(right)))
+                    } else {
+                        FastWgslInstruction::Expression(super::wgsl_elementwise_expression(
+                            *operation,
+                            &inputs
+                                .iter()
+                                .map(|input| scalar_operand_wgsl(*input))
+                                .collect::<Vec<_>>(),
+                        ))
+                    }
+                }
+            }
+        }
+        ScalarComputation::SumProducts(terms) => {
+            let mut expressions = Vec::new();
+            for (left, right) in terms {
+                let left = resolve_fast_operand(*left, aliases);
+                let right = resolve_fast_operand(*right, aliases);
+                if is_zero_fast(left) || is_zero_fast(right) {
+                    continue;
+                }
+                match (left, right) {
+                    (ScalarOperand::Constant(left), ScalarOperand::Constant(right)) => {
+                        expressions.push(super::format_wgsl_f32(left * right));
+                    }
+                    (ScalarOperand::Constant(1.0), value)
+                    | (value, ScalarOperand::Constant(1.0)) => {
+                        expressions.push(scalar_operand_wgsl(value));
+                    }
+                    (left, right) => {
+                        expressions.push(format!(
+                            "({} * {})",
+                            scalar_operand_wgsl(left),
+                            scalar_operand_wgsl(right)
+                        ));
+                    }
+                }
+            }
+            if expressions.is_empty() {
+                FastWgslInstruction::Alias(ScalarOperand::Constant(0.0))
+            } else if expressions.len() == 1 {
+                FastWgslInstruction::Expression(expressions.remove(0))
+            } else {
+                FastWgslInstruction::Expression(expressions.join(" + "))
+            }
+        }
+        ScalarComputation::IsFinite(input) => FastWgslInstruction::Expression(format!(
+            "select(0.0, 1.0, abs({}) <= 3.402823466e38)",
+            fast_operand_wgsl(*input, aliases)
+        )),
+        ScalarComputation::Compare {
+            operation,
+            left,
+            right,
+        } => FastWgslInstruction::Expression(format!(
+            "select(0.0, 1.0, ({}) {} ({}))",
+            fast_operand_wgsl(*left, aliases),
+            comparison_wgsl(*operation),
+            fast_operand_wgsl(*right, aliases)
+        )),
+        ScalarComputation::Logic { operation, inputs } => {
+            let left = format!("({} != 0.0)", fast_operand_wgsl(inputs[0], aliases));
+            let condition = match operation {
+                LogicOperation::And => format!(
+                    "{left} && ({} != 0.0)",
+                    fast_operand_wgsl(inputs[1], aliases)
+                ),
+                LogicOperation::Or => format!(
+                    "{left} || ({} != 0.0)",
+                    fast_operand_wgsl(inputs[1], aliases)
+                ),
+                LogicOperation::Xor => format!(
+                    "{left} != ({} != 0.0)",
+                    fast_operand_wgsl(inputs[1], aliases)
+                ),
+                LogicOperation::Not => format!("(!{left})"),
+            };
+            FastWgslInstruction::Expression(format!("select(0.0, 1.0, {condition})"))
+        }
+    }
+}
+
+fn is_zero_fast(operand: ScalarOperand) -> bool {
+    matches!(operand, ScalarOperand::Constant(value) if value == 0.0)
+}
+
+fn simplify_fast_binary(
+    operation: BinaryOperation,
+    left: ScalarOperand,
+    right: ScalarOperand,
+) -> Option<ScalarOperand> {
+    if let (ScalarOperand::Constant(left), ScalarOperand::Constant(right)) = (left, right) {
+        return Some(ScalarOperand::Constant(operation.apply(left, right)));
+    }
+    match operation {
+        BinaryOperation::Add if is_zero_fast(right) => Some(left),
+        BinaryOperation::Add if is_zero_fast(left) => Some(right),
+        BinaryOperation::Subtract if is_zero_fast(right) => Some(left),
+        BinaryOperation::Multiply if is_zero_fast(left) || is_zero_fast(right) => {
+            Some(ScalarOperand::Constant(0.0))
+        }
+        BinaryOperation::Multiply if is_one_fast(left) => Some(right),
+        BinaryOperation::Multiply if is_one_fast(right) => Some(left),
+        BinaryOperation::Divide if is_one_fast(right) => Some(left),
+        _ => None,
+    }
+}
+
+fn is_one_fast(operand: ScalarOperand) -> bool {
+    matches!(operand, ScalarOperand::Constant(value) if value == 1.0)
+}
+
 fn collect_operand_register(operand: ScalarOperand, registers: &mut BTreeSet<usize>) {
     if let ScalarOperand::Register(register) = operand {
         registers.insert(register);
@@ -396,6 +599,28 @@ fn prune_dead_instructions(
     retained
 }
 
+fn prune_dead_batched_instructions(
+    instructions: Vec<ScalarInstruction>,
+    states: &[BatchedState],
+) -> Vec<ScalarInstruction> {
+    let mut live = BTreeSet::new();
+    for state in states {
+        for source in &state.update {
+            collect_operand_register(*source, &mut live);
+        }
+    }
+
+    let mut retained = Vec::with_capacity(instructions.len());
+    for instruction in instructions.into_iter().rev() {
+        if live.contains(&instruction.output) {
+            instruction.computation.collect_registers(&mut live);
+            retained.push(instruction);
+        }
+    }
+    retained.reverse();
+    retained
+}
+
 #[derive(Clone, Debug)]
 struct BatchedInput {
     slot: CellSlotId,
@@ -428,6 +653,7 @@ pub struct FixedShapeKernel {
     instances: u32,
     compute: ComputeProgram,
     register_offsets: BTreeMap<CellSlotId, usize>,
+    instructions: Box<[ScalarInstruction]>,
     inputs: Vec<BatchedInput>,
     states: Vec<BatchedState>,
     constraints: Vec<BatchedConstraint>,
@@ -673,6 +899,7 @@ impl FixedShapeKernel {
             instances: storage.instances,
             compute: program.clone(),
             register_offsets: storage.register_offsets.clone(),
+            instructions: ir.instructions.clone(),
             inputs,
             states,
             constraints,
@@ -701,6 +928,31 @@ impl FixedShapeKernel {
 
     pub fn wgsl(&self) -> &str {
         &self.wgsl
+    }
+
+    /// Returns a copy of this kernel with integrity predicates removed from
+    /// the generated device program. This is an explicit opt-in execution
+    /// mode for callers that accept unchecked state publication; the source
+    /// artifact and checked kernel remain unchanged.
+    ///
+    /// Keeping this as a separate kernel is important for a fair performance
+    /// comparison: an unchecked dispatch must not pay for predicate
+    /// evaluation or carry an otherwise-unused atomic fault binding.
+    pub fn without_integrity_constraints(&self) -> Self {
+        let mut unchecked = self.clone();
+        unchecked.constraints.clear();
+        unchecked.compute = self.compute.clone().without_integrity_constraints();
+        unchecked.instructions =
+            prune_dead_batched_instructions(self.instructions.to_vec(), &unchecked.states)
+                .into_boxed_slice();
+        unchecked.wgsl = generate_wgsl_unchecked(
+            unchecked.instances,
+            &unchecked.register_offsets,
+            &unchecked.instructions,
+            &unchecked.inputs,
+            &unchecked.states,
+        );
+        unchecked
     }
 
     pub fn inputs(&self) -> impl Iterator<Item = (&str, usize)> {
@@ -2603,6 +2855,69 @@ fn generate_wgsl(
     states: &[BatchedState],
     constraints: &[BatchedConstraint],
 ) -> String {
+    generate_wgsl_with_turns(
+        instances,
+        register_offsets,
+        instructions,
+        inputs,
+        states,
+        constraints,
+        None,
+        false,
+    )
+}
+
+fn generate_wgsl_unchecked(
+    instances: u32,
+    register_offsets: &BTreeMap<CellSlotId, usize>,
+    instructions: &[ScalarInstruction],
+    inputs: &[BatchedInput],
+    states: &[BatchedState],
+) -> String {
+    generate_wgsl_with_turns(
+        instances,
+        register_offsets,
+        instructions,
+        inputs,
+        states,
+        &[],
+        None,
+        true,
+    )
+}
+
+#[cfg(feature = "native")]
+fn generate_wgsl_fused(
+    instances: u32,
+    register_offsets: &BTreeMap<CellSlotId, usize>,
+    instructions: &[ScalarInstruction],
+    inputs: &[BatchedInput],
+    states: &[BatchedState],
+    turns: u32,
+) -> String {
+    assert!(turns > 0, "fused GPU kernels require at least one turn");
+    generate_wgsl_with_turns(
+        instances,
+        register_offsets,
+        instructions,
+        inputs,
+        states,
+        &[],
+        Some(turns),
+        true,
+    )
+}
+
+fn generate_wgsl_with_turns(
+    instances: u32,
+    register_offsets: &BTreeMap<CellSlotId, usize>,
+    instructions: &[ScalarInstruction],
+    inputs: &[BatchedInput],
+    states: &[BatchedState],
+    constraints: &[BatchedConstraint],
+    fused_turns: Option<u32>,
+    optimize_unchecked: bool,
+) -> String {
     let mut shader = String::from("// Generic fixed-shape Mech batch kernel.\n");
     for input in inputs {
         shader.push_str(&format!(
@@ -2652,7 +2967,8 @@ fn generate_wgsl(
         let offset = register_offsets[&state.slot];
         for component in 0..state.shape.elements() {
             shader.push_str(&format!(
-                "  let r{} = state_read_{}[index * {}u + {}u];\n",
+                "  {} r{} = state_read_{}[index * {}u + {}u];\n",
+                if fused_turns.is_some() { "var" } else { "let" },
                 offset + component,
                 state.slot.get(),
                 state.shape.elements(),
@@ -2660,35 +2976,102 @@ fn generate_wgsl(
             ));
         }
     }
-    for instruction in instructions {
+    if let Some(turns) = fused_turns {
         shader.push_str(&format!(
-            "  let r{} = {};\n",
-            instruction.output,
-            scalar_computation_wgsl(&instruction.computation)
+            "  for (var mech_turn = 0u; mech_turn < {turns}u; mech_turn = mech_turn + 1u) {{\n"
         ));
     }
-    if !constraints.is_empty() {
-        shader.push_str("  var integrity_code = 0u;\n");
-        for (index, constraint) in constraints.iter().enumerate() {
-            let code = index + 1;
+    let mut aliases = BTreeMap::new();
+    for instruction in instructions {
+        if optimize_unchecked {
+            match fast_wgsl_instruction(&instruction.computation, &aliases) {
+                FastWgslInstruction::Alias(operand) => {
+                    aliases.insert(instruction.output, operand);
+                    continue;
+                }
+                FastWgslInstruction::Expression(expression) => {
+                    shader.push_str(&format!(
+                        "  {}let r{} = {};\n",
+                        if fused_turns.is_some() { "  " } else { "" },
+                        instruction.output,
+                        expression
+                    ));
+                }
+            }
+        } else {
             shader.push_str(&format!(
-                "  if (integrity_code == 0u && !{}) {{ integrity_code = {code}u; }}\n",
-                scalar_predicate_wgsl(&constraint.predicate)
+                "  {}let r{} = {};\n",
+                if fused_turns.is_some() { "  " } else { "" },
+                instruction.output,
+                scalar_computation_wgsl(&instruction.computation)
             ));
         }
-        shader.push_str(
-            "  if (integrity_code != 0u) { record_integrity_fault(integrity_code, index); }\n",
-        );
     }
-    for state in states {
-        for (component, source) in state.update.iter().enumerate() {
-            shader.push_str(&format!(
-                "  state_write_{}[index * {}u + {}u] = {};\n",
-                state.slot.get(),
-                state.shape.elements(),
-                component,
-                scalar_operand_wgsl(*source)
-            ));
+    if fused_turns.is_some() {
+        // Evaluate every component before assigning any state register. This
+        // preserves whole-value assignment semantics when one component's
+        // update reads another component from the previous turn.
+        for state in states {
+            for (component, source) in state.update.iter().enumerate() {
+                shader.push_str(&format!(
+                    "    let next_state_{}_{} = {};\n",
+                    state.slot.get(),
+                    component,
+                    fast_operand_wgsl(*source, &aliases)
+                ));
+            }
+        }
+        for state in states {
+            let offset = register_offsets[&state.slot];
+            for component in 0..state.shape.elements() {
+                shader.push_str(&format!(
+                    "    r{} = next_state_{}_{};\n",
+                    offset + component,
+                    state.slot.get(),
+                    component
+                ));
+            }
+        }
+        shader.push_str("  }\n");
+        for state in states {
+            for component in 0..state.shape.elements() {
+                shader.push_str(&format!(
+                    "  state_write_{}[index * {}u + {}u] = r{};\n",
+                    state.slot.get(),
+                    state.shape.elements(),
+                    component,
+                    register_offsets[&state.slot] + component
+                ));
+            }
+        }
+    } else {
+        if !constraints.is_empty() {
+            shader.push_str("  var integrity_code = 0u;\n");
+            for (index, constraint) in constraints.iter().enumerate() {
+                let code = index + 1;
+                shader.push_str(&format!(
+                    "  if (integrity_code == 0u && !{}) {{ integrity_code = {code}u; }}\n",
+                    scalar_predicate_wgsl(&constraint.predicate)
+                ));
+            }
+            shader.push_str(
+                "  if (integrity_code != 0u) { record_integrity_fault(integrity_code, index); }\n",
+            );
+        }
+        for state in states {
+            for (component, source) in state.update.iter().enumerate() {
+                shader.push_str(&format!(
+                    "  state_write_{}[index * {}u + {}u] = {};\n",
+                    state.slot.get(),
+                    state.shape.elements(),
+                    component,
+                    if optimize_unchecked {
+                        fast_operand_wgsl(*source, &aliases)
+                    } else {
+                        scalar_operand_wgsl(*source)
+                    }
+                ));
+            }
         }
     }
     shader.push_str("}\n");
@@ -2708,6 +3091,7 @@ mod native {
 
     use super::{
         BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, FixedShapeKernel,
+        generate_wgsl_fused,
     };
     use crate::{
         GpuBindingAccess, GpuExecutionBindingRole, GpuPlanConstraint, GpuPlanInitialValues,
@@ -2730,6 +3114,7 @@ mod native {
         integrity_fault: Option<Arc<wgpu::Buffer>>,
         integrity_readback: Option<wgpu::Buffer>,
         workgroups: u32,
+        fused_turns: Option<u32>,
         next_group: usize,
         last_output_group: Option<usize>,
         faults: BatchedFaultRecorder,
@@ -2749,14 +3134,53 @@ mod native {
             &self,
             inputs: &BTreeMap<String, Vec<f32>>,
         ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
-            pollster::block_on(self.prepare_resident_async(inputs))
+            pollster::block_on(self.prepare_resident_async(inputs, None))
+        }
+
+        /// Prepares an explicitly unchecked resident GPU session. Integrity
+        /// predicates and rollback publication are omitted from the generated
+        /// device kernel; callers must opt into this weaker contract by
+        /// constructing the kernel with [`FixedShapeKernel::without_integrity_constraints`].
+        pub fn prepare_resident_unchecked(
+            &self,
+            inputs: &BTreeMap<String, Vec<f32>>,
+        ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
+            if !self.constraints.is_empty() {
+                return Err(BatchedExecutionError::Native(
+                    "unchecked GPU preparation requires a kernel without integrity constraints"
+                        .to_owned(),
+                ));
+            }
+            pollster::block_on(self.prepare_resident_async(inputs, None))
+        }
+
+        /// Prepares a single-dispatch unchecked kernel that advances a fixed
+        /// number of resident turns inside each device invocation. Inputs and
+        /// state are loaded once per lane, then kept in device-local values for
+        /// the complete recurrence before one final state write.
+        pub fn prepare_resident_unchecked_fused(
+            &self,
+            inputs: &BTreeMap<String, Vec<f32>>,
+            turns: u32,
+        ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
+            if !self.constraints.is_empty() {
+                return Err(BatchedExecutionError::Native(
+                    "unchecked fused GPU preparation requires a kernel without integrity constraints"
+                        .to_owned(),
+                ));
+            }
+            if turns == 0 {
+                return Err(BatchedExecutionError::ZeroTurns);
+            }
+            pollster::block_on(self.prepare_resident_async(inputs, Some(turns)))
         }
 
         async fn prepare_resident_async(
             &self,
             inputs: &BTreeMap<String, Vec<f32>>,
+            fused_turns: Option<u32>,
         ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
-            let execution_plan = crate::GpuExecutionPlan::build(
+            let mut execution_plan = crate::GpuExecutionPlan::build(
                 crate::GpuKernelPlanSource::FixedShape(self),
                 inputs,
             )
@@ -2930,6 +3354,16 @@ mod native {
                     entries: &entries,
                 })
             });
+            if let Some(turns) = fused_turns {
+                execution_plan.wgsl = generate_wgsl_fused(
+                    self.instances,
+                    &self.register_offsets,
+                    &self.instructions,
+                    &self.inputs,
+                    &self.states,
+                    turns,
+                );
+            }
             let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Scalarized Mech fixed-shape batch"),
                 source: wgpu::ShaderSource::Wgsl(execution_plan.wgsl.clone().into()),
@@ -2986,6 +3420,7 @@ mod native {
                 integrity_fault,
                 integrity_readback,
                 workgroups: workgroup_count,
+                fused_turns,
                 next_group: 0,
                 last_output_group: None,
                 faults: BatchedFaultRecorder::default(),
@@ -3023,6 +3458,11 @@ mod native {
             if turns == 0 {
                 return Err(BatchedExecutionError::ZeroTurns);
             }
+            if self.fused_turns.is_some() {
+                return Err(BatchedExecutionError::Native(
+                    "fused unchecked GPU sessions must use dispatch_unchecked_fused".to_owned(),
+                ));
+            }
             if !self.constraints.is_empty() {
                 return self.dispatch_checked_turns(turns);
             }
@@ -3049,6 +3489,46 @@ mod native {
             self.queue.submit(Some(encoder.finish()));
             self.device.poll(wgpu::Maintain::Wait);
             Ok(started.elapsed())
+        }
+
+        /// Dispatches the resident fused unchecked kernel exactly once. The
+        /// prepared shader performs its configured number of turns on-device;
+        /// no per-turn command encoding, synchronization, or state swap occurs
+        /// on the host.
+        pub fn dispatch_unchecked_fused(&mut self) -> Result<Duration, BatchedExecutionError> {
+            let turns = self.fused_turns.ok_or_else(|| {
+                BatchedExecutionError::Native(
+                    "session was not prepared with a fused unchecked kernel".to_owned(),
+                )
+            })?;
+            if !self.constraints.is_empty() {
+                return Err(BatchedExecutionError::Native(
+                    "fused GPU dispatch cannot carry integrity constraints".to_owned(),
+                ));
+            }
+            let started = Instant::now();
+            let group = self.next_group;
+            let mut encoder = self
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Mech fused unchecked fixed-shape batch"),
+                });
+            {
+                let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                    label: Some("Mech fused unchecked fixed-shape compute pass"),
+                    timestamp_writes: None,
+                });
+                pass.set_pipeline(&self.pipeline);
+                pass.set_bind_group(0, &self.bind_groups[group], &[]);
+                pass.dispatch_workgroups(self.workgroups, 1, 1);
+            }
+            self.queue.submit(Some(encoder.finish()));
+            self.device.poll(wgpu::Maintain::Wait);
+            self.last_output_group = Some(group);
+            self.next_group = 1 - group;
+            let elapsed = started.elapsed();
+            debug_assert!(turns > 0);
+            Ok(elapsed)
         }
 
         fn dispatch_checked_turns(

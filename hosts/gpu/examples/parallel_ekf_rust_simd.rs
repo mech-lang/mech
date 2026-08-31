@@ -114,7 +114,9 @@ impl std::ops::Neg for V4 {
 type Matrix<const ROWS: usize, const COLS: usize> = [[V4; COLS]; ROWS];
 
 #[inline(always)]
-fn transpose<const ROWS: usize, const COLS: usize>(input: &Matrix<ROWS, COLS>) -> Matrix<COLS, ROWS> {
+fn transpose<const ROWS: usize, const COLS: usize>(
+    input: &Matrix<ROWS, COLS>,
+) -> Matrix<COLS, ROWS> {
     std::array::from_fn(|row| std::array::from_fn(|column| input[column][row]))
 }
 
@@ -125,24 +127,31 @@ fn matmul<const ROWS: usize, const INNER: usize, const COLS: usize>(
 ) -> Matrix<ROWS, COLS> {
     std::array::from_fn(|row| {
         std::array::from_fn(|column| {
-            (0..INNER).fold(V4::ZERO, |sum, index| sum + left[row][index] * right[index][column])
+            (0..INNER).fold(V4::ZERO, |sum, index| {
+                sum + left[row][index] * right[index][column]
+            })
         })
     })
 }
 
 #[inline(always)]
-fn valid_candidate(
-    state: &[V4; 3],
-    covariance: &Matrix<3, 3>,
-) -> [bool; LANES] {
+fn valid_candidate(state: &[V4; 3], covariance: &Matrix<3, 3>) -> [bool; LANES] {
     let mut valid = [true; LANES];
-    for value in state.iter().copied().chain(covariance.iter().flat_map(|row| row.iter().copied())) {
+    for value in state
+        .iter()
+        .copied()
+        .chain(covariance.iter().flat_map(|row| row.iter().copied()))
+    {
         for (index, finite) in value.is_finite().into_iter().enumerate() {
             valid[index] &= finite;
         }
     }
     for diagonal in 0..3 {
-        for (index, value) in covariance[diagonal][diagonal].lanes().into_iter().enumerate() {
+        for (index, value) in covariance[diagonal][diagonal]
+            .lanes()
+            .into_iter()
+            .enumerate()
+        {
             valid[index] &= value > 0.0;
         }
     }
@@ -187,14 +196,13 @@ fn step_group(
     ];
     let ft = transpose(&f);
     let gt = transpose(&g);
-    let process_noise: Matrix<2, 2> = [
-        [V4::splat(0.01), V4::ZERO],
-        [V4::ZERO, V4::splat(0.0025)],
-    ];
+    let process_noise: Matrix<2, 2> = [[V4::splat(0.01), V4::ZERO], [V4::ZERO, V4::splat(0.0025)]];
     let predicted_covariance = {
         let first = matmul(&matmul(&f, covariance), &ft);
         let second = matmul(&matmul(&g, &process_noise), &gt);
-        std::array::from_fn(|row| std::array::from_fn(|column| first[row][column] + second[row][column]))
+        std::array::from_fn(|row| {
+            std::array::from_fn(|column| first[row][column] + second[row][column])
+        })
     };
 
     let delta_x = V4::splat(140.0) - predicted_state[0];
@@ -204,23 +212,36 @@ fn step_group(
     let raw_innovation = bearing - predicted_bearing;
     let (innovation_sin, innovation_cos) = raw_innovation.sin_cos();
     let innovation = innovation_sin.atan2(innovation_cos);
-    let h = [delta_y / squared_range, -delta_x / squared_range, V4::splat(-1.0)];
+    let h = [
+        delta_y / squared_range,
+        -delta_x / squared_range,
+        V4::splat(-1.0),
+    ];
     let ph_t: [V4; 3] = std::array::from_fn(|row| {
-        (0..3).fold(V4::ZERO, |sum, index| sum + predicted_covariance[row][index] * h[index])
+        (0..3).fold(V4::ZERO, |sum, index| {
+            sum + predicted_covariance[row][index] * h[index]
+        })
     });
-    let innovation_variance = (0..3).fold(V4::splat(0.25), |sum, index| sum + h[index] * ph_t[index]);
+    let innovation_variance =
+        (0..3).fold(V4::splat(0.25), |sum, index| sum + h[index] * ph_t[index]);
     let gain = ph_t.map(|value| value / innovation_variance);
     let next_state = std::array::from_fn(|row| predicted_state[row] + gain[row] * innovation);
     let a: Matrix<3, 3> = std::array::from_fn(|row| {
         std::array::from_fn(|column| {
-            let identity = if row == column { V4::splat(1.0) } else { V4::ZERO };
+            let identity = if row == column {
+                V4::splat(1.0)
+            } else {
+                V4::ZERO
+            };
             identity - gain[row] * h[column]
         })
     });
     let at = transpose(&a);
     let corrected_base = matmul(&matmul(&a, &predicted_covariance), &at);
     let next_covariance = std::array::from_fn(|row| {
-        std::array::from_fn(|column| corrected_base[row][column] + gain[row] * gain[column] * V4::splat(0.25))
+        std::array::from_fn(|column| {
+            corrected_base[row][column] + gain[row] * gain[column] * V4::splat(0.25)
+        })
     });
 
     if !checked {
@@ -240,7 +261,11 @@ fn step_group(
                 }
                 for row in 0..3 {
                     for column in 0..3 {
-                        covariance[row][column] = V4::from_lane(covariance[row][column], next_covariance[row][column], lane);
+                        covariance[row][column] = V4::from_lane(
+                            covariance[row][column],
+                            next_covariance[row][column],
+                            lane,
+                        );
                     }
                 }
             }
@@ -324,28 +349,60 @@ fn dispatch(
 }
 
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
-    env::args().nth(index).and_then(|value| value.parse().ok()).unwrap_or(default)
+    env::args()
+        .nth(index)
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(default)
 }
 
 fn main() {
     let instances = argument(1, 100_000_usize).max(1);
     let turns = argument(2, 5_u32).max(1);
-    let checked = env::args().nth(3).is_some_and(|value| value.eq_ignore_ascii_case("checked"));
-    assert!(instances % LANES == 0, "Rust SIMD requires instances divisible by four");
+    let checked = env::args()
+        .nth(3)
+        .is_some_and(|value| value.eq_ignore_ascii_case("checked"));
+    assert!(
+        instances % LANES == 0,
+        "Rust SIMD requires instances divisible by four"
+    );
     let (velocity, angular_velocity, bearing) = inputs(instances);
     let mut state = std::array::from_fn(|_| vec![0.0; instances]);
     let mut covariance = std::array::from_fn(|_| vec![0.0; instances]);
     reset(&mut state, &mut covariance);
-    dispatch(&mut state, &mut covariance, &velocity, &angular_velocity, &bearing, 5, checked);
+    dispatch(
+        &mut state,
+        &mut covariance,
+        &velocity,
+        &angular_velocity,
+        &bearing,
+        5,
+        checked,
+    );
     reset(&mut state, &mut covariance);
     let started = Instant::now();
-    dispatch(&mut state, &mut covariance, &velocity, &angular_velocity, &bearing, turns, checked);
+    dispatch(
+        &mut state,
+        &mut covariance,
+        &velocity,
+        &angular_velocity,
+        &bearing,
+        turns,
+        checked,
+    );
     let elapsed = started.elapsed().as_secs_f64();
     let throughput = instances as f64 * turns as f64 / elapsed;
-    let checksum = state.iter().chain(covariance.iter()).flat_map(|values| values.iter()).map(|value| *value as f64).sum::<f64>();
+    let checksum = state
+        .iter()
+        .chain(covariance.iter())
+        .flat_map(|values| values.iter())
+        .map(|value| *value as f64)
+        .sum::<f64>();
     black_box((&state, &covariance));
     println!("lane: Rust packed SIMD (wide f32x4)");
-    println!("validation: {}", if checked { "checked" } else { "unchecked" });
+    println!(
+        "validation: {}",
+        if checked { "checked" } else { "unchecked" }
+    );
     println!("instances: {instances}");
     println!("turns: {turns}");
     println!("elapsed_s: {elapsed:.9}");

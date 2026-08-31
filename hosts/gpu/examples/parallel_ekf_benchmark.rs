@@ -71,6 +71,35 @@ fn main() {
         max_error <= 1.0e-4,
         "GPU result differs from generic CPU lowering by {max_error}"
     );
+    let unchecked_program = program.without_integrity_constraints();
+    assert_eq!(
+        unchecked_program.integrity_constraints().count(),
+        0,
+        "the unchecked GPU artifact must not carry integrity predicates"
+    );
+    let mut gpu_unchecked_validation = unchecked_program
+        .prepare_resident_unchecked(&inputs)
+        .unwrap();
+    let unchecked_actual = gpu_unchecked_validation
+        .run_turns(validation_turns)
+        .unwrap();
+    let unchecked_max_error = maximum_error(&expected, &unchecked_actual.state);
+    assert!(
+        unchecked_max_error <= 1.0e-4,
+        "unchecked GPU result differs from generic CPU lowering by {unchecked_max_error}"
+    );
+    let mut gpu_unchecked_fused_validation = unchecked_program
+        .prepare_resident_unchecked_fused(&inputs, validation_turns)
+        .unwrap();
+    gpu_unchecked_fused_validation
+        .dispatch_unchecked_fused()
+        .unwrap();
+    let (_, unchecked_fused_state) = gpu_unchecked_fused_validation.read_state().unwrap();
+    let unchecked_fused_max_error = maximum_error(&expected, &unchecked_fused_state);
+    assert!(
+        unchecked_fused_max_error <= 1.0e-4,
+        "fused unchecked GPU result differs from generic CPU lowering by {unchecked_fused_max_error}"
+    );
 
     let mut cpu_warmup = program.prepare_cpu(&inputs).unwrap();
     cpu_warmup.dispatch_turns(5).unwrap();
@@ -193,10 +222,47 @@ fn main() {
     let (readback, state) = gpu.read_state().unwrap();
     std::hint::black_box(state);
 
+    let mut gpu_unchecked_single = unchecked_program
+        .prepare_resident_unchecked(&inputs)
+        .unwrap();
+    gpu_unchecked_single.dispatch_turns(1).unwrap();
+    let unchecked_single_started = Instant::now();
+    for _ in 0..single_gpu_turns {
+        gpu_unchecked_single.dispatch_turns(1).unwrap();
+    }
+    let unchecked_single_per_turn = unchecked_single_started.elapsed() / single_gpu_turns;
+
+    let mut gpu_unchecked_batch = unchecked_program
+        .prepare_resident_unchecked(&inputs)
+        .unwrap();
+    gpu_unchecked_batch.dispatch_turns(5).unwrap();
+    let unchecked_batch_per_turn = gpu_unchecked_batch
+        .dispatch_turns(checked_gpu_turns)
+        .unwrap()
+        / checked_gpu_turns;
+
+    let mut gpu_unchecked_warmup = unchecked_program
+        .prepare_resident_unchecked_fused(&inputs, checked_gpu_turns)
+        .unwrap();
+    gpu_unchecked_warmup.dispatch_unchecked_fused().unwrap();
+    let unchecked_prepare_started = Instant::now();
+    let mut gpu_unchecked = unchecked_program
+        .prepare_resident_unchecked_fused(&inputs, checked_gpu_turns)
+        .unwrap();
+    let unchecked_prepare = unchecked_prepare_started.elapsed();
+    gpu_unchecked.dispatch_unchecked_fused().unwrap();
+    let unchecked_repeated = gpu_unchecked.dispatch_unchecked_fused().unwrap() / checked_gpu_turns;
+    let (_, unchecked_state) = gpu_unchecked.read_state().unwrap();
+    std::hint::black_box(unchecked_state);
+
     println!("EKF instances: {instances}");
     println!("batch extent authority: Mech input arrays");
     println!("source artifact nodes: {}", artifact.nodes().len());
     println!("generated WGSL bytes: {}", program.wgsl().len());
+    println!(
+        "generated unchecked fused WGSL bytes: {}",
+        unchecked_program.wgsl().len()
+    );
     println!("GPU workgroups: {}", program.workgroup_count());
     println!("CPU SIMD width: {} f32 lanes", program.simd_lanes());
     println!(
@@ -254,12 +320,24 @@ fn main() {
         millis(jit_simd_unchecked_fast_per_turn)
     );
     println!(
-        "resident GPU, one submission per turn: {:.3} ms/turn ({single_gpu_turns} turns)",
+        "resident GPU, checked one-turn API call: {:.3} ms/turn ({single_gpu_turns} turns)",
         millis(single_per_turn)
     );
     println!(
-        "resident GPU, checked repeated turns: {:.3} ms/turn ({checked_gpu_turns} turns)",
+        "resident GPU, checked repeated API call (per-turn validation): {:.3} ms/turn ({checked_gpu_turns} turns)",
         millis(checked_repeated)
+    );
+    println!(
+        "resident GPU, unchecked one-turn API call: {:.3} ms/turn ({single_gpu_turns} turns)",
+        millis(unchecked_single_per_turn)
+    );
+    println!(
+        "resident GPU, unchecked repeated dispatches: {:.3} ms/turn ({checked_gpu_turns} turns)",
+        millis(unchecked_batch_per_turn)
+    );
+    println!(
+        "resident GPU, unchecked one submission: {:.3} ms/turn ({checked_gpu_turns} turns)",
+        millis(unchecked_repeated)
     );
     println!(
         "Mech scalar throughput: {:.3} million EKF-turns/s",
@@ -310,15 +388,33 @@ fn main() {
         "SIMD-JIT checked-fast validation time overhead: {jit_simd_checked_fast_validation_overhead:.2}%"
     );
     println!(
-        "GPU single-submit throughput: {:.3} million EKF-turns/s",
+        "GPU checked one-turn throughput: {:.3} million EKF-turns/s",
         throughput(instances, single_per_turn)
     );
     println!(
-        "GPU checked repeated throughput: {:.3} million EKF-turns/s",
+        "GPU checked repeated throughput (per-turn validation): {:.3} million EKF-turns/s",
         throughput(instances, checked_repeated)
+    );
+    println!(
+        "GPU unchecked one-turn throughput: {:.3} million EKF-turns/s",
+        throughput(instances, unchecked_single_per_turn)
+    );
+    println!(
+        "GPU unchecked repeated throughput: {:.3} million EKF-turns/s",
+        throughput(instances, unchecked_batch_per_turn)
+    );
+    println!(
+        "GPU unchecked one-submit throughput: {:.3} million EKF-turns/s",
+        throughput(instances, unchecked_repeated)
+    );
+    println!(
+        "resident GPU unchecked prepare: {:.3} ms",
+        millis(unchecked_prepare)
     );
     println!("final state readback: {:.3} ms", millis(readback));
     println!("maximum CPU/GPU absolute error: {max_error:.3e}");
+    println!("maximum CPU/GPU unchecked absolute error: {unchecked_max_error:.3e}");
+    println!("maximum CPU/GPU fused unchecked absolute error: {unchecked_fused_max_error:.3e}");
     println!("maximum scalar/SIMD absolute error: {simd_max_error:.3e}");
     println!("maximum scalar/JIT absolute error: {jit_max_error:.3e}");
     println!("maximum scalar/SIMD-JIT absolute error: {jit_simd_max_error:.3e}");

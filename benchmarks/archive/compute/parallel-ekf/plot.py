@@ -32,8 +32,11 @@ ORDER = [
     ("LuaJIT scalar outer loop", "luajit"),
     ("LuaJIT fixed-shape flat checked", "luajit"),
     ("LuaJIT fixed-shape flat unchecked", "luajit"),
-    ("Mech GPU, one submission/turn", "gpu"),
-    ("Mech GPU, checked repeated turns", "gpu"),
+    ("Mech GPU, checked one-turn API call", "gpu"),
+    ("Mech GPU, checked repeated API call", "gpu"),
+    ("Mech GPU, unchecked one-turn API call", "gpu"),
+    ("Mech GPU, unchecked repeated dispatches", "gpu"),
+    ("Mech GPU, unchecked one submission", "gpu"),
 ]
 
 CHECKED_ORDER = [
@@ -48,8 +51,8 @@ CHECKED_ORDER = [
     ("Julia SIMD.jl intrinsics checked", "julia"),
     ("NumPy vectorized fixed-shape checked", "numpy"),
     ("LuaJIT fixed-shape flat checked", "luajit"),
-    ("Mech GPU, one submission/turn", "gpu"),
-    ("Mech GPU, checked repeated turns", "gpu"),
+    ("Mech GPU, checked one-turn API call", "gpu"),
+    ("Mech GPU, checked repeated API call", "gpu"),
 ]
 
 COLORS = {
@@ -102,7 +105,7 @@ def main() -> None:
     row_height = 31
     bottom = 100
     chart_width = width - left - right
-    max_value = 60.0
+    max_value = max(60.0, ((max(values.values()) + 9.999) // 10) * 10)
     height = top + row_height * len(order) + bottom
 
     def x(value: float) -> float:
@@ -115,7 +118,7 @@ def main() -> None:
         f'<text x="52" y="42" font-size="26" font-weight="700">Parallel EKF steady-state throughput{" (checked only)" if args.checked_only else ""}</text>',
         f'<text x="52" y="68" class="muted" font-size="15">Apple M1 | backend: {configuration["backend_instances"]:,} filters x {configuration["backend_cpu_turns"]} turns; language: {configuration["scalar_instances"]:,} filters x {configuration["scalar_turns"]} turns | median of {configuration["samples"]} isolated process samples | million EKF turns per second{" | integrity checks enabled" if args.checked_only else ""}</text>',
     ]
-    for tick in range(0, 61, 10):
+    for tick in range(0, int(max_value) + 1, 10):
         tick_x = x(tick)
         lines.append(f'<line x1="{tick_x:.1f}" y1="{top - 18}" x2="{tick_x:.1f}" y2="{height - bottom + 4}" class="grid"/>')
         lines.append(f'<text x="{tick_x:.1f}" y="{height - bottom + 28}" text-anchor="middle" class="axis">{tick}</text>')
@@ -137,7 +140,7 @@ def main() -> None:
         lines.append(f'<text x="{value_x:.1f}" y="{y + 19}" class="value">{value:.2f}</text>')
 
     note = "Checked controls only; unchecked-only controls are omitted. " if args.checked_only else ""
-    lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{note}GPU rows are Mech context measurements, not CPU comparisons. Parse, compilation, setup, and readback are excluded.</text>')
+    lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{note}Checked GPU rows synchronize and validate each turn; the unchecked row batches all turns in one device submission. Parse, compilation, setup, and final readback are excluded.</text>')
     lines.append('</svg>')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("\n".join(lines) + "\n", encoding="utf-8")

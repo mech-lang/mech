@@ -380,12 +380,27 @@ def main() -> None:
                 number(text, r"Mech SIMD throughput: ([0-9.]+) million")
                 for text in backend_mech_outputs
             ),
-            "Mech GPU, one submission/turn": statistics.median(
-                number(text, r"GPU single-submit throughput: ([0-9.]+) million")
+            "Mech GPU, checked one-turn API call": statistics.median(
+                number(text, r"GPU checked one-turn throughput: ([0-9.]+) million")
                 for text in backend_mech_outputs
             ),
-            "Mech GPU, checked repeated turns": statistics.median(
-                number(text, r"GPU checked repeated throughput: ([0-9.]+) million")
+            "Mech GPU, checked repeated API call": statistics.median(
+                number(
+                    text,
+                    r"GPU checked repeated throughput \(per-turn validation\): ([0-9.]+) million",
+                )
+                for text in backend_mech_outputs
+            ),
+            "Mech GPU, unchecked one-turn API call": statistics.median(
+                number(text, r"GPU unchecked one-turn throughput: ([0-9.]+) million")
+                for text in backend_mech_outputs
+            ),
+            "Mech GPU, unchecked repeated dispatches": statistics.median(
+                number(text, r"GPU unchecked repeated throughput: ([0-9.]+) million")
+                for text in backend_mech_outputs
+            ),
+            "Mech GPU, unchecked one submission": statistics.median(
+                number(text, r"GPU unchecked one-submit throughput: ([0-9.]+) million")
                 for text in backend_mech_outputs
             ),
         }

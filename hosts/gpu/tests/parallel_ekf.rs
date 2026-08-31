@@ -477,6 +477,16 @@ fn source_program_from(
 }
 
 #[test]
+fn unchecked_gpu_copy_removes_integrity_code_before_shader_generation() {
+    let (checked, _) = source_program(8);
+    assert_eq!(checked.integrity_constraints().count(), 3);
+    let unchecked = checked.without_integrity_constraints();
+    assert_eq!(unchecked.integrity_constraints().count(), 0);
+    assert!(!unchecked.wgsl().contains("integrity_fault"));
+    assert!(unchecked.wgsl().len() < checked.wgsl().len());
+}
+
+#[test]
 fn fixed_shape_physical_plan_expands_one_thousand_lane_resident_buffers() {
     let instances = 1_000;
     let (program, inputs) = source_program(instances);
