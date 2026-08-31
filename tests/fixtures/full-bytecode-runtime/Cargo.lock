@@ -657,6 +657,7 @@ dependencies = [
  "byteorder",
  "grapheme",
  "indexmap",
+ "libm",
  "mech-core",
  "mech-syntax",
  "nalgebra",

@@ -1,6 +1,6 @@
-use crate::canonical::{SetInput, SetOutput};
 #[cfg(feature = "source")]
 use crate::canonical::specialize_dynamic_set;
+use crate::canonical::{SetInput, SetOutput};
 use crate::*;
 
 const MAX_POWERSET_INPUT_CARDINALITY: usize = 16;

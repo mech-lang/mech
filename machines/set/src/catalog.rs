@@ -1,9 +1,30 @@
-use mech_core::{
-    FunctionCatalogBuilder, MResult, RuntimeFunctionContract, RuntimeOutputAliasPolicy, SchemaBody,
-    ValueCell, function_shape_contract_violation,
-};
 #[cfg(feature = "source")]
 use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(any(
+    feature = "cartesian_product",
+    feature = "difference",
+    feature = "disjoint",
+    feature = "element_of",
+    feature = "equals",
+    feature = "insert",
+    feature = "intersection",
+    feature = "not_element_of",
+    feature = "not_equals",
+    feature = "powerset",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "remove",
+    all(feature = "size", feature = "u64"),
+    feature = "subset",
+    feature = "superset",
+    feature = "symmetric_difference",
+    feature = "union",
+))]
+use mech_core::{
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, SchemaBody, ValueCell,
+    function_shape_contract_violation,
+};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -190,10 +211,50 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+#[cfg(any(
+    feature = "cartesian_product",
+    feature = "difference",
+    feature = "disjoint",
+    feature = "element_of",
+    feature = "equals",
+    feature = "insert",
+    feature = "intersection",
+    feature = "not_element_of",
+    feature = "not_equals",
+    feature = "powerset",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "remove",
+    all(feature = "size", feature = "u64"),
+    feature = "subset",
+    feature = "superset",
+    feature = "symmetric_difference",
+    feature = "union",
+))]
 fn set_contract_error(contract: &'static str, reason: impl Into<String>) -> mech_core::MechError {
     function_shape_contract_violation(contract, reason)
 }
 
+#[cfg(any(
+    feature = "cartesian_product",
+    feature = "difference",
+    feature = "disjoint",
+    feature = "element_of",
+    feature = "equals",
+    feature = "insert",
+    feature = "intersection",
+    feature = "not_element_of",
+    feature = "not_equals",
+    feature = "powerset",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "remove",
+    all(feature = "size", feature = "u64"),
+    feature = "subset",
+    feature = "superset",
+    feature = "symmetric_difference",
+    feature = "union",
+))]
 fn set_element(cell: &ValueCell, contract: &'static str, label: &str) -> MResult<SchemaBody> {
     let SchemaBody::Set { element, .. } = cell.closed_schema_body()? else {
         return Err(set_contract_error(
@@ -204,6 +265,26 @@ fn set_element(cell: &ValueCell, contract: &'static str, label: &str) -> MResult
     Ok(*element)
 }
 
+#[cfg(any(
+    feature = "cartesian_product",
+    feature = "difference",
+    feature = "disjoint",
+    feature = "element_of",
+    feature = "equals",
+    feature = "insert",
+    feature = "intersection",
+    feature = "not_element_of",
+    feature = "not_equals",
+    feature = "powerset",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "remove",
+    all(feature = "size", feature = "u64"),
+    feature = "subset",
+    feature = "superset",
+    feature = "symmetric_difference",
+    feature = "union",
+))]
 fn expect_arity<'a>(
     inputs: &'a [ValueCell],
     expected: usize,
@@ -218,6 +299,17 @@ fn expect_arity<'a>(
     Ok(inputs)
 }
 
+#[cfg(any(
+    feature = "disjoint",
+    feature = "element_of",
+    feature = "equals",
+    feature = "not_element_of",
+    feature = "not_equals",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "subset",
+    feature = "superset",
+))]
 fn require_bool_output(output: &ValueCell, contract: &'static str) -> MResult<()> {
     if output.closed_schema_body()? != SchemaBody::Bool {
         return Err(set_contract_error(contract, "output must be bool"));
@@ -225,6 +317,12 @@ fn require_bool_output(output: &ValueCell, contract: &'static str) -> MResult<()
     Ok(())
 }
 
+#[cfg(any(
+    feature = "difference",
+    feature = "intersection",
+    feature = "symmetric_difference",
+    feature = "union",
+))]
 fn validate_set_algebra(
     output: &ValueCell,
     inputs: &[ValueCell],
@@ -243,6 +341,15 @@ fn validate_set_algebra(
     Ok(())
 }
 
+#[cfg(any(
+    feature = "disjoint",
+    feature = "equals",
+    feature = "not_equals",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "subset",
+    feature = "superset",
+))]
 fn validate_set_relation(
     output: &ValueCell,
     inputs: &[ValueCell],
@@ -261,6 +368,7 @@ fn validate_set_relation(
     Ok(())
 }
 
+#[cfg(any(feature = "element_of", feature = "not_element_of"))]
 fn validate_set_membership(
     output: &ValueCell,
     inputs: &[ValueCell],
@@ -279,6 +387,7 @@ fn validate_set_membership(
     Ok(())
 }
 
+#[cfg(any(feature = "insert", feature = "remove"))]
 fn validate_set_mutation(
     output: &ValueCell,
     inputs: &[ValueCell],
@@ -335,7 +444,9 @@ fn validate_set_powerset(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()
     if *nested_element != input_element {
         return Err(set_contract_error(
             contract,
-            format!("nested output element {nested_element:?} differs from input {input_element:?}"),
+            format!(
+                "nested output element {nested_element:?} differs from input {input_element:?}"
+            ),
         ));
     }
     Ok(())
@@ -346,14 +457,18 @@ fn validate_set_size(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     let contract = "set_size";
     let inputs = expect_arity(inputs, 1, contract)?;
     set_element(&inputs[0], contract, "input")?;
-    if output.closed_schema_body()?
-        != SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
-    {
+    if output.closed_schema_body()? != SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) {
         return Err(set_contract_error(contract, "output must be u64"));
     }
     Ok(())
 }
 
+#[cfg(any(
+    feature = "difference",
+    feature = "intersection",
+    feature = "symmetric_difference",
+    feature = "union",
+))]
 macro_rules! set_algebra_validator {
     ($name:ident, $contract:literal) => {
         fn $name(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
@@ -362,6 +477,15 @@ macro_rules! set_algebra_validator {
     };
 }
 
+#[cfg(any(
+    feature = "disjoint",
+    feature = "equals",
+    feature = "not_equals",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "subset",
+    feature = "superset",
+))]
 macro_rules! set_relation_validator {
     ($name:ident, $contract:literal) => {
         fn $name(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
@@ -370,6 +494,7 @@ macro_rules! set_relation_validator {
     };
 }
 
+#[cfg(any(feature = "element_of", feature = "not_element_of"))]
 macro_rules! set_membership_validator {
     ($name:ident, $contract:literal) => {
         fn $name(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
@@ -378,6 +503,7 @@ macro_rules! set_membership_validator {
     };
 }
 
+#[cfg(any(feature = "insert", feature = "remove"))]
 macro_rules! set_mutation_validator {
     ($name:ident, $contract:literal) => {
         fn $name(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
@@ -386,20 +512,38 @@ macro_rules! set_mutation_validator {
     };
 }
 
+#[cfg(feature = "difference")]
 set_algebra_validator!(validate_set_difference, "set_difference");
+#[cfg(feature = "intersection")]
 set_algebra_validator!(validate_set_intersection, "set_intersection");
-set_algebra_validator!(validate_set_symmetric_difference, "set_symmetric_difference");
+#[cfg(feature = "symmetric_difference")]
+set_algebra_validator!(
+    validate_set_symmetric_difference,
+    "set_symmetric_difference"
+);
+#[cfg(feature = "union")]
 set_algebra_validator!(validate_set_union, "set_union");
+#[cfg(feature = "disjoint")]
 set_relation_validator!(validate_set_disjoint, "set_disjoint");
+#[cfg(feature = "equals")]
 set_relation_validator!(validate_set_equals, "set_equals");
+#[cfg(feature = "not_equals")]
 set_relation_validator!(validate_set_not_equals, "set_not_equals");
+#[cfg(feature = "proper_subset")]
 set_relation_validator!(validate_set_proper_subset, "set_proper_subset");
+#[cfg(feature = "proper_superset")]
 set_relation_validator!(validate_set_proper_superset, "set_proper_superset");
+#[cfg(feature = "subset")]
 set_relation_validator!(validate_set_subset, "set_subset");
+#[cfg(feature = "superset")]
 set_relation_validator!(validate_set_superset, "set_superset");
+#[cfg(feature = "element_of")]
 set_membership_validator!(validate_set_element_of, "set_element_of");
+#[cfg(feature = "not_element_of")]
 set_membership_validator!(validate_set_not_element_of, "set_not_element_of");
+#[cfg(feature = "insert")]
 set_mutation_validator!(validate_set_insert, "set_insert");
+#[cfg(feature = "remove")]
 set_mutation_validator!(validate_set_remove, "set_remove");
 
 macro_rules! for_each_set_runtime_factory {
@@ -446,6 +590,28 @@ for_each_set_runtime_factory!(declare_set_runtime_factory);
 
 /// Installs every concrete runtime factory linked by the enabled set features.
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(not(any(
+        feature = "cartesian_product",
+        feature = "difference",
+        feature = "disjoint",
+        feature = "element_of",
+        feature = "equals",
+        feature = "insert",
+        feature = "intersection",
+        feature = "not_element_of",
+        feature = "not_equals",
+        feature = "powerset",
+        feature = "proper_subset",
+        feature = "proper_superset",
+        feature = "remove",
+        all(feature = "size", feature = "u64"),
+        feature = "subset",
+        feature = "superset",
+        feature = "symmetric_difference",
+        feature = "union",
+    )))]
+    let _ = builder;
+
     macro_rules! register_set_runtime_factory {
         ($cfg:meta; $registration:ident; $_installer:ident; $_name:literal; $_factory:path; [$($_feature:literal),* $(,)?]; $_contract:expr) => {
             #[cfg($cfg)]
@@ -645,7 +811,11 @@ mod tests {
                 empty_set(u8_body.clone()),
             ))
             .unwrap_err();
-        assert!(error.kind_message().contains("output elements must themselves be sets"));
+        assert!(
+            error
+                .kind_message()
+                .contains("output elements must themselves be sets")
+        );
         let wrong_nested = SchemaBody::Set {
             element: Box::new(u16_body),
             cardinality: CardinalitySpec::Dynamic { upper_bound: None },
@@ -675,7 +845,11 @@ mod tests {
                     empty_set(u8_body.clone()),
                 ))
                 .unwrap_err();
-            assert!(error.kind_message().contains("rejected its argument contract"));
+            assert!(
+                error
+                    .kind_message()
+                    .contains("rejected its argument contract")
+            );
         }
 
         let size = runtime_entry(&catalog, "SetSizeFxn");
@@ -685,6 +859,10 @@ mod tests {
                 empty_set(u8_body),
             ))
             .unwrap_err();
-        assert!(error.kind_message().contains("rejected its argument contract"));
+        assert!(
+            error
+                .kind_message()
+                .contains("rejected its argument contract")
+        );
     }
 }

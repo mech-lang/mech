@@ -95,6 +95,13 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn(fetch, block)
         self.assertLess(block.index(fetch), block.index(projection))
 
+    def test_r1_artifact_closure_prefetches_before_offline_native_build(self):
+        block = job_block(FULL, "r1-artifact-closure")
+        fetch = "cargo fetch --locked"
+        closure = "python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}"
+        self.assertIn(fetch, block)
+        self.assertLess(block.index(fetch), block.index(closure))
+
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):
         block = job_block(FULL, "function-system-contracts")
         install = "sudo apt-get install --yes ripgrep"

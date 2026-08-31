@@ -645,6 +645,7 @@ version = "0.3.5"
 dependencies = [
  "byteorder",
  "grapheme",
+ "libm",
  "mech-bytecode",
  "mech-core",
  "mech-syntax",

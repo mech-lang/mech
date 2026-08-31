@@ -146,10 +146,12 @@ mod dynamic_outputs {
             panic!("expected product output")
         };
         assert_eq!(pairs.elements().len(), 4);
-        assert!(pairs
-            .elements()
-            .iter()
-            .all(|pair| matches!(pair.data(), ValueData::Tuple(_))));
+        assert!(
+            pairs
+                .elements()
+                .iter()
+                .all(|pair| matches!(pair.data(), ValueData::Tuple(_)))
+        );
         assert_dynamic_set(product.output());
     }
 

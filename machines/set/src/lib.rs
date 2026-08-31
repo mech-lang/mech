@@ -8,6 +8,26 @@ pub mod __mech_native {
     pub use crate::catalog::__mech_native::*;
 }
 
+#[cfg(any(
+    feature = "cartesian_product",
+    feature = "difference",
+    feature = "disjoint",
+    feature = "element_of",
+    feature = "equals",
+    feature = "insert",
+    feature = "intersection",
+    feature = "not_element_of",
+    feature = "not_equals",
+    feature = "powerset",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "remove",
+    all(feature = "size", feature = "u64"),
+    feature = "subset",
+    feature = "superset",
+    feature = "symmetric_difference",
+    feature = "union",
+))]
 use mech_core::*;
 
 #[cfg(any(
@@ -18,7 +38,26 @@ use mech_core::*;
     feature = "setdata"
 ))]
 mod canonical;
-#[cfg(feature = "runtime")]
+#[cfg(any(
+    feature = "cartesian_product",
+    feature = "difference",
+    feature = "disjoint",
+    feature = "element_of",
+    feature = "equals",
+    feature = "insert",
+    feature = "intersection",
+    feature = "not_element_of",
+    feature = "not_equals",
+    feature = "powerset",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "remove",
+    all(feature = "size", feature = "u64"),
+    feature = "subset",
+    feature = "superset",
+    feature = "symmetric_difference",
+    feature = "union",
+))]
 use std::sync::LazyLock;
 
 #[cfg(any(
@@ -53,7 +92,26 @@ static PURE_SET_UPDATE_CONTRACT: LazyLock<OperationContractDeclaration> =
 static PURE_SET_SIZE_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_full_write_contract(1, ChangeDetectionPolicy::ExactScalar));
 
-#[cfg(feature = "runtime")]
+#[cfg(any(
+    feature = "cartesian_product",
+    feature = "difference",
+    feature = "disjoint",
+    feature = "element_of",
+    feature = "equals",
+    feature = "insert",
+    feature = "intersection",
+    feature = "not_element_of",
+    feature = "not_equals",
+    feature = "powerset",
+    feature = "proper_subset",
+    feature = "proper_superset",
+    feature = "remove",
+    all(feature = "size", feature = "u64"),
+    feature = "subset",
+    feature = "superset",
+    feature = "symmetric_difference",
+    feature = "union",
+))]
 fn pure_full_write_contract(
     input_count: usize,
     change_detection: ChangeDetectionPolicy,
@@ -111,7 +169,6 @@ pub use self::setdata::*;
 
 #[cfg(test)]
 mod port_tests;
-
 
 #[macro_export]
 macro_rules! impl_set_fxns {

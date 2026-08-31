@@ -38,6 +38,7 @@ fn assert_f64(value: &Value, expected: f64) {
     );
 }
 
+#[cfg(feature = "distribution-full")]
 fn assert_f32(value: &Value, expected: f32, tolerance: f32) {
     let ValueData::F32(actual) = value.data() else {
         panic!("expected canonical f32, got {:?}", value.data());
@@ -90,6 +91,7 @@ fn assert_f64_matrix(value: &Value, expected: &[f64], rows: u64, columns: u64) {
     );
 }
 
+#[cfg(feature = "distribution-full")]
 fn assert_f32_matrix(value: &Value, expected: &[f32]) {
     let matrix = value.matrix_view().expect("expected canonical matrix");
     let SequenceView::F32(actual) = matrix.elements() else {

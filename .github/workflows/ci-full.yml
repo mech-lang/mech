@@ -67,6 +67,8 @@ jobs:
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
+      - name: Fetch locked artifact dependencies
+        run: cargo fetch --locked
       - name: Build and inspect representative artifacts
         run: python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}
 

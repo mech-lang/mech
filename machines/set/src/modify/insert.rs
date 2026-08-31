@@ -1,6 +1,6 @@
-use crate::canonical::{ArbitraryInput, SetInput, SetOutput};
 #[cfg(feature = "source")]
 use crate::canonical::specialize_dynamic_set;
+use crate::canonical::{ArbitraryInput, SetInput, SetOutput};
 use crate::*;
 
 #[derive(Debug)]
