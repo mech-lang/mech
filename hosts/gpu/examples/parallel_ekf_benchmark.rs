@@ -321,6 +321,7 @@ fn main() {
     println!("maximum CPU/GPU absolute error: {max_error:.3e}");
     println!("maximum scalar/SIMD absolute error: {simd_max_error:.3e}");
     println!("maximum scalar/JIT absolute error: {jit_max_error:.3e}");
+    println!("maximum scalar/SIMD-JIT absolute error: {jit_simd_max_error:.3e}");
     println!("Mech scalar checksum: {cpu_checksum:.9}");
     println!("Mech SIMD checksum: {simd_checksum:.9}");
     println!("Mech Cranelift JIT checksum: {jit_checksum:.9}");
