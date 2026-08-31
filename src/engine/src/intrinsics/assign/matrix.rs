@@ -1528,7 +1528,7 @@ macro_rules! assign_2d_all_range_b {
 
 macro_rules! assign_2d_all_range_v {
     ($source:expr, $ix:expr, $sink:expr) => {{
-        let nsrc = $source.nrows();
+        let nsrc = $source.ncols();
         for (i, &cix) in $ix.iter().enumerate() {
             let col_index = cix - 1;
             let mut sink_col = $sink.column_mut(col_index);
@@ -1542,11 +1542,12 @@ macro_rules! assign_2d_all_range_v {
 
 macro_rules! assign_2d_all_range_vb {
     ($source:expr, $ix:expr, $sink:expr) => {{
+        let nsrc = $source.ncols();
         let mut src_i = 0;
         for (i, cix) in (&$ix).iter().enumerate() {
             if *cix == true {
                 let mut sink_col = ($sink).column_mut(i);
-                let src_col = ($source).column(src_i);
+                let src_col = ($source).column(src_i % nsrc);
                 for (dst, src) in sink_col.iter_mut().zip(src_col.iter()) {
                     *dst = src.clone();
                 }

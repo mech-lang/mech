@@ -1,11 +1,14 @@
-use mech_core::snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft};
+use mech_core::snapshot::{F64Bits, SnapshotValidationContext, Value, ValueDataDraft, ValueDraft};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
     DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
     ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
     ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, SetValueRelation, ShapeInstance, ShapeRule, ValueData,
+    ResolvedOperationContract, SchemaBody, SchemaId, SchemaKey, SetValueRelation, ShapeInstance,
+    ShapeRule, ValueData,
 };
+use std::cmp::Ordering;
+use std::sync::Arc;
 
 const MAX_CARTESIAN_PRODUCT_OUTPUT_CARDINALITY: usize = 65_536;
 const MAX_POWERSET_INPUT_CARDINALITY: usize = 16;
@@ -165,6 +168,28 @@ fn set_element_bodies_match(
     element(left)
         .zip(element(right))
         .is_some_and(|(left, right)| left == right)
+}
+
+#[derive(Clone)]
+struct SetElementMetadata {
+    schema: SchemaId,
+    schema_key: SchemaKey,
+    shape: ShapeInstance,
+}
+
+fn set_element_metadata(
+    request: &ResidentKernelBindRequest<'_>,
+    input: usize,
+) -> Result<SetElementMetadata, ResidentKernelBindError> {
+    let input = request
+        .inputs
+        .get(input)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    Ok(SetElementMetadata {
+        schema: input.schema_id,
+        schema_key: input.schema_key,
+        shape: input.shape_instance.clone(),
+    })
 }
 
 fn bind_union(
@@ -394,7 +419,9 @@ fn bind_membership(
     if !element_schema_matches {
         return Ok(BoundResidentKernel::new(mismatch_kernel, Box::new([])));
     }
-    Ok(BoundResidentKernel::new(kernel, Box::new([])))
+    Ok(BoundResidentKernel::new(kernel, Box::new([]))
+        .with_snapshot_schemas(request.schemas.clone())
+        .with_retained_state(Arc::new(set_element_metadata(request, 0)?)))
 }
 
 fn bind_mutation(
@@ -441,7 +468,8 @@ fn bind_mutation(
             exact_cardinality,
             maximum_cardinality,
         })
-        .with_snapshot_schemas(request.schemas.clone()))
+        .with_snapshot_schemas(request.schemas.clone())
+        .with_retained_state(Arc::new(set_element_metadata(request, 1)?)))
 }
 
 fn bind_insert(
@@ -731,6 +759,66 @@ fn scalar_element_draft(
     }
 }
 
+fn finalize_set_element(
+    kernel: &BoundResidentKernel,
+    data: ValueDataDraft,
+) -> Result<Value, ResidentKernelError> {
+    let metadata = kernel
+        .retained_state::<SetElementMetadata>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let value = ValueDraft {
+        schema: metadata.schema,
+        shape_values: metadata
+            .shape
+            .parameter_values()
+            .to_vec()
+            .into_boxed_slice(),
+        data,
+    }
+    .finalize(&SnapshotValidationContext::new(schemas))
+    .map_err(|_| ResidentKernelError::InvalidInput)?;
+    if value.schema_key() != metadata.schema_key {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    Ok(value)
+}
+
+fn scalar_element_value(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    index: usize,
+) -> Result<Value, ResidentKernelError> {
+    let metadata = kernel
+        .retained_state::<SetElementMetadata>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    match inputs.get(index) {
+        Some(ResidentValueRef::Snapshot([Some(value)])) => value
+            .rebind(metadata.schema, &metadata.shape, schemas)
+            .map_err(|_| ResidentKernelError::InvalidInput),
+        _ => finalize_set_element(kernel, scalar_element_draft(inputs, index)?),
+    }
+}
+
+fn set_element_key_matches(
+    kernel: &BoundResidentKernel,
+    existing: ValueDataDraft,
+    candidate: &Value,
+) -> Result<bool, ResidentKernelError> {
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    finalize_set_element(kernel, existing)?
+        .key_cmp(schemas, candidate, schemas)
+        .map(|ordering| ordering == Ordering::Equal)
+        .map_err(|_| ResidentKernelError::InvalidInput)
+}
+
 fn write_membership(output: ResidentValueMut<'_>, next: bool) -> Result<bool, ResidentKernelError> {
     let ResidentValueMut::Bool([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
@@ -742,15 +830,21 @@ fn write_membership(output: ResidentValueMut<'_>, next: bool) -> Result<bool, Re
 }
 
 fn element_of(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let element = scalar_element_draft(inputs, 0)?;
+    let element = scalar_element_value(kernel, inputs, 0)?;
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(1) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    write_membership(output, set_element_drafts(set)?.contains(&element))
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let next = set
+        .set_contains(schemas, &element, schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    write_membership(output, next)
 }
 
 fn element_of_schema_mismatch(
@@ -773,15 +867,21 @@ fn element_of_schema_mismatch(
 }
 
 fn not_element_of(
-    _: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let element = scalar_element_draft(inputs, 0)?;
+    let element = scalar_element_value(kernel, inputs, 0)?;
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(1) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    write_membership(output, !set_element_drafts(set)?.contains(&element))
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let next = set
+        .set_contains(schemas, &element, schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    write_membership(output, !next)
 }
 
 fn not_element_of_schema_mismatch(
@@ -808,10 +908,20 @@ fn insert(
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let element = scalar_element_draft(inputs, 1)?;
+    let element = scalar_element_value(kernel, inputs, 1)?;
     let mut elements = set_element_drafts(set)?;
-    if !elements.contains(&element) {
-        elements.push(element);
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    if !set
+        .set_contains(schemas, &element, schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?
+    {
+        elements.push(
+            element
+                .canonical_data_draft()
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+        );
     }
     let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
     write_changed_snapshot(kernel, output, next)
@@ -825,11 +935,13 @@ fn remove(
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let element = scalar_element_draft(inputs, 1)?;
-    let elements = set_element_drafts(set)?
-        .into_iter()
-        .filter(|candidate| candidate != &element)
-        .collect::<Vec<_>>();
+    let element = scalar_element_value(kernel, inputs, 1)?;
+    let mut elements = Vec::new();
+    for candidate in set_element_drafts(set)? {
+        if !set_element_key_matches(kernel, candidate.clone(), &element)? {
+            elements.push(candidate);
+        }
+    }
     let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
     write_changed_snapshot(kernel, output, next)
 }

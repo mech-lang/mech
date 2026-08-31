@@ -37,6 +37,119 @@ fn assign_selector_cardinality(inputs: &[ValueCell], input_index: usize) -> MRes
 }
 
 #[cfg(feature = "matrix")]
+fn assign_selector_is_matrix(inputs: &[ValueCell], input_index: usize) -> MResult<bool> {
+    let selector = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(
+            "assign_slice",
+            format!("missing selector input {input_index}"),
+        )
+    })?;
+    Ok(canonical_matrix_dimensions(selector)?.is_some())
+}
+
+#[cfg(feature = "matrix")]
+fn assign_logical_selected_offsets(
+    inputs: &[ValueCell],
+    input_index: usize,
+) -> MResult<Vec<usize>> {
+    let selector = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(
+            "assign_slice",
+            format!("missing logical selector input {input_index}"),
+        )
+    })?;
+    match selector.snapshot()?.data() {
+        ValueData::Bool(selected) => Ok(if *selected { vec![0] } else { Vec::new() }),
+        ValueData::Matrix(_) => selector
+            .matrix_elements()?
+            .unwrap_or_default()
+            .into_iter()
+            .enumerate()
+            .filter_map(|(offset, value)| match value.snapshot() {
+                Ok(snapshot) if matches!(snapshot.data(), ValueData::Bool(true)) => {
+                    Some(Ok(offset))
+                }
+                Ok(_) => None,
+                Err(error) => Some(Err(error)),
+            })
+            .collect(),
+        _ => Ok(Vec::new()),
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn assign_index_selected_offsets(inputs: &[ValueCell], input_index: usize) -> MResult<Vec<usize>> {
+    let selector = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(
+            "assign_slice",
+            format!("missing index selector input {input_index}"),
+        )
+    })?;
+    match selector.snapshot()?.data() {
+        ValueData::Index(index) => Ok(vec![(*index as usize).saturating_sub(1)]),
+        ValueData::Matrix(_) => selector
+            .matrix_elements()?
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|value| match value.snapshot() {
+                Ok(snapshot) => match snapshot.data() {
+                    ValueData::Index(index) => Some(Ok((*index as usize).saturating_sub(1))),
+                    _ => None,
+                },
+                Err(error) => Some(Err(error)),
+            })
+            .collect(),
+        _ => Ok(Vec::new()),
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn selected_extent(offsets: &[usize]) -> usize {
+    offsets
+        .iter()
+        .copied()
+        .max()
+        .map_or(0, |offset| offset.saturating_add(1))
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_source_matrix_layout(
+    inputs: &[ValueCell],
+    required_rows: usize,
+    required_columns: usize,
+    broadcast_rows: bool,
+    broadcast_columns: bool,
+) -> MResult<()> {
+    let source = inputs.first().ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "missing assignment source input 0")
+    })?;
+    let Some((rows, columns)) = canonical_matrix_dimensions(source)? else {
+        return Ok(());
+    };
+    let rows_valid = rows >= required_rows || (broadcast_rows && rows == 1);
+    let columns_valid = columns >= required_columns || (broadcast_columns && columns == 1);
+    if !rows_valid || !columns_valid {
+        return Err(function_shape_contract_violation(
+            "assign_slice",
+            format!(
+                "matrix assignment source layout is {rows}x{columns}, selected layout requires at least {required_rows}x{required_columns}{}{}",
+                if broadcast_rows {
+                    " or one broadcast row"
+                } else {
+                    ""
+                },
+                if broadcast_columns {
+                    " or one broadcast column"
+                } else {
+                    ""
+                },
+            ),
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
 fn validate_assign_source_cardinality(inputs: &[ValueCell], required: usize) -> MResult<()> {
     let contract = "assign_slice";
     let source = inputs.first().ok_or_else(|| {
@@ -192,10 +305,14 @@ fn validate_assign_linear(output: &ValueCell, inputs: &[ValueCell]) -> MResult<(
 #[cfg(feature = "matrix")]
 fn validate_assign_logical_linear(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Linear)?;
-    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
-        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
-    })?;
-    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
+    let required = if assign_selector_is_matrix(inputs, 1)? {
+        selected_extent(&assign_logical_selected_offsets(inputs, 1)?)
+    } else {
+        // The scalar-bool vector kernel copies only the shared source/sink
+        // prefix, so it cannot index beyond a shorter source.
+        0
+    };
+    validate_assign_source_cardinality(inputs, required)
 }
 
 #[cfg(feature = "matrix")]
@@ -213,22 +330,17 @@ fn validate_assign_row(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> 
     let (_, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
         function_shape_contract_violation("assign_slice", "output must be matrix-backed")
     })?;
-    let selector_len = assign_selector_cardinality(inputs, 1)?;
-    let selector_is_scalar = matrix_element_count(&inputs[1])?.is_none();
-    let source_columns = inputs
-        .first()
-        .map(canonical_matrix_dimensions)
-        .transpose()?
-        .flatten()
-        .map(|(_, source_columns)| source_columns);
-    let required = if selector_is_scalar {
-        columns
-    } else if source_columns == Some(1) {
-        selector_len
+    if assign_selector_is_matrix(inputs, 1)? {
+        validate_assign_source_matrix_layout(
+            inputs,
+            assign_selector_cardinality(inputs, 1)?,
+            columns,
+            true,
+            false,
+        )
     } else {
-        columns
-    };
-    validate_assign_source_cardinality(inputs, required)
+        validate_assign_source_cardinality(inputs, columns)
+    }
 }
 
 #[cfg(feature = "matrix")]
@@ -237,60 +349,97 @@ fn validate_assign_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<(
     let (rows, _) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
         function_shape_contract_violation("assign_slice", "output must be matrix-backed")
     })?;
-    let selector_len = assign_selector_cardinality(inputs, 1)?;
-    let selector_is_scalar = matrix_element_count(&inputs[1])?.is_none();
-    let source_rows = inputs
-        .first()
-        .map(canonical_matrix_dimensions)
-        .transpose()?
-        .flatten()
-        .map(|(source_rows, _)| source_rows);
-    let required = if selector_is_scalar {
-        rows
-    } else if source_rows == Some(1) {
-        selector_len
+    if assign_selector_is_matrix(inputs, 1)? {
+        validate_assign_source_matrix_layout(
+            inputs,
+            rows,
+            assign_selector_cardinality(inputs, 1)?,
+            false,
+            true,
+        )
     } else {
-        rows.saturating_mul(selector_len)
-    };
-    validate_assign_source_cardinality(inputs, required)
+        validate_assign_source_cardinality(inputs, rows)
+    }
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_logical_row(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)?;
-    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+    let (_, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
         function_shape_contract_violation("assign_slice", "output must be matrix-backed")
     })?;
-    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
+    validate_assign_source_matrix_layout(
+        inputs,
+        selected_extent(&assign_logical_selected_offsets(inputs, 1)?),
+        columns,
+        false,
+        false,
+    )
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_logical_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Column)?;
-    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+    let (rows, _) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
         function_shape_contract_violation("assign_slice", "output must be matrix-backed")
     })?;
-    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
+    validate_assign_source_matrix_layout(
+        inputs,
+        rows,
+        assign_logical_selected_offsets(inputs, 1)?.len(),
+        false,
+        true,
+    )
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_logical_row_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)?;
     validate_assign_index(output, inputs, 2, AssignIndexAxis::Column)?;
-    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+    let (rows, _) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
         function_shape_contract_violation("assign_slice", "output must be matrix-backed")
     })?;
-    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
+    let selected_rows = assign_logical_selected_offsets(inputs, 1)?;
+    let required = if assign_selector_is_matrix(inputs, 2)? {
+        let selected_columns = assign_index_selected_offsets(inputs, 2)?;
+        selected_rows
+            .iter()
+            .flat_map(|row| {
+                selected_columns
+                    .iter()
+                    .map(move |column| column.saturating_mul(rows).saturating_add(*row))
+            })
+            .max()
+            .map_or(0, |offset| offset.saturating_add(1))
+    } else {
+        selected_extent(&selected_rows)
+    };
+    validate_assign_source_cardinality(inputs, required)
 }
 
 #[cfg(feature = "matrix")]
 fn validate_assign_row_logical_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     validate_assign_index(output, inputs, 1, AssignIndexAxis::Row)?;
     validate_assign_logical_mask(output, inputs, 2, AssignIndexAxis::Column)?;
-    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+    let (rows, _) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
         function_shape_contract_violation("assign_slice", "output must be matrix-backed")
     })?;
-    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
+    let selected_columns = assign_logical_selected_offsets(inputs, 2)?;
+    let required = if assign_selector_is_matrix(inputs, 1)? {
+        let selected_rows = assign_index_selected_offsets(inputs, 1)?;
+        selected_rows
+            .iter()
+            .flat_map(|row| {
+                selected_columns
+                    .iter()
+                    .map(move |column| column.saturating_mul(rows).saturating_add(*row))
+            })
+            .max()
+            .map_or(0, |offset| offset.saturating_add(1))
+    } else {
+        selected_extent(&selected_columns)
+    };
+    validate_assign_source_cardinality(inputs, required)
 }
 
 #[cfg(feature = "matrix")]
@@ -300,10 +449,21 @@ fn validate_assign_logical_row_logical_column(
 ) -> MResult<()> {
     validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)?;
     validate_assign_logical_mask(output, inputs, 2, AssignIndexAxis::Column)?;
-    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+    let (_, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
         function_shape_contract_violation("assign_slice", "output must be matrix-backed")
     })?;
-    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
+    let selected_rows = assign_logical_selected_offsets(inputs, 1)?;
+    let selected_columns = assign_logical_selected_offsets(inputs, 2)?;
+    let required = selected_rows
+        .iter()
+        .flat_map(|row| {
+            selected_columns
+                .iter()
+                .map(move |column| row.saturating_mul(columns).saturating_add(*column))
+        })
+        .max()
+        .map_or(0, |offset| offset.saturating_add(1));
+    validate_assign_source_cardinality(inputs, required)
 }
 
 #[cfg(feature = "matrix")]
@@ -2611,6 +2771,15 @@ mod tests {
         .unwrap()
     }
 
+    fn matrix_source(rows: usize, columns: usize, values: &[u8]) -> ValueCell {
+        ValueCell::from_exact_matrix_ref(
+            Ref::new(DMatrix::from_row_slice(rows, columns, values)),
+            rows,
+            columns,
+        )
+        .unwrap()
+    }
+
     fn indices(values: &[usize]) -> ValueCell {
         ValueCell::from_exact_matrix_ref(
             Ref::new(DVector::from_column_slice(values)),
@@ -2691,6 +2860,45 @@ mod tests {
         // Scalar sources broadcast, so selector cardinality is not bounded by the
         // sink cardinality when every selected index is valid.
         validate_assign_linear(&output(), &[source(), indices(&[1, 1, 2, 2, 3, 3, 6, 6])]).unwrap();
+
+        validate_assign_logical_linear(
+            &output(),
+            &[
+                vector_source(&[9]),
+                logical_mask(&[true, false, false, false, false, false]),
+            ],
+        )
+        .unwrap();
+        let error = validate_assign_logical_linear(
+            &output(),
+            &[
+                vector_source(&[9]),
+                logical_mask(&[false, true, false, false, false, false]),
+            ],
+        )
+        .unwrap_err();
+        assert!(error.kind_message().contains("requires at least 2"));
+    }
+
+    #[test]
+    fn row_selection_requires_complete_source_rows_or_one_broadcast_row() {
+        let selected_rows = indices(&[1, 2]);
+        let error = validate_assign_row(
+            &output(),
+            &[matrix_source(2, 2, &[1, 2, 3, 4]), selected_rows.clone()],
+        )
+        .unwrap_err();
+        assert!(error.kind_message().contains("requires at least 2x3"));
+
+        validate_assign_row(
+            &output(),
+            &[
+                matrix_source(2, 3, &[1, 2, 3, 4, 5, 6]),
+                selected_rows.clone(),
+            ],
+        )
+        .unwrap();
+        validate_assign_row(&output(), &[matrix_source(1, 3, &[1, 2, 3]), selected_rows]).unwrap();
     }
 
     #[test]

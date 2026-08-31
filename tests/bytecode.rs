@@ -342,6 +342,26 @@ fn snapshot_backed_set_elements_round_trip_through_bytecode() -> MResult<()> {
     assert_bool(&member, true);
     let (_, not_member) = run_compiled_source("3<u8> ∉ {1<u8>, 2<u8>}")?;
     assert_bool(&not_member, true);
+
+    let (_, signed_zero_member) = run_compiled_source("-0.0 ∈ {0.0}")?;
+    assert_bool(&signed_zero_member, true);
+    let (_, signed_zero_inserted) = run_compiled_source("set/insert({0.0}, -0.0)")?;
+    assert_eq!(
+        signed_zero_inserted
+            .set_view()
+            .expect("canonical float set")
+            .elements()
+            .len(),
+        1
+    );
+    let (_, signed_zero_removed) = run_compiled_source("set/remove({0.0}, -0.0)")?;
+    assert!(
+        signed_zero_removed
+            .set_view()
+            .expect("canonical float set")
+            .elements()
+            .is_empty()
+    );
     Ok(())
 }
 
