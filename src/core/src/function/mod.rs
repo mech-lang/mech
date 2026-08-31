@@ -625,6 +625,8 @@ mod canonical_function_instance_tests {
 
     struct OutputOnlyFunction;
 
+    struct ExplicitSemanticFunction;
+
     impl MechFunctionImpl for OutputOnlyFunction {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
@@ -632,6 +634,20 @@ mod canonical_function_instance_tests {
 
         fn to_string(&self) -> String {
             "OutputOnlyFunction".into()
+        }
+    }
+
+    impl MechFunctionImpl for ExplicitSemanticFunction {
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
+
+        fn semantic_operation_name(&self) -> Option<&str> {
+            Some("test/specialized")
+        }
+
+        fn to_string(&self) -> String {
+            "ExplicitSemanticFunction".into()
         }
     }
 
@@ -687,6 +703,13 @@ mod canonical_function_instance_tests {
     }
 
     #[cfg(feature = "semantic-compiler")]
+    impl MechFunctionCompiler for ExplicitSemanticFunction {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            unreachable!("test function is never compiled")
+        }
+    }
+
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for RepeatedOutputFunction {
         fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             unreachable!("test function is never compiled")
@@ -716,6 +739,19 @@ mod canonical_function_instance_tests {
         let mut journal = FunctionCheckpoint::new();
         repeated.capture_state(&mut journal).unwrap();
         assert_eq!(journal.cell_count(), 1);
+    }
+
+    #[test]
+    fn semantic_wrappers_preserve_explicit_specialized_operation_identity() {
+        let fallback = with_semantic_operation("test/source", Box::new(OutputOnlyFunction));
+        assert_eq!(fallback.semantic_operation_name(), Some("test/source"));
+
+        let specialized =
+            with_semantic_operation("test/source", Box::new(ExplicitSemanticFunction));
+        assert_eq!(
+            specialized.semantic_operation_name(),
+            Some("test/specialized")
+        );
     }
 
     #[test]
@@ -778,7 +814,9 @@ mod canonical_function_instance_tests {
 ///
 /// Specialization is allowed to choose implementation-specific factory names,
 /// but semantic artifacts and compute backends must continue to see the
-/// source-level operation that was selected.
+/// source-level operation that was selected. An implementation may declare a
+/// more specific portable operation identity; the attached identity is its
+/// fallback when it does not.
 pub fn with_semantic_operation(
     operation: impl Into<Box<str>>,
     function: Box<dyn MechFunction>,
@@ -872,7 +910,9 @@ impl MechFunctionImpl for SemanticMechFunction {
     }
 
     fn semantic_operation_name(&self) -> Option<&str> {
-        Some(&self.operation)
+        self.function
+            .semantic_operation_name()
+            .or(Some(&self.operation))
     }
 
     fn to_string(&self) -> String {
