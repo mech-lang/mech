@@ -80,6 +80,11 @@ def main() -> None:
         default="gpu",
         help="Taichi backend name (for example metal, cuda, vulkan, or cpu)",
     )
+    parser.add_argument(
+        "--taichi-cpu-threads",
+        type=int,
+        help="pin Taichi LLVM CPU workers when --taichi-arch=cpu (run 1 for SIMD-only)",
+    )
     parser.add_argument("--samples", type=int, default=3)
     parser.add_argument("--luajit-samples", type=int, default=5)
     parser.add_argument(
@@ -451,6 +456,9 @@ def main() -> None:
                     "unchecked-batched",
                 ],
             }
+            if args.taichi_arch.lower() == "cpu" and args.taichi_cpu_threads is not None:
+                for command in taichi_commands.values():
+                    command.extend(["--cpu-threads", str(args.taichi_cpu_threads)])
             taichi_checksums = {}
             for mode, lane in (
                 ("unchecked", "Taichi Vector/Matrix resident unchecked"),
@@ -519,6 +527,7 @@ def main() -> None:
                     "backend_cpu_turns": args.backend_cpu_turns,
                     "backend_gpu_turns": args.backend_gpu_turns,
                     "taichi_arch": args.taichi_arch,
+                    "taichi_cpu_threads": args.taichi_cpu_threads,
                     "samples": args.samples,
                     "luajit_samples": args.luajit_samples,
                     "scalar_checksum_tolerance": scalar_checksum_tolerance,

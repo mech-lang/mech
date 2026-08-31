@@ -33,6 +33,11 @@ def parse_args() -> argparse.Namespace:
         choices=("checked", "unchecked", "unchecked-batched"),
         default="unchecked",
     )
+    parser.add_argument(
+        "--cpu-threads",
+        type=int,
+        help="limit Taichi's LLVM CPU worker pool (only used with TAICHI_ARCH=cpu)",
+    )
     return parser.parse_args()
 
 
@@ -84,7 +89,13 @@ def main() -> None:
     checked = args.mode == "checked"
     batched = args.mode == "unchecked-batched"
 
-    ti.init(arch=arch_from_environment(), default_fp=ti.f32, kernel_profiler=False)
+    architecture = arch_from_environment()
+    init_kwargs = {"arch": architecture, "default_fp": ti.f32, "kernel_profiler": False}
+    if architecture == ti.cpu and args.cpu_threads is not None:
+        if args.cpu_threads < 1:
+            raise SystemExit("--cpu-threads must be at least 1")
+        init_kwargs["cpu_max_num_threads"] = args.cpu_threads
+    ti.init(**init_kwargs)
 
     state = ti.Vector.field(3, dtype=ti.f32, shape=instances)
     covariance = ti.Matrix.field(3, 3, dtype=ti.f32, shape=instances)
@@ -288,6 +299,8 @@ def main() -> None:
     print(f"validation: {'checked' if checked else 'unchecked'}")
     print(f"faults: {fault_count}")
     print(f"synchronization: {'once after batched kernel' if batched else 'per-turn'}")
+    if architecture == ti.cpu:
+        print(f"cpu_threads: {args.cpu_threads or 'taichi-default'}")
 
 
 if __name__ == "__main__":

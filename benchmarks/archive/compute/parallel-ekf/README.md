@@ -67,6 +67,42 @@ TAICHI_ARCH=metal .venv312/bin/python taichi_comparable.py 100000 120 checked
 TAICHI_ARCH=metal .venv312/bin/python taichi_comparable.py 100000 120 unchecked-batched
 ```
 
+For a CPU comparison, select Taichi's LLVM backend explicitly. `--cpu-threads
+1` is the closest available SIMD-only control: it removes thread-level
+parallelism, but Taichi still does not promise that every operation is emitted
+as a vector instruction. Omit the option to use Taichi's default CPU worker
+pool, or pin it to the machine's worker count when reproducing a run:
+
+```text
+TAICHI_ARCH=cpu .venv312/bin/python taichi_comparable.py 100000 20 unchecked --cpu-threads 1
+TAICHI_ARCH=cpu .venv312/bin/python taichi_comparable.py 100000 20 checked --cpu-threads 1
+TAICHI_ARCH=cpu .venv312/bin/python taichi_comparable.py 100000 20 unchecked --cpu-threads 8
+TAICHI_ARCH=cpu .venv312/bin/python taichi_comparable.py 100000 20 checked --cpu-threads 8
+```
+
+The three-process median controls below were measured on the Apple M1 (8 logical
+CPUs), with 100,000 resident filters and `ti.sync()` after every turn. The
+single-worker rows isolate Taichi's LLVM lowering and any compiler
+auto-vectorization from worker-pool parallelism; they are not a guarantee of a
+particular SIMD width. The eight-worker rows include Taichi's CPU scheduling
+and parallel outer loop.
+
+| Taichi CPU mode | Million EKF-turns/s |
+| --- | ---: |
+| Unchecked, one worker | 23.616 |
+| Checked, one worker | 20.695 |
+| Unchecked, eight workers | 94.381 |
+| Checked, eight workers | 82.607 |
+
+The same resident Mech artifact on this checkout measured approximately 41.2M
+unchecked-fast and 36.1M checked-fast turns/s through the four-lane Cranelift
+SIMD-JIT path in one benchmark process. These are directional comparisons,
+not a claim that Taichi's one-worker mode is a hand-written SIMD kernel:
+Taichi receives an explicit `for i in range(N)` and lets LLVM decide its CPU
+parallel/vector lowering, while Mech's SIMD lane width is explicit. Use the
+worker count and synchronization policy in the result table whenever comparing
+the two.
+
 The complete runner can execute both controls and compare their fresh-session
 checksums with the Mech GPU results. It pins the Taichi backend explicitly and
 records the raw process output when evidence is requested:
