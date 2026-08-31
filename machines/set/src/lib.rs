@@ -49,7 +49,7 @@ static PURE_SET_PREDICATE_CONTRACT: LazyLock<OperationContractDeclaration> =
 #[cfg(any(feature = "insert", feature = "remove"))]
 static PURE_SET_UPDATE_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_full_write_contract(2, ChangeDetectionPolicy::KernelReported));
-#[cfg(feature = "size")]
+#[cfg(all(feature = "size", feature = "u64"))]
 static PURE_SET_SIZE_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_full_write_contract(1, ChangeDetectionPolicy::ExactScalar));
 
