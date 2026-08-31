@@ -114,6 +114,55 @@ VARIANTS = [
 ]
 
 
+FACTORS = {
+    "Mech": {
+        "layout": "column-major resident graph values",
+        "boundary": "resident host turn; backend selected at build",
+        "contract": "checked rejects candidate and keeps prior; unchecked omits checks",
+    },
+    "Rust": {
+        "layout": "fixed scalar arrays -> four-lane packed values",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked and unchecked controls; no rollback in unchecked",
+    },
+    "NumPy": {
+        "layout": "per-lane arrays -> batched SoA arrays",
+        "boundary": "Python host loop (scalar) or one vectorized call per turn",
+        "contract": "checked masked copyback keeps prior lane; unchecked overwrites",
+    },
+    "Julia": {
+        "layout": "generic arrays -> explicit four-lane SIMD values",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked candidate publication; unchecked omits checks",
+    },
+    "LuaJIT": {
+        "layout": "matrix helpers -> flat fixed-shape scalar state",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked candidate publication; unchecked omits checks",
+    },
+    "Lua": {
+        "layout": "flat fixed-shape Lua tables/FFI-compatible arrays",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked candidate publication; unchecked omits checks",
+    },
+    "Taichi": {
+        "layout": "Vector/Matrix fields -> scalar SoA fields",
+        "boundary": "resident kernel with per-turn device synchronization",
+        "contract": "checked alternate fields keep prior; unchecked writes in place",
+    },
+    "Halide": {
+        "layout": "fixed-shape lane buffers, vectorized by eight",
+        "boundary": "one JIT pipeline call per host turn",
+        "contract": "checked select keeps prior lane; unchecked selects candidate",
+    },
+    "Futhark": {
+        "layout": "fixed-size array of 12-value lane states",
+        "boundary": "turn loop inside one compiled invocation; multicore map",
+        "contract": "checked select keeps prior lane; unchecked selects candidate",
+    },
+}
+
+
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
@@ -243,9 +292,91 @@ def throughput_rows(cross: dict, native: dict, taichi: dict, lua: dict, minimal:
     return result
 
 
+def throughput_variants(cross: dict, native: dict, taichi: dict, lua: dict, minimal: dict | None) -> dict[str, dict[str, dict[str, float | None]]]:
+    """Return benchmark values for both sides of every source pair."""
+    scalar = cross["summary"]["scalar_outer_loop"]
+    native_rows = {row["label"]: row for row in native["rows"]}
+
+    def m(label: str, mode: str) -> float | None:
+        row = scalar.get(label if not mode else f"{label} {mode}")
+        return None if row is None else row["ekf_turns_per_second"] / 1e6
+
+    def min_m(label: str) -> float | None:
+        if minimal is None:
+            return None
+        row = minimal.get("rows", {}).get(label)
+        if row is None or "throughput" not in row:
+            return None
+        return statistics.median(row["throughput"]) / 1e6
+
+    def pair(checked: float | None, unchecked: float | None) -> dict[str, float | None]:
+        return {"checked": checked, "unchecked": unchecked}
+
+    result: dict[str, dict[str, dict[str, float | None]]] = {
+        "Mech": {
+            "baseline": pair(m("Mech", "scalar"), None),
+            "advanced": pair(native_rows["Mech native Metal, checked"]["throughput_millions"], native_rows["Mech native Metal, unchecked"]["throughput_millions"]),
+        },
+        "Rust": {
+            "baseline": pair(None, m("Rust optimized fixed-shape", "")),
+            "advanced": pair(m("Rust packed SIMD", "checked"), m("Rust packed SIMD", "unchecked")),
+        },
+        "NumPy": {
+            "baseline": pair(min_m("NumPy scalar checked"), min_m("NumPy scalar unchecked")),
+            "advanced": pair(min_m("NumPy advanced checked"), min_m("NumPy advanced unchecked")),
+        },
+        "Julia": {
+            "baseline": pair(m("Julia generic", "checked"), m("Julia generic", "unchecked")),
+            "advanced": pair(m("Julia SIMD.jl intrinsics", "checked"), m("Julia SIMD.jl intrinsics", "unchecked")),
+        },
+        "LuaJIT": {
+            "baseline": pair(None, m("LuaJIT scalar outer loop", "")),
+            "advanced": pair(m("LuaJIT fixed-shape flat", "checked"), m("LuaJIT fixed-shape flat", "unchecked")),
+        },
+        "Lua": {
+            "baseline": pair(lua["rows"][0]["throughput_millions"], lua["rows"][1]["throughput_millions"]),
+            "advanced": pair(lua["rows"][0]["throughput_millions"], lua["rows"][1]["throughput_millions"]),
+        },
+        "Taichi": {
+            "baseline": pair(native_rows["Taichi native Metal, checked"]["throughput_millions"], native_rows["Taichi native Metal, unchecked"]["throughput_millions"]),
+            "advanced": pair(taichi["rows"][0]["throughput_millions"], taichi["rows"][1]["throughput_millions"]),
+        },
+        "Halide": {
+            "baseline": pair(min_m("Halide checked"), min_m("Halide unchecked")),
+            "advanced": pair(min_m("Halide checked"), min_m("Halide unchecked")),
+        },
+        "Futhark": {
+            "baseline": pair(min_m("Futhark multicore 1 threads checked"), min_m("Futhark multicore 1 threads unchecked")),
+            "advanced": pair(min_m("Futhark multicore 8 threads checked"), min_m("Futhark multicore 8 threads unchecked")),
+        },
+    }
+    # The legacy cross-language file predates the compact NumPy controls.
+    if result["NumPy"]["baseline"]["unchecked"] is None:
+        result["NumPy"]["baseline"]["unchecked"] = m("NumPy scalar outer loop", "")
+    if result["NumPy"]["advanced"]["unchecked"] is None:
+        result["NumPy"]["advanced"]["unchecked"] = m("NumPy vectorized fixed-shape", "unchecked")
+    if result["NumPy"]["advanced"]["checked"] is None:
+        result["NumPy"]["advanced"]["checked"] = m("NumPy vectorized fixed-shape", "checked")
+    if result["NumPy"]["baseline"]["checked"] is None:
+        result["NumPy"]["baseline"]["checked"] = None
+    return result
+
+
 def build_report(cross: dict, native: dict, taichi: dict, lua: dict, minimal: dict | None = None) -> dict:
     base = read(BASE_MECH)
-    throughputs = throughput_rows(cross, native, taichi, lua, minimal)
+    variants_throughput = throughput_variants(cross, native, taichi, lua, minimal)
+    cross_config = cross.get("configuration", {})
+    native_config = native.get("configuration", {})
+    minimal_config = (minimal or {}).get("configuration", {})
+    scalar_workload = f"{cross_config.get('scalar_instances', '?'):,} x {cross_config.get('scalar_turns', '?')}"
+    native_workload = f"{native_config.get('instances', '?'):,} x {native_config.get('turns', '?')}"
+    minimal_workload = f"{minimal_config.get('instances', '?'):,} x {minimal_config.get('turns', '?')}"
+    workload = {
+        "Mech": f"{scalar_workload} -> {native_workload}",
+        "Taichi": f"{native_workload} -> {native_workload}",
+        "Halide": f"{minimal_workload} -> {minimal_workload}",
+        "Futhark": f"{minimal_workload} -> {minimal_workload}",
+    }
     rows = []
     for variant in VARIANTS:
         baseline_path = ROOT / variant["baseline"]
@@ -261,10 +392,13 @@ def build_report(cross: dict, native: dict, taichi: dict, lua: dict, minimal: di
                 "advanced_chars": len(advanced),
                 "baseline_code": source_metrics(baseline, baseline_path),
                 "advanced_code": source_metrics(advanced, advanced_path),
+                "factors": FACTORS[variant["language"]],
+                "throughput_variants": variants_throughput[variant["language"]],
+                "workload": workload.get(variant["language"], f"{scalar_workload} -> {scalar_workload}"),
                 "baseline_to_advanced": diff_metrics(baseline, advanced),
                 "baseline_to_base_mech": diff_metrics(base, baseline),
                 "advanced_to_base_mech": diff_metrics(base, advanced),
-                "throughput_millions": throughputs[variant["language"]],
+                "throughput_millions": variants_throughput[variant["language"]]["advanced"],
             }
         )
     return {
@@ -280,21 +414,40 @@ def markdown(report: dict) -> str:
     lines = [
         "# Parallel EKF source-edit cost",
         "",
-        "This report measures source edits behind the benchmark variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Changed lines` is the number of line positions touched by a baseline-to-advanced diff; `changed chars` counts character slots in those changed line blocks. The base reference is the checked-in Mech EKF.",
+        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the checked-in Mech EKF. The workload column shows lanes x turns for each side; throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate.",
         "",
         "## Variant matrix",
         "",
-        "| Language | Baseline L/C | Advanced L/C | Changed L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Checked M/s | Unchecked M/s |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Language | Baseline model | Advanced model | Workload (baseline -> advanced) | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Baseline checked M/s | Baseline unchecked M/s | Advanced checked M/s | Advanced unchecked M/s |",
+        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in report["rows"]:
-        throughput = row["throughput_millions"]
-        checked = "--" if throughput["checked"] is None else f"{throughput['checked']:.3f}"
-        unchecked = "--" if throughput["unchecked"] is None else f"{throughput['unchecked']:.3f}"
+        baseline_throughput = row["throughput_variants"]["baseline"]
+        advanced_throughput = row["throughput_variants"]["advanced"]
+        baseline_checked = "--" if baseline_throughput["checked"] is None else f"{baseline_throughput['checked']:.3f}"
+        baseline_unchecked = "--" if baseline_throughput["unchecked"] is None else f"{baseline_throughput['unchecked']:.3f}"
+        advanced_checked = "--" if advanced_throughput["checked"] is None else f"{advanced_throughput['checked']:.3f}"
+        advanced_unchecked = "--" if advanced_throughput["unchecked"] is None else f"{advanced_throughput['unchecked']:.3f}"
         lines.append(
-            f"| {row['language']} | {row['baseline_code']['lines']} / {row['baseline_code']['chars']:,} | {row['advanced_code']['lines']} / {row['advanced_code']['chars']:,} | {row['baseline_to_advanced']['changed_line_slots']} / {row['baseline_to_advanced']['changed_chars']:,} | {row['baseline_to_base_mech']['changed_line_slots']} / {row['baseline_to_base_mech']['changed_chars']:,} | {row['advanced_to_base_mech']['changed_line_slots']} / {row['advanced_to_base_mech']['changed_chars']:,} | {checked} | {unchecked} |"
+            f"| {row['language']} | {row['baseline_label']} | {row['advanced_label']} | {row['workload']} | {row['baseline_code']['lines']} / {row['baseline_code']['chars']:,} | {row['advanced_code']['lines']} / {row['advanced_code']['chars']:,} | {row['baseline_to_advanced']['changed_line_slots']} / {row['baseline_to_advanced']['changed_chars']:,} | {row['baseline_to_base_mech']['changed_line_slots']} / {row['baseline_to_base_mech']['changed_chars']:,} | {row['advanced_to_base_mech']['changed_line_slots']} / {row['advanced_to_base_mech']['changed_chars']:,} | {baseline_checked} | {baseline_unchecked} | {advanced_checked} | {advanced_unchecked} |"
         )
-    lines += ["", "## Interpretation", ""]
+    lines += [
+        "",
+        "## Runtime factors",
+        "",
+        "| Language | Data layout | Turn/dispatch boundary | Validation and publication |",
+        "| --- | --- | --- | --- |",
+    ]
+    for row in report["rows"]:
+        factor = FACTORS[row["language"]]
+        lines.append(f"| {row['language']} | {factor['layout']} | {factor['boundary']} | {factor['contract']} |")
+    lines += [
+        "",
+        "## Interpretation",
+        "",
+        "`--` means that exact checked/unchecked baseline was not part of the retained evidence; it is not a zero-throughput result. Futhark baseline/advanced values differ only by worker count, while Halide and Mech keep the same source across both sides. The source pair and execution-boundary columns make those cases explicit.",
+        "",
+    ]
     for row in report["rows"]:
         edit = row["baseline_to_advanced"]
         lines.append(f"- **{row['language']}**: {row['note']} Baseline -> advanced touches **{edit['changed_line_slots']} lines / {edit['changed_chars']} characters**.")

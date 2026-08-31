@@ -123,10 +123,12 @@ the synchronized rows.
 The throughput charts are paired with a source-edit inventory. It measures the
 actual baseline-to-advanced edit surface rather than comparing file lengths:
 changed line slots, changed character slots, and each variant's distance from
-the base Mech `.mec`. This makes the portability cost visible. Mech's high-level
-source delta is zero because the same program is compiled to every backend;
-the native-Metal implementation work is explicitly identified as backend
-support instead of being hidden as a source rewrite.
+the base Mech `.mec`. The full matrix also records code-only line/character
+counts, data layout, turn boundary, validation contract, and checked/unchecked
+throughput for both sides of each pair. This makes the portability cost
+visible. Mech's high-level source delta is zero because the same program is
+compiled to every backend; the native-Metal implementation work is explicitly
+identified as backend support instead of being hidden as a source rewrite.
 
 ![Parallel EKF source-edit cost](results/parallel-ekf-source-edit-cost.svg)
 

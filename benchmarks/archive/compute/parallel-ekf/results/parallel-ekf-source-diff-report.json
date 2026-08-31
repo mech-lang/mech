@@ -37,6 +37,22 @@
         "lines": 85,
         "chars": 3908
       },
+      "factors": {
+        "layout": "column-major resident graph values",
+        "boundary": "resident host turn; backend selected at build",
+        "contract": "checked rejects candidate and keeps prior; unchecked omits checks"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 0.869,
+          "unchecked": null
+        },
+        "advanced": {
+          "checked": 246.151,
+          "unchecked": 241.028
+        }
+      },
+      "workload": "10,000 x 20 -> 500,000 x 40",
       "baseline_to_advanced": {
         "changed_line_slots": 0,
         "added_lines": 0,
@@ -79,6 +95,22 @@
         "lines": 359,
         "chars": 8900
       },
+      "factors": {
+        "layout": "fixed scalar arrays -> four-lane packed values",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked and unchecked controls; no rollback in unchecked"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": null,
+          "unchecked": 16.727943913
+        },
+        "advanced": {
+          "checked": 25.642120362,
+          "unchecked": 22.237150763
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
         "changed_line_slots": 533,
         "added_lines": 374,
@@ -121,6 +153,22 @@
         "lines": 149,
         "chars": 5700
       },
+      "factors": {
+        "layout": "per-lane arrays -> batched SoA arrays",
+        "boundary": "Python host loop (scalar) or one vectorized call per turn",
+        "contract": "checked masked copyback keeps prior lane; unchecked overwrites"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 0.040220152,
+          "unchecked": 0.052509955000000004
+        },
+        "advanced": {
+          "checked": 11.128708067,
+          "unchecked": 12.557587858
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
         "changed_line_slots": 145,
         "added_lines": 136,
@@ -140,8 +188,8 @@
         "changed_chars": 9492
       },
       "throughput_millions": {
-        "checked": 10.854448735,
-        "unchecked": 12.255119158
+        "checked": 11.128708067,
+        "unchecked": 12.557587858
       }
     },
     {
@@ -163,6 +211,22 @@
         "lines": 194,
         "chars": 6939
       },
+      "factors": {
+        "layout": "generic arrays -> explicit four-lane SIMD values",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked candidate publication; unchecked omits checks"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 3.1190826615700025,
+          "unchecked": 3.136789525406568
+        },
+        "advanced": {
+          "checked": 31.311360481744067,
+          "unchecked": 32.842297200456905
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
         "changed_line_slots": 245,
         "added_lines": 200,
@@ -205,6 +269,22 @@
         "lines": 153,
         "chars": 7031
       },
+      "factors": {
+        "layout": "matrix helpers -> flat fixed-shape scalar state",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked candidate publication; unchecked omits checks"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": null,
+          "unchecked": 1.093912378
+        },
+        "advanced": {
+          "checked": 1.2773431259999999,
+          "unchecked": 15.97699313
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
         "changed_line_slots": 174,
         "added_lines": 161,
@@ -247,6 +327,22 @@
         "lines": 153,
         "chars": 7031
       },
+      "factors": {
+        "layout": "flat fixed-shape Lua tables/FFI-compatible arrays",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked candidate publication; unchecked omits checks"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 0.565098,
+          "unchecked": 0.83461
+        },
+        "advanced": {
+          "checked": 0.565098,
+          "unchecked": 0.83461
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
         "changed_line_slots": 0,
         "added_lines": 0,
@@ -289,6 +385,22 @@
         "lines": 277,
         "chars": 11406
       },
+      "factors": {
+        "layout": "Vector/Matrix fields -> scalar SoA fields",
+        "boundary": "resident kernel with per-turn device synchronization",
+        "contract": "checked alternate fields keep prior; unchecked writes in place"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 176.71,
+          "unchecked": 194.793
+        },
+        "advanced": {
+          "checked": 168.798,
+          "unchecked": 217.297
+        }
+      },
+      "workload": "500,000 x 40 -> 500,000 x 40",
       "baseline_to_advanced": {
         "changed_line_slots": 255,
         "added_lines": 192,
@@ -331,6 +443,22 @@
         "lines": 18,
         "chars": 3875
       },
+      "factors": {
+        "layout": "fixed-shape lane buffers, vectorized by eight",
+        "boundary": "one JIT pipeline call per host turn",
+        "contract": "checked select keeps prior lane; unchecked selects candidate"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 2.707078841979349,
+          "unchecked": 5.058051765922671
+        },
+        "advanced": {
+          "checked": 2.707078841979349,
+          "unchecked": 5.058051765922671
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
         "changed_line_slots": 0,
         "added_lines": 0,
@@ -373,6 +501,22 @@
         "lines": 45,
         "chars": 2307
       },
+      "factors": {
+        "layout": "fixed-size array of 12-value lane states",
+        "boundary": "turn loop inside one compiled invocation; multicore map",
+        "contract": "checked select keeps prior lane; unchecked selects candidate"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 19.61361184662156,
+          "unchecked": 19.6347928529354
+        },
+        "advanced": {
+          "checked": 48.390999274135005,
+          "unchecked": 47.82400765184122
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
         "changed_line_slots": 0,
         "added_lines": 0,
