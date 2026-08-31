@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the Mech backend and scalar-language parallel EKF comparisons."""
+"""Run the Mech backend and cross-language parallel EKF comparisons."""
 
 from __future__ import annotations
 
@@ -76,6 +76,11 @@ def main() -> None:
         type=Path,
         default=ROOT / "target/release/examples/parallel_ekf_benchmark",
     )
+    parser.add_argument(
+        "--rust-simd-binary",
+        type=Path,
+        help="use a prebuilt packed Rust SIMD control instead of compiling it",
+    )
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument(
         "--evidence-output",
@@ -130,16 +135,50 @@ def main() -> None:
                 "opt-level=3",
                 "-C",
                 "target-cpu=native",
+                "-C",
+                "codegen-units=1",
                 str(ROOT / "hosts/gpu/examples/parallel_ekf_rust_scalar.rs"),
                 "-o",
                 str(rust_binary),
             ],
             environment,
         )
+        rust_simd_binary = args.rust_simd_binary or Path(temporary) / "rust-simd"
+        if args.rust_simd_binary is None:
+            wide_libraries = sorted((ROOT / "target/release/deps").glob("libwide-*.rlib"))
+            if not wide_libraries:
+                raise RuntimeError(
+                    "the Rust SIMD control needs the repository's wide dependency; "
+                    "build the mech-gpu release artifacts first"
+                )
+            output(
+                [
+                    required["rustc"],
+                    "--edition=2024",
+                    "-C",
+                    "opt-level=3",
+                    "-C",
+                    "target-cpu=native",
+                    "-C",
+                    "codegen-units=1",
+                    str(ROOT / "hosts/gpu/examples/parallel_ekf_rust_simd.rs"),
+                    "--extern",
+                    f"wide={wide_libraries[-1]}",
+                    "-L",
+                    f"dependency={ROOT / 'target/release/deps'}",
+                    "-o",
+                    str(rust_simd_binary),
+                ],
+                environment,
+            )
+        if not rust_simd_binary.is_file():
+            raise RuntimeError(f"Rust SIMD control does not exist: {rust_simd_binary}")
         common = [str(args.scalar_instances), str(args.scalar_turns)]
         language_commands = {
             "Mech scalar": None,
             "Rust optimized fixed-shape": [str(rust_binary), *common],
+            "Rust packed SIMD unchecked": [str(rust_simd_binary), *common, "unchecked"],
+            "Rust packed SIMD checked": [str(rust_simd_binary), *common, "checked"],
             "NumPy scalar outer loop": [
                 args.python,
                 str(HERE / "numpy_scalar.py"),

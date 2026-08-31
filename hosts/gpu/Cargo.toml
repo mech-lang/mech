@@ -59,6 +59,10 @@ required-features = ["native", "jit"]
 name = "parallel_ekf_rust_scalar"
 path = "examples/parallel_ekf_rust_scalar.rs"
 
+[[example]]
+name = "parallel_ekf_rust_simd"
+path = "examples/parallel_ekf_rust_simd.rs"
+
 [[test]]
 name = "parallel_ekf"
 path = "tests/parallel_ekf.rs"

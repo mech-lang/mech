@@ -21,6 +21,7 @@ git switch --track origin/codex/mech-program-gpu
 | Generic scalar, SIMD, and WGPU lowering/execution | `hosts/gpu/src/batched.rs` |
 | Cranelift lowering/execution | `hosts/gpu/src/batched/jit.rs` |
 | Optimized Rust control | `hosts/gpu/examples/parallel_ekf_rust_scalar.rs` |
+| Rust packed-lane SIMD control | `hosts/gpu/examples/parallel_ekf_rust_simd.rs` |
 | NumPy control | `benchmarks/archive/compute/parallel-ekf/numpy_scalar.py` |
 | Julia generic control | `benchmarks/archive/compute/parallel-ekf/julia_scalar.jl` |
 | Julia fixed-shape control | `benchmarks/archive/compute/parallel-ekf/julia_flat.jl` |
@@ -28,6 +29,7 @@ git switch --track origin/codex/mech-program-gpu
 | Julia SIMD intrinsics control | `benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl` |
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
+| Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
 
 ## Mech physical backends
@@ -220,8 +222,9 @@ storage and operation shape of the optimized Rust control. Both sources accept
 finite-state, finite-covariance, positive-diagonal, and covariance-symmetry
 predicates as the Mech artifact before publishing a candidate; a failed
 candidate leaves the prior state unchanged and increments the fault count.
-The runner executes all eight Julia rows, while the Rust row remains a raw
-unchecked control by design.
+The runner executes all eight Julia rows plus scalar and packed-SIMD Rust
+controls. The scalar Rust control remains an unchecked reference; the packed
+Rust control has both checked and unchecked modes.
 
 In a five-process Apple M1 probe with 10,000 filters and 20 measured turns,
 the current medians were:
@@ -276,3 +279,44 @@ lane-turns/s. Five corresponding Mech SIMD-JIT processes measured `31.16M`
 checked-fast and `32.65M` unchecked-fast. The remaining difference is within
 normal process noise; this is now the relevant performance target for the
 SIMD-capable path, not the sequential `19M` result.
+
+## Rust packed-lane control and current cross-language chart
+
+`parallel_ekf_rust_simd.rs` is a separate Rust ceiling control. It stores each
+state and covariance component in structure-of-arrays form, advances four
+filters with `wide::f32x4`, uses the same scalar transcendental fallback as the
+current Mech Cranelift SIMD-JIT, and implements the same finite, positive
+diagonal, and covariance-symmetry publication checks. It is therefore a real
+Rust SIMD comparison, not a scalar Rust result relabeled as SIMD. It is still
+specialized source: it does not demonstrate that the Rust compiler can infer
+this layout from the high-level EKF automatically.
+
+The current three-process Apple M1 evidence is recorded in
+[`results/apple-m1-simd-cross-language-2026-08-30.json`](results/apple-m1-simd-cross-language-2026-08-30.json).
+The chart below is generated only from that evidence file by `plot.py` and uses
+one shared 0--60 million-turns/s axis:
+
+![Parallel EKF cross-language throughput](apple-m1-simd-cross-language-2026-08-30.svg)
+
+| Control | Validation | Million EKF-turns/s |
+| --- | --- | ---: |
+| Rust fixed-shape scalar | unchecked | 16.80 |
+| Rust packed `wide::f32x4` | checked | 25.65 |
+| Rust packed `wide::f32x4` | unchecked | 29.35 |
+| Mech Cranelift SIMD-JIT | checked-fast | 31.20 |
+| Mech Cranelift SIMD-JIT | unchecked-fast | 32.64 |
+| Julia `SIMD.jl Vec{4,Float32}` | checked | 31.42 |
+| Julia `SIMD.jl Vec{4,Float32}` | unchecked | 32.80 |
+
+On this run, the specialized Rust control does **not** beat Julia's packed
+SIMD control. That is an empirical result, not a language limit: Rust could
+move ahead with a more aggressively unrolled kernel, architecture-specific
+vector math, or a compiler-generated layout equivalent to the Mech lowering.
+The current Mech checked-fast path is within measurement noise of Julia's
+checked SIMD result, while preserving the source-authored publication policy.
+
+To regenerate the chart from a new run:
+
+```text
+python3 plot.py results/apple-m1-simd-cross-language-2026-08-30.json results/apple-m1-simd-cross-language-2026-08-30.svg
+```
