@@ -12,12 +12,15 @@ Implementation: started 2018
 (1.2) Stage 2 - Beta `v0.1.0` - `v0.4+` (???)
 
 Started: December 2022
-Currently: `v0.3.5` (Spring 2026)
+
+Current package: `v0.3.6`
+Current development target: `v0.4.0`
+Canonical value-system cutover: complete
 
 - `v0.1` proof of concept `Concluded 2023`
 - `v0.2` data specification    `Concluded 2025`
 - `v0.3` program specification !!Started 2026!!
-- `v0.4` system specification `TBD`
+- `v0.4` system specification !!In development!!
 
 (1.3) Stage 3 - Stable v1.0.0
 
@@ -120,10 +123,27 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 
 (2.3) System specification (v0.4)
 
--(💭) gpgpu
--(🐣) capability permissions
--(🐣) distributed programs
--(🐣) concurrent programming
+The canonical value-system cutover is complete. The remaining v0.4 endgame is
+organized into bounded phases:
+
+- R1 Canonical contract and compatibility closure
+- R2 Type–memory boundary
+- R3 Type inference, classes, and conversions
+- R4 Type-system cutover
+- R5 Memory planner
+- R6 Memory runtime cutover
+- R7 Release qualification
+
+The root package remains `v0.3.6` until R7 qualifies `v0.4.0`.
+
+(2.4) Post-v0.4 direction
+
+The planned v0.5 type-system direction is:
+
+- computation types
+- effect types
+- coeffect types
+- refinement types
 
 3. Next Steps for v0.3
 --------------------------------------------------------------------------------

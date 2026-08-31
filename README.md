@@ -94,7 +94,19 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 
 ## Project Roadmap
 
-Mech `v0.4` is currently **beta** status, meaning while many intended features are implemented and working well, other features are incomplete, not tested, or undocumented.
+The current published package is `v0.3.6`; the active development target is
+`v0.4.0`. The canonical value-system cutover is complete, and the remaining
+v0.4 work is organized into the following endgame phases:
+
+- R1 Canonical contract and compatibility closure
+- R2 Type–memory boundary
+- R3 Type inference, classes, and conversions
+- R4 Type-system cutover
+- R5 Memory planner
+- R6 Memory runtime cutover
+- R7 Release qualification
+
+The package version remains `v0.3.6` until R7 qualifies the release.
 
 A Brief Roadmap:
 
@@ -102,9 +114,10 @@ A Brief Roadmap:
 - ☑️ [v0.2](https://github.com/mech-lang/mech/tree/v0.2-beta) - data specification - formulas, defining and manipulating data
 - ☑️ [v0.3](https://github.com/mech-lang/mech/tree/v0.3-beta) - program specification - functions, patterns, state machines, Mika
 - 📍 [v0.4](https://github.com/mech-lang/mech/tree/v0.4-beta) - system specification - modules, hosts, capabilities
-- ☐ [v0.5](https://github.com/mech-lang/mech/tree/v0.5-beta) - concurrency - parallel, asynchronous, and distributed execution
+- ☐ v0.5 - computation types, effect types, coeffect types, and refinement types
 
-For more details, read the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
+For more details, read the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html)
+and the checked-in [v0.4 endgame plan](docs/design/v0.4-endgame.md).
 
 ## Notice
 

@@ -1,7 +1,8 @@
 # Value-system architecture contracts
 
 The final deletion-to-replacement disposition for mixed and compatibility-only
-test suites is recorded in [final-cutover-test-map.md](final-cutover-test-map.md).
+test suites is retained as archived review evidence in the
+[value-system final-cutover test map](../../../docs/design/archive/value-system-final-cutover-test-map.md).
 
 ## Canonical runtime boundary
 
