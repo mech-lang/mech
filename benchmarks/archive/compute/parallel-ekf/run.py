@@ -76,6 +76,12 @@ def main() -> None:
         help="Python interpreter with Taichi installed; runs the synchronized GPU controls",
     )
     parser.add_argument(
+        "--taichi-script",
+        type=Path,
+        default=HERE / "taichi_comparable.py",
+        help="Taichi source to run (use taichi_optimized.py for the specialized control)",
+    )
+    parser.add_argument(
         "--taichi-arch",
         default="gpu",
         help="Taichi backend name (for example metal, cuda, vulkan, or cpu)",
@@ -490,21 +496,21 @@ def main() -> None:
             taichi_commands = {
                 "Taichi Vector/Matrix resident unchecked": [
                     str(args.taichi_python),
-                    str(HERE / "taichi_comparable.py"),
+                    str(args.taichi_script),
                     str(args.backend_instances),
                     str(args.backend_gpu_turns),
                     "unchecked",
                 ],
                 "Taichi Vector/Matrix resident checked": [
                     str(args.taichi_python),
-                    str(HERE / "taichi_comparable.py"),
+                    str(args.taichi_script),
                     str(args.backend_instances),
                     str(args.backend_gpu_turns),
                     "checked",
                 ],
                 "Taichi Vector/Matrix resident unchecked batched": [
                     str(args.taichi_python),
-                    str(HERE / "taichi_comparable.py"),
+                    str(args.taichi_script),
                     str(args.backend_instances),
                     str(args.backend_gpu_turns),
                     "unchecked-batched",

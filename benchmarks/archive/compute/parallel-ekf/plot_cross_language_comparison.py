@@ -55,6 +55,7 @@ def load_rows(
     runtime: dict,
     native: dict,
     lua: dict | None = None,
+    taichi_optimized: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -164,6 +165,16 @@ def load_rows(
             }
             for row in lua["rows"]
         )
+    if taichi_optimized is not None:
+        rows.extend(
+            {
+                "label": row["label"],
+                "family": "Taichi",
+                "mode": row["mode"],
+                "throughput": row["throughput_millions"],
+            }
+            for row in taichi_optimized["rows"]
+        )
     return rows
 
 
@@ -240,12 +251,18 @@ def main() -> None:
     parser.add_argument("native", type=Path)
     parser.add_argument("output_directory", type=Path)
     parser.add_argument("lua", type=Path, nargs="?", help="plain Lua evidence JSON")
+    parser.add_argument("--taichi-optimized", type=Path, help="optimized Taichi evidence JSON")
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
     native = json.loads(args.native.read_text(encoding="utf-8"))
     lua = json.loads(args.lua.read_text(encoding="utf-8")) if args.lua else None
-    rows = load_rows(cross_language, runtime, native, lua)
+    taichi_optimized = (
+        json.loads(args.taichi_optimized.read_text(encoding="utf-8"))
+        if args.taichi_optimized
+        else None
+    )
+    rows = load_rows(cross_language, runtime, native, lua, taichi_optimized)
     configuration = cross_language["configuration"]
     render(
         rows,

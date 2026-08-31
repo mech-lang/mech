@@ -18,6 +18,7 @@ git switch --track origin/codex/mech-program-gpu
 | --- | --- |
 | High-level Mech EKF | `hosts/gpu/fixtures/ekf-kernel.mec` |
 | Taichi-comparable Mech EKF | `hosts/gpu/fixtures/ekf-kernel-taichi-comparable.mec` |
+| Source-specialized Taichi control | `benchmarks/archive/compute/parallel-ekf/taichi_optimized.py` |
 | Mech artifact benchmark harness | `hosts/gpu/examples/parallel_ekf_benchmark.rs` |
 | Generic scalar, SIMD, and WGPU lowering/execution | `hosts/gpu/src/batched.rs` |
 | macOS native Metal measurement backend | `hosts/gpu/src/metal.rs` |
@@ -61,6 +62,7 @@ WGPU, and it does not replace the portable runtime backend for other targets.
 | --- | ---: | ---: |
 | Mech native Metal (direct MSL) | 246.151M/s | 241.028M/s |
 | Taichi native Metal | 176.710M/s | 194.793M/s |
+| Taichi optimized scalar-SoA Metal | 168.798M/s | 217.297M/s |
 | Mech WGPU over Metal (transport control) | 165.149M/s | 156.671M/s |
 
 These are medians of three isolated processes on the Apple M1 using 500,000
@@ -96,6 +98,13 @@ arrays are explicitly zero-initialized so the warmup has the same defined state
 as LuaJIT's FFI arrays. The raw three-sample medians are recorded in
 `results/apple-m1-lua-2026-08-31.json`.
 
+The source-specialized Taichi control is also included in both charts. It uses
+stock Taichi 1.7.4 and the normal Metal backend, but changes the Taichi program
+to scalar component fields, fixed-shape unrolled arithmetic, in-place
+unchecked state, and a tuned 32-thread block. It does not modify Taichi's
+compiler/runtime or bypass the per-turn `ti.sync()` boundary. Its raw samples
+are in `results/apple-m1-taichi-optimized-native-metal-2026-08-31.json`.
+
 The Mech-only progression view keeps checked and unchecked bars together while
 sorting execution lanes from resident scalar through SIMD, Cranelift JIT,
 eight-worker SIMD-JIT, synchronized WGPU, direct native Metal, and the fused
@@ -113,7 +122,8 @@ python3 plot_cross_language_comparison.py \
   results/apple-m1-mech-taichi-runtime-2026-08-31.json \
   results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
   results \
-  results/apple-m1-lua-2026-08-31.json
+  results/apple-m1-lua-2026-08-31.json \
+  --taichi-optimized results/apple-m1-taichi-optimized-native-metal-2026-08-31.json
 
 python3 plot_mech_progression.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \
@@ -255,6 +265,9 @@ python3 run.py --taichi-python /path/to/.venv312/bin/python \
   --taichi-arch metal --backend-instances 100000 --backend-gpu-turns 120 \
   --evidence-output results/apple-m1-taichi-parity.json
 ```
+
+Pass `--taichi-script taichi_optimized.py` to run the source-specialized
+scalar-SoA control through the same evidence runner.
 
 On the Apple M1/Metal sanity runs used while adding this harness, five
 per-turn synchronized turns measured approximately 264M unchecked and 103M
