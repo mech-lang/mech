@@ -360,7 +360,7 @@
       "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
       "baseline_label": "same data-parallel program",
       "advanced_label": "same program; multicore worker count",
-      "note": "Futhark expresses the lane map in the source. The reported advanced control uses the same source with eight multicore workers; OpenCL is recorded separately when the local driver can execute it.",
+      "note": "Futhark expresses the lane map in the source. The reported advanced control uses the same source with eight multicore workers and keeps the turns loop inside one compiled invocation; OpenCL is recorded separately when the local driver can execute it.",
       "baseline_lines": 45,
       "baseline_chars": 2430,
       "advanced_lines": 45,

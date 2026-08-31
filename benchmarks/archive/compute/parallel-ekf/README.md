@@ -143,7 +143,11 @@ fixed-shape EKF over all lanes and can be compiled to Futhark's multicore or
 OpenCL backends. Both programs expose `checked` and `unchecked` modes; checked
 mode validates the candidate state and covariance and publishes the previous
 lane when validation fails. Compilation and allocation are outside the timed
-loop.
+loop. Halide calls the pipeline once per measured turn; Futhark keeps its
+`turns` loop inside one compiled invocation, so its rows measure a resident
+data-parallel loop without a host wait between individual turns. That boundary
+difference is recorded here rather than presented as an apples-to-apples
+replacement for the synchronized Mech/Taichi rows.
 
 On the Apple M1 control machine, with 10,000 lanes and 20 measured turns, the
 five-sample medians were:

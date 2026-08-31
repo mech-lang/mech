@@ -26,7 +26,7 @@ This report measures source edits behind the benchmark variants. Source sizes co
 - **Lua**: The Lua comparison isolates the runtime: the source is identical to the LuaJIT flat control. Baseline -> advanced touches **0 lines / 0 characters**.
 - **Taichi**: This is the source-specialized Taichi control; it still uses stock Taichi 1.7.4 and per-turn sync. Baseline -> advanced touches **255 lines / 13096 characters**.
 - **Halide**: Halide is a fixed-shape C++ pipeline JIT. Checked mode selects the previous lane state when the candidate fails the finite/diagonal/symmetry checks. Baseline -> advanced touches **0 lines / 0 characters**.
-- **Futhark**: Futhark expresses the lane map in the source. The reported advanced control uses the same source with eight multicore workers; OpenCL is recorded separately when the local driver can execute it. Baseline -> advanced touches **0 lines / 0 characters**.
+- **Futhark**: Futhark expresses the lane map in the source. The reported advanced control uses the same source with eight multicore workers and keeps the turns loop inside one compiled invocation; OpenCL is recorded separately when the local driver can execute it. Baseline -> advanced touches **0 lines / 0 characters**.
 
 ## Mech backend support footprint
 
