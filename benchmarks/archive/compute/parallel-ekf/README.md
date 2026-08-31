@@ -35,6 +35,11 @@ git switch --track origin/codex/mech-program-gpu
 | NumPy batched fixed-shape control | `benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py` |
 | LuaJIT flat fixed-shape control | `benchmarks/archive/compute/parallel-ekf/luajit_fast.lua` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
+| Minimal NumPy scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py` |
+| Minimal NumPy batched control | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py` |
+| Minimal Halide fixed-shape pipeline | `benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp` |
+| Minimal Futhark data-parallel program | `benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut` |
+| Minimal cross-control runner | `benchmarks/archive/compute/parallel-ekf/minimal/measure.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
 | Cross-language checked/unchecked chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_cross_language_comparison.py` |
@@ -128,6 +133,45 @@ support instead of being hidden as a source rewrite.
 The complete table is in
 `results/parallel-ekf-source-diff-report.md`, with machine-readable metrics in
 `results/parallel-ekf-source-diff-report.json`.
+
+## Minimal Halide and Futhark controls
+
+The `minimal/` directory adds two independent controls for the same resident
+EKF workload. `halide_ekf.cpp` builds one fixed-shape Halide JIT pipeline and
+executes it for a host-synchronized turn loop. `futhark_ekf.fut` maps one
+fixed-shape EKF over all lanes and can be compiled to Futhark's multicore or
+OpenCL backends. Both programs expose `checked` and `unchecked` modes; checked
+mode validates the candidate state and covariance and publishes the previous
+lane when validation fails. Compilation and allocation are outside the timed
+loop.
+
+On the Apple M1 control machine, with 10,000 lanes and 20 measured turns, the
+five-sample medians were:
+
+| Control | Checked M turns/s | Unchecked M turns/s |
+| --- | ---: | ---: |
+| Halide JIT | 2.707 | 5.058 |
+| Futhark multicore, 8 workers | 48.391 | 47.824 |
+
+The Futhark OpenCL compiler is installed on that machine, but its Apple OpenCL
+driver rejects the generated kernel (`Invalid kernel`), so those rows are
+recorded as unavailable rather than silently omitted. The full samples,
+checksums, commands, and availability status are in
+`results/apple-m1-minimal-source-2026-08-31.json`.
+
+Re-run the controls after installing the tools (`brew install halide futhark`)
+with:
+
+```text
+/tmp/mech-ekf-venv/bin/python minimal/measure.py \
+  --python /tmp/mech-ekf-venv/bin/python \
+  --instances 10000 --turns 20 --samples 5
+```
+
+The runner uses one OpenMP/BLAS thread for NumPy, compiles Halide with `-O3`,
+and pins Futhark's multicore control to one and eight workers. It reports
+steady-state throughput only; JIT compilation, warmup, and input construction
+are not included in those numbers.
 
 Regenerate all three charts from the checked-in evidence with:
 

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "base_mech": "hosts/gpu/fixtures/ekf-kernel.mec",
-  "definition": "Changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. This is an edit-size measure, not a claim about semantic difficulty.",
+  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. This is an edit-size measure, not a claim about semantic difficulty.",
   "mech_backend_support_delta": {
     "base_commit": "1ca47cdeef1cef071a891babf5423af03f51466f",
     "head_commit": "HEAD",
@@ -29,6 +29,14 @@
       "baseline_chars": 4974,
       "advanced_lines": 116,
       "advanced_chars": 4974,
+      "baseline_code": {
+        "lines": 85,
+        "chars": 3908
+      },
+      "advanced_code": {
+        "lines": 85,
+        "chars": 3908
+      },
       "baseline_to_advanced": {
         "changed_line_slots": 0,
         "added_lines": 0,
@@ -63,6 +71,14 @@
       "baseline_chars": 6464,
       "advanced_lines": 411,
       "advanced_chars": 12058,
+      "baseline_code": {
+        "lines": 206,
+        "chars": 5003
+      },
+      "advanced_code": {
+        "lines": 359,
+        "chars": 8900
+      },
       "baseline_to_advanced": {
         "changed_line_slots": 533,
         "added_lines": 374,
@@ -87,50 +103,24 @@
       }
     },
     {
-      "language": "Python + NumPy (scalar)",
-      "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
-      "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
-      "baseline_label": "Python outer loop",
-      "advanced_label": "same source; interpreter/runtime only",
-      "note": "This is not pure Python: the outer loop is Python, while NumPy supplies the scalar matrix operations. NumPy vectorization is reported as its own row.",
-      "baseline_lines": 93,
-      "baseline_chars": 4150,
-      "advanced_lines": 93,
-      "advanced_chars": 4150,
-      "baseline_to_advanced": {
-        "changed_line_slots": 0,
-        "added_lines": 0,
-        "deleted_lines": 0,
-        "changed_chars": 0
-      },
-      "baseline_to_base_mech": {
-        "changed_line_slots": 168,
-        "added_lines": 81,
-        "deleted_lines": 104,
-        "changed_chars": 8484
-      },
-      "advanced_to_base_mech": {
-        "changed_line_slots": 168,
-        "added_lines": 81,
-        "deleted_lines": 104,
-        "changed_chars": 8484
-      },
-      "throughput_millions": {
-        "checked": null,
-        "unchecked": 0.055142191
-      }
-    },
-    {
       "language": "NumPy",
       "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
       "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py",
       "baseline_label": "per-filter scalar loop",
       "advanced_label": "batched fixed-shape vectorized operations",
-      "note": "This is a whole-program rewrite around NumPy array operations.",
+      "note": "The baseline is a per-filter NumPy call from a Python loop; the advanced control uses fixed-shape batched arrays. The row is labeled NumPy because both variants use NumPy for the numeric work.",
       "baseline_lines": 93,
       "baseline_chars": 4150,
       "advanced_lines": 173,
       "advanced_chars": 6731,
+      "baseline_code": {
+        "lines": 80,
+        "chars": 3651
+      },
+      "advanced_code": {
+        "lines": 149,
+        "chars": 5700
+      },
       "baseline_to_advanced": {
         "changed_line_slots": 145,
         "added_lines": 136,
@@ -165,6 +155,14 @@
       "baseline_chars": 4765,
       "advanced_lines": 217,
       "advanced_chars": 8549,
+      "baseline_code": {
+        "lines": 96,
+        "chars": 4382
+      },
+      "advanced_code": {
+        "lines": 194,
+        "chars": 6939
+      },
       "baseline_to_advanced": {
         "changed_line_slots": 245,
         "added_lines": 200,
@@ -199,6 +197,14 @@
       "baseline_chars": 3369,
       "advanced_lines": 169,
       "advanced_chars": 7609,
+      "baseline_code": {
+        "lines": 43,
+        "chars": 3288
+      },
+      "advanced_code": {
+        "lines": 153,
+        "chars": 7031
+      },
       "baseline_to_advanced": {
         "changed_line_slots": 174,
         "added_lines": 161,
@@ -233,6 +239,14 @@
       "baseline_chars": 7609,
       "advanced_lines": 169,
       "advanced_chars": 7609,
+      "baseline_code": {
+        "lines": 153,
+        "chars": 7031
+      },
+      "advanced_code": {
+        "lines": 153,
+        "chars": 7031
+      },
       "baseline_to_advanced": {
         "changed_line_slots": 0,
         "added_lines": 0,
@@ -267,6 +281,14 @@
       "baseline_chars": 11996,
       "advanced_lines": 318,
       "advanced_chars": 14346,
+      "baseline_code": {
+        "lines": 260,
+        "chars": 8891
+      },
+      "advanced_code": {
+        "lines": 277,
+        "chars": 11406
+      },
       "baseline_to_advanced": {
         "changed_line_slots": 255,
         "added_lines": 192,
@@ -288,6 +310,90 @@
       "throughput_millions": {
         "checked": 168.798,
         "unchecked": 217.297
+      }
+    },
+    {
+      "language": "Halide",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+      "baseline_label": "same fixed-shape JIT pipeline",
+      "advanced_label": "same pipeline; checked publication select",
+      "note": "Halide is a fixed-shape C++ pipeline JIT. Checked mode selects the previous lane state when the candidate fails the finite/diagonal/symmetry checks.",
+      "baseline_lines": 29,
+      "baseline_chars": 4093,
+      "advanced_lines": 29,
+      "advanced_chars": 4093,
+      "baseline_code": {
+        "lines": 18,
+        "chars": 3875
+      },
+      "advanced_code": {
+        "lines": 18,
+        "chars": 3875
+      },
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 124,
+        "added_lines": 28,
+        "deleted_lines": 115,
+        "changed_chars": 5152
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 124,
+        "added_lines": 28,
+        "deleted_lines": 115,
+        "changed_chars": 5152
+      },
+      "throughput_millions": {
+        "checked": 2.707078841979349,
+        "unchecked": 5.058051765922671
+      }
+    },
+    {
+      "language": "Futhark",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+      "baseline_label": "same data-parallel program",
+      "advanced_label": "same program; multicore worker count",
+      "note": "Futhark expresses the lane map in the source. The reported advanced control uses the same source with eight multicore workers; OpenCL is recorded separately when the local driver can execute it.",
+      "baseline_lines": 45,
+      "baseline_chars": 2430,
+      "advanced_lines": 45,
+      "advanced_chars": 2430,
+      "baseline_code": {
+        "lines": 45,
+        "chars": 2307
+      },
+      "advanced_code": {
+        "lines": 45,
+        "chars": 2307
+      },
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 116,
+        "added_lines": 45,
+        "deleted_lines": 116,
+        "changed_chars": 4974
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 116,
+        "added_lines": 45,
+        "deleted_lines": 116,
+        "changed_chars": 4974
+      },
+      "throughput_millions": {
+        "checked": 48.390999274135005,
+        "unchecked": 47.82400765184122
       }
     }
   ]

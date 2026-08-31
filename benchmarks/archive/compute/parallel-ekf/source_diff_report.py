@@ -7,6 +7,7 @@ import argparse
 import difflib
 import html
 import json
+import statistics
 import subprocess
 from pathlib import Path
 
@@ -27,12 +28,13 @@ COLORS = {
     "Mech": "#f4c430",
     "Rust": "#dea584",
     "Python": "#3776ab",
-    "Python + NumPy (scalar)": "#3776ab",
     "NumPy": "#4d77cf",
     "Julia": "#9558b2",
     "Lua": "#000080",
     "LuaJIT": "#5ba37f",
     "Taichi": "#e36b6b",
+    "Halide": "#ff8f00",
+    "Futhark": "#e94f37",
 }
 
 
@@ -54,20 +56,12 @@ VARIANTS = [
         "note": "The advanced control changes the value representation and execution loop.",
     },
     {
-        "language": "Python + NumPy (scalar)",
-        "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
-        "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
-        "baseline_label": "Python outer loop",
-        "advanced_label": "same source; interpreter/runtime only",
-        "note": "This is not pure Python: the outer loop is Python, while NumPy supplies the scalar matrix operations. NumPy vectorization is reported as its own row.",
-    },
-    {
         "language": "NumPy",
         "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
         "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py",
         "baseline_label": "per-filter scalar loop",
         "advanced_label": "batched fixed-shape vectorized operations",
-        "note": "This is a whole-program rewrite around NumPy array operations.",
+        "note": "The baseline is a per-filter NumPy call from a Python loop; the advanced control uses fixed-shape batched arrays. The row is labeled NumPy because both variants use NumPy for the numeric work.",
     },
     {
         "language": "Julia",
@@ -101,11 +95,54 @@ VARIANTS = [
         "advanced_label": "scalar SoA fields and unrolled 3x3 arithmetic",
         "note": "This is the source-specialized Taichi control; it still uses stock Taichi 1.7.4 and per-turn sync.",
     },
+    {
+        "language": "Halide",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+        "baseline_label": "same fixed-shape JIT pipeline",
+        "advanced_label": "same pipeline; checked publication select",
+        "note": "Halide is a fixed-shape C++ pipeline JIT. Checked mode selects the previous lane state when the candidate fails the finite/diagonal/symmetry checks.",
+    },
+    {
+        "language": "Futhark",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+        "baseline_label": "same data-parallel program",
+        "advanced_label": "same program; multicore worker count",
+        "note": "Futhark expresses the lane map in the source. The reported advanced control uses the same source with eight multicore workers; OpenCL is recorded separately when the local driver can execute it.",
+    },
 ]
 
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def source_metrics(text: str, path: Path) -> dict[str, int]:
+    """Count non-empty, non-comment source so comments do not skew the table."""
+    code: list[str] = []
+    in_docstring = False
+    for raw in text.splitlines():
+        line = raw.strip()
+        if path.suffix == ".py":
+            if line.startswith(('"""', "'''")):
+                delimiter = line[:3]
+                if line.count(delimiter) % 2:
+                    in_docstring = not in_docstring
+                continue
+            if in_docstring or line.startswith("#"):
+                continue
+        elif path.suffix in {".mec", ".lua"}:
+            if line.startswith("--") or (line and set(line) == {"-"}):
+                continue
+            if path.suffix == ".mec" and "--" in line:
+                line = line.split("--", 1)[0].rstrip()
+        elif path.suffix in {".cpp", ".rs", ".jl"}:
+            if line.startswith("//") or line.startswith("#"):
+                continue
+        if line:
+            code.append(line)
+    return {"lines": len(code), "chars": sum(len(line) for line in code)}
 
 
 def mech_support_delta() -> dict[str, object]:
@@ -177,25 +214,38 @@ def scalar_throughput(cross: dict, label: str) -> dict[str, float | None]:
             "unchecked": row["ekf_turns_per_second"] / 1e6 if mode == "unchecked" else None}
 
 
-def throughput_rows(cross: dict, native: dict, taichi: dict, lua: dict) -> dict[str, dict[str, float | None]]:
+def throughput_rows(cross: dict, native: dict, taichi: dict, lua: dict, minimal: dict | None) -> dict[str, dict[str, float | None]]:
     scalar = cross["summary"]["scalar_outer_loop"]
     native_rows = {row["label"]: row for row in native["rows"]}
     result: dict[str, dict[str, float | None]] = {
         "Mech": {"checked": native_rows["Mech native Metal, checked"]["throughput_millions"], "unchecked": native_rows["Mech native Metal, unchecked"]["throughput_millions"]},
         "Rust": {"checked": scalar["Rust packed SIMD checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["Rust packed SIMD unchecked"]["ekf_turns_per_second"] / 1e6},
-        "Python + NumPy (scalar)": {"checked": None, "unchecked": scalar["NumPy scalar outer loop"]["ekf_turns_per_second"] / 1e6},
         "NumPy": {"checked": scalar["NumPy vectorized fixed-shape checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["NumPy vectorized fixed-shape unchecked"]["ekf_turns_per_second"] / 1e6},
         "Julia": {"checked": scalar["Julia SIMD.jl intrinsics checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["Julia SIMD.jl intrinsics unchecked"]["ekf_turns_per_second"] / 1e6},
         "LuaJIT": {"checked": scalar["LuaJIT fixed-shape flat checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["LuaJIT fixed-shape flat unchecked"]["ekf_turns_per_second"] / 1e6},
         "Lua": {"checked": lua["rows"][0]["throughput_millions"], "unchecked": lua["rows"][1]["throughput_millions"]},
         "Taichi": {"checked": taichi["rows"][0]["throughput_millions"], "unchecked": taichi["rows"][1]["throughput_millions"]},
     }
+    if minimal is not None:
+        rows = minimal.get("rows", {})
+
+        def median(label: str) -> float | None:
+            row = rows.get(label)
+            if row is None or "throughput" not in row:
+                return None
+            return statistics.median(row["throughput"]) / 1e6
+
+        result["Halide"] = {"checked": median("Halide checked"), "unchecked": median("Halide unchecked")}
+        result["Futhark"] = {
+            "checked": median("Futhark multicore 8 threads checked"),
+            "unchecked": median("Futhark multicore 8 threads unchecked"),
+        }
     return result
 
 
-def build_report(cross: dict, native: dict, taichi: dict, lua: dict) -> dict:
+def build_report(cross: dict, native: dict, taichi: dict, lua: dict, minimal: dict | None = None) -> dict:
     base = read(BASE_MECH)
-    throughputs = throughput_rows(cross, native, taichi, lua)
+    throughputs = throughput_rows(cross, native, taichi, lua, minimal)
     rows = []
     for variant in VARIANTS:
         baseline_path = ROOT / variant["baseline"]
@@ -209,6 +259,8 @@ def build_report(cross: dict, native: dict, taichi: dict, lua: dict) -> dict:
                 "baseline_chars": len(baseline),
                 "advanced_lines": len(advanced.splitlines()),
                 "advanced_chars": len(advanced),
+                "baseline_code": source_metrics(baseline, baseline_path),
+                "advanced_code": source_metrics(advanced, advanced_path),
                 "baseline_to_advanced": diff_metrics(baseline, advanced),
                 "baseline_to_base_mech": diff_metrics(base, baseline),
                 "advanced_to_base_mech": diff_metrics(base, advanced),
@@ -218,7 +270,7 @@ def build_report(cross: dict, native: dict, taichi: dict, lua: dict) -> dict:
     return {
         "schema_version": 1,
         "base_mech": str(BASE_MECH.relative_to(ROOT)),
-        "definition": "Changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. This is an edit-size measure, not a claim about semantic difficulty.",
+        "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. This is an edit-size measure, not a claim about semantic difficulty.",
         "mech_backend_support_delta": mech_support_delta(),
         "rows": rows,
     }
@@ -228,19 +280,19 @@ def markdown(report: dict) -> str:
     lines = [
         "# Parallel EKF source-edit cost",
         "",
-        "This report measures source edits behind the benchmark variants. `Changed lines` is the number of line positions touched by a baseline-to-advanced diff; `changed chars` counts character slots in those changed line blocks. File size is included only for context. The base reference is `hosts/gpu/fixtures/ekf-kernel.mec`.",
+        "This report measures source edits behind the benchmark variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Changed lines` is the number of line positions touched by a baseline-to-advanced diff; `changed chars` counts character slots in those changed line blocks. The base reference is the checked-in Mech EKF.",
         "",
         "## Variant matrix",
         "",
-        "| Language | Baseline source | Baseline lines | Baseline chars | Advanced source | Advanced lines | Advanced chars | Changed lines | Changed chars | Baseline vs Mech lines/chars | Advanced vs Mech lines/chars | Checked M/s | Unchecked M/s |",
-        "| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Language | Baseline L/C | Advanced L/C | Changed L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Checked M/s | Unchecked M/s |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in report["rows"]:
         throughput = row["throughput_millions"]
         checked = "--" if throughput["checked"] is None else f"{throughput['checked']:.3f}"
         unchecked = "--" if throughput["unchecked"] is None else f"{throughput['unchecked']:.3f}"
         lines.append(
-            f"| {row['language']} | `{Path(row['baseline']).name}` | {row['baseline_lines']} | {row['baseline_chars']:,} | `{Path(row['advanced']).name}` | {row['advanced_lines']} | {row['advanced_chars']:,} | {row['baseline_to_advanced']['changed_line_slots']} | {row['baseline_to_advanced']['changed_chars']:,} | {row['baseline_to_base_mech']['changed_line_slots']} / {row['baseline_to_base_mech']['changed_chars']:,} | {row['advanced_to_base_mech']['changed_line_slots']} / {row['advanced_to_base_mech']['changed_chars']:,} | {checked} | {unchecked} |"
+            f"| {row['language']} | {row['baseline_code']['lines']} / {row['baseline_code']['chars']:,} | {row['advanced_code']['lines']} / {row['advanced_code']['chars']:,} | {row['baseline_to_advanced']['changed_line_slots']} / {row['baseline_to_advanced']['changed_chars']:,} | {row['baseline_to_base_mech']['changed_line_slots']} / {row['baseline_to_base_mech']['changed_chars']:,} | {row['advanced_to_base_mech']['changed_line_slots']} / {row['advanced_to_base_mech']['changed_chars']:,} | {checked} | {unchecked} |"
         )
     lines += ["", "## Interpretation", ""]
     for row in report["rows"]:
@@ -312,6 +364,9 @@ def main() -> None:
         json.loads(args.native.read_text(encoding="utf-8")),
         json.loads(args.taichi.read_text(encoding="utf-8")),
         json.loads(args.lua.read_text(encoding="utf-8")),
+        json.loads((args.output_directory / "apple-m1-minimal-source-2026-08-31.json").read_text(encoding="utf-8"))
+        if (args.output_directory / "apple-m1-minimal-source-2026-08-31.json").exists()
+        else None,
     )
     args.output_directory.mkdir(parents=True, exist_ok=True)
     (args.output_directory / "parallel-ekf-source-diff-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
