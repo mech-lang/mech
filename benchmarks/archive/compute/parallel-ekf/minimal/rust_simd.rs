@@ -1,0 +1,377 @@
+use std::{env, hint::black_box, time::Instant};
+use wide::f32x4;
+const LANES: usize = 4;
+const DT: f32 = 0.1;
+const SYMMETRY_TOLERANCE: f32 = 1.0e-4;
+#[derive(Clone, Copy)]
+struct V4(f32x4);
+impl V4 {
+    const ZERO: Self = Self(f32x4::ZERO);
+    #[inline(always)]
+    fn splat(value: f32) -> Self {
+        Self(f32x4::splat(value))
+    }
+    #[inline(always)]
+    fn load(values: &[f32], base: usize) -> Self {
+        Self(f32x4::new([
+            values[base],
+            values[base + 1],
+            values[base + 2],
+            values[base + 3],
+        ]))
+    }
+    #[inline(always)]
+    fn store(self, values: &mut [f32], base: usize) {
+        values[base..base + LANES].copy_from_slice(&self.0.to_array());
+    }
+    #[inline(always)]
+    fn lanes(self) -> [f32; LANES] {
+        self.0.to_array()
+    }
+    #[inline(always)]
+    fn sin_cos(self) -> (Self, Self) {
+        let mut sin = [0.0; LANES];
+        let mut cos = [0.0; LANES];
+        for (index, value) in self.lanes().into_iter().enumerate() {
+            let (s, c) = value.sin_cos();
+            sin[index] = s;
+            cos[index] = c;
+        }
+        (Self(f32x4::new(sin)), Self(f32x4::new(cos)))
+    }
+    #[inline(always)]
+    fn atan2(self, other: Self) -> Self {
+        let left = self.lanes();
+        let right = other.lanes();
+        let mut result = [0.0; LANES];
+        for index in 0..LANES {
+            result[index] = left[index].atan2(right[index]);
+        }
+        Self(f32x4::new(result))
+    }
+    #[inline(always)]
+    fn is_finite(self) -> [bool; LANES] {
+        self.lanes().map(f32::is_finite)
+    }
+}
+impl std::ops::Add for V4 {
+    type Output = Self;
+    #[inline(always)]
+    fn add(self, rhs: Self) -> Self {
+        Self(self.0 + rhs.0)
+    }
+}
+impl std::ops::Sub for V4 {
+    type Output = Self;
+    #[inline(always)]
+    fn sub(self, rhs: Self) -> Self {
+        Self(self.0 - rhs.0)
+    }
+}
+impl std::ops::Mul for V4 {
+    type Output = Self;
+    #[inline(always)]
+    fn mul(self, rhs: Self) -> Self {
+        Self(self.0 * rhs.0)
+    }
+}
+impl std::ops::Div for V4 {
+    type Output = Self;
+    #[inline(always)]
+    fn div(self, rhs: Self) -> Self {
+        Self(self.0 / rhs.0)
+    }
+}
+impl std::ops::Neg for V4 {
+    type Output = Self;
+    #[inline(always)]
+    fn neg(self) -> Self {
+        Self(-self.0)
+    }
+}
+type Matrix<const ROWS: usize, const COLS: usize> = [[V4; COLS]; ROWS];
+#[inline(always)]
+fn transpose<const ROWS: usize, const COLS: usize>(
+    input: &Matrix<ROWS, COLS>,
+) -> Matrix<COLS, ROWS> {
+    std::array::from_fn(|row| std::array::from_fn(|column| input[column][row]))
+}
+#[inline(always)]
+fn matmul<const ROWS: usize, const INNER: usize, const COLS: usize>(
+    left: &Matrix<ROWS, INNER>,
+    right: &Matrix<INNER, COLS>,
+) -> Matrix<ROWS, COLS> {
+    std::array::from_fn(|row| {
+        std::array::from_fn(|column| {
+            (0..INNER).fold(V4::ZERO, |sum, index| {
+                sum + left[row][index] * right[index][column]
+            })
+        })
+    })
+}
+#[inline(always)]
+fn valid_candidate(state: &[V4; 3], covariance: &Matrix<3, 3>) -> [bool; LANES] {
+    let mut valid = [true; LANES];
+    for value in state
+        .iter()
+        .copied()
+        .chain(covariance.iter().flat_map(|row| row.iter().copied()))
+    {
+        for (index, finite) in value.is_finite().into_iter().enumerate() {
+            valid[index] &= finite;
+        }
+    }
+    for diagonal in 0..3 {
+        for (index, value) in covariance[diagonal][diagonal]
+            .lanes()
+            .into_iter()
+            .enumerate()
+        {
+            valid[index] &= value > 0.0;
+        }
+    }
+    for row in 0..3 {
+        for column in row + 1..3 {
+            let left = covariance[row][column].lanes();
+            let right = covariance[column][row].lanes();
+            for index in 0..LANES {
+                valid[index] &= (left[index] - right[index]).abs() <= SYMMETRY_TOLERANCE;
+            }
+        }
+    }
+    valid
+}
+#[inline(always)]
+fn step_group(
+    state: &mut [V4; 3],
+    covariance: &mut Matrix<3, 3>,
+    velocity: V4,
+    angular_velocity: V4,
+    bearing: V4,
+    checked: bool,
+) {
+    let theta = state[2];
+    let (sin_theta, cos_theta) = theta.sin_cos();
+    let distance = velocity * V4::splat(DT);
+    let predicted_state = [
+        state[0] + distance * cos_theta,
+        state[1] + distance * sin_theta,
+        state[2] + angular_velocity * V4::splat(DT),
+    ];
+    let f: Matrix<3, 3> = [
+        [V4::splat(1.0), V4::ZERO, -distance * sin_theta],
+        [V4::ZERO, V4::splat(1.0), distance * cos_theta],
+        [V4::ZERO, V4::ZERO, V4::splat(1.0)],
+    ];
+    let g: Matrix<3, 2> = [
+        [cos_theta * V4::splat(DT), V4::ZERO],
+        [sin_theta * V4::splat(DT), V4::ZERO],
+        [V4::ZERO, V4::splat(DT)],
+    ];
+    let ft = transpose(&f);
+    let gt = transpose(&g);
+    let process_noise: Matrix<2, 2> = [[V4::splat(0.01), V4::ZERO], [V4::ZERO, V4::splat(0.0025)]];
+    let predicted_covariance = {
+        let first = matmul(&matmul(&f, covariance), &ft);
+        let second = matmul(&matmul(&g, &process_noise), &gt);
+        std::array::from_fn(|row| {
+            std::array::from_fn(|column| first[row][column] + second[row][column])
+        })
+    };
+    let delta_x = V4::splat(140.0) - predicted_state[0];
+    let delta_y = V4::splat(12.0) - predicted_state[1];
+    let squared_range = delta_x * delta_x + delta_y * delta_y;
+    let predicted_bearing = delta_y.atan2(delta_x) - predicted_state[2];
+    let raw_innovation = bearing - predicted_bearing;
+    let (innovation_sin, innovation_cos) = raw_innovation.sin_cos();
+    let innovation = innovation_sin.atan2(innovation_cos);
+    let h = [
+        delta_y / squared_range,
+        -delta_x / squared_range,
+        V4::splat(-1.0),
+    ];
+    let ph_t: [V4; 3] = std::array::from_fn(|row| {
+        (0..3).fold(V4::ZERO, |sum, index| {
+            sum + predicted_covariance[row][index] * h[index]
+        })
+    });
+    let innovation_variance =
+        (0..3).fold(V4::splat(0.25), |sum, index| sum + h[index] * ph_t[index]);
+    let gain = ph_t.map(|value| value / innovation_variance);
+    let next_state = std::array::from_fn(|row| predicted_state[row] + gain[row] * innovation);
+    let a: Matrix<3, 3> = std::array::from_fn(|row| {
+        std::array::from_fn(|column| {
+            let identity = if row == column {
+                V4::splat(1.0)
+            } else {
+                V4::ZERO
+            };
+            identity - gain[row] * h[column]
+        })
+    });
+    let at = transpose(&a);
+    let corrected_base = matmul(&matmul(&a, &predicted_covariance), &at);
+    let next_covariance = std::array::from_fn(|row| {
+        std::array::from_fn(|column| {
+            corrected_base[row][column] + gain[row] * gain[column] * V4::splat(0.25)
+        })
+    });
+    if !checked {
+        *state = next_state;
+        *covariance = next_covariance;
+        return;
+    }
+    let valid = valid_candidate(&next_state, &next_covariance);
+    if valid.into_iter().all(|lane| lane) {
+        *state = next_state;
+        *covariance = next_covariance;
+    } else {
+        for lane in 0..LANES {
+            if valid[lane] {
+                for row in 0..3 {
+                    state[row] = V4::from_lane(state[row], next_state[row], lane);
+                }
+                for row in 0..3 {
+                    for column in 0..3 {
+                        covariance[row][column] = V4::from_lane(
+                            covariance[row][column],
+                            next_covariance[row][column],
+                            lane,
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+impl V4 {
+    #[inline(always)]
+    fn from_lane(current: Self, replacement: Self, lane: usize) -> Self {
+        let mut values = current.lanes();
+        values[lane] = replacement.lanes()[lane];
+        Self(f32x4::new(values))
+    }
+}
+fn inputs(instances: usize) -> (Vec<f32>, Vec<f32>, Vec<f32>) {
+    let denominator = instances as f32;
+    let mut velocity = vec![0.0; instances];
+    let mut angular_velocity = vec![0.0; instances];
+    let mut bearing = vec![0.0; instances];
+    for index in 0..instances {
+        let phase = std::f32::consts::TAU * index as f32 / denominator;
+        velocity[index] = 1.0 + 0.05 * (phase * 3.0).sin();
+        angular_velocity[index] = 0.015 * (1.0 + 0.1 * (phase * 2.0).sin());
+        bearing[index] = -0.55 + 0.01 * (phase * 7.0).sin() + 0.005 * (phase * 11.0).sin();
+    }
+    (velocity, angular_velocity, bearing)
+}
+fn reset(state: &mut [Vec<f32>; 3], covariance: &mut [Vec<f32>; 9]) {
+    for values in state.iter_mut() {
+        values.fill(0.0);
+    }
+    for values in covariance.iter_mut() {
+        values.fill(0.0);
+    }
+    state[0].fill(55.0);
+    state[1].fill(25.0);
+    state[2].fill(0.4);
+    covariance[0].fill(100.0);
+    covariance[4].fill(100.0);
+    covariance[8].fill(0.15);
+}
+fn dispatch(
+    state: &mut [Vec<f32>; 3],
+    covariance: &mut [Vec<f32>; 9],
+    velocity: &[f32],
+    angular_velocity: &[f32],
+    bearing: &[f32],
+    turns: u32,
+    checked: bool,
+) {
+    for _ in 0..turns {
+        for base in (0..velocity.len()).step_by(LANES) {
+            let mut packed_state = std::array::from_fn(|row| V4::load(&state[row], base));
+            let packed_covariance: [V4; 9] =
+                std::array::from_fn(|index| V4::load(&covariance[index], base));
+            let mut matrix = std::array::from_fn(|row| {
+                std::array::from_fn(|column| packed_covariance[row * 3 + column])
+            });
+            step_group(
+                &mut packed_state,
+                &mut matrix,
+                V4::load(velocity, base),
+                V4::load(angular_velocity, base),
+                V4::load(bearing, base),
+                checked,
+            );
+            for row in 0..3 {
+                packed_state[row].store(&mut state[row], base);
+            }
+            for row in 0..3 {
+                for column in 0..3 {
+                    matrix[row][column].store(&mut covariance[row * 3 + column], base);
+                }
+            }
+        }
+    }
+}
+fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
+    env::args()
+        .nth(index)
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(default)
+}
+fn main() {
+    let instances = argument(1, 100_000_usize).max(1);
+    let turns = argument(2, 5_u32).max(1);
+    let checked = env::args()
+        .nth(3)
+        .is_some_and(|value| value.eq_ignore_ascii_case("checked"));
+    assert!(
+        instances % LANES == 0,
+        "Rust SIMD requires instances divisible by four"
+    );
+    let (velocity, angular_velocity, bearing) = inputs(instances);
+    let mut state = std::array::from_fn(|_| vec![0.0; instances]);
+    let mut covariance = std::array::from_fn(|_| vec![0.0; instances]);
+    reset(&mut state, &mut covariance);
+    dispatch(
+        &mut state,
+        &mut covariance,
+        &velocity,
+        &angular_velocity,
+        &bearing,
+        5,
+        checked,
+    );
+    reset(&mut state, &mut covariance);
+    let started = Instant::now();
+    dispatch(
+        &mut state,
+        &mut covariance,
+        &velocity,
+        &angular_velocity,
+        &bearing,
+        turns,
+        checked,
+    );
+    let elapsed = started.elapsed().as_secs_f64();
+    let throughput = instances as f64 * turns as f64 / elapsed;
+    let checksum = state
+        .iter()
+        .chain(covariance.iter())
+        .flat_map(|values| values.iter())
+        .map(|value| *value as f64)
+        .sum::<f64>();
+    black_box((&state, &covariance));
+    println!("lane: Rust packed SIMD (wide f32x4)");
+    println!(
+        "validation: {}",
+        if checked { "checked" } else { "unchecked" }
+    );
+    println!("instances: {instances}");
+    println!("turns: {turns}");
+    println!("elapsed_s: {elapsed:.9}");
+    println!("throughput: {throughput:.3}");
+    println!("checksum: {checksum:.9}");
+}

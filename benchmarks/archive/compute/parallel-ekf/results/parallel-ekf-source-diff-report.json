@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
-  "base_mech": "hosts/gpu/fixtures/ekf-kernel.mec",
-  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. This is an edit-size measure, not a claim about semantic difficulty.",
+  "base_mech": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+  "reference_mech": "hosts/gpu/fixtures/ekf-kernel.mec",
+  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. This is an edit-size measure, not a claim about semantic difficulty.",
   "mech_backend_support_delta": {
     "base_commit": "1ca47cdeef1cef071a891babf5423af03f51466f",
     "head_commit": "HEAD",
@@ -20,22 +21,22 @@
   "rows": [
     {
       "language": "Mech",
-      "baseline": "hosts/gpu/fixtures/ekf-kernel.mec",
-      "advanced": "hosts/gpu/fixtures/ekf-kernel.mec",
-      "baseline_label": "same high-level `.mec` program",
-      "advanced_label": "same `.mec`; native backend selected at build",
-      "note": "The source recurrence does not change. Native Metal specialization is backend support, not a second Mech program.",
-      "baseline_lines": 116,
-      "baseline_chars": 4974,
-      "advanced_lines": 116,
-      "advanced_chars": 4974,
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+      "baseline_label": "compact high-level `.mec` program",
+      "advanced_label": "same compact `.mec`; native backend selected at build",
+      "note": "The compact source recurrence does not change. Native Metal specialization is backend support, not a second Mech program.",
+      "baseline_lines": 46,
+      "baseline_chars": 1745,
+      "advanced_lines": 46,
+      "advanced_chars": 1745,
       "baseline_code": {
-        "lines": 85,
-        "chars": 3908
+        "lines": 42,
+        "chars": 1513
       },
       "advanced_code": {
-        "lines": 85,
-        "chars": 3908
+        "lines": 42,
+        "chars": 1513
       },
       "factors": {
         "layout": "column-major resident graph values",
@@ -78,15 +79,15 @@
     },
     {
       "language": "Rust",
-      "baseline": "hosts/gpu/examples/parallel_ekf_rust_scalar.rs",
-      "advanced": "hosts/gpu/examples/parallel_ekf_rust_simd.rs",
-      "baseline_label": "fixed-shape scalar control",
-      "advanced_label": "packed four-lane SIMD control",
-      "note": "The advanced control changes the value representation and execution loop.",
-      "baseline_lines": 220,
-      "baseline_chars": 6464,
-      "advanced_lines": 411,
-      "advanced_chars": 12058,
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs",
+      "baseline_label": "compact fixed-shape scalar control",
+      "advanced_label": "compact packed four-lane SIMD control",
+      "note": "The compact controls preserve the checked-in Rust algorithms while removing narrative scaffolding; the advanced control still changes the value representation and execution loop.",
+      "baseline_lines": 210,
+      "baseline_chars": 6454,
+      "advanced_lines": 377,
+      "advanced_chars": 12024,
       "baseline_code": {
         "lines": 206,
         "chars": 5003
@@ -112,22 +113,22 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 533,
-        "added_lines": 374,
-        "deleted_lines": 183,
-        "changed_chars": 15990
+        "changed_line_slots": 493,
+        "added_lines": 342,
+        "deleted_lines": 175,
+        "changed_chars": 15950
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 256,
+        "changed_line_slots": 210,
         "added_lines": 210,
-        "deleted_lines": 106,
-        "changed_chars": 8883
+        "deleted_lines": 46,
+        "changed_chars": 6454
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 431,
-        "added_lines": 391,
-        "deleted_lines": 96,
-        "changed_chars": 15278
+        "changed_line_slots": 377,
+        "added_lines": 377,
+        "deleted_lines": 46,
+        "changed_chars": 12024
       },
       "throughput_millions": {
         "checked": 25.642120362,
@@ -136,22 +137,22 @@
     },
     {
       "language": "NumPy",
-      "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
-      "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py",
-      "baseline_label": "per-filter scalar loop",
-      "advanced_label": "batched fixed-shape vectorized operations",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py",
+      "baseline_label": "compact per-filter scalar loop",
+      "advanced_label": "compact batched fixed-shape vectorized operations",
       "note": "The baseline is a per-filter NumPy call from a Python loop; the advanced control uses fixed-shape batched arrays. The row is labeled NumPy because both variants use NumPy for the numeric work.",
-      "baseline_lines": 93,
-      "baseline_chars": 4150,
-      "advanced_lines": 173,
-      "advanced_chars": 6731,
+      "baseline_lines": 22,
+      "baseline_chars": 1913,
+      "advanced_lines": 37,
+      "advanced_chars": 3206,
       "baseline_code": {
-        "lines": 80,
-        "chars": 3651
+        "lines": 18,
+        "chars": 1813
       },
       "advanced_code": {
-        "lines": 149,
-        "chars": 5700
+        "lines": 31,
+        "chars": 3043
       },
       "factors": {
         "layout": "per-lane arrays -> batched SoA arrays",
@@ -170,22 +171,22 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 145,
-        "added_lines": 136,
-        "deleted_lines": 56,
-        "changed_chars": 6312
+        "changed_line_slots": 29,
+        "added_lines": 28,
+        "deleted_lines": 13,
+        "changed_chars": 3090
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 168,
-        "added_lines": 81,
-        "deleted_lines": 104,
-        "changed_chars": 8484
+        "changed_line_slots": 45,
+        "added_lines": 20,
+        "deleted_lines": 44,
+        "changed_chars": 2121
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 205,
-        "added_lines": 153,
-        "deleted_lines": 96,
-        "changed_chars": 9492
+        "changed_line_slots": 45,
+        "added_lines": 35,
+        "deleted_lines": 44,
+        "changed_chars": 3417
       },
       "throughput_millions": {
         "checked": 11.128708067,
@@ -194,15 +195,15 @@
     },
     {
       "language": "Julia",
-      "baseline": "benchmarks/archive/compute/parallel-ekf/julia_scalar.jl",
-      "advanced": "benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl",
-      "baseline_label": "generic scalar Julia",
-      "advanced_label": "explicit four-lane SIMD.jl intrinsics",
-      "note": "The advanced source introduces an explicit packed value type and lane loop.",
-      "baseline_lines": 103,
-      "baseline_chars": 4765,
-      "advanced_lines": 217,
-      "advanced_chars": 8549,
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
+      "baseline_label": "compact generic scalar Julia",
+      "advanced_label": "compact explicit four-lane SIMD.jl intrinsics",
+      "note": "The compact controls preserve the Julia algorithms; the advanced source introduces an explicit packed value type and lane loop.",
+      "baseline_lines": 96,
+      "baseline_chars": 4758,
+      "advanced_lines": 194,
+      "advanced_chars": 8158,
       "baseline_code": {
         "lines": 96,
         "chars": 4382
@@ -228,22 +229,22 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 245,
-        "added_lines": 200,
-        "deleted_lines": 86,
-        "changed_chars": 10636
+        "changed_line_slots": 200,
+        "added_lines": 181,
+        "deleted_lines": 83,
+        "changed_chars": 8979
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 155,
+        "changed_line_slots": 96,
         "added_lines": 96,
-        "deleted_lines": 109,
-        "changed_chars": 7258
+        "deleted_lines": 46,
+        "changed_chars": 4758
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 215,
-        "added_lines": 200,
-        "deleted_lines": 99,
-        "changed_chars": 9487
+        "changed_line_slots": 194,
+        "added_lines": 194,
+        "deleted_lines": 46,
+        "changed_chars": 8158
       },
       "throughput_millions": {
         "checked": 31.311360481744067,
@@ -252,15 +253,15 @@
     },
     {
       "language": "LuaJIT",
-      "baseline": "benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua",
-      "advanced": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
-      "baseline_label": "generic matrix helper loop",
-      "advanced_label": "flat fixed-shape scalarized state",
-      "note": "The advanced source removes helper-level matrix temporaries and writes each component directly.",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+      "baseline_label": "compact generic matrix helper loop",
+      "advanced_label": "compact flat fixed-shape scalarized state",
+      "note": "The compact controls preserve the Lua algorithms; the advanced source removes helper-level matrix temporaries and writes each component directly.",
       "baseline_lines": 43,
       "baseline_chars": 3369,
-      "advanced_lines": 169,
-      "advanced_chars": 7609,
+      "advanced_lines": 153,
+      "advanced_chars": 7444,
       "baseline_code": {
         "lines": 43,
         "chars": 3288
@@ -286,22 +287,22 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 174,
-        "added_lines": 161,
+        "changed_line_slots": 150,
+        "added_lines": 145,
         "deleted_lines": 35,
-        "changed_chars": 9238
+        "changed_chars": 7719
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 116,
+        "changed_line_slots": 46,
         "added_lines": 43,
-        "deleted_lines": 116,
-        "changed_chars": 4974
+        "deleted_lines": 46,
+        "changed_chars": 3369
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 182,
-        "added_lines": 155,
-        "deleted_lines": 102,
-        "changed_chars": 9573
+        "changed_line_slots": 153,
+        "added_lines": 153,
+        "deleted_lines": 46,
+        "changed_chars": 7444
       },
       "throughput_millions": {
         "checked": 1.2773431259999999,
@@ -310,15 +311,15 @@
     },
     {
       "language": "Lua",
-      "baseline": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
-      "advanced": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
-      "baseline_label": "same flat source under PUC Lua",
-      "advanced_label": "same flat source under PUC Lua",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+      "baseline_label": "same compact flat source under PUC Lua",
+      "advanced_label": "same compact flat source under PUC Lua",
       "note": "The Lua comparison isolates the runtime: the source is identical to the LuaJIT flat control.",
-      "baseline_lines": 169,
-      "baseline_chars": 7609,
-      "advanced_lines": 169,
-      "advanced_chars": 7609,
+      "baseline_lines": 153,
+      "baseline_chars": 7444,
+      "advanced_lines": 153,
+      "advanced_chars": 7444,
       "baseline_code": {
         "lines": 153,
         "chars": 7031
@@ -350,16 +351,16 @@
         "changed_chars": 0
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 182,
-        "added_lines": 155,
-        "deleted_lines": 102,
-        "changed_chars": 9573
+        "changed_line_slots": 153,
+        "added_lines": 153,
+        "deleted_lines": 46,
+        "changed_chars": 7444
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 182,
-        "added_lines": 155,
-        "deleted_lines": 102,
-        "changed_chars": 9573
+        "changed_line_slots": 153,
+        "added_lines": 153,
+        "deleted_lines": 46,
+        "changed_chars": 7444
       },
       "throughput_millions": {
         "checked": 0.565098,
@@ -368,15 +369,15 @@
     },
     {
       "language": "Taichi",
-      "baseline": "benchmarks/archive/compute/parallel-ekf/taichi_comparable.py",
-      "advanced": "benchmarks/archive/compute/parallel-ekf/taichi_optimized.py",
-      "baseline_label": "Vector/Matrix resident fields",
-      "advanced_label": "scalar SoA fields and unrolled 3x3 arithmetic",
-      "note": "This is the source-specialized Taichi control; it still uses stock Taichi 1.7.4 and per-turn sync.",
-      "baseline_lines": 307,
-      "baseline_chars": 11996,
-      "advanced_lines": 318,
-      "advanced_chars": 14346,
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+      "baseline_label": "compact Vector/Matrix resident fields",
+      "advanced_label": "compact scalar SoA fields and unrolled 3x3 arithmetic",
+      "note": "This is the compact source-specialized Taichi control; it still uses stock Taichi 1.7.4 and per-turn sync.",
+      "baseline_lines": 260,
+      "baseline_chars": 11243,
+      "advanced_lines": 277,
+      "advanced_chars": 13907,
       "baseline_code": {
         "lines": 260,
         "chars": 8891
@@ -402,22 +403,22 @@
       },
       "workload": "500,000 x 40 -> 500,000 x 40",
       "baseline_to_advanced": {
-        "changed_line_slots": 255,
-        "added_lines": 192,
-        "deleted_lines": 181,
-        "changed_chars": 13096
+        "changed_line_slots": 224,
+        "added_lines": 179,
+        "deleted_lines": 162,
+        "changed_chars": 11640
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 333,
-        "added_lines": 287,
-        "deleted_lines": 96,
-        "changed_chars": 14642
+        "changed_line_slots": 260,
+        "added_lines": 260,
+        "deleted_lines": 46,
+        "changed_chars": 11243
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 351,
-        "added_lines": 298,
-        "deleted_lines": 96,
-        "changed_chars": 17149
+        "changed_line_slots": 277,
+        "added_lines": 277,
+        "deleted_lines": 46,
+        "changed_chars": 13907
       },
       "throughput_millions": {
         "checked": 168.798,
@@ -466,16 +467,16 @@
         "changed_chars": 0
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 124,
+        "changed_line_slots": 53,
         "added_lines": 28,
-        "deleted_lines": 115,
-        "changed_chars": 5152
+        "deleted_lines": 45,
+        "changed_chars": 4092
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 124,
+        "changed_line_slots": 53,
         "added_lines": 28,
-        "deleted_lines": 115,
-        "changed_chars": 5152
+        "deleted_lines": 45,
+        "changed_chars": 4092
       },
       "throughput_millions": {
         "checked": 2.707078841979349,
@@ -524,16 +525,16 @@
         "changed_chars": 0
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 116,
+        "changed_line_slots": 46,
         "added_lines": 45,
-        "deleted_lines": 116,
-        "changed_chars": 4974
+        "deleted_lines": 46,
+        "changed_chars": 2430
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 116,
+        "changed_line_slots": 46,
         "added_lines": 45,
-        "deleted_lines": 116,
-        "changed_chars": 4974
+        "deleted_lines": 46,
+        "changed_chars": 2430
       },
       "throughput_millions": {
         "checked": 48.390999274135005,

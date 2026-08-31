@@ -16,15 +16,16 @@ git switch --track origin/codex/mech-program-gpu
 
 | Role | Checked-in source |
 | --- | --- |
-| High-level Mech EKF | `hosts/gpu/fixtures/ekf-kernel.mec` |
+| High-level Mech EKF (full reference) | `hosts/gpu/fixtures/ekf-kernel.mec` |
+| Minimized Mech EKF source | `benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec` |
 | Taichi-comparable Mech EKF | `hosts/gpu/fixtures/ekf-kernel-taichi-comparable.mec` |
 | Source-specialized Taichi control | `benchmarks/archive/compute/parallel-ekf/taichi_optimized.py` |
 | Mech artifact benchmark harness | `hosts/gpu/examples/parallel_ekf_benchmark.rs` |
 | Generic scalar, SIMD, and WGPU lowering/execution | `hosts/gpu/src/batched.rs` |
 | macOS native Metal measurement backend | `hosts/gpu/src/metal.rs` |
 | Cranelift lowering/execution | `hosts/gpu/src/batched/jit.rs` |
-| Optimized Rust control | `hosts/gpu/examples/parallel_ekf_rust_scalar.rs` |
-| Rust packed-lane SIMD control | `hosts/gpu/examples/parallel_ekf_rust_simd.rs` |
+| Optimized Rust control (full reference) | `hosts/gpu/examples/parallel_ekf_rust_scalar.rs` |
+| Rust packed-lane SIMD control (full reference) | `hosts/gpu/examples/parallel_ekf_rust_simd.rs` |
 | NumPy control | `benchmarks/archive/compute/parallel-ekf/numpy_scalar.py` |
 | Julia generic control | `benchmarks/archive/compute/parallel-ekf/julia_scalar.jl` |
 | Julia fixed-shape control | `benchmarks/archive/compute/parallel-ekf/julia_flat.jl` |
@@ -37,9 +38,18 @@ git switch --track origin/codex/mech-program-gpu
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Minimal NumPy scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py` |
 | Minimal NumPy batched control | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py` |
+| Minimized Rust scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs` |
+| Minimized Rust packed-lane SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs` |
+| Minimized Julia scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl` |
+| Minimized Julia packed-lane SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl` |
+| Minimized LuaJIT scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua` |
+| Minimized LuaJIT flat control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua` |
+| Minimized Taichi comparable control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py` |
+| Minimized Taichi optimized control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py` |
 | Minimal Halide fixed-shape pipeline | `benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp` |
 | Minimal Futhark data-parallel program | `benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut` |
 | Minimal cross-control runner | `benchmarks/archive/compute/parallel-ekf/minimal/measure.py` |
+| Compact-source equivalence check | `benchmarks/archive/compute/parallel-ekf/minimal/check_sources.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
 | Cross-language checked/unchecked chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_cross_language_comparison.py` |
@@ -135,6 +145,14 @@ identified as backend support instead of being hidden as a source rewrite.
 The complete table is in
 `results/parallel-ekf-source-diff-report.md`, with machine-readable metrics in
 `results/parallel-ekf-source-diff-report.json`.
+
+The report now measures the checked-in compact controls under `minimal/`, not
+the explanatory listings. The Mech control is a single 42-line code-only
+recurrence with one statement per line, compact matrix literals, broadcast
+inputs, and the three publication predicates. The other compact controls are
+comment-free copies of the same benchmark programs; their harness behavior is
+unchanged, so source size is not being reduced by deleting numerical work.
+The longer reference files remain in the source map for auditability.
 
 ## Minimal Halide and Futhark controls
 

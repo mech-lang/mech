@@ -14,7 +14,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 HERE = Path(__file__).resolve().parent
-BASE_MECH = ROOT / "hosts/gpu/fixtures/ekf-kernel.mec"
+BASE_MECH = ROOT / "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec"
+REFERENCE_MECH = ROOT / "hosts/gpu/fixtures/ekf-kernel.mec"
 MECH_SUPPORT_BASE = "1ca47cdeef1cef071a891babf5423af03f51466f"
 MECH_SUPPORT_FILES = (
     "Cargo.lock",
@@ -41,59 +42,59 @@ COLORS = {
 VARIANTS = [
     {
         "language": "Mech",
-        "baseline": "hosts/gpu/fixtures/ekf-kernel.mec",
-        "advanced": "hosts/gpu/fixtures/ekf-kernel.mec",
-        "baseline_label": "same high-level `.mec` program",
-        "advanced_label": "same `.mec`; native backend selected at build",
-        "note": "The source recurrence does not change. Native Metal specialization is backend support, not a second Mech program.",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+        "baseline_label": "compact high-level `.mec` program",
+        "advanced_label": "same compact `.mec`; native backend selected at build",
+        "note": "The compact source recurrence does not change. Native Metal specialization is backend support, not a second Mech program.",
     },
     {
         "language": "Rust",
-        "baseline": "hosts/gpu/examples/parallel_ekf_rust_scalar.rs",
-        "advanced": "hosts/gpu/examples/parallel_ekf_rust_simd.rs",
-        "baseline_label": "fixed-shape scalar control",
-        "advanced_label": "packed four-lane SIMD control",
-        "note": "The advanced control changes the value representation and execution loop.",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs",
+        "baseline_label": "compact fixed-shape scalar control",
+        "advanced_label": "compact packed four-lane SIMD control",
+        "note": "The compact controls preserve the checked-in Rust algorithms while removing narrative scaffolding; the advanced control still changes the value representation and execution loop.",
     },
     {
         "language": "NumPy",
-        "baseline": "benchmarks/archive/compute/parallel-ekf/numpy_scalar.py",
-        "advanced": "benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py",
-        "baseline_label": "per-filter scalar loop",
-        "advanced_label": "batched fixed-shape vectorized operations",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py",
+        "baseline_label": "compact per-filter scalar loop",
+        "advanced_label": "compact batched fixed-shape vectorized operations",
         "note": "The baseline is a per-filter NumPy call from a Python loop; the advanced control uses fixed-shape batched arrays. The row is labeled NumPy because both variants use NumPy for the numeric work.",
     },
     {
         "language": "Julia",
-        "baseline": "benchmarks/archive/compute/parallel-ekf/julia_scalar.jl",
-        "advanced": "benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl",
-        "baseline_label": "generic scalar Julia",
-        "advanced_label": "explicit four-lane SIMD.jl intrinsics",
-        "note": "The advanced source introduces an explicit packed value type and lane loop.",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
+        "baseline_label": "compact generic scalar Julia",
+        "advanced_label": "compact explicit four-lane SIMD.jl intrinsics",
+        "note": "The compact controls preserve the Julia algorithms; the advanced source introduces an explicit packed value type and lane loop.",
     },
     {
         "language": "LuaJIT",
-        "baseline": "benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua",
-        "advanced": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
-        "baseline_label": "generic matrix helper loop",
-        "advanced_label": "flat fixed-shape scalarized state",
-        "note": "The advanced source removes helper-level matrix temporaries and writes each component directly.",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+        "baseline_label": "compact generic matrix helper loop",
+        "advanced_label": "compact flat fixed-shape scalarized state",
+        "note": "The compact controls preserve the Lua algorithms; the advanced source removes helper-level matrix temporaries and writes each component directly.",
     },
     {
         "language": "Lua",
-        "baseline": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
-        "advanced": "benchmarks/archive/compute/parallel-ekf/luajit_fast.lua",
-        "baseline_label": "same flat source under PUC Lua",
-        "advanced_label": "same flat source under PUC Lua",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+        "baseline_label": "same compact flat source under PUC Lua",
+        "advanced_label": "same compact flat source under PUC Lua",
         "note": "The Lua comparison isolates the runtime: the source is identical to the LuaJIT flat control.",
     },
     {
         "language": "Taichi",
-        "baseline": "benchmarks/archive/compute/parallel-ekf/taichi_comparable.py",
-        "advanced": "benchmarks/archive/compute/parallel-ekf/taichi_optimized.py",
-        "baseline_label": "Vector/Matrix resident fields",
-        "advanced_label": "scalar SoA fields and unrolled 3x3 arithmetic",
-        "note": "This is the source-specialized Taichi control; it still uses stock Taichi 1.7.4 and per-turn sync.",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+        "baseline_label": "compact Vector/Matrix resident fields",
+        "advanced_label": "compact scalar SoA fields and unrolled 3x3 arithmetic",
+        "note": "This is the compact source-specialized Taichi control; it still uses stock Taichi 1.7.4 and per-turn sync.",
     },
     {
         "language": "Halide",
@@ -404,7 +405,8 @@ def build_report(cross: dict, native: dict, taichi: dict, lua: dict, minimal: di
     return {
         "schema_version": 1,
         "base_mech": str(BASE_MECH.relative_to(ROOT)),
-        "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. This is an edit-size measure, not a claim about semantic difficulty.",
+        "reference_mech": str(REFERENCE_MECH.relative_to(ROOT)),
+        "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. This is an edit-size measure, not a claim about semantic difficulty.",
         "mech_backend_support_delta": mech_support_delta(),
         "rows": rows,
     }
@@ -414,7 +416,7 @@ def markdown(report: dict) -> str:
     lines = [
         "# Parallel EKF source-edit cost",
         "",
-        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the checked-in Mech EKF. The workload column shows lanes x turns for each side; throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate.",
+        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the compact checked-in Mech EKF source. The full teaching listing is retained as a separate reference path in the JSON. The workload column shows lanes x turns for each side; throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate.",
         "",
         "## Variant matrix",
         "",
