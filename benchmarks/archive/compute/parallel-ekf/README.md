@@ -370,6 +370,7 @@ python3 plot_cross_language_comparison.py \
   --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json \
   --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json \
   --futhark-fixed results/apple-m1-futhark-ispc-fixed-2026-08-31.json \
+  --futhark-scalarized results/apple-m1-futhark-scalarized-2026-09-01.json \
   --mech-persistent results/apple-m1-mech-persistent-simd-2026-08-31.json \
   --fused-references results/apple-m1-fused-reference-controls-2026-08-31.json \
   --julia-gpu results/apple-m1-julia-metal-2026-08-31.json \

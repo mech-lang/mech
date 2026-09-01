@@ -7,8 +7,8 @@ entry point at compile time; each invalid candidate retains its prior state.
 
 | Source | Checked (M turns/s) | Unchecked (M turns/s) |
 | --- | ---: | ---: |
-| `futhark_ekf.fut` (array-valued covariance) | 28.533 | 51.593 |
-| `futhark_scalar_ekf.fut` (scalar-expanded covariance) | **37.569** | **52.597** |
+| `futhark_ekf.fut` (array-valued covariance) | 28.620 | 51.693 |
+| `futhark_scalar_ekf.fut` (scalar-expanded covariance) | **37.608** | **52.673** |
 
 Both versions return the same valid-workload result within f32 reassociation
 (checksums `2682056.0609764401` and `2682056.0609516725`; absolute difference

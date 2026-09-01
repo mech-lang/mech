@@ -77,6 +77,7 @@ def load_rows(
     halide_gpu: dict | None = None,
     numpy_gpu: dict | None = None,
     futhark_fixed: dict | None = None,
+    futhark_scalarized: dict | None = None,
     mech_persistent: dict | None = None,
     fused_references: dict | None = None,
     strict_mech: dict | None = None,
@@ -412,6 +413,22 @@ def load_rows(
                         "throughput": statistics.median(row["throughput_millions"]),
                     }
                 )
+    if futhark_scalarized is not None:
+        import statistics
+
+        for mode in ("checked", "unchecked"):
+            row = futhark_scalarized.get("rows", {}).get(
+                f"Futhark ISPC scalarized SIMD 1 worker {mode}"
+            )
+            if row is not None and "throughput_millions" in row:
+                rows.append(
+                    {
+                        "label": "Futhark ISPC scalarized SIMD, 1 worker (10k x 20)",
+                        "family": "Futhark",
+                        "mode": mode,
+                        "throughput": statistics.median(row["throughput_millions"]),
+                    }
+                )
     if mech_persistent is not None:
         import statistics
 
@@ -607,6 +624,7 @@ def main() -> None:
     parser.add_argument("--halide-gpu", type=Path, help="Halide native Metal GPU evidence JSON")
     parser.add_argument("--numpy-gpu", type=Path, help="NumPy GPU capability evidence JSON")
     parser.add_argument("--futhark-fixed", type=Path, help="fixed-mode Futhark ISPC evidence JSON")
+    parser.add_argument("--futhark-scalarized", type=Path, help="Mech-level one-worker scalarized Futhark ISPC evidence JSON")
     parser.add_argument("--mech-persistent", type=Path, help="persistent Mech SIMD/JIT evidence JSON")
     parser.add_argument(
         "--fused-references",
@@ -673,6 +691,11 @@ def main() -> None:
         if args.futhark_fixed
         else None
     )
+    futhark_scalarized = (
+        json.loads(args.futhark_scalarized.read_text(encoding="utf-8"))
+        if args.futhark_scalarized
+        else None
+    )
     mech_persistent = (
         json.loads(args.mech_persistent.read_text(encoding="utf-8"))
         if args.mech_persistent
@@ -703,6 +726,7 @@ def main() -> None:
         halide_gpu,
         numpy_gpu,
         futhark_fixed,
+        futhark_scalarized,
         mech_persistent,
         fused_references,
         strict_mech,
