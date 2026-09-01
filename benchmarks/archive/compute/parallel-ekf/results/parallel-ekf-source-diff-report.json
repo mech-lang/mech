@@ -2,6 +2,15 @@
   "schema_version": 1,
   "base_mech": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
   "reference_mech": "hosts/gpu/fixtures/ekf-kernel.mec",
+  "benchmark_evidence": {
+    "cross_language": "2026-08-31T19:43:33.948743-04:00",
+    "native": "2026-08-31",
+    "strict_mech": "2026-08-31",
+    "strict_halide": "2026-09-01T00:05:05.531733-04:00",
+    "taichi": "2026-08-31",
+    "lua": "2026-08-31",
+    "minimal": "2026-08-31T18:45:52.116140-04:00"
+  },
   "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. This is an edit-size measure, not a claim about semantic difficulty.",
   "mech_backend_support_delta": {
     "base_commit": "1ca47cdeef1cef071a891babf5423af03f51466f",
@@ -49,8 +58,8 @@
           "unchecked": 1.029
         },
         "advanced": {
-          "checked": 246.151,
-          "unchecked": 241.028
+          "checked": 187.999,
+          "unchecked": 275.534
         }
       },
       "workload": "10,000 x 20 -> 500,000 x 40",
@@ -73,8 +82,8 @@
         "changed_chars": 0
       },
       "throughput_millions": {
-        "checked": 246.151,
-        "unchecked": 241.028
+        "checked": 187.999,
+        "unchecked": 275.534
       }
     },
     {
@@ -86,15 +95,15 @@
       "note": "The compact controls preserve the checked-in Rust algorithms while removing narrative scaffolding; the advanced control still changes the value representation and execution loop.",
       "baseline_lines": 210,
       "baseline_chars": 6454,
-      "advanced_lines": 585,
-      "advanced_chars": 20244,
+      "advanced_lines": 598,
+      "advanced_chars": 20655,
       "baseline_code": {
         "lines": 206,
         "chars": 5003
       },
       "advanced_code": {
-        "lines": 553,
-        "chars": 13846
+        "lines": 566,
+        "chars": 13848
       },
       "factors": {
         "layout": "fixed scalar arrays -> four-lane packed values",
@@ -113,10 +122,10 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 688,
-        "added_lines": 565,
+        "changed_line_slots": 701,
+        "added_lines": 578,
         "deleted_lines": 190,
-        "changed_chars": 23447
+        "changed_chars": 23858
       },
       "baseline_to_base_mech": {
         "changed_line_slots": 210,
@@ -125,10 +134,10 @@
         "changed_chars": 6454
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 583,
-        "added_lines": 583,
+        "changed_line_slots": 596,
+        "added_lines": 596,
         "deleted_lines": 44,
-        "changed_chars": 20242
+        "changed_chars": 20653
       },
       "throughput_millions": {
         "checked": 25.650480145,
@@ -451,15 +460,15 @@
       },
       "throughput_variants": {
         "baseline": {
-          "checked": 2.707078841979349,
-          "unchecked": 5.058051765922671
+          "checked": 111.47389174440411,
+          "unchecked": 212.28295726080685
         },
         "advanced": {
-          "checked": 2.707078841979349,
-          "unchecked": 5.058051765922671
+          "checked": 111.47389174440411,
+          "unchecked": 212.28295726080685
         }
       },
-      "workload": "10,000 x 20 -> 10,000 x 20",
+      "workload": "500,000 x 40 -> 500,000 x 40",
       "baseline_to_advanced": {
         "changed_line_slots": 0,
         "added_lines": 0,
@@ -479,8 +488,8 @@
         "changed_chars": 12174
       },
       "throughput_millions": {
-        "checked": 2.707078841979349,
-        "unchecked": 5.058051765922671
+        "checked": 111.47389174440411,
+        "unchecked": 212.28295726080685
       }
     },
     {

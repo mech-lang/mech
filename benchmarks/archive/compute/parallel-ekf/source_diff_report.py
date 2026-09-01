@@ -293,10 +293,25 @@ def throughput_rows(cross: dict, native: dict, taichi: dict, lua: dict, minimal:
     return result
 
 
-def throughput_variants(cross: dict, native: dict, taichi: dict, lua: dict, minimal: dict | None) -> dict[str, dict[str, dict[str, float | None]]]:
+def throughput_variants(
+    cross: dict,
+    native: dict,
+    taichi: dict,
+    lua: dict,
+    minimal: dict | None,
+    strict_mech: dict | None = None,
+    strict_halide: dict | None = None,
+) -> dict[str, dict[str, dict[str, float | None]]]:
     """Return benchmark values for both sides of every source pair."""
     scalar = cross["summary"]["scalar_outer_loop"]
     native_rows = {row["label"]: row for row in native["rows"]}
+    strict_mech_rows = (strict_mech or {}).get("rows", {})
+
+    def mech_metric(mode: str) -> float:
+        strict_row = strict_mech_rows.get(f"Mech native Metal {mode}")
+        if strict_row is not None:
+            return strict_row["median_million_turns_per_second"]
+        return native_rows[f"Mech native Metal, {mode}"]["throughput_millions"]
 
     def m(label: str, mode: str) -> float | None:
         row = scalar.get(label if not mode else f"{label} {mode}")
@@ -310,13 +325,21 @@ def throughput_variants(cross: dict, native: dict, taichi: dict, lua: dict, mini
             return None
         return statistics.median(row["throughput"]) / 1e6
 
+    def strict_halide_metric(mode: str) -> float | None:
+        if strict_halide is None:
+            return None
+        row = strict_halide.get("rows", {}).get(f"Halide GPU Metal {mode}")
+        if row is None or "throughput" not in row:
+            return None
+        return statistics.median(row["throughput"]) / 1e6
+
     def pair(checked: float | None, unchecked: float | None) -> dict[str, float | None]:
         return {"checked": checked, "unchecked": unchecked}
 
     result: dict[str, dict[str, dict[str, float | None]]] = {
         "Mech": {
             "baseline": pair(m("Mech scalar", ""), m("Mech scalar", "unchecked")),
-            "advanced": pair(native_rows["Mech native Metal, checked"]["throughput_millions"], native_rows["Mech native Metal, unchecked"]["throughput_millions"]),
+            "advanced": pair(mech_metric("checked"), mech_metric("unchecked")),
         },
         "Rust": {
             "baseline": pair(None, m("Rust optimized fixed-shape", "")),
@@ -343,8 +366,14 @@ def throughput_variants(cross: dict, native: dict, taichi: dict, lua: dict, mini
             "advanced": pair(taichi["rows"][0]["throughput_millions"], taichi["rows"][1]["throughput_millions"]),
         },
         "Halide": {
-            "baseline": pair(min_m("Halide checked"), min_m("Halide unchecked")),
-            "advanced": pair(min_m("Halide checked"), min_m("Halide unchecked")),
+            "baseline": pair(
+                strict_halide_metric("checked") or min_m("Halide checked"),
+                strict_halide_metric("unchecked") or min_m("Halide unchecked"),
+            ),
+            "advanced": pair(
+                strict_halide_metric("checked") or min_m("Halide checked"),
+                strict_halide_metric("unchecked") or min_m("Halide unchecked"),
+            ),
         },
         "Futhark": {
             "baseline": pair(min_m("Futhark multicore 1 threads checked"), min_m("Futhark multicore 1 threads unchecked")),
@@ -363,12 +392,29 @@ def throughput_variants(cross: dict, native: dict, taichi: dict, lua: dict, mini
     return result
 
 
-def build_report(cross: dict, native: dict, taichi: dict, lua: dict, minimal: dict | None = None) -> dict:
+def build_report(
+    cross: dict,
+    native: dict,
+    taichi: dict,
+    lua: dict,
+    minimal: dict | None = None,
+    strict_mech: dict | None = None,
+    strict_halide: dict | None = None,
+) -> dict:
     base = read(BASE_MECH)
-    variants_throughput = throughput_variants(cross, native, taichi, lua, minimal)
+    variants_throughput = throughput_variants(
+        cross,
+        native,
+        taichi,
+        lua,
+        minimal,
+        strict_mech,
+        strict_halide,
+    )
     cross_config = cross.get("configuration", {})
-    native_config = native.get("configuration", {})
+    native_config = (strict_mech or native).get("configuration", {})
     minimal_config = (minimal or {}).get("configuration", {})
+    halide_config = (strict_halide or minimal or {}).get("configuration", {})
 
     def extent(config: dict, key: str) -> str:
         value = config.get(key, "?")
@@ -377,10 +423,11 @@ def build_report(cross: dict, native: dict, taichi: dict, lua: dict, minimal: di
     scalar_workload = f"{extent(cross_config, 'scalar_instances')} x {extent(cross_config, 'scalar_turns')}"
     native_workload = f"{extent(native_config, 'instances')} x {extent(native_config, 'turns')}"
     minimal_workload = f"{extent(minimal_config, 'instances')} x {extent(minimal_config, 'turns')}"
+    halide_workload = f"{extent(halide_config, 'instances')} x {extent(halide_config, 'turns')}"
     workload = {
         "Mech": f"{scalar_workload} -> {native_workload}",
         "Taichi": f"{native_workload} -> {native_workload}",
-        "Halide": f"{minimal_workload} -> {minimal_workload}",
+        "Halide": f"{halide_workload} -> {halide_workload}",
         "Futhark": f"{minimal_workload} -> {minimal_workload}",
     }
     rows = []
@@ -411,6 +458,15 @@ def build_report(cross: dict, native: dict, taichi: dict, lua: dict, minimal: di
         "schema_version": 1,
         "base_mech": str(BASE_MECH.relative_to(ROOT)),
         "reference_mech": str(REFERENCE_MECH.relative_to(ROOT)),
+        "benchmark_evidence": {
+            "cross_language": cross.get("generated_at"),
+            "native": native.get("generated_at"),
+            "strict_mech": (strict_mech or {}).get("generated_at"),
+            "strict_halide": (strict_halide or {}).get("generated_at"),
+            "taichi": taichi.get("generated_at"),
+            "lua": lua.get("generated_at"),
+            "minimal": (minimal or {}).get("generated_at"),
+        },
         "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. This is an edit-size measure, not a claim about semantic difficulty.",
         "mech_backend_support_delta": mech_support_delta(),
         "rows": rows,
@@ -421,7 +477,7 @@ def markdown(report: dict) -> str:
     lines = [
         "# Parallel EKF source-edit cost",
         "",
-        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the compact checked-in Mech EKF source. The full teaching listing is retained as a separate reference path in the JSON. The workload column shows lanes x turns for each side; throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate.",
+        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the compact checked-in Mech EKF source. The full teaching listing is retained as a separate reference path in the JSON. The workload column shows lanes x turns for each side; throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate. Throughput provenance, including strict Mech and Halide evidence when present, is recorded in the JSON `benchmark_evidence` field.",
         "",
         "## Variant matrix",
         "",
@@ -518,7 +574,11 @@ def main() -> None:
     parser.add_argument("taichi", type=Path)
     parser.add_argument("lua", type=Path)
     parser.add_argument("output_directory", type=Path)
+    parser.add_argument("--strict-mech", type=Path)
+    parser.add_argument("--strict-halide", type=Path)
     args = parser.parse_args()
+    strict_mech_path = args.strict_mech or (args.output_directory / "apple-m1-mech-halide-strict-2026-08-31.json")
+    strict_halide_path = args.strict_halide or (args.output_directory / "apple-m1-halide-metal-strict-2026-08-31.json")
     report = build_report(
         json.loads(args.cross_language.read_text(encoding="utf-8")),
         json.loads(args.native.read_text(encoding="utf-8")),
@@ -527,6 +587,8 @@ def main() -> None:
         json.loads((args.output_directory / "apple-m1-minimal-source-2026-08-31.json").read_text(encoding="utf-8"))
         if (args.output_directory / "apple-m1-minimal-source-2026-08-31.json").exists()
         else None,
+        json.loads(strict_mech_path.read_text(encoding="utf-8")) if strict_mech_path.exists() else None,
+        json.loads(strict_halide_path.read_text(encoding="utf-8")) if strict_halide_path.exists() else None,
     )
     args.output_directory.mkdir(parents=True, exist_ok=True)
     (args.output_directory / "parallel-ekf-source-diff-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

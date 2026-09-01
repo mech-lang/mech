@@ -349,7 +349,9 @@ python3 source_diff_report.py \
   results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
   results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
   results/apple-m1-lua-2026-08-31.json \
-  results
+  results \
+  --strict-mech results/apple-m1-mech-halide-strict-2026-08-31.json \
+  --strict-halide results/apple-m1-halide-metal-strict-2026-08-31.json
 ```
 
 To isolate the direct control from the other backend warmups, build the
