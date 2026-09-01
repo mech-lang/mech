@@ -535,7 +535,7 @@ def render(
     width = 1700
     left = 550
     right = 140
-    top = 120
+    top = 200
     row_height = 31
     bottom = 100
     chart_width = width - left - right
@@ -589,10 +589,10 @@ def render(
     legend_x = width - right - 460
     for index, family in enumerate(legend):
         x_pos = legend_x + (index % 4) * 115
-        y_pos = 27 + (index // 4) * 22
+        y_pos = 106 + (index // 4) * 22
         lines.append(f'<rect x="{x_pos}" y="{y_pos - 11}" width="14" height="14" rx="2" fill="{COLORS[family]}"/>')
         lines.append(f'<text x="{x_pos + 22}" y="{y_pos}" font-size="13">{family}</text>')
-    key_y = 93
+    key_y = 172
     lines.append(f'<rect x="{legend_x}" y="{key_y - 11}" width="14" height="14" rx="2" fill="{COLORS["Mech"]}"/>')
     lines.append(f'<text x="{legend_x + 22}" y="{key_y}" font-size="13">CPU solid</text>')
     lines.append(f'<rect x="{legend_x + 115}" y="{key_y - 11}" width="14" height="14" rx="2" fill="url(#gpu-mech)"/>')

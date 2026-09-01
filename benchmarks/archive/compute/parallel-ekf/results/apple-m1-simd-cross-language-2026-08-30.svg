@@ -20,18 +20,18 @@
 <text x="905.0" y="688" text-anchor="middle" class="muted" font-size="14">million EKF turns/s</text>
 <line x1="894.8" y1="95" x2="894.8" y2="620" stroke="#f3a847" stroke-width="2" stroke-dasharray="7 6"/>
 <text x="902.8" y="91" fill="#f3a847" font-size="13">Rust packed-SIMD unchecked reference: 29.35</text>
-<text x="414" y="139" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
-<rect x="430" y="125" width="657.0" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="1096.0" y="139" class="value">41.50</text>
-<text x="414" y="170" text-anchor="end" class="label">Julia fixed-shape SIMD unchecked</text>
-<rect x="430" y="156" width="564.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="1003.8" y="170" class="value">35.67</text>
-<text x="414" y="201" text-anchor="end" class="label">Julia SIMD.jl intrinsics unchecked</text>
-<rect x="430" y="187" width="519.4" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="958.4" y="201" class="value">32.80</text>
-<text x="414" y="232" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
-<rect x="430" y="218" width="497.5" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="936.5" y="232" class="value">31.42</text>
+<text x="414" y="139" text-anchor="end" class="label">Julia fixed-shape SIMD unchecked</text>
+<rect x="430" y="125" width="564.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="1003.8" y="139" class="value">35.67</text>
+<text x="414" y="170" text-anchor="end" class="label">Julia SIMD.jl intrinsics unchecked</text>
+<rect x="430" y="156" width="519.4" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="958.4" y="170" class="value">32.80</text>
+<text x="414" y="201" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
+<rect x="430" y="187" width="497.5" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="936.5" y="201" class="value">31.42</text>
+<text x="414" y="232" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
+<rect x="430" y="218" width="466.1" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="905.1" y="232" class="value">29.44</text>
 <text x="414" y="263" text-anchor="end" class="label">Rust packed SIMD unchecked</text>
 <rect x="430" y="249" width="464.8" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
 <text x="903.8" y="263" class="value">29.35</text>
@@ -70,10 +70,10 @@
 <text x="440.0" y="604" class="value">0.06</text>
 <text x="52" y="620" class="muted" font-size="12">Checked GPU rows synchronize and validate each turn; unchecked rows batch turns. Setup and readback are excluded.</text>
 <g aria-label="Test machine">
-<rect x="990" y="626" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
-<text x="1002" y="642" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
-<text x="1002" y="657" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
-<text x="1002" y="672" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
-<text x="1002" y="687" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
+<rect x="990" y="18" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
+<text x="1002" y="34" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
+<text x="1002" y="49" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
+<text x="1002" y="64" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
+<text x="1002" y="79" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
 </g>
 </svg>

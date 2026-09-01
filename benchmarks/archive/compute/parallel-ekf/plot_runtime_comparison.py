@@ -41,7 +41,7 @@ def main() -> None:
     width = 1500
     left = 430
     right = 150
-    top = 125
+    top = 140
     row_height = 42
     bottom = 100
     chart_width = width - left - right
@@ -72,8 +72,8 @@ def main() -> None:
     legend_x = width - right - 220
     for index, runtime in enumerate(("Mech", "Taichi")):
         x_pos = legend_x + index * 115
-        lines.append(f'<rect x="{x_pos}" y="27" width="14" height="14" rx="2" fill="{COLORS[runtime]}"/>')
-        lines.append(f'<text x="{x_pos + 22}" y="39" font-size="14">{runtime}</text>')
+        lines.append(f'<rect x="{x_pos}" y="95" width="14" height="14" rx="2" fill="{COLORS[runtime]}"/>')
+        lines.append(f'<text x="{x_pos + 22}" y="107" font-size="14">{runtime}</text>')
 
     for index, row in enumerate(rows):
         value = float(row["throughput_millions"])

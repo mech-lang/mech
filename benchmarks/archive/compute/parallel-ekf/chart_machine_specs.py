@@ -13,12 +13,16 @@ MACHINE_LINES = (
 )
 
 
-def svg_machine_specs(width: int, height: int, right: int = 24, bottom: int = 18) -> str:
-    """Return a bottom-right machine specification box."""
+def svg_machine_specs(width: int, height: int, right: int = 24, bottom: int = 18, *, top: int = 18) -> str:
+    """Return a top-right machine specification box.
+
+    ``bottom`` remains in the signature for compatibility with the existing
+    chart renderers; machine metadata is intentionally anchored at the top.
+    """
     box_width = 390
     box_height = 72
     x = width - right - box_width
-    y = height - bottom - box_height
+    y = top
     title, *details = MACHINE_LINES
     lines = [
         f'<g aria-label="{html.escape(title, quote=True)}">',

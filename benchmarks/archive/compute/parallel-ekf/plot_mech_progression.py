@@ -218,8 +218,8 @@ def render(rows: list[dict[str, object]], output: Path) -> None:
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.minor-grid{stroke:#1b2536;stroke-width:1}.label{font-size:14px}.value{font-size:13px;font-variant-numeric:tabular-nums}.note{fill:#91a0b5;font-size:11px}</style>',
         '<text x="52" y="42" font-size="26" font-weight="700">Mech EKF execution-lane progression</text>',
         '<text x="52" y="68" class="muted" font-size="15">Apple M1 | Mech execution trials | logarithmic million EKF turns per second axis | checked fastest to slowest; unchecked-only trials follow</text>',
-        f'<rect x="{width - right - 230}" y="24" width="16" height="16" rx="2" fill="#f4c430"/><text x="{width - right - 206}" y="37" font-size="13">checked</text>',
-        f'<rect x="{width - right - 120}" y="24" width="16" height="16" rx="2" fill="#a88721"/><text x="{width - right - 96}" y="37" font-size="13">unchecked</text>',
+        '<rect x="52" y="96" width="16" height="16" rx="2" fill="#f4c430"/><text x="76" y="109" font-size="13">checked</text>',
+        '<rect x="162" y="96" width="16" height="16" rx="2" fill="#a88721"/><text x="186" y="109" font-size="13">unchecked</text>',
     ]
     visible_ticks = [tick for tick in ticks if min_axis <= tick <= max_axis]
     for tick in visible_ticks:

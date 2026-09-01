@@ -1,65 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="477" viewBox="0 0 1500 477">
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="492" viewBox="0 0 1500 492">
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:15px} .value{font-size:14px;font-variant-numeric:tabular-nums}</style>
 <text x="52" y="43" font-size="27" font-weight="700">Backend-matched EKF runtime throughput</text>
-<text x="52" y="71" class="muted" font-size="15">Apple M1 | 500,000 resident filters x 40 turns | median of 3 isolated samples | synchronized after every turn</text>
-<line x1="430.0" y1="105" x2="430.0" y2="381" class="grid"/>
-<text x="430.0" y="405" text-anchor="middle" class="axis">0</text>
-<line x1="500.8" y1="105" x2="500.8" y2="381" class="grid"/>
-<text x="500.8" y="405" text-anchor="middle" class="axis">20</text>
-<line x1="571.5" y1="105" x2="571.5" y2="381" class="grid"/>
-<text x="571.5" y="405" text-anchor="middle" class="axis">40</text>
-<line x1="642.3" y1="105" x2="642.3" y2="381" class="grid"/>
-<text x="642.3" y="405" text-anchor="middle" class="axis">60</text>
-<line x1="713.1" y1="105" x2="713.1" y2="381" class="grid"/>
-<text x="713.1" y="405" text-anchor="middle" class="axis">80</text>
-<line x1="783.8" y1="105" x2="783.8" y2="381" class="grid"/>
-<text x="783.8" y="405" text-anchor="middle" class="axis">100</text>
-<line x1="854.6" y1="105" x2="854.6" y2="381" class="grid"/>
-<text x="854.6" y="405" text-anchor="middle" class="axis">120</text>
-<line x1="925.4" y1="105" x2="925.4" y2="381" class="grid"/>
-<text x="925.4" y="405" text-anchor="middle" class="axis">140</text>
-<line x1="996.2" y1="105" x2="996.2" y2="381" class="grid"/>
-<text x="996.2" y="405" text-anchor="middle" class="axis">160</text>
-<line x1="1066.9" y1="105" x2="1066.9" y2="381" class="grid"/>
-<text x="1066.9" y="405" text-anchor="middle" class="axis">180</text>
-<line x1="1137.7" y1="105" x2="1137.7" y2="381" class="grid"/>
-<text x="1137.7" y="405" text-anchor="middle" class="axis">200</text>
-<line x1="1208.5" y1="105" x2="1208.5" y2="381" class="grid"/>
-<text x="1208.5" y="405" text-anchor="middle" class="axis">220</text>
-<line x1="1279.2" y1="105" x2="1279.2" y2="381" class="grid"/>
-<text x="1279.2" y="405" text-anchor="middle" class="axis">240</text>
-<line x1="1350.0" y1="105" x2="1350.0" y2="381" class="grid"/>
-<text x="1350.0" y="405" text-anchor="middle" class="axis">260</text>
-<text x="890.0" y="449" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>
-<rect x="1130" y="27" width="14" height="14" rx="2" fill="#40d4b0"/>
-<text x="1152" y="39" font-size="14">Mech</text>
-<rect x="1245" y="27" width="14" height="14" rx="2" fill="#b68cff"/>
-<text x="1267" y="39" font-size="14">Taichi</text>
-<text x="414" y="149" text-anchor="end" class="label">Mech native Metal, checked</text>
-<rect x="430" y="132" width="871.0" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="1311.0" y="149" class="value">246.15</text>
-<text x="414" y="191" text-anchor="end" class="label">Taichi native Metal, checked</text>
-<rect x="430" y="174" width="625.3" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="1065.3" y="191" class="value">176.71</text>
-<text x="414" y="233" text-anchor="end" class="label">Mech WGPU over Metal, checked (transport control)</text>
-<rect x="430" y="216" width="584.4" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="1024.4" y="233" class="value">165.15</text>
-<text x="414" y="275" text-anchor="end" class="label">Mech native Metal, unchecked</text>
-<rect x="430" y="258" width="852.9" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="1292.9" y="275" class="value">241.03</text>
-<text x="414" y="317" text-anchor="end" class="label">Taichi native Metal, unchecked</text>
-<rect x="430" y="300" width="689.3" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="1129.3" y="317" class="value">194.79</text>
-<text x="414" y="359" text-anchor="end" class="label">Mech WGPU over Metal, unchecked (transport control)</text>
-<rect x="430" y="342" width="554.4" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="994.4" y="359" class="value">156.67</text>
-<text x="52" y="381" class="muted" font-size="12">Checked rows validate and publish only valid candidates; unchecked rows omit those checks. Every GPU row submits and waits once per turn; setup, compilation, allocation, warmup, and final readback are excluded. Native Metal rows use direct Metal command submission; WGPU-over-Metal rows are shown only as a transport control.</text>
+<text x="52" y="71" class="muted" font-size="15">Apple M1 | 500,000 resident filters x 40 turns | median of 3 isolated samples | checked fastest to slowest, then unchecked</text>
+<line x1="430.0" y1="120" x2="430.0" y2="396" class="grid"/>
+<text x="430.0" y="420" text-anchor="middle" class="axis">0</text>
+<line x1="500.8" y1="120" x2="500.8" y2="396" class="grid"/>
+<text x="500.8" y="420" text-anchor="middle" class="axis">20</text>
+<line x1="571.5" y1="120" x2="571.5" y2="396" class="grid"/>
+<text x="571.5" y="420" text-anchor="middle" class="axis">40</text>
+<line x1="642.3" y1="120" x2="642.3" y2="396" class="grid"/>
+<text x="642.3" y="420" text-anchor="middle" class="axis">60</text>
+<line x1="713.1" y1="120" x2="713.1" y2="396" class="grid"/>
+<text x="713.1" y="420" text-anchor="middle" class="axis">80</text>
+<line x1="783.8" y1="120" x2="783.8" y2="396" class="grid"/>
+<text x="783.8" y="420" text-anchor="middle" class="axis">100</text>
+<line x1="854.6" y1="120" x2="854.6" y2="396" class="grid"/>
+<text x="854.6" y="420" text-anchor="middle" class="axis">120</text>
+<line x1="925.4" y1="120" x2="925.4" y2="396" class="grid"/>
+<text x="925.4" y="420" text-anchor="middle" class="axis">140</text>
+<line x1="996.2" y1="120" x2="996.2" y2="396" class="grid"/>
+<text x="996.2" y="420" text-anchor="middle" class="axis">160</text>
+<line x1="1066.9" y1="120" x2="1066.9" y2="396" class="grid"/>
+<text x="1066.9" y="420" text-anchor="middle" class="axis">180</text>
+<line x1="1137.7" y1="120" x2="1137.7" y2="396" class="grid"/>
+<text x="1137.7" y="420" text-anchor="middle" class="axis">200</text>
+<line x1="1208.5" y1="120" x2="1208.5" y2="396" class="grid"/>
+<text x="1208.5" y="420" text-anchor="middle" class="axis">220</text>
+<line x1="1279.2" y1="120" x2="1279.2" y2="396" class="grid"/>
+<text x="1279.2" y="420" text-anchor="middle" class="axis">240</text>
+<line x1="1350.0" y1="120" x2="1350.0" y2="396" class="grid"/>
+<text x="1350.0" y="420" text-anchor="middle" class="axis">260</text>
+<text x="890.0" y="464" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>
+<rect x="1130" y="95" width="14" height="14" rx="2" fill="#40d4b0"/>
+<text x="1152" y="107" font-size="14">Mech</text>
+<rect x="1245" y="95" width="14" height="14" rx="2" fill="#b68cff"/>
+<text x="1267" y="107" font-size="14">Taichi</text>
+<text x="414" y="164" text-anchor="end" class="label">Mech native Metal, checked</text>
+<rect x="430" y="147" width="871.0" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="1311.0" y="164" class="value">246.15</text>
+<text x="414" y="206" text-anchor="end" class="label">Taichi native Metal, checked</text>
+<rect x="430" y="189" width="625.3" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="1065.3" y="206" class="value">176.71</text>
+<text x="414" y="248" text-anchor="end" class="label">Mech WGPU over Metal, checked (transport control)</text>
+<rect x="430" y="231" width="584.4" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="1024.4" y="248" class="value">165.15</text>
+<text x="414" y="290" text-anchor="end" class="label">Mech native Metal, unchecked</text>
+<rect x="430" y="273" width="852.9" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="1292.9" y="290" class="value">241.03</text>
+<text x="414" y="332" text-anchor="end" class="label">Taichi native Metal, unchecked</text>
+<rect x="430" y="315" width="689.3" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="1129.3" y="332" class="value">194.79</text>
+<text x="414" y="374" text-anchor="end" class="label">Mech WGPU over Metal, unchecked (transport control)</text>
+<rect x="430" y="357" width="554.4" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="994.4" y="374" class="value">156.67</text>
+<text x="52" y="396" class="muted" font-size="12">Checked rows validate and publish only valid candidates; unchecked rows omit those checks. Every GPU row submits and waits once per turn; setup, compilation, allocation, warmup, and final readback are excluded. Native Metal rows use direct Metal command submission; WGPU-over-Metal rows are shown only as a transport control.</text>
 <g aria-label="Test machine">
-<rect x="960" y="387" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
-<text x="972" y="403" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
-<text x="972" y="418" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
-<text x="972" y="433" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
-<text x="972" y="448" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
+<rect x="960" y="18" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
+<text x="972" y="34" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
+<text x="972" y="49" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
+<text x="972" y="64" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
+<text x="972" y="79" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
 </g>
 </svg>

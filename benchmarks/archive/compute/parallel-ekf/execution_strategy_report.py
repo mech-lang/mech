@@ -649,9 +649,6 @@ def svg(report: dict, strategy: str) -> str:
             fill = f'url(#baseline-interpreted-{slug(row["language"])})' if mixed_baseline and row["language"] in INTERPRETED_BASELINE_LANGUAGES else color
             lines.append(f'<rect x="{left}" y="{y + offset}" width="{max(2, end - left):.1f}" height="16" rx="2" fill="{fill}" opacity="{0.92 if mode == "checked" else 0.42}"/>')
             lines.append(f'<text x="{min(end + 7, width - right - 35):.1f}" y="{y + offset + 13}" class="value">{value:.3f}</text>')
-    footer_y = height - bottom + 45
-    footer_note = chart_semantics
-    lines.append(f'<text x="38" y="{footer_y}" class="muted" font-size="12">{footer_note}</text>')
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append("</svg>")
     return "\n".join(lines) + "\n"

@@ -60,10 +60,10 @@
 <text x="1202.8" y="480" class="value">56.28</text>
 <text x="52" y="496" class="muted" font-size="12">Checked controls only; unchecked-only controls are omitted. Checked GPU rows synchronize and validate each turn; unchecked rows batch turns. Setup and readback are excluded.</text>
 <g aria-label="Test machine">
-<rect x="990" y="502" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
-<text x="1002" y="518" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
-<text x="1002" y="533" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
-<text x="1002" y="548" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
-<text x="1002" y="563" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
+<rect x="990" y="18" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
+<text x="1002" y="34" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
+<text x="1002" y="49" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
+<text x="1002" y="64" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
+<text x="1002" y="79" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
 </g>
 </svg>
