@@ -218,12 +218,17 @@ def main():
     velocity = np.float32(1) + np.float32(0.05) * np.sin(phase * np.float32(3))
     angular_velocity = np.float32(0.015) * (np.float32(1) + np.float32(0.1) * np.sin(phase * np.float32(2)))
     bearing = np.float32(-0.55) + np.float32(0.01) * np.sin(phase * np.float32(7)) + np.float32(0.005) * np.sin(phase * np.float32(11))
-    x0 = np.full(n, np.float32(55)); x1 = np.full(n, np.float32(25)); x2 = np.full(n, np.float32(0.4))
+    x0 = np.full(n, np.float32(55))
+    x1 = np.full(n, np.float32(25))
+    x2 = np.full(n, np.float32(0.4))
     p = [np.full(n, np.float32(100) if j in (0, 4) else np.float32(0.15) if j == 8 else np.float32(0)) for j in range(9)]
     run = dispatch_fused_fast if fused_fast else dispatch_fused if fused else dispatch
     run(x0, x1, x2, p, velocity, angular_velocity, bearing, 5, checked)
-    x0.fill(55); x1.fill(25); x2.fill(0.4)
-    for j, value in enumerate((100, 0, 0, 0, 100, 0, 0, 0, 0.15)): p[j].fill(value)
+    x0.fill(55)
+    x1.fill(25)
+    x2.fill(0.4)
+    for j, value in enumerate((100, 0, 0, 0, 100, 0, 0, 0, 0.15)):
+        p[j].fill(value)
     started = time.perf_counter()
     faults = run(x0, x1, x2, p, velocity, angular_velocity, bearing, turns, checked)
     elapsed = time.perf_counter() - started

@@ -86,15 +86,15 @@
       "note": "The compact controls preserve the checked-in Rust algorithms while removing narrative scaffolding; the advanced control still changes the value representation and execution loop.",
       "baseline_lines": 210,
       "baseline_chars": 6454,
-      "advanced_lines": 598,
-      "advanced_chars": 20655,
+      "advanced_lines": 585,
+      "advanced_chars": 20244,
       "baseline_code": {
         "lines": 206,
         "chars": 5003
       },
       "advanced_code": {
-        "lines": 566,
-        "chars": 13848
+        "lines": 553,
+        "chars": 13846
       },
       "factors": {
         "layout": "fixed scalar arrays -> four-lane packed values",
@@ -113,10 +113,10 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 701,
-        "added_lines": 578,
+        "changed_line_slots": 688,
+        "added_lines": 565,
         "deleted_lines": 190,
-        "changed_chars": 23858
+        "changed_chars": 23447
       },
       "baseline_to_base_mech": {
         "changed_line_slots": 210,
@@ -125,10 +125,10 @@
         "changed_chars": 6454
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 596,
-        "added_lines": 596,
+        "changed_line_slots": 583,
+        "added_lines": 583,
         "deleted_lines": 44,
-        "changed_chars": 20653
+        "changed_chars": 20242
       },
       "throughput_millions": {
         "checked": 25.650480145,
@@ -200,17 +200,17 @@
       "baseline_label": "compact generic scalar Julia",
       "advanced_label": "compact explicit four-lane SIMD.jl intrinsics",
       "note": "The compact controls preserve the Julia algorithms; the advanced source introduces an explicit packed value type and lane loop.",
-      "baseline_lines": 96,
-      "baseline_chars": 4758,
-      "advanced_lines": 194,
-      "advanced_chars": 8158,
+      "baseline_lines": 126,
+      "baseline_chars": 4828,
+      "advanced_lines": 196,
+      "advanced_chars": 8156,
       "baseline_code": {
-        "lines": 96,
-        "chars": 4382
+        "lines": 126,
+        "chars": 4322
       },
       "advanced_code": {
-        "lines": 194,
-        "chars": 6939
+        "lines": 196,
+        "chars": 6935
       },
       "factors": {
         "layout": "generic arrays -> explicit four-lane SIMD values",
@@ -229,22 +229,22 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 200,
-        "added_lines": 181,
-        "deleted_lines": 83,
-        "changed_chars": 8979
+        "changed_line_slots": 204,
+        "added_lines": 182,
+        "deleted_lines": 112,
+        "changed_chars": 8960
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 96,
-        "added_lines": 96,
+        "changed_line_slots": 126,
+        "added_lines": 126,
         "deleted_lines": 46,
-        "changed_chars": 4758
+        "changed_chars": 4828
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 194,
-        "added_lines": 194,
+        "changed_line_slots": 196,
+        "added_lines": 196,
         "deleted_lines": 46,
-        "changed_chars": 8158
+        "changed_chars": 8156
       },
       "throughput_millions": {
         "checked": 30.83544633229325,
@@ -258,13 +258,13 @@
       "baseline_label": "compact generic matrix helper loop",
       "advanced_label": "compact flat fixed-shape scalarized state",
       "note": "The compact controls preserve the Lua algorithms; the advanced source removes helper-level matrix temporaries and writes each component directly.",
-      "baseline_lines": 43,
-      "baseline_chars": 3369,
+      "baseline_lines": 175,
+      "baseline_chars": 4289,
       "advanced_lines": 153,
       "advanced_chars": 7444,
       "baseline_code": {
-        "lines": 43,
-        "chars": 3288
+        "lines": 165,
+        "chars": 3790
       },
       "advanced_code": {
         "lines": 153,
@@ -287,16 +287,16 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 150,
-        "added_lines": 145,
-        "deleted_lines": 35,
-        "changed_chars": 7719
+        "changed_line_slots": 224,
+        "added_lines": 129,
+        "deleted_lines": 151,
+        "changed_chars": 9071
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 46,
-        "added_lines": 43,
-        "deleted_lines": 46,
-        "changed_chars": 3369
+        "changed_line_slots": 173,
+        "added_lines": 173,
+        "deleted_lines": 44,
+        "changed_chars": 4287
       },
       "advanced_to_base_mech": {
         "changed_line_slots": 153,
@@ -432,17 +432,17 @@
       "baseline_label": "same fixed-shape JIT pipeline",
       "advanced_label": "same pipeline; strict checked publication and fault output",
       "note": "Halide is a fixed-shape C++ pipeline JIT. Checked mode selects the previous lane state when the candidate fails the finite/diagonal/symmetry checks and emits a per-lane fault code for host observation.",
-      "baseline_lines": 32,
-      "baseline_chars": 7517,
-      "advanced_lines": 32,
-      "advanced_chars": 7517,
+      "baseline_lines": 346,
+      "baseline_chars": 11959,
+      "advanced_lines": 346,
+      "advanced_chars": 11959,
       "baseline_code": {
-        "lines": 20,
-        "chars": 7278
+        "lines": 324,
+        "chars": 8928
       },
       "advanced_code": {
-        "lines": 20,
-        "chars": 7278
+        "lines": 324,
+        "chars": 8928
       },
       "factors": {
         "layout": "fixed-shape lane buffers, vectorized by eight",
@@ -467,16 +467,16 @@
         "changed_chars": 0
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 54,
-        "added_lines": 31,
-        "deleted_lines": 45,
-        "changed_chars": 7516
+        "changed_line_slots": 349,
+        "added_lines": 344,
+        "deleted_lines": 44,
+        "changed_chars": 12174
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 54,
-        "added_lines": 31,
-        "deleted_lines": 45,
-        "changed_chars": 7516
+        "changed_line_slots": 349,
+        "added_lines": 344,
+        "deleted_lines": 44,
+        "changed_chars": 12174
       },
       "throughput_millions": {
         "checked": 2.707078841979349,

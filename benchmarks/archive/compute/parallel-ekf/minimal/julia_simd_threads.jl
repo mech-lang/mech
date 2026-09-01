@@ -225,7 +225,9 @@ covariance = (fill(V4(100), groups), fill(V4(0), groups), fill(V4(0), groups),
              fill(V4(0), groups), fill(V4(100), groups), fill(V4(0), groups),
              fill(V4(0), groups), fill(V4(0), groups), fill(V4(0.15f0), groups))
 dispatch_mode!(x1, x2, x3, covariance, velocity, angular_velocity, bearing, 5)
-fill!(x1, V4(55)); fill!(x2, V4(25)); fill!(x3, V4(0.4f0))
+fill!(x1, V4(55))
+fill!(x2, V4(25))
+fill!(x3, V4(0.4f0))
 for i in eachindex(covariance)
     fill!(covariance[i], (i == 1 || i == 5) ? V4(100) : (i == 9 ? V4(0.15f0) : V4(0)))
 end
