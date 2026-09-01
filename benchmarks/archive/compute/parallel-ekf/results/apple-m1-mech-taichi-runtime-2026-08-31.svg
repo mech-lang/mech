@@ -2,7 +2,7 @@
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:15px} .value{font-size:14px;font-variant-numeric:tabular-nums}</style>
 <text x="52" y="43" font-size="27" font-weight="700">Matched hardware EKF runtime throughput</text>
-<text x="52" y="71" class="muted" font-size="15">Apple M1 | 500,000 resident filters x 40 turns | median of 3 isolated samples | synchronized after every turn</text>
+<text x="52" y="71" class="muted" font-size="15">Apple M1 | 500,000 resident filters x 40 turns | median of 3 isolated samples | checked fastest to slowest, then unchecked</text>
 <line x1="430.0" y1="105" x2="430.0" y2="465" class="grid"/>
 <text x="430.0" y="489" text-anchor="middle" class="axis">0</text>
 <line x1="506.7" y1="105" x2="506.7" y2="465" class="grid"/>
@@ -34,30 +34,30 @@
 <text x="1152" y="39" font-size="14">Mech</text>
 <rect x="1245" y="27" width="14" height="14" rx="2" fill="#b68cff"/>
 <text x="1267" y="39" font-size="14">Taichi</text>
-<text x="414" y="149" text-anchor="end" class="label">Mech SIMD/JIT CPU, checked (8 workers)</text>
-<rect x="430" y="132" width="401.7" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="841.7" y="149" class="value">104.78</text>
-<text x="414" y="191" text-anchor="end" class="label">Taichi LLVM CPU, checked (8 workers)</text>
-<rect x="430" y="174" width="329.8" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="769.8" y="191" class="value">86.05</text>
-<text x="414" y="233" text-anchor="end" class="label">Mech WGPU GPU, checked</text>
-<rect x="430" y="216" width="586.4" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="1026.4" y="233" class="value">152.97</text>
-<text x="414" y="275" text-anchor="end" class="label">Taichi Metal GPU, checked</text>
-<rect x="430" y="258" width="688.1" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="1128.1" y="275" class="value">179.50</text>
-<text x="414" y="317" text-anchor="end" class="label">Mech SIMD/JIT CPU, unchecked (8 workers)</text>
-<rect x="430" y="300" width="423.5" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="863.5" y="317" class="value">110.47</text>
-<text x="414" y="359" text-anchor="end" class="label">Taichi LLVM CPU, unchecked (8 workers)</text>
-<rect x="430" y="342" width="376.2" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="816.2" y="359" class="value">98.14</text>
-<text x="414" y="401" text-anchor="end" class="label">Mech WGPU GPU, unchecked</text>
-<rect x="430" y="384" width="602.4" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="1042.4" y="401" class="value">157.14</text>
-<text x="414" y="443" text-anchor="end" class="label">Taichi Metal GPU, unchecked</text>
-<rect x="430" y="426" width="851.8" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="1291.8" y="443" class="value">222.21</text>
+<text x="414" y="149" text-anchor="end" class="label">Taichi Metal GPU, checked</text>
+<rect x="430" y="132" width="688.1" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="1128.1" y="149" class="value">179.50</text>
+<text x="414" y="191" text-anchor="end" class="label">Mech WGPU GPU, checked</text>
+<rect x="430" y="174" width="586.4" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="1026.4" y="191" class="value">152.97</text>
+<text x="414" y="233" text-anchor="end" class="label">Mech SIMD/JIT CPU, checked (8 workers)</text>
+<rect x="430" y="216" width="401.7" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="841.7" y="233" class="value">104.78</text>
+<text x="414" y="275" text-anchor="end" class="label">Taichi LLVM CPU, checked (8 workers)</text>
+<rect x="430" y="258" width="329.8" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="769.8" y="275" class="value">86.05</text>
+<text x="414" y="317" text-anchor="end" class="label">Taichi Metal GPU, unchecked</text>
+<rect x="430" y="300" width="851.8" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="1291.8" y="317" class="value">222.21</text>
+<text x="414" y="359" text-anchor="end" class="label">Mech WGPU GPU, unchecked</text>
+<rect x="430" y="342" width="602.4" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="1042.4" y="359" class="value">157.14</text>
+<text x="414" y="401" text-anchor="end" class="label">Mech SIMD/JIT CPU, unchecked (8 workers)</text>
+<rect x="430" y="384" width="423.5" height="24" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="863.5" y="401" class="value">110.47</text>
+<text x="414" y="443" text-anchor="end" class="label">Taichi LLVM CPU, unchecked (8 workers)</text>
+<rect x="430" y="426" width="376.2" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="816.2" y="443" class="value">98.14</text>
 <text x="52" y="465" class="muted" font-size="12">Checked rows validate and publish only valid candidates; unchecked rows omit those checks. Every GPU row submits and waits once per turn; setup, compilation, allocation, warmup, and final readback are excluded.</text>
 <g aria-label="Test machine">
 <rect x="960" y="471" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>

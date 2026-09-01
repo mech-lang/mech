@@ -1,6 +1,6 @@
 # Parallel EKF: GPU batch ceiling
 
-A device-resident multi-turn submission. This is a throughput ceiling, not a replacement for per-turn observation. Workload: **500,000 filters x 40 turns, one submission where available**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.
+A device-resident multi-turn submission. This is a throughput ceiling, not a replacement for per-turn observation. Workload: **500,000 filters x 40 turns, one submission where available**. Rows are ordered by checked throughput, fastest to slowest; checked and unchecked are separate columns; source edits are measured against each language's baseline source.
 
 | Language | Representative source | Code L/C | Edit vs baseline L/C | Checked M/s | Unchecked M/s | Result |
 | --- | --- | ---: | ---: | ---: | ---: | --- |

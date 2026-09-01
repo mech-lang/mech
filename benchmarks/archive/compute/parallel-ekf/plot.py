@@ -113,6 +113,9 @@ def main() -> None:
         )
         for label, _ in order
     }
+    # Keep this legacy chart consistent with the other benchmark views:
+    # strongest checked throughput first (and deterministic label ties).
+    order.sort(key=lambda item: (-values[item[0]], item[0]))
     rust_reference = (
         values["Rust packed SIMD checked"]
         if args.checked_only

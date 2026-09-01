@@ -22,42 +22,42 @@
 <text x="905.0" y="564" text-anchor="middle" class="muted" font-size="14">million EKF turns/s</text>
 <line x1="778.1" y1="95" x2="778.1" y2="496" stroke="#f3a847" stroke-width="2" stroke-dasharray="7 6"/>
 <text x="786.1" y="91" fill="#f3a847" font-size="13">Rust packed-SIMD checked reference: 25.65</text>
-<text x="414" y="139" text-anchor="end" class="label">Mech scalar</text>
-<rect x="430" y="125" width="12.6" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="451.6" y="139" class="value">0.93</text>
-<text x="414" y="170" text-anchor="end" class="label">Mech Cranelift JIT</text>
-<rect x="430" y="156" width="226.8" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="665.8" y="170" class="value">16.71</text>
+<text x="414" y="139" text-anchor="end" class="label">Mech GPU, checked one-turn API call</text>
+<rect x="430" y="125" width="852.3" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
+<text x="1291.3" y="139" class="value">62.80</text>
+<text x="414" y="170" text-anchor="end" class="label">Mech GPU, checked repeated API call</text>
+<rect x="430" y="156" width="763.8" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
+<text x="1202.8" y="170" class="value">56.28</text>
 <text x="414" y="201" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
 <rect x="430" y="187" width="563.2" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
 <text x="1002.2" y="201" class="value">41.50</text>
-<text x="414" y="232" text-anchor="end" class="label">Rust packed SIMD checked</text>
-<rect x="430" y="218" width="348.1" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="787.1" y="232" class="value">25.65</text>
-<text x="414" y="263" text-anchor="end" class="label">Julia generic checked</text>
-<rect x="430" y="249" width="41.7" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="480.7" y="263" class="value">3.07</text>
-<text x="414" y="294" text-anchor="end" class="label">Julia fixed-shape checked</text>
-<rect x="430" y="280" width="253.4" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="692.4" y="294" class="value">18.67</text>
-<text x="414" y="325" text-anchor="end" class="label">Julia fixed-shape SIMD checked</text>
-<rect x="430" y="311" width="381.3" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="820.3" y="325" class="value">28.09</text>
-<text x="414" y="356" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
-<rect x="430" y="342" width="418.5" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="857.5" y="356" class="value">30.84</text>
+<text x="414" y="232" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
+<rect x="430" y="218" width="418.5" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="857.5" y="232" class="value">30.84</text>
+<text x="414" y="263" text-anchor="end" class="label">Julia fixed-shape SIMD checked</text>
+<rect x="430" y="249" width="381.3" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="820.3" y="263" class="value">28.09</text>
+<text x="414" y="294" text-anchor="end" class="label">Rust packed SIMD checked</text>
+<rect x="430" y="280" width="348.1" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="787.1" y="294" class="value">25.65</text>
+<text x="414" y="325" text-anchor="end" class="label">Julia fixed-shape checked</text>
+<rect x="430" y="311" width="253.4" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="692.4" y="325" class="value">18.67</text>
+<text x="414" y="356" text-anchor="end" class="label">Mech Cranelift JIT</text>
+<rect x="430" y="342" width="226.8" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="665.8" y="356" class="value">16.71</text>
 <text x="414" y="387" text-anchor="end" class="label">NumPy vectorized fixed-shape checked</text>
 <rect x="430" y="373" width="144.9" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
 <text x="583.9" y="387" class="value">10.67</text>
-<text x="414" y="418" text-anchor="end" class="label">LuaJIT fixed-shape flat checked</text>
-<rect x="430" y="404" width="17.1" height="19" rx="3" fill="#000080" opacity="0.9"/>
-<text x="456.1" y="418" class="value">1.26</text>
-<text x="414" y="449" text-anchor="end" class="label">Mech GPU, checked one-turn API call</text>
-<rect x="430" y="435" width="852.3" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
-<text x="1291.3" y="449" class="value">62.80</text>
-<text x="414" y="480" text-anchor="end" class="label">Mech GPU, checked repeated API call</text>
-<rect x="430" y="466" width="763.8" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
-<text x="1202.8" y="480" class="value">56.28</text>
+<text x="414" y="418" text-anchor="end" class="label">Julia generic checked</text>
+<rect x="430" y="404" width="41.7" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="480.7" y="418" class="value">3.07</text>
+<text x="414" y="449" text-anchor="end" class="label">LuaJIT fixed-shape flat checked</text>
+<rect x="430" y="435" width="17.1" height="19" rx="3" fill="#000080" opacity="0.9"/>
+<text x="456.1" y="449" class="value">1.26</text>
+<text x="414" y="480" text-anchor="end" class="label">Mech scalar</text>
+<rect x="430" y="466" width="12.6" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="451.6" y="480" class="value">0.93</text>
 <text x="52" y="496" class="muted" font-size="12">Checked controls only; unchecked-only controls are omitted. Checked GPU rows synchronize and validate each turn; unchecked rows batch turns. Setup and readback are excluded.</text>
 <g aria-label="Test machine">
 <rect x="990" y="502" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>

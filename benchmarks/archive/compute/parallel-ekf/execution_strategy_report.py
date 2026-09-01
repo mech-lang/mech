@@ -502,6 +502,16 @@ def build_report(data: dict[str, dict | None], output_directory: Path) -> dict:
             for mode in ("checked", "unchecked"):
                 if values[mode] is None and source_name is not None:
                     missing_cells.append({"strategy": strategy, "language": language, "mode": mode, "status": "not recorded"})
+        # Rank each execution strategy by its checked result. A control with
+        # no checked measurement is retained at the bottom for visibility.
+        rows.sort(
+            key=lambda row: (
+                row["values"]["checked"] is None,
+                -(row["values"]["checked"] or 0.0),
+                -(row["values"]["unchecked"] or 0.0),
+                str(row["language"]),
+            )
+        )
         strategies[strategy] = rows
     evidence = {name: (value or {}).get("generated_at") for name, value in data.items()}
     return {
@@ -524,7 +534,7 @@ def markdown(report: dict, strategy: str) -> str:
     lines = [
         f"# Parallel EKF: {spec['title']}",
         "",
-        f"{spec['description']} Workload: **{spec['workload']}**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.",
+        f"{spec['description']} Workload: **{spec['workload']}**. Rows are ordered by checked throughput, fastest to slowest; checked and unchecked are separate columns; source edits are measured against each language's baseline source.",
         "",
     ]
     if spec.get("note"):
@@ -586,7 +596,7 @@ def svg(report: dict, strategy: str) -> str:
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: {esc(STRATEGIES[strategy]["title"])} throughput</text>',
-        f'<text x="38" y="69" class="muted" font-size="15">{esc(STRATEGIES[strategy]["description"])} Checked is solid; unchecked is lighter. Linear M/s axis.</text>',
+        f'<text x="38" y="69" class="muted" font-size="15">{esc(STRATEGIES[strategy]["description"])} Checked is solid; unchecked is lighter. Checked throughput is ranked fastest to slowest. Linear M/s axis.</text>',
     ]
     if STRATEGIES[strategy].get("chart_note"):
         lines.append(f'<text x="38" y="91" class="muted" font-size="13">{esc(STRATEGIES[strategy]["chart_note"])}</text>')

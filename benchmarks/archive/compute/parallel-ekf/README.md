@@ -163,8 +163,8 @@ and Futhark's ISPC backend with eight workers. Futhark does not JIT at runtime;
 its source is compiled before the timed invocation. On this machine the
 Futhark 0.27 output needs the checked-in compatibility shim with ISPC 1.31,
 which removes only unused conflicting `erf`/`erfc` declarations.
-Each contract is sorted independently from slowest to fastest, with the new
-resident scalar Mech unchecked measurement included explicitly.
+Each contract is sorted independently from fastest checked to slowest checked,
+with the new resident scalar Mech unchecked measurement included explicitly.
 
 The pure-Python row is a standard-library-only scalar control. It uses Python
 lists and `math.sin`/`math.cos`/`math.atan2`, so it does not inherit NumPy's

@@ -28,7 +28,16 @@ def main() -> None:
 
     evidence = json.loads(args.evidence.read_text(encoding="utf-8"))
     configuration = evidence["configuration"]
-    rows = evidence["rows"]
+    rows = list(evidence["rows"])
+    # Keep checked controls together and rank them fastest first. Unchecked
+    # controls follow in their own throughput ranking so the guarantee level
+    # is never obscured by a faster unchecked row.
+    def rank(row: dict[str, object]) -> tuple[int, float, str]:
+        label = str(row["label"]).lower()
+        is_unchecked = "unchecked" in label
+        return (1 if is_unchecked else 0, -float(row["throughput_millions"]), str(row["label"]))
+
+    rows.sort(key=rank)
     width = 1500
     left = 430
     right = 150
@@ -52,7 +61,7 @@ def main() -> None:
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:15px} .value{font-size:14px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="52" y="43" font-size="27" font-weight="700">{chart_title}</text>',
-        f'<text x="52" y="71" class="muted" font-size="15">Apple M1 | {configuration["instances"]:,} resident filters x {configuration["turns"]} turns | median of {configuration["samples"]} isolated samples | synchronized after every turn</text>',
+        f'<text x="52" y="71" class="muted" font-size="15">Apple M1 | {configuration["instances"]:,} resident filters x {configuration["turns"]} turns | median of {configuration["samples"]} isolated samples | checked fastest to slowest, then unchecked</text>',
     ]
     for tick in range(0, int(max_value) + 1, 20):
         tick_x = x(tick)

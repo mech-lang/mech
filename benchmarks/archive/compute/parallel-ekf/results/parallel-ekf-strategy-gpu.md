@@ -1,6 +1,6 @@
 # Parallel EKF: Synchronized GPU
 
-One GPU dispatch and completion wait per turn; checked rows retain the prior published state on a fault. Workload: **500,000 filters x 40 turns, synchronized per turn**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.
+One GPU dispatch and completion wait per turn; checked rows retain the prior published state on a fault. Workload: **500,000 filters x 40 turns, synchronized per turn**. Rows are ordered by checked throughput, fastest to slowest; checked and unchecked are separate columns; source edits are measured against each language's baseline source.
 
 | Language | Representative source | Code L/C | Edit vs baseline L/C | Checked M/s | Unchecked M/s | Result |
 | --- | --- | ---: | ---: | ---: | ---: | --- |

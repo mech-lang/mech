@@ -529,7 +529,9 @@ def render(
     runtime_turns: int,
 ) -> None:
     visible = [row for row in rows if row["mode"] == mode]
-    visible.sort(key=lambda row: (float(row["throughput"]), str(row["label"])))
+    # Rank the selected contract from fastest to slowest so the strongest
+    # checked result is immediately visible at the top of the chart.
+    visible.sort(key=lambda row: (-float(row["throughput"]), str(row["label"])))
     width = 1700
     left = 550
     right = 140
@@ -560,12 +562,12 @@ def render(
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<defs>',
         *(
-            f'<pattern id="gpu-{family.lower()}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="{color}"/><path d="M0 0V8" stroke="#ffffff" stroke-opacity="0.38" stroke-width="2"/></pattern>'
+            f'<pattern id="gpu-{family.lower()}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="{color}"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>'
             for family, color in COLORS.items()
         ),
         '</defs>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .minor-grid{stroke:#1b2536;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
-        f'<text x="52" y="42" font-size="26" font-weight="700">Cross-language EKF runtime throughput ({esc(mode)}; slowest to fastest)</text>',
+        f'<text x="52" y="42" font-size="26" font-weight="700">Cross-language EKF runtime throughput ({esc(mode)}; fastest to slowest)</text>',
         f'<text x="52" y="68" class="muted" font-size="15">Apple M1 | CPU/language: {scalar_instances:,}x{scalar_turns}; Mech backend: {backend_instances:,}x{backend_turns}; matched runtime/native controls: {runtime_instances:,}x{runtime_turns} | steady-state, sorted</text>',
     ]
     first_exponent = math.floor(math.log10(min_value))
@@ -607,7 +609,7 @@ def render(
         value_x = min(left + bar_width + 9, width - right + 10)
         lines.append(f'<text x="{value_x:.1f}" y="{y + 19}" class="value">{value:.2f}</text>')
 
-    note = "Rows are ordered by throughput from slowest to fastest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. "
+    note = "Rows are ordered by throughput from fastest to slowest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. "
     note += "Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. "
     note += "Futhark multicore rows show worker count explicitly; only the 1-worker row is a single-core comparison. "
     note += "Compilation, allocation, warmup, and final readback are excluded from the timed region."
@@ -632,17 +634,17 @@ def markdown_table(
     lines = [
         "# Parallel EKF throughput table",
         "",
-        "This table is generated from the same retained evidence and row set as the SVG charts. Each contract is ranked independently from slowest to fastest; checked and unchecked values are never mixed in one rank.",
+        "This table is generated from the same retained evidence and row set as the SVG charts. Each contract is ranked independently from fastest to slowest; checked and unchecked values are never mixed in one rank.",
         "",
         f"Workloads: CPU/language {scalar_instances:,} filters x {scalar_turns} turns; Mech backend {backend_instances:,} filters x {backend_turns} CPU turns; matched runtime/native controls {runtime_instances:,} filters x {runtime_turns} turns. Setup, compilation, allocation, warmup, and final readback are outside the timed region.",
         "",
     ]
     for mode in ("checked", "unchecked"):
         visible = [row for row in rows if row["mode"] == mode]
-        visible.sort(key=lambda row: (float(row["throughput"]), str(row["label"])))
+        visible.sort(key=lambda row: (-float(row["throughput"]), str(row["label"])))
         lines.extend(
             [
-                f"## {mode.title()} (slowest to fastest)",
+                f"## {mode.title()} (fastest to slowest)",
                 "",
                 "| Rank | Runtime/lane | Family | Million EKF turns/s |",
                 "| ---: | --- | --- | ---: |",

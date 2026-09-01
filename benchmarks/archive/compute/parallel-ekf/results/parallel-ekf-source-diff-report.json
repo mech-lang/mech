@@ -491,24 +491,14 @@
         "unchecked": 275.534
       },
       "performance_maxima": {
-        "single_core": {
+        "gpu": {
           "checked": {
-            "throughput": 41.496,
-            "label": "Mech Cranelift SIMD-JIT"
+            "throughput": 187.999,
+            "label": "Mech GPU, native Metal"
           },
           "unchecked": {
-            "throughput": 49.787,
-            "label": "Mech Cranelift SIMD-JIT unchecked"
-          }
-        },
-        "gpu_batched": {
-          "checked": {
-            "throughput": 56.279,
-            "label": "Mech GPU, checked repeated"
-          },
-          "unchecked": {
-            "throughput": 3729.673,
-            "label": "Mech GPU, unchecked one-submit"
+            "throughput": 275.534,
+            "label": "Mech GPU, native Metal"
           }
         },
         "simd_multicore": {
@@ -521,14 +511,24 @@
             "label": "Mech SIMD/JIT CPU, fused unchecked block (8 workers)"
           }
         },
-        "gpu": {
+        "gpu_batched": {
           "checked": {
-            "throughput": 187.999,
-            "label": "Mech GPU, native Metal"
+            "throughput": 56.279,
+            "label": "Mech GPU, checked repeated"
           },
           "unchecked": {
-            "throughput": 275.534,
-            "label": "Mech GPU, native Metal"
+            "throughput": 3729.673,
+            "label": "Mech GPU, unchecked one-submit"
+          }
+        },
+        "single_core": {
+          "checked": {
+            "throughput": 41.496,
+            "label": "Mech Cranelift SIMD-JIT"
+          },
+          "unchecked": {
+            "throughput": 49.787,
+            "label": "Mech Cranelift SIMD-JIT unchecked"
           }
         }
       },
@@ -629,16 +629,6 @@
         "unchecked": 24.712842943
       },
       "performance_maxima": {
-        "single_core": {
-          "checked": {
-            "throughput": 25.65,
-            "label": "Rust packed SIMD, checked"
-          },
-          "unchecked": {
-            "throughput": 24.713,
-            "label": "Rust optimized fixed-shape, unchecked"
-          }
-        },
         "simd_multicore": {
           "checked": {
             "throughput": 146.509,
@@ -647,6 +637,16 @@
           "unchecked": {
             "throughput": 163.866,
             "label": "Rust packed SIMD, fused worker-local block (8 workers)"
+          }
+        },
+        "single_core": {
+          "checked": {
+            "throughput": 25.65,
+            "label": "Rust packed SIMD, checked"
+          },
+          "unchecked": {
+            "throughput": 24.713,
+            "label": "Rust optimized fixed-shape, unchecked"
           }
         }
       },
@@ -759,16 +759,6 @@
         "unchecked": 12.557587858
       },
       "performance_maxima": {
-        "single_core": {
-          "checked": {
-            "throughput": 10.673,
-            "label": "NumPy vectorized fixed-shape, checked"
-          },
-          "unchecked": {
-            "throughput": 12.032,
-            "label": "NumPy vectorized fixed-shape, unchecked"
-          }
-        },
         "simd_multicore": {
           "checked": {
             "throughput": 80.323,
@@ -777,6 +767,16 @@
           "unchecked": {
             "throughput": 81.972,
             "label": "NumPy/Numba, fused worker-local block (8 workers)"
+          }
+        },
+        "single_core": {
+          "checked": {
+            "throughput": 10.673,
+            "label": "NumPy vectorized fixed-shape, checked"
+          },
+          "unchecked": {
+            "throughput": 12.032,
+            "label": "NumPy vectorized fixed-shape, unchecked"
           }
         }
       },
@@ -985,14 +985,14 @@
         "unchecked": 32.260447626615
       },
       "performance_maxima": {
-        "single_core": {
+        "gpu": {
           "checked": {
-            "throughput": 30.835,
-            "label": "Julia SIMD.jl intrinsics, checked"
+            "throughput": 178.135,
+            "label": "Julia GPU, native Metal (strict retained-state)"
           },
           "unchecked": {
-            "throughput": 35.1,
-            "label": "Julia fixed-shape SIMD, unchecked"
+            "throughput": 199.454,
+            "label": "Julia GPU, native Metal (strict retained-state)"
           }
         },
         "simd_multicore": {
@@ -1005,14 +1005,14 @@
             "label": "Julia SIMD.jl, fused worker-local block (8 workers)"
           }
         },
-        "gpu": {
+        "single_core": {
           "checked": {
-            "throughput": 178.135,
-            "label": "Julia GPU, native Metal (strict retained-state)"
+            "throughput": 30.835,
+            "label": "Julia SIMD.jl intrinsics, checked"
           },
           "unchecked": {
-            "throughput": 199.454,
-            "label": "Julia GPU, native Metal (strict retained-state)"
+            "throughput": 35.1,
+            "label": "Julia fixed-shape SIMD, unchecked"
           }
         }
       },
@@ -1327,16 +1327,6 @@
         "unchecked": 217.297
       },
       "performance_maxima": {
-        "simd_multicore": {
-          "checked": {
-            "throughput": 86.047,
-            "label": "Taichi LLVM CPU, 8 workers"
-          },
-          "unchecked": {
-            "throughput": 98.14,
-            "label": "Taichi LLVM CPU, 8 workers"
-          }
-        },
         "gpu": {
           "checked": {
             "throughput": 176.71,
@@ -1345,6 +1335,16 @@
           "unchecked": {
             "throughput": 217.297,
             "label": "Taichi optimized native Metal, unchecked"
+          }
+        },
+        "simd_multicore": {
+          "checked": {
+            "throughput": 86.047,
+            "label": "Taichi LLVM CPU, 8 workers"
+          },
+          "unchecked": {
+            "throughput": 98.14,
+            "label": "Taichi LLVM CPU, 8 workers"
           }
         }
       },
@@ -1445,14 +1445,14 @@
         "unchecked": 212.28295726080685
       },
       "performance_maxima": {
-        "single_core": {
+        "gpu": {
           "checked": {
-            "throughput": 2.707,
-            "label": "Halide"
+            "throughput": 111.474,
+            "label": "Halide GPU, native Metal (strict fault-observing)"
           },
           "unchecked": {
-            "throughput": 5.058,
-            "label": "Halide"
+            "throughput": 212.283,
+            "label": "Halide GPU, native Metal (strict fault-observing)"
           }
         },
         "simd_multicore": {
@@ -1465,14 +1465,14 @@
             "label": "Halide JIT SIMD 8 workers, unchecked"
           }
         },
-        "gpu": {
+        "single_core": {
           "checked": {
-            "throughput": 111.474,
-            "label": "Halide GPU, native Metal (strict fault-observing)"
+            "throughput": 2.707,
+            "label": "Halide"
           },
           "unchecked": {
-            "throughput": 212.283,
-            "label": "Halide GPU, native Metal (strict fault-observing)"
+            "throughput": 5.058,
+            "label": "Halide"
           }
         }
       },

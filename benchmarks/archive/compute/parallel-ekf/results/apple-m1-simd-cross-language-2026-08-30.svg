@@ -20,54 +20,54 @@
 <text x="905.0" y="688" text-anchor="middle" class="muted" font-size="14">million EKF turns/s</text>
 <line x1="894.8" y1="95" x2="894.8" y2="620" stroke="#f3a847" stroke-width="2" stroke-dasharray="7 6"/>
 <text x="902.8" y="91" fill="#f3a847" font-size="13">Rust packed-SIMD unchecked reference: 29.35</text>
-<text x="414" y="139" text-anchor="end" class="label">Mech scalar</text>
-<rect x="430" y="125" width="14.2" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="453.2" y="139" class="value">0.90</text>
-<text x="414" y="170" text-anchor="end" class="label">Mech Cranelift JIT</text>
-<rect x="430" y="156" width="264.0" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="703.0" y="170" class="value">16.67</text>
-<text x="414" y="201" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
-<rect x="430" y="187" width="657.0" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="1096.0" y="201" class="value">41.50</text>
-<text x="414" y="232" text-anchor="end" class="label">Rust optimized fixed-shape</text>
-<rect x="430" y="218" width="265.9" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="704.9" y="232" class="value">16.80</text>
-<text x="414" y="263" text-anchor="end" class="label">Rust packed SIMD checked</text>
-<rect x="430" y="249" width="406.1" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="845.1" y="263" class="value">25.65</text>
-<text x="414" y="294" text-anchor="end" class="label">Rust packed SIMD unchecked</text>
-<rect x="430" y="280" width="464.8" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="903.8" y="294" class="value">29.35</text>
-<text x="414" y="325" text-anchor="end" class="label">Julia generic checked</text>
-<rect x="430" y="311" width="49.3" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="488.3" y="325" class="value">3.11</text>
-<text x="414" y="356" text-anchor="end" class="label">Julia generic unchecked</text>
-<rect x="430" y="342" width="50.2" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="489.2" y="356" class="value">3.17</text>
+<text x="414" y="139" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
+<rect x="430" y="125" width="657.0" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="1096.0" y="139" class="value">41.50</text>
+<text x="414" y="170" text-anchor="end" class="label">Julia fixed-shape SIMD unchecked</text>
+<rect x="430" y="156" width="564.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="1003.8" y="170" class="value">35.67</text>
+<text x="414" y="201" text-anchor="end" class="label">Julia SIMD.jl intrinsics unchecked</text>
+<rect x="430" y="187" width="519.4" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="958.4" y="201" class="value">32.80</text>
+<text x="414" y="232" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
+<rect x="430" y="218" width="497.5" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="936.5" y="232" class="value">31.42</text>
+<text x="414" y="263" text-anchor="end" class="label">Rust packed SIMD unchecked</text>
+<rect x="430" y="249" width="464.8" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="903.8" y="263" class="value">29.35</text>
+<text x="414" y="294" text-anchor="end" class="label">Julia fixed-shape SIMD checked</text>
+<rect x="430" y="280" width="444.1" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="883.1" y="294" class="value">28.05</text>
+<text x="414" y="325" text-anchor="end" class="label">Rust packed SIMD checked</text>
+<rect x="430" y="311" width="406.1" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="845.1" y="325" class="value">25.65</text>
+<text x="414" y="356" text-anchor="end" class="label">Julia fixed-shape unchecked</text>
+<rect x="430" y="342" width="348.1" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="787.1" y="356" class="value">21.98</text>
 <text x="414" y="387" text-anchor="end" class="label">Julia fixed-shape checked</text>
 <rect x="430" y="373" width="300.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
 <text x="739.8" y="387" class="value">19.00</text>
-<text x="414" y="418" text-anchor="end" class="label">Julia fixed-shape unchecked</text>
-<rect x="430" y="404" width="348.1" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="787.1" y="418" class="value">21.98</text>
-<text x="414" y="449" text-anchor="end" class="label">Julia fixed-shape SIMD checked</text>
-<rect x="430" y="435" width="444.1" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="883.1" y="449" class="value">28.05</text>
-<text x="414" y="480" text-anchor="end" class="label">Julia fixed-shape SIMD unchecked</text>
-<rect x="430" y="466" width="564.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="1003.8" y="480" class="value">35.67</text>
-<text x="414" y="511" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
-<rect x="430" y="497" width="497.5" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="936.5" y="511" class="value">31.42</text>
-<text x="414" y="542" text-anchor="end" class="label">Julia SIMD.jl intrinsics unchecked</text>
-<rect x="430" y="528" width="519.4" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="958.4" y="542" class="value">32.80</text>
-<text x="414" y="573" text-anchor="end" class="label">NumPy scalar outer loop</text>
-<rect x="430" y="559" width="1.0" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
-<text x="440.0" y="573" class="value">0.06</text>
-<text x="414" y="604" text-anchor="end" class="label">LuaJIT scalar outer loop</text>
-<rect x="430" y="590" width="15.7" height="19" rx="3" fill="#000080" opacity="0.9"/>
-<text x="454.7" y="604" class="value">0.99</text>
+<text x="414" y="418" text-anchor="end" class="label">Rust optimized fixed-shape</text>
+<rect x="430" y="404" width="265.9" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="704.9" y="418" class="value">16.80</text>
+<text x="414" y="449" text-anchor="end" class="label">Mech Cranelift JIT</text>
+<rect x="430" y="435" width="264.0" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="703.0" y="449" class="value">16.67</text>
+<text x="414" y="480" text-anchor="end" class="label">Julia generic unchecked</text>
+<rect x="430" y="466" width="50.2" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="489.2" y="480" class="value">3.17</text>
+<text x="414" y="511" text-anchor="end" class="label">Julia generic checked</text>
+<rect x="430" y="497" width="49.3" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="488.3" y="511" class="value">3.11</text>
+<text x="414" y="542" text-anchor="end" class="label">LuaJIT scalar outer loop</text>
+<rect x="430" y="528" width="15.7" height="19" rx="3" fill="#000080" opacity="0.9"/>
+<text x="454.7" y="542" class="value">0.99</text>
+<text x="414" y="573" text-anchor="end" class="label">Mech scalar</text>
+<rect x="430" y="559" width="14.2" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="453.2" y="573" class="value">0.90</text>
+<text x="414" y="604" text-anchor="end" class="label">NumPy scalar outer loop</text>
+<rect x="430" y="590" width="1.0" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
+<text x="440.0" y="604" class="value">0.06</text>
 <text x="52" y="620" class="muted" font-size="12">Checked GPU rows synchronize and validate each turn; unchecked rows batch turns. Setup and readback are excluded.</text>
 <g aria-label="Test machine">
 <rect x="990" y="626" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>

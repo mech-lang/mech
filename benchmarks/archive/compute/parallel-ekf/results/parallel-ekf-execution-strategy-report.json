@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-01T16:44:54.517146-04:00",
+  "generated_at": "2026-09-01T16:53:57.147503-04:00",
   "strategies": {
     "interpreted-baseline": [
       {
@@ -24,17 +24,17 @@
         }
       },
       {
-        "language": "NumPy",
-        "source": "Python loop over scalar NumPy operations",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
+        "language": "Lua",
+        "source": "PUC Lua flat fixed-shape arrays",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
         "values": {
-          "checked": 0.040220152,
-          "unchecked": 0.052509955000000004
+          "checked": 0.564217867,
+          "unchecked": 0.835840856
         },
         "status": "measured",
         "code": {
-          "lines": 66,
-          "chars": 1819
+          "lines": 153,
+          "chars": 7031
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -64,17 +64,17 @@
         }
       },
       {
-        "language": "Lua",
-        "source": "PUC Lua flat fixed-shape arrays",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+        "language": "NumPy",
+        "source": "Python loop over scalar NumPy operations",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
         "values": {
-          "checked": 0.564217867,
-          "unchecked": 0.835840856
+          "checked": 0.040220152,
+          "unchecked": 0.052509955000000004
         },
         "status": "measured",
         "code": {
-          "lines": 153,
-          "chars": 7031
+          "lines": 66,
+          "chars": 1819
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -85,26 +85,6 @@
       }
     ],
     "compiled-baseline": [
-      {
-        "language": "Mech",
-        "source": "scalar Cranelift JIT",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
-        "values": {
-          "checked": 16.713,
-          "unchecked": 18.191
-        },
-        "status": "measured",
-        "code": {
-          "lines": 42,
-          "chars": 1513
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
-        }
-      },
       {
         "language": "Rust",
         "source": "fixed-shape unrolled scalar arrays",
@@ -126,17 +106,17 @@
         }
       },
       {
-        "language": "Julia",
-        "source": "generic scalar JIT arrays",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+        "language": "Futhark",
+        "source": "compiled data-parallel array program",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
         "values": {
-          "checked": 3.072806272900473,
-          "unchecked": 3.123446427029506
+          "checked": 19.61361184662156,
+          "unchecked": 19.6347928529354
         },
         "status": "measured",
         "code": {
-          "lines": 126,
-          "chars": 4322
+          "lines": 56,
+          "chars": 3098
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -146,17 +126,17 @@
         }
       },
       {
-        "language": "LuaJIT",
-        "source": "generic FFI JIT loop",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+        "language": "Mech",
+        "source": "scalar Cranelift JIT",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
         "values": {
-          "checked": 1.06752923,
-          "unchecked": 1.739718914
+          "checked": 16.713,
+          "unchecked": 18.191
         },
         "status": "measured",
         "code": {
-          "lines": 205,
-          "chars": 4810
+          "lines": 42,
+          "chars": 1513
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -186,6 +166,26 @@
         }
       },
       {
+        "language": "Julia",
+        "source": "generic scalar JIT arrays",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+        "values": {
+          "checked": 3.072806272900473,
+          "unchecked": 3.123446427029506
+        },
+        "status": "measured",
+        "code": {
+          "lines": 126,
+          "chars": 4322
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
         "language": "Halide",
         "source": "fixed-shape compiled pipeline",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
@@ -206,17 +206,17 @@
         }
       },
       {
-        "language": "Futhark",
-        "source": "compiled data-parallel array program",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+        "language": "LuaJIT",
+        "source": "generic FFI JIT loop",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
         "values": {
-          "checked": 19.61361184662156,
-          "unchecked": 19.6347928529354
+          "checked": 1.06752923,
+          "unchecked": 1.739718914
         },
         "status": "measured",
         "code": {
-          "lines": 56,
-          "chars": 3098
+          "lines": 205,
+          "chars": 4810
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -227,26 +227,6 @@
       }
     ],
     "baseline": [
-      {
-        "language": "Mech",
-        "source": "same high-level `.mec` recurrence",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
-        "values": {
-          "checked": 0.919,
-          "unchecked": 1.029
-        },
-        "status": "measured",
-        "code": {
-          "lines": 42,
-          "chars": 1513
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
-        }
-      },
       {
         "language": "Rust",
         "source": "fixed-shape scalar arrays",
@@ -268,97 +248,17 @@
         }
       },
       {
-        "language": "NumPy",
-        "source": "per-filter NumPy loop",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
+        "language": "Futhark",
+        "source": "data-parallel array program",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
         "values": {
-          "checked": 0.040220152,
-          "unchecked": 0.052509955000000004
+          "checked": 19.61361184662156,
+          "unchecked": 19.6347928529354
         },
         "status": "measured",
         "code": {
-          "lines": 66,
-          "chars": 1819
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
-        }
-      },
-      {
-        "language": "Python",
-        "source": "standard-library lists and math",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
-        "values": {
-          "checked": 0.246483833,
-          "unchecked": 0.355909091
-        },
-        "status": "measured",
-        "code": {
-          "lines": 158,
-          "chars": 5118
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
-        }
-      },
-      {
-        "language": "Julia",
-        "source": "generic scalar arrays",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
-        "values": {
-          "checked": 3.072806272900473,
-          "unchecked": 3.123446427029506
-        },
-        "status": "measured",
-        "code": {
-          "lines": 126,
-          "chars": 4322
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
-        }
-      },
-      {
-        "language": "LuaJIT",
-        "source": "generic FFI helper loop",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
-        "values": {
-          "checked": 1.06752923,
-          "unchecked": 1.739718914
-        },
-        "status": "measured",
-        "code": {
-          "lines": 205,
-          "chars": 4810
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
-        }
-      },
-      {
-        "language": "Lua",
-        "source": "flat fixed-shape Lua tables (PUC Lua baseline)",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
-        "values": {
-          "checked": 0.564217867,
-          "unchecked": 0.835840856
-        },
-        "status": "measured",
-        "code": {
-          "lines": 153,
-          "chars": 7031
+          "lines": 56,
+          "chars": 3098
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -388,6 +288,26 @@
         }
       },
       {
+        "language": "Julia",
+        "source": "generic scalar arrays",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+        "values": {
+          "checked": 3.072806272900473,
+          "unchecked": 3.123446427029506
+        },
+        "status": "measured",
+        "code": {
+          "lines": 126,
+          "chars": 4322
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
         "language": "Halide",
         "source": "fixed-shape pipeline",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
@@ -408,17 +328,97 @@
         }
       },
       {
-        "language": "Futhark",
-        "source": "data-parallel array program",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+        "language": "LuaJIT",
+        "source": "generic FFI helper loop",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
         "values": {
-          "checked": 19.61361184662156,
-          "unchecked": 19.6347928529354
+          "checked": 1.06752923,
+          "unchecked": 1.739718914
         },
         "status": "measured",
         "code": {
-          "lines": 56,
-          "chars": 3098
+          "lines": 205,
+          "chars": 4810
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Mech",
+        "source": "same high-level `.mec` recurrence",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+        "values": {
+          "checked": 0.919,
+          "unchecked": 1.029
+        },
+        "status": "measured",
+        "code": {
+          "lines": 42,
+          "chars": 1513
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Lua",
+        "source": "flat fixed-shape Lua tables (PUC Lua baseline)",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+        "values": {
+          "checked": 0.564217867,
+          "unchecked": 0.835840856
+        },
+        "status": "measured",
+        "code": {
+          "lines": 153,
+          "chars": 7031
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Python",
+        "source": "standard-library lists and math",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
+        "values": {
+          "checked": 0.246483833,
+          "unchecked": 0.355909091
+        },
+        "status": "measured",
+        "code": {
+          "lines": 158,
+          "chars": 5118
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "NumPy",
+        "source": "per-filter NumPy loop",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
+        "values": {
+          "checked": 0.040220152,
+          "unchecked": 0.052509955000000004
+        },
+        "status": "measured",
+        "code": {
+          "lines": 66,
+          "chars": 1819
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -447,6 +447,46 @@
           "added_lines": 0,
           "deleted_lines": 0,
           "changed_chars": 0
+        }
+      },
+      {
+        "language": "Julia",
+        "source": "explicit SIMD.jl lanes",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
+        "values": {
+          "checked": 30.83544633229325,
+          "unchecked": 32.260447626615
+        },
+        "status": "measured",
+        "code": {
+          "lines": 196,
+          "chars": 6935
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 204,
+          "added_lines": 182,
+          "deleted_lines": 112,
+          "changed_chars": 8960
+        }
+      },
+      {
+        "language": "Futhark",
+        "source": "strict scalarized ISPC program, one worker",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_scalar_ekf.fut",
+        "values": {
+          "checked": 30.576,
+          "unchecked": 43.337
+        },
+        "status": "measured",
+        "code": {
+          "lines": 105,
+          "chars": 3566
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 112,
+          "added_lines": 106,
+          "deleted_lines": 51,
+          "changed_chars": 4266
         }
       },
       {
@@ -490,23 +530,23 @@
         }
       },
       {
-        "language": "Julia",
-        "source": "explicit SIMD.jl lanes",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
+        "language": "Halide",
+        "source": "fixed-shape pipeline, one host worker",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
         "values": {
-          "checked": 30.83544633229325,
-          "unchecked": 32.260447626615
+          "checked": 2.707078841979349,
+          "unchecked": 5.058051765922671
         },
         "status": "measured",
         "code": {
-          "lines": 196,
-          "chars": 6935
+          "lines": 324,
+          "chars": 8928
         },
         "edit_vs_baseline": {
-          "changed_line_slots": 204,
-          "added_lines": 182,
-          "deleted_lines": 112,
-          "changed_chars": 8960
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
         }
       },
       {
@@ -548,69 +588,9 @@
           "deleted_lines": 127,
           "changed_chars": 7203
         }
-      },
-      {
-        "language": "Halide",
-        "source": "fixed-shape pipeline, one host worker",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
-        "values": {
-          "checked": 2.707078841979349,
-          "unchecked": 5.058051765922671
-        },
-        "status": "measured",
-        "code": {
-          "lines": 324,
-          "chars": 8928
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
-        }
-      },
-      {
-        "language": "Futhark",
-        "source": "strict scalarized ISPC program, one worker",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_scalar_ekf.fut",
-        "values": {
-          "checked": 30.576,
-          "unchecked": 43.337
-        },
-        "status": "measured",
-        "code": {
-          "lines": 105,
-          "chars": 3566
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 112,
-          "added_lines": 106,
-          "deleted_lines": 51,
-          "changed_chars": 4266
-        }
       }
     ],
     "multicore": [
-      {
-        "language": "Mech",
-        "source": "same `.mec`; checkpointed fused eight-worker SIMD/JIT block",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
-        "values": {
-          "checked": 145.573,
-          "unchecked": 165.83
-        },
-        "status": "measured",
-        "code": {
-          "lines": 42,
-          "chars": 1513
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
-        }
-      },
       {
         "language": "Rust",
         "source": "packed SIMD with eight worker-local blocks",
@@ -632,23 +612,23 @@
         }
       },
       {
-        "language": "NumPy",
-        "source": "Numba `prange` eight-worker loop",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_numba.py",
+        "language": "Mech",
+        "source": "same `.mec`; checkpointed fused eight-worker SIMD/JIT block",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
         "values": {
-          "checked": 80.322749,
-          "unchecked": 81.971832
+          "checked": 145.573,
+          "unchecked": 165.83
         },
         "status": "measured",
         "code": {
-          "lines": 212,
-          "chars": 7568
+          "lines": 42,
+          "chars": 1513
         },
         "edit_vs_baseline": {
-          "changed_line_slots": 233,
-          "added_lines": 230,
-          "deleted_lines": 62,
-          "changed_chars": 10514
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
         }
       },
       {
@@ -689,6 +669,26 @@
           "added_lines": 179,
           "deleted_lines": 162,
           "changed_chars": 11640
+        }
+      },
+      {
+        "language": "NumPy",
+        "source": "Numba `prange` eight-worker loop",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_numba.py",
+        "values": {
+          "checked": 80.322749,
+          "unchecked": 81.971832
+        },
+        "status": "measured",
+        "code": {
+          "lines": 212,
+          "chars": 7568
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 233,
+          "added_lines": 230,
+          "deleted_lines": 62,
+          "changed_chars": 10514
         }
       },
       {

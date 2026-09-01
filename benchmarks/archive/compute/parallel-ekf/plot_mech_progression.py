@@ -93,7 +93,18 @@ def load_rows(
 
 
 def render(rows: list[dict[str, object]], output: Path) -> None:
-    rows = sorted(rows, key=lambda item: max(item["checked"] or 0.0, item["unchecked"] or 0.0))
+    # Checked throughput defines the ranking. Controls without a checked
+    # measurement stay at the bottom rather than being ranked by unchecked
+    # throughput.
+    rows = sorted(
+        rows,
+        key=lambda item: (
+            item["checked"] is None,
+            -(item["checked"] or 0.0),
+            -(item["unchecked"] or 0.0),
+            str(item["label"]),
+        ),
+    )
     width, left, right, top, row_height, bottom = 1800, 570, 150, 140, 44, 110
     chart_width = width - left - right
     maximum = max(max(item["checked"] or 0.0, item["unchecked"] or 0.0) for item in rows)
@@ -108,7 +119,7 @@ def render(rows: list[dict[str, object]], output: Path) -> None:
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:14px}.value{font-size:13px;font-variant-numeric:tabular-nums}.note{fill:#91a0b5;font-size:11px}</style>',
         '<text x="52" y="42" font-size="26" font-weight="700">Mech EKF execution-lane progression</text>',
-        '<text x="52" y="68" class="muted" font-size="15">Apple M1 | paired checked and unchecked steady-state throughput | million EKF turns per second | sorted slowest to fastest</text>',
+        '<text x="52" y="68" class="muted" font-size="15">Apple M1 | paired checked and unchecked steady-state throughput | million EKF turns per second | checked fastest to slowest</text>',
         '<rect x="1220" y="24" width="16" height="16" rx="2" fill="#f4c430"/><text x="1244" y="37" font-size="13">checked</text>',
         '<rect x="1325" y="24" width="16" height="16" rx="2" fill="#fff0a8"/><text x="1349" y="37" font-size="13">unchecked</text>',
     ]
