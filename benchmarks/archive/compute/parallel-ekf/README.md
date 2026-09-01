@@ -378,7 +378,8 @@ python3 source_diff_report.py \
   results \
   --strict-mech results/apple-m1-mech-halide-strict-2026-08-31.json \
   --strict-halide results/apple-m1-halide-metal-strict-2026-08-31.json \
-  --strict-julia results/apple-m1-julia-metal-2026-08-31.json
+  --strict-julia results/apple-m1-julia-metal-2026-08-31.json \
+  --pure-python results/apple-m1-pure-python-2026-09-01.json
 ```
 
 To isolate the direct control from the other backend warmups, build the

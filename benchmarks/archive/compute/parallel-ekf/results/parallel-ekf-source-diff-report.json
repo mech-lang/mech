@@ -8,6 +8,7 @@
     "strict_mech": "2026-08-31",
     "strict_halide": "2026-09-01T00:05:05.531733-04:00",
     "strict_julia": "2026-09-01T08:42:44-04:00",
+    "pure_python": "2026-09-01T08:51:47-04:00",
     "taichi": "2026-08-31",
     "lua": "2026-08-31",
     "minimal": "2026-08-31T18:45:52.116140-04:00"
@@ -285,6 +286,76 @@
           "unchecked": {
             "throughput": 86.973,
             "label": "NumPy/Numba, fused worker-local block fast math (8 workers)"
+          }
+        }
+      }
+    },
+    {
+      "language": "Python",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
+      "baseline_label": "standard-library scalar control",
+      "advanced_label": "same scalar control; no optimized Python variant",
+      "note": "This is a pure-Python lower-bound control using only math and ordinary lists. Baseline and advanced intentionally reference the same source because no optimized Python source variant is retained.",
+      "baseline_lines": 182,
+      "baseline_chars": 6286,
+      "advanced_lines": 182,
+      "advanced_chars": 6286,
+      "baseline_code": {
+        "lines": 158,
+        "chars": 5118
+      },
+      "advanced_code": {
+        "lines": 158,
+        "chars": 5118
+      },
+      "factors": {
+        "layout": "ordinary Python lists of scalar state/covariance values",
+        "boundary": "synchronous Python loop, one update per turn",
+        "contract": "checked candidate publication; unchecked overwrites"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 0.246483833,
+          "unchecked": 0.355909091
+        },
+        "advanced": {
+          "checked": 0.246483833,
+          "unchecked": 0.355909091
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 183,
+        "added_lines": 180,
+        "deleted_lines": 44,
+        "changed_chars": 6356
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 183,
+        "added_lines": 180,
+        "deleted_lines": 44,
+        "changed_chars": 6356
+      },
+      "throughput_millions": {
+        "checked": 0.246483833,
+        "unchecked": 0.355909091
+      },
+      "performance_maxima": {
+        "single_core": {
+          "checked": {
+            "throughput": 0.246,
+            "label": "Python pure scalar"
+          },
+          "unchecked": {
+            "throughput": 0.356,
+            "label": "Python pure scalar"
           }
         }
       }

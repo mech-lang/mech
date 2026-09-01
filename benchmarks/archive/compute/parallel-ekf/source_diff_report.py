@@ -65,6 +65,14 @@ VARIANTS = [
         "note": "The baseline is a per-filter NumPy call from a Python loop; the advanced control uses fixed-shape batched arrays. The row is labeled NumPy because both variants use NumPy for the numeric work.",
     },
     {
+        "language": "Python",
+        "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
+        "baseline_label": "standard-library scalar control",
+        "advanced_label": "same scalar control; no optimized Python variant",
+        "note": "This is a pure-Python lower-bound control using only math and ordinary lists. Baseline and advanced intentionally reference the same source because no optimized Python source variant is retained.",
+    },
+    {
         "language": "Julia",
         "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
         "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
@@ -130,6 +138,11 @@ FACTORS = {
         "layout": "per-lane arrays -> batched SoA arrays",
         "boundary": "Python host loop (scalar) or one vectorized call per turn",
         "contract": "checked masked copyback keeps prior lane; unchecked overwrites",
+    },
+    "Python": {
+        "layout": "ordinary Python lists of scalar state/covariance values",
+        "boundary": "synchronous Python loop, one update per turn",
+        "contract": "checked candidate publication; unchecked overwrites",
     },
     "Julia": {
         "layout": "generic arrays -> explicit four-lane SIMD values",
@@ -355,6 +368,7 @@ def throughput_variants(
     minimal: dict | None,
     strict_mech: dict | None = None,
     strict_halide: dict | None = None,
+    pure_python: dict | None = None,
 ) -> dict[str, dict[str, dict[str, float | None]]]:
     """Return benchmark values for both sides of every source pair."""
     scalar = cross["summary"]["scalar_outer_loop"]
@@ -387,6 +401,14 @@ def throughput_variants(
             return None
         return statistics.median(row["throughput"]) / 1e6
 
+    def pure_python_metric(mode: str) -> float | None:
+        if pure_python is None:
+            return None
+        row = pure_python.get("rows", {}).get(mode)
+        if row is None or "throughput_millions" not in row:
+            return None
+        return statistics.median(row["throughput_millions"])
+
     def pair(checked: float | None, unchecked: float | None) -> dict[str, float | None]:
         return {"checked": checked, "unchecked": unchecked}
 
@@ -402,6 +424,10 @@ def throughput_variants(
         "NumPy": {
             "baseline": pair(min_m("NumPy scalar checked"), min_m("NumPy scalar unchecked")),
             "advanced": pair(min_m("NumPy advanced checked"), min_m("NumPy advanced unchecked")),
+        },
+        "Python": {
+            "baseline": pair(pure_python_metric("checked"), pure_python_metric("unchecked")),
+            "advanced": pair(pure_python_metric("checked"), pure_python_metric("unchecked")),
         },
         "Julia": {
             "baseline": pair(m("Julia generic", "checked"), m("Julia generic", "unchecked")),
@@ -455,6 +481,7 @@ def build_report(
     strict_mech: dict | None = None,
     strict_halide: dict | None = None,
     strict_julia: dict | None = None,
+    pure_python: dict | None = None,
     maxima: dict[str, dict[str, dict[str, dict[str, object]]]] | None = None,
 ) -> dict:
     base = read(BASE_MECH)
@@ -466,6 +493,7 @@ def build_report(
         minimal,
         strict_mech,
         strict_halide,
+        pure_python,
     )
     cross_config = cross.get("configuration", {})
     native_config = (strict_mech or native).get("configuration", {})
@@ -521,6 +549,7 @@ def build_report(
             "strict_mech": (strict_mech or {}).get("generated_at"),
             "strict_halide": (strict_halide or {}).get("generated_at"),
             "strict_julia": (strict_julia or {}).get("generated_at"),
+            "pure_python": (pure_python or {}).get("generated_at"),
             "taichi": taichi.get("generated_at"),
             "lua": lua.get("generated_at"),
             "minimal": (minimal or {}).get("generated_at"),
@@ -576,7 +605,7 @@ def markdown(report: dict) -> str:
         "",
         "## Interpretation",
         "",
-        "`--` means that exact checked/unchecked baseline was not part of the retained evidence; it is not a zero-throughput result. Futhark baseline/advanced values differ only by worker count, while Halide and Mech keep the same source across both sides. The source pair and execution-boundary columns make those cases explicit.",
+        "`--` means that exact checked/unchecked baseline was not part of the retained evidence; it is not a zero-throughput result. Futhark baseline/advanced values differ only by worker count, while Halide, Mech, and the pure-Python control keep the same source across both sides. The source pair and execution-boundary columns make those cases explicit.",
         "Max columns are checked / unchecked M/s. The GPU column uses synchronized/per-turn GPU rows only. Single-thread SIMD/JIT rows remain in the single-core column; the SIMD/multicore column requires an explicit worker, thread, pool, or parallel marker. Multi-turn/fused GPU maxima are retained under gpu_batched in the JSON and in the ranked throughput table; Mech's 3,729.673 M/s one-submit control is a device-resident ceiling, not an equivalent synchronized GPU lane.",
         "",
     ]
@@ -646,11 +675,13 @@ def main() -> None:
     parser.add_argument("--strict-mech", type=Path)
     parser.add_argument("--strict-halide", type=Path)
     parser.add_argument("--strict-julia", type=Path)
+    parser.add_argument("--pure-python", type=Path)
     parser.add_argument("--throughput-table", type=Path)
     args = parser.parse_args()
     strict_mech_path = args.strict_mech or (args.output_directory / "apple-m1-mech-halide-strict-2026-08-31.json")
     strict_halide_path = args.strict_halide or (args.output_directory / "apple-m1-halide-metal-strict-2026-08-31.json")
     strict_julia_path = args.strict_julia or (args.output_directory / "apple-m1-julia-metal-2026-08-31.json")
+    pure_python_path = args.pure_python or (args.output_directory / "apple-m1-pure-python-2026-09-01.json")
     throughput_table_path = args.throughput_table or (args.output_directory / "parallel-ekf-throughput-table.md")
     maxima = performance_maxima(throughput_table_path) if throughput_table_path.exists() else None
     report = build_report(
@@ -664,6 +695,7 @@ def main() -> None:
         json.loads(strict_mech_path.read_text(encoding="utf-8")) if strict_mech_path.exists() else None,
         json.loads(strict_halide_path.read_text(encoding="utf-8")) if strict_halide_path.exists() else None,
         json.loads(strict_julia_path.read_text(encoding="utf-8")) if strict_julia_path.exists() else None,
+        json.loads(pure_python_path.read_text(encoding="utf-8")) if pure_python_path.exists() else None,
         maxima,
     )
     args.output_directory.mkdir(parents=True, exist_ok=True)
