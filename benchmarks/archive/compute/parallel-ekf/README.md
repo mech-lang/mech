@@ -45,6 +45,7 @@ git switch --track origin/codex/mech-program-gpu
 | Minimized Julia packed-lane SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl` |
 | Minimized Julia eight-worker SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_simd_threads.jl` |
 | Julia/Metal resident GPU control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_metal_ekf.jl` |
+| Pure-Python scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py` |
 | Minimized LuaJIT scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua` |
 | Minimized LuaJIT flat control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua` |
 | Minimized Taichi comparable control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py` |
@@ -68,6 +69,7 @@ git switch --track origin/codex/mech-program-gpu
 | Mech persistent SIMD/JIT evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-persistent-simd-2026-08-31.json` |
 | Fused Rust/Julia/Numba reference evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json` |
 | Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
+| Pure-Python scalar evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-pure-python-2026-09-01.json` |
 | NumPy GPU capability evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-gpu-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
 | Source-edit cost report/renderer | `benchmarks/archive/compute/parallel-ekf/source_diff_report.py` |
@@ -113,8 +115,9 @@ Raw samples, checksums, and the direct-vs-WGPU distinction are recorded in
 ## Cross-language checked and unchecked charts
 
 The complete comparison is split into two charts so the integrity contract is
-never hidden by a mixed bar. Mech rows use the project yellow; Rust, Python,
-NumPy, Julia, Lua, LuaJIT, and Taichi retain distinct language-family colors.
+never hidden by a mixed bar. Mech rows use the project yellow; Rust, Julia,
+Taichi, Halide, and Futhark retain their own family colors. Python and NumPy
+share the NumPy blue, while Lua and LuaJIT share the Lua navy.
 GPU rows keep their family color but use a diagonal hatch, while CPU rows are
 solid, so the accelerator distinction is visible without introducing a second
 palette.
@@ -149,6 +152,12 @@ Futhark 0.27 output needs the checked-in compatibility shim with ISPC 1.31,
 which removes only unused conflicting `erf`/`erfc` declarations.
 Each contract is sorted independently from slowest to fastest, with the new
 resident scalar Mech unchecked measurement included explicitly.
+
+The pure-Python row is a standard-library-only scalar control. It uses Python
+lists and `math.sin`/`math.cos`/`math.atan2`, so it does not inherit NumPy's
+native array kernels or Numba's JIT. At 10,000 filters x 20 turns it measured
+**0.246 M/s checked** and **0.356 M/s unchecked**; its raw five-sample evidence
+is in `results/apple-m1-pure-python-2026-09-01.json`.
 
 The fused-reference evidence adds the same block boundary to the native
 controls: Rust packed SIMD, Julia SIMD.jl, and NumPy/Numba each load a
@@ -350,6 +359,7 @@ python3 plot_cross_language_comparison.py \
   --mech-persistent results/apple-m1-mech-persistent-simd-2026-08-31.json \
   --fused-references results/apple-m1-fused-reference-controls-2026-08-31.json \
   --julia-gpu results/apple-m1-julia-metal-2026-08-31.json \
+  --pure-python results/apple-m1-pure-python-2026-09-01.json \
   --numpy-gpu results/apple-m1-numpy-gpu-2026-08-31.json \
   --strict-mech results/apple-m1-mech-halide-strict-2026-08-31.json
 

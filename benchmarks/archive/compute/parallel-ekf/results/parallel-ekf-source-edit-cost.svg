@@ -60,9 +60,9 @@
 <rect x="940.0" y="323" width="232.8" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
 <text x="1180.8" y="338" class="value">8,960</text>
 <text x="226" y="377" text-anchor="end" class="label">LuaJIT</text>
-<rect x="240" y="363" width="198.1" height="22" rx="3" fill="#5ba37f" opacity="0.9"/>
+<rect x="240" y="363" width="198.1" height="22" rx="3" fill="#000080" opacity="0.9"/>
 <text x="446.1" y="378" class="value">224</text>
-<rect x="940.0" y="363" width="235.7" height="22" rx="3" fill="#5ba37f" opacity="0.9"/>
+<rect x="940.0" y="363" width="235.7" height="22" rx="3" fill="#000080" opacity="0.9"/>
 <text x="1183.7" y="378" class="value">9,071</text>
 <text x="226" y="417" text-anchor="end" class="label">Taichi</text>
 <rect x="240" y="403" width="198.1" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>

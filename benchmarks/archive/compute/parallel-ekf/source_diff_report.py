@@ -28,11 +28,11 @@ MECH_SUPPORT_FILES = (
 COLORS = {
     "Mech": "#f4c430",
     "Rust": "#dea584",
-    "Python": "#3776ab",
+    "Python": "#4d77cf",
     "NumPy": "#4d77cf",
     "Julia": "#9558b2",
     "Lua": "#000080",
-    "LuaJIT": "#5ba37f",
+    "LuaJIT": "#000080",
     "Taichi": "#e36b6b",
     "Halide": "#ff8f00",
     "Futhark": "#e94f37",

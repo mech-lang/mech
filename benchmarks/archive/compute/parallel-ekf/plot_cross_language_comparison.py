@@ -22,7 +22,8 @@ COLORS = {
     "NumPy": "#4d77cf",     # NumPy blue
     "Julia": "#9558b2",     # Julia purple
     "Lua": "#000080",       # Lua navy
-    "LuaJIT": "#5ba37f",    # LuaJIT green
+    "LuaJIT": "#000080",    # Lua-family navy
+    "Python": "#4d77cf",    # NumPy/Python blue
     "Taichi": "#e36b6b",    # Taichi red
     "Halide": "#ff8f00",    # Halide orange
     "Futhark": "#e94f37",   # Futhark red
@@ -71,6 +72,7 @@ def load_rows(
     numpy_numba: dict | None = None,
     simd_controls: dict | None = None,
     julia_gpu: dict | None = None,
+    pure_python: dict | None = None,
     halide_gpu: dict | None = None,
     numpy_gpu: dict | None = None,
     futhark_fixed: dict | None = None,
@@ -335,6 +337,20 @@ def load_rows(
                         "throughput": statistics.median(row["throughput_millions"]),
                     }
                 )
+    if pure_python is not None:
+        import statistics
+
+        for mode in ("checked", "unchecked"):
+            row = pure_python.get("rows", {}).get(mode)
+            if row is not None and "throughput_millions" in row:
+                rows.append(
+                    {
+                        "label": "Python pure scalar",
+                        "family": "Python",
+                        "mode": mode,
+                        "throughput": statistics.median(row["throughput_millions"]),
+                    }
+                )
     if halide_gpu is not None:
         import statistics
 
@@ -566,6 +582,7 @@ def main() -> None:
     parser.add_argument("--numpy-numba", type=Path, help="NumPy/Numba threaded JIT evidence JSON")
     parser.add_argument("--simd-controls", type=Path, help="Halide and Futhark SIMD evidence JSON")
     parser.add_argument("--julia-gpu", type=Path, help="Julia Metal GPU evidence JSON")
+    parser.add_argument("--pure-python", type=Path, help="pure Python scalar evidence JSON")
     parser.add_argument("--halide-gpu", type=Path, help="Halide native Metal GPU evidence JSON")
     parser.add_argument("--numpy-gpu", type=Path, help="NumPy GPU capability evidence JSON")
     parser.add_argument("--futhark-fixed", type=Path, help="fixed-mode Futhark ISPC evidence JSON")
@@ -615,6 +632,11 @@ def main() -> None:
         if args.julia_gpu
         else None
     )
+    pure_python = (
+        json.loads(args.pure_python.read_text(encoding="utf-8"))
+        if args.pure_python
+        else None
+    )
     halide_gpu = (
         json.loads(args.halide_gpu.read_text(encoding="utf-8"))
         if args.halide_gpu
@@ -656,6 +678,7 @@ def main() -> None:
         numpy_numba,
         simd_controls,
         julia_gpu,
+        pure_python,
         halide_gpu,
         numpy_gpu,
         futhark_fixed,

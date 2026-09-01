@@ -42,6 +42,8 @@ retained-state contract. Its first kernel compilation and all allocation/final
 readback are outside the timed section. `numpy_gpu.py` is a
 CuPy capability probe; it deliberately does not relabel MLX or another Metal
 library as NumPy.
+`pure_python.py` is the corresponding standard-library-only scalar control; it
+uses Python lists and `math` calls and deliberately does not import NumPy.
 The `futhark-ispc-compat.sh` wrapper is used only when Futhark 0.27 is paired
 with ISPC 1.31; it removes four unused declarations that otherwise conflict
 with ISPC's standard library.

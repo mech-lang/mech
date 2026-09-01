@@ -61,7 +61,8 @@ COLORS = {
     "rust": "#f3a847",
     "julia": "#b68cff",
     "numpy": "#66a6ff",
-    "luajit": "#f276ad",
+    "luajit": "#000080",
+    "python": "#66a6ff",
     "gpu": "#56c7e8",
 }
 

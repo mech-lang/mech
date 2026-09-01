@@ -204,6 +204,18 @@ def main() -> None:
         common = [str(args.scalar_instances), str(args.scalar_turns)]
         language_commands = {
             "Mech scalar": None,
+            "Python pure scalar unchecked": [
+                args.python,
+                str(HERE / "minimal" / "pure_python.py"),
+                *common,
+                "unchecked",
+            ],
+            "Python pure scalar checked": [
+                args.python,
+                str(HERE / "minimal" / "pure_python.py"),
+                *common,
+                "checked",
+            ],
             "Rust optimized fixed-shape": [str(rust_binary), *common],
             "Rust packed SIMD unchecked": [str(rust_simd_binary), *common, "unchecked"],
             "Rust packed SIMD checked": [str(rust_simd_binary), *common, "checked"],
