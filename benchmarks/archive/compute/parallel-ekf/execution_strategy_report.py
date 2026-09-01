@@ -13,6 +13,7 @@ import datetime as dt
 import html
 import json
 import math
+import re
 import statistics
 from pathlib import Path
 
@@ -35,8 +36,8 @@ STRATEGIES = {
         "title": "Compiled baseline",
         "description": "Direct native, JIT, or ahead-of-time compiled controls, with no interpreter in the timed loop.",
         "workload": "10,000 filters x 20 turns where available",
-        "languages": ("Rust", "Julia", "LuaJIT", "Taichi", "Halide", "Futhark"),
-        "note": "This view uses each language's retained native/JIT/AOT scalar control. Mech's paired compiled controls are reported in the single-core and multicore views; its baseline scalar row is intentionally kept in the interpreted view because no paired scalar Cranelift checked/unchecked evidence is retained.",
+        "languages": ("Mech", "Rust", "Julia", "LuaJIT", "Taichi", "Halide", "Futhark"),
+        "note": "This view uses each language's retained native/JIT/AOT scalar control. Mech uses the paired scalar Cranelift JIT checked/unchecked measurements from the backend evidence; the single-core and multicore views remain separate SIMD/JIT controls.",
     },
     "baseline": {
         "title": "Baseline",
@@ -87,6 +88,7 @@ SOURCES = {
         "Lua": BASELINES["Lua"],
     },
     "compiled-baseline": {
+        "Mech": BASELINES["Mech"],
         "Rust": BASELINES["Rust"],
         "Julia": BASELINES["Julia"],
         "LuaJIT": BASELINES["LuaJIT"],
@@ -153,6 +155,7 @@ SOURCE_LABELS = {
         "Lua": "PUC Lua flat fixed-shape arrays",
     },
     "compiled-baseline": {
+        "Mech": "scalar Cranelift JIT",
         "Rust": "fixed-shape scalar arrays",
         "Julia": "generic scalar JIT arrays",
         "LuaJIT": "generic FFI JIT loop",
@@ -295,6 +298,20 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
         row = (strict_mech or {}).get("rows", {}).get(f"Mech native Metal {mode}")
         return None if row is None else float(row["median_million_turns_per_second"])
 
+    def mech_backend_metric(label: str) -> float | None:
+        """Read a paired scalar Cranelift result from summary or raw backend output."""
+        summary = (cross or {}).get("summary", {}).get("mech_backends_million_ekf_turns_per_second", {})
+        if label in summary:
+            return float(summary[label])
+        outputs = (cross or {}).get("runs", {}).get("mech_backend_settings", {}).get("measured_stdout", [])
+        pattern = re.compile(r"^" + re.escape(label) + r" throughput: ([0-9.]+) million", re.MULTILINE)
+        values = []
+        for output in outputs:
+            match = pattern.search(output)
+            if match:
+                values.append(float(match.group(1)))
+        return statistics.median(values) if values else None
+
     metrics = {
         "baseline": {
             "Mech": pair(m("Mech scalar"), m("Mech scalar unchecked")),
@@ -365,6 +382,10 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
         language: metrics["baseline"][language]
         for language in STRATEGIES["compiled-baseline"]["languages"]
     }
+    metrics["compiled-baseline"]["Mech"] = pair(
+        mech_backend_metric("Mech Cranelift JIT"),
+        mech_backend_metric("Mech Cranelift JIT unchecked"),
+    )
     return metrics
 
 
