@@ -711,8 +711,7 @@ fn merged_set_element_drafts(
     )?;
     let elements =
         merge(left, schemas, right, schemas).map_err(|_| ResidentKernelError::InvalidInput)?;
-    left.rebuild_set(elements, &SnapshotValidationContext::new(schemas))
-        .and_then(|value| value.set_element_drafts(schemas))
+    left.set_element_data_drafts(schemas, &elements)
         .map_err(|_| ResidentKernelError::InvalidInput)
 }
 
@@ -1289,6 +1288,73 @@ mod tests {
             }),
             Err(ResidentKernelBindError::UnsupportedLayout)
         ));
+    }
+
+    #[test]
+    fn set_union_uses_output_cardinality_for_derived_results() {
+        let element = SchemaBody::FloatingPoint(FloatWidth::W64);
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let input_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(element.clone()),
+                cardinality: mech_core::DimensionExpr::Constant(2).into(),
+            }))
+            .unwrap();
+        let output_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(element),
+                cardinality: mech_core::DimensionExpr::Constant(3).into(),
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let input_schema = build.resolve(input_handle).unwrap();
+        let output_schema = build.resolve(output_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let set = |values: &[f64]| {
+            ValueDraft {
+                schema: input_schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Set(
+                    values
+                        .iter()
+                        .map(|value| ValueDataDraft::F64(F64Bits::from_f64(*value)))
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let left_slot = [Some(set(&[1.0, 2.0]))];
+        let right_slot = [Some(set(&[2.0, 3.0]))];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left_slot),
+            ResidentValueRef::Snapshot(&right_slot),
+        ];
+        let output_shape = schemas
+            .get(output_schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let kernel = BoundResidentKernel::new(set_union, Box::new([]))
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: output_schema,
+                schema_key: schemas.entry(output_schema).unwrap().key(),
+                shape: output_shape,
+                exact_cardinality: Some(3),
+                maximum_cardinality: Some(3),
+            })
+            .with_snapshot_schemas(schemas);
+        let mut output = [None];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Ok(true),
+        );
+        let ValueData::Set(output) = output[0].as_ref().unwrap().data() else {
+            panic!("set/union must produce a set");
+        };
+        assert_eq!(output.elements().len(), 3);
     }
 
     fn nested_nan_element(outer_nan: u64, inner_nan: u64) -> ValueDataDraft {

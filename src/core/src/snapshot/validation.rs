@@ -272,6 +272,35 @@ impl Value {
             .map(Vec::into_boxed_slice)
     }
 
+    /// Converts canonical set element data back into drafts using this set's
+    /// declared element schema without imposing this set's container
+    /// cardinality on a derived result.
+    pub fn set_element_data_drafts(
+        &self,
+        schemas: &SchemaTable,
+        elements: &[ValueData],
+    ) -> Result<Box<[ValueDataDraft]>, SnapshotValueError> {
+        let schema = self.validate_against(schemas)?;
+        let SchemaBody::Set { element, .. } = schema.body() else {
+            return Err(rebuild_kind_mismatch(
+                schema.body(),
+                super::ValueDataKind::Set,
+            ));
+        };
+        elements
+            .iter()
+            .enumerate()
+            .map(|(index, value)| {
+                canonical_data_to_draft(
+                    element,
+                    value,
+                    &SnapshotPath::root().child(SnapshotPathSegment::SetElement(index as u64)),
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .map(Vec::into_boxed_slice)
+    }
+
     pub fn rebuild_option(
         &self,
         payload: Option<ValueData>,
