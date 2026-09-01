@@ -2596,9 +2596,9 @@ fn static_numeric_indices(data: &ValueData) -> Result<Vec<u64>, String> {
         ValueData::I64(value) => signed_scalar!(value),
         ValueData::I128(value) => signed_scalar!(value),
         ValueData::F32(value) => {
-            exact_float_index(f64::from(value.to_f32())).map(|value| vec![value])
+            canonical_float_index(f64::from(value.to_f32())).map(|value| vec![value])
         }
-        ValueData::F64(value) => exact_float_index(value.to_f64()).map(|value| vec![value]),
+        ValueData::F64(value) => canonical_float_index(value.to_f64()).map(|value| vec![value]),
         ValueData::Matrix(matrix) => match matrix.elements() {
             SequenceView::Index(values) | SequenceView::U64(values) => Ok(values.to_vec()),
             SequenceView::U8(values) => Ok(values.iter().copied().map(u64::from).collect()),
@@ -2618,11 +2618,11 @@ fn static_numeric_indices(data: &ValueData) -> Result<Vec<u64>, String> {
             SequenceView::I128(values) => signed_indices(values),
             SequenceView::F32(values) => values
                 .iter()
-                .map(|value| exact_float_index(f64::from(value.to_f32())))
+                .map(|value| canonical_float_index(f64::from(value.to_f32())))
                 .collect(),
             SequenceView::F64(values) => values
                 .iter()
-                .map(|value| exact_float_index(value.to_f64()))
+                .map(|value| canonical_float_index(value.to_f64()))
                 .collect(),
             _ => Err("static matrix selector must contain real integers".to_owned()),
         },
@@ -2644,11 +2644,11 @@ where
         .collect()
 }
 
-fn exact_float_index(value: f64) -> Result<u64, String> {
-    if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value >= u64::MAX as f64 {
-        return Err("static selector must be a finite nonnegative integer".to_owned());
+fn canonical_float_index(value: f64) -> Result<u64, String> {
+    if !value.is_finite() || value < 0.0 || value > u32::MAX as f64 {
+        return Err("static selector must fit the portable nonnegative index range".to_owned());
     }
-    Ok(value as u64)
+    Ok(value.trunc() as u64)
 }
 
 fn artifact_constant_values(
@@ -2929,6 +2929,40 @@ mod axis_tests {
                 Some(vec![2]),
             )
             .is_err(),
+        );
+    }
+
+    #[test]
+    fn static_float_selectors_use_source_truncation_semantics() {
+        assert_eq!(
+            static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
+                2.75,
+            ))),
+            Ok(vec![2]),
+        );
+        assert_eq!(
+            static_numeric_indices(&ValueData::F32(mech_core::snapshot::F32Bits::from_f32(
+                1.99,
+            ))),
+            Ok(vec![1]),
+        );
+        assert!(
+            static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
+                f64::INFINITY,
+            )))
+            .is_err()
+        );
+        assert!(
+            static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
+                -1.0,
+            )))
+            .is_err()
+        );
+        assert!(
+            static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
+                f64::from(u32::MAX) + 1.0,
+            )))
+            .is_err()
         );
     }
 }

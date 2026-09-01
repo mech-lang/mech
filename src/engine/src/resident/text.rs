@@ -31,7 +31,8 @@ fn checked_string_payload<'a>(
 
 fn admit_string_materialization(
     output_elements: usize,
-    payload_bytes: usize,
+    output_payload_bytes: usize,
+    cloned_payload_bytes: usize,
     compute_work: usize,
     staged_containers: usize,
     selector_bytes: usize,
@@ -42,7 +43,7 @@ fn admit_string_materialization(
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_bytes = output_elements
         .checked_mul(core::mem::size_of::<String>())
-        .and_then(|bytes| bytes.checked_add(payload_bytes))
+        .and_then(|bytes| bytes.checked_add(output_payload_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     super::budget::PreparedKernel::new(
         (),
@@ -50,8 +51,8 @@ fn admit_string_materialization(
             compute_work,
             output_elements,
             output_bytes,
-            temporary_bytes: payload_bytes,
-            cloned_bytes: payload_bytes,
+            temporary_bytes: cloned_payload_bytes,
+            cloned_bytes: cloned_payload_bytes,
             container_bytes,
             selector_bytes,
             index_bytes,
@@ -127,6 +128,7 @@ fn string_transpose(
     admit_string_materialization(
         output.len(),
         payload_bytes,
+        payload_bytes,
         output.len(),
         output.len(),
         0,
@@ -168,11 +170,10 @@ pub(super) fn bind_string_gather(
             })
         || source.kind != ResidentValueKind::String
         || source.shape.len().is_none()
-        || !matches!(
-            indexes.kind,
-            ResidentValueKind::F64 | ResidentValueKind::Index
-        )
-        || indexes.shape.len() != request.output.shape.len()
+        || !super::numeric::numeric_positional_selector_layout(request, indexes)
+        || Some(super::numeric::declared_selector_cardinality(
+            request, indexes,
+        )?) != request.output.shape.len()
         || request.output.kind != ResidentValueKind::String
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -201,22 +202,23 @@ fn string_gather(
     let Some(ResidentValueRef::String(source)) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let indexes_len = inputs
-        .get(1)
-        .ok_or(ResidentKernelError::InvalidInput)?
-        .len();
+    let selector = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
     let ResidentValueMut::String(output) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    if indexes_len != output.len() {
-        return Err(ResidentKernelError::InvalidShape);
-    }
+    let mut indexes_len = 0usize;
     let mut payload_bytes = 0usize;
-    for ordinal in 0..indexes_len {
-        let index = checked_string_index(string_index_at(inputs, 1, ordinal)?, source.len())?;
+    super::numeric::selector_for_each_access_index(selector, source.len(), |index| {
+        indexes_len = indexes_len
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?;
         payload_bytes = payload_bytes
             .checked_add(source[index].len())
             .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
+    })?;
+    if indexes_len != output.len() {
+        return Err(ResidentKernelError::InvalidShape);
     }
     let index_bytes = indexes_len
         .checked_mul(core::mem::size_of::<u64>())
@@ -224,16 +226,17 @@ fn string_gather(
     admit_string_materialization(
         output.len(),
         payload_bytes,
+        payload_bytes,
         output.len(),
         output.len(),
         0,
         index_bytes,
     )?;
     let mut next = Vec::with_capacity(output.len());
-    for ordinal in 0..output.len() {
-        let index = checked_string_index(string_index_at(inputs, 1, ordinal)?, source.len())?;
+    super::numeric::selector_for_each_access_index(selector, source.len(), |index| {
         next.push(source[index].clone());
-    }
+        Ok(())
+    })?;
     let changed = output != next;
     for (target, value) in output.iter_mut().zip(next) {
         *target = value;
@@ -358,11 +361,8 @@ pub(super) fn bind_string_scalar_access(
             })
         || source.kind != ResidentValueKind::String
         || source.shape.len().is_none()
-        || !matches!(
-            index.kind,
-            ResidentValueKind::F64 | ResidentValueKind::Index
-        )
-        || index.shape != ResidentShape::SCALAR
+        || !super::numeric::numeric_positional_selector_layout(request, index)
+        || super::numeric::declared_selector_cardinality(request, index)? != 1
         || request.output.kind != ResidentValueKind::String
         || request.output.shape != ResidentShape::SCALAR
     {
@@ -392,12 +392,27 @@ fn string_scalar_access(
     let Some(ResidentValueRef::String(source)) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let index = string_index_at(inputs, 1, 0)?;
-    let next = &source[checked_string_index(index, source.len())?];
+    let selector = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let mut selected = None;
+    super::numeric::selector_for_each_access_index(selector, source.len(), |index| {
+        if selected.replace(index).is_some() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(())
+    })?;
+    let next = &source[selected.ok_or(ResidentKernelError::InvalidShape)?];
     let ResidentValueMut::String([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    admit_string_materialization(1, next.len(), 1, 0, 0, core::mem::size_of::<u64>())?;
+    admit_string_materialization(
+        1,
+        next.len(),
+        next.len(),
+        1,
+        0,
+        0,
+        core::mem::size_of::<u64>(),
+    )?;
     let next = next.clone();
     let changed = *target != next;
     if changed {
@@ -463,6 +478,7 @@ fn f64_vector_to_string(
         .ok_or(ResidentKernelError::InvalidShape)?;
     admit_string_materialization(
         source.len(),
+        payload_upper,
         payload_upper,
         source.len(),
         source.len(),
@@ -650,7 +666,7 @@ fn concat(
         .len()
         .checked_add(right.len())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_materialization(1, length, length, 0, 0, 0)?;
+    admit_string_materialization(1, length, length, length, 0, 0, 0)?;
     let mut next = String::with_capacity(length);
     next.push_str(left);
     next.push_str(right);
@@ -680,11 +696,35 @@ fn string_mask_assign(
         return Err(ResidentKernelError::InvalidInput);
     }
     let selected = indexes.iter().filter(|selected| **selected != 0).count();
+    if selected == 0 {
+        return Ok(false);
+    }
     let cloned_bytes = source
         .len()
         .checked_mul(selected)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_materialization(selected, cloned_bytes, target.len(), 0, indexes.len(), 0)?;
+    let output_payload_bytes =
+        target
+            .iter()
+            .zip(indexes)
+            .try_fold(0usize, |bytes, (target, selected)| {
+                bytes
+                    .checked_add(if *selected == 0 {
+                        target.len()
+                    } else {
+                        source.len()
+                    })
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
+    admit_string_materialization(
+        target.len(),
+        output_payload_bytes,
+        cloned_bytes,
+        target.len(),
+        0,
+        indexes.len(),
+        0,
+    )?;
     let mut changed = false;
     for (target, selected) in target.iter_mut().zip(indexes) {
         if *selected != 0 && target != source {
@@ -716,7 +756,28 @@ fn string_index_assign(
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    admit_string_materialization(1, source.len(), 1, 0, 0, core::mem::size_of::<u64>())?;
+    let output_payload_bytes =
+        target
+            .iter()
+            .enumerate()
+            .try_fold(0usize, |bytes, (ordinal, value)| {
+                bytes
+                    .checked_add(if ordinal == target_index {
+                        source.len()
+                    } else {
+                        value.len()
+                    })
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
+    admit_string_materialization(
+        target.len(),
+        output_payload_bytes,
+        source.len(),
+        target.len(),
+        0,
+        0,
+        core::mem::size_of::<u64>(),
+    )?;
     let target = &mut target[target_index];
     let changed = target != source;
     if changed {
@@ -742,6 +803,9 @@ fn string_indices_assign(
     for index in indexes {
         checked_string_index(*index, target.len())?;
     }
+    if indexes.is_empty() {
+        return Ok(false);
+    }
     let cloned_bytes = source
         .len()
         .checked_mul(indexes.len())
@@ -750,10 +814,28 @@ fn string_indices_assign(
         .len()
         .checked_mul(core::mem::size_of::<u64>())
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_payload_bytes =
+        target
+            .iter()
+            .enumerate()
+            .try_fold(0usize, |bytes, (ordinal, value)| {
+                let selected = indexes
+                    .iter()
+                    .any(|index| *index as usize == ordinal.saturating_add(1));
+                bytes
+                    .checked_add(if selected { source.len() } else { value.len() })
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
+    let compute_work = target
+        .len()
+        .checked_mul(indexes.len())
+        .and_then(|work| work.checked_add(indexes.len()))
+        .ok_or(ResidentKernelError::InvalidShape)?;
     admit_string_materialization(
-        indexes.len(),
+        target.len(),
+        output_payload_bytes,
         cloned_bytes,
-        indexes.len(),
+        compute_work,
         0,
         0,
         index_bytes,
@@ -767,29 +849,6 @@ fn string_indices_assign(
         }
     }
     Ok(changed)
-}
-
-fn string_index_at(
-    inputs: &dyn ResidentKernelInputs,
-    input_index: usize,
-    ordinal: usize,
-) -> Result<u64, ResidentKernelError> {
-    match inputs.get(input_index) {
-        Some(ResidentValueRef::Index(values)) => values
-            .get(ordinal)
-            .copied()
-            .ok_or(ResidentKernelError::InvalidInput),
-        Some(ResidentValueRef::F64(values)) => {
-            let value = *values
-                .get(ordinal)
-                .ok_or(ResidentKernelError::InvalidInput)?;
-            if !value.is_finite() || value < 0.0 || value.fract() != 0.0 {
-                return Err(ResidentKernelError::InvalidInput);
-            }
-            Ok(value as u64)
-        }
-        _ => Err(ResidentKernelError::InvalidInput),
-    }
 }
 
 fn checked_string_index(index: u64, upper: usize) -> Result<usize, ResidentKernelError> {
@@ -826,7 +885,15 @@ fn string_all_assign(
         .len()
         .checked_mul(target.len())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_materialization(target.len(), cloned_bytes, target.len(), 0, 1, 0)?;
+    admit_string_materialization(
+        target.len(),
+        cloned_bytes,
+        cloned_bytes,
+        target.len(),
+        0,
+        1,
+        0,
+    )?;
     let mut changed = false;
     for target in target {
         if target != source {
@@ -932,6 +999,52 @@ mod tests {
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(output, ["unchanged"]);
+    }
+
+    #[test]
+    fn partial_string_assignments_admit_the_complete_post_write_output() {
+        let source = ["replacement".to_owned()];
+        let oversized = "x".repeat(super::super::budget::MAX_RESIDENT_OUTPUT_BYTES as usize);
+
+        let mask = [0_u8, 1];
+        let inputs = Refs(vec![
+            ResidentValueRef::String(&source),
+            ResidentValueRef::Bool(&mask),
+        ]);
+        let mut output = [oversized.clone(), "old".to_owned()];
+        assert_eq!(
+            BoundResidentKernel::new(string_mask_assign, Box::new([]))
+                .execute(&inputs, ResidentValueMut::String(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(output[0].len(), oversized.len());
+        assert_eq!(output[1], "old");
+
+        let index = [2_u64];
+        let inputs = Refs(vec![
+            ResidentValueRef::String(&source),
+            ResidentValueRef::Index(&index),
+        ]);
+        let mut output = [oversized.clone(), "old".to_owned()];
+        assert_eq!(
+            BoundResidentKernel::new(string_index_assign, Box::new([]))
+                .execute(&inputs, ResidentValueMut::String(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(output[0].len(), oversized.len());
+        assert_eq!(output[1], "old");
+
+        let mut output = [oversized, "old".to_owned()];
+        assert_eq!(
+            BoundResidentKernel::new(string_indices_assign, Box::new([]))
+                .execute(&inputs, ResidentValueMut::String(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(
+            output[0].len(),
+            super::super::budget::MAX_RESIDENT_OUTPUT_BYTES as usize
+        );
+        assert_eq!(output[1], "old");
     }
 
     #[test]

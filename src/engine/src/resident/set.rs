@@ -604,6 +604,122 @@ fn value_retained_cost(
     Ok((footprint.retained_bytes, footprint.node_count))
 }
 
+#[derive(Clone, Copy, Debug)]
+struct SetCandidateCost {
+    retained_bytes: u64,
+    retained_nodes: u64,
+}
+
+fn scalar_element_retained_cost(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    index: usize,
+) -> Result<SetCandidateCost, ResidentKernelError> {
+    let (retained_bytes, retained_nodes) = match inputs.get(index) {
+        Some(ResidentValueRef::Bool([value])) if *value <= 1 => {
+            (checked_u64(core::mem::size_of::<u8>())?, 1)
+        }
+        Some(ResidentValueRef::Index([_])) => (checked_u64(core::mem::size_of::<u64>())?, 1),
+        Some(ResidentValueRef::F64([_])) => (checked_u64(core::mem::size_of::<f64>())?, 1),
+        Some(ResidentValueRef::String([value])) => (
+            checked_cost_sum(&[
+                checked_u64(core::mem::size_of::<String>())?,
+                checked_u64(value.len())?,
+            ])?,
+            1,
+        ),
+        Some(ResidentValueRef::Snapshot([Some(value)])) => value
+            .retained_footprint(
+                kernel
+                    .snapshot_schemas()
+                    .ok_or(ResidentKernelError::InvalidInput)?,
+            )
+            .map(|footprint| (footprint.retained_bytes, footprint.node_count))
+            .map_err(|_| ResidentKernelError::InvalidInput)?,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    Ok(SetCandidateCost {
+        retained_bytes,
+        retained_nodes,
+    })
+}
+
+fn admit_set_candidate_operation(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    candidate_index: usize,
+    set: &Value,
+    output_elements: Option<usize>,
+    candidate_retained_in_output: bool,
+) -> Result<(), ResidentKernelError> {
+    let cardinality = set_cardinality(set)?;
+    let (set_bytes, set_nodes) = value_retained_cost(kernel, set)?;
+    let candidate = scalar_element_retained_cost(kernel, inputs, candidate_index)?;
+    let comparison_work = set_nodes
+        .checked_add(
+            candidate
+                .retained_nodes
+                .max(1)
+                .checked_mul(checked_u64(cardinality)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let Some(output_elements) = output_elements else {
+        return PreparedKernel::new(
+            (),
+            super::budget::resident_cost! {
+                comparison_work,
+                compute_work: comparison_work,
+                output_elements: 1,
+                output_bytes: core::mem::size_of::<u8>(),
+                temporary_bytes: candidate.retained_bytes,
+                cloned_bytes: candidate.retained_bytes,
+                selector_bytes: set_bytes,
+                retained_nodes: checked_cost_sum(&[set_nodes, candidate.retained_nodes])?,
+                ..KernelCostEstimate::default()
+            },
+        )
+        .admit()
+        .map(|admitted| admitted.into_plan());
+    };
+    let output_clone_bytes = if candidate_retained_in_output {
+        checked_cost_sum(&[set_bytes, candidate.retained_bytes])?
+    } else {
+        set_bytes
+    };
+    let output_nodes = if candidate_retained_in_output {
+        checked_cost_sum(&[set_nodes, candidate.retained_nodes])?
+    } else {
+        set_nodes
+    };
+    let container_bytes = checked_cost_product(&[
+        checked_u64(output_elements)?,
+        checked_u64(core::mem::size_of::<ValueDataDraft>())?,
+    ])?;
+    PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work,
+            compute_work: comparison_work
+                .checked_add(checked_u64(output_elements)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            output_elements,
+            output_bytes: checked_cost_sum(&[output_clone_bytes, container_bytes])?,
+            temporary_bytes: output_clone_bytes
+                .checked_mul(2)
+                .and_then(|bytes| bytes.checked_add(candidate.retained_bytes))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes: checked_cost_sum(&[output_clone_bytes, candidate.retained_bytes])?,
+            container_bytes,
+            retained_nodes: checked_cost_sum(&[output_nodes, candidate.retained_nodes])?,
+            ..KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
 fn admit_set_read(comparison_work: usize) -> Result<(), ResidentKernelError> {
     super::budget::resident_cost! {
         comparison_work,
@@ -1079,14 +1195,14 @@ fn element_of(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let element = scalar_element_value(kernel, inputs, 0)?;
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(1) else {
         return Err(ResidentKernelError::InvalidInput);
     };
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    admit_set_read(set_cardinality(set)?)?;
+    admit_set_candidate_operation(kernel, inputs, 0, set, None, false)?;
+    let element = scalar_element_value(kernel, inputs, 0)?;
     let next = set
         .set_contains(schemas, &element, schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -1117,14 +1233,14 @@ fn not_element_of(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let element = scalar_element_value(kernel, inputs, 0)?;
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(1) else {
         return Err(ResidentKernelError::InvalidInput);
     };
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    admit_set_read(set_cardinality(set)?)?;
+    admit_set_candidate_operation(kernel, inputs, 0, set, None, false)?;
+    let element = scalar_element_value(kernel, inputs, 0)?;
     let next = set
         .set_contains(schemas, &element, schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -1155,22 +1271,14 @@ fn insert(
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let element = scalar_element_value(kernel, inputs, 1)?;
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    let (set_bytes, set_nodes) = value_retained_cost(kernel, set)?;
-    let (element_bytes, element_nodes) = value_retained_cost(kernel, &element)?;
-    admit_set_materialization(
-        set_cardinality(set)?
-            .checked_add(1)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        set_cardinality(set)?,
-        checked_cost_sum(&[set_bytes, element_bytes])?,
-        checked_cost_sum(&[set_nodes, element_nodes])?,
-    )?
-    .admit()?
-    .into_plan();
+    let maximum_output_elements = set_cardinality(set)?
+        .checked_add(1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_set_candidate_operation(kernel, inputs, 1, set, Some(maximum_output_elements), true)?;
+    let element = scalar_element_value(kernel, inputs, 1)?;
     let mut elements = set_element_drafts(set)?;
     if !set
         .set_contains(schemas, &element, schemas)
@@ -1194,16 +1302,8 @@ fn remove(
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
+    admit_set_candidate_operation(kernel, inputs, 1, set, Some(set_cardinality(set)?), false)?;
     let element = scalar_element_value(kernel, inputs, 1)?;
-    let (set_bytes, set_nodes) = value_retained_cost(kernel, set)?;
-    admit_set_materialization(
-        set_cardinality(set)?,
-        set_cardinality(set)?,
-        set_bytes,
-        set_nodes,
-    )?
-    .admit()?
-    .into_plan();
     let mut elements = Vec::new();
     for candidate in set_element_drafts(set)? {
         if !set_element_key_matches(kernel, candidate.clone(), &element)? {
@@ -1746,5 +1846,107 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(powerset_output[0].is_none());
+    }
+
+    #[test]
+    fn set_candidates_are_admitted_before_rebinding_or_comparison() {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let element_handle = builder.insert(schema(SchemaBody::String)).unwrap();
+        let set_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(SchemaBody::String),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let element_schema = build.resolve(element_handle).unwrap();
+        let set_schema = build.resolve(set_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let element_shape = schemas
+            .get(element_schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let set_shape = schemas
+            .get(set_schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let metadata = SetElementMetadata {
+            schema: element_schema,
+            schema_key: schemas.entry(element_schema).unwrap().key(),
+            shape: element_shape,
+        };
+        let candidate = ValueDraft {
+            schema: element_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::String(
+                "x".repeat(super::super::budget::MAX_RESIDENT_CLONED_BYTES as usize + 1),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let empty_set = ValueDraft {
+            schema: set_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(Box::new([])),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let candidate_slot = [Some(candidate)];
+        let set_slot = [Some(empty_set.clone())];
+        let membership_inputs = [
+            ResidentValueRef::Snapshot(&candidate_slot),
+            ResidentValueRef::Snapshot(&set_slot),
+        ];
+        for (executor, initial) in [
+            (element_of as mech_core::ResidentKernelExecutor, 1_u8),
+            (not_element_of as mech_core::ResidentKernelExecutor, 0_u8),
+        ] {
+            let kernel = BoundResidentKernel::new(executor, Box::new([]))
+                .with_snapshot_schemas(schemas.clone())
+                .with_retained_state(Arc::new(metadata.clone()));
+            let mut output = [initial];
+            assert_eq!(
+                kernel.execute(
+                    &Inputs(&membership_inputs),
+                    ResidentValueMut::Bool(&mut output),
+                ),
+                Err(ResidentKernelError::InvalidShape),
+            );
+            assert_eq!(output, [initial]);
+        }
+
+        let mutation_inputs = [
+            ResidentValueRef::Snapshot(&set_slot),
+            ResidentValueRef::Snapshot(&candidate_slot),
+        ];
+        for executor in [
+            insert as mech_core::ResidentKernelExecutor,
+            remove as mech_core::ResidentKernelExecutor,
+        ] {
+            let kernel = BoundResidentKernel::new(executor, Box::new([]))
+                .with_snapshot_output(ResidentSnapshotOutput {
+                    schema: set_schema,
+                    schema_key: schemas.entry(set_schema).unwrap().key(),
+                    shape: set_shape.clone(),
+                    exact_cardinality: None,
+                    maximum_cardinality: None,
+                })
+                .with_snapshot_schemas(schemas.clone())
+                .with_retained_state(Arc::new(metadata.clone()));
+            let mut output = [Some(empty_set.clone())];
+            assert_eq!(
+                kernel.execute(
+                    &Inputs(&mutation_inputs),
+                    ResidentValueMut::Snapshot(&mut output),
+                ),
+                Err(ResidentKernelError::InvalidShape),
+            );
+            let ValueData::Set(output) = output[0].as_ref().unwrap().data() else {
+                unreachable!()
+            };
+            assert!(output.elements().is_empty());
+        }
     }
 }

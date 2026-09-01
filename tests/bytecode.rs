@@ -133,6 +133,8 @@ fn generated_resident_capability_matrix_survives_bytecode_and_exact_binding() ->
         "matrix := [1 2; 3 4]\nmatrix[2,1]",
         "matrix := [1 2; 3 4]\nmatrix[2]",
         "matrix := [1 2; 3 4]\nselectors := [4 1 4]\nmatrix[selectors]",
+        "matrix := [1 2; 3 4]\nselectors := [4<u64> 1<u64> 4<u64>]\nmatrix[selectors]",
+        "matrix := [1 2; 3 4]\nselectors := [4.9<f32> 1.2<f32> 4.1<f32>]\nmatrix[selectors]",
         "~matrix := [1 2; 3 4]\nmatrix[:,2] = [9; 10]\nmatrix",
         "1<u64>..=4<u64>",
         "+> stats\nstats/sum/row([1<u64> 2<u64>; 3<u64> 4<u64>])",

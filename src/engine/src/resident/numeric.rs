@@ -2678,6 +2678,55 @@ fn access_selector_layout_matches_schema(
     }
 }
 
+fn is_numeric_positional_selector_schema(body: &SchemaBody) -> bool {
+    match body {
+        body if is_positional_selector_schema(body) => true,
+        SchemaBody::Matrix { element, .. } => is_positional_selector_schema(element.as_ref()),
+        _ => false,
+    }
+}
+
+pub(super) fn numeric_positional_selector_layout(
+    request: &ResidentKernelBindRequest<'_>,
+    layout: &mech_core::ResidentPortLayout,
+) -> bool {
+    request.schemas.get(layout.schema_id).is_some_and(|schema| {
+        is_numeric_positional_selector_schema(schema.body())
+            && access_selector_layout_matches_schema(layout, schema.body())
+    })
+}
+
+fn positional_selector_layout(
+    request: &ResidentKernelBindRequest<'_>,
+    layout: &mech_core::ResidentPortLayout,
+) -> bool {
+    request.schemas.get(layout.schema_id).is_some_and(|schema| {
+        is_access_positional_selector_schema(schema.body())
+            && access_selector_layout_matches_schema(layout, schema.body())
+    })
+}
+
+pub(super) fn declared_selector_cardinality(
+    request: &ResidentKernelBindRequest<'_>,
+    layout: &mech_core::ResidentPortLayout,
+) -> Result<usize, ResidentKernelBindError> {
+    let schema = request
+        .schemas
+        .get(layout.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    match schema.body() {
+        SchemaBody::Matrix { .. } => {
+            let (rows, columns) = declared_matrix_dimensions(request, layout)?;
+            rows.checked_mul(columns)
+                .ok_or(ResidentKernelBindError::UnsupportedLayout)
+        }
+        _ => layout
+            .shape
+            .len()
+            .ok_or(ResidentKernelBindError::UnsupportedLayout),
+    }
+}
+
 fn bind_indexed_assign_with_region(
     request: &ResidentKernelBindRequest<'_>,
     regions: RegionPolicy,
@@ -2850,10 +2899,7 @@ fn bind_indexed_assign_with_region(
         let source_len = source_rows
             .checked_mul(source_columns)
             .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-        let selector_len = selector
-            .shape
-            .len()
-            .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+        let selector_len = declared_selector_cardinality(request, selector)?;
         let source_shape_supported = source_len == 1
             || source_len == output_len
             || if selector.kind == ResidentValueKind::Bool {
@@ -2867,10 +2913,7 @@ fn bind_indexed_assign_with_region(
             || base.shape != ResidentShape::SCALAR
             || source.shape != ResidentShape::SCALAR
             || request.output.shape != ResidentShape::SCALAR
-            || !matches!(
-                selector.kind,
-                ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-            )
+            || !positional_selector_layout(request, selector)
             || (selector.kind == ResidentValueKind::Bool && selector_len != output_len)
             || !source_shape_supported
         {
@@ -2914,10 +2957,7 @@ fn bind_indexed_assign_with_region(
         .shape
         .len()
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    let selector_len = selector
-        .shape
-        .len()
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let selector_len = declared_selector_cardinality(request, selector)?;
     let source_shape_supported = source_len == 1
         || source_len == output_len
         || if selector.kind == ResidentValueKind::Bool {
@@ -2933,10 +2973,7 @@ fn bind_indexed_assign_with_region(
     if base.kind != source.kind
         || base.kind != request.output.kind
         || base.shape != request.output.shape
-        || !matches!(
-            selector.kind,
-            ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-        )
+        || !positional_selector_layout(request, selector)
         || (selector.kind == ResidentValueKind::Bool && selector_len != output_len)
         || !source_shape_supported
     {
@@ -3028,6 +3065,10 @@ fn bind_matrix_selection_assign(
     if selectors.len() != selector_count {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
+    let selector_cardinalities = selectors
+        .iter()
+        .map(|selector| declared_selector_cardinality(request, selector))
+        .collect::<Result<Vec<_>, _>>()?;
     let base_schema = request
         .schemas
         .get(base.schema_id)
@@ -3056,12 +3097,9 @@ fn bind_matrix_selection_assign(
     };
     let (rows, columns) = declared_matrix_dimensions(request, base)?;
     if declared_matrix_dimensions(request, &request.output)? != (rows, columns)
-        || selectors.iter().any(|selector| {
-            !matches!(
-                selector.kind,
-                ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-            ) || selector.shape.len().is_none()
-        })
+        || selectors
+            .iter()
+            .any(|selector| !positional_selector_layout(request, selector))
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -3073,20 +3111,11 @@ fn bind_matrix_selection_assign(
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let selector_capacity = match mode {
         ResolvedSelectionMode::Whole => Some(output_len),
-        ResolvedSelectionMode::Rows => selectors[0]
-            .shape
-            .len()
-            .and_then(|selected| selected.checked_mul(columns)),
-        ResolvedSelectionMode::Columns => selectors[0]
-            .shape
-            .len()
-            .and_then(|selected| rows.checked_mul(selected)),
-        ResolvedSelectionMode::Rectangle => selectors[0].shape.len().and_then(|selected_rows| {
-            selectors[1]
-                .shape
-                .len()
-                .and_then(|selected_columns| selected_rows.checked_mul(selected_columns))
-        }),
+        ResolvedSelectionMode::Rows => selector_cardinalities[0].checked_mul(columns),
+        ResolvedSelectionMode::Columns => rows.checked_mul(selector_cardinalities[0]),
+        ResolvedSelectionMode::Rectangle => {
+            selector_cardinalities[0].checked_mul(selector_cardinalities[1])
+        }
         ResolvedSelectionMode::LinearScalar
         | ResolvedSelectionMode::LinearGather
         | ResolvedSelectionMode::Field { .. }
@@ -3097,16 +3126,15 @@ fn bind_matrix_selection_assign(
     let selector_axes_match = match mode {
         ResolvedSelectionMode::Whole => true,
         ResolvedSelectionMode::Rows => {
-            selectors[0].kind != ResidentValueKind::Bool || selectors[0].shape.len() == Some(rows)
+            selectors[0].kind != ResidentValueKind::Bool || selector_cardinalities[0] == rows
         }
         ResolvedSelectionMode::Columns => {
-            selectors[0].kind != ResidentValueKind::Bool
-                || selectors[0].shape.len() == Some(columns)
+            selectors[0].kind != ResidentValueKind::Bool || selector_cardinalities[0] == columns
         }
         ResolvedSelectionMode::Rectangle => {
-            (selectors[0].kind != ResidentValueKind::Bool || selectors[0].shape.len() == Some(rows))
+            (selectors[0].kind != ResidentValueKind::Bool || selector_cardinalities[0] == rows)
                 && (selectors[1].kind != ResidentValueKind::Bool
-                    || selectors[1].shape.len() == Some(columns))
+                    || selector_cardinalities[1] == columns)
         }
         ResolvedSelectionMode::LinearScalar
         | ResolvedSelectionMode::LinearGather
@@ -3587,12 +3615,10 @@ fn bind_gather_1d(
     )?;
     if request.inputs.len() != 2
         || request.inputs[0].kind != ResidentValueKind::F64
-        || !matches!(
-            request.inputs[1].kind,
-            ResidentValueKind::F64 | ResidentValueKind::Index
-        )
+        || !numeric_positional_selector_layout(request, &request.inputs[1])
         || request.output.kind != ResidentValueKind::F64
-        || request.output.shape.len() != request.inputs[1].shape.len()
+        || request.output.shape.len()
+            != Some(declared_selector_cardinality(request, &request.inputs[1])?)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -3610,11 +3636,8 @@ fn bind_scalar_access_1d(
     )?;
     if request.inputs.len() != 2
         || request.inputs[0].kind != ResidentValueKind::F64
-        || !matches!(
-            request.inputs[1].kind,
-            ResidentValueKind::F64 | ResidentValueKind::Index
-        )
-        || request.inputs[1].shape != ResidentShape::SCALAR
+        || !numeric_positional_selector_layout(request, &request.inputs[1])
+        || declared_selector_cardinality(request, &request.inputs[1])? != 1
         || request.output.kind != ResidentValueKind::F64
         || request.output.shape != ResidentShape::SCALAR
         || request.inputs[0].shape.len().is_none()
@@ -3634,12 +3657,10 @@ fn bind_scalar_index(
         ChangeDetectionPolicy::KernelReported,
     )?;
     if request.inputs.len() != 1
-        || !matches!(
-            request.inputs[0].kind,
-            ResidentValueKind::F64 | ResidentValueKind::Index | ResidentValueKind::Snapshot
-        )
+        || !numeric_positional_selector_layout(request, &request.inputs[0])
         || request.output.kind != ResidentValueKind::Index
-        || request.output.shape.len() != request.inputs[0].shape.len()
+        || request.output.shape.len()
+            != Some(declared_selector_cardinality(request, &request.inputs[0])?)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -3677,13 +3698,10 @@ fn bind_scalar_access_2d(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
     if source.kind != ResidentValueKind::F64
-        || !matches!(row.kind, ResidentValueKind::F64 | ResidentValueKind::Index)
-        || !matches!(
-            column.kind,
-            ResidentValueKind::F64 | ResidentValueKind::Index
-        )
-        || row.shape != ResidentShape::SCALAR
-        || column.shape != ResidentShape::SCALAR
+        || !numeric_positional_selector_layout(request, row)
+        || !numeric_positional_selector_layout(request, column)
+        || declared_selector_cardinality(request, row)? != 1
+        || declared_selector_cardinality(request, column)? != 1
         || request.output.kind != ResidentValueKind::F64
         || request.output.shape != ResidentShape::SCALAR
         || source.shape.len().is_none()
@@ -4312,10 +4330,7 @@ fn bind_all_rows_columns(
     let [source, _] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let selected = request.inputs[1]
-        .shape
-        .len()
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let selected = declared_selector_cardinality(request, &request.inputs[1])?;
     if request.output.shape.len() != Some(source.shape.rows as usize * selected) {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -4328,7 +4343,9 @@ fn bind_all_rows_columns(
 fn bind_all_rows_column(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    if request.inputs.get(1).map(|input| input.shape) != Some(ResidentShape::SCALAR) {
+    if request.inputs.get(1).is_none()
+        || declared_selector_cardinality(request, &request.inputs[1])? != 1
+    {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     bind_all_rows_columns(request).map(|_| {
@@ -4350,7 +4367,7 @@ fn bind_row_all_columns(
     let [source, _] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    if request.inputs[1].shape != ResidentShape::SCALAR
+    if declared_selector_cardinality(request, &request.inputs[1])? != 1
         || request.output.shape.len() != Some(source.shape.columns as usize)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -4368,10 +4385,7 @@ fn bind_rows_all_columns(
     let [source, _] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let selected = request.inputs[1]
-        .shape
-        .len()
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let selected = declared_selector_cardinality(request, &request.inputs[1])?;
     if request.output.shape.len() != Some(selected * source.shape.columns as usize) {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -4403,17 +4417,10 @@ fn bind_indexed_rows(
     };
     if base.kind != ResidentValueKind::F64
         || source.kind != ResidentValueKind::F64
-        || !matches!(
-            indices.kind,
-            ResidentValueKind::F64 | ResidentValueKind::Index
-        )
+        || !numeric_positional_selector_layout(request, indices)
         || request.output.kind != ResidentValueKind::F64
         || base.shape != request.output.shape
-        || source.shape.rows as usize
-            != indices
-                .shape
-                .len()
-                .ok_or(ResidentKernelBindError::UnsupportedLayout)?
+        || source.shape.rows as usize != declared_selector_cardinality(request, indices)?
         || source.shape.columns != base.shape.columns
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -4425,7 +4432,7 @@ fn bind_indexed_rows(
             base.shape.columns as u64,
             source.shape.rows as u64,
             source.shape.columns as u64,
-            indices.shape.len().unwrap_or(0) as u64,
+            declared_selector_cardinality(request, indices)? as u64,
         ]
         .into_boxed_slice(),
     )
@@ -4442,10 +4449,7 @@ fn validate_selection_contract(
     )?;
     if request.inputs.len() != 2
         || request.inputs[0].kind != ResidentValueKind::F64
-        || !matches!(
-            request.inputs[1].kind,
-            ResidentValueKind::F64 | ResidentValueKind::Index
-        )
+        || !numeric_positional_selector_layout(request, &request.inputs[1])
         || request.output.kind != ResidentValueKind::F64
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -4479,81 +4483,78 @@ fn index_at(
     input_index: usize,
     ordinal: usize,
 ) -> Result<u64, ResidentKernelError> {
-    match input(inputs, input_index)? {
-        ResidentValueRef::Index(values) => values
-            .get(ordinal)
-            .copied()
-            .ok_or(ResidentKernelError::InvalidInput),
-        ResidentValueRef::F64(values) => {
-            let value = *values
-                .get(ordinal)
-                .ok_or(ResidentKernelError::InvalidInput)?;
-            if !value.is_finite() || value < 0.0 || value.fract() != 0.0 {
-                return Err(ResidentKernelError::InvalidInput);
-            }
-            Ok(value as u64)
+    let mut selected = None;
+    let mut current = 0usize;
+    selector_for_each_access_index(input(inputs, input_index)?, usize::MAX, |position| {
+        if current == ordinal {
+            selected = Some(position);
         }
-        ResidentValueRef::Bool(_) | ResidentValueRef::String(_) | ResidentValueRef::Snapshot(_) => {
-            Err(ResidentKernelError::InvalidInput)
-        }
-    }
+        current = current
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
+    })?;
+    selected
+        .and_then(|position| position.checked_add(1))
+        .and_then(|index| u64::try_from(index).ok())
+        .ok_or(ResidentKernelError::InvalidInput)
 }
 
 #[derive(Clone, Copy)]
-enum ValidatedIndices<'a> {
-    Index(&'a [u64]),
-    F64(&'a [f64]),
+struct ValidatedIndices<'a> {
+    selector: ResidentValueRef<'a>,
+    upper: usize,
+    len: usize,
 }
 
 impl<'a> ValidatedIndices<'a> {
     fn new(selector: ResidentValueRef<'a>, upper: usize) -> Result<Self, ResidentKernelError> {
-        let indices = match selector {
-            ResidentValueRef::Index(values) => Self::Index(values),
-            ResidentValueRef::F64(values) => {
-                if values
-                    .iter()
-                    .any(|value| !value.is_finite() || *value < 0.0 || value.fract() != 0.0)
-                {
-                    return Err(ResidentKernelError::InvalidInput);
-                }
-                Self::F64(values)
-            }
-            _ => return Err(ResidentKernelError::InvalidShape),
-        };
-        indices.try_for_each(|_, index| checked_one_based(index, upper).map(|_| ()))?;
-        Ok(indices)
+        if matches!(
+            selector,
+            ResidentValueRef::Bool(_) | ResidentValueRef::String(_)
+        ) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let mut len = 0usize;
+        selector_for_each_access_index(selector, upper, |_| {
+            len = len
+                .checked_add(1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(())
+        })?;
+        Ok(Self {
+            selector,
+            upper,
+            len,
+        })
     }
 
     fn len(self) -> usize {
-        match self {
-            Self::Index(values) => values.len(),
-            Self::F64(values) => values.len(),
-        }
+        self.len
     }
 
-    fn try_for_each<E>(
+    fn try_for_each(
         self,
-        mut visitor: impl FnMut(usize, u64) -> Result<(), E>,
-    ) -> Result<(), E> {
-        match self {
-            Self::Index(values) => {
-                for (ordinal, index) in values.iter().copied().enumerate() {
-                    visitor(ordinal, index)?;
-                }
-            }
-            Self::F64(values) => {
-                for (ordinal, index) in values.iter().copied().enumerate() {
-                    visitor(ordinal, index as u64)?;
-                }
-            }
-        }
-        Ok(())
+        mut visitor: impl FnMut(usize, u64) -> Result<(), ResidentKernelError>,
+    ) -> Result<(), ResidentKernelError> {
+        let mut ordinal = 0usize;
+        selector_for_each_access_index(self.selector, self.upper, |position| {
+            let index = position
+                .checked_add(1)
+                .and_then(|index| u64::try_from(index).ok())
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            visitor(ordinal, index)?;
+            ordinal = ordinal
+                .checked_add(1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(())
+        })
     }
 
-    fn try_for_each_position<E>(
+    fn try_for_each_position(
         self,
-        mut visitor: impl FnMut(usize, usize) -> Result<(), E>,
-    ) -> Result<(), E> {
+        mut visitor: impl FnMut(usize, usize) -> Result<(), ResidentKernelError>,
+    ) -> Result<(), ResidentKernelError> {
         self.try_for_each(|ordinal, index| visitor(ordinal, index as usize - 1))
     }
 }
@@ -4589,18 +4590,19 @@ impl<'a> ValidatedPositions<'a> {
         let mut maximum = None;
         let result = self.try_for_each(|_, position| {
             maximum = Some(maximum.map_or(position, |current: usize| current.max(position)));
-            Ok::<(), core::convert::Infallible>(())
+            Ok::<(), ResidentKernelError>(())
         });
-        match result {
-            Ok(()) => maximum,
-            Err(error) => match error {},
-        }
+        debug_assert!(
+            result.is_ok(),
+            "validated selector replay must remain valid"
+        );
+        maximum
     }
 
-    fn try_for_each<E>(
+    fn try_for_each(
         self,
-        mut visitor: impl FnMut(usize, usize) -> Result<(), E>,
-    ) -> Result<(), E> {
+        mut visitor: impl FnMut(usize, usize) -> Result<(), ResidentKernelError>,
+    ) -> Result<(), ResidentKernelError> {
         match self {
             Self::Mask(values) => {
                 let mut ordinal = 0;
@@ -8976,11 +8978,10 @@ fn gather_1d(
     }
     let source_values = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
-    let indices_len = input(inputs, 1)?.len();
-    if output.len() != indices_len {
+    let indices = ValidatedIndices::new(input(inputs, 1)?, source_values.len())?;
+    if output.len() != indices.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let indices = ValidatedIndices::new(input(inputs, 1)?, source_values.len())?;
     let mut changed = false;
     indices.try_for_each_position(|ordinal, index| {
         let target = &mut output[ordinal];
@@ -9017,34 +9018,90 @@ fn portable_index_at(
     ordinal: usize,
 ) -> Result<u64, ResidentKernelError> {
     match input {
-        ResidentValueRef::F64(values) => values[ordinal].to_portable_index(),
-        ResidentValueRef::Index(values) => values[ordinal].to_portable_index(),
-        ResidentValueRef::Snapshot(values) => {
-            let value = values[ordinal]
-                .as_ref()
-                .ok_or(ResidentKernelError::InvalidInput)?;
+        ResidentValueRef::F64(values) => values
+            .get(ordinal)
+            .copied()
+            .and_then(ToPortableIndex::to_portable_index),
+        ResidentValueRef::Index(values) => values
+            .get(ordinal)
+            .copied()
+            .and_then(ToPortableIndex::to_portable_index),
+        ResidentValueRef::Snapshot([value]) => {
+            let value = value.as_ref().ok_or(ResidentKernelError::InvalidInput)?;
             match value.data() {
-                ValueData::U8(value) => value.to_portable_index(),
-                ValueData::U16(value) => value.to_portable_index(),
-                ValueData::U32(value) => value.to_portable_index(),
-                ValueData::U64(value) => value.to_portable_index(),
-                ValueData::U128(value) => value.to_portable_index(),
-                ValueData::I8(value) => value.to_portable_index(),
-                ValueData::I16(value) => value.to_portable_index(),
-                ValueData::I32(value) => value.to_portable_index(),
-                ValueData::I64(value) => value.to_portable_index(),
-                ValueData::I128(value) => value.to_portable_index(),
-                ValueData::F32(value) => value.to_f32().to_portable_index(),
-                ValueData::F64(value) => value.to_f64().to_portable_index(),
-                ValueData::Index(value) => value.to_portable_index(),
-                _ => return Err(ResidentKernelError::InvalidInput),
+                ValueData::Matrix(matrix) => portable_sequence_index_at(matrix.elements(), ordinal),
+                value if ordinal == 0 => portable_data_index(value),
+                _ => None,
             }
         }
-        ResidentValueRef::Bool(_) | ResidentValueRef::String(_) => {
+        ResidentValueRef::Bool(_) | ResidentValueRef::String(_) | ResidentValueRef::Snapshot(_) => {
             return Err(ResidentKernelError::InvalidInput);
         }
     }
     .ok_or(ResidentKernelError::InvalidInput)
+}
+
+fn portable_data_index(value: &ValueData) -> Option<u64> {
+    match value {
+        ValueData::U8(value) => value.to_portable_index(),
+        ValueData::U16(value) => value.to_portable_index(),
+        ValueData::U32(value) => value.to_portable_index(),
+        ValueData::U64(value) => value.to_portable_index(),
+        ValueData::U128(value) => value.to_portable_index(),
+        ValueData::I8(value) => value.to_portable_index(),
+        ValueData::I16(value) => value.to_portable_index(),
+        ValueData::I32(value) => value.to_portable_index(),
+        ValueData::I64(value) => value.to_portable_index(),
+        ValueData::I128(value) => value.to_portable_index(),
+        ValueData::F32(value) => value.to_f32().to_portable_index(),
+        ValueData::F64(value) => value.to_f64().to_portable_index(),
+        ValueData::Index(value) => value.to_portable_index(),
+        _ => None,
+    }
+}
+
+fn portable_sequence_index_at(sequence: SequenceView<'_>, ordinal: usize) -> Option<u64> {
+    macro_rules! integer {
+        ($values:expr) => {
+            $values
+                .get(ordinal)
+                .copied()
+                .and_then(ToPortableIndex::to_portable_index)
+        };
+    }
+    match sequence {
+        SequenceView::U8(values) => integer!(values),
+        SequenceView::U16(values) => integer!(values),
+        SequenceView::U32(values) => integer!(values),
+        SequenceView::U64(values) | SequenceView::Index(values) => integer!(values),
+        SequenceView::U128(values) => integer!(values),
+        SequenceView::I8(values) => integer!(values),
+        SequenceView::I16(values) => integer!(values),
+        SequenceView::I32(values) => integer!(values),
+        SequenceView::I64(values) => integer!(values),
+        SequenceView::I128(values) => integer!(values),
+        SequenceView::F32(values) => values
+            .get(ordinal)
+            .map(|value| value.to_f32())
+            .and_then(ToPortableIndex::to_portable_index),
+        SequenceView::F64(values) => values
+            .get(ordinal)
+            .map(|value| value.to_f64())
+            .and_then(ToPortableIndex::to_portable_index),
+        SequenceView::Values(values) => values.get(ordinal).and_then(portable_data_index),
+        _ => None,
+    }
+}
+
+fn resident_portable_index_len(input: ResidentValueRef<'_>) -> Result<usize, ResidentKernelError> {
+    match input {
+        ResidentValueRef::Snapshot([Some(value)]) => Ok(match value.data() {
+            ValueData::Matrix(matrix) => matrix.elements().len(),
+            _ => 1,
+        }),
+        ResidentValueRef::Snapshot(_) => Err(ResidentKernelError::InvalidInput),
+        value => Ok(value.len()),
+    }
 }
 
 fn scalar_index(
@@ -9059,10 +9116,11 @@ fn scalar_index(
     let ResidentValueMut::Index(output) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    if input.len() != output.len() {
+    let input_len = resident_portable_index_len(input)?;
+    if input_len != output.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
-    for ordinal in 0..output.len() {
+    for ordinal in 0..input_len {
         portable_index_at(input, ordinal)?;
     }
     let bytes = output
@@ -9070,7 +9128,7 @@ fn scalar_index(
         .checked_mul(core::mem::size_of::<u64>())
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_len = super::budget::PreparedKernel::new(
-        output.len(),
+        input_len,
         super::budget::resident_cost! {
             compute_work: output
                 .len()
@@ -9311,7 +9369,7 @@ fn sequence_for_each_access_index(
     }
 }
 
-fn selector_for_each_access_index(
+pub(super) fn selector_for_each_access_index(
     value: ResidentValueRef<'_>,
     upper: usize,
     mut visit: impl FnMut(usize) -> Result<(), ResidentKernelError>,
@@ -9424,13 +9482,42 @@ fn map_access_entry_for_selector(
         };
         Ok(ordering.is_ok_and(|ordering| ordering == core::cmp::Ordering::Equal))
     };
+    // Plan the complete worst-case key walk before performing the first
+    // comparison. A missing key and a key in the final entry must receive the
+    // same admission decision, and an oversized map must fail while planning
+    // rather than after partially executing the lookup.
     let mut comparison_work = 0u64;
-    for (ordinal, entry) in map.entries().iter().enumerate() {
+    let mut retained_key_bytes = 0u64;
+    let mut retained_key_nodes = 0u64;
+    for entry in map.entries() {
         let key_footprint = canonical_data_retained_footprint(key_schema, entry.key().data())
             .map_err(|_| ResidentKernelError::InvalidInput)?;
         comparison_work = comparison_work
             .checked_add(key_footprint.node_count.max(1))
             .ok_or(ResidentKernelError::InvalidShape)?;
+        retained_key_bytes = retained_key_bytes
+            .checked_add(key_footprint.retained_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        retained_key_nodes = retained_key_nodes
+            .checked_add(key_footprint.node_count)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if comparison_work > super::budget::MAX_RESIDENT_COMPARISON_WORK {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+    }
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work,
+            compute_work: comparison_work,
+            selector_bytes: retained_key_bytes,
+            retained_nodes: retained_key_nodes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    for (ordinal, entry) in map.entries().iter().enumerate() {
         if matches(entry.key().data())? {
             return Ok((ordinal, comparison_work));
         }
@@ -11570,15 +11657,14 @@ fn all_rows_columns(
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let source_columns = kernel.parameters()[1] as usize;
-    let selected_columns = input(inputs, 1)?.len();
+    let selected_columns = ValidatedIndices::new(input(inputs, 1)?, source_columns)?;
     if output.len()
         != rows
-            .checked_mul(selected_columns)
+            .checked_mul(selected_columns.len())
             .ok_or(ResidentKernelError::InvalidShape)?
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let selected_columns = ValidatedIndices::new(input(inputs, 1)?, source_columns)?;
     let mut changed = false;
     selected_columns.try_for_each_position(|ordinal, column| {
         let source = &source[column * rows..(column + 1) * rows];
@@ -11632,15 +11718,15 @@ fn rows_all_columns(
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
-    let selected_rows = input(inputs, 1)?.len();
+    let selected_rows = ValidatedIndices::new(input(inputs, 1)?, rows)?;
     if output.len()
         != selected_rows
+            .len()
             .checked_mul(columns)
             .ok_or(ResidentKernelError::InvalidShape)?
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let selected_rows = ValidatedIndices::new(input(inputs, 1)?, rows)?;
     let mut changed = false;
     let mut target_index = 0;
     for column in 0..columns {
@@ -11706,11 +11792,10 @@ fn indexed_rows(
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let index_count = input(inputs, 1)?.len();
-    if index_count != source_rows {
+    let rows = ValidatedIndices::new(input(inputs, 1)?, target_rows)?;
+    if rows.len() != source_rows {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let rows = ValidatedIndices::new(input(inputs, 1)?, target_rows)?;
     // As with indexed assignment, the RMW alias policy applies only to the
     // hidden base input; source_values remains immutable while this plan runs.
     let mut changed = false;
@@ -14455,6 +14540,361 @@ mod tests {
                 .unwrap();
         assert_eq!(ordinal, 2);
         assert_eq!(comparison_work, 3);
+    }
+
+    #[test]
+    fn dense_access_and_assignment_accept_typed_fractional_selectors() {
+        let matrix = |element, rows, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(rows),
+                mech_core::DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let f64_body = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+        let u64_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let f32_body = SchemaBody::FloatingPoint(mech_core::FloatWidth::W32);
+        let (schemas, ids) = test_schema_table([
+            f64_body.clone(),
+            matrix(f64_body.clone(), 1, 3),
+            matrix(f64_body.clone(), 1, 2),
+            matrix(u64_body, 1, 2),
+            matrix(f32_body, 1, 2),
+            matrix(f64_body.clone(), 2, 3),
+            matrix(f64_body.clone(), 2, 2),
+        ]);
+        let [
+            f64_schema,
+            source_schema,
+            output_schema,
+            u64_selector_schema,
+            f32_selector_schema,
+            matrix_2x3_schema,
+            matrix_2x2_schema,
+        ] = ids.as_slice()
+        else {
+            unreachable!()
+        };
+        let source_layout = test_layout(
+            &schemas,
+            *source_schema,
+            ResidentValueKind::F64,
+            ResidentShape {
+                rows: 1,
+                columns: 3,
+            },
+        );
+        let output_layout = test_layout(
+            &schemas,
+            *output_schema,
+            ResidentValueKind::F64,
+            ResidentShape {
+                rows: 1,
+                columns: 2,
+            },
+        );
+        let gather_contract = test_contract(
+            &[*source_schema, *u64_selector_schema],
+            *output_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let u64_selector_layout = test_layout(
+            &schemas,
+            *u64_selector_schema,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let kernel = bind_gather_1d(&ResidentKernelBindRequest {
+            contract: &gather_contract,
+            schemas: &schemas,
+            inputs: &[source_layout.clone(), u64_selector_layout],
+            output: output_layout.clone(),
+        })
+        .unwrap();
+        let u64_selector = [Some(test_value(
+            &schemas,
+            *u64_selector_schema,
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U64(3), ValueDataDraft::U64(1)].into_boxed_slice(),
+            ),
+        ))];
+        let source = [10.0, 20.0, 30.0];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Snapshot(&u64_selector),
+        ];
+        let mut output = [0.0; 2];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Ok(true),
+        );
+        assert_eq!(output, [30.0, 10.0]);
+
+        let fractional_contract = test_contract(
+            &[*source_schema, *f32_selector_schema],
+            *output_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let fractional_layout = test_layout(
+            &schemas,
+            *f32_selector_schema,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let kernel = bind_gather_1d(&ResidentKernelBindRequest {
+            contract: &fractional_contract,
+            schemas: &schemas,
+            inputs: &[source_layout.clone(), fractional_layout.clone()],
+            output: output_layout,
+        })
+        .unwrap();
+        let fractional_selector = [Some(test_value(
+            &schemas,
+            *f32_selector_schema,
+            ValueDataDraft::Matrix(
+                vec![
+                    ValueDataDraft::F32(F32Bits::from_f32(2.9)),
+                    ValueDataDraft::F32(F32Bits::from_f32(1.1)),
+                ]
+                .into_boxed_slice(),
+            ),
+        ))];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Snapshot(&fractional_selector),
+        ];
+        let mut output = [0.0; 2];
+        kernel
+            .execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output))
+            .unwrap();
+        assert_eq!(output, [20.0, 10.0]);
+
+        let assignment_contract = test_contract(
+            &[*source_schema, *f64_schema, *u64_selector_schema],
+            *source_schema,
+            OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::IndexedAxis { axis: 0 },
+            },
+            AccessMode::ReadWrite,
+            AliasPolicy::MayAlias { input: 0 },
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_indexed_assign_with_region(
+            &ResidentKernelBindRequest {
+                contract: &assignment_contract,
+                schemas: &schemas,
+                inputs: &[
+                    source_layout.clone(),
+                    test_layout(
+                        &schemas,
+                        *f64_schema,
+                        ResidentValueKind::F64,
+                        ResidentShape::SCALAR,
+                    ),
+                    test_layout(
+                        &schemas,
+                        *u64_selector_schema,
+                        ResidentValueKind::Snapshot,
+                        ResidentShape::SCALAR,
+                    ),
+                ],
+                output: source_layout,
+            },
+            RegionPolicy::IndexedAxis { axis: 0 },
+        )
+        .unwrap();
+        let replacement = [9.0];
+        let inputs = [
+            ResidentValueRef::F64(&replacement),
+            ResidentValueRef::Snapshot(&u64_selector),
+        ];
+        let mut output = [10.0, 20.0, 30.0];
+        kernel
+            .execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output))
+            .unwrap();
+        assert_eq!(output, [9.0, 20.0, 9.0]);
+
+        let matrix_2x3_layout = test_layout(
+            &schemas,
+            *matrix_2x3_schema,
+            ResidentValueKind::F64,
+            ResidentShape {
+                rows: 2,
+                columns: 3,
+            },
+        );
+        let matrix_2x2_layout = test_layout(
+            &schemas,
+            *matrix_2x2_schema,
+            ResidentValueKind::F64,
+            ResidentShape {
+                rows: 2,
+                columns: 2,
+            },
+        );
+        let row_contract = test_contract(
+            &[*matrix_2x3_schema, *f32_selector_schema],
+            *matrix_2x3_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_rows_all_columns(&ResidentKernelBindRequest {
+            contract: &row_contract,
+            schemas: &schemas,
+            inputs: &[matrix_2x3_layout.clone(), fractional_layout.clone()],
+            output: matrix_2x3_layout.clone(),
+        })
+        .unwrap();
+        let source = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Snapshot(&fractional_selector),
+        ];
+        let mut output = [0.0; 6];
+        kernel
+            .execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output))
+            .unwrap();
+        assert_eq!(output, [2.0, 1.0, 4.0, 3.0, 6.0, 5.0]);
+
+        let column_contract = test_contract(
+            &[*matrix_2x3_schema, *u64_selector_schema],
+            *matrix_2x2_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_all_rows_columns(&ResidentKernelBindRequest {
+            contract: &column_contract,
+            schemas: &schemas,
+            inputs: &[
+                matrix_2x3_layout.clone(),
+                test_layout(
+                    &schemas,
+                    *u64_selector_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+            ],
+            output: matrix_2x2_layout,
+        })
+        .unwrap();
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Snapshot(&u64_selector),
+        ];
+        let mut output = [0.0; 4];
+        kernel
+            .execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output))
+            .unwrap();
+        assert_eq!(output, [5.0, 6.0, 1.0, 2.0]);
+
+        let rectangle_contract = test_contract(
+            &[
+                *matrix_2x3_schema,
+                *f64_schema,
+                *f32_selector_schema,
+                *u64_selector_schema,
+            ],
+            *matrix_2x3_schema,
+            OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::RectangularRegion,
+            },
+            AccessMode::ReadWrite,
+            AliasPolicy::MayAlias { input: 0 },
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_indexed_assign_rectangle(&ResidentKernelBindRequest {
+            contract: &rectangle_contract,
+            schemas: &schemas,
+            inputs: &[
+                matrix_2x3_layout.clone(),
+                test_layout(
+                    &schemas,
+                    *f64_schema,
+                    ResidentValueKind::F64,
+                    ResidentShape::SCALAR,
+                ),
+                fractional_layout,
+                test_layout(
+                    &schemas,
+                    *u64_selector_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+            ],
+            output: matrix_2x3_layout,
+        })
+        .unwrap();
+        let replacement = [9.0];
+        let inputs = [
+            ResidentValueRef::F64(&replacement),
+            ResidentValueRef::Snapshot(&fractional_selector),
+            ResidentValueRef::Snapshot(&u64_selector),
+        ];
+        let mut output = source;
+        kernel
+            .execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output))
+            .unwrap();
+        assert_eq!(output, [9.0, 9.0, 3.0, 4.0, 9.0, 9.0]);
+    }
+
+    #[test]
+    fn missing_map_key_is_admitted_before_the_first_comparison() {
+        let string_body = SchemaBody::String;
+        let u64_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let map_body = SchemaBody::Map {
+            key: Box::new(string_body.clone()),
+            value: Box::new(u64_body.clone()),
+            cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let (schemas, ids) = test_schema_table([string_body.clone(), u64_body, map_body]);
+        let [_, _, map_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let map = test_value(
+            &schemas,
+            *map_schema,
+            ValueDataDraft::Map(
+                vec![mech_core::snapshot::MapEntryDraft {
+                    items: vec![
+                        ValueDataDraft::String("x".repeat(
+                            super::super::budget::MAX_RESIDENT_TEMPORARY_BYTES as usize + 1,
+                        )),
+                        ValueDataDraft::U64(1),
+                    ]
+                    .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        );
+        let ValueData::Map(map) = map.data() else {
+            unreachable!()
+        };
+        let missing = ["missing".to_owned()];
+        assert_eq!(
+            map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&missing),),
+            Err(ResidentKernelError::InvalidShape),
+        );
     }
 
     #[test]
