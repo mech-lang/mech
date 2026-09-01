@@ -64,6 +64,8 @@ def main() -> None:
     p.add_argument("--turns", type=int, default=20)
     p.add_argument("--samples", type=int, default=5)
     p.add_argument("--halide-cxx", default=shutil.which("clang++") or "clang++")
+    p.add_argument("--halide-simd", action="store_true", help="also measure Halide JIT SIMD with eight workers")
+    p.add_argument("--futhark-ispc", action="store_true", help="also measure Futhark ISPC SIMD with eight workers")
     p.add_argument("--output", type=Path, default=HERE.parent / "results/apple-m1-minimal-source-2026-08-31.json")
     args = p.parse_args()
     env = os.environ.copy()
@@ -89,6 +91,12 @@ def main() -> None:
             command = [str(halide), str(args.instances), str(args.turns), mode]
             out = samples(command, args.samples, halide_env)
             rows[f"Halide {mode}"] = {"command": command, "throughput": [value(x, "throughput") for x in out], "checksums": [value(x, "checksum") for x in out]}
+        if args.halide_simd:
+            simd_halide_env = halide_env | {"HL_NUM_THREADS": "8"}
+            for mode in ("unchecked", "checked"):
+                command = [str(halide), str(args.instances), str(args.turns), mode]
+                out = samples(command, args.samples, simd_halide_env)
+                rows[f"Halide JIT SIMD 8 workers {mode}"] = {"command": command, "throughput": [value(x, "throughput") for x in out], "checksums": [value(x, "checksum") for x in out]}
         futhark = Path(temp) / "futhark-ekf"
         run(["futhark", "multicore", str(HERE / "futhark_ekf.fut"), "-o", str(futhark)], env=env)
         inp = futhark_input(args.instances, args.turns)
@@ -107,6 +115,26 @@ def main() -> None:
                     times.append(args.instances * args.turns / (micros / 1e6))
                     checksums.append(float(output.strip().removesuffix("f32").removesuffix("f64")))
                 rows[f"Futhark multicore {threads} threads {'checked' if checked else 'unchecked'}"] = {"command": command, "throughput": times, "checksums": checksums}
+        if args.futhark_ispc:
+            ispc_path = Path(temp) / "ispc-bin"
+            ispc_path.mkdir()
+            (ispc_path / "ispc").symlink_to(HERE / "futhark-ispc-compat.sh")
+            ispc_env = env | {"PATH": f"{ispc_path}{os.pathsep}{env.get('PATH', '')}"}
+            futhark_ispc = Path(temp) / "futhark-ekf-ispc"
+            run(["futhark", "ispc", str(HERE / "futhark_ekf.fut"), "-o", str(futhark_ispc)], env=ispc_env)
+            for checked, flag in ((False, "false"), (True, "true")):
+                times: list[float] = []
+                checksums: list[float] = []
+                command = [str(futhark_ispc), "--num-threads", "8", "-r", "1", "-t", str(Path(temp) / "time-ispc")]
+                data = inp + f" {flag}"
+                run(command, stdin=data, env=ispc_env)
+                for _ in range(args.samples):
+                    output = run(command, stdin=data, env=ispc_env)
+                    with open(Path(temp) / "time-ispc", encoding="utf-8") as timing:
+                        micros = float(timing.read().strip())
+                    times.append(args.instances * args.turns / (micros / 1e6))
+                    checksums.append(float(output.strip().removesuffix("f32").removesuffix("f64")))
+                rows[f"Futhark ISPC SIMD 8 workers {'checked' if checked else 'unchecked'}"] = {"command": command, "throughput": times, "checksums": checksums}
         opencl = Path(temp) / "futhark-opencl"
         try:
             run(["futhark", "opencl", str(HERE / "futhark_ekf.fut"), "-o", str(opencl)], env=env)

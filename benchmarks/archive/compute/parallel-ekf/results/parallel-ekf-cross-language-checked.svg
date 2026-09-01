@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1057" viewBox="0 0 1700 1057">
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1119" viewBox="0 0 1700 1119">
 <rect width="100%" height="100%" fill="#080c14"/>
 <defs>
 <pattern id="gpu-mech" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#f4c430"/><path d="M0 0V8" stroke="#ffffff" stroke-opacity="0.38" stroke-width="2"/></pattern>
@@ -14,35 +14,35 @@
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="52" y="42" font-size="26" font-weight="700">Cross-language EKF runtime throughput (checked; slowest to fastest)</text>
 <text x="52" y="68" class="muted" font-size="15">Apple M1 | CPU/language: 10,000x20; Mech backend: 100,000x5; matched runtime/native controls: 500,000x40 | steady-state, sorted</text>
-<line x1="550.0" y1="102" x2="550.0" y2="961" class="grid"/>
-<text x="550.0" y="985" text-anchor="middle" class="axis">0</text>
-<line x1="627.7" y1="102" x2="627.7" y2="961" class="grid"/>
-<text x="627.7" y="985" text-anchor="middle" class="axis">20</text>
-<line x1="705.4" y1="102" x2="705.4" y2="961" class="grid"/>
-<text x="705.4" y="985" text-anchor="middle" class="axis">40</text>
-<line x1="783.1" y1="102" x2="783.1" y2="961" class="grid"/>
-<text x="783.1" y="985" text-anchor="middle" class="axis">60</text>
-<line x1="860.8" y1="102" x2="860.8" y2="961" class="grid"/>
-<text x="860.8" y="985" text-anchor="middle" class="axis">80</text>
-<line x1="938.5" y1="102" x2="938.5" y2="961" class="grid"/>
-<text x="938.5" y="985" text-anchor="middle" class="axis">100</text>
-<line x1="1016.2" y1="102" x2="1016.2" y2="961" class="grid"/>
-<text x="1016.2" y="985" text-anchor="middle" class="axis">120</text>
-<line x1="1093.8" y1="102" x2="1093.8" y2="961" class="grid"/>
-<text x="1093.8" y="985" text-anchor="middle" class="axis">140</text>
-<line x1="1171.5" y1="102" x2="1171.5" y2="961" class="grid"/>
-<text x="1171.5" y="985" text-anchor="middle" class="axis">160</text>
-<line x1="1249.2" y1="102" x2="1249.2" y2="961" class="grid"/>
-<text x="1249.2" y="985" text-anchor="middle" class="axis">180</text>
-<line x1="1326.9" y1="102" x2="1326.9" y2="961" class="grid"/>
-<text x="1326.9" y="985" text-anchor="middle" class="axis">200</text>
-<line x1="1404.6" y1="102" x2="1404.6" y2="961" class="grid"/>
-<text x="1404.6" y="985" text-anchor="middle" class="axis">220</text>
-<line x1="1482.3" y1="102" x2="1482.3" y2="961" class="grid"/>
-<text x="1482.3" y="985" text-anchor="middle" class="axis">240</text>
-<line x1="1560.0" y1="102" x2="1560.0" y2="961" class="grid"/>
-<text x="1560.0" y="985" text-anchor="middle" class="axis">260</text>
-<text x="1055.0" y="1029" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>
+<line x1="550.0" y1="102" x2="550.0" y2="1023" class="grid"/>
+<text x="550.0" y="1047" text-anchor="middle" class="axis">0</text>
+<line x1="627.7" y1="102" x2="627.7" y2="1023" class="grid"/>
+<text x="627.7" y="1047" text-anchor="middle" class="axis">20</text>
+<line x1="705.4" y1="102" x2="705.4" y2="1023" class="grid"/>
+<text x="705.4" y="1047" text-anchor="middle" class="axis">40</text>
+<line x1="783.1" y1="102" x2="783.1" y2="1023" class="grid"/>
+<text x="783.1" y="1047" text-anchor="middle" class="axis">60</text>
+<line x1="860.8" y1="102" x2="860.8" y2="1023" class="grid"/>
+<text x="860.8" y="1047" text-anchor="middle" class="axis">80</text>
+<line x1="938.5" y1="102" x2="938.5" y2="1023" class="grid"/>
+<text x="938.5" y="1047" text-anchor="middle" class="axis">100</text>
+<line x1="1016.2" y1="102" x2="1016.2" y2="1023" class="grid"/>
+<text x="1016.2" y="1047" text-anchor="middle" class="axis">120</text>
+<line x1="1093.8" y1="102" x2="1093.8" y2="1023" class="grid"/>
+<text x="1093.8" y="1047" text-anchor="middle" class="axis">140</text>
+<line x1="1171.5" y1="102" x2="1171.5" y2="1023" class="grid"/>
+<text x="1171.5" y="1047" text-anchor="middle" class="axis">160</text>
+<line x1="1249.2" y1="102" x2="1249.2" y2="1023" class="grid"/>
+<text x="1249.2" y="1047" text-anchor="middle" class="axis">180</text>
+<line x1="1326.9" y1="102" x2="1326.9" y2="1023" class="grid"/>
+<text x="1326.9" y="1047" text-anchor="middle" class="axis">200</text>
+<line x1="1404.6" y1="102" x2="1404.6" y2="1023" class="grid"/>
+<text x="1404.6" y="1047" text-anchor="middle" class="axis">220</text>
+<line x1="1482.3" y1="102" x2="1482.3" y2="1023" class="grid"/>
+<text x="1482.3" y="1047" text-anchor="middle" class="axis">240</text>
+<line x1="1560.0" y1="102" x2="1560.0" y2="1023" class="grid"/>
+<text x="1560.0" y="1047" text-anchor="middle" class="axis">260</text>
+<text x="1055.0" y="1091" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>
 <rect x="1100" y="16" width="14" height="14" rx="2" fill="#f4c430"/>
 <text x="1122" y="27" font-size="13">Mech</text>
 <rect x="1215" y="16" width="14" height="14" rx="2" fill="#dea584"/>
@@ -80,71 +80,77 @@
 <text x="534" y="263" text-anchor="end" class="label">Julia generic, checked</text>
 <rect x="550" y="249" width="11.9" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
 <text x="570.9" y="263" class="value">3.07</text>
-<text x="534" y="294" text-anchor="end" class="label">Mech SIMD</text>
-<rect x="550" y="280" width="16.2" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="575.2" y="294" class="value">4.16</text>
-<text x="534" y="325" text-anchor="end" class="label">NumPy vectorized fixed-shape, checked</text>
-<rect x="550" y="311" width="41.5" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="600.5" y="325" class="value">10.67</text>
-<text x="534" y="356" text-anchor="end" class="label">Mech Cranelift JIT</text>
-<rect x="550" y="342" width="64.5" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="623.5" y="356" class="value">16.61</text>
-<text x="534" y="387" text-anchor="end" class="label">Julia fixed-shape, checked</text>
-<rect x="550" y="373" width="72.5" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="631.5" y="387" class="value">18.67</text>
-<text x="534" y="418" text-anchor="end" class="label">Mech Cranelift JIT checked fast</text>
-<rect x="550" y="404" width="72.8" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="631.8" y="418" class="value">18.74</text>
-<text x="534" y="449" text-anchor="end" class="label">Rust packed SIMD, checked</text>
-<rect x="550" y="435" width="99.6" height="19" rx="3" fill="#dea584" opacity="0.9"/>
-<text x="658.6" y="449" class="value">25.65</text>
-<text x="534" y="480" text-anchor="end" class="label">Julia fixed-shape SIMD, checked</text>
-<rect x="550" y="466" width="109.1" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="668.1" y="480" class="value">28.09</text>
-<text x="534" y="511" text-anchor="end" class="label">Julia SIMD.jl intrinsics, checked</text>
-<rect x="550" y="497" width="119.8" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="678.8" y="511" class="value">30.84</text>
-<text x="534" y="542" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
-<rect x="550" y="528" width="134.2" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="693.2" y="542" class="value">34.55</text>
-<text x="534" y="573" text-anchor="end" class="label">Mech Cranelift SIMD-JIT checked fast</text>
-<rect x="550" y="559" width="142.4" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="701.4" y="573" class="value">36.65</text>
-<text x="534" y="604" text-anchor="end" class="label">Futhark, checked</text>
-<rect x="550" y="590" width="188.0" height="19" rx="3" fill="#e94f37" opacity="0.9"/>
-<text x="747.0" y="604" class="value">48.39</text>
-<text x="534" y="635" text-anchor="end" class="label">Mech GPU, checked repeated</text>
-<rect x="550" y="621" width="218.6" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="777.6" y="635" class="value">56.28</text>
-<text x="534" y="666" text-anchor="end" class="label">Mech Cranelift SIMD-JIT parallel</text>
-<rect x="550" y="652" width="225.1" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="784.1" y="666" class="value">57.95</text>
-<text x="534" y="697" text-anchor="end" class="label">Mech GPU, checked one-turn</text>
-<rect x="550" y="683" width="243.9" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="802.9" y="697" class="value">62.80</text>
-<text x="534" y="728" text-anchor="end" class="label">NumPy/Numba parallel JIT, 8 workers</text>
-<rect x="550" y="714" width="300.0" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="859.0" y="728" class="value">77.23</text>
-<text x="534" y="759" text-anchor="end" class="label">Taichi LLVM CPU, 8 workers</text>
-<rect x="550" y="745" width="334.3" height="19" rx="3" fill="#e36b6b" opacity="0.9"/>
-<text x="893.3" y="759" class="value">86.05</text>
-<text x="534" y="790" text-anchor="end" class="label">Mech SIMD/JIT CPU, 8 workers</text>
-<rect x="550" y="776" width="407.0" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="966.0" y="790" class="value">104.78</text>
-<text x="534" y="821" text-anchor="end" class="label">Julia SIMD.jl, 8 workers</text>
-<rect x="550" y="807" width="413.1" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="972.1" y="821" class="value">106.34</text>
-<text x="534" y="852" text-anchor="end" class="label">Mech GPU, WGPU per-turn</text>
-<rect x="550" y="838" width="594.2" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="1153.2" y="852" class="value">152.97</text>
-<text x="534" y="883" text-anchor="end" class="label">Taichi optimized native Metal, checked</text>
-<rect x="550" y="869" width="655.7" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
-<text x="1214.7" y="883" class="value">168.80</text>
-<text x="534" y="914" text-anchor="end" class="label">Taichi GPU, native Metal</text>
-<rect x="550" y="900" width="686.5" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
-<text x="1245.5" y="914" class="value">176.71</text>
-<text x="534" y="945" text-anchor="end" class="label">Mech GPU, native Metal</text>
-<rect x="550" y="931" width="956.2" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="1515.2" y="945" class="value">246.15</text>
-<text x="52" y="1002" class="muted" font-size="12">Rows are ordered by throughput from slowest to fastest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. Compilation, allocation, warmup, and final readback are excluded from the timed region.</text>
+<text x="534" y="294" text-anchor="end" class="label">Halide JIT SIMD 8 workers, checked</text>
+<rect x="550" y="280" width="12.7" height="19" rx="3" fill="#ff8f00" opacity="0.9"/>
+<text x="571.7" y="294" class="value">3.27</text>
+<text x="534" y="325" text-anchor="end" class="label">Mech SIMD</text>
+<rect x="550" y="311" width="16.2" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="575.2" y="325" class="value">4.16</text>
+<text x="534" y="356" text-anchor="end" class="label">NumPy vectorized fixed-shape, checked</text>
+<rect x="550" y="342" width="41.5" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="600.5" y="356" class="value">10.67</text>
+<text x="534" y="387" text-anchor="end" class="label">Mech Cranelift JIT</text>
+<rect x="550" y="373" width="64.5" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="623.5" y="387" class="value">16.61</text>
+<text x="534" y="418" text-anchor="end" class="label">Julia fixed-shape, checked</text>
+<rect x="550" y="404" width="72.5" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="631.5" y="418" class="value">18.67</text>
+<text x="534" y="449" text-anchor="end" class="label">Mech Cranelift JIT checked fast</text>
+<rect x="550" y="435" width="72.8" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="631.8" y="449" class="value">18.74</text>
+<text x="534" y="480" text-anchor="end" class="label">Rust packed SIMD, checked</text>
+<rect x="550" y="466" width="99.6" height="19" rx="3" fill="#dea584" opacity="0.9"/>
+<text x="658.6" y="480" class="value">25.65</text>
+<text x="534" y="511" text-anchor="end" class="label">Julia fixed-shape SIMD, checked</text>
+<rect x="550" y="497" width="109.1" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="668.1" y="511" class="value">28.09</text>
+<text x="534" y="542" text-anchor="end" class="label">Julia SIMD.jl intrinsics, checked</text>
+<rect x="550" y="528" width="119.8" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="678.8" y="542" class="value">30.84</text>
+<text x="534" y="573" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
+<rect x="550" y="559" width="134.2" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="693.2" y="573" class="value">34.55</text>
+<text x="534" y="604" text-anchor="end" class="label">Mech Cranelift SIMD-JIT checked fast</text>
+<rect x="550" y="590" width="142.4" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="701.4" y="604" class="value">36.65</text>
+<text x="534" y="635" text-anchor="end" class="label">Futhark, checked</text>
+<rect x="550" y="621" width="188.0" height="19" rx="3" fill="#e94f37" opacity="0.9"/>
+<text x="747.0" y="635" class="value">48.39</text>
+<text x="534" y="666" text-anchor="end" class="label">Futhark ISPC SIMD 8 workers, checked</text>
+<rect x="550" y="652" width="191.0" height="19" rx="3" fill="#e94f37" opacity="0.9"/>
+<text x="750.0" y="666" class="value">49.16</text>
+<text x="534" y="697" text-anchor="end" class="label">Mech GPU, checked repeated</text>
+<rect x="550" y="683" width="218.6" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="777.6" y="697" class="value">56.28</text>
+<text x="534" y="728" text-anchor="end" class="label">Mech Cranelift SIMD-JIT parallel</text>
+<rect x="550" y="714" width="225.1" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="784.1" y="728" class="value">57.95</text>
+<text x="534" y="759" text-anchor="end" class="label">Mech GPU, checked one-turn</text>
+<rect x="550" y="745" width="243.9" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="802.9" y="759" class="value">62.80</text>
+<text x="534" y="790" text-anchor="end" class="label">NumPy/Numba parallel JIT, 8 workers</text>
+<rect x="550" y="776" width="300.0" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="859.0" y="790" class="value">77.23</text>
+<text x="534" y="821" text-anchor="end" class="label">Taichi LLVM CPU, 8 workers</text>
+<rect x="550" y="807" width="334.3" height="19" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="893.3" y="821" class="value">86.05</text>
+<text x="534" y="852" text-anchor="end" class="label">Mech SIMD/JIT CPU, 8 workers</text>
+<rect x="550" y="838" width="407.0" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="966.0" y="852" class="value">104.78</text>
+<text x="534" y="883" text-anchor="end" class="label">Julia SIMD.jl, 8 workers</text>
+<rect x="550" y="869" width="413.1" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="972.1" y="883" class="value">106.34</text>
+<text x="534" y="914" text-anchor="end" class="label">Mech GPU, WGPU per-turn</text>
+<rect x="550" y="900" width="594.2" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="1153.2" y="914" class="value">152.97</text>
+<text x="534" y="945" text-anchor="end" class="label">Taichi optimized native Metal, checked</text>
+<rect x="550" y="931" width="655.7" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
+<text x="1214.7" y="945" class="value">168.80</text>
+<text x="534" y="976" text-anchor="end" class="label">Taichi GPU, native Metal</text>
+<rect x="550" y="962" width="686.5" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
+<text x="1245.5" y="976" class="value">176.71</text>
+<text x="534" y="1007" text-anchor="end" class="label">Mech GPU, native Metal</text>
+<rect x="550" y="993" width="956.2" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="1515.2" y="1007" class="value">246.15</text>
+<text x="52" y="1064" class="muted" font-size="12">Rows are ordered by throughput from slowest to fastest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. Compilation, allocation, warmup, and final readback are excluded from the timed region.</text>
 </svg>

@@ -50,6 +50,7 @@ git switch --track origin/codex/mech-program-gpu
 | Minimized Taichi optimized control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py` |
 | Minimal Halide fixed-shape pipeline | `benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp` |
 | Minimal Futhark data-parallel program | `benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut` |
+| Futhark/ISPC compatibility shim | `benchmarks/archive/compute/parallel-ekf/minimal/futhark-ispc-compat.sh` |
 | Minimal cross-control runner | `benchmarks/archive/compute/parallel-ekf/minimal/measure.py` |
 | Compact-source equivalence check | `benchmarks/archive/compute/parallel-ekf/minimal/check_sources.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
@@ -58,6 +59,7 @@ git switch --track origin/codex/mech-program-gpu
 | Ranked throughput table | `benchmarks/archive/compute/parallel-ekf/results/parallel-ekf-throughput-table.md` |
 | Threaded Julia SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-threaded-2026-08-31.json` |
 | NumPy/Numba threaded evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-numba-2026-08-31.json` |
+| Halide/Futhark SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-halide-simd-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
 | Source-edit cost report/renderer | `benchmarks/archive/compute/parallel-ekf/source_diff_report.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -126,6 +128,11 @@ The chart also includes a NumPy/Numba control using `@njit(parallel=True)` and
 an eight-worker `prange` over the same 500,000-filter, 40-turn synchronous
 boundary. It is labeled separately from plain NumPy because the JIT and worker
 pool are an additional compiled runtime, not a feature of NumPy's array API.
+The SIMD controls add Halide's JIT pipeline with eight pinned runtime workers
+and Futhark's ISPC backend with eight workers. Futhark does not JIT at runtime;
+its source is compiled before the timed invocation. On this machine the
+Futhark 0.27 output needs the checked-in compatibility shim with ISPC 1.31,
+which removes only unused conflicting `erf`/`erfc` declarations.
 Each contract is sorted independently from slowest to fastest, with the new
 resident scalar Mech unchecked measurement included explicitly.
 
@@ -243,7 +250,8 @@ python3 plot_cross_language_comparison.py \
   --taichi-optimized results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
   --minimal-source results/apple-m1-minimal-source-2026-08-31.json \
   --julia-threaded results/apple-m1-julia-threaded-2026-08-31.json \
-  --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json
+  --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json \
+  --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json
 
 python3 plot_mech_progression.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \

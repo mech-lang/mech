@@ -68,6 +68,7 @@ def load_rows(
     minimal: dict | None = None,
     julia_threaded: dict | None = None,
     numpy_numba: dict | None = None,
+    simd_controls: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -282,6 +283,24 @@ def load_rows(
                         "throughput": statistics.median(row["throughput_millions"]),
                     }
                 )
+    if simd_controls is not None:
+        import statistics
+
+        for label, family in (
+            ("Halide JIT SIMD 8 workers", "Halide"),
+            ("Futhark ISPC SIMD 8 workers", "Futhark"),
+        ):
+            for mode in ("checked", "unchecked"):
+                row = simd_controls.get("rows", {}).get(f"{label} {mode}")
+                if row is not None and "throughput_millions" in row:
+                    rows.append(
+                        {
+                            "label": f"{label}, {mode}",
+                            "family": family,
+                            "mode": mode,
+                            "throughput": statistics.median(row["throughput_millions"]),
+                        }
+                    )
     return rows
 
 
@@ -420,6 +439,7 @@ def main() -> None:
     parser.add_argument("--minimal-source", type=Path, help="Halide/Futhark/NumPy minimal-control evidence JSON")
     parser.add_argument("--julia-threaded", type=Path, help="threaded Julia SIMD evidence JSON")
     parser.add_argument("--numpy-numba", type=Path, help="NumPy/Numba threaded JIT evidence JSON")
+    parser.add_argument("--simd-controls", type=Path, help="Halide and Futhark SIMD evidence JSON")
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
@@ -445,6 +465,11 @@ def main() -> None:
         if args.numpy_numba
         else None
     )
+    simd_controls = (
+        json.loads(args.simd_controls.read_text(encoding="utf-8"))
+        if args.simd_controls
+        else None
+    )
     rows = load_rows(
         cross_language,
         runtime,
@@ -454,6 +479,7 @@ def main() -> None:
         minimal,
         julia_threaded,
         numpy_numba,
+        simd_controls,
     )
     configuration = cross_language["configuration"]
     render(
