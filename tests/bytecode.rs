@@ -775,6 +775,14 @@ fn canonical_resident_capabilities_close_matrix_logic_comparison_and_indexing_pa
     let (_, value) = run_compiled_source("~matrix := [1 2; 3 4]\nmatrix[2,:] = [9 10]\nmatrix")?;
     assert_f64_matrix(&value, &[1.0, 2.0, 9.0, 10.0], 2, 2);
 
+    let (_, value) = run_compiled_source(
+        "~matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[:,:] = 9<u64>\nmatrix",
+    )?;
+    assert_u64_matrix(&value, &[9, 9, 9, 9]);
+
+    let (_, value) = run_compiled_source("~matrix := [1 2; 3 4]\nmatrix[:] = [5 6; 7 8]\nmatrix")?;
+    assert_f64_matrix(&value, &[5.0, 6.0, 7.0, 8.0], 2, 2);
+
     let (_, value) = run_compiled_source("record := {number: 7<u64>}\nrecord.number")?;
     assert_u64(&value, 7);
 

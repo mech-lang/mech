@@ -111,6 +111,10 @@ static PURE_RECTANGULAR_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationCo
     std::sync::LazyLock::new(|| indexed_state_register_contract(4, RegionPolicy::RectangularRegion));
 
 #[cfg(feature = "semantic-compiler")]
+static PURE_WHOLE_VALUE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| indexed_state_register_contract(2, RegionPolicy::WholeValue));
+
+#[cfg(feature = "semantic-compiler")]
 static PURE_COLLECTION_ENTRY_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
 > = std::sync::LazyLock::new(|| indexed_state_register_contract(3, RegionPolicy::CollectionEntry));
@@ -478,6 +482,7 @@ struct AssignCanonicalSelection {
 #[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum CanonicalAssignmentSelectionKind {
+    WholeValue,
     Linear,
     Rows,
     Columns,
@@ -490,6 +495,7 @@ enum CanonicalAssignmentSelectionKind {
 impl CanonicalAssignmentSelectionKind {
     fn contract(self) -> &'static OperationContractDeclaration {
         match self {
+            Self::WholeValue => &PURE_WHOLE_VALUE_STATE_REGISTER_CONTRACT,
             Self::Linear => &PURE_INDEXED_STATE_REGISTER_CONTRACT,
             Self::Rows => &PURE_ROW_INDEXED_STATE_REGISTER_CONTRACT,
             Self::Columns => &PURE_COLUMN_INDEXED_STATE_REGISTER_CONTRACT,
@@ -501,6 +507,7 @@ impl CanonicalAssignmentSelectionKind {
 
     const fn operation(self) -> &'static str {
         match self {
+            Self::WholeValue => "core/assign/whole-value",
             Self::Linear => "core/assign/indexed-axis",
             Self::Rows => "core/assign/indexed-rows",
             Self::Columns => "core/assign/indexed-columns",
@@ -774,6 +781,10 @@ impl AssignCanonicalSelection {
             .with_compiler_loc()
         })?;
         let positions = match self.selectors.as_slice() {
+            [CanonicalAccessSelector::All]
+            | [CanonicalAccessSelector::All, CanonicalAccessSelector::All] => {
+                (0..element_count).collect::<Vec<_>>()
+            }
             [selector] => canonical_indices(selector, element_count)?
                 .into_iter()
                 .map(|linear| {
@@ -949,6 +960,7 @@ impl MechFunctionCompiler for AssignCanonicalSelection {
             .collect::<MResult<Vec<_>>>()?;
         if selectors.len()
             != match self.selection_kind {
+                CanonicalAssignmentSelectionKind::WholeValue => 0,
                 CanonicalAssignmentSelectionKind::Rectangular => 2,
                 _ => 1,
             }
@@ -997,6 +1009,10 @@ fn canonical_indexed_assignment(
             CanonicalAssignmentSelectionKind::SingleElement
         }
         SchemaBody::Matrix { .. } => match selectors.as_slice() {
+            [CanonicalAccessSelector::All]
+            | [CanonicalAccessSelector::All, CanonicalAccessSelector::All] => {
+                CanonicalAssignmentSelectionKind::WholeValue
+            }
             [CanonicalAccessSelector::Cell(_)] => CanonicalAssignmentSelectionKind::Linear,
             [
                 CanonicalAccessSelector::Cell(_),

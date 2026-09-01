@@ -55,6 +55,7 @@ impl SemanticArithmetic {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum SnapshotMatrixAccessMode {
+    AllRowsAllColumns,
     Linear,
     RowsAllColumns,
     AllRowsColumns,
@@ -215,6 +216,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["matrix"], "solve", bind_matrix_solve)?;
     register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
     register(builder, &["core"], "assign", bind_hold_state)?;
+    register(
+        builder,
+        &["core", "assign"],
+        "whole-value",
+        bind_whole_matrix_assign,
+    )?;
     register(
         builder,
         &["core", "assign"],
@@ -2759,12 +2766,26 @@ fn bind_indexed_assign_rectangle(
     )
 }
 
+fn bind_whole_matrix_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_matrix_selection_assign(
+        request,
+        RegionPolicy::WholeValue,
+        SnapshotMatrixAccessMode::AllRowsAllColumns,
+    )
+}
+
 fn bind_matrix_selection_assign(
     request: &ResidentKernelBindRequest<'_>,
     regions: RegionPolicy,
     mode: SnapshotMatrixAccessMode,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    let selector_count = usize::from(matches!(mode, SnapshotMatrixAccessMode::RowsColumns)) + 1;
+    let selector_count = match mode {
+        SnapshotMatrixAccessMode::AllRowsAllColumns => 0,
+        SnapshotMatrixAccessMode::RowsColumns => 2,
+        _ => 1,
+    };
     validate_rmw(request, 2 + selector_count, regions)?;
     let base = request
         .inputs
@@ -2825,6 +2846,7 @@ fn bind_matrix_selection_assign(
         .checked_mul(source_columns)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let selector_capacity = match mode {
+        SnapshotMatrixAccessMode::AllRowsAllColumns => Some(output_len),
         SnapshotMatrixAccessMode::RowsAllColumns => selectors[0]
             .shape
             .len()
@@ -2845,6 +2867,7 @@ fn bind_matrix_selection_assign(
     }
     .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let selector_axes_match = match mode {
+        SnapshotMatrixAccessMode::AllRowsAllColumns => true,
         SnapshotMatrixAccessMode::RowsAllColumns => {
             selectors[0].kind != ResidentValueKind::Bool || selectors[0].shape.len() == Some(rows)
         }
@@ -4615,6 +4638,9 @@ fn matrix_selection_coordinates(
     selectors: &[mech_core::Value],
 ) -> Result<(Vec<usize>, Vec<usize>), ResidentKernelError> {
     match plan.mode {
+        SnapshotMatrixAccessMode::AllRowsAllColumns => {
+            Ok(((0..plan.rows).collect(), (0..plan.columns).collect()))
+        }
         SnapshotMatrixAccessMode::RowsAllColumns => Ok((
             access_indices(&selectors[0], plan.rows)?,
             (0..plan.columns).collect(),
@@ -7527,6 +7553,9 @@ fn snapshot_access_data(
                 return Err(ResidentKernelError::InvalidShape);
             }
             let (selected_rows, selected_columns, scalar) = match plan.matrix_mode {
+                Some(SnapshotMatrixAccessMode::AllRowsAllColumns) => {
+                    return Err(ResidentKernelError::InvalidInput);
+                }
                 Some(SnapshotMatrixAccessMode::Linear) => {
                     let selected = access_indices(&selectors[0], source_len)?;
                     let values = selected
