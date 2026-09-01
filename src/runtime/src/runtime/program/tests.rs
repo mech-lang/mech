@@ -2784,7 +2784,7 @@ fn production_source_and_bytecode_load_residently_without_engine_selection() {
 }
 
 #[test]
-fn production_tuple_access_loads_residently_without_legacy_fallback() {
+fn production_tuple_access_loads_through_resident_route() {
     let mut runtime = runtime();
     let outcome = runtime
         .load_source_program(
