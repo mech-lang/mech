@@ -66,6 +66,7 @@ def main() -> None:
     p.add_argument("--halide-cxx", default=shutil.which("clang++") or "clang++")
     p.add_argument("--halide-simd", action="store_true", help="also measure Halide JIT SIMD with eight workers")
     p.add_argument("--futhark-ispc", action="store_true", help="also measure Futhark ISPC SIMD with eight workers")
+    p.add_argument("--futhark-ispc-fixed", action="store_true", help="use fixed checked/unchecked Futhark entry points so unchecked code removes validation")
     p.add_argument("--julia-metal", action="store_true", help="also measure Julia Metal GPU with per-turn synchronization")
     p.add_argument("--julia", default=shutil.which("julia") or "julia")
     p.add_argument("--output", type=Path, default=HERE.parent / "results/apple-m1-minimal-source-2026-08-31.json")
@@ -137,12 +138,21 @@ def main() -> None:
             (ispc_path / "ispc").symlink_to(HERE / "futhark-ispc-compat.sh")
             ispc_env = env | {"PATH": f"{ispc_path}{os.pathsep}{env.get('PATH', '')}"}
             futhark_ispc = Path(temp) / "futhark-ekf-ispc"
-            run(["futhark", "ispc", str(HERE / "futhark_ekf.fut"), "-o", str(futhark_ispc)], env=ispc_env)
+            compile_command = ["futhark", "ispc"]
+            if args.futhark_ispc_fixed:
+                compile_command.extend(["--entry-point=main_unchecked", "--entry-point=main_checked"])
+            compile_command.extend([str(HERE / "futhark_ekf.fut"), "-o", str(futhark_ispc)])
+            run(compile_command, env=ispc_env)
             for checked, flag in ((False, "false"), (True, "true")):
                 times: list[float] = []
                 checksums: list[float] = []
+                entry = "main_checked" if checked else "main_unchecked"
                 command = [str(futhark_ispc), "--num-threads", "8", "-r", "1", "-t", str(Path(temp) / "time-ispc")]
-                data = inp + f" {flag}"
+                if args.futhark_ispc_fixed:
+                    command.extend(["--entry-point", entry])
+                    data = inp
+                else:
+                    data = inp + f" {flag}"
                 run(command, stdin=data, env=ispc_env)
                 for _ in range(args.samples):
                     output = run(command, stdin=data, env=ispc_env)
@@ -150,7 +160,8 @@ def main() -> None:
                         micros = float(timing.read().strip())
                     times.append(args.instances * args.turns / (micros / 1e6))
                     checksums.append(float(output.strip().removesuffix("f32").removesuffix("f64")))
-                rows[f"Futhark ISPC SIMD 8 workers {'checked' if checked else 'unchecked'}"] = {"command": command, "throughput": times, "checksums": checksums}
+                label = "Futhark ISPC fixed SIMD 8 workers" if args.futhark_ispc_fixed else "Futhark ISPC SIMD 8 workers"
+                rows[f"{label} {'checked' if checked else 'unchecked'}"] = {"command": command, "throughput": times, "checksums": checksums}
         opencl = Path(temp) / "futhark-opencl"
         try:
             run(["futhark", "opencl", str(HERE / "futhark_ekf.fut"), "-o", str(opencl)], env=env)

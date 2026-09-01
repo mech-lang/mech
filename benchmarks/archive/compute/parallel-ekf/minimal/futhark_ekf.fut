@@ -43,3 +43,16 @@ let main [n] (v:[n]f32) (w:[n]f32) (z:[n]f32) (turns:i32) (checked:bool):f64 =
   let x0=map (\_ -> [55f32,25f32,0.4f32,100f32,0f32,0f32,0f32,100f32,0f32,0f32,0f32,0.15f32]) (iota n)
   let x=loop x=x0 for _i < turns do u x v w z checked
   in reduce (+) 0f64 (map (\r -> reduce (+) 0f64 (map f64.f32 r)) x)
+
+-- These fixed-mode entry points let an AOT compiler propagate the mode and
+-- remove the validation predicate from the unchecked kernel. `main` remains
+-- the reference entry point used for the source-shaped comparison.
+let main_unchecked [n] (v:[n]f32) (w:[n]f32) (z:[n]f32) (turns:i32):f64 =
+  let x0=map (\_ -> [55f32,25f32,0.4f32,100f32,0f32,0f32,0f32,100f32,0f32,0f32,0f32,0.15f32]) (iota n)
+  let x=loop x=x0 for _i < turns do u x v w z false
+  in reduce (+) 0f64 (map (\r -> reduce (+) 0f64 (map f64.f32 r)) x)
+
+let main_checked [n] (v:[n]f32) (w:[n]f32) (z:[n]f32) (turns:i32):f64 =
+  let x0=map (\_ -> [55f32,25f32,0.4f32,100f32,0f32,0f32,0f32,100f32,0f32,0f32,0f32,0.15f32]) (iota n)
+  let x=loop x=x0 for _i < turns do u x v w z true
+  in reduce (+) 0f64 (map (\r -> reduce (+) 0f64 (map f64.f32 r)) x)

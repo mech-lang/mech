@@ -62,6 +62,7 @@ git switch --track origin/codex/mech-program-gpu
 | Threaded Julia SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-threaded-2026-08-31.json` |
 | NumPy/Numba threaded evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-numba-2026-08-31.json` |
 | Halide/Futhark SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-halide-simd-2026-08-31.json` |
+| Futhark fixed-mode ISPC evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-ispc-fixed-2026-08-31.json` |
 | Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
 | NumPy GPU capability evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-gpu-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
@@ -256,6 +257,7 @@ python3 plot_cross_language_comparison.py \
   --julia-threaded results/apple-m1-julia-threaded-2026-08-31.json \
   --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json \
   --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json \
+  --futhark-fixed results/apple-m1-futhark-ispc-fixed-2026-08-31.json \
   --julia-gpu results/apple-m1-julia-metal-2026-08-31.json \
   --numpy-gpu results/apple-m1-numpy-gpu-2026-08-31.json
 

@@ -71,6 +71,7 @@ def load_rows(
     simd_controls: dict | None = None,
     julia_gpu: dict | None = None,
     numpy_gpu: dict | None = None,
+    futhark_fixed: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -292,6 +293,11 @@ def load_rows(
             ("Halide JIT SIMD 8 workers", "Halide"),
             ("Futhark ISPC SIMD 8 workers", "Futhark"),
         ):
+            if family == "Futhark" and futhark_fixed is not None:
+                # The old row is a 10k x 20 dynamic-mode run. Once matched
+                # fixed-mode evidence is supplied, retaining it unlabelled
+                # would recreate the misleading ranking this control fixes.
+                continue
             for mode in ("checked", "unchecked"):
                 row = simd_controls.get("rows", {}).get(f"{label} {mode}")
                 if row is not None and "throughput_millions" in row:
@@ -321,6 +327,31 @@ def load_rows(
     # in the report inputs so the absence is auditable, but never turn an
     # unavailable backend into a zero-throughput chart row.
     _ = numpy_gpu
+    if futhark_fixed is not None:
+        import statistics
+
+        for mode in ("checked", "unchecked"):
+            row = futhark_fixed.get("rows", {}).get(mode)
+            if row is not None and "throughput_millions" in row:
+                rows.append(
+                    {
+                        "label": "Futhark ISPC fixed-mode, 8 workers (500k x 40)",
+                        "family": "Futhark",
+                        "mode": mode,
+                        "throughput": statistics.median(row["throughput_millions"]),
+                    }
+                )
+        for key, mode in (("dynamic_checked", "checked"), ("dynamic_unchecked", "unchecked")):
+            row = futhark_fixed.get("rows", {}).get(key)
+            if row is not None and "throughput_millions" in row:
+                rows.append(
+                    {
+                        "label": "Futhark ISPC dynamic-mode, 8 workers (500k x 40)",
+                        "family": "Futhark",
+                        "mode": mode,
+                        "throughput": statistics.median(row["throughput_millions"]),
+                    }
+                )
     return rows
 
 
@@ -463,6 +494,7 @@ def main() -> None:
     parser.add_argument("--simd-controls", type=Path, help="Halide and Futhark SIMD evidence JSON")
     parser.add_argument("--julia-gpu", type=Path, help="Julia Metal GPU evidence JSON")
     parser.add_argument("--numpy-gpu", type=Path, help="NumPy GPU capability evidence JSON")
+    parser.add_argument("--futhark-fixed", type=Path, help="fixed-mode Futhark ISPC evidence JSON")
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
@@ -503,6 +535,11 @@ def main() -> None:
         if args.numpy_gpu
         else None
     )
+    futhark_fixed = (
+        json.loads(args.futhark_fixed.read_text(encoding="utf-8"))
+        if args.futhark_fixed
+        else None
+    )
     rows = load_rows(
         cross_language,
         runtime,
@@ -515,6 +552,7 @@ def main() -> None:
         simd_controls,
         julia_gpu,
         numpy_gpu,
+        futhark_fixed,
     )
     configuration = cross_language["configuration"]
     render(

@@ -18,8 +18,8 @@ fi
 patched="${TMPDIR:-/tmp}/futhark-ispc-compat-$$.ispc"
 trap 'rm -f "$patched"' EXIT HUP INT TERM
 sed \
-    -e '/^extern "C" unmasked uniform double erf(/d' \
-    -e '/^extern "C" unmasked uniform double erfc(/d' \
+    -e '/^[[:space:]]*extern "C" unmasked uniform double erf(/d' \
+    -e '/^[[:space:]]*extern "C" unmasked uniform double erfc(/d' \
     "$source" > "$patched"
 
 arguments=

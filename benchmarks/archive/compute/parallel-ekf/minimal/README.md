@@ -44,3 +44,15 @@ GPU. The capability result is retained in
 `results/apple-m1-numpy-gpu-2026-08-31.json`, and the probe exits cleanly with
 an explicit unavailable result. Run the same source family on the RTX host
 after installing CUDA and CuPy rather than inventing a Metal NumPy number.
+
+## Fixed-mode Futhark
+
+The Futhark source exposes `main_checked` and `main_unchecked` entry points.
+These fix the guarantee mode at compile time, allowing the ISPC backend to
+remove the validation predicate from the unchecked kernel. At the matched
+500,000-filter/40-turn workload, five samples measured **108.718 M/s checked**
+and **152.330 M/s unchecked**. The dynamic-boolean entry points measured
+**108.283 M/s checked** and **106.863 M/s unchecked**, which explains why the
+earlier unchecked row looked artificially slow: it still paid for validation
+arithmetic. Raw evidence is in
+`results/apple-m1-futhark-ispc-fixed-2026-08-31.json`.

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T21:46:00-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "device": "Apple M1 CPU, ISPC 1.31"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples": 5,
+    "workers": 8,
+    "source": "minimal/futhark_ekf.fut",
+    "backend": "Futhark ISPC",
+    "boundary": "steady-state AOT entry point invocation; turns loop inside compiled program",
+    "notes": [
+      "main_unchecked and main_checked are separate entry points, allowing constant propagation of the guarantee mode.",
+      "The reference main entry point still accepts a dynamic checked boolean and remains available for the source-shaped comparison.",
+      "Compilation, input construction, process startup, and final result readback are outside the timed region."
+    ]
+  },
+  "rows": {
+    "checked": {
+      "entry_point": "main_checked",
+      "throughput_millions": [108.902804, 107.497407, 109.275286, 108.717514, 108.394034],
+      "checksum": 133818338.644006,
+      "faults": 0
+    },
+    "unchecked": {
+      "entry_point": "main_unchecked",
+      "throughput_millions": [151.092779, 154.089141, 152.478539, 151.391286, 152.329886],
+      "checksum": 133818338.644006,
+      "faults": 0
+    },
+    "dynamic_checked": {
+      "entry_point": "main checked=true",
+      "throughput_millions": [108.611832, 108.283117, 107.120859, 108.933055, 105.873323],
+      "checksum": 133818338.644006
+    },
+    "dynamic_unchecked": {
+      "entry_point": "main checked=false",
+      "throughput_millions": [106.863295, 107.741206, 106.130073, 106.469627, 108.338841],
+      "checksum": 133818338.644006
+    }
+  },
+  "version": "Futhark 0.27.1 / ISPC 1.31.0"
+}
