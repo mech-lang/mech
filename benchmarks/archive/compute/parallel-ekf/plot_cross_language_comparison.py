@@ -329,7 +329,7 @@ def load_rows(
             if row is not None and "throughput_millions" in row:
                 rows.append(
                     {
-                        "label": "Julia GPU, native Metal",
+                        "label": "Julia GPU, native Metal (strict retained-state)",
                         "family": "Julia",
                         "mode": mode,
                         "throughput": statistics.median(row["throughput_millions"]),

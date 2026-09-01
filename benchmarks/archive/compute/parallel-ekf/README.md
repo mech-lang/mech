@@ -292,6 +292,17 @@ two-word device fault reduction, so it reports the same first-fault metadata
 without copying a per-lane fault array to the host each turn. That is an
 implementation advantage, not a weaker validity contract.
 
+The Julia Metal control is held to the same boundary. Its checked mode now
+uses two resident state groups, writes candidates only to the unpublished
+group, records the first failing lane/constraint in a two-word atomic summary,
+and reads that summary after every synchronized turn before swapping the
+published group. The earlier Julia result (197.078 M checked turns/s) used
+in-place valid-lane publication and post-loop fault observation, so it is not
+an equivalent checked result and is excluded from the current ranking. The
+strict rerun is 178.135 M checked turns/s and 199.454 M unchecked turns/s;
+Mech is 187.999 M and 275.534 M/s under the same 500,000-filter, 40-turn
+per-turn boundary.
+
 The Futhark OpenCL compiler is installed on that machine, but its Apple OpenCL
 driver rejects the generated kernel (`Invalid kernel`), so those rows are
 recorded as unavailable rather than silently omitted. The full samples,
@@ -356,7 +367,8 @@ python3 source_diff_report.py \
   results/apple-m1-lua-2026-08-31.json \
   results \
   --strict-mech results/apple-m1-mech-halide-strict-2026-08-31.json \
-  --strict-halide results/apple-m1-halide-metal-strict-2026-08-31.json
+  --strict-halide results/apple-m1-halide-metal-strict-2026-08-31.json \
+  --strict-julia results/apple-m1-julia-metal-2026-08-31.json
 ```
 
 To isolate the direct control from the other backend warmups, build the

@@ -1,11 +1,12 @@
 """Synchronous Julia/Metal EKF control.
 
 The state is stored in structure-of-arrays form and one Metal thread owns one
-filter.  The two kernels keep validation out of the unchecked launch path;
-checked launches publish nothing for an invalid candidate and set a per-lane
-fault bit instead.  Host synchronization remains inside the timed loop so
-this measures a synchronous resident runtime boundary rather than a batched
-one-shot submission.
+filter.  The two kernels keep validation out of the unchecked launch path.
+Checked launches write candidates into an unpublished alternate state, record
+a fault summary for invalid lanes, and publish the alternate state only after
+the host observes a completed turn with no faults.  Host synchronization and
+fault observation remain inside the timed loop so this measures a synchronous
+resident runtime boundary rather than a batched one-shot submission.
 """
 
 using Metal
@@ -18,7 +19,7 @@ const FINITE_LIMIT = 3.402823466f38
 @inline function ekf_unchecked!(
     x0, x1, x2,
     p00, p01, p02, p10, p11, p12, p20, p21, p22,
-    velocity, angular_velocity, bearing, faults, n,
+    velocity, angular_velocity, bearing, n,
 )
     i = thread_position_in_grid().x
     if i <= n
@@ -119,30 +120,31 @@ const FINITE_LIMIT = 3.402823466f38
         p20[i] = np20
         p21[i] = np21
         p22[i] = np22
-        faults[i] = Int32(0)
     end
     return
 end
 
 @inline function ekf_checked!(
-    x0, x1, x2,
-    p00, p01, p02, p10, p11, p12, p20, p21, p22,
+    x0r, x1r, x2r,
+    p00r, p01r, p02r, p10r, p11r, p12r, p20r, p21r, p22r,
+    x0w, x1w, x2w,
+    p00w, p01w, p02w, p10w, p11w, p12w, p20w, p21w, p22w,
     velocity, angular_velocity, bearing, faults, n,
 )
     i = thread_position_in_grid().x
     if i <= n
-        sx0 = x0[i]
-        sx1 = x1[i]
-        sx2 = x2[i]
-        sp00 = p00[i]
-        sp01 = p01[i]
-        sp02 = p02[i]
-        sp10 = p10[i]
-        sp11 = p11[i]
-        sp12 = p12[i]
-        sp20 = p20[i]
-        sp21 = p21[i]
-        sp22 = p22[i]
+        sx0 = x0r[i]
+        sx1 = x1r[i]
+        sx2 = x2r[i]
+        sp00 = p00r[i]
+        sp01 = p01r[i]
+        sp02 = p02r[i]
+        sp10 = p10r[i]
+        sp11 = p11r[i]
+        sp12 = p12r[i]
+        sp20 = p20r[i]
+        sp21 = p21r[i]
+        sp22 = p22r[i]
 
         st = sin(sx2)
         ct = cos(sx2)
@@ -217,30 +219,39 @@ end
         cx0 = nx0 + k0 * inn
         cx1 = nx1 + k1 * inn
         cx2 = nx2 + k2 * inn
-        ok = abs(cx0) <= FINITE_LIMIT && abs(cx1) <= FINITE_LIMIT && abs(cx2) <= FINITE_LIMIT &&
-             abs(np00) <= FINITE_LIMIT && abs(np01) <= FINITE_LIMIT && abs(np02) <= FINITE_LIMIT &&
-             abs(np10) <= FINITE_LIMIT && abs(np11) <= FINITE_LIMIT && abs(np12) <= FINITE_LIMIT &&
-             abs(np20) <= FINITE_LIMIT && abs(np21) <= FINITE_LIMIT && abs(np22) <= FINITE_LIMIT &&
-             np00 > 0.0f0 && np11 > 0.0f0 && np22 > 0.0f0 &&
-             abs(np01 - np10) <= SYMMETRY_TOLERANCE &&
-             abs(np02 - np20) <= SYMMETRY_TOLERANCE &&
-             abs(np12 - np21) <= SYMMETRY_TOLERANCE
-        if ok
-            x0[i] = cx0
-            x1[i] = cx1
-            x2[i] = cx2
-            p00[i] = np00
-            p01[i] = np01
-            p02[i] = np02
-            p10[i] = np10
-            p11[i] = np11
-            p12[i] = np12
-            p20[i] = np20
-            p21[i] = np21
-            p22[i] = np22
-            faults[i] = Int32(0)
+        finite = abs(cx0) <= FINITE_LIMIT && abs(cx1) <= FINITE_LIMIT && abs(cx2) <= FINITE_LIMIT &&
+                 abs(np00) <= FINITE_LIMIT && abs(np01) <= FINITE_LIMIT && abs(np02) <= FINITE_LIMIT &&
+                 abs(np10) <= FINITE_LIMIT && abs(np11) <= FINITE_LIMIT && abs(np12) <= FINITE_LIMIT &&
+                 abs(np20) <= FINITE_LIMIT && abs(np21) <= FINITE_LIMIT && abs(np22) <= FINITE_LIMIT
+        positive = np00 > 0.0f0 && np11 > 0.0f0 && np22 > 0.0f0
+        symmetric = abs(np01 - np10) <= SYMMETRY_TOLERANCE &&
+                    abs(np02 - np20) <= SYMMETRY_TOLERANCE &&
+                    abs(np12 - np21) <= SYMMETRY_TOLERANCE
+        code = Int32(0)
+        if !finite
+            code = Int32(1)
+        elseif !positive
+            code = Int32(2)
+        elseif !symmetric
+            code = Int32(3)
+        end
+        if code == Int32(0)
+            x0w[i] = cx0
+            x1w[i] = cx1
+            x2w[i] = cx2
+            p00w[i] = np00
+            p01w[i] = np01
+            p02w[i] = np02
+            p10w[i] = np10
+            p11w[i] = np11
+            p12w[i] = np12
+            p20w[i] = np20
+            p21w[i] = np21
+            p22w[i] = np22
         else
-            faults[i] = Int32(1)
+            Metal.@atomic faults[1] += Int32(1)
+            packed = (Int32(i) << 8) | code
+            Metal.@atomic faults[2] = min(faults[2], packed)
         end
     end
     return
@@ -259,39 +270,60 @@ state = [fill(T(55), instances), fill(T(25), instances), fill(T(0.4), instances)
          fill(T(100), instances), fill(T(0), instances), fill(T(0), instances),
          fill(T(0), instances), fill(T(100), instances), fill(T(0), instances),
          fill(T(0), instances), fill(T(0), instances), fill(T(0.15), instances)]
-device_state = map(MtlArray, state)
+device_state_a = map(MtlArray, state)
+device_state_b = map(MtlArray, state)
 device_velocity = MtlArray(velocity)
 device_angular_velocity = MtlArray(angular_velocity)
 device_bearing = MtlArray(bearing)
-faults = MtlArray(zeros(Int32, instances))
+faults = MtlArray(Int32[0, typemax(Int32)])
+fault_seed = Int32[0, typemax(Int32)]
 n = Int32(instances)
 groups = cld(instances, 256)
-args = (device_state..., device_velocity, device_angular_velocity, device_bearing, faults, n)
+unchecked_args = (device_state_a..., device_velocity, device_angular_velocity, device_bearing, n)
+checked_args_a = (device_state_a..., device_state_b..., device_velocity, device_angular_velocity, device_bearing, faults, n)
+checked_args_b = (device_state_b..., device_state_a..., device_velocity, device_angular_velocity, device_bearing, faults, n)
+published_group = 0
 
 function dispatch!(count)
+    global published_group
     for _ in 1:count
         if mode == "checked"
+            copyto!(faults, fault_seed)
+            args = published_group == 0 ? checked_args_a : checked_args_b
             @metal submit=true threads=256 groups=groups ekf_checked!(args...)
         else
-            @metal submit=true threads=256 groups=groups ekf_unchecked!(args...)
+            @metal submit=true threads=256 groups=groups ekf_unchecked!(unchecked_args...)
         end
         synchronize()
+        if mode == "checked"
+            fault_values = Array(faults)
+            if fault_values[1] != 0
+                return
+            end
+            published_group = 1 - published_group
+        end
     end
 end
 
 # Compile and warm the device kernel before timing steady-state turns.
 dispatch!(5)
-for (target, source) in zip(device_state, state)
+for (target, source) in zip(device_state_a, state)
     copyto!(target, source)
 end
-fill!(faults, Int32(0))
+for (target, source) in zip(device_state_b, state)
+    copyto!(target, source)
+end
+published_group = 0
+copyto!(faults, fault_seed)
 synchronize()
 started = time_ns()
 dispatch!(turns)
 elapsed = (time_ns() - started) / 1e9
-host_state = map(Array, device_state)
+published_state = mode == "checked" ? (published_group == 0 ? device_state_a : device_state_b) : device_state_a
+host_state = map(Array, published_state)
 checksum = sum(sum(Float64.(target)) for target in host_state)
-fault_count = sum(Int, Array(faults))
+fault_count = Int(Array(faults)[1])
+fault_word = UInt32(Array(faults)[2])
 println("lane: Julia Metal GPU, SoA resident")
 println("instances: ", instances)
 println("turns: ", turns)
@@ -300,4 +332,5 @@ println("throughput: ", instances * turns / elapsed)
 println("checksum: ", checksum)
 println("validation: ", mode)
 println("faults: ", fault_count)
+println("fault_word: ", fault_word)
 println("synchronization: per-turn Metal.synchronize")

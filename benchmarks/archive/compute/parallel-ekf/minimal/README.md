@@ -35,8 +35,11 @@ receives an infinite velocity, the candidate is rejected, and the checked
 runner reports the fault while retaining that lane's prior publication.
 `julia_metal_ekf.jl` is a direct Julia/Metal control: it stores the same
 structure-of-arrays state on the device, launches one thread per filter, and
-calls `Metal.synchronize()` after every turn. Its first kernel compilation and
-all allocation/readback are outside the timed section. `numpy_gpu.py` is a
+calls `Metal.synchronize()` plus a compact fault readback after every checked
+turn. Checked mode uses two resident state groups and swaps the published
+group only after the fault summary is clear; this matches Mech's whole-turn
+retained-state contract. Its first kernel compilation and all allocation/final
+readback are outside the timed section. `numpy_gpu.py` is a
 CuPy capability probe; it deliberately does not relabel MLX or another Metal
 library as NumPy.
 The `futhark-ispc-compat.sh` wrapper is used only when Futhark 0.27 is paired
@@ -50,10 +53,14 @@ Taichi needs its Python environment).
 
 ## GPU controls
 
-The Julia Metal control was measured on the Apple M1 at 500,000 filters x 40
-turns (five fresh processes). The medians are **197.078 M turns/s checked**
-and **216.462 M turns/s unchecked**, with zero faults and matching checksums.
-This is a synchronous per-turn GPU boundary, not a one-submit batch.
+The Julia Metal control was remeasured on the Apple M1 at 500,000 filters x 40
+turns (five fresh processes). With the strict two-group publication boundary,
+the medians are **178.135 M turns/s checked** and **199.454 M turns/s
+unchecked**, with zero faults and matching checksums. This is a synchronous
+per-turn GPU boundary, not a one-submit batch. The earlier 197.078 M/s checked
+number used in-place valid-lane publication and post-loop fault observation;
+it is retained only as historical evidence and must not be compared to Mech's
+strict checked result.
 
 Plain NumPy has no GPU backend. CuPy is the NumPy-compatible CUDA option, but
 it requires an NVIDIA CUDA device; it cannot target this machine's Apple Metal

@@ -7,6 +7,7 @@
     "native": "2026-08-31",
     "strict_mech": "2026-08-31",
     "strict_halide": "2026-09-01T00:05:05.531733-04:00",
+    "strict_julia": "2026-09-01T08:42:44-04:00",
     "taichi": "2026-08-31",
     "lua": "2026-08-31",
     "minimal": "2026-08-31T18:45:52.116140-04:00"
@@ -368,12 +369,12 @@
         },
         "gpu": {
           "checked": {
-            "throughput": 197.078,
-            "label": "Julia GPU, native Metal"
+            "throughput": 178.135,
+            "label": "Julia GPU, native Metal (strict retained-state)"
           },
           "unchecked": {
-            "throughput": 216.462,
-            "label": "Julia GPU, native Metal"
+            "throughput": 199.454,
+            "label": "Julia GPU, native Metal (strict retained-state)"
           }
         }
       }

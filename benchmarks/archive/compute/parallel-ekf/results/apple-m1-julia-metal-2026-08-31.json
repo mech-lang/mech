@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-31T21:20:00-04:00",
+  "generated_at": "2026-09-01T08:42:44-04:00",
   "platform": {
     "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
     "machine": "arm64",
@@ -16,7 +16,8 @@
     "notes": [
       "Julia Metal kernels use the same manually lowered EKF recurrence and SoA state layout as the matched GPU controls.",
       "Kernel compilation, allocation, warmup, and final readback are outside the timed region.",
-      "Checked mode validates finiteness, positive covariance diagonal, and covariance symmetry; an invalid lane keeps its previous state and sets a per-lane fault bit.",
+      "Checked mode uses two resident state groups, validates finite state/covariance, positive covariance diagonal, and covariance symmetry, writes only to the unpublished group, records a two-word atomic fault summary, and swaps publication only after a per-turn host fault readback succeeds.",
+      "The checked boundary is intended to match Mech's whole-turn retained-state contract; an invalid candidate leaves the previously published group selected.",
       "This is a direct Metal control, not a NumPy-compatible API or a batched one-shot submission."
     ]
   },
@@ -30,7 +31,7 @@
         "40",
         "checked"
       ],
-      "throughput_millions": [179.61920674284756, 164.94425960286725, 216.73746161051255, 209.35977633843863, 197.0783955587674],
+      "throughput_millions": [166.41606072082716, 184.5724354615255, 167.52073203075466, 185.91111299666297, 178.1349058037759],
       "checksums": [133818339.66889535, 133818339.66889535, 133818339.66889535, 133818339.66889535, 133818339.66889535],
       "faults": [0, 0, 0, 0, 0]
     },
@@ -43,7 +44,7 @@
         "40",
         "unchecked"
       ],
-      "throughput_millions": [234.5298263306636, 198.31883536708638, 216.4619297581038, 190.09321239679196, 232.270726117892],
+      "throughput_millions": [260.9956658407241, 175.0508741603028, 227.543690436457, 190.02819087214407, 199.4539111475908],
       "checksums": [133818339.66889535, 133818339.66889535, 133818339.66889535, 133818339.66889535, 133818339.66889535],
       "faults": [0, 0, 0, 0, 0]
     }
