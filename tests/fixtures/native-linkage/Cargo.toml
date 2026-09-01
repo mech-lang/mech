@@ -122,7 +122,9 @@ extended-math-shard-signed-wide = [
 ]
 extended-math-shard-float = ["extended-math-shard"]
 extended-math-shard-complex = ["extended-math-shard", "mech-math/c64"]
-extended-math-shard-rational = ["extended-math-shard", "mech-math/r64"]
+extended-math-shard-rational = [
+  "extended-math-shard", "mech-math/i32", "mech-math/r64",
+]
 extended-compare = [
   "dep:mech-core", "dep:mech-compare", "dep:serde", "dep:serde_json",
   "mech-core/native-plan", "mech-compare/native-plan", "mech-compare/full_runtime",
