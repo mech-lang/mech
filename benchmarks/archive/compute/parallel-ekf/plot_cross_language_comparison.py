@@ -438,7 +438,7 @@ def render(
     for index, row in enumerate(visible):
         value = float(row["throughput"])
         y = top + index * row_height
-        bar_width = max(1.0, chart_width * value / max_value)
+        bar_width = max(1.0, x(value) - left)
         color = COLORS[str(row["family"])]
         fill = f'url(#gpu-{str(row["family"]).lower()})' if is_gpu_row(row) else color
         lines.append(f'<text x="{left - 16}" y="{y + 19}" text-anchor="end" class="label">{esc(row["label"])}</text>')
