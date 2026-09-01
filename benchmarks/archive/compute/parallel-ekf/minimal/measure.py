@@ -152,7 +152,15 @@ def main() -> None:
             ispc_path = Path(temp) / "ispc-bin"
             ispc_path.mkdir()
             (ispc_path / "ispc").symlink_to(HERE / "futhark-ispc-compat.sh")
-            ispc_env = env | {"PATH": f"{ispc_path}{os.pathsep}{env.get('PATH', '')}"}
+            # Keep the cross-language checked/unchecked comparison on the
+            # same arithmetic contract as Mech.  ISPC's default permits FMA
+            # contraction; that is not the named relaxed-math mode, but it does
+            # change the operation sequence and can change rounded results.
+            # Do not allow the benchmark to inherit a relaxed caller setting.
+            ispc_env = env | {
+                "PATH": f"{ispc_path}{os.pathsep}{env.get('PATH', '')}",
+                "ISPCFLAGS": "-O3 --woff --opt=disable-fma",
+            }
         if args.futhark_ispc:
             futhark_ispc = Path(temp) / "futhark-ekf-ispc"
             compile_command = ["futhark", "ispc"]

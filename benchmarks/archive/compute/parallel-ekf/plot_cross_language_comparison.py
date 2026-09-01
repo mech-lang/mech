@@ -140,15 +140,10 @@ def load_rows(
         scalar("Mech scalar", "Mech", "unchecked"),
         mech_backend("Mech SIMD", "Mech", "checked"),
         mech_backend("Mech Cranelift JIT", "Mech", "checked"),
-        mech_backend("Mech Cranelift JIT checked fast", "Mech", "checked"),
         mech_backend("Mech Cranelift JIT unchecked", "Mech", "unchecked"),
-        mech_backend("Mech Cranelift JIT unchecked fast", "Mech", "unchecked"),
         mech_backend("Mech Cranelift SIMD-JIT", "Mech", "checked"),
-        mech_backend("Mech Cranelift SIMD-JIT checked fast", "Mech", "checked"),
         mech_backend("Mech Cranelift SIMD-JIT parallel", "Mech", "checked"),
         mech_backend("Mech Cranelift SIMD-JIT unchecked", "Mech", "unchecked"),
-        mech_backend("Mech Cranelift SIMD-JIT unchecked fast", "Mech", "unchecked"),
-        mech_backend("Mech Cranelift SIMD-JIT parallel unchecked fast", "Mech", "unchecked"),
         mech_backend("Mech GPU, checked one-turn", "Mech", "checked"),
         mech_backend("Mech GPU, checked repeated", "Mech", "checked"),
         mech_backend("Mech GPU, unchecked one-turn", "Mech", "unchecked"),
@@ -432,7 +427,7 @@ def load_rows(
     if mech_persistent is not None:
         import statistics
 
-        for key in ("persistent_per_turn_unchecked_fast", "fused_unchecked_block"):
+        for key in ("fused_unchecked_block",):
             row = mech_persistent.get("rows", {}).get(key)
             if row is not None and "throughput_millions" in row:
                 rows.append(

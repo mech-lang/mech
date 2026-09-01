@@ -104,9 +104,10 @@ impl MetalResidentGpuSession {
             _ => metal::MTLLanguageVersion::V2_2,
         };
         options.set_language_version(language_version);
-        // The unchecked contract explicitly permits relaxed floating-point
-        // reassociation; checked publication keeps Metal's default precision.
-        options.set_fast_math_enabled(!checked);
+        // Keep IEEE floating-point behavior for both contracts. The unchecked
+        // contract omits publication checks, but never changes arithmetic
+        // semantics or NaN propagation.
+        options.set_fast_math_enabled(false);
         let library = device
             .new_library_with_source(&msl_source, &options)
             .map_err(|error| {

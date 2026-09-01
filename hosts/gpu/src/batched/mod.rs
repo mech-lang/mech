@@ -171,74 +171,54 @@ fn comparison_wgsl(operation: ComparisonOperation) -> &'static str {
 }
 
 fn scalar_predicate_wgsl(predicate: &ScalarPredicate) -> String {
-    scalar_predicate_wgsl_with_aliases(predicate, &BTreeMap::new())
-}
-
-fn scalar_predicate_wgsl_with_aliases(
-    predicate: &ScalarPredicate,
-    aliases: &BTreeMap<usize, ScalarOperand>,
-) -> String {
-    match predicate {
-        ScalarPredicate::Value(value) => format!("({} != 0.0)", fast_operand_wgsl(*value, aliases)),
-        ScalarPredicate::IsFinite(value) => {
-            format!(
-                "(abs({}) <= 3.402823466e38)",
-                fast_operand_wgsl(*value, aliases)
-            )
-        }
-        ScalarPredicate::AbsoluteDifferenceWithin {
-            left,
-            right,
-            tolerance,
-        } => format!(
-            "(abs(({}) - ({})) <= ({}))",
-            fast_operand_wgsl(*left, aliases),
-            fast_operand_wgsl(*right, aliases),
-            fast_operand_wgsl(*tolerance, aliases)
-        ),
-        ScalarPredicate::Compare {
-            operation,
-            left,
-            right,
-        } => format!(
-            "(({}) {} ({}))",
-            fast_operand_wgsl(*left, aliases),
-            comparison_wgsl(*operation),
-            fast_operand_wgsl(*right, aliases)
-        ),
-        ScalarPredicate::All(inputs) => format!(
-            "({})",
-            inputs
-                .iter()
-                .map(|input| scalar_predicate_wgsl_with_aliases(input, aliases))
-                .collect::<Vec<_>>()
-                .join(" && ")
-        ),
-        ScalarPredicate::Logic { operation, inputs } => {
-            let left = scalar_predicate_wgsl_with_aliases(&inputs[0], aliases);
-            match operation {
-                LogicOperation::And => {
-                    format!(
-                        "({left} && {})",
-                        scalar_predicate_wgsl_with_aliases(&inputs[1], aliases)
-                    )
+    fn render(predicate: &ScalarPredicate) -> String {
+        match predicate {
+            ScalarPredicate::Value(value) => format!("({} != 0.0)", scalar_operand_wgsl(*value)),
+            ScalarPredicate::IsFinite(value) => {
+                format!("(abs({}) <= 3.402823466e38)", scalar_operand_wgsl(*value))
+            }
+            ScalarPredicate::AbsoluteDifferenceWithin {
+                left,
+                right,
+                tolerance,
+            } => format!(
+                "(abs(({}) - ({})) <= ({}))",
+                scalar_operand_wgsl(*left),
+                scalar_operand_wgsl(*right),
+                scalar_operand_wgsl(*tolerance)
+            ),
+            ScalarPredicate::Compare {
+                operation,
+                left,
+                right,
+            } => format!(
+                "(({}) {} ({}))",
+                scalar_operand_wgsl(*left),
+                comparison_wgsl(*operation),
+                scalar_operand_wgsl(*right)
+            ),
+            ScalarPredicate::All(inputs) => format!(
+                "({})",
+                inputs.iter().map(render).collect::<Vec<_>>().join(" && ")
+            ),
+            ScalarPredicate::Logic { operation, inputs } => {
+                let left = render(&inputs[0]);
+                match operation {
+                    LogicOperation::And => {
+                        format!("({left} && {})", render(&inputs[1]))
+                    }
+                    LogicOperation::Or => {
+                        format!("({left} || {})", render(&inputs[1]))
+                    }
+                    LogicOperation::Xor => {
+                        format!("({left} != {})", render(&inputs[1]))
+                    }
+                    LogicOperation::Not => format!("(!{left})"),
                 }
-                LogicOperation::Or => {
-                    format!(
-                        "({left} || {})",
-                        scalar_predicate_wgsl_with_aliases(&inputs[1], aliases)
-                    )
-                }
-                LogicOperation::Xor => {
-                    format!(
-                        "({left} != {})",
-                        scalar_predicate_wgsl_with_aliases(&inputs[1], aliases)
-                    )
-                }
-                LogicOperation::Not => format!("(!{left})"),
             }
         }
     }
+    render(predicate)
 }
 
 fn scalar_computation_wgsl(computation: &ScalarComputation) -> String {
@@ -304,223 +284,6 @@ fn scalar_computation_wgsl(computation: &ScalarComputation) -> String {
             expression
         }
     }
-}
-
-enum FastWgslInstruction {
-    Alias(ScalarOperand),
-    Expression(String),
-}
-
-enum FastSumTerm {
-    Product(String, String),
-    Value(String),
-}
-
-fn resolve_fast_operand(
-    mut operand: ScalarOperand,
-    aliases: &BTreeMap<usize, ScalarOperand>,
-) -> ScalarOperand {
-    let mut seen = BTreeSet::new();
-    while let ScalarOperand::Register(register) = operand {
-        if !seen.insert(register) {
-            break;
-        }
-        let Some(next) = aliases.get(&register).copied() else {
-            break;
-        };
-        operand = next;
-    }
-    operand
-}
-
-fn fast_operand_wgsl(operand: ScalarOperand, aliases: &BTreeMap<usize, ScalarOperand>) -> String {
-    scalar_operand_wgsl(resolve_fast_operand(operand, aliases))
-}
-
-fn fast_wgsl_instruction(
-    computation: &ScalarComputation,
-    aliases: &BTreeMap<usize, ScalarOperand>,
-) -> FastWgslInstruction {
-    match computation {
-        ScalarComputation::Copy(input) => {
-            FastWgslInstruction::Alias(resolve_fast_operand(*input, aliases))
-        }
-        ScalarComputation::Negate(input) => {
-            let input = resolve_fast_operand(*input, aliases);
-            match input {
-                ScalarOperand::Constant(value) => {
-                    FastWgslInstruction::Alias(ScalarOperand::Constant(-value))
-                }
-                _ => FastWgslInstruction::Expression(format!("-({})", scalar_operand_wgsl(input))),
-            }
-        }
-        ScalarComputation::Absolute(input) => {
-            let input = resolve_fast_operand(*input, aliases);
-            match input {
-                ScalarOperand::Constant(value) => {
-                    FastWgslInstruction::Alias(ScalarOperand::Constant(value.abs()))
-                }
-                _ => {
-                    FastWgslInstruction::Expression(format!("abs({})", scalar_operand_wgsl(input)))
-                }
-            }
-        }
-        ScalarComputation::Elementwise { operation, inputs } => {
-            let inputs = inputs
-                .iter()
-                .map(|input| resolve_fast_operand(*input, aliases))
-                .collect::<Vec<_>>();
-            match operation {
-                ElementwiseOperation::Identity => FastWgslInstruction::Alias(inputs[0]),
-                ElementwiseOperation::Binary(operation) => {
-                    if let Some(alias) = simplify_fast_binary(*operation, inputs[0], inputs[1]) {
-                        FastWgslInstruction::Alias(alias)
-                    } else {
-                        FastWgslInstruction::Expression(format!(
-                            "({})",
-                            super::wgsl_elementwise_expression(
-                                ElementwiseOperation::Binary(*operation),
-                                &inputs
-                                    .iter()
-                                    .map(|input| scalar_operand_wgsl(*input))
-                                    .collect::<Vec<_>>(),
-                            )
-                        ))
-                    }
-                }
-                ElementwiseOperation::Unary(operation) => {
-                    if let ScalarOperand::Constant(value) = inputs[0] {
-                        FastWgslInstruction::Alias(ScalarOperand::Constant(operation.apply(value)))
-                    } else {
-                        FastWgslInstruction::Expression(super::wgsl_elementwise_expression(
-                            ElementwiseOperation::Unary(*operation),
-                            &[scalar_operand_wgsl(inputs[0])],
-                        ))
-                    }
-                }
-                ElementwiseOperation::Atan2 => {
-                    if let (ScalarOperand::Constant(left), ScalarOperand::Constant(right)) =
-                        (inputs[0], inputs[1])
-                    {
-                        FastWgslInstruction::Alias(ScalarOperand::Constant(left.atan2(right)))
-                    } else {
-                        FastWgslInstruction::Expression(super::wgsl_elementwise_expression(
-                            *operation,
-                            &inputs
-                                .iter()
-                                .map(|input| scalar_operand_wgsl(*input))
-                                .collect::<Vec<_>>(),
-                        ))
-                    }
-                }
-            }
-        }
-        ScalarComputation::SumProducts(terms) => {
-            let mut sum_terms = Vec::new();
-            for (left, right) in terms {
-                let left = resolve_fast_operand(*left, aliases);
-                let right = resolve_fast_operand(*right, aliases);
-                if is_zero_fast(left) || is_zero_fast(right) {
-                    continue;
-                }
-                match (left, right) {
-                    (ScalarOperand::Constant(left), ScalarOperand::Constant(right)) => {
-                        sum_terms.push(FastSumTerm::Value(super::format_wgsl_f32(left * right)));
-                    }
-                    (ScalarOperand::Constant(1.0), value)
-                    | (value, ScalarOperand::Constant(1.0)) => {
-                        sum_terms.push(FastSumTerm::Value(scalar_operand_wgsl(value)));
-                    }
-                    (left, right) => {
-                        sum_terms.push(FastSumTerm::Product(
-                            scalar_operand_wgsl(left),
-                            scalar_operand_wgsl(right),
-                        ));
-                    }
-                }
-            }
-            if sum_terms.is_empty() {
-                FastWgslInstruction::Alias(ScalarOperand::Constant(0.0))
-            } else {
-                let mut expression = match sum_terms.remove(0) {
-                    FastSumTerm::Product(left, right) => format!("({left} * {right})"),
-                    FastSumTerm::Value(value) => value,
-                };
-                for term in sum_terms {
-                    expression = match term {
-                        FastSumTerm::Product(left, right) => {
-                            format!("fma({left}, {right}, {expression})")
-                        }
-                        FastSumTerm::Value(value) => format!("({expression} + {value})"),
-                    };
-                }
-                FastWgslInstruction::Expression(expression)
-            }
-        }
-        ScalarComputation::IsFinite(input) => FastWgslInstruction::Expression(format!(
-            "select(0.0, 1.0, abs({}) <= 3.402823466e38)",
-            fast_operand_wgsl(*input, aliases)
-        )),
-        ScalarComputation::Compare {
-            operation,
-            left,
-            right,
-        } => FastWgslInstruction::Expression(format!(
-            "select(0.0, 1.0, ({}) {} ({}))",
-            fast_operand_wgsl(*left, aliases),
-            comparison_wgsl(*operation),
-            fast_operand_wgsl(*right, aliases)
-        )),
-        ScalarComputation::Logic { operation, inputs } => {
-            let left = format!("({} != 0.0)", fast_operand_wgsl(inputs[0], aliases));
-            let condition = match operation {
-                LogicOperation::And => format!(
-                    "{left} && ({} != 0.0)",
-                    fast_operand_wgsl(inputs[1], aliases)
-                ),
-                LogicOperation::Or => format!(
-                    "{left} || ({} != 0.0)",
-                    fast_operand_wgsl(inputs[1], aliases)
-                ),
-                LogicOperation::Xor => format!(
-                    "{left} != ({} != 0.0)",
-                    fast_operand_wgsl(inputs[1], aliases)
-                ),
-                LogicOperation::Not => format!("(!{left})"),
-            };
-            FastWgslInstruction::Expression(format!("select(0.0, 1.0, {condition})"))
-        }
-    }
-}
-
-fn is_zero_fast(operand: ScalarOperand) -> bool {
-    matches!(operand, ScalarOperand::Constant(value) if value == 0.0)
-}
-
-fn simplify_fast_binary(
-    operation: BinaryOperation,
-    left: ScalarOperand,
-    right: ScalarOperand,
-) -> Option<ScalarOperand> {
-    if let (ScalarOperand::Constant(left), ScalarOperand::Constant(right)) = (left, right) {
-        return Some(ScalarOperand::Constant(operation.apply(left, right)));
-    }
-    match operation {
-        BinaryOperation::Add if is_zero_fast(right) => Some(left),
-        BinaryOperation::Add if is_zero_fast(left) => Some(right),
-        BinaryOperation::Subtract if is_zero_fast(right) => Some(left),
-        BinaryOperation::Multiply if is_zero_fast(left) || is_zero_fast(right) => {
-            Some(ScalarOperand::Constant(0.0))
-        }
-        BinaryOperation::Multiply if is_one_fast(left) => Some(right),
-        BinaryOperation::Multiply if is_one_fast(right) => Some(left),
-        BinaryOperation::Divide if is_one_fast(right) => Some(left),
-        _ => None,
-    }
-}
-
-fn is_one_fast(operand: ScalarOperand) -> bool {
-    matches!(operand, ScalarOperand::Constant(value) if value == 1.0)
 }
 
 fn collect_operand_register(operand: ScalarOperand, registers: &mut BTreeSet<usize>) {
@@ -2934,7 +2697,6 @@ fn generate_wgsl(
         states,
         constraints,
         None,
-        true,
         false,
     )
 }
@@ -2954,7 +2716,6 @@ fn generate_wgsl_unchecked(
         states,
         &[],
         None,
-        true,
         false,
     )
 }
@@ -2977,7 +2738,6 @@ fn generate_wgsl_fused(
         states,
         &[],
         Some(turns),
-        true,
         false,
     )
 }
@@ -2999,7 +2759,6 @@ fn generate_wgsl_unchecked_in_place(
         &[],
         None,
         true,
-        true,
     )
 }
 
@@ -3011,7 +2770,6 @@ fn generate_wgsl_with_turns(
     states: &[BatchedState],
     constraints: &[BatchedConstraint],
     fused_turns: Option<u32>,
-    optimize_unchecked: bool,
     in_place_state: bool,
 ) -> String {
     let mut shader = String::from("// Generic fixed-shape Mech batch kernel.\n");
@@ -3090,44 +2848,13 @@ fn generate_wgsl_with_turns(
             "  for (var mech_turn = 0u; mech_turn < {turns}u; mech_turn = mech_turn + 1u) {{\n"
         ));
     }
-    let mut aliases = BTreeMap::new();
-    let mut expression_aliases = BTreeMap::<String, ScalarOperand>::new();
     for instruction in instructions {
-        if optimize_unchecked {
-            match fast_wgsl_instruction(&instruction.computation, &aliases) {
-                FastWgslInstruction::Alias(operand) => {
-                    aliases.insert(instruction.output, operand);
-                    continue;
-                }
-                FastWgslInstruction::Expression(expression) => {
-                    // All scalar computations are pure. Reuse an identical
-                    // expression instead of asking the backend to rediscover
-                    // common subexpressions across the lowered instruction
-                    // stream (matrix products commonly repeat these terms).
-                    if let Some(operand) = expression_aliases.get(&expression).copied() {
-                        aliases.insert(instruction.output, operand);
-                        continue;
-                    }
-                    expression_aliases.insert(
-                        expression.clone(),
-                        ScalarOperand::Register(instruction.output),
-                    );
-                    shader.push_str(&format!(
-                        "  {}let r{} = {};\n",
-                        if fused_turns.is_some() { "  " } else { "" },
-                        instruction.output,
-                        expression
-                    ));
-                }
-            }
-        } else {
-            shader.push_str(&format!(
-                "  {}let r{} = {};\n",
-                if fused_turns.is_some() { "  " } else { "" },
-                instruction.output,
-                scalar_computation_wgsl(&instruction.computation)
-            ));
-        }
+        shader.push_str(&format!(
+            "  {}let r{} = {};\n",
+            if fused_turns.is_some() { "  " } else { "" },
+            instruction.output,
+            scalar_computation_wgsl(&instruction.computation)
+        ));
     }
     if fused_turns.is_some() {
         // Evaluate every component before assigning any state register. This
@@ -3139,7 +2866,7 @@ fn generate_wgsl_with_turns(
                     "    let next_state_{}_{} = {};\n",
                     state.slot.get(),
                     component,
-                    fast_operand_wgsl(*source, &aliases)
+                    scalar_operand_wgsl(*source)
                 ));
             }
         }
@@ -3178,11 +2905,7 @@ fn generate_wgsl_with_turns(
                 let code = index + 1;
                 shader.push_str(&format!(
                     "  if (integrity_code == 0u && !{}) {{ integrity_code = {code}u; }}\n",
-                    if optimize_unchecked {
-                        scalar_predicate_wgsl_with_aliases(&constraint.predicate, &aliases)
-                    } else {
-                        scalar_predicate_wgsl(&constraint.predicate)
-                    }
+                    scalar_predicate_wgsl(&constraint.predicate)
                 ));
             }
             shader.push_str(
@@ -3201,11 +2924,7 @@ fn generate_wgsl_with_turns(
                     state_name,
                     state.shape.elements(),
                     component,
-                    if optimize_unchecked {
-                        fast_operand_wgsl(*source, &aliases)
-                    } else {
-                        scalar_operand_wgsl(*source)
-                    }
+                    scalar_operand_wgsl(*source)
                 ));
             }
         }

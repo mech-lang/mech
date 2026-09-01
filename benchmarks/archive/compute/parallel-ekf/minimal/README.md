@@ -102,7 +102,7 @@ The control is opt-in so it cannot silently replace the published Futhark
 worker-count rows:
 
 ```text
-python3 minimal/measure.py --futhark-ispc-scalarized \
+ISPCFLAGS='-O3 --woff --opt=disable-fma' python3 minimal/measure.py --futhark-ispc-scalarized \
   --instances 10000 --turns 20 --samples 5
 ```
 
@@ -114,7 +114,7 @@ The fused reference controls use the same boundary as Mech's unchecked block:
 each worker loads its assigned filters once, advances all turns locally, and
 publishes one final state. Rust's packed SIMD control, Julia's eight-thread
 SIMD control, and NumPy/Numba's `prange` control all expose this mode through
-the fourth command-line argument (`fused` or `fused-fast`). The final state is
+the fourth command-line argument (`fused`). The final state is
 observable after the block; per-turn host observation requires the ordinary
 synchronous mode. Raw measurements are retained in
 `results/apple-m1-fused-reference-controls-2026-08-31.json`.
@@ -134,6 +134,5 @@ rust-simd 500000 40 unchecked fused 8
 ```
 
 The fourth argument selects the fused boundary; omit it for the observable
-per-turn loop. NumPy/Numba also accepts `fused-fast` as an explicit unchecked
-fast-math control, whose checksum is retained separately because it is not
-strictly identical to the f32 result.
+per-turn loop. All controls use their normal arithmetic policy; there is no
+relaxed-math benchmark lane.

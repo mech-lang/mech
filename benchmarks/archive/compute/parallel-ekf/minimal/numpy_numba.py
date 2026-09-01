@@ -198,22 +198,12 @@ def dispatch_fused(x0, x1, x2, p, velocity, angular_velocity, bearing, turns, ch
     return faults
 
 
-# Keep fast math an explicit unchecked-only control. Reusing the Python body
-# avoids a second source listing while giving Numba a separate compilation
-# policy, matching Mech's unchecked fast-math lane without weakening checked
-# validation.
-dispatch_fused_fast = njit(parallel=True, fastmath=True)(dispatch_fused.py_func)
-
-
 def main():
     n = max(1, int(sys.argv[1])) if len(sys.argv) > 1 else 10000
     turns = max(1, int(sys.argv[2])) if len(sys.argv) > 2 else 20
     checked = len(sys.argv) > 3 and sys.argv[3].lower() == "checked"
     mode = sys.argv[4].lower() if len(sys.argv) > 4 else "per-turn"
-    fused = mode in ("fused", "batched", "unchecked-batched", "fused-fast")
-    fused_fast = mode == "fused-fast"
-    if fused_fast and checked:
-        raise ValueError("fused-fast is an unchecked-only control")
+    fused = mode in ("fused", "batched", "unchecked-batched")
     phase = np.float32(2 * np.pi) * np.arange(n, dtype=np.float32) / np.float32(n)
     velocity = np.float32(1) + np.float32(0.05) * np.sin(phase * np.float32(3))
     angular_velocity = np.float32(0.015) * (np.float32(1) + np.float32(0.1) * np.sin(phase * np.float32(2)))
@@ -222,7 +212,7 @@ def main():
     x1 = np.full(n, np.float32(25))
     x2 = np.full(n, np.float32(0.4))
     p = [np.full(n, np.float32(100) if j in (0, 4) else np.float32(0.15) if j == 8 else np.float32(0)) for j in range(9)]
-    run = dispatch_fused_fast if fused_fast else dispatch_fused if fused else dispatch
+    run = dispatch_fused if fused else dispatch
     run(x0, x1, x2, p, velocity, angular_velocity, bearing, 5, checked)
     x0.fill(55)
     x1.fill(25)
@@ -242,7 +232,6 @@ def main():
     print(f"checksum: {checksum:.9f}")
     print(f"validation: {'checked' if checked else 'unchecked'}")
     print(f"synchronization: {'once after fused block' if fused else 'per-turn'}")
-    print(f"math: {'fast' if fused_fast else 'strict'}")
     print(f"faults: {int(faults.sum())}")
 
 

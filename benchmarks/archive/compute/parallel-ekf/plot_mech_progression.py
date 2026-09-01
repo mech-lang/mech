@@ -43,9 +43,7 @@ def load_rows(cross: dict, runtime: dict, native: dict, historical: dict) -> lis
         row("resident scalar CPU", scalar_values["Mech scalar"], None),
         row("resident SIMD CPU (4 lanes)", scalar_values["Mech SIMD"], None),
         row("Cranelift JIT", scalar_values["Mech Cranelift JIT"], scalar_values["Mech Cranelift JIT unchecked"]),
-        row("Cranelift JIT, checked-fast / unchecked-fast", scalar_values["Mech Cranelift JIT checked fast"], scalar_values["Mech Cranelift JIT unchecked fast"]),
         row("Cranelift SIMD-JIT", scalar_values["Mech Cranelift SIMD-JIT"], scalar_values["Mech Cranelift SIMD-JIT unchecked"]),
-        row("Cranelift SIMD-JIT, checked-fast / unchecked-fast", scalar_values["Mech Cranelift SIMD-JIT checked fast"], scalar_values["Mech Cranelift SIMD-JIT unchecked fast"]),
         row(
             "Cranelift SIMD-JIT, 8 workers",
             runtime_rows["Mech SIMD/JIT CPU, checked (8 workers)"]["throughput_millions"],

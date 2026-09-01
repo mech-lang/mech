@@ -488,10 +488,10 @@ and parallel outer loop.
 | Unchecked, eight workers | 94.381 |
 | Checked, eight workers | 82.607 |
 
-The same resident Mech artifact on this checkout measured approximately 41.2M
-unchecked-fast and 36.1M checked-fast turns/s through the four-lane Cranelift
-SIMD-JIT path in one benchmark process. These are directional comparisons,
-not a claim that Taichi's one-worker mode is a hand-written SIMD kernel:
+The same resident Mech artifact on this checkout measured approximately 37.7M
+unchecked and 30.8M checked turns/s through the four-lane Cranelift SIMD-JIT
+path in one benchmark process. These are directional comparisons, not a claim
+that Taichi's one-worker mode is a hand-written SIMD kernel:
 Taichi receives an explicit `for i in range(N)` and lets LLVM decide its CPU
 parallel/vector lowering, while Mech's SIMD lane width is explicit. Use the
 worker count and synchronization policy in the result table whenever comparing
@@ -858,10 +858,8 @@ the runner.
 
 At the runner's 10,000-filter/20-turn setting, five isolated Julia intrinsic
 processes measured a median of `31.34M` checked and `32.54M` unchecked
-lane-turns/s. Five corresponding Mech SIMD-JIT processes measured `31.16M`
-checked-fast and `32.65M` unchecked-fast. The remaining difference is within
-normal process noise; this is now the relevant performance target for the
-SIMD-capable path, not the sequential `19M` result.
+lane-turns/s. Five corresponding Mech SIMD-JIT processes measured the ordinary
+checked and unchecked paths; no relaxed arithmetic lane is reported.
 
 ## Rust packed-lane control and current cross-language chart
 
@@ -892,8 +890,8 @@ SIMD-JIT Mech executor from the current branch:
 | Rust fixed-shape scalar | unchecked | 16.69 |
 | Rust packed `wide::f32x4` | checked | 25.68 |
 | Rust packed `wide::f32x4` | unchecked | 20.87 |
-| Mech Cranelift SIMD-JIT | checked-fast | 37.21 |
-| Mech Cranelift SIMD-JIT | unchecked-fast | 41.34 |
+| Mech Cranelift SIMD-JIT | checked | 30.8 |
+| Mech Cranelift SIMD-JIT | unchecked | 37.7 |
 | Julia `SIMD.jl Vec{4,Float32}` | checked | 31.18 |
 | Julia `SIMD.jl Vec{4,Float32}` | unchecked | 32.87 |
 | NumPy vectorized fixed-shape | checked | 10.69 |
@@ -914,48 +912,8 @@ python3 plot.py results/apple-m1-simd-cross-language-2026-08-30.json results/app
 python3 plot.py --checked-only results/apple-m1-checked-cross-language-2026-08-31.json results/apple-m1-checked-cross-language-2026-08-31.svg
 ```
 
-## What "checked-fast" means
-
-The latest one-worker SIMD-JIT rerun is recorded in
-[`results/apple-m1-mech-simd-unchecked-2026-09-01.md`](results/apple-m1-mech-simd-unchecked-2026-09-01.md).
-It reports the ordinary unchecked artifact separately from the opt-in
-unchecked-fast lowering:
-
-| Mech SIMD-JIT path | Contract | Median M EKF-turns/s |
-| --- | --- | ---: |
-| Strict checked | candidate validation and retained-state publication | 33.327 |
-| Checked-fast | checked publication with limited algebraic simplification | 38.655 |
-| Ordinary unchecked | no integrity predicates; normal arithmetic policy | 40.234 |
-| Unchecked-fast | no integrity predicates plus algebraic simplification | 42.497 |
-
-The fast rows are not the default checked numbers. They are a separate
-numeric policy. Futhark's bounded control performs a comparable source-level
-optimization by scalarizing the fixed matrix products and deleting known zero
-terms before its ISPC backend vectorizes the map; it does not imply that the
-two systems expose the same runtime guarantees. The fair strict comparison is
-Mech checked versus Futhark checked, and the fair unchecked comparison is
-Mech ordinary unchecked versus Futhark unchecked.
-
-The Rust control currently has ordinary `checked` and `unchecked` modes. It
-does not have a Rust-specific `checked-fast` mode because that would be a new
-floating-point policy, not a free compiler switch. The Mech checked-fast path
-keeps candidate validation, rollback, and fault reporting, but permits a
-small set of arithmetic simplifications that are only valid under finite
-inputs. It is **not** equivalent to applying unrestricted `-ffast-math`.
-
-Unrestricted fast math can reassociate operations, contract multiplies and
-adds, treat NaNs or infinities as impossible, change signed-zero behavior, and
-replace transcendental functions with lower-accuracy approximations. In this
-EKF, those changes can alter a residual, make a covariance fail symmetry or
-positivity, or worse, hide an exceptional operand (for example, replacing
-`0 * NaN` with `0`) before the integrity check sees it. A checked wrapper does
-not make those arithmetic transformations safe by itself.
-
-A defensible checked-fast policy is possible: validate all external and state
-inputs before entering the fast region, restrict transformations to proofs
-that hold for finite operands, retain the candidate finite/diagonal/symmetry
-checks, and fall back to strict recomputation when the fast candidate fails.
-The fallback must be armed before publication, and the fast path must not
-silently erase NaN/Inf evidence. That policy is the next step if we want a
-Rust checked-fast row; the current chart deliberately reports the measured
-Rust checked row instead of inventing one.
+All current controls use their normal arithmetic policy. In particular, the
+Futhark ISPC reproduction is compiled with `ISPCFLAGS='-O3 --woff
+--opt=disable-fma'`; this prevents default ISPC FMA contraction from being
+mistaken for a strict result. Older rows that used default ISPC contraction
+are historical evidence and are excluded from current comparisons.

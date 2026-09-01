@@ -378,14 +378,6 @@ def main() -> None:
         )
         for label, pattern in (
             ("Mech Cranelift SIMD-JIT", r"Mech Cranelift SIMD-JIT throughput: ([0-9.]+) million"),
-            (
-                "Mech Cranelift SIMD-JIT checked fast",
-                r"Mech Cranelift SIMD-JIT checked fast throughput: ([0-9.]+) million",
-            ),
-            (
-                "Mech Cranelift SIMD-JIT unchecked fast",
-                r"Mech Cranelift SIMD-JIT unchecked fast throughput: ([0-9.]+) million",
-            ),
         ):
             scalar[label] = (
                 statistics.median(number(text, pattern) for text in scalar_mech_outputs)
@@ -400,11 +392,6 @@ def main() -> None:
                 "Mech Cranelift SIMD-JIT parallel",
                 r"Mech Cranelift SIMD-JIT parallel throughput: ([0-9.]+) million",
                 r"Mech Cranelift SIMD-JIT parallel checksum: ([0-9.eE+-]+)",
-            ),
-            (
-                "Mech Cranelift SIMD-JIT parallel unchecked fast",
-                r"Mech Cranelift SIMD-JIT parallel unchecked fast throughput: ([0-9.]+) million",
-                r"Mech Cranelift SIMD-JIT parallel unchecked fast checksum: ([0-9.eE+-]+)",
             ),
         ):
             scalar[label] = (
@@ -444,20 +431,6 @@ def main() -> None:
             ),
             "Mech Cranelift SIMD-JIT": statistics.median(
                 number(text, r"Mech Cranelift SIMD-JIT throughput: ([0-9.]+) million")
-                for text in backend_mech_outputs
-            ),
-            "Mech Cranelift SIMD-JIT checked fast": statistics.median(
-                number(
-                    text,
-                    r"Mech Cranelift SIMD-JIT checked fast throughput: ([0-9.]+) million",
-                )
-                for text in backend_mech_outputs
-            ),
-            "Mech Cranelift SIMD-JIT unchecked fast": statistics.median(
-                number(
-                    text,
-                    r"Mech Cranelift SIMD-JIT unchecked fast throughput: ([0-9.]+) million",
-                )
                 for text in backend_mech_outputs
             ),
             "Mech SIMD (4xf32)": statistics.median(

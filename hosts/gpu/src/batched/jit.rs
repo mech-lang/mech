@@ -3,9 +3,9 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::{mem, sync::Arc, thread};
 
 #[cfg(target_arch = "aarch64")]
-use core::arch::aarch64::{float32x4_t, vst1q_f32};
+use core::arch::aarch64::{float32x4_t, vld1q_f32, vst1q_f32};
 #[cfg(target_arch = "x86_64")]
-use core::arch::x86_64::{__m128, _mm_storeu_ps};
+use core::arch::x86_64::{__m128, _mm_loadu_ps, _mm_storeu_ps};
 
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, MemFlags, StackSlotData, StackSlotKind, Type, UserFuncName, Value,
@@ -223,7 +223,6 @@ pub struct BatchedJitCpuSession {
     program: Arc<FixedShapeKernel>,
     kernel: NativeKernel,
     checked: bool,
-    fast_math: bool,
     inputs: BTreeMap<CellSlotId, Vec<f32>>,
     input_broadcast: Vec<bool>,
     state: BTreeMap<CellSlotId, Vec<f32>>,
@@ -244,7 +243,6 @@ pub struct BatchedJitSimdCpuSession {
     kernel: NativeSimdKernel,
     parallel_pool: Option<ParallelWorkerPool>,
     checked: bool,
-    fast_math: bool,
     inputs: BTreeMap<CellSlotId, Vec<f32>>,
     packed_inputs: BTreeMap<CellSlotId, Vec<f32>>,
     input_broadcast: Vec<bool>,
@@ -264,7 +262,7 @@ impl FixedShapeKernel {
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
-        self.prepare_jit_cpu_with_validation(inputs, true, false)
+        self.prepare_jit_cpu_with_validation(inputs, true)
     }
 
     /// Prepares a JIT session without integrity predicates. Invalid candidate
@@ -274,28 +272,7 @@ impl FixedShapeKernel {
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
-        self.prepare_jit_cpu_with_validation(inputs, false, false)
-    }
-
-    /// Prepares a JIT session with integrity predicates disabled and algebraic
-    /// zero-term elimination enabled. This mode does not preserve IEEE NaN
-    /// propagation through zero products; callers must accept that weaker
-    /// numeric guarantee in addition to unchecked publication.
-    pub fn prepare_jit_cpu_unchecked_fast(
-        &self,
-        inputs: &BTreeMap<String, Vec<f32>>,
-    ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
-        self.prepare_jit_cpu_with_validation(inputs, false, true)
-    }
-
-    /// Prepares a checked JIT session with algebraic zero-term elimination.
-    /// Rollback and all declared integrity predicates remain enabled, but
-    /// IEEE NaN propagation through eliminated zero products is not preserved.
-    pub fn prepare_jit_cpu_checked_fast(
-        &self,
-        inputs: &BTreeMap<String, Vec<f32>>,
-    ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
-        self.prepare_jit_cpu_with_validation(inputs, true, true)
+        self.prepare_jit_cpu_with_validation(inputs, false)
     }
 
     /// Prepares the lane-vectorized JIT session.  The first implementation
@@ -306,7 +283,7 @@ impl FixedShapeKernel {
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BatchedJitSimdCpuSession, BatchedExecutionError> {
-        self.prepare_jit_simd_cpu_with_validation(inputs, true, false)
+        self.prepare_jit_simd_cpu_with_validation(inputs, true)
     }
 
     /// Prepares an unchecked lane-vectorized JIT session.
@@ -314,33 +291,13 @@ impl FixedShapeKernel {
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BatchedJitSimdCpuSession, BatchedExecutionError> {
-        self.prepare_jit_simd_cpu_with_validation(inputs, false, false)
-    }
-
-    /// Prepares a checked lane-vectorized JIT session with algebraic
-    /// zero-term elimination.  This has the same weakened NaN propagation as
-    /// [`Self::prepare_jit_cpu_checked_fast`].
-    pub fn prepare_jit_simd_cpu_checked_fast(
-        &self,
-        inputs: &BTreeMap<String, Vec<f32>>,
-    ) -> Result<BatchedJitSimdCpuSession, BatchedExecutionError> {
-        self.prepare_jit_simd_cpu_with_validation(inputs, true, true)
-    }
-
-    /// Prepares an unchecked lane-vectorized JIT session with algebraic
-    /// zero-term elimination.
-    pub fn prepare_jit_simd_cpu_unchecked_fast(
-        &self,
-        inputs: &BTreeMap<String, Vec<f32>>,
-    ) -> Result<BatchedJitSimdCpuSession, BatchedExecutionError> {
-        self.prepare_jit_simd_cpu_with_validation(inputs, false, true)
+        self.prepare_jit_simd_cpu_with_validation(inputs, false)
     }
 
     fn prepare_jit_cpu_with_validation(
         &self,
         provided_inputs: &BTreeMap<String, Vec<f32>>,
         checked: bool,
-        fast_math: bool,
     ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
         let input_broadcast = self
             .inputs
@@ -357,7 +314,7 @@ impl FixedShapeKernel {
             .iter()
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
-        let kernel = NativeKernel::compile(self, checked, &input_broadcast, fast_math)?;
+        let kernel = NativeKernel::compile(self, checked, &input_broadcast)?;
         let input_pointers = self
             .inputs
             .iter()
@@ -367,7 +324,6 @@ impl FixedShapeKernel {
             program: Arc::new(self.clone()),
             kernel,
             checked,
-            fast_math,
             inputs,
             input_broadcast,
             state,
@@ -385,7 +341,6 @@ impl FixedShapeKernel {
         &self,
         provided_inputs: &BTreeMap<String, Vec<f32>>,
         checked: bool,
-        fast_math: bool,
     ) -> Result<BatchedJitSimdCpuSession, BatchedExecutionError> {
         if self.instances as usize % SIMD_JIT_LANES != 0 {
             return Err(BatchedExecutionError::Native(format!(
@@ -435,7 +390,7 @@ impl FixedShapeKernel {
                 .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
                 .collect()
         });
-        let kernel = NativeSimdKernel::compile(self, checked, &input_broadcast, fast_math)?;
+        let kernel = NativeSimdKernel::compile(self, checked, &input_broadcast)?;
         let input_pointers = self
             .inputs
             .iter()
@@ -446,7 +401,6 @@ impl FixedShapeKernel {
             kernel,
             parallel_pool: None,
             checked,
-            fast_math,
             inputs,
             packed_inputs,
             input_broadcast,
@@ -494,12 +448,8 @@ impl BatchedJitCpuSession {
             .map(|input| self.inputs[&input.slot].as_ptr())
             .collect();
         if recompile {
-            self.kernel = NativeKernel::compile(
-                &self.program,
-                self.checked,
-                &self.input_broadcast,
-                self.fast_math,
-            )?;
+            self.kernel =
+                NativeKernel::compile(&self.program, self.checked, &self.input_broadcast)?;
         }
         Ok(())
     }
@@ -603,12 +553,8 @@ impl BatchedJitSimdCpuSession {
             .map(|input| self.packed_inputs[&input.slot].as_ptr())
             .collect();
         if recompile {
-            self.kernel = NativeSimdKernel::compile(
-                &self.program,
-                self.checked,
-                &self.input_broadcast,
-                self.fast_math,
-            )?;
+            self.kernel =
+                NativeSimdKernel::compile(&self.program, self.checked, &self.input_broadcast)?;
         }
         Ok(())
     }
@@ -798,7 +744,7 @@ impl BatchedJitSimdCpuSession {
     /// This is the CPU analogue of Futhark's fixed `main_unchecked` entry
     /// point: no integrity publication occurs inside the block, while the
     /// public session still exposes the resulting state at its boundary.
-    pub fn dispatch_turns_parallel_unchecked_fast(
+    pub fn dispatch_turns_parallel_unchecked(
         &mut self,
         turns: u32,
         workers: usize,
@@ -930,7 +876,6 @@ impl NativeKernel {
         program: &FixedShapeKernel,
         checked: bool,
         input_broadcast: &[bool],
-        fast_math: bool,
     ) -> Result<Self, BatchedExecutionError> {
         let mut jit_builder =
             JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
@@ -1192,8 +1137,14 @@ impl NativeKernel {
             debug_assert_eq!(loop_base_index, header_params.len());
             let instructions = &program.fixed_ir().instructions;
             let mut paired_outputs = BTreeSet::new();
+            let mut common_values = BTreeMap::<String, NativeRegister>::new();
             for (instruction_index, instruction) in instructions.iter().enumerate() {
                 if paired_outputs.remove(&instruction.output) {
+                    continue;
+                }
+                let computation_key = format!("{:?}", instruction.computation);
+                if let Some(value) = common_values.get(&computation_key).copied() {
+                    registers[instruction.output] = Some(value);
                     continue;
                 }
                 if let Some((partner_index, current_is_sin, operand)) =
@@ -1207,6 +1158,11 @@ impl NativeKernel {
                     registers[instruction.output] = Some(NativeRegister::F32(current));
                     registers[instructions[partner_index].output] =
                         Some(NativeRegister::F32(partner));
+                    common_values.insert(computation_key, NativeRegister::F32(current));
+                    common_values.insert(
+                        format!("{:?}", instructions[partner_index].computation),
+                        NativeRegister::F32(partner),
+                    );
                     paired_outputs.insert(instructions[partner_index].output);
                     continue;
                 }
@@ -1216,9 +1172,9 @@ impl NativeKernel {
                     &registers,
                     functions,
                     &constant_values,
-                    fast_math,
                 )?;
                 registers[instruction.output] = Some(value);
+                common_values.insert(computation_key, value);
             }
             let constraint_result = if checked {
                 let mut constraint_code = builder.ins().iconst(types::I32, 0);
@@ -1315,7 +1271,6 @@ impl NativeSimdKernel {
         program: &FixedShapeKernel,
         checked: bool,
         input_broadcast: &[bool],
-        fast_math: bool,
     ) -> Result<Self, BatchedExecutionError> {
         let mut jit_builder =
             JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
@@ -1331,10 +1286,15 @@ impl NativeSimdKernel {
         let simd_unary_signature = {
             let mut signature = module.make_signature();
             #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
-            signature.params.push(AbiParam::new(types::F32X4));
-            signature.params.push(AbiParam::new(pointer_type));
+            {
+                signature.params.push(AbiParam::new(types::F32X4));
+                signature.returns.push(AbiParam::new(types::F32X4));
+            }
             #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-            signature.params.push(AbiParam::new(pointer_type));
+            {
+                signature.params.push(AbiParam::new(pointer_type));
+                signature.params.push(AbiParam::new(pointer_type));
+            }
             signature
         };
         let simd_binary_signature = {
@@ -1343,22 +1303,30 @@ impl NativeSimdKernel {
             {
                 signature.params.push(AbiParam::new(types::F32X4));
                 signature.params.push(AbiParam::new(types::F32X4));
+                signature.returns.push(AbiParam::new(types::F32X4));
             }
             #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-            signature.params.push(AbiParam::new(pointer_type));
-            #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-            signature.params.push(AbiParam::new(pointer_type));
-            signature.params.push(AbiParam::new(pointer_type));
+            {
+                signature.params.push(AbiParam::new(pointer_type));
+                signature.params.push(AbiParam::new(pointer_type));
+                signature.params.push(AbiParam::new(pointer_type));
+            }
             signature
         };
         let simd_sincos_signature = {
             let mut signature = module.make_signature();
             #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
-            signature.params.push(AbiParam::new(types::F32X4));
+            {
+                signature.params.push(AbiParam::new(types::F32X4));
+                signature.params.push(AbiParam::new(pointer_type));
+                signature.params.push(AbiParam::new(pointer_type));
+            }
             #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-            signature.params.push(AbiParam::new(pointer_type));
-            signature.params.push(AbiParam::new(pointer_type));
-            signature.params.push(AbiParam::new(pointer_type));
+            {
+                signature.params.push(AbiParam::new(pointer_type));
+                signature.params.push(AbiParam::new(pointer_type));
+                signature.params.push(AbiParam::new(pointer_type));
+            }
             signature
         };
         let sin_simd_id = module
@@ -1629,8 +1597,14 @@ impl NativeSimdKernel {
             debug_assert_eq!(loop_base_index, header_params.len());
             let instructions = &program.fixed_ir().instructions;
             let mut paired_outputs = BTreeSet::new();
+            let mut common_values = BTreeMap::<String, NativeSimdRegister>::new();
             for (instruction_index, instruction) in instructions.iter().enumerate() {
                 if paired_outputs.remove(&instruction.output) {
+                    continue;
+                }
+                let computation_key = format!("{:?}", instruction.computation);
+                if let Some(value) = common_values.get(&computation_key).copied() {
+                    registers[instruction.output] = Some(value);
                     continue;
                 }
                 if let Some((partner_index, current_is_sin, operand)) =
@@ -1644,6 +1618,11 @@ impl NativeSimdKernel {
                     registers[instruction.output] = Some(NativeSimdRegister::F32(current));
                     registers[instructions[partner_index].output] =
                         Some(NativeSimdRegister::F32(partner));
+                    common_values.insert(computation_key, NativeSimdRegister::F32(current));
+                    common_values.insert(
+                        format!("{:?}", instructions[partner_index].computation),
+                        NativeSimdRegister::F32(partner),
+                    );
                     paired_outputs.insert(instructions[partner_index].output);
                     continue;
                 }
@@ -1653,10 +1632,10 @@ impl NativeSimdKernel {
                     &registers,
                     simd_functions,
                     &constant_values,
-                    fast_math,
                     pointer_type,
                 )?;
                 registers[instruction.output] = Some(value);
+                common_values.insert(computation_key, value);
             }
 
             let mut check_block = body;
@@ -1928,7 +1907,6 @@ fn lower_computation(
     registers: &[Option<NativeRegister>],
     functions: MathFunctions,
     constants: &BTreeMap<u32, Value>,
-    fast_math: bool,
 ) -> Result<NativeRegister, BatchedExecutionError> {
     Ok(match computation {
         ScalarComputation::Copy(input) => lower_operand(builder, *input, registers, constants)?,
@@ -2003,7 +1981,7 @@ fn lower_computation(
             })
         }
         ScalarComputation::SumProducts(terms) => {
-            return lower_sum_products(builder, terms, registers, constants, fast_math);
+            return lower_sum_products(builder, terms, registers, constants);
         }
     })
 }
@@ -2013,32 +1991,14 @@ fn lower_sum_products(
     terms: &[(ScalarOperand, ScalarOperand)],
     registers: &[Option<NativeRegister>],
     constants: &BTreeMap<u32, Value>,
-    skip_zero_terms: bool,
 ) -> Result<NativeRegister, BatchedExecutionError> {
     let mut sum = None;
     for (left, right) in terms {
-        if skip_zero_terms && (is_zero_operand(*left) || is_zero_operand(*right)) {
-            continue;
-        }
         let value = match sum {
             None => {
-                if is_one_operand(*left) {
-                    lower_numeric_operand(builder, *right, registers, constants)?
-                } else if is_one_operand(*right) {
-                    lower_numeric_operand(builder, *left, registers, constants)?
-                } else {
-                    let left = lower_numeric_operand(builder, *left, registers, constants)?;
-                    let right = lower_numeric_operand(builder, *right, registers, constants)?;
-                    builder.ins().fmul(left, right)
-                }
-            }
-            Some(sum) if is_one_operand(*left) => {
-                let right = lower_numeric_operand(builder, *right, registers, constants)?;
-                builder.ins().fadd(sum, right)
-            }
-            Some(sum) if is_one_operand(*right) => {
                 let left = lower_numeric_operand(builder, *left, registers, constants)?;
-                builder.ins().fadd(sum, left)
+                let right = lower_numeric_operand(builder, *right, registers, constants)?;
+                builder.ins().fmul(left, right)
             }
             Some(sum) => {
                 let left = lower_numeric_operand(builder, *left, registers, constants)?;
@@ -2059,7 +2019,6 @@ fn lower_simd_computation(
     registers: &[Option<NativeSimdRegister>],
     functions: SimdMathFunctions,
     constants: &BTreeMap<u32, Value>,
-    fast_math: bool,
     pointer_type: Type,
 ) -> Result<NativeSimdRegister, BatchedExecutionError> {
     Ok(match computation {
@@ -2144,7 +2103,7 @@ fn lower_simd_computation(
             })
         }
         ScalarComputation::SumProducts(terms) => {
-            return lower_simd_sum_products(builder, terms, registers, constants, fast_math);
+            return lower_simd_sum_products(builder, terms, registers, constants);
         }
     })
 }
@@ -2154,32 +2113,14 @@ fn lower_simd_sum_products(
     terms: &[(ScalarOperand, ScalarOperand)],
     registers: &[Option<NativeSimdRegister>],
     constants: &BTreeMap<u32, Value>,
-    skip_zero_terms: bool,
 ) -> Result<NativeSimdRegister, BatchedExecutionError> {
     let mut sum = None;
     for (left, right) in terms {
-        if skip_zero_terms && (is_zero_operand(*left) || is_zero_operand(*right)) {
-            continue;
-        }
         let value = match sum {
             None => {
-                if is_one_operand(*left) {
-                    lower_simd_numeric_operand(*right, registers, constants)?
-                } else if is_one_operand(*right) {
-                    lower_simd_numeric_operand(*left, registers, constants)?
-                } else {
-                    let left = lower_simd_numeric_operand(*left, registers, constants)?;
-                    let right = lower_simd_numeric_operand(*right, registers, constants)?;
-                    builder.ins().fmul(left, right)
-                }
-            }
-            Some(sum) if is_one_operand(*left) => {
-                let right = lower_simd_numeric_operand(*right, registers, constants)?;
-                builder.ins().fadd(sum, right)
-            }
-            Some(sum) if is_one_operand(*right) => {
                 let left = lower_simd_numeric_operand(*left, registers, constants)?;
-                builder.ins().fadd(sum, left)
+                let right = lower_simd_numeric_operand(*right, registers, constants)?;
+                builder.ins().fmul(left, right)
             }
             Some(sum) => {
                 let left = lower_simd_numeric_operand(*left, registers, constants)?;
@@ -2372,29 +2313,25 @@ fn call_simd_unary_math(
     builder: &mut FunctionBuilder<'_>,
     function: cranelift_codegen::ir::FuncRef,
     value: Value,
-    pointer_type: Type,
+    _pointer_type: Type,
 ) -> Value {
-    let output_slot = simd_stack_slot(builder);
-    let output = stack_address(builder, output_slot, pointer_type);
     #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
     {
-        builder.ins().call(function, &[value, output]);
+        let call = builder.ins().call(function, &[value]);
+        builder.inst_results(call)[0]
+    }
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    {
+        let output_slot = simd_stack_slot(builder);
+        let output = stack_address(builder, output_slot, _pointer_type);
+        let input_slot = simd_stack_slot(builder);
+        let input = stack_address(builder, input_slot, _pointer_type);
+        builder.ins().store(MemFlags::trusted(), value, input, 0);
+        builder.ins().call(function, &[input, output]);
         builder
             .ins()
             .load(types::F32X4, MemFlags::trusted(), output, 0)
     }
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let input_slot = simd_stack_slot(builder);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let input = stack_address(builder, input_slot, pointer_type);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    builder.ins().store(MemFlags::trusted(), value, input, 0);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    builder.ins().call(function, &[input, output]);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    builder
-        .ins()
-        .load(types::F32X4, MemFlags::trusted(), output, 0)
 }
 
 fn call_simd_binary_math(
@@ -2402,41 +2339,34 @@ fn call_simd_binary_math(
     function: cranelift_codegen::ir::FuncRef,
     left: Value,
     right: Value,
-    pointer_type: Type,
+    _pointer_type: Type,
 ) -> Value {
-    let output_slot = simd_stack_slot(builder);
-    let output = stack_address(builder, output_slot, pointer_type);
     #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
     {
-        builder.ins().call(function, &[left, right, output]);
+        let call = builder.ins().call(function, &[left, right]);
+        builder.inst_results(call)[0]
+    }
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    {
+        let output_slot = simd_stack_slot(builder);
+        let output = stack_address(builder, output_slot, _pointer_type);
+        let left_slot = simd_stack_slot(builder);
+        let right_slot = simd_stack_slot(builder);
+        let left_address = stack_address(builder, left_slot, _pointer_type);
+        let right_address = stack_address(builder, right_slot, _pointer_type);
+        builder
+            .ins()
+            .store(MemFlags::trusted(), left, left_address, 0);
+        builder
+            .ins()
+            .store(MemFlags::trusted(), right, right_address, 0);
+        builder
+            .ins()
+            .call(function, &[left_address, right_address, output]);
         builder
             .ins()
             .load(types::F32X4, MemFlags::trusted(), output, 0)
     }
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let left_slot = simd_stack_slot(builder);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let right_slot = simd_stack_slot(builder);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let left_address = stack_address(builder, left_slot, pointer_type);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let right_address = stack_address(builder, right_slot, pointer_type);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    builder
-        .ins()
-        .store(MemFlags::trusted(), left, left_address, 0);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    builder
-        .ins()
-        .store(MemFlags::trusted(), right, right_address, 0);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    builder
-        .ins()
-        .call(function, &[left_address, right_address, output]);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    builder
-        .ins()
-        .load(types::F32X4, MemFlags::trusted(), output, 0)
 }
 
 fn lower_simd_is_finite(builder: &mut FunctionBuilder<'_>, value: Value) -> Value {
@@ -2502,14 +2432,6 @@ fn store_simd_component(
     builder
         .ins()
         .store(MemFlags::trusted(), value, base, offset);
-}
-
-fn is_zero_operand(operand: ScalarOperand) -> bool {
-    matches!(operand, ScalarOperand::Constant(value) if value == 0.0)
-}
-
-fn is_one_operand(operand: ScalarOperand) -> bool {
-    matches!(operand, ScalarOperand::Constant(value) if value == 1.0)
 }
 
 fn lower_predicate(
@@ -2683,41 +2605,42 @@ fn call_simd_sincos(
     builder: &mut FunctionBuilder<'_>,
     function: cranelift_codegen::ir::FuncRef,
     value: Value,
-    pointer_type: Type,
+    _pointer_type: Type,
 ) -> (Value, Value) {
-    let sin_slot = simd_stack_slot(builder);
-    let cos_slot = simd_stack_slot(builder);
-    let sin = stack_address(builder, sin_slot, pointer_type);
-    let cos = stack_address(builder, cos_slot, pointer_type);
     #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
     {
+        let sin_slot = simd_stack_slot(builder);
+        let cos_slot = simd_stack_slot(builder);
+        let sin = stack_address(builder, sin_slot, _pointer_type);
+        let cos = stack_address(builder, cos_slot, _pointer_type);
         builder.ins().call(function, &[value, sin, cos]);
-        let sin_value = builder
+        let sin = builder
             .ins()
             .load(types::F32X4, MemFlags::trusted(), sin, 0);
-        let cos_value = builder
+        let cos = builder
             .ins()
             .load(types::F32X4, MemFlags::trusted(), cos, 0);
-        (sin_value, cos_value)
+        return (sin, cos);
     }
+
     #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let input_slot = simd_stack_slot(builder);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let input = stack_address(builder, input_slot, pointer_type);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    builder.ins().store(MemFlags::trusted(), value, input, 0);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    builder.ins().call(function, &[input, sin, cos]);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let sin = builder
-        .ins()
-        .load(types::F32X4, MemFlags::trusted(), sin, 0);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    let cos = builder
-        .ins()
-        .load(types::F32X4, MemFlags::trusted(), cos, 0);
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    (sin, cos)
+    {
+        let sin_slot = simd_stack_slot(builder);
+        let cos_slot = simd_stack_slot(builder);
+        let sin = stack_address(builder, sin_slot, _pointer_type);
+        let cos = stack_address(builder, cos_slot, _pointer_type);
+        let input_slot = simd_stack_slot(builder);
+        let input = stack_address(builder, input_slot, _pointer_type);
+        builder.ins().store(MemFlags::trusted(), value, input, 0);
+        builder.ins().call(function, &[input, sin, cos]);
+        let sin = builder
+            .ins()
+            .load(types::F32X4, MemFlags::trusted(), sin, 0);
+        let cos = builder
+            .ins()
+            .load(types::F32X4, MemFlags::trusted(), cos, 0);
+        (sin, cos)
+    }
 }
 
 fn load_component(builder: &mut FunctionBuilder<'_>, base: Value, component: usize) -> Value {
@@ -2760,16 +2683,16 @@ extern "C" fn mech_jit_sincos_pack(value: f32) -> u64 {
 /// the pointer ABI remains the portable fallback for other architectures.
 #[cfg(target_arch = "aarch64")]
 #[allow(improper_ctypes_definitions)]
-extern "C" fn mech_jit_sinf_f32x4(value: float32x4_t, output: *mut f32) {
+extern "C" fn mech_jit_sinf_f32x4(value: float32x4_t) -> float32x4_t {
     let value = unsafe { wide_from_aarch64(value) };
-    unsafe { *(output as *mut [f32; 4]) = value.sin().to_array() };
+    unsafe { wide_to_aarch64(value.sin()) }
 }
 
 #[cfg(target_arch = "x86_64")]
 #[allow(improper_ctypes_definitions)]
-extern "C" fn mech_jit_sinf_f32x4(value: __m128, output: *mut f32) {
+extern "C" fn mech_jit_sinf_f32x4(value: __m128) -> __m128 {
     let value = unsafe { wide_from_x86(value) };
-    unsafe { *(output as *mut [f32; 4]) = value.sin().to_array() };
+    unsafe { wide_to_x86(value.sin()) }
 }
 
 #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
@@ -2780,16 +2703,16 @@ extern "C" fn mech_jit_sinf_f32x4(input: *const f32, output: *mut f32) {
 
 #[cfg(target_arch = "aarch64")]
 #[allow(improper_ctypes_definitions)]
-extern "C" fn mech_jit_cosf_f32x4(value: float32x4_t, output: *mut f32) {
+extern "C" fn mech_jit_cosf_f32x4(value: float32x4_t) -> float32x4_t {
     let value = unsafe { wide_from_aarch64(value) };
-    unsafe { *(output as *mut [f32; 4]) = value.cos().to_array() };
+    unsafe { wide_to_aarch64(value.cos()) }
 }
 
 #[cfg(target_arch = "x86_64")]
 #[allow(improper_ctypes_definitions)]
-extern "C" fn mech_jit_cosf_f32x4(value: __m128, output: *mut f32) {
+extern "C" fn mech_jit_cosf_f32x4(value: __m128) -> __m128 {
     let value = unsafe { wide_from_x86(value) };
-    unsafe { *(output as *mut [f32; 4]) = value.cos().to_array() };
+    unsafe { wide_to_x86(value.cos()) }
 }
 
 #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
@@ -2836,18 +2759,18 @@ extern "C" fn mech_jit_sincos_f32x4(input: *const f32, sin_output: *mut f32, cos
 
 #[cfg(target_arch = "aarch64")]
 #[allow(improper_ctypes_definitions)]
-extern "C" fn mech_jit_atan2_f32x4(y: float32x4_t, x: float32x4_t, output: *mut f32) {
+extern "C" fn mech_jit_atan2_f32x4(y: float32x4_t, x: float32x4_t) -> float32x4_t {
     let y = unsafe { wide_from_aarch64(y) };
     let x = unsafe { wide_from_aarch64(x) };
-    unsafe { *(output as *mut [f32; 4]) = y.atan2(x).to_array() };
+    unsafe { wide_to_aarch64(y.atan2(x)) }
 }
 
 #[cfg(target_arch = "x86_64")]
 #[allow(improper_ctypes_definitions)]
-extern "C" fn mech_jit_atan2_f32x4(y: __m128, x: __m128, output: *mut f32) {
+extern "C" fn mech_jit_atan2_f32x4(y: __m128, x: __m128) -> __m128 {
     let y = unsafe { wide_from_x86(y) };
     let x = unsafe { wide_from_x86(x) };
-    unsafe { *(output as *mut [f32; 4]) = y.atan2(x).to_array() };
+    unsafe { wide_to_x86(y.atan2(x)) }
 }
 
 #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
@@ -2864,11 +2787,23 @@ unsafe fn wide_from_aarch64(value: float32x4_t) -> f32x4 {
     f32x4::new(lanes)
 }
 
+#[cfg(target_arch = "aarch64")]
+unsafe fn wide_to_aarch64(value: f32x4) -> float32x4_t {
+    let lanes = value.to_array();
+    unsafe { vld1q_f32(lanes.as_ptr()) }
+}
+
 #[cfg(target_arch = "x86_64")]
 unsafe fn wide_from_x86(value: __m128) -> f32x4 {
     let mut lanes = [0.0; 4];
     unsafe { _mm_storeu_ps(lanes.as_mut_ptr(), value) };
     f32x4::new(lanes)
+}
+
+#[cfg(target_arch = "x86_64")]
+unsafe fn wide_to_x86(value: f32x4) -> __m128 {
+    let lanes = value.to_array();
+    unsafe { _mm_loadu_ps(lanes.as_ptr()) }
 }
 
 extern "C" fn mech_jit_sqrtf(value: f32) -> f32 {

@@ -316,7 +316,7 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
         return statistics.median(values) if values else None
 
     def mech_simd_metric(mode: str) -> float | None:
-        """Use the strict SIMD-JIT row; checked-fast is kept out of headlines."""
+        """Use the ordinary SIMD-JIT row for the requested publication mode."""
         label = "Mech Cranelift SIMD-JIT" if mode == "checked" else "Mech Cranelift SIMD-JIT unchecked"
         return mech_backend_metric(label)
 
