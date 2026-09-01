@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import math
 import re
 import statistics
 from pathlib import Path
@@ -20,7 +21,7 @@ def printed_mech(cross: dict, run_name: str) -> dict[str, float]:
     values: dict[str, list[float]] = {}
     for text in cross.get("runs", {}).get(run_name, {}).get("measured_stdout", []):
         for match in re.finditer(
-            r"^(Mech .+? throughput|GPU .+? throughput): ([0-9.]+) million",
+            r"^(Mech .+? throughput|GPU .+? throughput)(?: \([^)]*\))?: ([0-9.]+) million",
             text,
             flags=re.MULTILINE,
         ):
@@ -35,6 +36,7 @@ def load_rows(
     native: dict,
     historical: dict,
     mech_simd_jit: dict | None = None,
+    strict_mech: dict | None = None,
 ) -> list[dict[str, object]]:
     scalar_values = printed_mech(cross, "mech_scalar_settings")
     backend_values = printed_mech(cross, "mech_backend_settings")
@@ -42,6 +44,7 @@ def load_rows(
     native_rows = {row["label"]: row for row in native["rows"]}
     old = historical["summary"]["mech_backends_million_ekf_turns_per_second"]
     optimized_rows = (mech_simd_jit or {}).get("rows", {})
+    strict_rows = (strict_mech or {}).get("rows", {})
 
     def optimized(mode: str, fallback: float | None) -> float | None:
         row = optimized_rows.get(mode)
@@ -53,41 +56,113 @@ def load_rows(
         return {"label": label, "checked": checked, "unchecked": unchecked, "note": note}
 
     return [
-        row("resident scalar CPU", scalar_values["Mech scalar"], None),
-        row("resident SIMD CPU (4 lanes)", scalar_values["Mech SIMD"], None),
-        row("Cranelift JIT", scalar_values["Mech Cranelift JIT"], scalar_values["Mech Cranelift JIT unchecked"]),
         row(
-            "Cranelift SIMD-JIT",
-            optimized("checked", scalar_values["Mech Cranelift SIMD-JIT"]),
-            optimized("unchecked", scalar_values["Mech Cranelift SIMD-JIT unchecked"]),
-        ),
-        row(
-            "Cranelift SIMD-JIT, 8 workers",
-            runtime_rows["Mech SIMD/JIT CPU, checked (8 workers)"]["throughput_millions"],
-            runtime_rows["Mech SIMD/JIT CPU, unchecked (8 workers)"]["throughput_millions"],
-        ),
-        row(
-            "WGPU, synchronized per-turn",
-            runtime_rows["Mech WGPU GPU, checked"]["throughput_millions"],
-            runtime_rows["Mech WGPU GPU, unchecked"]["throughput_millions"],
-        ),
-        row(
-            "WGPU, one checked submission/turn",
-            backend_values["GPU unchecked one-submit"],
-            None,
-            "100k-filter control",
+            "native Metal, strict retained-state",
+            strict_rows.get("Mech native Metal checked", {}).get("median_million_turns_per_second"),
+            strict_rows.get("Mech native Metal unchecked", {}).get("median_million_turns_per_second"),
+            "500k filters x 40 synchronized turns",
         ),
         row(
             "native Metal, direct MSL",
             native_rows["Mech native Metal, checked"]["throughput_millions"],
             native_rows["Mech native Metal, unchecked"]["throughput_millions"],
-            "500k filters, 40 synchronized turns",
+            "500k filters x 40 synchronized turns",
         ),
         row(
-            "WGPU, fused device batch",
+            "WGPU, synchronized per-turn",
+            runtime_rows["Mech WGPU GPU, checked"]["throughput_millions"],
+            runtime_rows["Mech WGPU GPU, unchecked"]["throughput_millions"],
+            "500k filters x 40; portable transport",
+        ),
+        row(
+            "Cranelift SIMD-JIT, 8 workers",
+            runtime_rows["Mech SIMD/JIT CPU, checked (8 workers)"]["throughput_millions"],
+            runtime_rows["Mech SIMD/JIT CPU, unchecked (8 workers)"]["throughput_millions"],
+            "500k filters x 40 synchronized turns",
+        ),
+        row(
+            "Cranelift SIMD-JIT, parallel checked",
+            backend_values.get("Mech Cranelift SIMD-JIT parallel"),
+            None,
+            "100k filters x 5; unchecked counterpart was fast-only",
+        ),
+        row(
+            "Cranelift SIMD-JIT, strict resident",
+            optimized("checked", scalar_values.get("Mech Cranelift SIMD-JIT")),
+            optimized("unchecked", scalar_values.get("Mech Cranelift SIMD-JIT unchecked")),
+            "10k filters x 20; retained strict source",
+        ),
+        row(
+            "Cranelift SIMD-JIT, resident baseline",
+            scalar_values.get("Mech Cranelift SIMD-JIT"),
+            scalar_values.get("Mech Cranelift SIMD-JIT unchecked"),
+            "100k filters x 5; generic resident lane",
+        ),
+        row(
+            "Cranelift JIT, resident",
+            scalar_values.get("Mech Cranelift JIT"),
+            scalar_values.get("Mech Cranelift JIT unchecked"),
+            "100k filters x 5; generic resident lane",
+        ),
+        row(
+            "resident SIMD CPU (4 lanes)",
+            scalar_values.get("Mech SIMD"),
+            None,
+            "100k filters x 5; unchecked trial not retained",
+        ),
+        row(
+            "resident scalar CPU",
+            scalar_values.get("Mech scalar"),
+            scalar_values.get("Mech scalar unchecked"),
+            "100k filters x 5",
+        ),
+        row(
+            "GPU API, checked one-turn",
+            backend_values.get("GPU checked one-turn"),
+            None,
+            "100k filters x 5; synchronous API boundary",
+        ),
+        row(
+            "GPU API, checked repeated",
+            backend_values.get("GPU checked repeated"),
+            None,
+            "100k filters x 5; per-turn validation",
+        ),
+        row(
+            "GPU API, unchecked one-turn",
+            None,
+            backend_values.get("GPU unchecked one-turn"),
+            "100k filters x 5; ping-pong state",
+        ),
+        row(
+            "GPU API, unchecked in-place one-turn",
+            None,
+            backend_values.get("GPU unchecked in-place one-turn"),
+            "100k filters x 5; in-place state",
+        ),
+        row(
+            "GPU API, unchecked repeated dispatches",
+            None,
+            backend_values.get("GPU unchecked repeated"),
+            "100k filters x 5; device dispatch loop",
+        ),
+        row(
+            "GPU API, unchecked in-place repeated",
+            None,
+            backend_values.get("GPU unchecked in-place repeated"),
+            "100k filters x 5; in-place dispatch loop",
+        ),
+        row(
+            "GPU API, unchecked one-submit",
+            None,
+            backend_values.get("GPU unchecked one-submit"),
+            "100k filters x 5; device-resident ceiling",
+        ),
+        row(
+            "WGPU, fused device batch (historical)",
             None,
             old["Mech GPU, 120 turns/submission"],
-            "historical 2026-08-14 fused control; no per-turn boundary",
+            "historical 2026-08-14; no per-turn boundary",
         ),
     ]
 
@@ -105,45 +180,70 @@ def render(rows: list[dict[str, object]], output: Path) -> None:
             str(item["label"]),
         ),
     )
-    width, left, right, top, row_height, bottom = 1800, 570, 150, 140, 44, 110
+    width, left, right, top, row_height, bottom = 1900, 620, 250, 158, 62, 230
     chart_width = width - left - right
-    maximum = max(max(item["checked"] or 0.0, item["unchecked"] or 0.0) for item in rows)
-    max_axis = max(20.0, ((maximum + 19.999) // 20) * 20)
+    positive = [
+        value
+        for item in rows
+        for value in (item["checked"], item["unchecked"])
+        if value is not None and value > 0.0
+    ]
+    if not positive:
+        raise ValueError("progression chart requires at least one positive throughput")
+    ticks = [multiplier * (10.0**exponent) for exponent in range(-4, 7) for multiplier in (1, 2, 5)]
+    min_axis = max(tick for tick in ticks if tick <= min(positive))
+    max_axis = min(tick for tick in ticks if tick >= max(positive))
+    if min_axis == max_axis:
+        max_axis *= 2.0
     height = top + row_height * len(rows) + bottom
 
     def x(value: float) -> float:
-        return left + chart_width * value / max_axis
+        return left + chart_width * (math.log10(value) - math.log10(min_axis)) / (math.log10(max_axis) - math.log10(min_axis))
+
+    def format_tick(value: float) -> str:
+        return f"{value:g}"
+
+    def value_label(value: float, end: float) -> str:
+        if end + 54 <= width - right:
+            return f'<text x="{end + 8:.1f}" y="{{y}}" class="value">{value:.2f}</text>'
+        return f'<text x="{width - right - 4:.1f}" y="{{y}}" text-anchor="end" class="value">{value:.2f}</text>'
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#080c14"/>',
-        '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:14px}.value{font-size:13px;font-variant-numeric:tabular-nums}.note{fill:#91a0b5;font-size:11px}</style>',
+        '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.minor-grid{stroke:#1b2536;stroke-width:1}.label{font-size:14px}.value{font-size:13px;font-variant-numeric:tabular-nums}.note{fill:#91a0b5;font-size:11px}</style>',
         '<text x="52" y="42" font-size="26" font-weight="700">Mech EKF execution-lane progression</text>',
-        '<text x="52" y="68" class="muted" font-size="15">Apple M1 | paired checked and unchecked steady-state throughput | million EKF turns per second | checked fastest to slowest</text>',
-        '<rect x="1220" y="24" width="16" height="16" rx="2" fill="#f4c430"/><text x="1244" y="37" font-size="13">checked</text>',
-        '<rect x="1325" y="24" width="16" height="16" rx="2" fill="#fff0a8"/><text x="1349" y="37" font-size="13">unchecked</text>',
+        '<text x="52" y="68" class="muted" font-size="15">Apple M1 | Mech execution trials | logarithmic million EKF turns per second axis | checked fastest to slowest; unchecked-only trials follow</text>',
+        f'<rect x="{width - right - 230}" y="24" width="16" height="16" rx="2" fill="#f4c430"/><text x="{width - right - 206}" y="37" font-size="13">checked</text>',
+        f'<rect x="{width - right - 120}" y="24" width="16" height="16" rx="2" fill="#a88721"/><text x="{width - right - 96}" y="37" font-size="13">unchecked</text>',
     ]
-    for tick in range(0, int(max_axis) + 1, 20):
+    visible_ticks = [tick for tick in ticks if min_axis <= tick <= max_axis]
+    for tick in visible_ticks:
         tx = x(tick)
-        lines.append(f'<line x1="{tx:.1f}" y1="{top - 22}" x2="{tx:.1f}" y2="{height - bottom + 4}" class="grid"/>')
-        lines.append(f'<text x="{tx:.1f}" y="{height - bottom + 28}" text-anchor="middle" class="muted" font-size="13">{tick}</text>')
+        major = tick in {1.0, 10.0, 100.0, 1000.0, 10000.0}
+        grid_class = "grid" if major else "minor-grid"
+        lines.append(f'<line x1="{tx:.1f}" y1="{top - 22}" x2="{tx:.1f}" y2="{height - bottom + 4}" class="{grid_class}"/>')
+        lines.append(f'<text x="{tx:.1f}" y="{height - bottom + 28}" text-anchor="middle" class="muted" font-size="13">{format_tick(tick)}</text>')
 
     for index, item in enumerate(rows):
         y = top + index * row_height
-        lines.append(f'<text x="{left - 16}" y="{y + 17}" text-anchor="end" class="label">{esc(item["label"])}</text>')
-        for offset, mode, color in ((2, "checked", "#f4c430"), (22, "unchecked", "#fff0a8")):
+        lines.append(f'<text x="{left - 16}" y="{y + 18}" text-anchor="end" class="label">{esc(item["label"])}</text>')
+        if item["note"]:
+            lines.append(f'<text x="{left - 16}" y="{y + 39}" text-anchor="end" class="note">{esc(item["note"])}</text>')
+        for offset, mode, color in ((3, "checked", "#f4c430"), (29, "unchecked", "#a88721")):
             value = item[mode]
             if value is None:
-                lines.append(f'<text x="{left + 5}" y="{y + offset + 14}" class="note">not measured</text>')
+                lines.append(f'<text x="{left + 5}" y="{y + offset + 13}" class="note">not measured</text>')
                 continue
-            bar_width = max(1.0, chart_width * value / max_axis)
-            lines.append(f'<rect x="{left}" y="{y + offset}" width="{bar_width:.1f}" height="15" rx="2" fill="{color}" opacity="0.92"/>')
-            lines.append(f'<text x="{min(left + bar_width + 8, width - right + 5):.1f}" y="{y + offset + 13}" class="value">{value:.2f}</text>')
-        if item["note"]:
-            lines.append(f'<text x="{left + 8}" y="{y + 39}" class="note">{esc(item["note"])}</text>')
+            end = x(value)
+            bar_width = max(2.0, end - left)
+            lines.append(f'<rect x="{left}" y="{y + offset}" width="{bar_width:.1f}" height="17" rx="2" fill="{color}" opacity="0.95"/>')
+            lines.append(value_label(value, end).format(y=y + offset + 14))
 
-    lines.append(f'<text x="{left + chart_width / 2:.1f}" y="{height - 28}" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>')
-    lines.append('<text x="52" y="%d" class="muted" font-size="12">Checked bars validate candidate publication; unchecked bars omit integrity checks. Missing bars were not measured.</text>' % (height - 96))
+    lines.append(f'<text x="{left + chart_width / 2:.1f}" y="{height - bottom + 58}" text-anchor="middle" class="muted" font-size="14">million EKF turns per second (log scale)</text>')
+    footer_y = height - bottom + 92
+    lines.append(f'<text x="52" y="{footer_y}" class="muted" font-size="12">Checked bars validate candidate publication; unchecked bars omit integrity checks. Missing bars are explicit evidence gaps, not zeroes.</text>')
+    lines.append(f'<text x="52" y="{footer_y + 19}" class="muted" font-size="12">Fast-arithmetic-only controls are excluded; the historical fused batch is retained as a device-resident ceiling without a per-turn publication boundary.</text>')
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -158,6 +258,7 @@ def main() -> None:
     parser.add_argument("historical", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--mech-simd-jit", type=Path)
+    parser.add_argument("--strict-mech", type=Path)
     args = parser.parse_args()
     rows = load_rows(
         json.loads(args.cross_language.read_text(encoding="utf-8")),
@@ -166,6 +267,9 @@ def main() -> None:
         json.loads(args.historical.read_text(encoding="utf-8")),
         json.loads(args.mech_simd_jit.read_text(encoding="utf-8"))
         if args.mech_simd_jit
+        else None,
+        json.loads(args.strict_mech.read_text(encoding="utf-8"))
+        if args.strict_mech
         else None,
     )
     render(rows, args.output)

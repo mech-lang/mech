@@ -236,11 +236,13 @@ section. Samples and checksums are in
 `results/apple-m1-julia-threaded-2026-08-31.json`.
 
 The Mech-only progression view keeps checked and unchecked bars together while
-sorting execution lanes from resident scalar through SIMD, Cranelift JIT,
-eight-worker SIMD-JIT, synchronized WGPU, direct native Metal, and the fused
-device batch. The fused batch is marked historical because it has no per-turn
-publication boundary and therefore is not an apples-to-apples replacement for
-the synchronized rows.
+sorting every retained execution trial by checked throughput on a logarithmic
+axis. It includes resident scalar/SIMD, Cranelift JIT and SIMD-JIT variants,
+the eight-worker block, synchronized WGPU, direct and strict native Metal,
+the API boundary trials, and the historical fused device batch. Fast-arithmetic
+controls are excluded. The fused batch is marked historical because it has no
+per-turn publication boundary and therefore is not an apples-to-apples
+replacement for the synchronized rows.
 
 ![Mech EKF execution-lane progression](results/parallel-ekf-mech-progression.svg)
 
@@ -426,7 +428,8 @@ python3 plot_mech_progression.py \
   results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
   results/apple-m1-2026-08-14.json \
   results/parallel-ekf-mech-progression.svg \
-  --mech-simd-jit results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json
+  --mech-simd-jit results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json \
+  --strict-mech results/apple-m1-mech-halide-strict-2026-08-31.json
 
 python3 source_diff_report.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \
