@@ -402,6 +402,10 @@ python3 measure_compile_times.py \
   --python /path/to/python-with-numpy \
   --taichi-python /path/to/python-with-taichi
 
+python3 plot_compile_times.py \
+  results/apple-m1-compile-times-2026-09-01.json \
+  results/parallel-ekf-compile-times.svg
+
 python3 execution_strategy_report.py --results results
 ```
 
