@@ -658,6 +658,12 @@ fn lexicographic_refs(
     Ok(Ordering::Equal)
 }
 
+/// Applies the canonical language equality rules to two already-validated
+/// payloads under one shared schema.
+pub fn schema_data_language_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
+    language_data_eq(schema, left, right)
+}
+
 fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
     match (schema, left, right) {
         (

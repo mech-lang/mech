@@ -647,7 +647,7 @@ impl AssignCanonicalSelection {
                 for entry in &mut entries {
                     let candidate =
                         ValueCell::from_schema_data((**key).clone(), entry.items[0].clone())?;
-                    if candidate.snapshot_eq(selector)? {
+                    if candidate.key_eq(selector)? {
                         entry.items[1] = replacement.clone();
                         found = true;
                         break;
@@ -1133,5 +1133,53 @@ impl CanonicalFunctionSpecializer for AddAssignValue {
             Box::new(implementation),
             FunctionInvocation::unary(sink, source),
         )))
+    }
+}
+
+#[cfg(all(test, feature = "semantic-compiler"))]
+mod canonical_aggregate_assignment_tests {
+    use super::*;
+
+    #[test]
+    fn map_assignment_uses_canonical_key_equality() {
+        let sink = ValueCell::from_schema_data(
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                value: Box::new(SchemaBody::String),
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            ValueDataDraft::Map(
+                vec![mech_core::snapshot::MapEntryDraft {
+                    items: vec![
+                        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(-0.0)),
+                        ValueDataDraft::String("old".to_owned()),
+                    ]
+                    .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let assignment = AssignCanonicalSelection {
+            sink: sink.clone(),
+            source: ValueCell::from_exact("new".to_owned()).unwrap(),
+            selectors: vec![CanonicalAccessSelector::Cell(
+                ValueCell::from_schema_data(
+                    SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                    ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(0.0)),
+                )
+                .unwrap(),
+            )],
+        };
+
+        assignment.solve_result().unwrap();
+        let ValueDataDraft::Map(entries) = sink.snapshot().unwrap().canonical_data_draft().unwrap()
+        else {
+            panic!("map assignment must preserve the map schema");
+        };
+        assert!(matches!(
+            entries[0].items[1],
+            ValueDataDraft::String(ref value) if value == "new"
+        ));
     }
 }

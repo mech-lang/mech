@@ -45,6 +45,7 @@ pub(crate) enum JoinMode {
 struct CanonicalTable {
     fields: Box<[SchemaField]>,
     columns: Box<[TableColumnDraft]>,
+    canonical_columns: Box<[Box<[ValueData]>]>,
     rows: usize,
 }
 
@@ -62,15 +63,33 @@ impl CanonicalTable {
                 "table columns have inconsistent row counts",
             ));
         }
+        let snapshot = cell.snapshot()?;
+        let ValueData::Table(table) = snapshot.data() else {
+            return Err(table_join_error("table input has a non-table snapshot"));
+        };
+        let canonical_columns = (0..columns.len())
+            .map(|index| {
+                table
+                    .column(index)
+                    .map(|column| column.to_values().into_boxed_slice())
+                    .ok_or_else(|| table_join_error("table snapshot omitted a schema column"))
+            })
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
         Ok(Self {
             fields: columns,
             columns: values,
+            canonical_columns,
             rows,
         })
     }
 
     fn value(&self, column: usize, row: usize) -> &ValueDataDraft {
         &self.columns[column].values[row]
+    }
+
+    fn canonical_value(&self, column: usize, row: usize) -> &ValueData {
+        &self.canonical_columns[column][row]
     }
 }
 
@@ -126,35 +145,50 @@ fn rows_match(
     rhs_row: usize,
     common: &[(usize, usize)],
 ) -> bool {
-    common
-        .iter()
-        .all(|(left, right)| lhs.value(*left, lhs_row) == rhs.value(*right, rhs_row))
+    common.iter().all(|(left, right)| {
+        mech_core::snapshot::schema_data_language_eq(
+            &lhs.fields[*left].schema,
+            lhs.canonical_value(*left, lhs_row),
+            rhs.canonical_value(*right, rhs_row),
+        )
+    })
 }
 
-pub(crate) fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> MResult<ValueCell> {
-    let lhs = CanonicalTable::from_cell(lhs)?;
-    let rhs = CanonicalTable::from_cell(rhs)?;
+fn common_columns(lhs: &[SchemaField], rhs: &[SchemaField]) -> MResult<Vec<(usize, usize)>> {
     let common = lhs
-        .fields
         .iter()
         .enumerate()
         .filter_map(|(left, field)| {
-            rhs.fields
-                .iter()
+            rhs.iter()
                 .position(|candidate| candidate.name == field.name)
                 .map(|right| (left, right))
         })
         .collect::<Vec<_>>();
+    if common
+        .iter()
+        .any(|(left, right)| lhs[*left].schema != rhs[*right].schema)
+    {
+        return Err(table_join_error(
+            "common join columns must have identical schemas",
+        ));
+    }
+    Ok(common)
+}
+
+pub(crate) fn joined_table_fields(
+    lhs: &[SchemaField],
+    rhs: &[SchemaField],
+    mode: JoinMode,
+) -> MResult<Box<[SchemaField]>> {
+    let common = common_columns(lhs, rhs)?;
     let common_rhs = common
         .iter()
         .map(|(_, right)| *right)
         .collect::<std::collections::BTreeSet<_>>();
-
     let lhs_outer = matches!(mode, JoinMode::RightOuter | JoinMode::FullOuter);
     let rhs_outer = matches!(mode, JoinMode::LeftOuter | JoinMode::FullOuter);
     let lhs_only = matches!(mode, JoinMode::LeftSemi | JoinMode::LeftAnti);
     let mut fields = lhs
-        .fields
         .iter()
         .enumerate()
         .map(|(index, field)| SchemaField {
@@ -168,8 +202,7 @@ pub(crate) fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> 
         .collect::<Vec<_>>();
     if !lhs_only {
         fields.extend(
-            rhs.fields
-                .iter()
+            rhs.iter()
                 .enumerate()
                 .filter(|(index, _)| !common_rhs.contains(index))
                 .map(|(_, field)| SchemaField {
@@ -182,6 +215,20 @@ pub(crate) fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> 
                 }),
         );
     }
+    Ok(fields.into_boxed_slice())
+}
+
+pub(crate) fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> MResult<ValueCell> {
+    let lhs = CanonicalTable::from_cell(lhs)?;
+    let rhs = CanonicalTable::from_cell(rhs)?;
+    let common = common_columns(&lhs.fields, &rhs.fields)?;
+    let common_rhs = common
+        .iter()
+        .map(|(_, right)| *right)
+        .collect::<std::collections::BTreeSet<_>>();
+
+    let lhs_only = matches!(mode, JoinMode::LeftSemi | JoinMode::LeftAnti);
+    let fields = joined_table_fields(&lhs.fields, &rhs.fields, mode)?;
 
     let mut row_pairs = Vec::new();
     let mut rhs_matched = vec![false; rhs.rows];
@@ -268,7 +315,7 @@ pub(crate) fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> 
     }
     ValueCell::from_schema_data(
         SchemaBody::Table {
-            columns: fields.into_boxed_slice(),
+            columns: fields,
             rows: CardinalitySpec::Dynamic { upper_bound: None },
         },
         ValueDataDraft::Table(output_columns.into_boxed_slice()),
@@ -432,6 +479,76 @@ pub mod __mech_native {
         install_table_left_outer_join, install_table_left_semi_join,
         install_table_right_outer_join,
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn field(name: &str, schema: SchemaBody) -> SchemaField {
+        SchemaField {
+            name: name.to_owned(),
+            schema,
+        }
+    }
+
+    #[test]
+    fn join_schema_planning_is_shared_and_rejects_incompatible_common_columns() {
+        let left = [
+            field("id", SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+            field("left", SchemaBody::String),
+        ];
+        let right = [
+            field("id", SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+            field("right", SchemaBody::Bool),
+        ];
+        assert_eq!(
+            joined_table_fields(&left, &right, JoinMode::Inner).unwrap(),
+            vec![left[0].clone(), left[1].clone(), right[1].clone()].into_boxed_slice(),
+        );
+        assert_eq!(
+            joined_table_fields(&left, &right, JoinMode::FullOuter).unwrap(),
+            vec![
+                left[0].clone(),
+                field("left", SchemaBody::Option(Box::new(SchemaBody::String))),
+                field("right", SchemaBody::Option(Box::new(SchemaBody::Bool))),
+            ]
+            .into_boxed_slice(),
+        );
+
+        let incompatible = [field("id", SchemaBody::String)];
+        assert!(joined_table_fields(&left, &incompatible, JoinMode::Inner).is_err());
+    }
+
+    #[test]
+    fn join_row_matching_uses_schema_directed_language_equality() {
+        let table = |bits| {
+            ValueCell::from_schema_data(
+                SchemaBody::Table {
+                    columns: vec![field("id", SchemaBody::FloatingPoint(FloatWidth::W64))]
+                        .into_boxed_slice(),
+                    rows: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+                ValueDataDraft::Table(
+                    vec![TableColumnDraft {
+                        name: "id".to_owned(),
+                        values: vec![ValueDataDraft::F64(
+                            mech_core::snapshot::F64Bits::from_bits(bits),
+                        )]
+                        .into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                ),
+            )
+            .unwrap()
+        };
+        let negative_zero = CanonicalTable::from_cell(&table((-0.0_f64).to_bits())).unwrap();
+        let positive_zero = CanonicalTable::from_cell(&table(0.0_f64.to_bits())).unwrap();
+        assert!(rows_match(&negative_zero, 0, &positive_zero, 0, &[(0, 0)]));
+
+        let nan = CanonicalTable::from_cell(&table(f64::NAN.to_bits())).unwrap();
+        assert!(!rows_match(&nan, 0, &nan, 0, &[(0, 0)]));
+    }
 }
 
 macro_rules! table_join_specializer {

@@ -32,6 +32,16 @@ impl SnapshotByteSink for VecSnapshotSink {
     }
 }
 
+struct LengthSnapshotSink {
+    len: usize,
+}
+
+impl SnapshotByteSink for LengthSnapshotSink {
+    fn write(&mut self, bytes: &[u8]) {
+        self.len = self.len.saturating_add(bytes.len());
+    }
+}
+
 struct Sha256SnapshotSink {
     hash: Sha256,
 }
@@ -86,6 +96,19 @@ impl Value {
         let mut sink = VecSnapshotSink::new();
         encode_data(schema.body(), self.data(), &mut sink);
         Ok(sink.finish())
+    }
+
+    /// Returns the canonical encoded payload length without allocating the
+    /// encoded payload. A saturated length is sufficient for callers that use
+    /// this value to enforce a bounded-work limit.
+    pub fn canonical_payload_len(
+        &self,
+        schemas: &SchemaTable,
+    ) -> Result<usize, SnapshotValueError> {
+        let schema = self.validate_against(schemas)?;
+        let mut sink = LengthSnapshotSink { len: 0 };
+        encode_data(schema.body(), self.data(), &mut sink);
+        Ok(sink.len)
     }
 
     pub fn value_hash(&self, schemas: &SchemaTable) -> Result<ValueHash, SnapshotValueError> {

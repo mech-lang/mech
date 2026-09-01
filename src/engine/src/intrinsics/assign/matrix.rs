@@ -32,6 +32,37 @@ fn require_assignment_source_index(actual: usize, index: usize) -> MResult<()> {
     Ok(())
 }
 
+fn require_assignment_selector_len(axis: &str, actual: usize, expected: usize) -> MResult<()> {
+    if actual != expected {
+        return Err(function_shape_contract_violation(
+            "assign_slice",
+            format!(
+                "reactive assignment {axis} selector has length {actual}, but the sink requires {expected}"
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn require_assignment_index(axis: &str, index: usize, extent: usize) -> MResult<()> {
+    if index == 0 || index > extent {
+        return Err(function_shape_contract_violation(
+            "assign_slice",
+            format!(
+                "reactive assignment {axis} index {index} is outside the one-based sink extent 1..={extent}"
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn require_assignment_indices(axis: &str, indices: &[usize], extent: usize) -> MResult<()> {
+    for &index in indices {
+        require_assignment_index(axis, index, extent)?;
+    }
+    Ok(())
+}
+
 fn require_assignment_source_layout(
     source_rows: usize,
     source_columns: usize,
@@ -231,6 +262,7 @@ macro_rules! impl_set_all_fxn_s {
 #[macro_export]
 macro_rules! assign_1d_scalar {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_index("linear", $ix, ($sink).len())?;
         ($sink)[$ix - 1] = ($source).clone();
     };
 }
@@ -250,8 +282,10 @@ macro_rules! assign_1d_scalar_b {
 macro_rules! assign_1d_scalar_vb {
     ($source:expr, $ix:expr, $sink:expr) => {
         if *$ix {
-            let len = $sink.len().min($source.len());
-            for ix in 0..len {
+            if !($sink).is_empty() {
+                require_assignment_source_index(($source).len(), ($sink).len() - 1)?;
+            }
+            for ix in 0..$sink.len() {
                 $sink[ix] = $source[ix].clone();
             }
         }
@@ -379,6 +413,7 @@ impl_assign_scalar_fxn_v!(Assign1DVB, assign_1d_scalar_vb, bool);
 
 macro_rules! set_1d_range {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_indices("linear", ($ix).as_ref(), ($sink).len())?;
         for i in 0..($ix).len() {
             ($sink)[($ix)[i] - 1] = ($source).clone();
         }
@@ -387,6 +422,7 @@ macro_rules! set_1d_range {
 
 macro_rules! set_1d_range_b {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_selector_len("linear", ($ix).len(), ($sink).len())?;
         for i in 0..($ix).len() {
             if $ix[i] == true {
                 ($sink)[i] = ($source).clone();
@@ -397,6 +433,10 @@ macro_rules! set_1d_range_b {
 
 macro_rules! set_1d_range_vec {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_indices("linear", ($ix).as_ref(), ($sink).len())?;
+        if !($ix).is_empty() {
+            require_assignment_source_index(($source).len(), ($ix).len() - 1)?;
+        }
         for i in 0..($ix).len() {
             ($sink)[($ix)[i] - 1] = ($source)[i].clone();
         }
@@ -405,6 +445,7 @@ macro_rules! set_1d_range_vec {
 
 macro_rules! set_1d_range_vec_b {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_selector_len("linear", ($ix).len(), ($sink).len())?;
         for (i, selected) in ($ix).iter().enumerate() {
             if *selected {
                 require_assignment_source_index(($source).len(), i)?;
@@ -595,6 +636,8 @@ where
             let source_val = (*self.source.as_ptr()).clone();
             let r = (*self.ixes.0.as_ptr()).clone();
             let c = (*self.ixes.1.as_ptr()).clone();
+            require_assignment_index("row", r, sink_ptr.nrows())?;
+            require_assignment_index("column", c, sink_ptr.ncols())?;
             sink_ptr[(r - 1, c - 1)] = source_val;
         };
         Ok(())
@@ -630,6 +673,7 @@ where
 
 macro_rules! assign_2d_all_scalar {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_index("column", $ix, ($sink).ncols())?;
         for i in 0..$sink.nrows() {
             ($sink).column_mut($ix - 1)[i] = ($source).clone();
         }
@@ -638,6 +682,10 @@ macro_rules! assign_2d_all_scalar {
 
 macro_rules! assign_2d_all_vector {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_index("column", *$ix, ($sink).ncols())?;
+        if ($sink).nrows() != 0 {
+            require_assignment_source_index(($source).len(), ($sink).nrows() - 1)?;
+        }
         for i in 0..$sink.nrows() {
             ($sink).column_mut($ix - 1)[i] = ($source)[i].clone();
         }
@@ -760,6 +808,7 @@ impl_assign_scalar_fxn_v!(Assign2DASV, assign_2d_all_vector, usize);
 
 macro_rules! assign_2d_scalar_all_scalar {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_index("row", $ix, ($sink).nrows())?;
         for i in 0..$sink.ncols() {
             ($sink).row_mut($ix - 1)[i] = ($source).clone();
         }
@@ -768,6 +817,10 @@ macro_rules! assign_2d_scalar_all_scalar {
 
 macro_rules! assign_2d_scalar_all_vector {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_index("row", *$ix, ($sink).nrows())?;
+        if ($sink).ncols() != 0 {
+            require_assignment_source_index(($source).len(), ($sink).ncols() - 1)?;
+        }
         for i in 0..$sink.ncols() {
             ($sink).row_mut($ix - 1)[i] = ($source)[i].clone();
         }
@@ -779,6 +832,8 @@ impl_assign_scalar_fxn_v!(Assign2DSAV, assign_2d_scalar_all_vector, usize);
 
 macro_rules! assign_2d_range_scalar {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_indices("row", ($ix1).as_ref(), ($sink).nrows())?;
+        require_assignment_index("column", $ix2, ($sink).ncols())?;
         let mut col = ($sink).column_mut($ix2 - 1);
         for &rix in ($ix1).iter() {
             col[rix - 1] = ($source).clone();
@@ -788,6 +843,11 @@ macro_rules! assign_2d_range_scalar {
 
 macro_rules! assign_2d_range_scalar_v {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_indices("row", ($ix1).as_ref(), ($sink).nrows())?;
+        require_assignment_index("column", $ix2, ($sink).ncols())?;
+        if !($ix1).is_empty() {
+            require_assignment_source_index(($source).len(), ($ix1).len() - 1)?;
+        }
         let mut col = ($sink).column_mut($ix2 - 1);
         for (i, &rix) in ($ix1).iter().enumerate() {
             col[rix - 1] = ($source)[i].clone();
@@ -797,6 +857,8 @@ macro_rules! assign_2d_range_scalar_v {
 
 macro_rules! assign_2d_range_scalar_b {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_selector_len("row", ($ix1).len(), ($sink).nrows())?;
+        require_assignment_index("column", $ix2, ($sink).ncols())?;
         let mut col = ($sink).column_mut($ix2 - 1);
         for (rix, &is_selected) in ($ix1).iter().enumerate() {
             if is_selected {
@@ -808,6 +870,8 @@ macro_rules! assign_2d_range_scalar_b {
 
 macro_rules! assign_2d_range_scalar_vb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_selector_len("row", ($ix1).len(), ($sink).nrows())?;
+        require_assignment_index("column", $ix2, ($sink).ncols())?;
         for (rix, is_selected) in ($ix1).iter().enumerate() {
             if *is_selected {
                 require_assignment_source_index(($source).len(), rix)?;
@@ -1064,6 +1128,8 @@ impl_assign_range_scalar_fxn_v!(Assign2DRSVB, assign_2d_range_scalar_vb, bool);
 
 macro_rules! assign_2d_scalar_range {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_index("row", $ix1, ($sink).nrows())?;
+        require_assignment_indices("column", ($ix2).as_ref(), ($sink).ncols())?;
         for i in 0..($ix2).len() {
             let cix = $ix2[i] - 1;
             ($sink).row_mut($ix1 - 1)[cix] = ($source).clone();
@@ -1073,6 +1139,11 @@ macro_rules! assign_2d_scalar_range {
 
 macro_rules! assign_2d_scalar_range_v {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_index("row", $ix1, ($sink).nrows())?;
+        require_assignment_indices("column", ($ix2).as_ref(), ($sink).ncols())?;
+        if !($ix2).is_empty() {
+            require_assignment_source_index(($source).len(), ($ix2).len() - 1)?;
+        }
         for i in 0..($ix2).len() {
             let cix = $ix2[i] - 1;
             ($sink).row_mut($ix1 - 1)[cix] = ($source)[i].clone();
@@ -1082,6 +1153,8 @@ macro_rules! assign_2d_scalar_range_v {
 
 macro_rules! assign_2d_scalar_range_b {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_selector_len("column", ($ix2).len(), ($sink).ncols())?;
+        require_assignment_index("row", $ix1, ($sink).nrows())?;
         for cix in 0..($ix2).len() {
             if $ix2[cix] == true {
                 ($sink).row_mut($ix1 - 1)[cix] = ($source).clone();
@@ -1092,6 +1165,8 @@ macro_rules! assign_2d_scalar_range_b {
 
 macro_rules! assign_2d_scalar_range_vb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_selector_len("column", ($ix2).len(), ($sink).ncols())?;
+        require_assignment_index("row", $ix1, ($sink).nrows())?;
         for (cix, selected) in ($ix2).iter().enumerate() {
             if *selected {
                 require_assignment_source_index(($source).len(), cix)?;
@@ -1345,6 +1420,8 @@ impl_assign_scalar_range_fxn_v!(Assign2DSRVB, assign_2d_scalar_range_vb, bool);
 
 macro_rules! assign_2d_range_range {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_indices("row", ($ix1).as_ref(), ($sink).nrows())?;
+        require_assignment_indices("column", ($ix2).as_ref(), ($sink).ncols())?;
         for rix in 0..($ix1).len() {
             let r = $ix1[rix] - 1;
             for cix in 0..($ix2).len() {
@@ -1357,6 +1434,17 @@ macro_rules! assign_2d_range_range {
 
 macro_rules! assign_2d_range_range_v {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_indices("row", ($ix1).as_ref(), ($sink).nrows())?;
+        require_assignment_indices("column", ($ix2).as_ref(), ($sink).ncols())?;
+        let required_source_len = ($ix1).len().checked_mul(($ix2).len()).ok_or_else(|| {
+            function_shape_contract_violation(
+                "assign_slice",
+                "reactive assignment source length overflowed usize",
+            )
+        })?;
+        if required_source_len != 0 {
+            require_assignment_source_index(($source).len(), required_source_len - 1)?;
+        }
         for rix in 0..($ix1).len() {
             let r = $ix1[rix] - 1;
             for cix in 0..($ix2).len() {
@@ -1369,6 +1457,8 @@ macro_rules! assign_2d_range_range_v {
 
 macro_rules! assign_2d_range_range_b {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_selector_len("row", ($ix1).len(), ($sink).nrows())?;
+        require_assignment_selector_len("column", ($ix2).len(), ($sink).ncols())?;
         for r in 0..($ix1).len() {
             if $ix1[r] == true {
                 for c in 0..($ix2).len() {
@@ -1383,6 +1473,8 @@ macro_rules! assign_2d_range_range_b {
 
 macro_rules! assign_2d_range_range_vb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_selector_len("row", ($ix1).len(), ($sink).nrows())?;
+        require_assignment_selector_len("column", ($ix2).len(), ($sink).ncols())?;
         for r in 0..($ix1).len() {
             if $ix1[r] {
                 for c in 0..($ix2).len() {
@@ -1415,6 +1507,8 @@ macro_rules! assign_2d_range_range_vb {
 
 macro_rules! assign_2d_range_range_bu {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_selector_len("row", ($ix1).len(), ($sink).nrows())?;
+        require_assignment_indices("column", ($ix2).as_ref(), ($sink).ncols())?;
         for r in 0..($ix1).len() {
             if $ix1[r] == true {
                 for cix in 0..($ix2).len() {
@@ -1428,6 +1522,8 @@ macro_rules! assign_2d_range_range_bu {
 
 macro_rules! assign_2d_range_range_vbu {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_selector_len("row", ($ix1).len(), ($sink).nrows())?;
+        require_assignment_indices("column", ($ix2).as_ref(), ($sink).ncols())?;
         let nrows = $sink.nrows();
         for cix in 0..($ix2).len() {
             let c = $ix2[cix] - 1;
@@ -1452,12 +1548,13 @@ macro_rules! assign_2d_range_range_vbu {
 
 macro_rules! assign_2d_range_range_ub {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        for r in 0..$ix1.len() {
-            if $ix1[r] != 0 {
-                for c in 0..$ix2.len() {
-                    if $ix2[c] {
-                        ($sink)[(r, c)] = $source.clone();
-                    }
+        require_assignment_selector_len("column", ($ix2).len(), ($sink).ncols())?;
+        require_assignment_indices("row", ($ix1).as_ref(), ($sink).nrows())?;
+        for &row in ($ix1).iter() {
+            let r = row - 1;
+            for c in 0..$ix2.len() {
+                if $ix2[c] {
+                    ($sink)[(r, c)] = $source.clone();
                 }
             }
         }
@@ -1466,6 +1563,8 @@ macro_rules! assign_2d_range_range_ub {
 
 macro_rules! assign_2d_range_range_vub {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        require_assignment_selector_len("column", ($ix2).len(), ($sink).ncols())?;
+        require_assignment_indices("row", ($ix1).as_ref(), ($sink).nrows())?;
         let nrows = $sink.nrows();
         for c in 0..$ix2.len() {
             if $ix2[c] {
@@ -1617,6 +1716,7 @@ impl_range_range_fxn_v!(Assign2DRRVUB, assign_2d_range_range_vub, usize, bool);
 
 macro_rules! assign_2d_all_range {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_indices("column", ($ix).as_ref(), ($sink).ncols())?;
         for cix in $ix.iter() {
             for rix in 0..($sink).nrows() {
                 ($sink).column_mut(cix - 1)[rix] = ($source).clone();
@@ -1627,6 +1727,7 @@ macro_rules! assign_2d_all_range {
 
 macro_rules! assign_2d_all_range_b {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_selector_len("column", ($ix).len(), ($sink).ncols())?;
         for cix in 0..$ix.len() {
             for rix in 0..($sink).nrows() {
                 if $ix[cix] == true {
@@ -1639,7 +1740,16 @@ macro_rules! assign_2d_all_range_b {
 
 macro_rules! assign_2d_all_range_v {
     ($source:expr, $ix:expr, $sink:expr) => {{
+        require_assignment_indices("column", ($ix).as_ref(), ($sink).ncols())?;
         let nsrc = $source.ncols();
+        require_assignment_source_layout(
+            ($source).nrows(),
+            nsrc,
+            ($sink).nrows(),
+            ($ix).len(),
+            false,
+            true,
+        )?;
         for (i, &cix) in $ix.iter().enumerate() {
             let col_index = cix - 1;
             let mut sink_col = $sink.column_mut(col_index);
@@ -1653,6 +1763,7 @@ macro_rules! assign_2d_all_range_v {
 
 macro_rules! assign_2d_all_range_vb {
     ($source:expr, $ix:expr, $sink:expr) => {{
+        require_assignment_selector_len("column", ($ix).len(), ($sink).ncols())?;
         let nsrc = $source.ncols();
         let selected_columns = ($ix).iter().filter(|selected| **selected).count();
         require_assignment_source_layout(
@@ -1686,6 +1797,7 @@ impl_all_fxn_v!(Set2DARVB, assign_2d_all_range_vb, bool);
 
 macro_rules! assign_2d_range_all {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_indices("row", ($ix).as_ref(), ($sink).nrows())?;
         for cix in 0..($sink).ncols() {
             for rix in $ix.iter() {
                 ($sink).column_mut(cix)[rix - 1] = ($source).clone();
@@ -1696,10 +1808,11 @@ macro_rules! assign_2d_range_all {
 
 macro_rules! assign_2d_range_all_b {
     ($source:expr, $ix:expr, $sink:expr) => {
+        require_assignment_selector_len("row", ($ix).len(), ($sink).nrows())?;
         for cix in 0..($sink).ncols() {
             for rix in 0..$ix.len() {
                 if $ix[rix] == true {
-                    ($sink).column_mut(cix)[rix - 1] = ($source).clone();
+                    ($sink).column_mut(cix)[rix] = ($source).clone();
                 }
             }
         }
@@ -1708,7 +1821,16 @@ macro_rules! assign_2d_range_all_b {
 
 macro_rules! assign_2d_range_all_v {
     ($source:expr, $ix:expr, $sink:expr) => {{
+        require_assignment_indices("row", ($ix).as_ref(), ($sink).nrows())?;
         let nsrc = $source.nrows();
+        require_assignment_source_layout(
+            nsrc,
+            ($source).ncols(),
+            ($ix).len(),
+            ($sink).ncols(),
+            true,
+            false,
+        )?;
         for (i, &rix) in $ix.iter().enumerate() {
             let row_index = rix - 1;
             let mut sink_row = $sink.row_mut(row_index);
@@ -1722,6 +1844,7 @@ macro_rules! assign_2d_range_all_v {
 
 macro_rules! assign_2d_range_all_vb {
     ($source:expr, $ix:expr, $sink:expr) => {{
+        require_assignment_selector_len("row", ($ix).len(), ($sink).nrows())?;
         for (i, selected) in ($ix).iter().enumerate() {
             if *selected {
                 require_assignment_source_layout(
@@ -1871,5 +1994,81 @@ mod tests {
         let error = function.solve_result().unwrap_err();
         assert!(error.kind_message().contains("source offset 1"));
         assert_eq!(sink.borrow().as_slice(), &[9, 0, 0]);
+    }
+
+    #[test]
+    fn reactive_mask_extents_are_revalidated_before_any_matrix_write() {
+        let source = Ref::new(DMatrix::from_element(2, 4, 7_u8));
+        let columns = Ref::new(DVector::from_vec(vec![true, false, false]));
+        let sink = Ref::new(DMatrix::<u8>::zeros(2, 3));
+        let function = Set2DARVB::<u8, DMatrix<u8>, DMatrix<u8>, DVector<bool>>::new_invocation(
+            FunctionInvocation::binary(
+                ValueCell::from_exact_matrix_ref(sink.clone(), 2, 3).unwrap(),
+                ValueCell::from_exact_matrix_ref(source, 2, 4).unwrap(),
+                ValueCell::from_exact_matrix_ref(columns.clone(), 3, 1).unwrap(),
+            ),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        let before = sink.borrow().clone();
+        *columns.borrow_mut() = DVector::from_vec(vec![true, false, false, true]);
+        let error = function.solve_result().unwrap_err();
+        assert!(
+            error
+                .kind_message()
+                .contains("column selector has length 4")
+        );
+        assert_eq!(*sink.borrow(), before);
+
+        let source = Ref::new(DMatrix::from_element(3, 3, 8_u8));
+        let rows = Ref::new(DVector::from_vec(vec![true, false]));
+        let sink = Ref::new(DMatrix::<u8>::zeros(2, 3));
+        let function = Set2DRAVB::<u8, DMatrix<u8>, DMatrix<u8>, DVector<bool>>::new_invocation(
+            FunctionInvocation::binary(
+                ValueCell::from_exact_matrix_ref(sink.clone(), 2, 3).unwrap(),
+                ValueCell::from_exact_matrix_ref(source, 3, 3).unwrap(),
+                ValueCell::from_exact_matrix_ref(rows.clone(), 2, 1).unwrap(),
+            ),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        let before = sink.borrow().clone();
+        *rows.borrow_mut() = DVector::from_vec(vec![true, false, true]);
+        let error = function.solve_result().unwrap_err();
+        assert!(error.kind_message().contains("row selector has length 3"));
+        assert_eq!(*sink.borrow(), before);
+    }
+
+    #[test]
+    fn reactive_numeric_indices_are_revalidated_before_any_matrix_write() {
+        let source_cell = ValueCell::from_exact(9_u8).unwrap();
+        let row_cell = ValueCell::from_exact(1_usize).unwrap();
+        let column_cell = ValueCell::from_exact(1_usize).unwrap();
+        let sink = Ref::new(DMatrix::<u8>::zeros(2, 3));
+        let function = Assign2DSSS::<u8, DMatrix<u8>>::new_invocation(FunctionInvocation::ternary(
+            ValueCell::from_exact_matrix_ref(sink.clone(), 2, 3).unwrap(),
+            source_cell,
+            row_cell.clone(),
+            column_cell.clone(),
+        ))
+        .unwrap();
+
+        function.solve_result().unwrap();
+        let before = sink.borrow().clone();
+        row_cell
+            .replace(&ValueCell::from_exact(3_usize).unwrap().snapshot().unwrap())
+            .unwrap();
+        assert!(function.solve_result().is_err());
+        assert_eq!(*sink.borrow(), before);
+        row_cell
+            .replace(&ValueCell::from_exact(1_usize).unwrap().snapshot().unwrap())
+            .unwrap();
+        column_cell
+            .replace(&ValueCell::from_exact(4_usize).unwrap().snapshot().unwrap())
+            .unwrap();
+        assert!(function.solve_result().is_err());
+        assert_eq!(*sink.borrow(), before);
     }
 }

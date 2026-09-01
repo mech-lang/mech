@@ -86,6 +86,40 @@ impl SequenceView<'_> {
     pub fn is_empty(self) -> bool {
         self.len() == 0
     }
+
+    /// Materializes canonical sequence elements without changing their
+    /// schema-directed representation.
+    pub fn to_values(self) -> Vec<ValueData> {
+        macro_rules! unpack {
+            ($values:expr, $variant:ident) => {
+                $values.iter().cloned().map(ValueData::$variant).collect()
+            };
+        }
+
+        match self {
+            Self::U8(values) => unpack!(values, U8),
+            Self::U16(values) => unpack!(values, U16),
+            Self::U32(values) => unpack!(values, U32),
+            Self::U64(values) => unpack!(values, U64),
+            Self::U128(values) => unpack!(values, U128),
+            Self::I8(values) => unpack!(values, I8),
+            Self::I16(values) => unpack!(values, I16),
+            Self::I32(values) => unpack!(values, I32),
+            Self::I64(values) => unpack!(values, I64),
+            Self::I128(values) => unpack!(values, I128),
+            Self::F32(values) => unpack!(values, F32),
+            Self::F64(values) => unpack!(values, F64),
+            Self::Complex32(values) => unpack!(values, Complex32),
+            Self::Complex64(values) => unpack!(values, Complex64),
+            Self::Rational64(values) => unpack!(values, Rational64),
+            Self::Bool(values) => values.iter().copied().map(ValueData::Bool).collect(),
+            Self::String(values) => values.iter().cloned().map(ValueData::String).collect(),
+            Self::Id(values) => unpack!(values, Id),
+            Self::Index(values) => unpack!(values, Index),
+            Self::Unit(count) => (0..count).map(|_| ValueData::Atom).collect(),
+            Self::Values(values) => values.to_vec(),
+        }
+    }
 }
 
 impl SequenceStorage {

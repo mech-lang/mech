@@ -1,3 +1,4 @@
+use super::budget::{KernelCostEstimate, checked_product, checked_sum};
 use mech_core::snapshot::{F64Bits, SnapshotValidationContext, Value, ValueDataDraft, ValueDraft};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
@@ -10,7 +11,6 @@ use mech_core::{
 use std::cmp::Ordering;
 use std::sync::Arc;
 
-const MAX_CARTESIAN_PRODUCT_OUTPUT_CARDINALITY: usize = 65_536;
 const MAX_POWERSET_INPUT_CARDINALITY: usize = 16;
 
 fn cardinality_bounds(
@@ -170,6 +170,52 @@ fn set_element_bodies_match(
         .is_some_and(|(left, right)| left == right)
 }
 
+fn set_element_body(
+    schemas: &mech_core::SchemaTable,
+    set: mech_core::SchemaId,
+) -> Option<&SchemaBody> {
+    schemas.get(set).and_then(|schema| match schema.body() {
+        SchemaBody::Set { element, .. } => Some(element.as_ref()),
+        _ => None,
+    })
+}
+
+fn set_algebra_schemas_match(request: &ResidentKernelBindRequest<'_>) -> bool {
+    set_element_bodies_match(
+        request.schemas,
+        request.inputs[0].schema_id,
+        request.inputs[1].schema_id,
+    ) && set_element_bodies_match(
+        request.schemas,
+        request.inputs[0].schema_id,
+        request.output.schema_id,
+    )
+}
+
+fn cartesian_product_schemas_match(request: &ResidentKernelBindRequest<'_>) -> bool {
+    let Some(left) = set_element_body(request.schemas, request.inputs[0].schema_id) else {
+        return false;
+    };
+    let Some(right) = set_element_body(request.schemas, request.inputs[1].schema_id) else {
+        return false;
+    };
+    matches!(
+        set_element_body(request.schemas, request.output.schema_id),
+        Some(SchemaBody::Tuple(elements))
+            if elements.as_ref() == [left.clone(), right.clone()]
+    )
+}
+
+fn powerset_schemas_match(request: &ResidentKernelBindRequest<'_>) -> bool {
+    let Some(input) = set_element_body(request.schemas, request.inputs[0].schema_id) else {
+        return false;
+    };
+    matches!(
+        set_element_body(request.schemas, request.output.schema_id),
+        Some(SchemaBody::Set { element, .. }) if element.as_ref() == input
+    )
+}
+
 #[derive(Clone)]
 struct SetElementMetadata {
     schema: SchemaId,
@@ -195,36 +241,48 @@ fn set_element_metadata(
 fn bind_union(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary_set_output(request, set_union)
+    bind_set_algebra_output(request, set_union)
 }
 
 fn bind_cartesian_product(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary_set_output(request, set_cartesian_product)
+    bind_binary_set_output(
+        request,
+        set_cartesian_product,
+        cartesian_product_schemas_match,
+    )
 }
 
 fn bind_difference(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary_set_output(request, set_difference)
+    bind_set_algebra_output(request, set_difference)
 }
 
 fn bind_intersection(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary_set_output(request, set_intersection)
+    bind_set_algebra_output(request, set_intersection)
 }
 
 fn bind_symmetric_difference(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary_set_output(request, set_symmetric_difference)
+    bind_set_algebra_output(request, set_symmetric_difference)
+}
+
+fn bind_set_algebra_output(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary_set_output(request, executor, set_algebra_schemas_match)
 }
 
 fn bind_binary_set_output(
     request: &ResidentKernelBindRequest<'_>,
     executor: mech_core::ResidentKernelExecutor,
+    schemas_match: fn(&ResidentKernelBindRequest<'_>) -> bool,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_binary_contract(request, ChangeDetectionPolicy::AlwaysChanged)?;
     if request.inputs.iter().any(|input| {
@@ -236,6 +294,7 @@ fn bind_binary_set_output(
             .iter()
             .any(|input| !is_set(request.schemas.get(input.schema_id)))
         || !is_set(request.schemas.get(request.output.schema_id))
+        || !schemas_match(request)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -269,6 +328,7 @@ fn bind_powerset(
         || request.output.shape != ResidentShape::SCALAR
         || !is_set(request.schemas.get(request.inputs[0].schema_id))
         || !is_set(request.schemas.get(request.output.schema_id))
+        || !powerset_schemas_match(request)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -303,6 +363,11 @@ fn bind_relation(
             || !is_set(request.schemas.get(input.schema_id))
     }) || request.output.kind != ResidentValueKind::Bool
         || request.output.shape != ResidentShape::SCALAR
+        || !set_element_bodies_match(
+            request.schemas,
+            request.inputs[0].schema_id,
+            request.inputs[1].schema_id,
+        )
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -515,6 +580,53 @@ fn set_element_drafts(
     Ok(elements.into_vec())
 }
 
+fn set_cardinality(value: &Value) -> Result<usize, ResidentKernelError> {
+    let ValueData::Set(set) = value.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    Ok(set.elements().len())
+}
+
+fn set_payload_len(
+    kernel: &BoundResidentKernel,
+    value: &Value,
+) -> Result<usize, ResidentKernelError> {
+    value
+        .canonical_payload_len(
+            kernel
+                .snapshot_schemas()
+                .ok_or(ResidentKernelError::InvalidInput)?,
+        )
+        .map_err(|_| ResidentKernelError::InvalidInput)
+}
+
+fn admit_set_read(comparison_work: usize) -> Result<(), ResidentKernelError> {
+    KernelCostEstimate {
+        comparison_work,
+        compute_work: comparison_work,
+        ..KernelCostEstimate::default()
+    }
+    .admit()
+}
+
+fn admit_set_materialization(
+    output_elements: usize,
+    comparison_work: usize,
+    cloned_bytes: usize,
+) -> Result<(), ResidentKernelError> {
+    let container_bytes = checked_product(&[output_elements, std::mem::size_of::<usize>()])?;
+    let output_bytes = checked_sum(&[cloned_bytes, container_bytes])?;
+    KernelCostEstimate {
+        comparison_work,
+        compute_work: checked_sum(&[comparison_work, output_elements])?,
+        output_elements,
+        output_bytes,
+        temporary_bytes: checked_sum(&[output_bytes, output_bytes])?,
+        cloned_bytes,
+    }
+    .admit()
+}
+
 fn finalize_snapshot(
     kernel: &BoundResidentKernel,
     data: ValueDataDraft,
@@ -570,19 +682,50 @@ fn write_changed_snapshot(
     Ok(changed)
 }
 
+type SetMerge = fn(
+    &Value,
+    &mech_core::SchemaTable,
+    &Value,
+    &mech_core::SchemaTable,
+) -> Result<Box<[ValueData]>, mech_core::snapshot::SnapshotValueError>;
+
+fn merged_set_element_drafts(
+    kernel: &BoundResidentKernel,
+    left: &Value,
+    right: &Value,
+    maximum_output_elements: usize,
+    merge: SetMerge,
+) -> Result<Box<[ValueDataDraft]>, ResidentKernelError> {
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let left_count = set_cardinality(left)?;
+    let right_count = set_cardinality(right)?;
+    admit_set_materialization(
+        maximum_output_elements,
+        checked_sum(&[left_count, right_count])?,
+        checked_sum(&[
+            set_payload_len(kernel, left)?,
+            set_payload_len(kernel, right)?,
+        ])?,
+    )?;
+    let elements =
+        merge(left, schemas, right, schemas).map_err(|_| ResidentKernelError::InvalidInput)?;
+    left.rebuild_set(elements, &SnapshotValidationContext::new(schemas))
+        .and_then(|value| value.set_element_drafts(schemas))
+        .map_err(|_| ResidentKernelError::InvalidInput)
+}
+
 fn set_union(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
-    let mut elements = set_element_drafts(left)?;
-    for element in set_element_drafts(right)? {
-        if !elements.contains(&element) {
-            elements.push(element);
-        }
-    }
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
+    let maximum = checked_sum(&[set_cardinality(left)?, set_cardinality(right)?])?;
+    let elements =
+        merged_set_element_drafts(kernel, left, right, maximum, Value::set_union_elements)?;
+    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
     write_full_snapshot(output, next)
 }
 
@@ -592,12 +735,15 @@ fn set_intersection(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
-    let right = set_element_drafts(right)?;
-    let elements = set_element_drafts(left)?
-        .into_iter()
-        .filter(|element| right.contains(element))
-        .collect::<Vec<_>>();
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
+    let maximum = set_cardinality(left)?.min(set_cardinality(right)?);
+    let elements = merged_set_element_drafts(
+        kernel,
+        left,
+        right,
+        maximum,
+        Value::set_intersection_elements,
+    )?;
+    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
     write_full_snapshot(output, next)
 }
 
@@ -607,12 +753,14 @@ fn set_difference(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
-    let right = set_element_drafts(right)?;
-    let elements = set_element_drafts(left)?
-        .into_iter()
-        .filter(|element| !right.contains(element))
-        .collect::<Vec<_>>();
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
+    let elements = merged_set_element_drafts(
+        kernel,
+        left,
+        right,
+        set_cardinality(left)?,
+        Value::set_difference_elements,
+    )?;
+    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
     write_full_snapshot(output, next)
 }
 
@@ -622,15 +770,15 @@ fn set_symmetric_difference(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
-    let left = set_element_drafts(left)?;
-    let right = set_element_drafts(right)?;
-    let elements = left
-        .iter()
-        .filter(|element| !right.contains(element))
-        .chain(right.iter().filter(|element| !left.contains(element)))
-        .cloned()
-        .collect::<Vec<_>>();
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
+    let maximum = checked_sum(&[set_cardinality(left)?, set_cardinality(right)?])?;
+    let elements = merged_set_element_drafts(
+        kernel,
+        left,
+        right,
+        maximum,
+        Value::set_symmetric_difference_elements,
+    )?;
+    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
     write_full_snapshot(output, next)
 }
 
@@ -640,13 +788,28 @@ fn set_cartesian_product(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
+    let left_payload_len = set_payload_len(kernel, left)?;
+    let right_payload_len = set_payload_len(kernel, right)?;
+    let left_count = set_cardinality(left)?;
+    let right_count = set_cardinality(right)?;
+    let output_len = checked_product(&[left_count, right_count])?;
+    let cloned_bytes = checked_sum(&[
+        checked_product(&[left_payload_len, right_count])?,
+        checked_product(&[right_payload_len, left_count])?,
+    ])?;
+    let container_bytes = checked_product(&[output_len, 2, std::mem::size_of::<usize>()])?;
+    let output_bytes = checked_sum(&[cloned_bytes, container_bytes])?;
+    KernelCostEstimate {
+        compute_work: output_len,
+        output_elements: output_len,
+        output_bytes,
+        temporary_bytes: output_bytes,
+        cloned_bytes,
+        ..KernelCostEstimate::default()
+    }
+    .admit()?;
     let left = set_element_drafts(left)?;
     let right = set_element_drafts(right)?;
-    let output_len = left
-        .len()
-        .checked_mul(right.len())
-        .filter(|len| *len <= MAX_CARTESIAN_PRODUCT_OUTPUT_CARDINALITY)
-        .ok_or(ResidentKernelError::InvalidShape)?;
     let mut elements = Vec::with_capacity(output_len);
     for left in left {
         for right in &right {
@@ -667,10 +830,38 @@ fn set_powerset(
     let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let elements = set_element_drafts(input)?;
-    if elements.len() > MAX_POWERSET_INPUT_CARDINALITY {
+    let element_count = set_cardinality(input)?;
+    if element_count > MAX_POWERSET_INPUT_CARDINALITY {
         return Err(ResidentKernelError::InvalidShape);
     }
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let subset_count = 1usize
+        .checked_shl(element_count as u32)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let copies_per_element = if element_count == 0 {
+        0
+    } else {
+        subset_count / 2
+    };
+    let cloned_bytes = input
+        .canonical_payload_len(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?
+        .checked_mul(copies_per_element)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let subset_headers = checked_product(&[subset_count, std::mem::size_of::<usize>()])?;
+    let output_bytes = checked_sum(&[cloned_bytes, subset_headers])?;
+    KernelCostEstimate {
+        compute_work: checked_product(&[element_count, copies_per_element])?,
+        output_elements: subset_count,
+        output_bytes,
+        temporary_bytes: output_bytes,
+        cloned_bytes,
+        ..KernelCostEstimate::default()
+    }
+    .admit()?;
+    let elements = set_element_drafts(input)?;
     let mut subsets = vec![Vec::new()];
     for element in elements {
         let with_element = subsets
@@ -715,6 +906,10 @@ fn set_relation(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    admit_set_read(checked_sum(&[
+        set_cardinality(left)?,
+        set_cardinality(right)?,
+    ])?)?;
     let next = left
         .set_relation(schemas, right, schemas, relation)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -841,6 +1036,7 @@ fn element_of(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    admit_set_read(set_cardinality(set)?)?;
     let next = set
         .set_contains(schemas, &element, schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -878,6 +1074,7 @@ fn not_element_of(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    admit_set_read(set_cardinality(set)?)?;
     let next = set
         .set_contains(schemas, &element, schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -909,10 +1106,22 @@ fn insert(
         return Err(ResidentKernelError::InvalidInput);
     };
     let element = scalar_element_value(kernel, inputs, 1)?;
-    let mut elements = set_element_drafts(set)?;
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    admit_set_materialization(
+        set_cardinality(set)?
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        set_cardinality(set)?,
+        checked_sum(&[
+            set_payload_len(kernel, set)?,
+            element
+                .canonical_payload_len(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+        ])?,
+    )?;
+    let mut elements = set_element_drafts(set)?;
     if !set
         .set_contains(schemas, &element, schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?
@@ -936,6 +1145,11 @@ fn remove(
         return Err(ResidentKernelError::InvalidInput);
     };
     let element = scalar_element_value(kernel, inputs, 1)?;
+    admit_set_materialization(
+        set_cardinality(set)?,
+        set_cardinality(set)?,
+        set_payload_len(kernel, set)?,
+    )?;
     let mut elements = Vec::new();
     for candidate in set_element_drafts(set)? {
         if !set_element_key_matches(kernel, candidate.clone(), &element)? {
@@ -974,6 +1188,13 @@ mod tests {
     }
 
     #[test]
+    fn resident_set_semantics_do_not_reintroduce_raw_draft_equality() {
+        let production = include_str!("set.rs").split("#[cfg(test)]").next().unwrap();
+        assert!(!production.contains(".contains("));
+        assert!(!production.contains("ValueDataDraft::contains"));
+    }
+
+    #[test]
     fn membership_requires_the_exact_set_element_schema() {
         let mut builder = mech_core::SchemaTableBuilder::new();
         let scalar = builder
@@ -1003,6 +1224,71 @@ mod tests {
 
         assert!(set_element_schema_matches(&schemas, scalar, set));
         assert!(!set_element_schema_matches(&schemas, matrix, set));
+    }
+
+    #[test]
+    fn set_algebra_binder_rejects_mismatched_element_schemas() {
+        let dynamic = CardinalitySpec::Dynamic { upper_bound: None };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let numbers = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                cardinality: dynamic.clone(),
+            }))
+            .unwrap();
+        let strings = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(SchemaBody::String),
+                cardinality: dynamic,
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let numbers = build.resolve(numbers).unwrap();
+        let strings = build.resolve(strings).unwrap();
+        let (schemas, _) = build.into_parts();
+        let port = |schema_id| mech_core::ResidentPortLayout {
+            schema_id,
+            schema_key: schemas.entry(schema_id).unwrap().key(),
+            kind: ResidentValueKind::Snapshot,
+            shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(schema_id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+        };
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: vec![numbers, strings]
+                .into_iter()
+                .map(|schema| mech_core::ResolvedInputPort {
+                    schema,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            outputs: vec![mech_core::ResolvedOutputPort {
+                schema: numbers,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        });
+        assert!(matches!(
+            bind_union(&ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &[port(numbers), port(strings)],
+                output: port(numbers),
+            }),
+            Err(ResidentKernelBindError::UnsupportedLayout)
+        ));
     }
 
     fn nested_nan_element(outer_nan: u64, inner_nan: u64) -> ValueDataDraft {
@@ -1176,5 +1462,145 @@ mod tests {
             panic!("set/remove must produce a set");
         };
         assert!(removed.elements().is_empty());
+
+        let candidate_set = ValueDraft {
+            schema: set_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                vec![candidate.canonical_data_draft().unwrap()].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let candidate_set_slot = [Some(candidate_set)];
+        let algebra_inputs = [
+            ResidentValueRef::Snapshot(&set_slot),
+            ResidentValueRef::Snapshot(&candidate_set_slot),
+        ];
+        let algebra_kernel = |executor| {
+            BoundResidentKernel::new(executor, Box::new([]))
+                .with_snapshot_output(ResidentSnapshotOutput {
+                    schema: set_schema,
+                    schema_key: schemas.entry(set_schema).unwrap().key(),
+                    shape: set_shape.clone(),
+                    exact_cardinality: None,
+                    maximum_cardinality: None,
+                })
+                .with_snapshot_schemas(schemas.clone())
+        };
+        for (executor, expected_len) in [
+            (set_union as mech_core::ResidentKernelExecutor, 1),
+            (set_intersection as mech_core::ResidentKernelExecutor, 1),
+            (set_difference as mech_core::ResidentKernelExecutor, 0),
+            (
+                set_symmetric_difference as mech_core::ResidentKernelExecutor,
+                0,
+            ),
+        ] {
+            let mut output = [None];
+            assert_eq!(
+                algebra_kernel(executor).execute(
+                    &Inputs(&algebra_inputs),
+                    ResidentValueMut::Snapshot(&mut output),
+                ),
+                Ok(true),
+            );
+            let ValueData::Set(output) = output[0].as_ref().unwrap().data() else {
+                panic!("set algebra must produce a set");
+            };
+            assert_eq!(output.elements().len(), expected_len);
+        }
+    }
+
+    #[test]
+    fn set_expansions_reject_byte_amplification_before_allocating_outputs() {
+        let dynamic = CardinalitySpec::Dynamic { upper_bound: None };
+        let string_set_body = SchemaBody::Set {
+            element: Box::new(SchemaBody::String),
+            cardinality: dynamic.clone(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let string_set_handle = builder.insert(schema(string_set_body.clone())).unwrap();
+        let pair_set_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(SchemaBody::Tuple(
+                    vec![SchemaBody::String, SchemaBody::String].into_boxed_slice(),
+                )),
+                cardinality: dynamic.clone(),
+            }))
+            .unwrap();
+        let powerset_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(string_set_body),
+                cardinality: dynamic,
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let string_set_schema = build.resolve(string_set_handle).unwrap();
+        let pair_set_schema = build.resolve(pair_set_handle).unwrap();
+        let powerset_schema = build.resolve(powerset_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let shape = |schema| {
+            schemas
+                .get(schema)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap()
+        };
+        let set = |count: usize, width: usize| {
+            ValueDraft {
+                schema: string_set_schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Set(
+                    (0..count)
+                        .map(|index| {
+                            ValueDataDraft::String(format!("{index:04}-{}", "x".repeat(width)))
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let output_kernel = |executor, schema| {
+            BoundResidentKernel::new(executor, Box::new([]))
+                .with_snapshot_output(ResidentSnapshotOutput {
+                    schema,
+                    schema_key: schemas.entry(schema).unwrap().key(),
+                    shape: shape(schema),
+                    exact_cardinality: None,
+                    maximum_cardinality: None,
+                })
+                .with_snapshot_schemas(schemas.clone())
+        };
+
+        let left = [Some(set(256, 128))];
+        let right = [Some(set(256, 128))];
+        let cartesian_inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
+        let mut cartesian_output = [None];
+        assert_eq!(
+            output_kernel(set_cartesian_product, pair_set_schema).execute(
+                &Inputs(&cartesian_inputs),
+                ResidentValueMut::Snapshot(&mut cartesian_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(cartesian_output[0].is_none());
+
+        let input = [Some(set(16, 1024))];
+        let powerset_inputs = [ResidentValueRef::Snapshot(&input)];
+        let mut powerset_output = [None];
+        assert_eq!(
+            output_kernel(set_powerset, powerset_schema).execute(
+                &Inputs(&powerset_inputs),
+                ResidentValueMut::Snapshot(&mut powerset_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(powerset_output[0].is_none());
     }
 }

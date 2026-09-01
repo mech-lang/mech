@@ -51,15 +51,15 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["math", "bessel"], "jn", bind_math_bessel_jn)?;
     register(builder, &["math", "bessel"], "yn", bind_math_bessel_yn)?;
     register(builder, &["logic"], "and", bind_semantic_bool_and)?;
-    register(builder, &["logic"], "or", bind_bool_or)?;
-    register(builder, &["logic"], "xor", bind_bool_xor)?;
+    register(builder, &["logic"], "or", bind_semantic_bool_or)?;
+    register(builder, &["logic"], "xor", bind_semantic_bool_xor)?;
     register(builder, &["logic"], "not", bind_bool_not)?;
     register(builder, &["compare"], "eq", bind_semantic_equal)?;
     register(builder, &["compare"], "neq", bind_semantic_not_equal)?;
-    register(builder, &["compare"], "lt", bind_f64_less)?;
-    register(builder, &["compare"], "lte", bind_f64_less_equal)?;
-    register(builder, &["compare"], "gt", bind_f64_greater)?;
-    register(builder, &["compare"], "gte", bind_f64_greater_equal)?;
+    register(builder, &["compare"], "lt", bind_semantic_less)?;
+    register(builder, &["compare"], "lte", bind_semantic_less_equal)?;
+    register(builder, &["compare"], "gt", bind_semantic_greater)?;
+    register(builder, &["compare"], "gte", bind_semantic_greater_equal)?;
     register(builder, &["compare"], "seq", bind_strict_equal)?;
     register(builder, &["compare"], "sneq", bind_strict_not_equal)?;
     register(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
@@ -887,11 +887,26 @@ fn bind_snapshot_equality(
 fn bind_semantic_not_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_not_equal(request).or_else(|_| bind_snapshot_equality(request, snapshot_not_equal))
+    bind_f64_not_equal(request)
+        .or_else(|_| bind_f64_vector_not_equal(request))
+        .or_else(|_| bind_snapshot_equality(request, snapshot_not_equal))
 }
 
 fn bind_f64_vector_equal(
     request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_vector_comparison(request, f64_vector_equal)
+}
+
+fn bind_f64_vector_not_equal(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_vector_comparison(request, f64_vector_not_equal)
+}
+
+fn bind_f64_vector_comparison(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
         request,
@@ -904,20 +919,27 @@ fn bind_f64_vector_equal(
         &[ResidentValueKind::F64, ResidentValueKind::F64],
         ResidentValueKind::Bool,
     )?;
-    let output_len = request
+    request
         .output
         .shape
         .len()
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    if request.inputs.iter().any(|input| {
-        input
-            .shape
-            .len()
-            .is_none_or(|len| len != 1 && len != output_len)
-    }) {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
-    bound(f64_vector_equal, Vec::<u64>::new().into_boxed_slice())
+    let modes = request
+        .inputs
+        .iter()
+        .map(|input| binary_broadcast_mode(input.shape, request.output.shape))
+        .collect::<Option<Vec<_>>>()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    bound(
+        executor,
+        vec![
+            request.output.shape.rows as u64,
+            request.output.shape.columns as u64,
+            modes[0],
+            modes[1],
+        ]
+        .into_boxed_slice(),
+    )
 }
 
 fn bind_f64_not_equal(
@@ -932,10 +954,23 @@ fn bind_f64_less(
     bind_f64_comparison(request, f64_less)
 }
 
+fn bind_semantic_less(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_less(request).or_else(|_| bind_f64_vector_comparison(request, f64_vector_less))
+}
+
 fn bind_f64_less_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_comparison(request, f64_less_equal)
+}
+
+fn bind_semantic_less_equal(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_less_equal(request)
+        .or_else(|_| bind_f64_vector_comparison(request, f64_vector_less_equal))
 }
 
 fn bind_f64_greater(
@@ -944,10 +979,23 @@ fn bind_f64_greater(
     bind_f64_comparison(request, f64_greater)
 }
 
+fn bind_semantic_greater(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_greater(request).or_else(|_| bind_f64_vector_comparison(request, f64_vector_greater))
+}
+
 fn bind_f64_greater_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_comparison(request, f64_greater_equal)
+}
+
+fn bind_semantic_greater_equal(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_greater_equal(request)
+        .or_else(|_| bind_f64_vector_comparison(request, f64_vector_greater_equal))
 }
 
 fn bind_bool_binary(
@@ -991,6 +1039,13 @@ fn bind_semantic_bool_and(
 fn bind_bool_vector_and(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_bool_vector_binary(request, bool_vector_and)
+}
+
+fn bind_bool_vector_binary(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
         request,
         2,
@@ -1002,14 +1057,27 @@ fn bind_bool_vector_and(
         &[ResidentValueKind::Bool, ResidentValueKind::Bool],
         ResidentValueKind::Bool,
     )?;
-    if request
+    request
+        .output
+        .shape
+        .len()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let modes = request
         .inputs
         .iter()
-        .any(|input| input.shape != request.output.shape)
-    {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
-    bound(bool_vector_and, Vec::<u64>::new().into_boxed_slice())
+        .map(|input| binary_broadcast_mode(input.shape, request.output.shape))
+        .collect::<Option<Vec<_>>>()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    bound(
+        executor,
+        vec![
+            request.output.shape.rows as u64,
+            request.output.shape.columns as u64,
+            modes[0],
+            modes[1],
+        ]
+        .into_boxed_slice(),
+    )
 }
 
 fn bind_bool_or(
@@ -1018,10 +1086,22 @@ fn bind_bool_or(
     bind_bool_binary(request, bool_or)
 }
 
+fn bind_semantic_bool_or(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_bool_or(request).or_else(|_| bind_bool_vector_binary(request, bool_vector_or))
+}
+
 fn bind_bool_xor(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_bool_binary(request, bool_xor)
+}
+
+fn bind_semantic_bool_xor(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_bool_xor(request).or_else(|_| bind_bool_vector_binary(request, bool_vector_xor))
 }
 
 fn bind_bool_not(
@@ -1384,6 +1464,35 @@ fn bind_indexed_assign(
     let [base, source, selector] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    let Some(output_schema) = request.schemas.get(request.output.schema_id) else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let SchemaBody::Matrix { element, .. } = output_schema.body() else {
+        // Snapshot-backed records, maps, tables, tuples, and aggregate-valued
+        // matrices require their own semantic assignment capability. Treating
+        // their one snapshot lane as a one-element dense matrix would replace
+        // the aggregate itself instead of the selected member.
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if request
+        .schemas
+        .get(base.schema_id)
+        .map(mech_core::Schema::body)
+        != Some(output_schema.body())
+        || !request
+            .schemas
+            .get(source.schema_id)
+            .is_some_and(|schema| match schema.body() {
+                body if body == element.as_ref() => true,
+                SchemaBody::Matrix {
+                    element: source_element,
+                    ..
+                } => source_element.as_ref() == element.as_ref(),
+                _ => false,
+            })
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     let output_len = request
         .output
         .shape
@@ -2338,11 +2447,16 @@ fn indexed_assign(
     }
     let selector = input(inputs, 1)?;
     let positions = match selector {
-        ResidentValueRef::Bool(values) if values.len() == output_len => values
-            .iter()
-            .enumerate()
-            .filter_map(|(index, include)| (*include != 0).then_some(index))
-            .collect::<Vec<_>>(),
+        ResidentValueRef::Bool(values) if values.len() == output_len => {
+            if values.iter().any(|value| *value > 1) {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            values
+                .iter()
+                .enumerate()
+                .filter_map(|(index, include)| (*include != 0).then_some(index))
+                .collect::<Vec<_>>()
+        }
         ResidentValueRef::Index(values) => values
             .iter()
             .map(|index| checked_one_based(*index, output_len))
@@ -2373,6 +2487,7 @@ fn indexed_assign(
     }
     match (source, output) {
         (ResidentValueRef::Bool(source), ResidentValueMut::Bool(output)) => {
+            let source = source.to_vec();
             let mut changed = false;
             for (ordinal, position) in positions.into_iter().enumerate() {
                 let next = source[source_index(ordinal, position)];
@@ -2382,6 +2497,7 @@ fn indexed_assign(
             Ok(changed)
         }
         (ResidentValueRef::Index(source), ResidentValueMut::Index(output)) => {
+            let source = source.to_vec();
             let mut changed = false;
             for (ordinal, position) in positions.into_iter().enumerate() {
                 let next = source[source_index(ordinal, position)];
@@ -2391,6 +2507,7 @@ fn indexed_assign(
             Ok(changed)
         }
         (ResidentValueRef::F64(source), ResidentValueMut::F64(output)) => {
+            let source = source.to_vec();
             let mut changed = false;
             for (ordinal, position) in positions.into_iter().enumerate() {
                 let next = source[source_index(ordinal, position)];
@@ -2400,6 +2517,7 @@ fn indexed_assign(
             Ok(changed)
         }
         (ResidentValueRef::String(source), ResidentValueMut::String(output)) => {
+            let source = source.to_vec();
             let mut changed = false;
             for (ordinal, position) in positions.into_iter().enumerate() {
                 let next = &source[source_index(ordinal, position)];
@@ -2409,6 +2527,7 @@ fn indexed_assign(
             Ok(changed)
         }
         (ResidentValueRef::Snapshot(source), ResidentValueMut::Snapshot(output)) => {
+            let source = source.to_vec();
             let schemas = kernel
                 .snapshot_schemas()
                 .ok_or(ResidentKernelError::InvalidInput)?;
@@ -3039,6 +3158,15 @@ fn validate_binary_broadcast_input(
     rows: usize,
     columns: usize,
 ) -> Result<(), ResidentKernelError> {
+    validate_binary_broadcast_len(values.len(), mode, rows, columns)
+}
+
+fn validate_binary_broadcast_len(
+    len: usize,
+    mode: u64,
+    rows: usize,
+    columns: usize,
+) -> Result<(), ResidentKernelError> {
     let expected = match mode {
         BINARY_BROADCAST_SCALAR => 1,
         BINARY_BROADCAST_EXACT => rows
@@ -3048,7 +3176,7 @@ fn validate_binary_broadcast_input(
         BINARY_BROADCAST_ROW => columns,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
-    if values.len() == expected {
+    if len == expected {
         Ok(())
     } else {
         Err(ResidentKernelError::InvalidShape)
@@ -3128,9 +3256,26 @@ fn f64_equal(
 }
 
 fn f64_vector_equal(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_vector_comparison(kernel, inputs, output, |left, right| left == right)
+}
+
+fn f64_vector_not_equal(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_vector_comparison(kernel, inputs, output, |left, right| left != right)
+}
+
+fn f64_vector_comparison(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+    comparison: impl Fn(f64, f64) -> bool,
 ) -> Result<bool, ResidentKernelError> {
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
@@ -3140,24 +3285,64 @@ fn f64_vector_equal(
     let ResidentValueMut::Bool(output) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let output_len = output.len();
-    let pick = |values: &[f64], index: usize| match values.len() {
-        1 => Some(values[0]),
-        len if len == output_len => Some(values[index]),
-        _ => None,
+    let [rows, columns, left_mode, right_mode] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
     };
-    if pick(left, 0).is_none() || pick(right, 0).is_none() {
+    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    if output.len()
+        != rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    {
         return Err(ResidentKernelError::InvalidShape);
     }
+    validate_binary_broadcast_input(left, *left_mode, rows, columns)?;
+    validate_binary_broadcast_input(right, *right_mode, rows, columns)?;
     let mut changed = false;
     for (index, target) in output.iter_mut().enumerate() {
-        let next = u8::from(pick(left, index).unwrap() == pick(right, index).unwrap());
+        let next = u8::from(comparison(
+            binary_broadcast_value(left, *left_mode, index, rows),
+            binary_broadcast_value(right, *right_mode, index, rows),
+        ));
         if *target != next {
             *target = next;
             changed = true;
         }
     }
     Ok(changed)
+}
+
+fn f64_vector_less(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_vector_comparison(kernel, inputs, output, |left, right| left < right)
+}
+
+fn f64_vector_less_equal(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_vector_comparison(kernel, inputs, output, |left, right| left <= right)
+}
+
+fn f64_vector_greater(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_vector_comparison(kernel, inputs, output, |left, right| left > right)
+}
+
+fn f64_vector_greater_equal(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_vector_comparison(kernel, inputs, output, |left, right| left >= right)
 }
 
 fn f64_not_equal(
@@ -3212,9 +3397,34 @@ fn bool_and(
 }
 
 fn bool_vector_and(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    bool_vector_binary(kernel, inputs, output, |left, right| left && right)
+}
+
+fn bool_vector_or(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    bool_vector_binary(kernel, inputs, output, |left, right| left || right)
+}
+
+fn bool_vector_xor(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    bool_vector_binary(kernel, inputs, output, |left, right| left ^ right)
+}
+
+fn bool_vector_binary(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+    operation: impl Fn(bool, bool) -> bool,
 ) -> Result<bool, ResidentKernelError> {
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
@@ -3228,12 +3438,39 @@ fn bool_vector_and(
     let ResidentValueMut::Bool(output) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    if left.len() != output.len() || right.len() != output.len() {
+    if left.iter().chain(right).any(|value| *value > 1) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let [rows, columns, left_mode, right_mode] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    if output.len()
+        != rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    {
         return Err(ResidentKernelError::InvalidShape);
     }
+    validate_binary_broadcast_len(left.len(), *left_mode, rows, columns)?;
+    validate_binary_broadcast_len(right.len(), *right_mode, rows, columns)?;
+    let at = |values: &[u8], mode, index| {
+        let index = match mode {
+            BINARY_BROADCAST_SCALAR => 0,
+            BINARY_BROADCAST_EXACT => index,
+            BINARY_BROADCAST_COLUMN => index % rows,
+            BINARY_BROADCAST_ROW => index / rows,
+            _ => unreachable!("validated Boolean broadcast mode"),
+        };
+        values[index] != 0
+    };
     let mut changed = false;
-    for ((left, right), target) in left.iter().zip(right).zip(output) {
-        let next = u8::from(*left != 0 && *right != 0);
+    for (index, target) in output.iter_mut().enumerate() {
+        let next = u8::from(operation(
+            at(left, *left_mode, index),
+            at(right, *right_mode, index),
+        ));
         if *target != next {
             *target = next;
             changed = true;
@@ -3835,9 +4072,11 @@ fn gather_1d(
     if output.len() != indices_len {
         return Err(ResidentKernelError::InvalidShape);
     }
+    let indices = (0..indices_len)
+        .map(|ordinal| checked_one_based(index_at(inputs, 1, ordinal)?, source_values.len()))
+        .collect::<Result<Vec<_>, _>>()?;
     let mut changed = false;
-    for (ordinal, target) in output.iter_mut().enumerate() {
-        let index = checked_one_based(index_at(inputs, 1, ordinal)?, source_values.len())?;
+    for (index, target) in indices.into_iter().zip(output.iter_mut()) {
         let next = source_values[index];
         changed |= target.to_bits() != next.to_bits();
         *target = next;
@@ -4373,12 +4612,18 @@ fn all_rows_columns(
     let rows = kernel.parameters()[0] as usize;
     let source_columns = kernel.parameters()[1] as usize;
     let selected_columns = input(inputs, 1)?.len();
-    if output.len() != rows * selected_columns {
+    if output.len()
+        != rows
+            .checked_mul(selected_columns)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    {
         return Err(ResidentKernelError::InvalidShape);
     }
+    let columns = (0..selected_columns)
+        .map(|ordinal| checked_one_based(index_at(inputs, 1, ordinal)?, source_columns))
+        .collect::<Result<Vec<_>, _>>()?;
     let mut changed = false;
-    for ordinal in 0..selected_columns {
-        let column = checked_one_based(index_at(inputs, 1, ordinal)?, source_columns)?;
+    for (ordinal, column) in columns.into_iter().enumerate() {
         let source = &source[column * rows..(column + 1) * rows];
         let target = &mut output[ordinal * rows..(ordinal + 1) * rows];
         changed |= target
@@ -4430,14 +4675,20 @@ fn rows_all_columns(
     let rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
     let selected_rows = input(inputs, 1)?.len();
-    if output.len() != selected_rows * columns {
+    if output.len()
+        != selected_rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    {
         return Err(ResidentKernelError::InvalidShape);
     }
+    let selected_rows = (0..selected_rows)
+        .map(|ordinal| checked_one_based(index_at(inputs, 1, ordinal)?, rows))
+        .collect::<Result<Vec<_>, _>>()?;
     let mut changed = false;
     let mut target_index = 0;
     for column in 0..columns {
-        for ordinal in 0..selected_rows {
-            let row = checked_one_based(index_at(inputs, 1, ordinal)?, rows)?;
+        for &row in &selected_rows {
             let next = source[row + column * rows];
             changed |= output[target_index].to_bits() != next.to_bits();
             output[target_index] = next;
@@ -4487,13 +4738,27 @@ fn indexed_rows(
     let target_rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
     let source_rows = kernel.parameters()[2] as usize;
-    if output.len() != target_rows * columns || source_values.len() != source_rows * columns {
+    if output.len()
+        != target_rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?
+        || source_values.len()
+            != source_rows
+                .checked_mul(columns)
+                .ok_or(ResidentKernelError::InvalidShape)?
+    {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let mut changed = false;
     let index_count = input(inputs, 1)?.len();
-    for occurrence in 0..index_count {
-        let row = checked_one_based(index_at(inputs, 1, occurrence)?, target_rows)?;
+    if index_count != source_rows {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let rows = (0..index_count)
+        .map(|occurrence| checked_one_based(index_at(inputs, 1, occurrence)?, target_rows))
+        .collect::<Result<Vec<_>, _>>()?;
+    let source_values = source_values.to_vec();
+    let mut changed = false;
+    for (occurrence, row) in rows.into_iter().enumerate() {
         for column in 0..columns {
             let target = row + column * target_rows;
             let source = occurrence + column * source_rows;
@@ -4905,7 +5170,7 @@ mod tests {
     }
 
     #[test]
-    fn out_of_range_index_is_a_structured_kernel_rejection() {
+    fn late_out_of_range_index_rejects_before_indexed_row_mutation() {
         let kernel = indexed_kernel(sub_indexed_rows, 2, 1, 2, 2);
         let source = [1.0, 2.0];
         let indices = [1_u64, 3];
@@ -4922,7 +5187,128 @@ mod tests {
                 upper_bound: 2,
             })
         );
-        assert_eq!(candidate, [9.0, 20.0]);
+        assert_eq!(candidate, [10.0, 20.0]);
+    }
+
+    #[test]
+    fn late_out_of_range_gather_index_rejects_before_output_mutation() {
+        let kernel = BoundResidentKernel::new(gather_1d, Box::new([]));
+        let source = [10.0, 20.0];
+        let indices = [1_u64, 3];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Index(&indices),
+        ];
+        let mut output = [90.0, 80.0];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Err(ResidentKernelError::IndexOutOfRange {
+                index: 3,
+                upper_bound: 2,
+            })
+        );
+        assert_eq!(output, [90.0, 80.0]);
+    }
+
+    #[test]
+    fn late_out_of_range_row_selector_rejects_before_output_mutation() {
+        let kernel = BoundResidentKernel::new(rows_all_columns, Box::new([2, 2]));
+        let source = [10.0, 20.0, 30.0, 40.0];
+        let indices = [1_u64, 3];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Index(&indices),
+        ];
+        let mut output = [90.0, 80.0, 70.0, 60.0];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Err(ResidentKernelError::IndexOutOfRange {
+                index: 3,
+                upper_bound: 2,
+            })
+        );
+        assert_eq!(output, [90.0, 80.0, 70.0, 60.0]);
+    }
+
+    #[test]
+    fn indexed_assignment_capability_rejects_snapshot_aggregate_lanes() {
+        fn schema(body: SchemaBody) -> mech_core::Schema {
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap()
+        }
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let map = builder
+            .insert(schema(SchemaBody::Map {
+                key: Box::new(SchemaBody::Index),
+                value: Box::new(SchemaBody::Tuple(vec![SchemaBody::Bool].into_boxed_slice())),
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+            }))
+            .unwrap();
+        let tuple = builder
+            .insert(schema(SchemaBody::Tuple(
+                vec![SchemaBody::Bool].into_boxed_slice(),
+            )))
+            .unwrap();
+        let index = builder.insert(schema(SchemaBody::Index)).unwrap();
+        let build = builder.finish().unwrap();
+        let map = build.resolve(map).unwrap();
+        let tuple = build.resolve(tuple).unwrap();
+        let index = build.resolve(index).unwrap();
+        let (schemas, _) = build.into_parts();
+        let port = |schema_id, kind| mech_core::ResidentPortLayout {
+            schema_id,
+            schema_key: schemas.entry(schema_id).unwrap().key(),
+            kind,
+            shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(schema_id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+        };
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: [map, tuple, index]
+                .into_iter()
+                .map(|schema| mech_core::ResolvedInputPort {
+                    schema,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            outputs: vec![mech_core::ResolvedOutputPort {
+                schema: map,
+                access: AccessMode::ReadWrite,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::ReadModifyWrite {
+                    base_input: 0,
+                    regions: RegionPolicy::IndexedAxis { axis: 0 },
+                },
+                alias: AliasPolicy::MayAlias { input: 0 },
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        });
+        assert!(matches!(
+            bind_indexed_assign(&ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &[
+                    port(map, ResidentValueKind::Snapshot),
+                    port(tuple, ResidentValueKind::Snapshot),
+                    port(index, ResidentValueKind::Index),
+                ],
+                output: port(map, ResidentValueKind::Snapshot),
+            }),
+            Err(ResidentKernelBindError::UnsupportedLayout)
+        ));
     }
 
     #[test]
@@ -4971,6 +5357,57 @@ mod tests {
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
             Err(ResidentKernelError::InvalidInput)
         );
+
+        let matrix = [1, 2, 0, 1];
+        let scalar = [1];
+        let inputs = [
+            ResidentValueRef::Bool(&matrix),
+            ResidentValueRef::Bool(&scalar),
+        ];
+        let mut output = [0; 4];
+        let kernel = BoundResidentKernel::new(
+            bool_vector_or,
+            Box::new([2, 2, BINARY_BROADCAST_EXACT, BINARY_BROADCAST_SCALAR]),
+        );
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Err(ResidentKernelError::InvalidInput)
+        );
+    }
+
+    #[test]
+    fn boolean_matrix_kernels_share_broadcast_and_change_semantics() {
+        let matrix = [1, 0, 0, 1, 1, 0];
+        let row = [0, 1, 0];
+        let inputs = [
+            ResidentValueRef::Bool(&matrix),
+            ResidentValueRef::Bool(&row),
+        ];
+        for (executor, expected) in [
+            (
+                bool_vector_and as mech_core::ResidentKernelExecutor,
+                [0, 0, 0, 1, 0, 0],
+            ),
+            (
+                bool_vector_or as mech_core::ResidentKernelExecutor,
+                [1, 0, 1, 1, 1, 0],
+            ),
+            (
+                bool_vector_xor as mech_core::ResidentKernelExecutor,
+                [1, 0, 1, 0, 1, 0],
+            ),
+        ] {
+            let kernel = BoundResidentKernel::new(
+                executor,
+                Box::new([2, 3, BINARY_BROADCAST_EXACT, BINARY_BROADCAST_ROW]),
+            );
+            let mut output = [0; 6];
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+                Ok(expected.iter().any(|value| *value != 0)),
+            );
+            assert_eq!(output, expected);
+        }
     }
 
     #[test]
@@ -4994,6 +5431,171 @@ mod tests {
                 Ok(true)
             );
             assert_eq!(output, [u8::from(expected)]);
+        }
+    }
+
+    #[test]
+    fn f64_matrix_comparisons_share_declared_broadcast_layouts() {
+        let matrix = [1.0, 4.0, 2.0, 5.0, 3.0, 6.0];
+        let row = [1.0, 4.0, 3.0];
+        let inputs = [ResidentValueRef::F64(&matrix), ResidentValueRef::F64(&row)];
+        for (executor, expected) in [
+            (
+                f64_vector_equal as mech_core::ResidentKernelExecutor,
+                [1, 0, 0, 0, 1, 0],
+            ),
+            (
+                f64_vector_not_equal as mech_core::ResidentKernelExecutor,
+                [0, 1, 1, 1, 0, 1],
+            ),
+            (
+                f64_vector_less as mech_core::ResidentKernelExecutor,
+                [0, 0, 1, 0, 0, 0],
+            ),
+            (
+                f64_vector_less_equal as mech_core::ResidentKernelExecutor,
+                [1, 0, 1, 0, 1, 0],
+            ),
+            (
+                f64_vector_greater as mech_core::ResidentKernelExecutor,
+                [0, 1, 0, 1, 0, 1],
+            ),
+            (
+                f64_vector_greater_equal as mech_core::ResidentKernelExecutor,
+                [1, 1, 0, 1, 1, 1],
+            ),
+        ] {
+            let kernel = BoundResidentKernel::new(
+                executor,
+                Box::new([2, 3, BINARY_BROADCAST_EXACT, BINARY_BROADCAST_ROW]),
+            );
+            let mut output = [0; 6];
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+                Ok(true),
+            );
+            assert_eq!(output, expected);
+        }
+    }
+
+    #[test]
+    fn all_f64_matrix_comparison_binders_admit_the_same_broadcast_layouts() {
+        fn schema(body: SchemaBody) -> mech_core::Schema {
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap()
+        }
+        let matrix = |element, rows, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(rows),
+                mech_core::DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let lhs = builder
+            .insert(schema(matrix(
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                2,
+                3,
+            )))
+            .unwrap();
+        let rhs = builder
+            .insert(schema(matrix(
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                1,
+                3,
+            )))
+            .unwrap();
+        let output = builder
+            .insert(schema(matrix(SchemaBody::Bool, 2, 3)))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let lhs = build.resolve(lhs).unwrap();
+        let rhs = build.resolve(rhs).unwrap();
+        let output = build.resolve(output).unwrap();
+        let (schemas, _) = build.into_parts();
+        let port = |schema_id, kind, shape| mech_core::ResidentPortLayout {
+            schema_id,
+            schema_key: schemas.entry(schema_id).unwrap().key(),
+            kind,
+            shape,
+            shape_instance: schemas
+                .get(schema_id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+        };
+        let inputs = [
+            port(
+                lhs,
+                ResidentValueKind::F64,
+                ResidentShape {
+                    rows: 2,
+                    columns: 3,
+                },
+            ),
+            port(
+                rhs,
+                ResidentValueKind::F64,
+                ResidentShape {
+                    rows: 1,
+                    columns: 3,
+                },
+            ),
+        ];
+        let output_port = port(
+            output,
+            ResidentValueKind::Bool,
+            ResidentShape {
+                rows: 2,
+                columns: 3,
+            },
+        );
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: [lhs, rhs]
+                .into_iter()
+                .map(|schema| mech_core::ResolvedInputPort {
+                    schema,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            outputs: vec![mech_core::ResolvedOutputPort {
+                schema: output,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        });
+        for binder in [
+            bind_semantic_equal as mech_core::ResidentKernelFactory,
+            bind_semantic_not_equal as mech_core::ResidentKernelFactory,
+            bind_semantic_less as mech_core::ResidentKernelFactory,
+            bind_semantic_less_equal as mech_core::ResidentKernelFactory,
+            bind_semantic_greater as mech_core::ResidentKernelFactory,
+            bind_semantic_greater_equal as mech_core::ResidentKernelFactory,
+        ] {
+            assert!(
+                binder(&ResidentKernelBindRequest {
+                    contract: &contract,
+                    schemas: &schemas,
+                    inputs: &inputs,
+                    output: output_port.clone(),
+                })
+                .is_ok()
+            );
         }
     }
 

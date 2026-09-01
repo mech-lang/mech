@@ -1096,6 +1096,20 @@ impl ValueCell {
         .map_err(snapshot_failure)
     }
 
+    /// Compares two canonical key values using the schema-directed ordering
+    /// rules used by sets and maps.
+    pub fn key_eq(&self, other: &Self) -> MResult<bool> {
+        let left = self.snapshot()?;
+        let right = other.snapshot()?;
+        left.key_cmp(
+            self.binding.schemas.as_ref(),
+            &right,
+            other.binding.schemas.as_ref(),
+        )
+        .map(|ordering| ordering == core::cmp::Ordering::Equal)
+        .map_err(snapshot_failure)
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn set_contains(&self, candidate: &Self) -> MResult<bool> {
         let set = self.snapshot()?;
@@ -3272,6 +3286,35 @@ mod tests {
             alias.snapshot().unwrap().data(),
             ValueData::F64(value) if value.to_f64() == 3.0
         ));
+    }
+
+    #[cfg(feature = "f64")]
+    #[test]
+    fn value_cell_key_equality_uses_canonical_float_keys() {
+        let left = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueDataDraft::F64(crate::snapshot::F64Bits::from_bits(0x7ff0_0000_0000_0001)),
+        )
+        .unwrap();
+        let right = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueDataDraft::F64(crate::snapshot::F64Bits::from_bits(0xfff8_0000_0000_0042)),
+        )
+        .unwrap();
+        assert!(!left.snapshot_eq(&right).unwrap());
+        assert!(left.key_eq(&right).unwrap());
+
+        let negative_zero = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueDataDraft::F64(crate::snapshot::F64Bits::from_f64(-0.0)),
+        )
+        .unwrap();
+        let positive_zero = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueDataDraft::F64(crate::snapshot::F64Bits::from_f64(0.0)),
+        )
+        .unwrap();
+        assert!(negative_zero.key_eq(&positive_zero).unwrap());
     }
 
     #[cfg(feature = "string")]

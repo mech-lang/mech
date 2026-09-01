@@ -399,7 +399,7 @@ fn canonical_access_result(
                     .with_compiler_loc()
                 })?;
                 let candidate = ValueCell::from_schema_data((*key).clone(), key_draft)?;
-                if candidate.snapshot_eq(selector)? {
+                if candidate.key_eq(selector)? {
                     return ValueCell::from_schema_data((*value).clone(), value_draft);
                 }
             }
@@ -741,5 +741,103 @@ impl CanonicalFunctionSpecializer for AccessColumn {
         _: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         canonical_access(invocation, "CanonicalColumnAccess")
+    }
+}
+
+#[cfg(all(test, feature = "semantic-compiler"))]
+mod canonical_aggregate_access_tests {
+    use super::*;
+
+    #[test]
+    fn map_access_uses_canonical_key_equality() {
+        let map = ValueCell::from_schema_data(
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                value: Box::new(SchemaBody::String),
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            ValueDataDraft::Map(
+                vec![mech_core::snapshot::MapEntryDraft {
+                    items: vec![
+                        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(-0.0)),
+                        ValueDataDraft::String("zero".to_owned()),
+                    ]
+                    .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let selector = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(0.0)),
+        )
+        .unwrap();
+
+        let selected =
+            canonical_access_result(&map, &[CanonicalAccessSelector::Cell(selector)]).unwrap();
+        assert!(matches!(
+            selected.snapshot().unwrap().data(),
+            ValueData::String(value) if value.as_ref() == "zero"
+        ));
+    }
+
+    #[test]
+    fn reactive_record_selector_schema_change_rejects_without_output_mutation() {
+        let record = ValueCell::from_schema_data(
+            SchemaBody::Record(
+                vec![
+                    mech_core::SchemaField {
+                        name: "number".to_owned(),
+                        schema: SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+                    },
+                    mech_core::SchemaField {
+                        name: "text".to_owned(),
+                        schema: SchemaBody::String,
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+            ValueDataDraft::Record(
+                vec![
+                    mech_core::snapshot::NamedValueDraft {
+                        name: "number".to_owned(),
+                        value: ValueDataDraft::U64(7),
+                    },
+                    mech_core::snapshot::NamedValueDraft {
+                        name: "text".to_owned(),
+                        value: ValueDataDraft::String("seven".to_owned()),
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let selector =
+            ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash_str("number")))
+                .unwrap();
+        let output =
+            canonical_access_result(&record, &[CanonicalAccessSelector::Cell(selector.clone())])
+                .unwrap();
+        let access = CanonicalAccess {
+            source: record,
+            selectors: vec![CanonicalAccessSelector::Cell(selector.clone())],
+            output: output.clone(),
+            name: "RecordAccessField",
+        };
+
+        selector
+            .replace(
+                &ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash_str("text")))
+                    .unwrap()
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+        assert!(access.solve_result().is_err());
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::U64(7)
+        ));
     }
 }

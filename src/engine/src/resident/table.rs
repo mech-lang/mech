@@ -1,4 +1,5 @@
-use crate::intrinsics::table_ops::{JoinMode, joined_table};
+use super::budget::{KernelCostEstimate, checked_product, checked_sum};
+use crate::intrinsics::table_ops::{JoinMode, joined_table, joined_table_fields};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
@@ -7,9 +8,7 @@ use mech_core::{
     ResolvedOperationContract, SchemaBody, ShapeRule, ValueCell, ValueData,
 };
 
-const MAX_TABLE_JOIN_WORK: usize = 65_536;
 const MAX_TABLE_JOIN_OUTPUT_ROWS: usize = 65_536;
-const MAX_TABLE_JOIN_OUTPUT_CELLS: usize = 65_536;
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     builder.insert_resident_factory(["table"], "join", bind_inner)?;
@@ -86,7 +85,7 @@ fn bind(
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let (left_columns, right_columns) = match (
+    let (left_columns, right_columns, output_columns) = match (
         request
             .schemas
             .get(request.inputs[0].schema_id)
@@ -95,13 +94,25 @@ fn bind(
             .schemas
             .get(request.inputs[1].schema_id)
             .map(mech_core::Schema::body),
+        request
+            .schemas
+            .get(request.output.schema_id)
+            .map(mech_core::Schema::body),
     ) {
         (
             Some(SchemaBody::Table { columns: left, .. }),
             Some(SchemaBody::Table { columns: right, .. }),
-        ) => (left, right),
+            Some(SchemaBody::Table {
+                columns: output, ..
+            }),
+        ) => (left, right, output),
         _ => return Err(ResidentKernelBindError::UnsupportedLayout),
     };
+    let expected_output = joined_table_fields(left_columns, right_columns, mode)
+        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    if output_columns.as_ref() != expected_output.as_ref() {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     let common_columns = left_columns
         .iter()
         .filter(|left| right_columns.iter().any(|right| right.name == left.name))
@@ -176,14 +187,11 @@ fn validate_join_bounds(
     left_columns: usize,
     right_columns: usize,
     common_columns: usize,
+    left_payload_bytes: usize,
+    right_payload_bytes: usize,
 ) -> Result<(), ResidentKernelError> {
-    let comparisons = left_rows
-        .checked_mul(right_rows)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    comparisons
-        .checked_mul(common_columns.max(1))
-        .filter(|work| *work <= MAX_TABLE_JOIN_WORK)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let comparisons = checked_product(&[left_rows, right_rows])?;
+    let comparison_work = checked_product(&[comparisons, common_columns.max(1)])?;
     let output_rows = match mode {
         JoinMode::Inner => Some(comparisons),
         JoinMode::LeftOuter => comparisons.checked_add(left_rows),
@@ -203,11 +211,33 @@ fn validate_join_bounds(
             .and_then(|count| count.checked_sub(common_columns))
             .ok_or(ResidentKernelError::InvalidShape)?
     };
-    output_rows
-        .checked_mul(output_columns)
-        .filter(|cells| *cells <= MAX_TABLE_JOIN_OUTPUT_CELLS)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    Ok(())
+    let output_cells = checked_product(&[output_rows, output_columns])?;
+    let paired_clone_bytes = checked_sum(&[
+        checked_product(&[left_payload_bytes, right_rows])?,
+        checked_product(&[right_payload_bytes, left_rows])?,
+    ])?;
+    let cloned_bytes = match mode {
+        JoinMode::Inner => paired_clone_bytes,
+        JoinMode::LeftOuter => checked_sum(&[paired_clone_bytes, left_payload_bytes])?,
+        JoinMode::RightOuter => checked_sum(&[paired_clone_bytes, right_payload_bytes])?,
+        JoinMode::FullOuter => {
+            checked_sum(&[paired_clone_bytes, left_payload_bytes, right_payload_bytes])?
+        }
+        JoinMode::LeftSemi | JoinMode::LeftAnti => left_payload_bytes,
+    };
+    let output_bytes = checked_sum(&[
+        cloned_bytes,
+        checked_product(&[output_cells, std::mem::size_of::<usize>()])?,
+    ])?;
+    KernelCostEstimate {
+        comparison_work,
+        compute_work: checked_sum(&[comparison_work, output_cells])?,
+        output_elements: output_cells,
+        output_bytes,
+        temporary_bytes: checked_sum(&[left_payload_bytes, right_payload_bytes, output_bytes])?,
+        cloned_bytes,
+    }
+    .admit()
 }
 
 fn table_join(
@@ -241,6 +271,19 @@ fn table_join(
         usize::try_from(*left_columns).map_err(|_| ResidentKernelError::InvalidInput)?,
         usize::try_from(*right_columns).map_err(|_| ResidentKernelError::InvalidInput)?,
         usize::try_from(*common_columns).map_err(|_| ResidentKernelError::InvalidInput)?,
+        left.canonical_payload_len(
+            kernel
+                .snapshot_schemas()
+                .ok_or(ResidentKernelError::InvalidInput)?,
+        )
+        .map_err(|_| ResidentKernelError::InvalidInput)?,
+        right
+            .canonical_payload_len(
+                kernel
+                    .snapshot_schemas()
+                    .ok_or(ResidentKernelError::InvalidInput)?,
+            )
+            .map_err(|_| ResidentKernelError::InvalidInput)?,
     )?;
     let left =
         ValueCell::from_snapshot(left.clone()).map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -278,23 +321,27 @@ mod tests {
     #[test]
     fn resident_join_bounds_work_and_output_before_materialization() {
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 256, 256, 1, 1, 1),
+            validate_join_bounds(JoinMode::Inner, 256, 256, 1, 1, 1, 0, 0),
             Ok(())
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 257, 257, 1, 1, 1),
+            validate_join_bounds(JoinMode::Inner, 257, 257, 1, 1, 1, 0, 0),
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::FullOuter, 0, 65_537, 1, 1, 1),
+            validate_join_bounds(JoinMode::FullOuter, 0, 65_537, 1, 1, 1, 0, 0),
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 256, 256, 64, 64, 0),
+            validate_join_bounds(JoinMode::Inner, 256, 256, 64, 64, 0, 0, 0),
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 64, 64, 17, 17, 17),
+            validate_join_bounds(JoinMode::Inner, 64, 64, 17, 17, 17, 0, 0),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(
+            validate_join_bounds(JoinMode::Inner, 256, 256, 1, 1, 1, 32_768, 32_768),
             Err(ResidentKernelError::InvalidShape)
         );
     }
