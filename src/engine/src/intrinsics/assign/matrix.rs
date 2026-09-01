@@ -16,6 +16,66 @@ macro_rules! optional_operation_contract {
 }
 use std::sync::LazyLock;
 
+fn assignment_source_out_of_bounds(required: usize, actual: usize) -> MechError {
+    function_shape_contract_violation(
+        "assign_slice",
+        format!(
+            "reactive assignment selector requires source offset {required}, but the source has {actual} elements"
+        ),
+    )
+}
+
+fn require_assignment_source_index(actual: usize, index: usize) -> MResult<()> {
+    if index >= actual {
+        return Err(assignment_source_out_of_bounds(index, actual));
+    }
+    Ok(())
+}
+
+fn require_assignment_source_layout(
+    source_rows: usize,
+    source_columns: usize,
+    required_rows: usize,
+    required_columns: usize,
+    broadcast_rows: bool,
+    broadcast_columns: bool,
+) -> MResult<()> {
+    let rows_valid = source_rows >= required_rows || (broadcast_rows && source_rows == 1);
+    let columns_valid =
+        source_columns >= required_columns || (broadcast_columns && source_columns == 1);
+    if !rows_valid || !columns_valid {
+        return Err(function_shape_contract_violation(
+            "assign_slice",
+            format!(
+                "reactive assignment selector requires source layout {required_rows}x{required_columns}{}{}, but the source is {source_rows}x{source_columns}",
+                if broadcast_rows {
+                    " or one broadcast row"
+                } else {
+                    ""
+                },
+                if broadcast_columns {
+                    " or one broadcast column"
+                } else {
+                    ""
+                },
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn checked_assignment_source_offset(row: usize, column: usize, rows: usize) -> MResult<usize> {
+    column
+        .checked_mul(rows)
+        .and_then(|offset| offset.checked_add(row))
+        .ok_or_else(|| {
+            function_shape_contract_violation(
+                "assign_slice",
+                "reactive assignment source offset overflowed usize",
+            )
+        })
+}
+
 static PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
@@ -345,6 +405,11 @@ macro_rules! set_1d_range_vec {
 
 macro_rules! set_1d_range_vec_b {
     ($source:expr, $ix:expr, $sink:expr) => {
+        for (i, selected) in ($ix).iter().enumerate() {
+            if *selected {
+                require_assignment_source_index(($source).len(), i)?;
+            }
+        }
         for i in 0..($ix).len() {
             if $ix[i] == true {
                 ($sink)[i] = ($source)[i].clone();
@@ -743,6 +808,11 @@ macro_rules! assign_2d_range_scalar_b {
 
 macro_rules! assign_2d_range_scalar_vb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        for (rix, is_selected) in ($ix1).iter().enumerate() {
+            if *is_selected {
+                require_assignment_source_index(($source).len(), rix)?;
+            }
+        }
         let mut col = ($sink).column_mut($ix2 - 1);
         for (rix, &is_selected) in ($ix1).iter().enumerate() {
             if is_selected {
@@ -1022,6 +1092,11 @@ macro_rules! assign_2d_scalar_range_b {
 
 macro_rules! assign_2d_scalar_range_vb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+        for (cix, selected) in ($ix2).iter().enumerate() {
+            if *selected {
+                require_assignment_source_index(($source).len(), cix)?;
+            }
+        }
         for cix in 0..($ix2).len() {
             if $ix2[cix] == true {
                 ($sink).row_mut($ix1 - 1)[cix] = ($source)[cix].clone();
@@ -1309,6 +1384,24 @@ macro_rules! assign_2d_range_range_b {
 macro_rules! assign_2d_range_range_vb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
         for r in 0..($ix1).len() {
+            if $ix1[r] {
+                for c in 0..($ix2).len() {
+                    if $ix2[c] {
+                        let offset = r
+                            .checked_mul(($ix2).len())
+                            .and_then(|offset| offset.checked_add(c))
+                            .ok_or_else(|| {
+                                function_shape_contract_violation(
+                                    "assign_slice",
+                                    "reactive assignment source offset overflowed usize",
+                                )
+                            })?;
+                        require_assignment_source_index(($source).len(), offset)?;
+                    }
+                }
+            }
+        }
+        for r in 0..($ix1).len() {
             if $ix1[r] == true {
                 for c in 0..($ix2).len() {
                     if $ix2[c] == true {
@@ -1340,6 +1433,15 @@ macro_rules! assign_2d_range_range_vbu {
             let c = $ix2[cix] - 1;
             for r in 0..($ix1).len() {
                 if $ix1[r] {
+                    let offset = checked_assignment_source_offset(r, c, nrows)?;
+                    require_assignment_source_index(($source).len(), offset)?;
+                }
+            }
+        }
+        for cix in 0..($ix2).len() {
+            let c = $ix2[cix] - 1;
+            for r in 0..($ix1).len() {
+                if $ix1[r] {
                     let offset = r + c * nrows;
                     ($sink)[(r, c)] = ($source)[offset].clone();
                 }
@@ -1365,6 +1467,15 @@ macro_rules! assign_2d_range_range_ub {
 macro_rules! assign_2d_range_range_vub {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
         let nrows = $sink.nrows();
+        for c in 0..$ix2.len() {
+            if $ix2[c] {
+                for rix in 0..$ix1.len() {
+                    let r = $ix1[rix] - 1;
+                    let offset = checked_assignment_source_offset(r, c, nrows)?;
+                    require_assignment_source_index(($source).len(), offset)?;
+                }
+            }
+        }
         for c in 0..$ix2.len() {
             if $ix2[c] {
                 for rix in 0..$ix1.len() {
@@ -1543,6 +1654,15 @@ macro_rules! assign_2d_all_range_v {
 macro_rules! assign_2d_all_range_vb {
     ($source:expr, $ix:expr, $sink:expr) => {{
         let nsrc = $source.ncols();
+        let selected_columns = ($ix).iter().filter(|selected| **selected).count();
+        require_assignment_source_layout(
+            ($source).nrows(),
+            nsrc,
+            ($sink).nrows(),
+            selected_columns,
+            false,
+            true,
+        )?;
         let mut src_i = 0;
         for (i, cix) in (&$ix).iter().enumerate() {
             if *cix == true {
@@ -1602,6 +1722,18 @@ macro_rules! assign_2d_range_all_v {
 
 macro_rules! assign_2d_range_all_vb {
     ($source:expr, $ix:expr, $sink:expr) => {{
+        for (i, selected) in ($ix).iter().enumerate() {
+            if *selected {
+                require_assignment_source_layout(
+                    ($source).nrows(),
+                    ($source).ncols(),
+                    i + 1,
+                    ($sink).ncols(),
+                    false,
+                    false,
+                )?;
+            }
+        }
         for (i, rix) in ($ix).iter().enumerate() {
             if *rix {
                 let mut sink_row = ($sink).row_mut(i);
@@ -1684,3 +1816,60 @@ static PURE_MATRIX_WHOLE_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclarat
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
     });
+
+#[cfg(all(
+    test,
+    feature = "matrixd",
+    feature = "vectord",
+    feature = "logical_indexing",
+    feature = "u8"
+))]
+mod tests {
+    use super::*;
+    use mech_core::{FunctionInvocation, Ref};
+    use nalgebra::{DMatrix, DVector};
+
+    #[test]
+    fn column_assignment_routes_each_rectangular_source_column() {
+        let source = Ref::new(DMatrix::from_row_slice(2, 3, &[1_u8, 2, 3, 4, 5, 6]));
+        let columns = Ref::new(DVector::from_vec(vec![1_usize, 2, 3]));
+        let sink = Ref::new(DMatrix::<u8>::zeros(2, 3));
+        let function = Set2DARV::<u8, DMatrix<u8>, DMatrix<u8>, DVector<usize>>::new_invocation(
+            FunctionInvocation::binary(
+                ValueCell::from_exact_matrix_ref(sink.clone(), 2, 3).unwrap(),
+                ValueCell::from_exact_matrix_ref(source, 2, 3).unwrap(),
+                ValueCell::from_exact_matrix_ref(columns, 3, 1).unwrap(),
+            ),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        assert_eq!(
+            *sink.borrow(),
+            DMatrix::from_row_slice(2, 3, &[1, 2, 3, 4, 5, 6])
+        );
+    }
+
+    #[test]
+    fn reactive_sparse_mask_is_revalidated_before_any_write() {
+        let source = Ref::new(DVector::from_vec(vec![9_u8]));
+        let mask = Ref::new(DVector::from_vec(vec![true, false, false]));
+        let sink = Ref::new(DVector::<u8>::zeros(3));
+        let function = Assign1DRVB::<u8, DVector<u8>, DVector<u8>, DVector<bool>>::new_invocation(
+            FunctionInvocation::binary(
+                ValueCell::from_exact_matrix_ref(sink.clone(), 3, 1).unwrap(),
+                ValueCell::from_exact_matrix_ref(source, 1, 1).unwrap(),
+                ValueCell::from_exact_matrix_ref(mask.clone(), 3, 1).unwrap(),
+            ),
+        )
+        .unwrap();
+
+        function.solve_result().unwrap();
+        assert_eq!(sink.borrow().as_slice(), &[9, 0, 0]);
+
+        *mask.borrow_mut() = DVector::from_vec(vec![false, true, false]);
+        let error = function.solve_result().unwrap_err();
+        assert!(error.kind_message().contains("source offset 1"));
+        assert_eq!(sink.borrow().as_slice(), &[9, 0, 0]);
+    }
+}

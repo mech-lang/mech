@@ -949,7 +949,20 @@ fn remove(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::FloatWidth;
+    use mech_core::snapshot::NamedValueDraft;
+    use mech_core::{FloatWidth, SchemaField};
+
+    struct Inputs<'a>(&'a [ResidentValueRef<'a>]);
+
+    impl ResidentKernelInputs for Inputs<'_> {
+        fn len(&self) -> usize {
+            self.0.len()
+        }
+
+        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+            self.0.get(index).copied()
+        }
+    }
 
     fn schema(body: SchemaBody) -> mech_core::Schema {
         mech_core::SchemaDraft {
@@ -990,5 +1003,178 @@ mod tests {
 
         assert!(set_element_schema_matches(&schemas, scalar, set));
         assert!(!set_element_schema_matches(&schemas, matrix, set));
+    }
+
+    fn nested_nan_element(outer_nan: u64, inner_nan: u64) -> ValueDataDraft {
+        ValueDataDraft::Tuple(
+            vec![
+                ValueDataDraft::F64(F64Bits::from_bits(outer_nan)),
+                ValueDataDraft::Record(
+                    vec![NamedValueDraft {
+                        name: "nested".to_owned(),
+                        value: ValueDataDraft::Set(
+                            vec![ValueDataDraft::F64(F64Bits::from_bits(inner_nan))]
+                                .into_boxed_slice(),
+                        ),
+                    }]
+                    .into_boxed_slice(),
+                ),
+            ]
+            .into_boxed_slice(),
+        )
+    }
+
+    #[test]
+    fn snapshot_set_operations_use_recursive_canonical_nan_keys() {
+        let inner_set = SchemaBody::Set {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let element_body = SchemaBody::Tuple(
+            vec![
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                SchemaBody::Record(
+                    vec![SchemaField {
+                        name: "nested".to_owned(),
+                        schema: inner_set,
+                    }]
+                    .into_boxed_slice(),
+                ),
+            ]
+            .into_boxed_slice(),
+        );
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let element_handle = builder.insert(schema(element_body.clone())).unwrap();
+        let set_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(element_body),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let element_schema = build.resolve(element_handle).unwrap();
+        let set_schema = build.resolve(set_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let element_shape = schemas
+            .get(element_schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let set_shape = schemas
+            .get(set_schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let element_metadata = SetElementMetadata {
+            schema: element_schema,
+            schema_key: schemas.entry(element_schema).unwrap().key(),
+            shape: element_shape,
+        };
+        let existing = ValueDraft {
+            schema: element_schema,
+            shape_values: Box::new([]),
+            data: nested_nan_element(0x7ff0_0000_0000_0001, 0x7ff8_0000_0000_0002),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let candidate = ValueDraft {
+            schema: element_schema,
+            shape_values: Box::new([]),
+            data: nested_nan_element(0xfff8_0000_0000_0042, 0xfff0_0000_0000_0043),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        assert!(
+            !existing
+                .snapshot_eq(&schemas, &candidate, &schemas)
+                .unwrap()
+        );
+        assert_eq!(
+            existing.key_cmp(&schemas, &candidate, &schemas).unwrap(),
+            Ordering::Equal
+        );
+        let set = ValueDraft {
+            schema: set_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                vec![existing.canonical_data_draft().unwrap()].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+
+        let candidate_slot = [Some(candidate.clone())];
+        let set_slot = [Some(set.clone())];
+        let membership_inputs = [
+            ResidentValueRef::Snapshot(&candidate_slot),
+            ResidentValueRef::Snapshot(&set_slot),
+        ];
+        let membership_kernel = BoundResidentKernel::new(element_of, Box::new([]))
+            .with_snapshot_schemas(schemas.clone())
+            .with_retained_state(Arc::new(element_metadata.clone()));
+        let mut member = [0_u8];
+        assert_eq!(
+            membership_kernel.execute(
+                &Inputs(&membership_inputs),
+                ResidentValueMut::Bool(&mut member),
+            ),
+            Ok(true),
+        );
+        assert_eq!(member, [1]);
+
+        let non_membership_kernel = BoundResidentKernel::new(not_element_of, Box::new([]))
+            .with_snapshot_schemas(schemas.clone())
+            .with_retained_state(Arc::new(element_metadata.clone()));
+        let mut non_member = [1_u8];
+        assert_eq!(
+            non_membership_kernel.execute(
+                &Inputs(&membership_inputs),
+                ResidentValueMut::Bool(&mut non_member),
+            ),
+            Ok(true),
+        );
+        assert_eq!(non_member, [0]);
+
+        let mutation_kernel = |executor| {
+            BoundResidentKernel::new(executor, Box::new([]))
+                .with_snapshot_output(ResidentSnapshotOutput {
+                    schema: set_schema,
+                    schema_key: schemas.entry(set_schema).unwrap().key(),
+                    shape: set_shape.clone(),
+                    exact_cardinality: None,
+                    maximum_cardinality: None,
+                })
+                .with_snapshot_schemas(schemas.clone())
+                .with_retained_state(Arc::new(element_metadata.clone()))
+        };
+        let mutation_inputs = [
+            ResidentValueRef::Snapshot(&set_slot),
+            ResidentValueRef::Snapshot(&candidate_slot),
+        ];
+        let mut inserted = [None];
+        assert_eq!(
+            mutation_kernel(insert).execute(
+                &Inputs(&mutation_inputs),
+                ResidentValueMut::Snapshot(&mut inserted),
+            ),
+            Ok(true),
+        );
+        let ValueData::Set(inserted) = inserted[0].as_ref().unwrap().data() else {
+            panic!("set/insert must produce a set");
+        };
+        assert_eq!(inserted.elements().len(), 1);
+
+        let mut removed = [None];
+        assert_eq!(
+            mutation_kernel(remove).execute(
+                &Inputs(&mutation_inputs),
+                ResidentValueMut::Snapshot(&mut removed),
+            ),
+            Ok(true),
+        );
+        let ValueData::Set(removed) = removed[0].as_ref().unwrap().data() else {
+            panic!("set/remove must produce a set");
+        };
+        assert!(removed.elements().is_empty());
     }
 }
