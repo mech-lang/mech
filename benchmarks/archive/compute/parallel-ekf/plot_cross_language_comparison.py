@@ -335,7 +335,7 @@ def load_rows(
             if row is not None and "throughput" in row:
                 rows.append(
                     {
-                        "label": "Halide GPU, native Metal",
+                        "label": "Halide GPU, native Metal (fused)",
                         "family": "Halide",
                         "mode": mode,
                         "throughput": statistics.median(row["throughput"]) / 1_000_000,

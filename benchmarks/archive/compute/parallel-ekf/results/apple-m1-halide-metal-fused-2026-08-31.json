@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T23:42:21.446948-04:00",
+  "configuration": {
+    "instances": 500000,
+    "turns": 500,
+    "samples": 5,
+    "backend": "native Metal",
+    "synchronized_per_turn": true,
+    "schedule": "single fused tuple output with shared scalar intermediates"
+  },
+  "rows": {
+    "Halide GPU Metal unchecked": {
+      "command": ["halide_ekf", "500000", "500", "unchecked", "gpu"],
+      "throughput": [
+        285938147.8339775,
+        267086621.7051552,
+        277347914.08858144,
+        275830884.0203632,
+        272569938.1234949
+      ],
+      "checksums": [
+        125946654.77758524,
+        125946654.77758524,
+        125946654.77758524,
+        125946654.77758524,
+        125946654.77758524
+      ]
+    },
+    "Halide GPU Metal checked": {
+      "command": ["halide_ekf", "500000", "500", "checked", "gpu"],
+      "throughput": [
+        280557623.13431114,
+        274111823.9097924,
+        279060785.47460306,
+        271177052.03203285,
+        272854410.3808172
+      ],
+      "checksums": [
+        125946655.72741863,
+        125946655.72741863,
+        125946655.72741863,
+        125946655.72741863,
+        125946655.72741863
+      ]
+    }
+  }
+}

@@ -244,21 +244,23 @@ difference is recorded here rather than presented as an apples-to-apples
 replacement for the synchronized Mech/Taichi rows.
 
 On the Apple M1 control machine, the CPU controls use 10,000 lanes x 20 turns
-and the native GPU control uses the matched 500,000 lanes x 40 turns workload;
-the five-sample medians were:
+and the native GPU controls use the matched 500,000 lanes x 40 turns workload.
+The fused Halide measurement uses 500 turns to amortize the per-process GPU
+clock variance; its result is reported separately below.
 
 | Control | Checked M turns/s | Unchecked M turns/s |
 | --- | ---: | ---: |
 | Halide JIT | 2.707 | 5.058 |
-| Halide native Metal GPU | 57.843 | 63.112 |
+| Halide native Metal GPU, fused (500 turns) | 274.112 | 275.831 |
 | Futhark multicore, 8 workers | 48.391 | 47.824 |
 
 The Halide GPU row uses the same fixed-shape EKF expression and per-turn
 publication boundary as the CPU control, scheduled with `gpu_tile` and compiled
-for the native Metal target. State and input buffers stay device-resident during
-the timed loop; only the final checksum is copied back. At the matched 500,000
-filters x 40 turns workload, five samples measured **57.843 M/s checked** and
-**63.112 M/s unchecked**. Checked mode evaluates the same
+for the native Metal target. The twelve outputs are emitted as one fused tuple
+kernel, shared scalar intermediates are materialized once per lane, and state and
+input buffers stay device-resident during the timed loop. At the matched 500,000
+filters x 500 turns workload, five samples measured **274.112 M/s checked** and
+**275.831 M/s unchecked**. Checked mode evaluates the same
 finite/positive-diagonal/symmetry predicate and keeps the previous lane value
 when a candidate is invalid. The GPU schedule is an Apple-Metal control, not a
 WGPU transport comparison.
@@ -268,7 +270,7 @@ driver rejects the generated kernel (`Invalid kernel`), so those rows are
 recorded as unavailable rather than silently omitted. The full samples,
 checksums, commands, and availability status are in
 `results/apple-m1-minimal-source-2026-08-31.json`; the matched Metal-only
-invocation is retained as `results/apple-m1-halide-metal-2026-08-31.json`.
+invocation is retained as `results/apple-m1-halide-metal-fused-2026-08-31.json`.
 
 Re-run the controls after installing the tools (`brew install halide futhark`)
 with:
@@ -280,7 +282,7 @@ with:
 
 # Matched GPU workload (Halide only)
 python3 minimal/measure_halide_gpu.py \
-  --instances 500000 --turns 40 --samples 5
+  --instances 500000 --turns 500 --samples 5
 ```
 
 The runner uses one OpenMP/BLAS thread for NumPy, compiles Halide with `-O3`,
@@ -299,7 +301,7 @@ python3 plot_cross_language_comparison.py \
   results/apple-m1-lua-2026-08-31.json \
   --taichi-optimized results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
   --minimal-source results/apple-m1-minimal-source-2026-08-31.json \
-  --halide-gpu results/apple-m1-halide-metal-2026-08-31.json \
+  --halide-gpu results/apple-m1-halide-metal-fused-2026-08-31.json \
   --julia-threaded results/apple-m1-julia-threaded-2026-08-31.json \
   --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json \
   --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json \

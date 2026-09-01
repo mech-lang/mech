@@ -54,7 +54,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=HERE.parent / "results/apple-m1-halide-metal-2026-08-31.json",
+        default=HERE.parent / "results/apple-m1-halide-metal-fused-2026-08-31.json",
     )
     args = parser.parse_args()
     env = os.environ.copy()
@@ -84,6 +84,8 @@ def main() -> None:
                 "turns": args.turns,
                 "samples": args.samples,
                 "backend": "native Metal",
+                "synchronized_per_turn": True,
+                "schedule": "single fused tuple output with shared scalar intermediates",
             },
             "rows": {},
         }

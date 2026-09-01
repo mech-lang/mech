@@ -26,23 +26,23 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 16 | Mech Cranelift SIMD-JIT checked fast | Mech | 36.654 |
 | 17 | Futhark, checked | Futhark | 48.391 |
 | 18 | Mech GPU, checked repeated | Mech | 56.279 |
-| 19 | Halide GPU, native Metal | Halide | 57.843 |
-| 20 | Mech Cranelift SIMD-JIT parallel | Mech | 57.950 |
-| 21 | Mech GPU, checked one-turn | Mech | 62.798 |
-| 22 | NumPy/Numba parallel JIT, 8 workers | NumPy | 77.225 |
-| 23 | NumPy/Numba, fused worker-local block checked (8 workers) | NumPy | 80.323 |
-| 24 | Taichi LLVM CPU, 8 workers | Taichi | 86.047 |
-| 25 | Mech SIMD/JIT CPU, 8 workers | Mech | 104.783 |
-| 26 | Julia SIMD.jl, 8 workers | Julia | 106.341 |
-| 27 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 108.718 |
-| 28 | Julia SIMD.jl, fused worker-local block checked (8 workers) | Julia | 128.544 |
-| 29 | Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers) | Mech | 145.573 |
-| 30 | Rust packed SIMD, fused worker-local block strict checked (8 workers) | Rust | 146.509 |
-| 31 | Mech GPU, WGPU per-turn | Mech | 152.972 |
-| 32 | Taichi optimized native Metal, checked | Taichi | 168.798 |
-| 33 | Taichi GPU, native Metal | Taichi | 176.710 |
-| 34 | Julia GPU, native Metal | Julia | 197.078 |
-| 35 | Mech GPU, native Metal | Mech | 246.151 |
+| 19 | Mech Cranelift SIMD-JIT parallel | Mech | 57.950 |
+| 20 | Mech GPU, checked one-turn | Mech | 62.798 |
+| 21 | NumPy/Numba parallel JIT, 8 workers | NumPy | 77.225 |
+| 22 | NumPy/Numba, fused worker-local block checked (8 workers) | NumPy | 80.323 |
+| 23 | Taichi LLVM CPU, 8 workers | Taichi | 86.047 |
+| 24 | Mech SIMD/JIT CPU, 8 workers | Mech | 104.783 |
+| 25 | Julia SIMD.jl, 8 workers | Julia | 106.341 |
+| 26 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 108.718 |
+| 27 | Julia SIMD.jl, fused worker-local block checked (8 workers) | Julia | 128.544 |
+| 28 | Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers) | Mech | 145.573 |
+| 29 | Rust packed SIMD, fused worker-local block strict checked (8 workers) | Rust | 146.509 |
+| 30 | Mech GPU, WGPU per-turn | Mech | 152.972 |
+| 31 | Taichi optimized native Metal, checked | Taichi | 168.798 |
+| 32 | Taichi GPU, native Metal | Taichi | 176.710 |
+| 33 | Julia GPU, native Metal | Julia | 197.078 |
+| 34 | Mech GPU, native Metal | Mech | 246.151 |
+| 35 | Halide GPU, native Metal (fused) | Halide | 274.112 |
 
 ## Unchecked (slowest to fastest)
 
@@ -71,23 +71,23 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 21 | Mech GPU, unchecked ping-pong one-turn | Mech | 51.801 |
 | 22 | Mech GPU, unchecked in-place one-turn | Mech | 54.635 |
 | 23 | Mech Cranelift SIMD-JIT parallel unchecked fast | Mech | 61.823 |
-| 24 | Halide GPU, native Metal | Halide | 63.112 |
-| 25 | NumPy/Numba parallel JIT, 8 workers | NumPy | 77.130 |
-| 26 | NumPy/Numba, fused worker-local block (8 workers) | NumPy | 81.972 |
-| 27 | NumPy/Numba, fused worker-local block fast math (8 workers) | NumPy | 86.973 |
-| 28 | Taichi LLVM CPU, 8 workers | Taichi | 98.140 |
-| 29 | Julia SIMD.jl, 8 workers | Julia | 109.628 |
-| 30 | Mech SIMD/JIT CPU, 8 workers | Mech | 110.469 |
-| 31 | Julia SIMD.jl, fused worker-local block (8 workers) | Julia | 133.605 |
-| 32 | Mech SIMD/JIT CPU, persistent pool per-turn (8 workers) | Mech | 150.395 |
-| 33 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 152.330 |
-| 34 | Mech GPU, WGPU per-turn | Mech | 157.141 |
-| 35 | Rust packed SIMD, fused worker-local block (8 workers) | Rust | 163.866 |
-| 36 | Mech SIMD/JIT CPU, fused unchecked block (8 workers) | Mech | 165.830 |
-| 37 | Taichi GPU, native Metal | Taichi | 194.793 |
-| 38 | Julia GPU, native Metal | Julia | 216.462 |
-| 39 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
-| 40 | Mech GPU, native Metal | Mech | 241.028 |
+| 24 | NumPy/Numba parallel JIT, 8 workers | NumPy | 77.130 |
+| 25 | NumPy/Numba, fused worker-local block (8 workers) | NumPy | 81.972 |
+| 26 | NumPy/Numba, fused worker-local block fast math (8 workers) | NumPy | 86.973 |
+| 27 | Taichi LLVM CPU, 8 workers | Taichi | 98.140 |
+| 28 | Julia SIMD.jl, 8 workers | Julia | 109.628 |
+| 29 | Mech SIMD/JIT CPU, 8 workers | Mech | 110.469 |
+| 30 | Julia SIMD.jl, fused worker-local block (8 workers) | Julia | 133.605 |
+| 31 | Mech SIMD/JIT CPU, persistent pool per-turn (8 workers) | Mech | 150.395 |
+| 32 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 152.330 |
+| 33 | Mech GPU, WGPU per-turn | Mech | 157.141 |
+| 34 | Rust packed SIMD, fused worker-local block (8 workers) | Rust | 163.866 |
+| 35 | Mech SIMD/JIT CPU, fused unchecked block (8 workers) | Mech | 165.830 |
+| 36 | Taichi GPU, native Metal | Taichi | 194.793 |
+| 37 | Julia GPU, native Metal | Julia | 216.462 |
+| 38 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
+| 39 | Mech GPU, native Metal | Mech | 241.028 |
+| 40 | Halide GPU, native Metal (fused) | Halide | 275.831 |
 | 41 | Mech GPU, unchecked repeated | Mech | 350.930 |
 | 42 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
 | 43 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
