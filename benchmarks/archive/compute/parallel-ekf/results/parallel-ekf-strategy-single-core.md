@@ -1,8 +1,8 @@
 # Parallel EKF: Single-core
 
-One process and one host worker; explicit SIMD/JIT controls are used where the retained evidence provides them. Workload: **10,000 filters x 20 turns where available**. Rows are ordered by checked throughput, fastest to slowest; checked and unchecked are separate columns; source edits are measured against each language's baseline source.
+Single-worker SIMD/JIT controls where available; scalar controls remain where they are not. Workload: **10,000 filters x 20 turns where available**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.
 
-**Scope note:** The strict one-worker SIMD comparison uses the scalarized Futhark ISPC control (30.55 checked / 43.34 unchecked; FMA contraction disabled). The eight-worker Futhark result belongs to the multicore view.
+**Scope note:** SIMD/JIT controls are identified in the representative-source column; scalar controls remain where a SIMD/JIT implementation is not available.
 
 | Language | Representative source | Code L/C | Edit vs baseline L/C | Checked M/s | Unchecked M/s | Result |
 | --- | --- | ---: | ---: | ---: | ---: | --- |

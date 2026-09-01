@@ -1,6 +1,6 @@
 # Parallel EKF: Eight-worker multicore
 
-Matched eight-worker CPU fused block; checked mode validates each candidate and publishes at the block boundary. Workload: **500,000 filters x 40 turns where available**. Rows are ordered by checked throughput, fastest to slowest; checked and unchecked are separate columns; source edits are measured against each language's baseline source.
+Eight-worker CPU fused controls. Workload: **500,000 filters x 40 turns where available**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.
 
 | Language | Representative source | Code L/C | Edit vs baseline L/C | Checked M/s | Unchecked M/s | Result |
 | --- | --- | ---: | ---: | ---: | ---: | --- |

@@ -1,69 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="755" viewBox="0 0 1500 755">
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="735" viewBox="0 0 1500 735">
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: Single-core throughput</text>
-<text x="38" y="69" class="muted" font-size="15">One process and one host worker; explicit SIMD/JIT controls are used where the retained evidence provides them. Checked is solid; unchecked is lighter. Checked throughput is ranked fastest to slowest. Linear M/s axis.</text>
-<text x="38" y="91" class="muted" font-size="13">Strict Futhark one-worker row: 30.55 / 43.34 M/s; FMA contraction disabled. Eight-worker Futhark belongs to the multicore view.</text>
-<rect x="38" y="108" width="18" height="12" fill="#dce5f2"/><text x="64" y="119" class="muted" font-size="13">checked</text>
-<rect x="145" y="108" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="119" class="muted" font-size="13">unchecked</text>
-<line x1="300.0" y1="130" x2="300.0" y2="585" class="grid"/>
-<text x="300.0" y="609" text-anchor="middle" class="muted" font-size="12">0</text>
-<line x1="520.0" y1="130" x2="520.0" y2="585" class="grid"/>
-<text x="520.0" y="609" text-anchor="middle" class="muted" font-size="12">10</text>
-<line x1="740.0" y1="130" x2="740.0" y2="585" class="grid"/>
-<text x="740.0" y="609" text-anchor="middle" class="muted" font-size="12">20</text>
-<line x1="960.0" y1="130" x2="960.0" y2="585" class="grid"/>
-<text x="960.0" y="609" text-anchor="middle" class="muted" font-size="12">30</text>
-<line x1="1180.0" y1="130" x2="1180.0" y2="585" class="grid"/>
-<text x="1180.0" y="609" text-anchor="middle" class="muted" font-size="12">40</text>
-<line x1="1400.0" y1="130" x2="1400.0" y2="585" class="grid"/>
-<text x="1400.0" y="609" text-anchor="middle" class="muted" font-size="12">50</text>
-<text x="286" y="169" text-anchor="end" class="label">Mech</text>
-<rect x="300" y="149" width="912.9" height="16" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="1219.9" y="162" class="value">41.496</text>
-<rect x="300" y="174" width="1095.3" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
-<text x="1365.0" y="187" class="value">49.787</text>
-<text x="286" y="224" text-anchor="end" class="label">Julia</text>
-<rect x="300" y="204" width="678.4" height="16" rx="2" fill="#9558b2" opacity="0.92"/>
-<text x="985.4" y="217" class="value">30.835</text>
-<rect x="300" y="229" width="709.7" height="16" rx="2" fill="#9558b2" opacity="0.42"/>
-<text x="1016.7" y="242" class="value">32.260</text>
-<text x="286" y="279" text-anchor="end" class="label">Futhark</text>
-<rect x="300" y="259" width="672.7" height="16" rx="2" fill="#e94f37" opacity="0.92"/>
-<text x="979.7" y="272" class="value">30.576</text>
-<rect x="300" y="284" width="953.4" height="16" rx="2" fill="#e94f37" opacity="0.42"/>
-<text x="1260.4" y="297" class="value">43.337</text>
-<text x="286" y="334" text-anchor="end" class="label">Rust</text>
-<rect x="300" y="314" width="564.3" height="16" rx="2" fill="#dea584" opacity="0.92"/>
-<text x="871.3" y="327" class="value">25.650</text>
-<rect x="300" y="339" width="409.8" height="16" rx="2" fill="#dea584" opacity="0.42"/>
-<text x="716.8" y="352" class="value">18.627</text>
-<text x="286" y="389" text-anchor="end" class="label">NumPy</text>
-<rect x="300" y="369" width="244.8" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
-<text x="551.8" y="382" class="value">11.129</text>
-<rect x="300" y="394" width="276.3" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
-<text x="583.3" y="407" class="value">12.558</text>
-<text x="286" y="444" text-anchor="end" class="label">Halide</text>
-<rect x="300" y="424" width="59.6" height="16" rx="2" fill="#ff8f00" opacity="0.92"/>
-<text x="366.6" y="437" class="value">2.707</text>
-<rect x="300" y="449" width="111.3" height="16" rx="2" fill="#ff8f00" opacity="0.42"/>
-<text x="418.3" y="462" class="value">5.058</text>
-<text x="286" y="499" text-anchor="end" class="label">LuaJIT</text>
-<rect x="300" y="479" width="27.8" height="16" rx="2" fill="#000080" opacity="0.92"/>
-<text x="334.8" y="492" class="value">1.263</text>
-<rect x="300" y="504" width="351.8" height="16" rx="2" fill="#000080" opacity="0.42"/>
-<text x="658.8" y="517" class="value">15.991</text>
-<text x="286" y="554" text-anchor="end" class="label">Lua</text>
-<rect x="300" y="534" width="12.8" height="16" rx="2" fill="#000080" opacity="0.92"/>
-<text x="319.8" y="547" class="value">0.584</text>
-<rect x="300" y="559" width="19.3" height="16" rx="2" fill="#000080" opacity="0.42"/>
-<text x="326.3" y="572" class="value">0.879</text>
-<text x="38" y="630" class="muted" font-size="12">Checked is solid and unchecked is lighter.</text>
+<text x="38" y="69" class="muted" font-size="15">Single-worker SIMD/JIT controls where available; scalar controls remain where they are not. Checked is brighter; unchecked is darker.</text>
+<rect x="38" y="87" width="18" height="12" fill="#dce5f2"/><text x="64" y="98" class="muted" font-size="13">checked</text>
+<rect x="145" y="87" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="98" class="muted" font-size="13">unchecked</text>
+<line x1="300.0" y1="110" x2="300.0" y2="565" class="grid"/>
+<text x="300.0" y="589" text-anchor="middle" class="muted" font-size="12">0</text>
+<line x1="520.0" y1="110" x2="520.0" y2="565" class="grid"/>
+<text x="520.0" y="589" text-anchor="middle" class="muted" font-size="12">10</text>
+<line x1="740.0" y1="110" x2="740.0" y2="565" class="grid"/>
+<text x="740.0" y="589" text-anchor="middle" class="muted" font-size="12">20</text>
+<line x1="960.0" y1="110" x2="960.0" y2="565" class="grid"/>
+<text x="960.0" y="589" text-anchor="middle" class="muted" font-size="12">30</text>
+<line x1="1180.0" y1="110" x2="1180.0" y2="565" class="grid"/>
+<text x="1180.0" y="589" text-anchor="middle" class="muted" font-size="12">40</text>
+<line x1="1400.0" y1="110" x2="1400.0" y2="565" class="grid"/>
+<text x="1400.0" y="589" text-anchor="middle" class="muted" font-size="12">50</text>
+<text x="286" y="149" text-anchor="end" class="label">Mech</text>
+<rect x="300" y="129" width="912.9" height="16" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="1219.9" y="142" class="value">41.496</text>
+<rect x="300" y="154" width="1095.3" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
+<text x="1365.0" y="167" class="value">49.787</text>
+<text x="286" y="204" text-anchor="end" class="label">Julia</text>
+<rect x="300" y="184" width="678.4" height="16" rx="2" fill="#9558b2" opacity="0.92"/>
+<text x="985.4" y="197" class="value">30.835</text>
+<rect x="300" y="209" width="709.7" height="16" rx="2" fill="#9558b2" opacity="0.42"/>
+<text x="1016.7" y="222" class="value">32.260</text>
+<text x="286" y="259" text-anchor="end" class="label">Futhark</text>
+<rect x="300" y="239" width="672.7" height="16" rx="2" fill="#e94f37" opacity="0.92"/>
+<text x="979.7" y="252" class="value">30.576</text>
+<rect x="300" y="264" width="953.4" height="16" rx="2" fill="#e94f37" opacity="0.42"/>
+<text x="1260.4" y="277" class="value">43.337</text>
+<text x="286" y="314" text-anchor="end" class="label">Rust</text>
+<rect x="300" y="294" width="564.3" height="16" rx="2" fill="#dea584" opacity="0.92"/>
+<text x="871.3" y="307" class="value">25.650</text>
+<rect x="300" y="319" width="409.8" height="16" rx="2" fill="#dea584" opacity="0.42"/>
+<text x="716.8" y="332" class="value">18.627</text>
+<text x="286" y="369" text-anchor="end" class="label">NumPy</text>
+<rect x="300" y="349" width="244.8" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
+<text x="551.8" y="362" class="value">11.129</text>
+<rect x="300" y="374" width="276.3" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
+<text x="583.3" y="387" class="value">12.558</text>
+<text x="286" y="424" text-anchor="end" class="label">Halide</text>
+<rect x="300" y="404" width="59.6" height="16" rx="2" fill="#ff8f00" opacity="0.92"/>
+<text x="366.6" y="417" class="value">2.707</text>
+<rect x="300" y="429" width="111.3" height="16" rx="2" fill="#ff8f00" opacity="0.42"/>
+<text x="418.3" y="442" class="value">5.058</text>
+<text x="286" y="479" text-anchor="end" class="label">LuaJIT</text>
+<rect x="300" y="459" width="27.8" height="16" rx="2" fill="#000080" opacity="0.92"/>
+<text x="334.8" y="472" class="value">1.263</text>
+<rect x="300" y="484" width="351.8" height="16" rx="2" fill="#000080" opacity="0.42"/>
+<text x="658.8" y="497" class="value">15.991</text>
+<text x="286" y="534" text-anchor="end" class="label">Lua</text>
+<rect x="300" y="514" width="12.8" height="16" rx="2" fill="#000080" opacity="0.92"/>
+<text x="319.8" y="527" class="value">0.584</text>
+<rect x="300" y="539" width="19.3" height="16" rx="2" fill="#000080" opacity="0.42"/>
+<text x="326.3" y="552" class="value">0.879</text>
+<text x="38" y="610" class="muted" font-size="12">Checked is brighter; unchecked is darker.</text>
 <g aria-label="Test machine">
-<rect x="1010" y="665" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
-<text x="1022" y="681" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
-<text x="1022" y="696" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
-<text x="1022" y="711" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
-<text x="1022" y="726" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
+<rect x="1010" y="645" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
+<text x="1022" y="661" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
+<text x="1022" y="676" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
+<text x="1022" y="691" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
+<text x="1022" y="706" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
 </g>
 </svg>

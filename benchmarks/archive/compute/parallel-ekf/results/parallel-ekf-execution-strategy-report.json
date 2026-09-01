@@ -950,7 +950,7 @@
   "definitions": {
     "interpreted-baseline": {
       "title": "Interpreted baseline",
-      "description": "Interpreter and host-loop controls kept separate from native/JIT/data-parallel compilation.",
+      "description": "Interpreter-driven controls.",
       "workload": "10,000 filters x 20 turns where available",
       "languages": [
         "Mech",
@@ -962,7 +962,7 @@
     },
     "compiled-baseline": {
       "title": "Compiled baseline",
-      "description": "Direct native, JIT, or ahead-of-time compiled controls, with no interpreter in the timed loop.",
+      "description": "Compiled and JIT controls.",
       "workload": "10,000 filters x 20 turns where available",
       "languages": [
         "Mech",
@@ -977,30 +977,29 @@
     },
     "baseline": {
       "title": "Baseline",
-      "description": "The most direct scalar or fixed-shape control retained for each language.",
+      "description": "Direct scalar or fixed-shape controls.",
       "workload": "10,000 filters x 20 turns where available",
       "note": "Historical mixed view retained for compatibility. Interpreted rows are hatched and compiled rows are solid; checked and unchecked remain separate by opacity. Use the interpreted and compiled baseline views for like-for-like execution-boundary comparisons."
     },
     "single-core": {
       "title": "Single-core",
-      "description": "One process and one host worker; explicit SIMD/JIT controls are used where the retained evidence provides them.",
+      "description": "Single-worker SIMD/JIT controls where available; scalar controls remain where they are not.",
       "workload": "10,000 filters x 20 turns where available",
-      "note": "The strict one-worker SIMD comparison uses the scalarized Futhark ISPC control (30.55 checked / 43.34 unchecked; FMA contraction disabled). The eight-worker Futhark result belongs to the multicore view.",
-      "chart_note": "Strict Futhark one-worker row: 30.55 / 43.34 M/s; FMA contraction disabled. Eight-worker Futhark belongs to the multicore view."
+      "note": "SIMD/JIT controls are identified in the representative-source column; scalar controls remain where a SIMD/JIT implementation is not available."
     },
     "multicore": {
       "title": "Eight-worker multicore",
-      "description": "Matched eight-worker CPU fused block; checked mode validates each candidate and publishes at the block boundary.",
+      "description": "Eight-worker CPU fused controls.",
       "workload": "500,000 filters x 40 turns where available"
     },
     "gpu": {
       "title": "Synchronized GPU",
-      "description": "One GPU dispatch and completion wait per turn; checked rows retain the prior published state on a fault.",
+      "description": "Synchronized GPU controls, one dispatch per turn.",
       "workload": "500,000 filters x 40 turns, synchronized per turn"
     },
     "gpu-batched": {
       "title": "GPU batch ceiling",
-      "description": "A device-resident multi-turn submission. This is a throughput ceiling, not a replacement for per-turn observation.",
+      "description": "Device-resident multi-turn submission.",
       "workload": "500,000 filters x 40 turns, one submission where available"
     }
   }

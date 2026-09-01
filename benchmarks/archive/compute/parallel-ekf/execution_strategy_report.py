@@ -34,44 +34,43 @@ INTERPRETED_BASELINE_LANGUAGES = {"Mech", "NumPy", "Python", "Lua"}
 STRATEGIES = {
     "interpreted-baseline": {
         "title": "Interpreted baseline",
-        "description": "Interpreter and host-loop controls kept separate from native/JIT/data-parallel compilation.",
+        "description": "Interpreter-driven controls.",
         "workload": "10,000 filters x 20 turns where available",
         "languages": ("Mech", "NumPy", "Python", "Lua"),
         "note": "NumPy is included here because this row is a Python loop invoking one-filter NumPy operations; its array kernels are native, but the outer execution remains interpreter-driven.",
     },
     "compiled-baseline": {
         "title": "Compiled baseline",
-        "description": "Direct native, JIT, or ahead-of-time compiled controls, with no interpreter in the timed loop.",
+        "description": "Compiled and JIT controls.",
         "workload": "10,000 filters x 20 turns where available",
         "languages": ("Mech", "Rust", "Julia", "LuaJIT", "Taichi", "Halide", "Futhark"),
         "note": "This view uses each language's retained native/JIT/AOT scalar control. Rust uses the fixed-shape unrolled control, Taichi pins fast_math=False, and Mech uses the paired scalar Cranelift JIT measurements; SIMD/JIT population kernels remain separate.",
     },
     "baseline": {
         "title": "Baseline",
-        "description": "The most direct scalar or fixed-shape control retained for each language.",
+        "description": "Direct scalar or fixed-shape controls.",
         "workload": "10,000 filters x 20 turns where available",
         "note": "Historical mixed view retained for compatibility. Interpreted rows are hatched and compiled rows are solid; checked and unchecked remain separate by opacity. Use the interpreted and compiled baseline views for like-for-like execution-boundary comparisons.",
     },
     "single-core": {
         "title": "Single-core",
-        "description": "One process and one host worker; explicit SIMD/JIT controls are used where the retained evidence provides them.",
+        "description": "Single-worker SIMD/JIT controls where available; scalar controls remain where they are not.",
         "workload": "10,000 filters x 20 turns where available",
-        "note": "The strict one-worker SIMD comparison uses the scalarized Futhark ISPC control (30.55 checked / 43.34 unchecked; FMA contraction disabled). The eight-worker Futhark result belongs to the multicore view.",
-        "chart_note": "Strict Futhark one-worker row: 30.55 / 43.34 M/s; FMA contraction disabled. Eight-worker Futhark belongs to the multicore view.",
+        "note": "SIMD/JIT controls are identified in the representative-source column; scalar controls remain where a SIMD/JIT implementation is not available.",
     },
     "multicore": {
         "title": "Eight-worker multicore",
-        "description": "Matched eight-worker CPU fused block; checked mode validates each candidate and publishes at the block boundary.",
+        "description": "Eight-worker CPU fused controls.",
         "workload": "500,000 filters x 40 turns where available",
     },
     "gpu": {
         "title": "Synchronized GPU",
-        "description": "One GPU dispatch and completion wait per turn; checked rows retain the prior published state on a fault.",
+        "description": "Synchronized GPU controls, one dispatch per turn.",
         "workload": "500,000 filters x 40 turns, synchronized per turn",
     },
     "gpu-batched": {
         "title": "GPU batch ceiling",
-        "description": "A device-resident multi-turn submission. This is a throughput ceiling, not a replacement for per-turn observation.",
+        "description": "Device-resident multi-turn submission.",
         "workload": "500,000 filters x 40 turns, one submission where available",
     },
 }
@@ -540,7 +539,7 @@ def markdown(report: dict, strategy: str) -> str:
     lines = [
         f"# Parallel EKF: {spec['title']}",
         "",
-        f"{spec['description']} Workload: **{spec['workload']}**. Rows are ordered by checked throughput, fastest to slowest; checked and unchecked are separate columns; source edits are measured against each language's baseline source.",
+        f"{spec['description']} Workload: **{spec['workload']}**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.",
         "",
     ]
     if spec.get("note"):
@@ -587,7 +586,7 @@ def svg(report: dict, strategy: str) -> str:
         tick_step = 10.0 * magnitude
     maximum = tick_step * math.ceil(maximum_value / tick_step)
     width, left, right, row_height = 1500, 300, 100, 55
-    top = 145 if STRATEGIES[strategy].get("chart_note") else 125
+    top = 125
     # The chart stays focused on measured bars.  Unavailable controls remain in
     # the Markdown/JSON notes rather than consuming chart space; the machine
     # specification box occupies the freed footer area.
@@ -604,12 +603,15 @@ def svg(report: dict, strategy: str) -> str:
         return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
 
     mixed_baseline = strategy == "baseline"
+    chart_semantics = "Checked is brighter; unchecked is darker."
+    if mixed_baseline:
+        chart_semantics += " Interpreted rows are hatched; compiled rows are solid."
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: {esc(STRATEGIES[strategy]["title"])} throughput</text>',
-        f'<text x="38" y="69" class="muted" font-size="15">{esc(STRATEGIES[strategy]["description"])} Checked is solid; unchecked is lighter. Checked throughput is ranked fastest to slowest. Linear M/s axis.{" Interpreted rows are hatched; compiled rows are solid." if mixed_baseline else ""}</text>',
+        f'<text x="38" y="69" class="muted" font-size="15">{esc(STRATEGIES[strategy]["description"])} {chart_semantics}</text>',
     ]
     if mixed_baseline:
         lines.append('<defs>')
@@ -618,11 +620,7 @@ def svg(report: dict, strategy: str) -> str:
             color = COLORS[language]
             lines.append(f'<pattern id="baseline-interpreted-{slug(language)}" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="{color}"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>')
         lines.append('</defs>')
-    if STRATEGIES[strategy].get("chart_note"):
-        lines.append(f'<text x="38" y="91" class="muted" font-size="13">{esc(STRATEGIES[strategy]["chart_note"])}</text>')
-        legend_y = 108
-    else:
-        legend_y = 87
+    legend_y = 87
     lines.extend([
         f'<rect x="38" y="{legend_y}" width="18" height="12" fill="#dce5f2"/><text x="64" y="{legend_y + 11}" class="muted" font-size="13">checked</text>',
         f'<rect x="145" y="{legend_y}" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="{legend_y + 11}" class="muted" font-size="13">unchecked</text>',
@@ -652,7 +650,7 @@ def svg(report: dict, strategy: str) -> str:
             lines.append(f'<rect x="{left}" y="{y + offset}" width="{max(2, end - left):.1f}" height="16" rx="2" fill="{fill}" opacity="{0.92 if mode == "checked" else 0.42}"/>')
             lines.append(f'<text x="{min(end + 7, width - right - 35):.1f}" y="{y + offset + 13}" class="value">{value:.3f}</text>')
     footer_y = height - bottom + 45
-    footer_note = "Checked is solid and unchecked is lighter; interpreted baseline rows are hatched." if mixed_baseline else "Checked is solid and unchecked is lighter."
+    footer_note = chart_semantics
     lines.append(f'<text x="38" y="{footer_y}" class="muted" font-size="12">{footer_note}</text>')
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append("</svg>")

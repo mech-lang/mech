@@ -2,7 +2,7 @@
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: Interpreted baseline throughput</text>
-<text x="38" y="69" class="muted" font-size="15">Interpreter and host-loop controls kept separate from native/JIT/data-parallel compilation. Checked is solid; unchecked is lighter. Checked throughput is ranked fastest to slowest. Linear M/s axis.</text>
+<text x="38" y="69" class="muted" font-size="15">Interpreter-driven controls. Checked is brighter; unchecked is darker.</text>
 <rect x="38" y="87" width="18" height="12" fill="#dce5f2"/><text x="64" y="98" class="muted" font-size="13">checked</text>
 <rect x="145" y="87" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="98" class="muted" font-size="13">unchecked</text>
 <line x1="300.0" y1="110" x2="300.0" y2="345" class="grid"/>
@@ -39,7 +39,7 @@
 <text x="343.9" y="307" class="value">0.040</text>
 <rect x="300" y="319" width="48.1" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
 <text x="355.1" y="332" class="value">0.053</text>
-<text x="38" y="390" class="muted" font-size="12">Checked is solid and unchecked is lighter.</text>
+<text x="38" y="390" class="muted" font-size="12">Checked is brighter; unchecked is darker.</text>
 <g aria-label="Test machine">
 <rect x="1010" y="425" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
 <text x="1022" y="441" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>

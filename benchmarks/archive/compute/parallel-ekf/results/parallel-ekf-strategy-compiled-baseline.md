@@ -1,6 +1,6 @@
 # Parallel EKF: Compiled baseline
 
-Direct native, JIT, or ahead-of-time compiled controls, with no interpreter in the timed loop. Workload: **10,000 filters x 20 turns where available**. Rows are ordered by checked throughput, fastest to slowest; checked and unchecked are separate columns; source edits are measured against each language's baseline source.
+Compiled and JIT controls. Workload: **10,000 filters x 20 turns where available**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.
 
 **Scope note:** This view uses each language's retained native/JIT/AOT scalar control. Rust uses the fixed-shape unrolled control, Taichi pins fast_math=False, and Mech uses the paired scalar Cranelift JIT measurements; SIMD/JIT population kernels remain separate.
 

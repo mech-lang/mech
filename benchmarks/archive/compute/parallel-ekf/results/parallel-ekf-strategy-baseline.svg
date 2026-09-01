@@ -2,7 +2,7 @@
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: Baseline throughput</text>
-<text x="38" y="69" class="muted" font-size="15">The most direct scalar or fixed-shape control retained for each language. Checked is solid; unchecked is lighter. Checked throughput is ranked fastest to slowest. Linear M/s axis. Interpreted rows are hatched; compiled rows are solid.</text>
+<text x="38" y="69" class="muted" font-size="15">Direct scalar or fixed-shape controls. Checked is brighter; unchecked is darker. Interpreted rows are hatched; compiled rows are solid.</text>
 <defs>
 <pattern id="baseline-interpreted-key" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="#dce5f2"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>
 <pattern id="baseline-interpreted-lua" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="#000080"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>
@@ -76,7 +76,7 @@
 <text x="308.8" y="637" class="value">0.040</text>
 <rect x="300" y="649" width="2.3" height="16" rx="2" fill="url(#baseline-interpreted-numpy)" opacity="0.42"/>
 <text x="309.3" y="662" class="value">0.053</text>
-<text x="38" y="720" class="muted" font-size="12">Checked is solid and unchecked is lighter; interpreted baseline rows are hatched.</text>
+<text x="38" y="720" class="muted" font-size="12">Checked is brighter; unchecked is darker. Interpreted rows are hatched; compiled rows are solid.</text>
 <g aria-label="Test machine">
 <rect x="1010" y="755" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
 <text x="1022" y="771" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>

@@ -1,6 +1,6 @@
 # Parallel EKF: Interpreted baseline
 
-Interpreter and host-loop controls kept separate from native/JIT/data-parallel compilation. Workload: **10,000 filters x 20 turns where available**. Rows are ordered by checked throughput, fastest to slowest; checked and unchecked are separate columns; source edits are measured against each language's baseline source.
+Interpreter-driven controls. Workload: **10,000 filters x 20 turns where available**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.
 
 **Scope note:** NumPy is included here because this row is a Python loop invoking one-filter NumPy operations; its array kernels are native, but the outer execution remains interpreter-driven.
 
