@@ -3,59 +3,61 @@
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: Single-core throughput</text>
 <text x="38" y="69" class="muted" font-size="15">One process and one host worker; explicit SIMD/JIT controls are used where the retained evidence provides them. Checked is solid; unchecked is lighter. Linear M/s axis.</text>
-<text x="38" y="91" class="muted" font-size="13">Closest Futhark one-worker row: 19.614 / 19.635 M/s. The 48.391 / 47.824 row is eight-worker multicore, not a single-core comparison.</text>
+<text x="38" y="91" class="muted" font-size="13">Strict Futhark one-worker row: 30.55 / 43.34 M/s; FMA contraction disabled. Eight-worker Futhark belongs to the multicore view.</text>
 <rect x="38" y="108" width="18" height="12" fill="#dce5f2"/><text x="64" y="119" class="muted" font-size="13">checked</text>
 <rect x="145" y="108" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="119" class="muted" font-size="13">unchecked</text>
 <line x1="300.0" y1="130" x2="300.0" y2="585" class="grid"/>
 <text x="300.0" y="609" text-anchor="middle" class="muted" font-size="12">0</text>
-<line x1="575.0" y1="130" x2="575.0" y2="585" class="grid"/>
-<text x="575.0" y="609" text-anchor="middle" class="muted" font-size="12">10</text>
-<line x1="850.0" y1="130" x2="850.0" y2="585" class="grid"/>
-<text x="850.0" y="609" text-anchor="middle" class="muted" font-size="12">20</text>
-<line x1="1125.0" y1="130" x2="1125.0" y2="585" class="grid"/>
-<text x="1125.0" y="609" text-anchor="middle" class="muted" font-size="12">30</text>
+<line x1="520.0" y1="130" x2="520.0" y2="585" class="grid"/>
+<text x="520.0" y="609" text-anchor="middle" class="muted" font-size="12">10</text>
+<line x1="740.0" y1="130" x2="740.0" y2="585" class="grid"/>
+<text x="740.0" y="609" text-anchor="middle" class="muted" font-size="12">20</text>
+<line x1="960.0" y1="130" x2="960.0" y2="585" class="grid"/>
+<text x="960.0" y="609" text-anchor="middle" class="muted" font-size="12">30</text>
+<line x1="1180.0" y1="130" x2="1180.0" y2="585" class="grid"/>
+<text x="1180.0" y="609" text-anchor="middle" class="muted" font-size="12">40</text>
 <line x1="1400.0" y1="130" x2="1400.0" y2="585" class="grid"/>
-<text x="1400.0" y="609" text-anchor="middle" class="muted" font-size="12">40</text>
+<text x="1400.0" y="609" text-anchor="middle" class="muted" font-size="12">50</text>
 <text x="286" y="169" text-anchor="end" class="label">Mech</text>
-<rect x="300" y="149" width="949.3" height="16" rx="2" fill="#f4c430" opacity="0.92"/>
-<text x="1256.3" y="162" class="value">34.521</text>
-<rect x="300" y="174" width="1051.2" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
-<text x="1358.2" y="187" class="value">38.226</text>
+<rect x="300" y="149" width="912.9" height="16" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="1219.9" y="162" class="value">41.496</text>
+<rect x="300" y="174" width="1095.3" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
+<text x="1365.0" y="187" class="value">49.787</text>
 <text x="286" y="224" text-anchor="end" class="label">Rust</text>
-<rect x="300" y="204" width="705.4" height="16" rx="2" fill="#dea584" opacity="0.92"/>
-<text x="1012.4" y="217" class="value">25.650</text>
-<rect x="300" y="229" width="512.2" height="16" rx="2" fill="#dea584" opacity="0.42"/>
-<text x="819.2" y="242" class="value">18.627</text>
+<rect x="300" y="204" width="564.3" height="16" rx="2" fill="#dea584" opacity="0.92"/>
+<text x="871.3" y="217" class="value">25.650</text>
+<rect x="300" y="229" width="409.8" height="16" rx="2" fill="#dea584" opacity="0.42"/>
+<text x="716.8" y="242" class="value">18.627</text>
 <text x="286" y="279" text-anchor="end" class="label">NumPy</text>
-<rect x="300" y="259" width="306.0" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
-<text x="613.0" y="272" class="value">11.129</text>
-<rect x="300" y="284" width="345.3" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
-<text x="652.3" y="297" class="value">12.558</text>
+<rect x="300" y="259" width="244.8" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
+<text x="551.8" y="272" class="value">11.129</text>
+<rect x="300" y="284" width="276.3" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
+<text x="583.3" y="297" class="value">12.558</text>
 <text x="286" y="334" text-anchor="end" class="label">Julia</text>
-<rect x="300" y="314" width="848.0" height="16" rx="2" fill="#9558b2" opacity="0.92"/>
-<text x="1155.0" y="327" class="value">30.835</text>
-<rect x="300" y="339" width="887.2" height="16" rx="2" fill="#9558b2" opacity="0.42"/>
-<text x="1194.2" y="352" class="value">32.260</text>
+<rect x="300" y="314" width="678.4" height="16" rx="2" fill="#9558b2" opacity="0.92"/>
+<text x="985.4" y="327" class="value">30.835</text>
+<rect x="300" y="339" width="709.7" height="16" rx="2" fill="#9558b2" opacity="0.42"/>
+<text x="1016.7" y="352" class="value">32.260</text>
 <text x="286" y="389" text-anchor="end" class="label">LuaJIT</text>
-<rect x="300" y="369" width="34.7" height="16" rx="2" fill="#000080" opacity="0.92"/>
-<text x="341.7" y="382" class="value">1.263</text>
-<rect x="300" y="394" width="439.8" height="16" rx="2" fill="#000080" opacity="0.42"/>
-<text x="746.8" y="407" class="value">15.991</text>
+<rect x="300" y="369" width="27.8" height="16" rx="2" fill="#000080" opacity="0.92"/>
+<text x="334.8" y="382" class="value">1.263</text>
+<rect x="300" y="394" width="351.8" height="16" rx="2" fill="#000080" opacity="0.42"/>
+<text x="658.8" y="407" class="value">15.991</text>
 <text x="286" y="444" text-anchor="end" class="label">Lua</text>
-<rect x="300" y="424" width="15.5" height="16" rx="2" fill="#000080" opacity="0.92"/>
-<text x="322.5" y="437" class="value">0.565</text>
-<rect x="300" y="449" width="23.0" height="16" rx="2" fill="#000080" opacity="0.42"/>
-<text x="330.0" y="462" class="value">0.835</text>
+<rect x="300" y="424" width="12.4" height="16" rx="2" fill="#000080" opacity="0.92"/>
+<text x="319.4" y="437" class="value">0.565</text>
+<rect x="300" y="449" width="18.4" height="16" rx="2" fill="#000080" opacity="0.42"/>
+<text x="325.4" y="462" class="value">0.835</text>
 <text x="286" y="499" text-anchor="end" class="label">Halide</text>
-<rect x="300" y="479" width="74.4" height="16" rx="2" fill="#ff8f00" opacity="0.92"/>
-<text x="381.4" y="492" class="value">2.707</text>
-<rect x="300" y="504" width="139.1" height="16" rx="2" fill="#ff8f00" opacity="0.42"/>
-<text x="446.1" y="517" class="value">5.058</text>
+<rect x="300" y="479" width="59.6" height="16" rx="2" fill="#ff8f00" opacity="0.92"/>
+<text x="366.6" y="492" class="value">2.707</text>
+<rect x="300" y="504" width="111.3" height="16" rx="2" fill="#ff8f00" opacity="0.42"/>
+<text x="418.3" y="517" class="value">5.058</text>
 <text x="286" y="554" text-anchor="end" class="label">Futhark</text>
-<rect x="300" y="534" width="539.4" height="16" rx="2" fill="#e94f37" opacity="0.92"/>
-<text x="846.4" y="547" class="value">19.614</text>
-<rect x="300" y="559" width="540.0" height="16" rx="2" fill="#e94f37" opacity="0.42"/>
-<text x="847.0" y="572" class="value">19.635</text>
+<rect x="300" y="534" width="672.7" height="16" rx="2" fill="#e94f37" opacity="0.92"/>
+<text x="979.7" y="547" class="value">30.576</text>
+<rect x="300" y="559" width="953.4" height="16" rx="2" fill="#e94f37" opacity="0.42"/>
+<text x="1260.4" y="572" class="value">43.337</text>
 <text x="38" y="630" class="muted" font-size="12">Bars show only languages with at least one measured result; checked is solid and unchecked is lighter.</text>
 <text x="38" y="648" class="muted" font-size="12">Python: backend/strategy unavailable.</text>
 <text x="38" y="666" class="muted" font-size="12">Taichi: backend/strategy unavailable.</text>

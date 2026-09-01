@@ -67,6 +67,8 @@ git switch --track origin/codex/mech-program-gpu
 | Matched Mech/strict-Halide evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-halide-strict-2026-08-31.json` |
 | Futhark fixed-mode ISPC evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-ispc-fixed-2026-08-31.json` |
 | Mech persistent SIMD/JIT evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-persistent-simd-2026-08-31.json` |
+| Mech strict resident SIMD-JIT optimization evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json` |
+| Mech strict resident SIMD-JIT optimization summary | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.md` |
 | Fused Rust/Julia/Numba reference evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json` |
 | Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
 | Pure-Python scalar evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-pure-python-2026-09-01.json` |
@@ -370,8 +372,9 @@ python3 plot_cross_language_comparison.py \
   --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json \
   --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json \
   --futhark-fixed results/apple-m1-futhark-ispc-fixed-2026-08-31.json \
-  --futhark-scalarized results/apple-m1-futhark-scalarized-2026-09-01.json \
+  --futhark-scalarized results/apple-m1-futhark-ispc-strict-2026-09-01.json \
   --mech-persistent results/apple-m1-mech-persistent-simd-2026-08-31.json \
+  --mech-simd-jit results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json \
   --fused-references results/apple-m1-fused-reference-controls-2026-08-31.json \
   --julia-gpu results/apple-m1-julia-metal-2026-08-31.json \
   --pure-python results/apple-m1-pure-python-2026-09-01.json \
@@ -383,7 +386,8 @@ python3 plot_mech_progression.py \
   results/apple-m1-mech-taichi-runtime-2026-08-31.json \
   results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
   results/apple-m1-2026-08-14.json \
-  results/parallel-ekf-mech-progression.svg
+  results/parallel-ekf-mech-progression.svg \
+  --mech-simd-jit results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json
 
 python3 source_diff_report.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \
@@ -908,8 +912,10 @@ closer with a generated fixed-shape kernel and a matching packed layout.
 To regenerate the chart from a new run:
 
 ```text
-python3 plot.py results/apple-m1-simd-cross-language-2026-08-30.json results/apple-m1-simd-cross-language-2026-08-30.svg
-python3 plot.py --checked-only results/apple-m1-checked-cross-language-2026-08-31.json results/apple-m1-checked-cross-language-2026-08-31.svg
+python3 plot.py results/apple-m1-simd-cross-language-2026-08-30.json results/apple-m1-simd-cross-language-2026-08-30.svg \
+  --mech-simd-jit results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json
+python3 plot.py --checked-only results/apple-m1-checked-cross-language-2026-08-31.json results/apple-m1-checked-cross-language-2026-08-31.svg \
+  --mech-simd-jit results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json
 ```
 
 All current controls use their normal arithmetic policy. In particular, the

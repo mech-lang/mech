@@ -50,8 +50,8 @@ STRATEGIES = {
         "title": "Single-core",
         "description": "One process and one host worker; explicit SIMD/JIT controls are used where the retained evidence provides them.",
         "workload": "10,000 filters x 20 turns where available",
-        "note": "The closest Futhark comparison is its one-worker row (19.614 checked / 19.635 unchecked). The 48.391 / 47.824 Futhark result uses eight workers and belongs to the multicore view.",
-        "chart_note": "Closest Futhark one-worker row: 19.614 / 19.635 M/s. The 48.391 / 47.824 row is eight-worker multicore, not a single-core comparison.",
+        "note": "The strict one-worker SIMD comparison uses the scalarized Futhark ISPC control (30.55 checked / 43.34 unchecked; FMA contraction disabled). The eight-worker Futhark result belongs to the multicore view.",
+        "chart_note": "Strict Futhark one-worker row: 30.55 / 43.34 M/s; FMA contraction disabled. Eight-worker Futhark belongs to the multicore view.",
     },
     "multicore": {
         "title": "Eight-worker multicore",
@@ -110,7 +110,7 @@ SOURCES = {
         "Lua": BASELINES["Lua"],
         "Taichi": None,
         "Halide": BASELINES["Halide"],
-        "Futhark": BASELINES["Futhark"],
+        "Futhark": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_scalar_ekf.fut",
     },
     "multicore": {
         "Mech": BASELINES["Mech"],
@@ -188,7 +188,7 @@ SOURCE_LABELS = {
         "Lua": "flat scalarized Lua state",
         "Taichi": "not applicable: no single-core row",
         "Halide": "fixed-shape pipeline, one host worker",
-        "Futhark": "same data-parallel program, one worker",
+        "Futhark": "strict scalarized ISPC program, one worker",
     },
     "multicore": {
         "Mech": "same `.mec`; checkpointed fused eight-worker SIMD/JIT block",
@@ -267,6 +267,15 @@ def row_metric(data: dict | None, label: str) -> float | None:
     return median_value(row, "throughput", 1_000_000)
 
 
+def strict_futhark_available(data: dict | None) -> bool:
+    if data is None:
+        return False
+    configuration = data.get("configuration", {})
+    backend = str(configuration.get("backend", "")).lower()
+    notes = " ".join(str(note).lower() for note in configuration.get("notes", []))
+    return "disable-fma" in backend or "disable-fma" in notes or "fma contraction disabled" in backend
+
+
 def pair(checked: float | None, unchecked: float | None) -> dict[str, float | None]:
     return {"checked": checked, "unchecked": unchecked}
 
@@ -286,7 +295,9 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
     strict_mech = data["strict_mech"]
     fused = data["fused"]
     mech_persistent = data["mech_persistent"]
-    futhark_fixed = data["futhark_fixed"]
+    futhark_fixed = data["futhark_fixed"] if strict_futhark_available(data["futhark_fixed"]) else None
+    futhark_strict = data["futhark_strict"]
+    mech_simd_jit = data["mech_simd_jit"]
 
     def m(label: str, mode: str | None = None) -> float | None:
         return scalar_metric(cross, label, mode)
@@ -320,6 +331,12 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
         label = "Mech Cranelift SIMD-JIT" if mode == "checked" else "Mech Cranelift SIMD-JIT unchecked"
         return mech_backend_metric(label)
 
+    def strict_futhark_metric(mode: str) -> float | None:
+        return row_metric(
+            futhark_strict,
+            f"Futhark ISPC scalarized SIMD 1 worker {mode}",
+        )
+
     metrics = {
         "baseline": {
             "Mech": pair(m("Mech scalar"), m("Mech scalar unchecked")),
@@ -334,7 +351,10 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
             "Futhark": pair(min_m("Futhark multicore 1 threads checked"), min_m("Futhark multicore 1 threads unchecked")),
         },
         "single-core": {
-            "Mech": pair(mech_simd_metric("checked"), mech_simd_metric("unchecked")),
+            "Mech": pair(
+                row_metric(mech_simd_jit, "checked") or mech_simd_metric("checked"),
+                row_metric(mech_simd_jit, "unchecked") or mech_simd_metric("unchecked"),
+            ),
             "Rust": pair(m("Rust packed SIMD", "checked"), m("Rust packed SIMD", "unchecked")),
             "NumPy": pair(min_m("NumPy advanced checked"), min_m("NumPy advanced unchecked")),
             "Python": pair(None, None),
@@ -343,7 +363,10 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
             "Lua": pair(row_metric(lua, "Lua fixed-shape flat checked"), row_metric(lua, "Lua fixed-shape flat unchecked")),
             "Taichi": pair(None, None),
             "Halide": pair(min_m("Halide checked"), min_m("Halide unchecked")),
-            "Futhark": pair(min_m("Futhark multicore 1 threads checked"), min_m("Futhark multicore 1 threads unchecked")),
+            "Futhark": pair(
+                strict_futhark_metric("checked") or min_m("Futhark multicore 1 threads checked"),
+                strict_futhark_metric("unchecked") or min_m("Futhark multicore 1 threads unchecked"),
+            ),
         },
         "multicore": {
             "Mech": pair(row_metric(fused, "mech_fused_checked"), row_metric(mech_persistent, "fused_unchecked_block")),
@@ -590,6 +613,8 @@ def load_inputs(results: Path) -> dict[str, dict | None]:
         "strict_mech": "apple-m1-mech-halide-strict-2026-08-31.json",
         "fused": "apple-m1-fused-reference-controls-2026-08-31.json",
         "mech_persistent": "apple-m1-mech-persistent-simd-2026-08-31.json",
+        "mech_simd_jit": "apple-m1-mech-simd-jit-neon-strict-2026-09-01.json",
+        "futhark_strict": "apple-m1-futhark-ispc-strict-2026-09-01.json",
     }
     return {key: load_json(results / filename) for key, filename in names.items()}
 

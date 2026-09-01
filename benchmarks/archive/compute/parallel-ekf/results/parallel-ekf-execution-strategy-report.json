@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-01T11:05:24.017498-04:00",
+  "generated_at": "2026-09-01T15:38:30.259349-04:00",
   "strategies": {
     "interpreted-baseline": [
       {
@@ -434,8 +434,8 @@
         "source": "same `.mec`; Cranelift SIMD/JIT backend",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
         "values": {
-          "checked": 34.521,
-          "unchecked": 38.226
+          "checked": 41.496,
+          "unchecked": 49.787
         },
         "status": "measured",
         "code": {
@@ -571,22 +571,22 @@
       },
       {
         "language": "Futhark",
-        "source": "same data-parallel program, one worker",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+        "source": "strict scalarized ISPC program, one worker",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_scalar_ekf.fut",
         "values": {
-          "checked": 19.61361184662156,
-          "unchecked": 19.6347928529354
+          "checked": 30.576,
+          "unchecked": 43.337
         },
         "status": "measured",
         "code": {
-          "lines": 56,
-          "chars": 3098
+          "lines": 105,
+          "chars": 3566
         },
         "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
+          "changed_line_slots": 112,
+          "added_lines": 106,
+          "deleted_lines": 51,
+          "changed_chars": 4266
         }
       }
     ],
@@ -641,14 +641,14 @@
         },
         "status": "measured",
         "code": {
-          "lines": 217,
-          "chars": 7871
+          "lines": 212,
+          "chars": 7568
         },
         "edit_vs_baseline": {
-          "changed_line_slots": 244,
-          "added_lines": 241,
+          "changed_line_slots": 233,
+          "added_lines": 230,
           "deleted_lines": 62,
-          "changed_chars": 11087
+          "changed_chars": 10514
         }
       },
       {
@@ -703,26 +703,6 @@
         "code": {
           "lines": 324,
           "chars": 8928
-        },
-        "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
-        }
-      },
-      {
-        "language": "Futhark",
-        "source": "ISPC fixed-mode with eight workers",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
-        "values": {
-          "checked": 108.717514,
-          "unchecked": 152.329886
-        },
-        "status": "measured",
-        "code": {
-          "lines": 56,
-          "chars": 3098
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -863,6 +843,10 @@
       {
         "language": "Lua",
         "reason": "backend/strategy unavailable"
+      },
+      {
+        "language": "Futhark",
+        "reason": "source exists but was not tested"
       }
     ],
     "gpu": [
@@ -958,7 +942,9 @@
     "halide_gpu": "2026-09-01T00:05:05.531733-04:00",
     "strict_mech": "2026-08-31",
     "fused": "2026-08-31T23:10:00-04:00",
-    "mech_persistent": "2026-08-31T22:20:00-04:00"
+    "mech_persistent": "2026-08-31T22:20:00-04:00",
+    "mech_simd_jit": "2026-09-01T16:00:00-04:00",
+    "futhark_strict": "2026-09-01T12:00:00-04:00"
   },
   "definitions": {
     "interpreted-baseline": {
@@ -998,8 +984,8 @@
       "title": "Single-core",
       "description": "One process and one host worker; explicit SIMD/JIT controls are used where the retained evidence provides them.",
       "workload": "10,000 filters x 20 turns where available",
-      "note": "The closest Futhark comparison is its one-worker row (19.614 checked / 19.635 unchecked). The 48.391 / 47.824 Futhark result uses eight workers and belongs to the multicore view.",
-      "chart_note": "Closest Futhark one-worker row: 19.614 / 19.635 M/s. The 48.391 / 47.824 row is eight-worker multicore, not a single-core comparison."
+      "note": "The strict one-worker SIMD comparison uses the scalarized Futhark ISPC control (30.55 checked / 43.34 unchecked; FMA contraction disabled). The eight-worker Futhark result belongs to the multicore view.",
+      "chart_note": "Strict Futhark one-worker row: 30.55 / 43.34 M/s; FMA contraction disabled. Eight-worker Futhark belongs to the multicore view."
     },
     "multicore": {
       "title": "Eight-worker multicore",

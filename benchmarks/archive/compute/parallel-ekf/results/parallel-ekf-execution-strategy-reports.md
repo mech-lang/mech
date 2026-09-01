@@ -23,6 +23,7 @@ Languages with no measured result are omitted from the corresponding tables and 
 | multicore | Python | backend/strategy unavailable |
 | multicore | LuaJIT | backend/strategy unavailable |
 | multicore | Lua | backend/strategy unavailable |
+| multicore | Futhark | source exists but was not tested |
 | gpu | Rust | backend/strategy unavailable |
 | gpu | NumPy | backend/strategy unavailable |
 | gpu | Python | backend/strategy unavailable |

@@ -29,12 +29,25 @@ def printed_mech(cross: dict, run_name: str) -> dict[str, float]:
     return {label: statistics.median(samples) for label, samples in values.items()}
 
 
-def load_rows(cross: dict, runtime: dict, native: dict, historical: dict) -> list[dict[str, object]]:
+def load_rows(
+    cross: dict,
+    runtime: dict,
+    native: dict,
+    historical: dict,
+    mech_simd_jit: dict | None = None,
+) -> list[dict[str, object]]:
     scalar_values = printed_mech(cross, "mech_scalar_settings")
     backend_values = printed_mech(cross, "mech_backend_settings")
     runtime_rows = {row["label"]: row for row in runtime["rows"]}
     native_rows = {row["label"]: row for row in native["rows"]}
     old = historical["summary"]["mech_backends_million_ekf_turns_per_second"]
+    optimized_rows = (mech_simd_jit or {}).get("rows", {})
+
+    def optimized(mode: str, fallback: float | None) -> float | None:
+        row = optimized_rows.get(mode)
+        if row is None or "throughput_millions" not in row:
+            return fallback
+        return statistics.median(row["throughput_millions"])
 
     def row(label: str, checked: float | None, unchecked: float | None, note: str = "") -> dict[str, object]:
         return {"label": label, "checked": checked, "unchecked": unchecked, "note": note}
@@ -43,7 +56,11 @@ def load_rows(cross: dict, runtime: dict, native: dict, historical: dict) -> lis
         row("resident scalar CPU", scalar_values["Mech scalar"], None),
         row("resident SIMD CPU (4 lanes)", scalar_values["Mech SIMD"], None),
         row("Cranelift JIT", scalar_values["Mech Cranelift JIT"], scalar_values["Mech Cranelift JIT unchecked"]),
-        row("Cranelift SIMD-JIT", scalar_values["Mech Cranelift SIMD-JIT"], scalar_values["Mech Cranelift SIMD-JIT unchecked"]),
+        row(
+            "Cranelift SIMD-JIT",
+            optimized("checked", scalar_values["Mech Cranelift SIMD-JIT"]),
+            optimized("unchecked", scalar_values["Mech Cranelift SIMD-JIT unchecked"]),
+        ),
         row(
             "Cranelift SIMD-JIT, 8 workers",
             runtime_rows["Mech SIMD/JIT CPU, checked (8 workers)"]["throughput_millions"],
@@ -129,12 +146,16 @@ def main() -> None:
     parser.add_argument("native", type=Path)
     parser.add_argument("historical", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--mech-simd-jit", type=Path)
     args = parser.parse_args()
     rows = load_rows(
         json.loads(args.cross_language.read_text(encoding="utf-8")),
         json.loads(args.runtime.read_text(encoding="utf-8")),
         json.loads(args.native.read_text(encoding="utf-8")),
         json.loads(args.historical.read_text(encoding="utf-8")),
+        json.loads(args.mech_simd_jit.read_text(encoding="utf-8"))
+        if args.mech_simd_jit
+        else None,
     )
     render(rows, args.output)
 

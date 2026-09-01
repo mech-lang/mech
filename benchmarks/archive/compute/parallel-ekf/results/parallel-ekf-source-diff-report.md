@@ -6,16 +6,16 @@ This report measures source edits and runtime factors behind the parallel EKF va
 
 | Language | Baseline model | Advanced model | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Compile/JIT ms (baseline / advanced; phase in JSON) | Baseline checked M/s (baseline row workload) | Baseline unchecked M/s (baseline row workload) | Advanced checked M/s (advanced row workload) | Advanced unchecked M/s (advanced row workload) | Max single-core M/s (10,000 x 20; checked / unchecked) | Max SIMD/multicore M/s (500,000 x 40 where available; checked / unchecked) | Max GPU M/s (500,000 x 40 synchronized per-turn; checked / unchecked) |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Mech | compact high-level `.mec` program | same compact `.mec`; native backend selected at build | 42 / 1,513 | 42 / 1,513 | 0 / 0 | 0 / 0 | 0 / 0 | 197.377 / 4.303 | 0.919 | 1.029 | 187.999 | 275.534 | 34.551 / 38.226 | 145.573 / 165.830 | 187.999 / 275.534 |
+| Mech | compact high-level `.mec` program | same compact `.mec`; native backend selected at build | 42 / 1,513 | 42 / 1,513 | 0 / 0 | 0 / 0 | 0 / 0 | 197.377 / 4.303 | 0.919 | 1.029 | 187.999 | 275.534 | 41.496 / 49.787 | 145.573 / 165.830 | 187.999 / 275.534 |
 | Rust | compact fixed-shape scalar control | compact packed four-lane SIMD control | 243 / 6,059 | 566 / 13,848 | 708 / 24,453 | 248 / 7,865 | 596 / 20,653 | 405.700 / 708.794 | 19.799 | 20.544 | 25.650 | 18.627 | 25.650 / 18.627 | 146.509 / 163.866 | -- / -- |
-| NumPy | compact per-filter scalar loop | compact batched fixed-shape vectorized operations | 66 / 1,819 | 108 / 2,974 | 94 / 3,123 | 72 / 2,365 | 116 / 3,772 | 86.338 / 85.805 | 0.040 | 0.053 | 11.129 | 12.558 | 10.673 / 12.032 | 80.323 / 86.973 | -- / -- |
+| NumPy | compact per-filter scalar loop | compact batched fixed-shape vectorized operations | 66 / 1,819 | 108 / 2,974 | 94 / 3,123 | 72 / 2,365 | 116 / 3,772 | 86.338 / 85.805 | 0.040 | 0.053 | 11.129 | 12.558 | 10.673 / 12.032 | 80.323 / 81.972 | -- / -- |
 | Python | standard-library scalar control | same scalar control; no optimized Python variant | 158 / 5,118 | 158 / 5,118 | 0 / 0 | 183 / 6,356 | 183 / 6,356 | 86.207 / 85.986 | 0.246 | 0.356 | 0.246 | 0.356 | 0.246 / 0.356 | -- / -- | -- / -- |
 | Julia | compact generic scalar Julia | compact explicit four-lane SIMD.jl intrinsics | 126 / 4,322 | 196 / 6,935 | 204 / 8,960 | 126 / 4,828 | 196 / 8,156 | 1282.440 / 1379.128 | 3.073 | 3.123 | 30.835 | 32.260 | 30.835 / 35.100 | 128.544 / 133.605 | 178.135 / 199.454 |
 | LuaJIT | compact generic matrix helper loop | compact flat fixed-shape scalarized state | 205 / 4,810 | 153 / 7,031 | 242 / 9,393 | 215 / 5,447 | 153 / 7,444 | 3.373 / 3.599 | 1.068 | 1.740 | 1.263 | 15.991 | 1.263 / 15.991 | -- / -- | -- / -- |
 | Lua | same compact flat source under PUC Lua | same compact flat source under PUC Lua | 153 / 7,031 | 153 / 7,031 | 0 / 0 | 153 / 7,444 | 153 / 7,444 | 2.943 / 2.843 | 0.565 | 0.835 | 0.565 | 0.835 | 0.565 / 0.835 | -- / -- | -- / -- |
 | Taichi | compact Vector/Matrix resident fields | compact scalar SoA fields and unrolled 3x3 arithmetic | 260 / 8,891 | 277 / 11,406 | 224 / 11,640 | 260 / 11,243 | 277 / 13,907 | 446.897 / 391.229 | 176.710 | 194.793 | 168.798 | 217.297 | -- / -- | 86.047 / 98.140 | 176.710 / 217.297 |
 | Halide | same fixed-shape JIT pipeline | same pipeline; strict checked publication and fault output | 324 / 8,928 | 324 / 8,928 | 0 / 0 | 349 / 12,174 | 349 / 12,174 | 1440.497 / 1435.551 | 111.474 | 212.283 | 111.474 | 212.283 | 2.707 / 5.058 | 3.270 / 5.593 | 111.474 / 212.283 |
-| Futhark | same data-parallel program | same program; multicore worker count | 56 / 3,098 | 56 / 3,098 | 0 / 0 | 87 / 4,332 | 87 / 4,332 | 802.385 / 1501.165 | 19.614 | 19.635 | 48.391 | 47.824 | 48.391 / 47.824 | 108.718 / 152.330 | -- / -- |
+| Futhark | same data-parallel program | same program; multicore worker count | 56 / 3,098 | 56 / 3,098 | 0 / 0 | 87 / 4,332 | 87 / 4,332 | 802.385 / 1501.165 | 19.614 | 19.635 | 48.391 | 47.824 | -- / -- | 48.391 / 47.824 | -- / -- |
 
 ## Runtime factors
 
@@ -51,6 +51,6 @@ Compile/JIT values are baseline / advanced medians. AOT and bytecode phases are 
 
 ## Mech backend support footprint
 
-The high-level Mech source delta is zero, but the native-Metal backend support changed **523 line slots** (438 added / 85 deleted) across the backend files in the report JSON. This is intentionally reported separately: generated WGSL/MSL is a build artifact, not a second user program.
+The high-level Mech source delta is zero, but the native-Metal backend support changed **1082 line slots** (555 added / 527 deleted) across the backend files in the report JSON. This is intentionally reported separately: generated WGSL/MSL is a build artifact, not a second user program.
 
 The Mech row deliberately reports zero high-level source edits: the same `.mec` recurrence feeds the scalar, SIMD, JIT, WGPU, and native-Metal backends. Conversely, Taichi, Julia, Rust, and LuaJIT advanced rows include their source-level layout or execution changes.

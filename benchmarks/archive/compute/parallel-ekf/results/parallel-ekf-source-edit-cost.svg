@@ -79,6 +79,6 @@
 <text x="852.0" y="498" class="value">708</text>
 <rect x="940.0" y="483" width="620.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
 <text x="1552.0" y="498" class="value">24,453</text>
-<text x="42" y="575" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed 523 backend line slots and is intentionally not counted as program edits.</text>
+<text x="42" y="575" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed 1082 backend line slots and is intentionally not counted as program edits.</text>
 <text x="1560" y="592" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

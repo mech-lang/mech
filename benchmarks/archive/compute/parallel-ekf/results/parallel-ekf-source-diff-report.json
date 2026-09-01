@@ -430,9 +430,9 @@
       "hosts/gpu/src/batched/mod.rs",
       "hosts/gpu/src/metal.rs"
     ],
-    "added_lines": 438,
-    "deleted_lines": 85,
-    "changed_line_slots": 523,
+    "added_lines": 555,
+    "deleted_lines": 527,
+    "changed_line_slots": 1082,
     "note": "This is backend/compiler support for native Metal and the direct benchmark path; generated WGSL/MSL is an artifact, not a second user program."
   },
   "rows": [
@@ -496,11 +496,11 @@
       "performance_maxima": {
         "single_core": {
           "checked": {
-            "throughput": 34.551,
+            "throughput": 41.496,
             "label": "Mech Cranelift SIMD-JIT"
           },
           "unchecked": {
-            "throughput": 38.226,
+            "throughput": 49.787,
             "label": "Mech Cranelift SIMD-JIT unchecked"
           }
         },
@@ -782,8 +782,8 @@
             "label": "NumPy/Numba, fused worker-local block checked (8 workers)"
           },
           "unchecked": {
-            "throughput": 86.973,
-            "label": "NumPy/Numba, fused worker-local block fast math (8 workers)"
+            "throughput": 81.972,
+            "label": "NumPy/Numba, fused worker-local block (8 workers)"
           }
         }
       },
@@ -1455,11 +1455,11 @@
         "single_core": {
           "checked": {
             "throughput": 2.707,
-            "label": "Halide, checked"
+            "label": "Halide"
           },
           "unchecked": {
             "throughput": 5.058,
-            "label": "Halide, unchecked"
+            "label": "Halide"
           }
         },
         "simd_multicore": {
@@ -1588,24 +1588,14 @@
         "unchecked": 47.82400765184122
       },
       "performance_maxima": {
-        "single_core": {
+        "simd_multicore": {
           "checked": {
             "throughput": 48.391,
-            "label": "Futhark, checked"
+            "label": "Futhark multicore, 8 workers (10k x 20)"
           },
           "unchecked": {
             "throughput": 47.824,
-            "label": "Futhark, unchecked"
-          }
-        },
-        "simd_multicore": {
-          "checked": {
-            "throughput": 108.718,
-            "label": "Futhark ISPC fixed-mode, 8 workers (500k x 40)"
-          },
-          "unchecked": {
-            "throughput": 152.33,
-            "label": "Futhark ISPC fixed-mode, 8 workers (500k x 40)"
+            "label": "Futhark multicore, 8 workers (10k x 20)"
           }
         }
       },

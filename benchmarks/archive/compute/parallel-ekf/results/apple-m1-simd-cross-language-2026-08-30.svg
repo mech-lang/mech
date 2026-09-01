@@ -1,25 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="840" viewBox="0 0 1500 840">
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="716" viewBox="0 0 1500 716">
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="52" y="42" font-size="26" font-weight="700">Parallel EKF steady-state throughput</text>
-<text x="52" y="68" class="muted" font-size="15">Apple M1 | 10,000 filters x 20 turns | median of three isolated process samples | million EKF turns per second</text>
-<line x1="430.0" y1="102" x2="430.0" y2="744" class="grid"/>
-<text x="430.0" y="768" text-anchor="middle" class="axis">0</text>
-<line x1="588.3" y1="102" x2="588.3" y2="744" class="grid"/>
-<text x="588.3" y="768" text-anchor="middle" class="axis">10</text>
-<line x1="746.7" y1="102" x2="746.7" y2="744" class="grid"/>
-<text x="746.7" y="768" text-anchor="middle" class="axis">20</text>
-<line x1="905.0" y1="102" x2="905.0" y2="744" class="grid"/>
-<text x="905.0" y="768" text-anchor="middle" class="axis">30</text>
-<line x1="1063.3" y1="102" x2="1063.3" y2="744" class="grid"/>
-<text x="1063.3" y="768" text-anchor="middle" class="axis">40</text>
-<line x1="1221.7" y1="102" x2="1221.7" y2="744" class="grid"/>
-<text x="1221.7" y="768" text-anchor="middle" class="axis">50</text>
-<line x1="1380.0" y1="102" x2="1380.0" y2="744" class="grid"/>
-<text x="1380.0" y="768" text-anchor="middle" class="axis">60</text>
-<text x="905.0" y="812" text-anchor="middle" class="muted" font-size="14">million EKF turns/s</text>
-<line x1="894.8" y1="95" x2="894.8" y2="744" stroke="#f3a847" stroke-width="2" stroke-dasharray="7 6"/>
-<text x="902.8" y="91" fill="#f3a847" font-size="13">Rust packed-SIMD ceiling: 29.35</text>
+<text x="52" y="68" class="muted" font-size="15">Apple M1 | backend: 100,000 filters x 5 turns; language: 10,000 filters x 20 turns | median of 3 isolated process samples | million EKF turns per second</text>
+<line x1="430.0" y1="102" x2="430.0" y2="620" class="grid"/>
+<text x="430.0" y="644" text-anchor="middle" class="axis">0</text>
+<line x1="588.3" y1="102" x2="588.3" y2="620" class="grid"/>
+<text x="588.3" y="644" text-anchor="middle" class="axis">10</text>
+<line x1="746.7" y1="102" x2="746.7" y2="620" class="grid"/>
+<text x="746.7" y="644" text-anchor="middle" class="axis">20</text>
+<line x1="905.0" y1="102" x2="905.0" y2="620" class="grid"/>
+<text x="905.0" y="644" text-anchor="middle" class="axis">30</text>
+<line x1="1063.3" y1="102" x2="1063.3" y2="620" class="grid"/>
+<text x="1063.3" y="644" text-anchor="middle" class="axis">40</text>
+<line x1="1221.7" y1="102" x2="1221.7" y2="620" class="grid"/>
+<text x="1221.7" y="644" text-anchor="middle" class="axis">50</text>
+<line x1="1380.0" y1="102" x2="1380.0" y2="620" class="grid"/>
+<text x="1380.0" y="644" text-anchor="middle" class="axis">60</text>
+<text x="905.0" y="688" text-anchor="middle" class="muted" font-size="14">million EKF turns/s</text>
+<line x1="894.8" y1="95" x2="894.8" y2="620" stroke="#f3a847" stroke-width="2" stroke-dasharray="7 6"/>
+<text x="902.8" y="91" fill="#f3a847" font-size="13">Rust packed-SIMD unchecked reference: 29.35</text>
 <text x="414" y="139" text-anchor="end" class="label">Mech scalar</text>
 <rect x="430" y="125" width="14.2" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
 <text x="453.2" y="139" class="value">0.90</text>
@@ -27,59 +27,47 @@
 <rect x="430" y="156" width="264.0" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
 <text x="703.0" y="170" class="value">16.67</text>
 <text x="414" y="201" text-anchor="end" class="label">Mech Cranelift SIMD-JIT</text>
-<rect x="430" y="187" width="466.1" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="905.1" y="201" class="value">29.44</text>
-<text x="414" y="232" text-anchor="end" class="label">Mech Cranelift SIMD-JIT checked fast</text>
-<rect x="430" y="218" width="487.5" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="926.5" y="232" class="value">30.79</text>
-<text x="414" y="263" text-anchor="end" class="label">Mech Cranelift SIMD-JIT unchecked fast</text>
-<rect x="430" y="249" width="512.9" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
-<text x="951.9" y="263" class="value">32.40</text>
-<text x="414" y="294" text-anchor="end" class="label">Rust optimized fixed-shape</text>
-<rect x="430" y="280" width="265.9" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="704.9" y="294" class="value">16.80</text>
-<text x="414" y="325" text-anchor="end" class="label">Rust packed SIMD checked</text>
-<rect x="430" y="311" width="406.1" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="845.1" y="325" class="value">25.65</text>
-<text x="414" y="356" text-anchor="end" class="label">Rust packed SIMD unchecked</text>
-<rect x="430" y="342" width="464.8" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
-<text x="903.8" y="356" class="value">29.35</text>
-<text x="414" y="387" text-anchor="end" class="label">Julia generic checked</text>
-<rect x="430" y="373" width="49.3" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="488.3" y="387" class="value">3.11</text>
-<text x="414" y="418" text-anchor="end" class="label">Julia generic unchecked</text>
-<rect x="430" y="404" width="50.2" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="489.2" y="418" class="value">3.17</text>
-<text x="414" y="449" text-anchor="end" class="label">Julia fixed-shape checked</text>
-<rect x="430" y="435" width="300.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="739.8" y="449" class="value">19.00</text>
-<text x="414" y="480" text-anchor="end" class="label">Julia fixed-shape unchecked</text>
-<rect x="430" y="466" width="348.1" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="787.1" y="480" class="value">21.98</text>
-<text x="414" y="511" text-anchor="end" class="label">Julia fixed-shape SIMD checked</text>
-<rect x="430" y="497" width="444.1" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="883.1" y="511" class="value">28.05</text>
-<text x="414" y="542" text-anchor="end" class="label">Julia fixed-shape SIMD unchecked</text>
-<rect x="430" y="528" width="564.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="1003.8" y="542" class="value">35.67</text>
-<text x="414" y="573" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
-<rect x="430" y="559" width="497.5" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="936.5" y="573" class="value">31.42</text>
-<text x="414" y="604" text-anchor="end" class="label">Julia SIMD.jl intrinsics unchecked</text>
-<rect x="430" y="590" width="519.4" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
-<text x="958.4" y="604" class="value">32.80</text>
-<text x="414" y="635" text-anchor="end" class="label">NumPy scalar outer loop</text>
-<rect x="430" y="621" width="1.0" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
-<text x="440.0" y="635" class="value">0.06</text>
-<text x="414" y="666" text-anchor="end" class="label">LuaJIT scalar outer loop</text>
-<rect x="430" y="652" width="15.7" height="19" rx="3" fill="#f276ad" opacity="0.9"/>
-<text x="454.7" y="666" class="value">0.99</text>
-<text x="414" y="697" text-anchor="end" class="label">Mech GPU, one submission/turn</text>
-<rect x="430" y="683" width="885.7" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
-<text x="1324.7" y="697" class="value">55.94</text>
-<text x="414" y="728" text-anchor="end" class="label">Mech GPU, checked repeated turns</text>
-<rect x="430" y="714" width="856.1" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
-<text x="1295.1" y="728" class="value">54.07</text>
-<text x="52" y="785" class="muted" font-size="12">GPU rows are Mech context measurements, not CPU comparisons. Parse, compilation, setup, and readback are excluded.</text>
-<text x="1380" y="822" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
+<rect x="430" y="187" width="657.0" height="19" rx="3" fill="#40d4b0" opacity="0.9"/>
+<text x="1096.0" y="201" class="value">41.50</text>
+<text x="414" y="232" text-anchor="end" class="label">Rust optimized fixed-shape</text>
+<rect x="430" y="218" width="265.9" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="704.9" y="232" class="value">16.80</text>
+<text x="414" y="263" text-anchor="end" class="label">Rust packed SIMD checked</text>
+<rect x="430" y="249" width="406.1" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="845.1" y="263" class="value">25.65</text>
+<text x="414" y="294" text-anchor="end" class="label">Rust packed SIMD unchecked</text>
+<rect x="430" y="280" width="464.8" height="19" rx="3" fill="#f3a847" opacity="0.9"/>
+<text x="903.8" y="294" class="value">29.35</text>
+<text x="414" y="325" text-anchor="end" class="label">Julia generic checked</text>
+<rect x="430" y="311" width="49.3" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="488.3" y="325" class="value">3.11</text>
+<text x="414" y="356" text-anchor="end" class="label">Julia generic unchecked</text>
+<rect x="430" y="342" width="50.2" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="489.2" y="356" class="value">3.17</text>
+<text x="414" y="387" text-anchor="end" class="label">Julia fixed-shape checked</text>
+<rect x="430" y="373" width="300.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="739.8" y="387" class="value">19.00</text>
+<text x="414" y="418" text-anchor="end" class="label">Julia fixed-shape unchecked</text>
+<rect x="430" y="404" width="348.1" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="787.1" y="418" class="value">21.98</text>
+<text x="414" y="449" text-anchor="end" class="label">Julia fixed-shape SIMD checked</text>
+<rect x="430" y="435" width="444.1" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="883.1" y="449" class="value">28.05</text>
+<text x="414" y="480" text-anchor="end" class="label">Julia fixed-shape SIMD unchecked</text>
+<rect x="430" y="466" width="564.8" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="1003.8" y="480" class="value">35.67</text>
+<text x="414" y="511" text-anchor="end" class="label">Julia SIMD.jl intrinsics checked</text>
+<rect x="430" y="497" width="497.5" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="936.5" y="511" class="value">31.42</text>
+<text x="414" y="542" text-anchor="end" class="label">Julia SIMD.jl intrinsics unchecked</text>
+<rect x="430" y="528" width="519.4" height="19" rx="3" fill="#b68cff" opacity="0.9"/>
+<text x="958.4" y="542" class="value">32.80</text>
+<text x="414" y="573" text-anchor="end" class="label">NumPy scalar outer loop</text>
+<rect x="430" y="559" width="1.0" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
+<text x="440.0" y="573" class="value">0.06</text>
+<text x="414" y="604" text-anchor="end" class="label">LuaJIT scalar outer loop</text>
+<rect x="430" y="590" width="15.7" height="19" rx="3" fill="#000080" opacity="0.9"/>
+<text x="454.7" y="604" class="value">0.99</text>
+<text x="52" y="661" class="muted" font-size="12">Checked GPU rows synchronize and validate each turn; the unchecked row batches all turns in one device submission. Parse, compilation, setup, and final readback are excluded.</text>
+<text x="1380" y="698" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import statistics
 from pathlib import Path
 
 from chart_machine_specs import svg_machine_specs
@@ -78,17 +79,37 @@ def main() -> None:
         action="store_true",
         help="plot only controls that execute the integrity checks",
     )
+    parser.add_argument(
+        "--mech-simd-jit",
+        type=Path,
+        help="optimized strict resident Mech SIMD-JIT evidence JSON",
+    )
     args = parser.parse_args()
     evidence = json.loads(args.evidence.read_text(encoding="utf-8"))
     scalar = evidence["summary"]["scalar_outer_loop"]
     backend = evidence["summary"]["mech_backends_million_ekf_turns_per_second"]
     configuration = evidence["configuration"]
-    order = CHECKED_ORDER if args.checked_only else ORDER
+    optimized = {}
+    if args.mech_simd_jit:
+        optimized = json.loads(args.mech_simd_jit.read_text(encoding="utf-8")).get("rows", {})
+    requested_order = CHECKED_ORDER if args.checked_only else ORDER
+    order = [
+        (label, family)
+        for label, family in requested_order
+        if label in backend or label in scalar
+    ]
     values = {
-        label: float(
-            backend[label]
-            if label in backend
-            else scalar[label]["ekf_turns_per_second"] / 1_000_000
+        label: (
+            statistics.median(optimized["checked"]["throughput_millions"])
+            if label == "Mech Cranelift SIMD-JIT"
+            and "checked" in optimized
+            else float(
+                # The full chart has no separate unchecked SIMD-JIT label;
+                # retain the source evidence's checked label there.
+                backend[label]
+                if label in backend
+                else scalar[label]["ekf_turns_per_second"] / 1_000_000
+            )
         )
         for label, _ in order
     }

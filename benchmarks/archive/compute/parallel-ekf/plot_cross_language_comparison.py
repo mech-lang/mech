@@ -40,6 +40,16 @@ def is_gpu_row(row: dict[str, object]) -> bool:
     return "GPU" in label or "native Metal" in label
 
 
+def is_strict_futhark(evidence: dict | None) -> bool:
+    """Accept only Futhark evidence that explicitly disables FMA contraction."""
+    if evidence is None:
+        return False
+    configuration = evidence.get("configuration", {})
+    backend = str(configuration.get("backend", "")).lower()
+    notes = " ".join(str(note).lower() for note in configuration.get("notes", []))
+    return "disable-fma" in backend or "disable-fma" in notes or "fma contraction disabled" in backend
+
+
 def _median_mech_throughputs(cross_language: dict) -> dict[str, float]:
     """Recover backend-only Mech flavors from backend-setting stdout."""
     import re
@@ -81,6 +91,7 @@ def load_rows(
     mech_persistent: dict | None = None,
     fused_references: dict | None = None,
     strict_mech: dict | None = None,
+    mech_simd_jit: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -88,6 +99,7 @@ def load_rows(
     runtime_rows = {row["label"]: row for row in runtime["rows"]}
     native_rows = {row["label"]: row for row in native["rows"]}
     strict_mech_rows = (strict_mech or {}).get("rows", {})
+    optimized_simd_rows = (mech_simd_jit or {}).get("rows", {})
 
     def native_mech_metric(mode: str) -> float:
         strict_row = strict_mech_rows.get(f"Mech native Metal {mode}")
@@ -119,6 +131,20 @@ def load_rows(
             "Mech GPU, unchecked in-place repeated": "GPU unchecked in-place repeated",
         }
         key = aliases.get(label, label)
+        if label in {
+            "Mech Cranelift SIMD-JIT",
+            "Mech Cranelift SIMD-JIT unchecked",
+        }:
+            optimized_row = optimized_simd_rows.get(mode)
+            if optimized_row is not None:
+                import statistics
+
+                return {
+                    "label": label,
+                    "family": family,
+                    "mode": mode,
+                    "throughput": statistics.median(optimized_row["throughput_millions"]),
+                }
         # JIT lanes are stored in the scalar summary because their resident
         # CPU loop is the same harness as the language controls. Backend-only
         # lanes remain in the backend summary.
@@ -390,7 +416,7 @@ def load_rows(
     # in the report inputs so the absence is auditable, but never turn an
     # unavailable backend into a zero-throughput chart row.
     _ = numpy_gpu
-    if futhark_fixed is not None:
+    if futhark_fixed is not None and is_strict_futhark(futhark_fixed):
         import statistics
 
         # The raw evidence also retains dynamic-mode runs for diagnostics, but
@@ -443,6 +469,8 @@ def load_rows(
 
         for row in fused_references.get("rows", {}).values():
             if "throughput_millions" in row:
+                if "fast math" in str(row.get("label", "")).lower():
+                    continue
                 rows.append(
                     {
                         "label": row["label"],
@@ -594,6 +622,7 @@ def markdown_table(
         [
             "Checked rows include candidate validation/publication. Unchecked rows explicitly omit those guarantees. The GPU one-submit row is a fused unchecked control and is therefore shown only in the unchecked section.",
             "Futhark GPU has no numeric row on this Apple M1: Futhark 0.27 exposes CUDA/OpenCL backends but no Metal backend; the generated OpenCL kernel is rejected by Apple's driver.",
+            "Futhark's eight-worker fixed-mode row is omitted here because no FMA-disabled evidence is retained for that workload; the strict one-worker scalarized control is shown above.",
             "NumPy GPU has no numeric row on this Apple M1: plain NumPy has no GPU backend and CuPy requires CUDA/NVIDIA. The capability result is retained separately.",
             "",
         ]
@@ -630,6 +659,11 @@ def main() -> None:
         "--strict-mech",
         type=Path,
         help="strict retained-state Mech native Metal evidence JSON",
+    )
+    parser.add_argument(
+        "--mech-simd-jit",
+        type=Path,
+        help="optimized strict resident Mech SIMD-JIT evidence JSON",
     )
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
@@ -706,6 +740,11 @@ def main() -> None:
         if args.strict_mech
         else None
     )
+    mech_simd_jit = (
+        json.loads(args.mech_simd_jit.read_text(encoding="utf-8"))
+        if args.mech_simd_jit
+        else None
+    )
     rows = load_rows(
         cross_language,
         runtime,
@@ -725,6 +764,7 @@ def main() -> None:
         mech_persistent,
         fused_references,
         strict_mech,
+        mech_simd_jit,
     )
     configuration = cross_language["configuration"]
     render(
