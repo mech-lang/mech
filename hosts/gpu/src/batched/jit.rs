@@ -3,7 +3,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::{mem, sync::Arc, thread};
 
 use cranelift_codegen::ir::{
-    AbiParam, InstBuilder, MemFlags, UserFuncName, Value,
+    AbiParam, InstBuilder, MemFlags, StackSlotData, StackSlotKind, Type, UserFuncName, Value,
     condcodes::{FloatCC, IntCC},
     types,
 };
@@ -11,6 +11,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 use mech_core::CellSlotId;
+use wide::f32x4;
 
 use super::{
     BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, BinaryOperation,
@@ -710,8 +711,10 @@ impl BatchedJitSimdCpuSession {
                 "checked fused parallel dispatch requires a checked session".to_owned(),
             ));
         }
-        if workers <= 1 {
-            return self.dispatch_turns(turns);
+        if workers == 0 {
+            return Err(BatchedExecutionError::Native(
+                "checked fused parallel dispatch requires at least one worker".to_owned(),
+            ));
         }
         let groups = self.program.instances as usize / SIMD_JIT_LANES;
         if groups == 0 {
@@ -803,8 +806,10 @@ impl BatchedJitSimdCpuSession {
                 "fixed unchecked parallel dispatch requires an unchecked session".to_owned(),
             ));
         }
-        if workers <= 1 {
-            return self.dispatch_turns(turns);
+        if workers == 0 {
+            return Err(BatchedExecutionError::Native(
+                "fixed unchecked parallel dispatch requires at least one worker".to_owned(),
+            ));
         }
         let groups = self.program.instances as usize / SIMD_JIT_LANES;
         if groups == 0 {
@@ -970,7 +975,6 @@ impl NativeKernel {
         let atan2_id = module
             .declare_function("mech_jit_atan2f", Linkage::Import, &binary_signature)
             .map_err(native_error)?;
-
         let pointer_type = module.target_config().pointer_type();
         let mut signature = module.make_signature();
         for _ in 0..3 {
@@ -1312,51 +1316,61 @@ impl NativeSimdKernel {
             JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
                 .map_err(native_error)?;
         jit_builder
-            .symbol("mech_jit_sinf", mech_jit_sinf as *const u8)
-            .symbol("mech_jit_cosf", mech_jit_cosf as *const u8)
-            .symbol("mech_jit_sincos_pack", mech_jit_sincos_pack as *const u8)
-            .symbol("mech_jit_sqrtf", mech_jit_sqrtf as *const u8)
-            .symbol("mech_jit_ceilf", mech_jit_ceilf as *const u8)
-            .symbol("mech_jit_atan2f", mech_jit_atan2f as *const u8);
+            .symbol("mech_jit_sinf_f32x4", mech_jit_sinf_f32x4 as *const u8)
+            .symbol("mech_jit_cosf_f32x4", mech_jit_cosf_f32x4 as *const u8)
+            .symbol("mech_jit_sincos_f32x4", mech_jit_sincos_f32x4 as *const u8)
+            .symbol("mech_jit_atan2_f32x4", mech_jit_atan2_f32x4 as *const u8);
         let mut module = JITModule::new(jit_builder);
 
-        let unary_signature = {
-            let mut signature = module.make_signature();
-            signature.params.push(AbiParam::new(types::F32));
-            signature.returns.push(AbiParam::new(types::F32));
-            signature
-        };
-        let binary_signature = {
-            let mut signature = module.make_signature();
-            signature.params.push(AbiParam::new(types::F32));
-            signature.params.push(AbiParam::new(types::F32));
-            signature.returns.push(AbiParam::new(types::F32));
-            signature
-        };
-        let sin_id = module
-            .declare_function("mech_jit_sinf", Linkage::Import, &unary_signature)
-            .map_err(native_error)?;
-        let cos_id = module
-            .declare_function("mech_jit_cosf", Linkage::Import, &unary_signature)
-            .map_err(native_error)?;
-        let sincos_id = module
-            .declare_function("mech_jit_sincos_pack", Linkage::Import, &{
-                let mut signature = module.make_signature();
-                signature.params.push(AbiParam::new(types::F32));
-                signature.returns.push(AbiParam::new(types::I64));
-                signature
-            })
-            .map_err(native_error)?;
-        let sqrt_id = module
-            .declare_function("mech_jit_sqrtf", Linkage::Import, &unary_signature)
-            .map_err(native_error)?;
-        let ceil_id = module
-            .declare_function("mech_jit_ceilf", Linkage::Import, &unary_signature)
-            .map_err(native_error)?;
-        let atan2_id = module
-            .declare_function("mech_jit_atan2f", Linkage::Import, &binary_signature)
-            .map_err(native_error)?;
         let pointer_type = module.target_config().pointer_type();
+        let simd_unary_signature = {
+            let mut signature = module.make_signature();
+            signature.params.push(AbiParam::new(pointer_type));
+            signature.params.push(AbiParam::new(pointer_type));
+            signature
+        };
+        let simd_binary_signature = {
+            let mut signature = module.make_signature();
+            signature.params.push(AbiParam::new(pointer_type));
+            signature.params.push(AbiParam::new(pointer_type));
+            signature.params.push(AbiParam::new(pointer_type));
+            signature
+        };
+        let simd_sincos_signature = {
+            let mut signature = module.make_signature();
+            signature.params.push(AbiParam::new(pointer_type));
+            signature.params.push(AbiParam::new(pointer_type));
+            signature.params.push(AbiParam::new(pointer_type));
+            signature
+        };
+        let sin_simd_id = module
+            .declare_function(
+                "mech_jit_sinf_f32x4",
+                Linkage::Import,
+                &simd_unary_signature,
+            )
+            .map_err(native_error)?;
+        let cos_simd_id = module
+            .declare_function(
+                "mech_jit_cosf_f32x4",
+                Linkage::Import,
+                &simd_unary_signature,
+            )
+            .map_err(native_error)?;
+        let sincos_simd_id = module
+            .declare_function(
+                "mech_jit_sincos_f32x4",
+                Linkage::Import,
+                &simd_sincos_signature,
+            )
+            .map_err(native_error)?;
+        let atan2_simd_id = module
+            .declare_function(
+                "mech_jit_atan2_f32x4",
+                Linkage::Import,
+                &simd_binary_signature,
+            )
+            .map_err(native_error)?;
         let mut signature = module.make_signature();
         for _ in 0..3 {
             signature.params.push(AbiParam::new(pointer_type));
@@ -1524,19 +1538,15 @@ impl NativeSimdKernel {
             builder.ins().brif(has_group, body, &[], exit, &[]);
 
             builder.switch_to_block(body);
-            let sin_ref = module.declare_func_in_func(sin_id, builder.func);
-            let cos_ref = module.declare_func_in_func(cos_id, builder.func);
-            let sincos_ref = module.declare_func_in_func(sincos_id, builder.func);
-            let sqrt_ref = module.declare_func_in_func(sqrt_id, builder.func);
-            let ceil_ref = module.declare_func_in_func(ceil_id, builder.func);
-            let atan2_ref = module.declare_func_in_func(atan2_id, builder.func);
-            let functions = MathFunctions {
-                sin: sin_ref,
-                cos: cos_ref,
-                sincos: sincos_ref,
-                sqrt: sqrt_ref,
-                ceil: ceil_ref,
-                atan2: atan2_ref,
+            let sin_simd_ref = module.declare_func_in_func(sin_simd_id, builder.func);
+            let cos_simd_ref = module.declare_func_in_func(cos_simd_id, builder.func);
+            let sincos_simd_ref = module.declare_func_in_func(sincos_simd_id, builder.func);
+            let atan2_simd_ref = module.declare_func_in_func(atan2_simd_id, builder.func);
+            let simd_functions = SimdMathFunctions {
+                sin: sin_simd_ref,
+                cos: cos_simd_ref,
+                sincos: sincos_simd_ref,
+                atan2: atan2_simd_ref,
             };
             let mut registers = vec![None; program.fixed_ir().register_count];
             let mut loop_base_index = 1;
@@ -1609,7 +1619,8 @@ impl NativeSimdKernel {
                     find_sincos_partner(instructions, instruction_index, &instruction.computation)
                 {
                     let value = lower_simd_numeric_operand(operand, &registers, &constant_values)?;
-                    let (sin, cos) = call_simd_sincos(&mut builder, functions.sincos, value);
+                    let (sin, cos) =
+                        call_simd_sincos(&mut builder, simd_functions.sincos, value, pointer_type);
                     let current = if current_is_sin { sin } else { cos };
                     let partner = if current_is_sin { cos } else { sin };
                     registers[instruction.output] = Some(NativeSimdRegister::F32(current));
@@ -1622,9 +1633,10 @@ impl NativeSimdKernel {
                     &mut builder,
                     &instruction.computation,
                     &registers,
-                    functions,
+                    simd_functions,
                     &constant_values,
                     fast_math,
+                    pointer_type,
                 )?;
                 registers[instruction.output] = Some(value);
             }
@@ -1742,6 +1754,14 @@ struct MathFunctions {
     sincos: cranelift_codegen::ir::FuncRef,
     sqrt: cranelift_codegen::ir::FuncRef,
     ceil: cranelift_codegen::ir::FuncRef,
+    atan2: cranelift_codegen::ir::FuncRef,
+}
+
+#[derive(Clone, Copy)]
+struct SimdMathFunctions {
+    sin: cranelift_codegen::ir::FuncRef,
+    cos: cranelift_codegen::ir::FuncRef,
+    sincos: cranelift_codegen::ir::FuncRef,
     atan2: cranelift_codegen::ir::FuncRef,
 }
 
@@ -2019,9 +2039,10 @@ fn lower_simd_computation(
     builder: &mut FunctionBuilder<'_>,
     computation: &ScalarComputation,
     registers: &[Option<NativeSimdRegister>],
-    functions: MathFunctions,
+    functions: SimdMathFunctions,
     constants: &BTreeMap<u32, Value>,
     fast_math: bool,
+    pointer_type: Type,
 ) -> Result<NativeSimdRegister, BatchedExecutionError> {
     Ok(match computation {
         ScalarComputation::Copy(input) => lower_simd_operand(*input, registers, constants)?,
@@ -2085,14 +2106,22 @@ fn lower_simd_computation(
                     BinaryOperation::Divide => builder.ins().fdiv(values[0], values[1]),
                 },
                 ElementwiseOperation::Unary(operation) => match operation {
-                    UnaryOperation::Sin => call_simd_unary_math(builder, functions.sin, values[0]),
-                    UnaryOperation::Cos => call_simd_unary_math(builder, functions.cos, values[0]),
+                    UnaryOperation::Sin => {
+                        call_simd_unary_math(builder, functions.sin, values[0], pointer_type)
+                    }
+                    UnaryOperation::Cos => {
+                        call_simd_unary_math(builder, functions.cos, values[0], pointer_type)
+                    }
                     UnaryOperation::Sqrt => builder.ins().sqrt(values[0]),
                     UnaryOperation::Ceil => builder.ins().ceil(values[0]),
                 },
-                ElementwiseOperation::Atan2 => {
-                    call_simd_binary_math(builder, functions.atan2, values[0], values[1])
-                }
+                ElementwiseOperation::Atan2 => call_simd_binary_math(
+                    builder,
+                    functions.atan2,
+                    values[0],
+                    values[1],
+                    pointer_type,
+                ),
                 ElementwiseOperation::Identity => values[0],
             })
         }
@@ -2309,19 +2338,60 @@ fn unpack_simd_instances(packed: &[f32], values: &mut [f32], elements: usize) {
     }
 }
 
+fn simd_stack_slot(builder: &mut FunctionBuilder<'_>) -> cranelift_codegen::ir::StackSlot {
+    builder.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 16, 4))
+}
+
+fn stack_address(
+    builder: &mut FunctionBuilder<'_>,
+    slot: cranelift_codegen::ir::StackSlot,
+    pointer_type: Type,
+) -> Value {
+    builder.ins().stack_addr(pointer_type, slot, 0)
+}
+
 fn call_simd_unary_math(
     builder: &mut FunctionBuilder<'_>,
     function: cranelift_codegen::ir::FuncRef,
     value: Value,
+    pointer_type: Type,
 ) -> Value {
-    let zero = builder.ins().f32const(0.0);
-    let mut result = builder.ins().splat(types::F32X4, zero);
-    for lane in 0..SIMD_JIT_LANES {
-        let scalar = builder.ins().extractlane(value, lane as u8);
-        let scalar = call_math(builder, function, &[scalar]);
-        result = builder.ins().insertlane(result, scalar, lane as u8);
-    }
-    result
+    let input_slot = simd_stack_slot(builder);
+    let output_slot = simd_stack_slot(builder);
+    let input = stack_address(builder, input_slot, pointer_type);
+    let output = stack_address(builder, output_slot, pointer_type);
+    builder.ins().store(MemFlags::trusted(), value, input, 0);
+    builder.ins().call(function, &[input, output]);
+    builder
+        .ins()
+        .load(types::F32X4, MemFlags::trusted(), output, 0)
+}
+
+fn call_simd_binary_math(
+    builder: &mut FunctionBuilder<'_>,
+    function: cranelift_codegen::ir::FuncRef,
+    left: Value,
+    right: Value,
+    pointer_type: Type,
+) -> Value {
+    let left_slot = simd_stack_slot(builder);
+    let right_slot = simd_stack_slot(builder);
+    let output_slot = simd_stack_slot(builder);
+    let left_address = stack_address(builder, left_slot, pointer_type);
+    let right_address = stack_address(builder, right_slot, pointer_type);
+    let output = stack_address(builder, output_slot, pointer_type);
+    builder
+        .ins()
+        .store(MemFlags::trusted(), left, left_address, 0);
+    builder
+        .ins()
+        .store(MemFlags::trusted(), right, right_address, 0);
+    builder
+        .ins()
+        .call(function, &[left_address, right_address, output]);
+    builder
+        .ins()
+        .load(types::F32X4, MemFlags::trusted(), output, 0)
 }
 
 fn lower_simd_is_finite(builder: &mut FunctionBuilder<'_>, value: Value) -> Value {
@@ -2333,23 +2403,6 @@ fn lower_simd_is_finite(builder: &mut FunctionBuilder<'_>, value: Value) -> Valu
     builder
         .ins()
         .fcmp(FloatCC::LessThanOrEqual, absolute, maximum)
-}
-
-fn call_simd_binary_math(
-    builder: &mut FunctionBuilder<'_>,
-    function: cranelift_codegen::ir::FuncRef,
-    left: Value,
-    right: Value,
-) -> Value {
-    let zero = builder.ins().f32const(0.0);
-    let mut result = builder.ins().splat(types::F32X4, zero);
-    for lane in 0..SIMD_JIT_LANES {
-        let left = builder.ins().extractlane(left, lane as u8);
-        let right = builder.ins().extractlane(right, lane as u8);
-        let scalar = call_math(builder, function, &[left, right]);
-        result = builder.ins().insertlane(result, scalar, lane as u8);
-    }
-    result
 }
 
 fn load_simd_component(
@@ -2585,16 +2638,22 @@ fn call_simd_sincos(
     builder: &mut FunctionBuilder<'_>,
     function: cranelift_codegen::ir::FuncRef,
     value: Value,
+    pointer_type: Type,
 ) -> (Value, Value) {
-    let zero = builder.ins().f32const(0.0);
-    let mut sin = builder.ins().splat(types::F32X4, zero);
-    let mut cos = builder.ins().splat(types::F32X4, zero);
-    for lane in 0..SIMD_JIT_LANES {
-        let scalar = builder.ins().extractlane(value, lane as u8);
-        let (lane_sin, lane_cos) = call_sincos(builder, function, scalar);
-        sin = builder.ins().insertlane(sin, lane_sin, lane as u8);
-        cos = builder.ins().insertlane(cos, lane_cos, lane as u8);
-    }
+    let input_slot = simd_stack_slot(builder);
+    let sin_slot = simd_stack_slot(builder);
+    let cos_slot = simd_stack_slot(builder);
+    let input = stack_address(builder, input_slot, pointer_type);
+    let sin = stack_address(builder, sin_slot, pointer_type);
+    let cos = stack_address(builder, cos_slot, pointer_type);
+    builder.ins().store(MemFlags::trusted(), value, input, 0);
+    builder.ins().call(function, &[input, sin, cos]);
+    let sin = builder
+        .ins()
+        .load(types::F32X4, MemFlags::trusted(), sin, 0);
+    let cos = builder
+        .ins()
+        .load(types::F32X4, MemFlags::trusted(), cos, 0);
     (sin, cos)
 }
 
@@ -2631,6 +2690,38 @@ extern "C" fn mech_jit_cosf(value: f32) -> f32 {
 extern "C" fn mech_jit_sincos_pack(value: f32) -> u64 {
     let (sin, cos) = value.sin_cos();
     u64::from(sin.to_bits()) | (u64::from(cos.to_bits()) << 32)
+}
+
+/// Vector math entry points used by the SIMD JIT. `wide` selects the native
+/// NEON/SSE implementation on the host, while pointer arguments keep the JIT
+/// ABI portable across platforms with different vector calling conventions.
+extern "C" fn mech_jit_sinf_f32x4(input: *const f32, output: *mut f32) {
+    // SAFETY: the generated JIT call supplies 16-byte buffers for four f32s.
+    let value = unsafe { f32x4::new(*(input as *const [f32; 4])) };
+    unsafe { *(output as *mut [f32; 4]) = value.sin().to_array() };
+}
+
+extern "C" fn mech_jit_cosf_f32x4(input: *const f32, output: *mut f32) {
+    // SAFETY: the generated JIT call supplies 16-byte buffers for four f32s.
+    let value = unsafe { f32x4::new(*(input as *const [f32; 4])) };
+    unsafe { *(output as *mut [f32; 4]) = value.cos().to_array() };
+}
+
+extern "C" fn mech_jit_sincos_f32x4(input: *const f32, sin_output: *mut f32, cos_output: *mut f32) {
+    // SAFETY: the generated JIT call supplies three distinct 16-byte buffers.
+    let value = unsafe { f32x4::new(*(input as *const [f32; 4])) };
+    let (sin, cos) = value.sin_cos();
+    unsafe {
+        *(sin_output as *mut [f32; 4]) = sin.to_array();
+        *(cos_output as *mut [f32; 4]) = cos.to_array();
+    }
+}
+
+extern "C" fn mech_jit_atan2_f32x4(y_input: *const f32, x_input: *const f32, output: *mut f32) {
+    // SAFETY: the generated JIT call supplies three 16-byte buffers.
+    let y = unsafe { f32x4::new(*(y_input as *const [f32; 4])) };
+    let x = unsafe { f32x4::new(*(x_input as *const [f32; 4])) };
+    unsafe { *(output as *mut [f32; 4]) = y.atan2(x).to_array() };
 }
 
 extern "C" fn mech_jit_sqrtf(value: f32) -> f32 {

@@ -16,8 +16,13 @@ fn main() {
     let single_gpu_turns = argument(3, 20_u32).max(1);
     let checked_gpu_turns = argument(4, 120_u32).max(1);
     let validation_turns = 4;
-    let parallel_workers =
-        std::thread::available_parallelism().map_or(1, std::num::NonZeroUsize::get);
+    let parallel_workers = env::var("MECH_PARALLEL_WORKERS")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|workers| *workers > 0)
+        .unwrap_or_else(|| {
+            std::thread::available_parallelism().map_or(1, std::num::NonZeroUsize::get)
+        });
 
     let compile_started = Instant::now();
     let tree = source_tree(requested_instances);

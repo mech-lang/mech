@@ -1201,6 +1201,20 @@ fn simd_jit_matches_scalar_and_retains_state_on_fault() {
     }
     assert_eq!(batched_unchecked.attempted_turns(), 3);
 
+    // A one-worker fused block must use the same resident turn-block path as
+    // the multi-worker implementation; it must not fall back to one host call
+    // per turn.
+    let mut one_worker_unchecked = program
+        .prepare_jit_simd_cpu_unchecked_fast(&inputs)
+        .unwrap();
+    one_worker_unchecked
+        .dispatch_turns_parallel_unchecked_fast(3, 1)
+        .unwrap();
+    for (slot, expected) in scalar_unchecked.state() {
+        assert_close(expected, &one_worker_unchecked.state()[slot], 1.0e-4);
+    }
+    assert_eq!(one_worker_unchecked.attempted_turns(), 3);
+
     let mut invalid_inputs = inputs.clone();
     invalid_inputs
         .get_mut("bearing")
@@ -1237,6 +1251,15 @@ fn simd_jit_matches_scalar_and_retains_state_on_fault() {
         assert_close(expected, &fused_checked.state()[slot], 1.0e-4);
     }
     assert_eq!(fused_checked.attempted_turns(), 3);
+
+    let mut one_worker_checked = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    one_worker_checked
+        .dispatch_turns_parallel_checked_fused(3, 1)
+        .unwrap();
+    for (slot, expected) in scalar.state() {
+        assert_close(expected, &one_worker_checked.state()[slot], 1.0e-4);
+    }
+    assert_eq!(one_worker_checked.attempted_turns(), 3);
 
     let mut fused_fault = program.prepare_jit_simd_cpu(&inputs).unwrap();
     fused_fault
