@@ -2,7 +2,7 @@
 
 This table is generated from the same retained evidence and row set as the SVG charts. Each contract is ranked independently from slowest to fastest; checked and unchecked values are never mixed in one rank.
 
-Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters x 5 CPU turns; matched GPU runtime/native 500,000 filters x 40 turns. Setup, compilation, allocation, warmup, and final readback are outside the timed region.
+Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters x 5 CPU turns; matched runtime/native controls 500,000 filters x 40 turns. Setup, compilation, allocation, warmup, and final readback are outside the timed region.
 
 ## Checked (slowest to fastest)
 
@@ -27,10 +27,12 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 17 | Mech GPU, checked repeated | Mech | 56.279 |
 | 18 | Mech Cranelift SIMD-JIT parallel | Mech | 57.950 |
 | 19 | Mech GPU, checked one-turn | Mech | 62.798 |
-| 20 | Mech GPU, WGPU per-turn | Mech | 152.972 |
-| 21 | Taichi optimized native Metal, checked | Taichi | 168.798 |
-| 22 | Taichi GPU, native Metal | Taichi | 176.710 |
-| 23 | Mech GPU, native Metal | Mech | 246.151 |
+| 20 | Taichi LLVM CPU, 8 workers | Taichi | 86.047 |
+| 21 | Mech SIMD/JIT CPU, 8 workers | Mech | 104.783 |
+| 22 | Mech GPU, WGPU per-turn | Mech | 152.972 |
+| 23 | Taichi optimized native Metal, checked | Taichi | 168.798 |
+| 24 | Taichi GPU, native Metal | Taichi | 176.710 |
+| 25 | Mech GPU, native Metal | Mech | 246.151 |
 
 ## Unchecked (slowest to fastest)
 
@@ -58,12 +60,14 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 20 | Mech GPU, unchecked ping-pong one-turn | Mech | 51.801 |
 | 21 | Mech GPU, unchecked in-place one-turn | Mech | 54.635 |
 | 22 | Mech Cranelift SIMD-JIT parallel unchecked fast | Mech | 61.823 |
-| 23 | Mech GPU, WGPU per-turn | Mech | 157.141 |
-| 24 | Taichi GPU, native Metal | Taichi | 194.793 |
-| 25 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
-| 26 | Mech GPU, native Metal | Mech | 241.028 |
-| 27 | Mech GPU, unchecked repeated | Mech | 350.930 |
-| 28 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
-| 29 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
+| 23 | Taichi LLVM CPU, 8 workers | Taichi | 98.140 |
+| 24 | Mech SIMD/JIT CPU, 8 workers | Mech | 110.469 |
+| 25 | Mech GPU, WGPU per-turn | Mech | 157.141 |
+| 26 | Taichi GPU, native Metal | Taichi | 194.793 |
+| 27 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
+| 28 | Mech GPU, native Metal | Mech | 241.028 |
+| 29 | Mech GPU, unchecked repeated | Mech | 350.930 |
+| 30 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
+| 31 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
 
 Checked rows include candidate validation/publication. Unchecked rows explicitly omit those guarantees. The GPU one-submit row is a fused unchecked control and is therefore shown only in the unchecked section.

@@ -131,6 +131,30 @@ def load_rows(
         mech_backend("Mech GPU, unchecked in-place repeated", "Mech", "unchecked"),
         mech_backend("Mech GPU, unchecked one-submit", "Mech", "unchecked"),
         {
+            "label": "Mech SIMD/JIT CPU, 8 workers",
+            "family": "Mech",
+            "mode": "checked",
+            "throughput": runtime_rows["Mech SIMD/JIT CPU, checked (8 workers)"]["throughput_millions"],
+        },
+        {
+            "label": "Mech SIMD/JIT CPU, 8 workers",
+            "family": "Mech",
+            "mode": "unchecked",
+            "throughput": runtime_rows["Mech SIMD/JIT CPU, unchecked (8 workers)"]["throughput_millions"],
+        },
+        {
+            "label": "Taichi LLVM CPU, 8 workers",
+            "family": "Taichi",
+            "mode": "checked",
+            "throughput": runtime_rows["Taichi LLVM CPU, checked (8 workers)"]["throughput_millions"],
+        },
+        {
+            "label": "Taichi LLVM CPU, 8 workers",
+            "family": "Taichi",
+            "mode": "unchecked",
+            "throughput": runtime_rows["Taichi LLVM CPU, unchecked (8 workers)"]["throughput_millions"],
+        },
+        {
             "label": "Mech GPU, WGPU per-turn",
             "family": "Mech",
             "mode": "checked",
@@ -257,7 +281,7 @@ def render(
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="52" y="42" font-size="26" font-weight="700">Cross-language EKF runtime throughput ({esc(mode)}; slowest to fastest)</text>',
-        f'<text x="52" y="68" class="muted" font-size="15">Apple M1 | CPU/language: {scalar_instances:,}x{scalar_turns}; Mech backend: {backend_instances:,}x{backend_turns}; matched GPU runtime/native: {runtime_instances:,}x{runtime_turns} | steady-state, sorted</text>',
+        f'<text x="52" y="68" class="muted" font-size="15">Apple M1 | CPU/language: {scalar_instances:,}x{scalar_turns}; Mech backend: {backend_instances:,}x{backend_turns}; matched runtime/native controls: {runtime_instances:,}x{runtime_turns} | steady-state, sorted</text>',
     ]
     for tick in range(0, int(max_value) + 1, 20):
         tick_x = x(tick)
@@ -308,7 +332,7 @@ def markdown_table(
         "",
         "This table is generated from the same retained evidence and row set as the SVG charts. Each contract is ranked independently from slowest to fastest; checked and unchecked values are never mixed in one rank.",
         "",
-        f"Workloads: CPU/language {scalar_instances:,} filters x {scalar_turns} turns; Mech backend {backend_instances:,} filters x {backend_turns} CPU turns; matched GPU runtime/native {runtime_instances:,} filters x {runtime_turns} turns. Setup, compilation, allocation, warmup, and final readback are outside the timed region.",
+        f"Workloads: CPU/language {scalar_instances:,} filters x {scalar_turns} turns; Mech backend {backend_instances:,} filters x {backend_turns} CPU turns; matched runtime/native controls {runtime_instances:,} filters x {runtime_turns} turns. Setup, compilation, allocation, warmup, and final readback are outside the timed region.",
         "",
     ]
     for mode in ("checked", "unchecked"):

@@ -105,7 +105,8 @@ The CPU language rows use 10,000 resident filters and 20 turns. GPU rows use
 throughput measurements; setup, compilation, allocation, and final readback
 are outside the timed region. The subtitle on each chart records those two
 workloads explicitly. The ranking includes every retained scalar, SIMD/JIT,
-worker-parallel, WGPU, native-Metal, and fused GPU lane.
+worker-parallel, WGPU, native-Metal, and fused GPU lane, including the matched
+eight-worker CPU controls at 104.783 M/s checked and 110.469 M/s unchecked.
 
 ![Cross-language checked EKF throughput](results/parallel-ekf-cross-language-checked.svg)
 
