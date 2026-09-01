@@ -376,7 +376,9 @@ def render(
     row_height = 31
     bottom = 100
     chart_width = width - left - right
-    positive_values = [float(row["throughput"]) for row in visible if float(row["throughput"]) > 0.0]
+    # Use the complete checked+unchecked row set so the two output charts have
+    # identical logarithmic extents and remain directly comparable.
+    positive_values = [float(row["throughput"]) for row in rows if float(row["throughput"]) > 0.0]
     if not positive_values:
         raise ValueError("logarithmic throughput axis requires at least one positive value")
     min_value = 10.0 ** math.floor(math.log10(min(positive_values)))
