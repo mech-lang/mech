@@ -116,6 +116,22 @@ class R1CompatibilityClosureTests(unittest.TestCase):
             any("artifact-completeness proof" in item for item in CHECKER.failures(root))
         )
 
+    def test_matrix_not_source_and_resident_proofs_are_required(self):
+        for relative in (
+            "machines/logic/src/not.rs",
+            "src/engine/src/resident/numeric.rs",
+        ):
+            with self.subTest(relative=relative):
+                root = self.fixture()
+                (root / relative).write_text("proof removed\n", encoding="utf-8")
+                failures = CHECKER.failures(root)
+                self.assertTrue(
+                    any(
+                        f"artifact-completeness proof {relative}" in item
+                        for item in failures
+                    )
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

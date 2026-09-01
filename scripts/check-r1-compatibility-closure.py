@@ -73,6 +73,21 @@ ARTIFACT_COMPLETENESS_PROOFS = (
             "distribution_source_bytecode_native_canary",
         ),
     ),
+    (
+        "machines/logic/src/not.rs",
+        (
+            "pub struct NotV",
+            "logic_unary_full_write_contract(MatA::REPRESENTATION)",
+            "FunctionMatrixRepresentation::MatrixD",
+        ),
+    ),
+    (
+        "src/engine/src/resident/numeric.rs",
+        (
+            "fn bool_vector_not(",
+            "one_by_one_boolean_matrix_not_uses_matrix_change_contract",
+        ),
+    ),
 )
 
 RUST_RULES = (
@@ -171,13 +186,6 @@ def failures(root: Path) -> list[str]:
             continue
         for line, text in matching_lines(path, retired_operations):
             found.append(f"{relative}:{line}: retired operation remains advertised: {text}")
-
-    logic = root / "machines/logic/src"
-    if logic.is_dir():
-        for path in logic.rglob("*.rs"):
-            relative = path.relative_to(root).as_posix()
-            for line, text in matching_lines(path, re.compile(r"\bNotV\b")):
-                found.append(f"{relative}:{line}: retired matrix NOT surface: {text}")
 
     return found
 
