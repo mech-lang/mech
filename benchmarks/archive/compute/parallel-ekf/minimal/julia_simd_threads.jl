@@ -4,6 +4,7 @@ const DT = 0.1f0
 const R = 0.25f0
 const SYMMETRY_TOLERANCE = 0.0001f0
 const VALIDATE = length(ARGS) > 2 && lowercase(ARGS[3]) == "checked"
+const FUSED = length(ARGS) > 3 && lowercase(ARGS[4]) in ("fused", "batched", "unchecked-batched")
 @inline function mm33(a::NTuple{9,T}, b::NTuple{9,T}) where {T}
     (a[1]*b[1] + a[4]*b[2] + a[7]*b[3],
      a[2]*b[1] + a[5]*b[2] + a[8]*b[3],
@@ -179,6 +180,36 @@ function dispatch!(x1, x2, x3, covariance, velocity, angular_velocity, bearing, 
     end
     sum(faults_by_thread)
 end
+
+function dispatch_fused!(x1, x2, x3, covariance, velocity, angular_velocity, bearing, turns)
+    # Each worker owns a disjoint set of independent filters and keeps its
+    # turn loop local. This removes the per-turn thread barrier while keeping
+    # validation and rollback inside each filter when requested.
+    faults_by_thread = zeros(Int, Threads.maxthreadid())
+    if Threads.nthreads() == 1
+        faults = 0
+        @inbounds for group in eachindex(velocity)
+            for _ in 1:turns
+                faults += step_group!(x1, x2, x3, covariance, group, velocity, angular_velocity, bearing)
+            end
+        end
+        return faults
+    end
+    @inbounds Threads.@threads :static for group in eachindex(velocity)
+        local_faults = 0
+        for _ in 1:turns
+            if VALIDATE
+                local_faults += step_group!(x1, x2, x3, covariance, group, velocity, angular_velocity, bearing)
+            else
+                step_group!(x1, x2, x3, covariance, group, velocity, angular_velocity, bearing)
+            end
+        end
+        faults_by_thread[Threads.threadid()] += local_faults
+    end
+    sum(faults_by_thread)
+end
+
+dispatch_mode!(args...) = FUSED ? dispatch_fused!(args...) : dispatch!(args...)
 instances = max(1, length(ARGS) > 0 ? parse(Int, ARGS[1]) : 10_000)
 turns = max(1, length(ARGS) > 1 ? parse(Int, ARGS[2]) : 5)
 instances % 4 == 0 || error("instance count must be divisible by four")
@@ -193,13 +224,13 @@ x3 = fill(V4(0.4f0), groups)
 covariance = (fill(V4(100), groups), fill(V4(0), groups), fill(V4(0), groups),
              fill(V4(0), groups), fill(V4(100), groups), fill(V4(0), groups),
              fill(V4(0), groups), fill(V4(0), groups), fill(V4(0.15f0), groups))
-dispatch!(x1, x2, x3, covariance, velocity, angular_velocity, bearing, 5)
+dispatch_mode!(x1, x2, x3, covariance, velocity, angular_velocity, bearing, 5)
 fill!(x1, V4(55)); fill!(x2, V4(25)); fill!(x3, V4(0.4f0))
 for i in eachindex(covariance)
     fill!(covariance[i], (i == 1 || i == 5) ? V4(100) : (i == 9 ? V4(0.15f0) : V4(0)))
 end
 started = time_ns()
-faults = dispatch!(x1, x2, x3, covariance, velocity, angular_velocity, bearing, turns)
+faults = dispatch_mode!(x1, x2, x3, covariance, velocity, angular_velocity, bearing, turns)
 elapsed = (time_ns() - started) / 1e9
 println("lane: Julia fixed-shape SIMD (SIMD.jl Vec V4)")
 println("instances: ", instances)
@@ -209,4 +240,5 @@ println("elapsed_s: ", elapsed)
 println("throughput: ", instances * turns / elapsed)
 println("checksum: ", checksum(x1) + checksum(x2) + checksum(x3) + sum(checksum, covariance))
 println("validation: ", VALIDATE ? "checked" : "unchecked")
+println("synchronization: ", FUSED ? "once after fused block" : "per-turn")
 println("faults: ", faults)

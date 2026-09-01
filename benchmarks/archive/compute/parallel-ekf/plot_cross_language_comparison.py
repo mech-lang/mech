@@ -74,6 +74,7 @@ def load_rows(
     numpy_gpu: dict | None = None,
     futhark_fixed: dict | None = None,
     mech_persistent: dict | None = None,
+    fused_references: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -361,6 +362,19 @@ def load_rows(
                         "throughput": statistics.median(row["throughput_millions"]),
                     }
                 )
+    if fused_references is not None:
+        import statistics
+
+        for row in fused_references.get("rows", {}).values():
+            if "throughput_millions" in row:
+                rows.append(
+                    {
+                        "label": row["label"],
+                        "family": row["family"],
+                        "mode": row["mode"],
+                        "throughput": statistics.median(row["throughput_millions"]),
+                    }
+                )
     return rows
 
 
@@ -526,6 +540,11 @@ def main() -> None:
     parser.add_argument("--numpy-gpu", type=Path, help="NumPy GPU capability evidence JSON")
     parser.add_argument("--futhark-fixed", type=Path, help="fixed-mode Futhark ISPC evidence JSON")
     parser.add_argument("--mech-persistent", type=Path, help="persistent Mech SIMD/JIT evidence JSON")
+    parser.add_argument(
+        "--fused-references",
+        type=Path,
+        help="fused worker-local Rust/Julia/Numba evidence JSON",
+    )
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
@@ -576,6 +595,11 @@ def main() -> None:
         if args.mech_persistent
         else None
     )
+    fused_references = (
+        json.loads(args.fused_references.read_text(encoding="utf-8"))
+        if args.fused_references
+        else None
+    )
     rows = load_rows(
         cross_language,
         runtime,
@@ -590,6 +614,7 @@ def main() -> None:
         numpy_gpu,
         futhark_fixed,
         mech_persistent,
+        fused_references,
     )
     configuration = cross_language["configuration"]
     render(

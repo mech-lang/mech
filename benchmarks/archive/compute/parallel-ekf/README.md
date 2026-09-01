@@ -64,6 +64,7 @@ git switch --track origin/codex/mech-program-gpu
 | Halide/Futhark SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-halide-simd-2026-08-31.json` |
 | Futhark fixed-mode ISPC evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-ispc-fixed-2026-08-31.json` |
 | Mech persistent SIMD/JIT evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-persistent-simd-2026-08-31.json` |
+| Fused Rust/Julia/Numba reference evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json` |
 | Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
 | NumPy GPU capability evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-gpu-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
@@ -146,6 +147,16 @@ Futhark 0.27 output needs the checked-in compatibility shim with ISPC 1.31,
 which removes only unused conflicting `erf`/`erfc` declarations.
 Each contract is sorted independently from slowest to fastest, with the new
 resident scalar Mech unchecked measurement included explicitly.
+
+The fused-reference evidence adds the same block boundary to the native
+controls: Rust packed SIMD, Julia SIMD.jl, and NumPy/Numba each load a
+worker's filters once, advance the complete 40-turn block locally, and publish
+the final state once. On the Apple M1, Rust reaches a median **163.866 M
+turns/s**, Julia **133.605 M turns/s**, and NumPy/Numba **81.972 M turns/s**,
+versus Mech at **165.830 M turns/s**. The rows are included in both charts
+from `results/apple-m1-fused-reference-controls-2026-08-31.json`. They expose
+the final state after the block; intermediate values still require an explicit
+synchronization/checkpoint boundary.
 
 Plain PUC Lua now runs the same fixed-shape flat source as LuaJIT. Its table
 arrays are explicitly zero-initialized so the warmup has the same defined state
@@ -265,6 +276,7 @@ python3 plot_cross_language_comparison.py \
   --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json \
   --futhark-fixed results/apple-m1-futhark-ispc-fixed-2026-08-31.json \
   --mech-persistent results/apple-m1-mech-persistent-simd-2026-08-31.json \
+  --fused-references results/apple-m1-fused-reference-controls-2026-08-31.json \
   --julia-gpu results/apple-m1-julia-metal-2026-08-31.json \
   --numpy-gpu results/apple-m1-numpy-gpu-2026-08-31.json
 

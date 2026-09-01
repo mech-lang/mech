@@ -1,4 +1,4 @@
-use std::{env, hint::black_box, time::Instant};
+use std::{env, hint::black_box, slice, time::Instant};
 use wide::f32x4;
 const LANES: usize = 4;
 const DT: f32 = 0.1;
@@ -315,6 +315,117 @@ fn dispatch(
         }
     }
 }
+
+fn dispatch_parallel_fused(
+    state: &mut [Vec<f32>; 3],
+    covariance: &mut [Vec<f32>; 9],
+    velocity: &[f32],
+    angular_velocity: &[f32],
+    bearing: &[f32],
+    turns: u32,
+    checked: bool,
+    workers: usize,
+) {
+    let groups = velocity.len() / LANES;
+    let workers = workers.max(1).min(groups.max(1));
+    // Convert the disjoint buffer starts to integers before crossing the
+    // scoped-thread boundary. Each worker reconstructs only its own slices;
+    // ranges never overlap, and all backing Vecs remain live until the scope
+    // joins.
+    let state_ptrs = [
+        state[0].as_mut_ptr() as usize,
+        state[1].as_mut_ptr() as usize,
+        state[2].as_mut_ptr() as usize,
+    ];
+    let covariance_ptrs: [usize; 9] =
+        std::array::from_fn(|index| covariance[index].as_mut_ptr() as usize);
+    let velocity_ptr = velocity.as_ptr() as usize;
+    let angular_velocity_ptr = angular_velocity.as_ptr() as usize;
+    let bearing_ptr = bearing.as_ptr() as usize;
+    std::thread::scope(|scope| {
+        for worker in 0..workers {
+            let start_group = groups * worker / workers;
+            let end_group = groups * (worker + 1) / workers;
+            let group_count = end_group - start_group;
+            let state_ptrs = state_ptrs;
+            let covariance_ptrs = covariance_ptrs;
+            scope.spawn(move || {
+                let count = group_count * LANES;
+                let offset = start_group * LANES;
+                let state_slices = unsafe {
+                    [
+                        slice::from_raw_parts_mut(
+                            (state_ptrs[0] as *mut f32).add(offset),
+                            count,
+                        ),
+                        slice::from_raw_parts_mut(
+                            (state_ptrs[1] as *mut f32).add(offset),
+                            count,
+                        ),
+                        slice::from_raw_parts_mut(
+                            (state_ptrs[2] as *mut f32).add(offset),
+                            count,
+                        ),
+                    ]
+                };
+                let covariance_slices: [&mut [f32]; 9] = unsafe {
+                    std::array::from_fn(|index| {
+                        slice::from_raw_parts_mut(
+                            (covariance_ptrs[index] as *mut f32).add(offset),
+                            count,
+                        )
+                    })
+                };
+                let velocities = unsafe {
+                    slice::from_raw_parts((velocity_ptr as *const f32).add(offset), count)
+                };
+                let angular_velocities = unsafe {
+                    slice::from_raw_parts(
+                        (angular_velocity_ptr as *const f32).add(offset),
+                        count,
+                    )
+                };
+                let bearings = unsafe {
+                    slice::from_raw_parts((bearing_ptr as *const f32).add(offset), count)
+                };
+                for group in 0..group_count {
+                    let base = group * LANES;
+                    let mut packed_state =
+                        std::array::from_fn(|row| V4::load(state_slices[row], base));
+                    let packed_covariance: [V4; 9] =
+                        std::array::from_fn(|index| V4::load(covariance_slices[index], base));
+                    let mut matrix = std::array::from_fn(|row| {
+                        std::array::from_fn(|column| packed_covariance[row * 3 + column])
+                    });
+                    let velocity = V4::load(velocities, base);
+                    let angular_velocity = V4::load(angular_velocities, base);
+                    let bearing = V4::load(bearings, base);
+                    for _ in 0..turns {
+                        step_group(
+                            &mut packed_state,
+                            &mut matrix,
+                            velocity,
+                            angular_velocity,
+                            bearing,
+                            checked,
+                        );
+                    }
+                    for row in 0..3 {
+                        packed_state[row].store(state_slices[row], base);
+                    }
+                    for row in 0..3 {
+                        for column in 0..3 {
+                            matrix[row][column].store(
+                                covariance_slices[row * 3 + column],
+                                base,
+                            );
+                        }
+                    }
+                }
+            });
+        }
+    });
+}
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
     env::args()
         .nth(index)
@@ -327,6 +438,10 @@ fn main() {
     let checked = env::args()
         .nth(3)
         .is_some_and(|value| value.eq_ignore_ascii_case("checked"));
+    let fused = env::args()
+        .nth(4)
+        .is_some_and(|value| matches!(value.to_ascii_lowercase().as_str(), "fused" | "batched"));
+    let workers = argument(5, 8_usize).max(1);
     assert!(
         instances % LANES == 0,
         "Rust SIMD requires instances divisible by four"
@@ -335,26 +450,52 @@ fn main() {
     let mut state = std::array::from_fn(|_| vec![0.0; instances]);
     let mut covariance = std::array::from_fn(|_| vec![0.0; instances]);
     reset(&mut state, &mut covariance);
-    dispatch(
-        &mut state,
-        &mut covariance,
-        &velocity,
-        &angular_velocity,
-        &bearing,
-        5,
-        checked,
-    );
+    if fused {
+        dispatch_parallel_fused(
+            &mut state,
+            &mut covariance,
+            &velocity,
+            &angular_velocity,
+            &bearing,
+            5,
+            checked,
+            workers,
+        );
+    } else {
+        dispatch(
+            &mut state,
+            &mut covariance,
+            &velocity,
+            &angular_velocity,
+            &bearing,
+            5,
+            checked,
+        );
+    }
     reset(&mut state, &mut covariance);
     let started = Instant::now();
-    dispatch(
-        &mut state,
-        &mut covariance,
-        &velocity,
-        &angular_velocity,
-        &bearing,
-        turns,
-        checked,
-    );
+    if fused {
+        dispatch_parallel_fused(
+            &mut state,
+            &mut covariance,
+            &velocity,
+            &angular_velocity,
+            &bearing,
+            turns,
+            checked,
+            workers,
+        );
+    } else {
+        dispatch(
+            &mut state,
+            &mut covariance,
+            &velocity,
+            &angular_velocity,
+            &bearing,
+            turns,
+            checked,
+        );
+    }
     let elapsed = started.elapsed().as_secs_f64();
     let throughput = instances as f64 * turns as f64 / elapsed;
     let checksum = state
@@ -371,6 +512,11 @@ fn main() {
     );
     println!("instances: {instances}");
     println!("turns: {turns}");
+    println!("workers: {workers}");
+    println!(
+        "synchronization: {}",
+        if fused { "once after fused block" } else { "per-turn" }
+    );
     println!("elapsed_s: {elapsed:.9}");
     println!("throughput: {throughput:.3}");
     println!("checksum: {checksum:.9}");

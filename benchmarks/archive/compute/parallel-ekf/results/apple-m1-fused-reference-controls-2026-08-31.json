@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T23:10:00-04:00",
+  "platform": {
+    "description": "macOS arm64",
+    "device": "Apple M1 CPU"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "workers": 8,
+    "boundary": "resident state; one worker scheduling boundary for the measured block; final state observable after the block",
+    "notes": [
+      "Every control loads its assigned filters once, advances all 40 turns locally, and stores once.",
+      "Checked controls still validate and reject each candidate inside the fused block.",
+      "No control is claimed to provide host observation between internal turns.",
+      "Compilation, allocation, process startup, warmup, and final checksum are outside the timed region."
+    ]
+  },
+  "rows": {
+    "rust_fused": {
+      "label": "Rust packed SIMD, fused worker-local block (8 workers)",
+      "family": "Rust",
+      "mode": "unchecked",
+      "throughput_millions": [163.865925, 169.581225, 162.420114],
+      "checksum": 133818339.815538272,
+      "faults": 0
+    },
+    "rust_fused_checked": {
+      "label": "Rust packed SIMD, fused worker-local block checked (8 workers)",
+      "family": "Rust",
+      "mode": "checked",
+      "throughput_millions": [138.169655, 140.858504, 139.702161],
+      "checksum": 133818339.815538272,
+      "faults": 0
+    },
+    "julia_fused": {
+      "label": "Julia SIMD.jl, fused worker-local block (8 workers)",
+      "family": "Julia",
+      "mode": "unchecked",
+      "throughput_millions": [133.605332, 108.762939, 136.754786],
+      "checksum": 133818339.83441573,
+      "faults": 0
+    },
+    "julia_fused_checked": {
+      "label": "Julia SIMD.jl, fused worker-local block checked (8 workers)",
+      "family": "Julia",
+      "mode": "checked",
+      "throughput_millions": [128.649905, 126.951885, 128.544239],
+      "checksum": 133818339.83441573,
+      "faults": 0
+    },
+    "numba_fused": {
+      "label": "NumPy/Numba, fused worker-local block (8 workers)",
+      "family": "NumPy",
+      "mode": "unchecked",
+      "throughput_millions": [82.241717, 79.426948, 81.971832],
+      "checksum": 133818339.818573162,
+      "faults": 0
+    },
+    "numba_fused_checked": {
+      "label": "NumPy/Numba, fused worker-local block checked (8 workers)",
+      "family": "NumPy",
+      "mode": "checked",
+      "throughput_millions": [80.111289, 80.358291, 80.322749],
+      "checksum": 133818339.818573162,
+      "faults": 0
+    },
+    "numba_fused_fast": {
+      "label": "NumPy/Numba, fused worker-local block fast math (8 workers)",
+      "family": "NumPy",
+      "mode": "unchecked",
+      "throughput_millions": [77.196979, 87.868444, 86.973254],
+      "checksum": 133818340.515845209,
+      "faults": 0,
+      "notes": ["Explicit unchecked fast-math control; checksum differs slightly from strict f32 arithmetic."]
+    }
+  }
+}

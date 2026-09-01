@@ -29,15 +29,18 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 19 | Mech Cranelift SIMD-JIT parallel | Mech | 57.950 |
 | 20 | Mech GPU, checked one-turn | Mech | 62.798 |
 | 21 | NumPy/Numba parallel JIT, 8 workers | NumPy | 77.225 |
-| 22 | Taichi LLVM CPU, 8 workers | Taichi | 86.047 |
-| 23 | Mech SIMD/JIT CPU, 8 workers | Mech | 104.783 |
-| 24 | Julia SIMD.jl, 8 workers | Julia | 106.341 |
-| 25 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 108.718 |
-| 26 | Mech GPU, WGPU per-turn | Mech | 152.972 |
-| 27 | Taichi optimized native Metal, checked | Taichi | 168.798 |
-| 28 | Taichi GPU, native Metal | Taichi | 176.710 |
-| 29 | Julia GPU, native Metal | Julia | 197.078 |
-| 30 | Mech GPU, native Metal | Mech | 246.151 |
+| 22 | NumPy/Numba, fused worker-local block checked (8 workers) | NumPy | 80.323 |
+| 23 | Taichi LLVM CPU, 8 workers | Taichi | 86.047 |
+| 24 | Mech SIMD/JIT CPU, 8 workers | Mech | 104.783 |
+| 25 | Julia SIMD.jl, 8 workers | Julia | 106.341 |
+| 26 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 108.718 |
+| 27 | Julia SIMD.jl, fused worker-local block checked (8 workers) | Julia | 128.544 |
+| 28 | Rust packed SIMD, fused worker-local block checked (8 workers) | Rust | 139.702 |
+| 29 | Mech GPU, WGPU per-turn | Mech | 152.972 |
+| 30 | Taichi optimized native Metal, checked | Taichi | 168.798 |
+| 31 | Taichi GPU, native Metal | Taichi | 176.710 |
+| 32 | Julia GPU, native Metal | Julia | 197.078 |
+| 33 | Mech GPU, native Metal | Mech | 246.151 |
 
 ## Unchecked (slowest to fastest)
 
@@ -67,20 +70,24 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 22 | Mech GPU, unchecked in-place one-turn | Mech | 54.635 |
 | 23 | Mech Cranelift SIMD-JIT parallel unchecked fast | Mech | 61.823 |
 | 24 | NumPy/Numba parallel JIT, 8 workers | NumPy | 77.130 |
-| 25 | Taichi LLVM CPU, 8 workers | Taichi | 98.140 |
-| 26 | Julia SIMD.jl, 8 workers | Julia | 109.628 |
-| 27 | Mech SIMD/JIT CPU, 8 workers | Mech | 110.469 |
-| 28 | Mech SIMD/JIT CPU, persistent pool per-turn (8 workers) | Mech | 150.395 |
-| 29 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 152.330 |
-| 30 | Mech GPU, WGPU per-turn | Mech | 157.141 |
-| 31 | Mech SIMD/JIT CPU, fused unchecked block (8 workers) | Mech | 165.830 |
-| 32 | Taichi GPU, native Metal | Taichi | 194.793 |
-| 33 | Julia GPU, native Metal | Julia | 216.462 |
-| 34 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
-| 35 | Mech GPU, native Metal | Mech | 241.028 |
-| 36 | Mech GPU, unchecked repeated | Mech | 350.930 |
-| 37 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
-| 38 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
+| 25 | NumPy/Numba, fused worker-local block (8 workers) | NumPy | 81.972 |
+| 26 | NumPy/Numba, fused worker-local block fast math (8 workers) | NumPy | 86.973 |
+| 27 | Taichi LLVM CPU, 8 workers | Taichi | 98.140 |
+| 28 | Julia SIMD.jl, 8 workers | Julia | 109.628 |
+| 29 | Mech SIMD/JIT CPU, 8 workers | Mech | 110.469 |
+| 30 | Julia SIMD.jl, fused worker-local block (8 workers) | Julia | 133.605 |
+| 31 | Mech SIMD/JIT CPU, persistent pool per-turn (8 workers) | Mech | 150.395 |
+| 32 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 152.330 |
+| 33 | Mech GPU, WGPU per-turn | Mech | 157.141 |
+| 34 | Rust packed SIMD, fused worker-local block (8 workers) | Rust | 163.866 |
+| 35 | Mech SIMD/JIT CPU, fused unchecked block (8 workers) | Mech | 165.830 |
+| 36 | Taichi GPU, native Metal | Taichi | 194.793 |
+| 37 | Julia GPU, native Metal | Julia | 216.462 |
+| 38 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
+| 39 | Mech GPU, native Metal | Mech | 241.028 |
+| 40 | Mech GPU, unchecked repeated | Mech | 350.930 |
+| 41 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
+| 42 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
 
 Checked rows include candidate validation/publication. Unchecked rows explicitly omit those guarantees. The GPU one-submit row is a fused unchecked control and is therefore shown only in the unchecked section.
 Futhark GPU has no numeric row on this Apple M1: Futhark 0.27 exposes CUDA/OpenCL backends but no Metal backend; the generated OpenCL kernel is rejected by Apple's driver.

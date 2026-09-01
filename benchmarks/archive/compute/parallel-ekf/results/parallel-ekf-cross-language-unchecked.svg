@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1398" viewBox="0 0 1700 1398">
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1522" viewBox="0 0 1700 1522">
 <rect width="100%" height="100%" fill="#080c14"/>
 <defs>
 <pattern id="gpu-mech" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#f4c430"/><path d="M0 0V8" stroke="#ffffff" stroke-opacity="0.38" stroke-width="2"/></pattern>
@@ -14,45 +14,45 @@
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .minor-grid{stroke:#1b2536;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="52" y="42" font-size="26" font-weight="700">Cross-language EKF runtime throughput (unchecked; slowest to fastest)</text>
 <text x="52" y="68" class="muted" font-size="15">Apple M1 | CPU/language: 10,000x20; Mech backend: 100,000x5; matched runtime/native controls: 500,000x40 | steady-state, sorted</text>
-<line x1="550.0" y1="102" x2="550.0" y2="1302" class="grid"/>
-<text x="550.0" y="1326" text-anchor="middle" class="axis">0.01</text>
-<line x1="600.7" y1="102" x2="600.7" y2="1302" class="minor-grid"/>
-<text x="600.7" y="1326" text-anchor="middle" class="axis">0.02</text>
-<line x1="667.7" y1="102" x2="667.7" y2="1302" class="minor-grid"/>
-<text x="667.7" y="1326" text-anchor="middle" class="axis">0.05</text>
-<line x1="718.3" y1="102" x2="718.3" y2="1302" class="grid"/>
-<text x="718.3" y="1326" text-anchor="middle" class="axis">0.1</text>
-<line x1="769.0" y1="102" x2="769.0" y2="1302" class="minor-grid"/>
-<text x="769.0" y="1326" text-anchor="middle" class="axis">0.2</text>
-<line x1="836.0" y1="102" x2="836.0" y2="1302" class="minor-grid"/>
-<text x="836.0" y="1326" text-anchor="middle" class="axis">0.5</text>
-<line x1="886.7" y1="102" x2="886.7" y2="1302" class="grid"/>
-<text x="886.7" y="1326" text-anchor="middle" class="axis">1</text>
-<line x1="937.3" y1="102" x2="937.3" y2="1302" class="minor-grid"/>
-<text x="937.3" y="1326" text-anchor="middle" class="axis">2</text>
-<line x1="1004.3" y1="102" x2="1004.3" y2="1302" class="minor-grid"/>
-<text x="1004.3" y="1326" text-anchor="middle" class="axis">5</text>
-<line x1="1055.0" y1="102" x2="1055.0" y2="1302" class="grid"/>
-<text x="1055.0" y="1326" text-anchor="middle" class="axis">10</text>
-<line x1="1105.7" y1="102" x2="1105.7" y2="1302" class="minor-grid"/>
-<text x="1105.7" y="1326" text-anchor="middle" class="axis">20</text>
-<line x1="1172.7" y1="102" x2="1172.7" y2="1302" class="minor-grid"/>
-<text x="1172.7" y="1326" text-anchor="middle" class="axis">50</text>
-<line x1="1223.3" y1="102" x2="1223.3" y2="1302" class="grid"/>
-<text x="1223.3" y="1326" text-anchor="middle" class="axis">100</text>
-<line x1="1274.0" y1="102" x2="1274.0" y2="1302" class="minor-grid"/>
-<text x="1274.0" y="1326" text-anchor="middle" class="axis">200</text>
-<line x1="1341.0" y1="102" x2="1341.0" y2="1302" class="minor-grid"/>
-<text x="1341.0" y="1326" text-anchor="middle" class="axis">500</text>
-<line x1="1391.7" y1="102" x2="1391.7" y2="1302" class="grid"/>
-<text x="1391.7" y="1326" text-anchor="middle" class="axis">1000</text>
-<line x1="1442.3" y1="102" x2="1442.3" y2="1302" class="minor-grid"/>
-<text x="1442.3" y="1326" text-anchor="middle" class="axis">2000</text>
-<line x1="1509.3" y1="102" x2="1509.3" y2="1302" class="minor-grid"/>
-<text x="1509.3" y="1326" text-anchor="middle" class="axis">5000</text>
-<line x1="1560.0" y1="102" x2="1560.0" y2="1302" class="grid"/>
-<text x="1560.0" y="1326" text-anchor="middle" class="axis">10000</text>
-<text x="1055.0" y="1370" text-anchor="middle" class="muted" font-size="14">million EKF turns per second (log scale)</text>
+<line x1="550.0" y1="102" x2="550.0" y2="1426" class="grid"/>
+<text x="550.0" y="1450" text-anchor="middle" class="axis">0.01</text>
+<line x1="600.7" y1="102" x2="600.7" y2="1426" class="minor-grid"/>
+<text x="600.7" y="1450" text-anchor="middle" class="axis">0.02</text>
+<line x1="667.7" y1="102" x2="667.7" y2="1426" class="minor-grid"/>
+<text x="667.7" y="1450" text-anchor="middle" class="axis">0.05</text>
+<line x1="718.3" y1="102" x2="718.3" y2="1426" class="grid"/>
+<text x="718.3" y="1450" text-anchor="middle" class="axis">0.1</text>
+<line x1="769.0" y1="102" x2="769.0" y2="1426" class="minor-grid"/>
+<text x="769.0" y="1450" text-anchor="middle" class="axis">0.2</text>
+<line x1="836.0" y1="102" x2="836.0" y2="1426" class="minor-grid"/>
+<text x="836.0" y="1450" text-anchor="middle" class="axis">0.5</text>
+<line x1="886.7" y1="102" x2="886.7" y2="1426" class="grid"/>
+<text x="886.7" y="1450" text-anchor="middle" class="axis">1</text>
+<line x1="937.3" y1="102" x2="937.3" y2="1426" class="minor-grid"/>
+<text x="937.3" y="1450" text-anchor="middle" class="axis">2</text>
+<line x1="1004.3" y1="102" x2="1004.3" y2="1426" class="minor-grid"/>
+<text x="1004.3" y="1450" text-anchor="middle" class="axis">5</text>
+<line x1="1055.0" y1="102" x2="1055.0" y2="1426" class="grid"/>
+<text x="1055.0" y="1450" text-anchor="middle" class="axis">10</text>
+<line x1="1105.7" y1="102" x2="1105.7" y2="1426" class="minor-grid"/>
+<text x="1105.7" y="1450" text-anchor="middle" class="axis">20</text>
+<line x1="1172.7" y1="102" x2="1172.7" y2="1426" class="minor-grid"/>
+<text x="1172.7" y="1450" text-anchor="middle" class="axis">50</text>
+<line x1="1223.3" y1="102" x2="1223.3" y2="1426" class="grid"/>
+<text x="1223.3" y="1450" text-anchor="middle" class="axis">100</text>
+<line x1="1274.0" y1="102" x2="1274.0" y2="1426" class="minor-grid"/>
+<text x="1274.0" y="1450" text-anchor="middle" class="axis">200</text>
+<line x1="1341.0" y1="102" x2="1341.0" y2="1426" class="minor-grid"/>
+<text x="1341.0" y="1450" text-anchor="middle" class="axis">500</text>
+<line x1="1391.7" y1="102" x2="1391.7" y2="1426" class="grid"/>
+<text x="1391.7" y="1450" text-anchor="middle" class="axis">1000</text>
+<line x1="1442.3" y1="102" x2="1442.3" y2="1426" class="minor-grid"/>
+<text x="1442.3" y="1450" text-anchor="middle" class="axis">2000</text>
+<line x1="1509.3" y1="102" x2="1509.3" y2="1426" class="minor-grid"/>
+<text x="1509.3" y="1450" text-anchor="middle" class="axis">5000</text>
+<line x1="1560.0" y1="102" x2="1560.0" y2="1426" class="grid"/>
+<text x="1560.0" y="1450" text-anchor="middle" class="axis">10000</text>
+<text x="1055.0" y="1494" text-anchor="middle" class="muted" font-size="14">million EKF turns per second (log scale)</text>
 <rect x="1100" y="16" width="14" height="14" rx="2" fill="#f4c430"/>
 <text x="1122" y="27" font-size="13">Mech</text>
 <rect x="1215" y="16" width="14" height="14" rx="2" fill="#dea584"/>
@@ -147,47 +147,59 @@
 <text x="534" y="852" text-anchor="end" class="label">NumPy/Numba parallel JIT, 8 workers</text>
 <rect x="550" y="838" width="654.3" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
 <text x="1213.3" y="852" class="value">77.13</text>
-<text x="534" y="883" text-anchor="end" class="label">Taichi LLVM CPU, 8 workers</text>
-<rect x="550" y="869" width="672.0" height="19" rx="3" fill="#e36b6b" opacity="0.9"/>
-<text x="1231.0" y="883" class="value">98.14</text>
-<text x="534" y="914" text-anchor="end" class="label">Julia SIMD.jl, 8 workers</text>
-<rect x="550" y="900" width="680.1" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="1239.1" y="914" class="value">109.63</text>
-<text x="534" y="945" text-anchor="end" class="label">Mech SIMD/JIT CPU, 8 workers</text>
-<rect x="550" y="931" width="680.6" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="1239.6" y="945" class="value">110.47</text>
-<text x="534" y="976" text-anchor="end" class="label">Mech SIMD/JIT CPU, persistent pool per-turn (8 workers)</text>
-<rect x="550" y="962" width="703.2" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="1262.2" y="976" class="value">150.40</text>
-<text x="534" y="1007" text-anchor="end" class="label">Futhark ISPC fixed-mode, 8 workers (500k x 40)</text>
-<rect x="550" y="993" width="704.1" height="19" rx="3" fill="#e94f37" opacity="0.9"/>
-<text x="1263.1" y="1007" class="value">152.33</text>
-<text x="534" y="1038" text-anchor="end" class="label">Mech GPU, WGPU per-turn</text>
-<rect x="550" y="1024" width="706.4" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="1265.4" y="1038" class="value">157.14</text>
-<text x="534" y="1069" text-anchor="end" class="label">Mech SIMD/JIT CPU, fused unchecked block (8 workers)</text>
-<rect x="550" y="1055" width="710.3" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="1269.3" y="1069" class="value">165.83</text>
-<text x="534" y="1100" text-anchor="end" class="label">Taichi GPU, native Metal</text>
-<rect x="550" y="1086" width="722.1" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
-<text x="1281.1" y="1100" class="value">194.79</text>
-<text x="534" y="1131" text-anchor="end" class="label">Julia GPU, native Metal</text>
-<rect x="550" y="1117" width="729.8" height="19" rx="3" fill="url(#gpu-julia)" opacity="0.9"/>
-<text x="1288.8" y="1131" class="value">216.46</text>
-<text x="534" y="1162" text-anchor="end" class="label">Taichi optimized native Metal, unchecked</text>
-<rect x="550" y="1148" width="730.1" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
-<text x="1289.1" y="1162" class="value">217.30</text>
-<text x="534" y="1193" text-anchor="end" class="label">Mech GPU, native Metal</text>
-<rect x="550" y="1179" width="737.6" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="1296.6" y="1193" class="value">241.03</text>
-<text x="534" y="1224" text-anchor="end" class="label">Mech GPU, unchecked repeated</text>
-<rect x="550" y="1210" width="765.1" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="1324.1" y="1224" class="value">350.93</text>
-<text x="534" y="1255" text-anchor="end" class="label">Mech GPU, unchecked in-place repeated</text>
-<rect x="550" y="1241" width="780.6" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="1339.6" y="1255" class="value">433.89</text>
-<text x="534" y="1286" text-anchor="end" class="label">Mech GPU, unchecked one-submit</text>
-<rect x="550" y="1272" width="937.9" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="1496.9" y="1286" class="value">3729.67</text>
-<text x="52" y="1343" class="muted" font-size="12">Rows are ordered by throughput from slowest to fastest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. Compilation, allocation, warmup, and final readback are excluded from the timed region.</text>
+<text x="534" y="883" text-anchor="end" class="label">NumPy/Numba, fused worker-local block (8 workers)</text>
+<rect x="550" y="869" width="658.8" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="1217.8" y="883" class="value">81.97</text>
+<text x="534" y="914" text-anchor="end" class="label">NumPy/Numba, fused worker-local block fast math (8 workers)</text>
+<rect x="550" y="900" width="663.1" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="1222.1" y="914" class="value">86.97</text>
+<text x="534" y="945" text-anchor="end" class="label">Taichi LLVM CPU, 8 workers</text>
+<rect x="550" y="931" width="672.0" height="19" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="1231.0" y="945" class="value">98.14</text>
+<text x="534" y="976" text-anchor="end" class="label">Julia SIMD.jl, 8 workers</text>
+<rect x="550" y="962" width="680.1" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="1239.1" y="976" class="value">109.63</text>
+<text x="534" y="1007" text-anchor="end" class="label">Mech SIMD/JIT CPU, 8 workers</text>
+<rect x="550" y="993" width="680.6" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="1239.6" y="1007" class="value">110.47</text>
+<text x="534" y="1038" text-anchor="end" class="label">Julia SIMD.jl, fused worker-local block (8 workers)</text>
+<rect x="550" y="1024" width="694.5" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="1253.5" y="1038" class="value">133.61</text>
+<text x="534" y="1069" text-anchor="end" class="label">Mech SIMD/JIT CPU, persistent pool per-turn (8 workers)</text>
+<rect x="550" y="1055" width="703.2" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="1262.2" y="1069" class="value">150.40</text>
+<text x="534" y="1100" text-anchor="end" class="label">Futhark ISPC fixed-mode, 8 workers (500k x 40)</text>
+<rect x="550" y="1086" width="704.1" height="19" rx="3" fill="#e94f37" opacity="0.9"/>
+<text x="1263.1" y="1100" class="value">152.33</text>
+<text x="534" y="1131" text-anchor="end" class="label">Mech GPU, WGPU per-turn</text>
+<rect x="550" y="1117" width="706.4" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="1265.4" y="1131" class="value">157.14</text>
+<text x="534" y="1162" text-anchor="end" class="label">Rust packed SIMD, fused worker-local block (8 workers)</text>
+<rect x="550" y="1148" width="709.4" height="19" rx="3" fill="#dea584" opacity="0.9"/>
+<text x="1268.4" y="1162" class="value">163.87</text>
+<text x="534" y="1193" text-anchor="end" class="label">Mech SIMD/JIT CPU, fused unchecked block (8 workers)</text>
+<rect x="550" y="1179" width="710.3" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="1269.3" y="1193" class="value">165.83</text>
+<text x="534" y="1224" text-anchor="end" class="label">Taichi GPU, native Metal</text>
+<rect x="550" y="1210" width="722.1" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
+<text x="1281.1" y="1224" class="value">194.79</text>
+<text x="534" y="1255" text-anchor="end" class="label">Julia GPU, native Metal</text>
+<rect x="550" y="1241" width="729.8" height="19" rx="3" fill="url(#gpu-julia)" opacity="0.9"/>
+<text x="1288.8" y="1255" class="value">216.46</text>
+<text x="534" y="1286" text-anchor="end" class="label">Taichi optimized native Metal, unchecked</text>
+<rect x="550" y="1272" width="730.1" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
+<text x="1289.1" y="1286" class="value">217.30</text>
+<text x="534" y="1317" text-anchor="end" class="label">Mech GPU, native Metal</text>
+<rect x="550" y="1303" width="737.6" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="1296.6" y="1317" class="value">241.03</text>
+<text x="534" y="1348" text-anchor="end" class="label">Mech GPU, unchecked repeated</text>
+<rect x="550" y="1334" width="765.1" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="1324.1" y="1348" class="value">350.93</text>
+<text x="534" y="1379" text-anchor="end" class="label">Mech GPU, unchecked in-place repeated</text>
+<rect x="550" y="1365" width="780.6" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="1339.6" y="1379" class="value">433.89</text>
+<text x="534" y="1410" text-anchor="end" class="label">Mech GPU, unchecked one-submit</text>
+<rect x="550" y="1396" width="937.9" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="1496.9" y="1410" class="value">3729.67</text>
+<text x="52" y="1467" class="muted" font-size="12">Rows are ordered by throughput from slowest to fastest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. Compilation, allocation, warmup, and final readback are excluded from the timed region.</text>
 </svg>
