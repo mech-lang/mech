@@ -395,8 +395,22 @@ python3 source_diff_report.py \
   --strict-julia results/apple-m1-julia-metal-2026-08-31.json \
   --pure-python results/apple-m1-pure-python-2026-09-01.json
 
+# Measure source-to-artifact and first-run compiler costs for every retained
+# language control, then let source_diff_report.py include the medians in its
+# baseline / advanced compile column.
+python3 measure_compile_times.py \
+  --python /path/to/python-with-numpy \
+  --taichi-python /path/to/python-with-taichi
+
 python3 execution_strategy_report.py --results results
 ```
+
+The resulting `results/apple-m1-compile-times-2026-09-01.json` records every
+command, sample, median, and unavailable tool. Rust, Halide, and Futhark rows
+measure AOT artifact creation; Python, Lua, and LuaJIT rows measure bytecode
+creation; Julia and Taichi rows measure a cold process plus first-call/kernel
+specialization. These phases are labeled separately because they are not
+steady-state runtime throughput.
 
 To isolate the direct control from the other backend warmups, build the
 benchmark with `native,jit,native-metal` and run:

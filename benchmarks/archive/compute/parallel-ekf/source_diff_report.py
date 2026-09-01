@@ -13,7 +13,6 @@ import subprocess
 from pathlib import Path
 
 from chart_machine_specs import svg_machine_specs
-from chart_machine_specs import svg_machine_specs
 
 ROOT = Path(__file__).resolve().parents[4]
 HERE = Path(__file__).resolve().parent
@@ -491,14 +490,21 @@ def throughput_variants(
     return result
 
 
-def recorded_compile_times(cross: dict) -> dict[str, dict[str, object]]:
+def recorded_compile_times(
+    cross: dict,
+    compile_evidence: dict | None = None,
+) -> dict[str, dict[str, dict[str, object]]]:
     """Return only compile/JIT timings explicitly retained in evidence.
 
     The cross-language runner times steady-state process bodies, not compiler
-    wall time. The Mech backend stdout is the one retained source that reports
-    a separable scalar Cranelift preparation interval; other rows remain
-    unavailable instead of being inferred from process startup time.
+    wall time. Prefer the companion compile-evidence file when present. Keep
+    the Mech timings from the cross-language evidence as a fallback so older
+    reports remain reproducible.
     """
+    if compile_evidence is not None:
+        measured = compile_evidence.get("rows", {})
+        if measured:
+            return measured
     outputs = cross.get("runs", {}).get("mech_backend_settings", {}).get("measured_stdout", [])
     pattern = re.compile(r"^Cranelift JIT prepare: ([0-9.]+) ms$", re.MULTILINE)
     values = []
@@ -508,12 +514,15 @@ def recorded_compile_times(cross: dict) -> dict[str, dict[str, object]]:
             values.append(float(match.group(1)))
     if not values:
         return {}
-    return {
-        "Mech": {
-            "milliseconds": statistics.median(values),
-            "label": "scalar Cranelift JIT prepare",
-        }
+    entry = {
+        "available": True,
+        "milliseconds": statistics.median(values),
+        "median_milliseconds": statistics.median(values),
+        "phase": "scalar Cranelift JIT prepare",
+        "label": "scalar Cranelift JIT prepare",
+        "notes": "Fallback extracted from the retained Mech benchmark stdout.",
     }
+    return {"Mech": {"baseline": entry, "advanced": entry}}
 
 
 def build_report(
@@ -529,6 +538,7 @@ def build_report(
     maxima: dict[str, dict[str, dict[str, dict[str, object]]]] | None = None,
     rust_scalar: dict | None = None,
     luajit_scalar: dict | None = None,
+    compile_evidence: dict | None = None,
 ) -> dict:
     base = read(BASE_MECH)
     variants_throughput = throughput_variants(
@@ -543,7 +553,7 @@ def build_report(
         rust_scalar,
         luajit_scalar,
     )
-    compile_times = recorded_compile_times(cross)
+    compile_times = recorded_compile_times(cross, compile_evidence)
     cross_config = cross.get("configuration", {})
     native_config = (strict_mech or native).get("configuration", {})
     minimal_config = (minimal or {}).get("configuration", {})
@@ -586,7 +596,7 @@ def build_report(
                 "advanced_to_base_mech": diff_metrics(base, advanced),
                 "throughput_millions": variants_throughput[variant["language"]]["advanced"],
                 "performance_maxima": (maxima or {}).get(variant["language"], {}),
-                "compile_time": compile_times.get(variant["language"]),
+                "compile_time": compile_times.get(variant["language"], {}),
             }
         )
     return {
@@ -607,7 +617,7 @@ def build_report(
             "minimal": (minimal or {}).get("generated_at"),
         },
         "compile_times": compile_times,
-        "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. Compile/JIT time is included only when the evidence records a separable compiler interval; it is not inferred from process startup or steady-state timing. The max single-core, SIMD/multicore, and synchronized GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker; multi-turn/fused GPU rows are retained separately as gpu_batched maxima. This is an edit-size measure, not a claim about semantic difficulty.",
+        "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. Compile/JIT time is shown as baseline / advanced medians from the companion compile-evidence run, with phase and command retained per row; it is not inferred from process startup or steady-state throughput. The max single-core, SIMD/multicore, and synchronized GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker; multi-turn/fused GPU rows are retained separately as gpu_batched maxima. This is an edit-size measure, not a claim about semantic difficulty.",
         "mech_backend_support_delta": mech_support_delta(),
         "rows": rows,
     }
@@ -617,11 +627,11 @@ def markdown(report: dict) -> str:
     lines = [
         "# Parallel EKF source-edit cost",
         "",
-        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the compact checked-in Mech EKF source. The full teaching listing and each row's exact baseline-to-advanced workload are retained in the JSON. Throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate; their headers identify the row workload. The compile/JIT column reports only separately measured compiler preparation intervals; `--` means that timing was not retained, not that compilation was free. The three max columns are the best retained result in that execution class for each family, shown as checked / unchecked M/s; GPU maxima use synchronized per-turn rows. Throughput provenance, including strict Mech and Halide evidence when present, is recorded in the JSON `benchmark_evidence` field.",
+        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the compact checked-in Mech EKF source. The full teaching listing and each row's exact baseline-to-advanced workload are retained in the JSON. Throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate; their headers identify the row workload. The compile/JIT column reports baseline / advanced medians from separately measured compiler or first-run phases; `--` means that timing was unavailable, not that compilation was free. The three max columns are the best retained result in that execution class for each family, shown as checked / unchecked M/s; GPU maxima use synchronized per-turn rows. Throughput provenance, including strict Mech and Halide evidence when present, is recorded in the JSON `benchmark_evidence` field.",
         "",
         "## Variant matrix",
         "",
-        "| Language | Baseline model | Advanced model | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Compile/JIT ms (recorded) | Baseline checked M/s (baseline row workload) | Baseline unchecked M/s (baseline row workload) | Advanced checked M/s (advanced row workload) | Advanced unchecked M/s (advanced row workload) | Max single-core M/s (10,000 x 20; checked / unchecked) | Max SIMD/multicore M/s (500,000 x 40 where available; checked / unchecked) | Max GPU M/s (500,000 x 40 synchronized per-turn; checked / unchecked) |",
+        "| Language | Baseline model | Advanced model | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Compile/JIT ms (baseline / advanced; phase in JSON) | Baseline checked M/s (baseline row workload) | Baseline unchecked M/s (baseline row workload) | Advanced checked M/s (advanced row workload) | Advanced unchecked M/s (advanced row workload) | Max single-core M/s (10,000 x 20; checked / unchecked) | Max SIMD/multicore M/s (500,000 x 40 where available; checked / unchecked) | Max GPU M/s (500,000 x 40 synchronized per-turn; checked / unchecked) |",
         "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     def maximum_cell(row: dict, category: str) -> str:
@@ -641,8 +651,18 @@ def markdown(report: dict) -> str:
         baseline_unchecked = "--" if baseline_throughput["unchecked"] is None else f"{baseline_throughput['unchecked']:.3f}"
         advanced_checked = "--" if advanced_throughput["checked"] is None else f"{advanced_throughput['checked']:.3f}"
         advanced_unchecked = "--" if advanced_throughput["unchecked"] is None else f"{advanced_throughput['unchecked']:.3f}"
-        compile_time = row.get("compile_time")
-        compile_cell = "--" if compile_time is None else f"{float(compile_time['milliseconds']):.3f} ({compile_time['label']})"
+        compile_time = row.get("compile_time", {})
+
+        def compile_value(variant: str) -> str:
+            entry = compile_time.get(variant) if isinstance(compile_time, dict) else None
+            if not isinstance(entry, dict) or not entry.get("available"):
+                return "--"
+            milliseconds = entry.get("median_milliseconds", entry.get("milliseconds"))
+            if isinstance(milliseconds, list):
+                milliseconds = statistics.median(milliseconds)
+            return f"{float(milliseconds):.3f}"
+
+        compile_cell = f"{compile_value('baseline')} / {compile_value('advanced')}"
         lines.append(
             f"| {row['language']} | {row['baseline_label']} | {row['advanced_label']} | {row['baseline_code']['lines']} / {row['baseline_code']['chars']:,} | {row['advanced_code']['lines']} / {row['advanced_code']['chars']:,} | {row['baseline_to_advanced']['changed_line_slots']} / {row['baseline_to_advanced']['changed_chars']:,} | {row['baseline_to_base_mech']['changed_line_slots']} / {row['baseline_to_base_mech']['changed_chars']:,} | {row['advanced_to_base_mech']['changed_line_slots']} / {row['advanced_to_base_mech']['changed_chars']:,} | {compile_cell} | {baseline_checked} | {baseline_unchecked} | {advanced_checked} | {advanced_unchecked} | {maximum_cell(row, 'single_core')} | {maximum_cell(row, 'simd_multicore')} | {maximum_cell(row, 'gpu')} |"
         )
@@ -662,7 +682,7 @@ def markdown(report: dict) -> str:
         "",
         "`--` means that exact checked/unchecked baseline was not part of the retained evidence; it is not a zero-throughput result. Futhark baseline/advanced values differ only by worker count, while Halide, Mech, and the pure-Python control keep the same source across both sides. The source pair and execution-boundary columns make those cases explicit.",
         "Max columns are checked / unchecked M/s. The GPU column uses synchronized/per-turn GPU rows only. Single-thread SIMD/JIT rows remain in the single-core column; the SIMD/multicore column requires an explicit worker, thread, pool, or parallel marker. Multi-turn/fused GPU maxima are retained under gpu_batched in the JSON and in the ranked throughput table; Mech's 3,729.673 M/s one-submit control is a device-resident ceiling, not an equivalent synchronized GPU lane.",
-        "Compile/JIT ms is shown only for a separately recorded compiler preparation interval. The current retained evidence has Mech's scalar Cranelift JIT preparation; Rust, Julia, NumPy, LuaJIT, Taichi, Halide, and Futhark compiler wall times were not recorded by the corresponding benchmark runs and are shown as `--`.",
+        "Compile/JIT values are baseline / advanced medians. AOT and bytecode phases are source-to-artifact commands; Julia and Taichi are cold first-process/first-kernel measurements; Mech values are emitted source/artifact or backend preparation intervals. See the JSON `compile_times` object for exact phase labels and commands. A missing value means unavailable evidence, not zero compilation cost.",
         "",
     ]
     for row in report["rows"]:
@@ -735,6 +755,7 @@ def main() -> None:
     parser.add_argument("--pure-python", type=Path)
     parser.add_argument("--rust-scalar", type=Path)
     parser.add_argument("--luajit-scalar", type=Path)
+    parser.add_argument("--compile-times", type=Path)
     parser.add_argument("--throughput-table", type=Path)
     args = parser.parse_args()
     strict_mech_path = args.strict_mech or (args.output_directory / "apple-m1-mech-halide-strict-2026-08-31.json")
@@ -743,6 +764,7 @@ def main() -> None:
     pure_python_path = args.pure_python or (args.output_directory / "apple-m1-pure-python-2026-09-01.json")
     rust_scalar_path = args.rust_scalar or (args.output_directory / "apple-m1-rust-scalar-2026-09-01.json")
     luajit_scalar_path = args.luajit_scalar or (args.output_directory / "apple-m1-luajit-scalar-2026-09-01.json")
+    compile_times_path = args.compile_times or (args.output_directory / "apple-m1-compile-times-2026-09-01.json")
     throughput_table_path = args.throughput_table or (args.output_directory / "parallel-ekf-throughput-table.md")
     maxima = performance_maxima(throughput_table_path) if throughput_table_path.exists() else None
     report = build_report(
@@ -760,6 +782,7 @@ def main() -> None:
         maxima,
         json.loads(rust_scalar_path.read_text(encoding="utf-8")) if rust_scalar_path.exists() else None,
         json.loads(luajit_scalar_path.read_text(encoding="utf-8")) if luajit_scalar_path.exists() else None,
+        json.loads(compile_times_path.read_text(encoding="utf-8")) if compile_times_path.exists() else None,
     )
     args.output_directory.mkdir(parents=True, exist_ok=True)
     (args.output_directory / "parallel-ekf-source-diff-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
