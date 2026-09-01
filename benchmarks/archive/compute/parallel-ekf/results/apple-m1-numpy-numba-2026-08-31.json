@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T20:37:55-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "/tmp/mech-ekf-venv/bin/python",
+    "numba_threads": 8
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "threads": 8,
+    "samples": 3,
+    "source": "minimal/numpy_numba.py",
+    "boundary": "synchronous per-turn prange publication"
+  },
+  "rows": {
+    "checked": {
+      "command": [
+        "NUMBA_NUM_THREADS=8",
+        "/tmp/mech-ekf-venv/bin/python",
+        "minimal/numpy_numba.py",
+        "500000",
+        "40",
+        "checked"
+      ],
+      "throughput_millions": [
+        71.789141848,
+        77.386740121,
+        77.225059076
+      ],
+      "checksums": [
+        133818339.818573162,
+        133818339.818573162,
+        133818339.818573162
+      ],
+      "faults": [
+        0,
+        0,
+        0
+      ]
+    },
+    "unchecked": {
+      "command": [
+        "NUMBA_NUM_THREADS=8",
+        "/tmp/mech-ekf-venv/bin/python",
+        "minimal/numpy_numba.py",
+        "500000",
+        "40",
+        "unchecked"
+      ],
+      "throughput_millions": [
+        77.130377284,
+        76.918356190,
+        77.365074571
+      ],
+      "checksums": [
+        133818339.818573162,
+        133818339.818573162,
+        133818339.818573162
+      ],
+      "faults": [
+        0,
+        0,
+        0
+      ]
+    }
+  }
+}

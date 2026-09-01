@@ -38,6 +38,7 @@ git switch --track origin/codex/mech-program-gpu
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Minimal NumPy scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py` |
 | Minimal NumPy batched control | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py` |
+| NumPy/Numba eight-worker JIT control | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_numba.py` |
 | Minimized Rust scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs` |
 | Minimized Rust packed-lane SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs` |
 | Minimized Julia scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl` |
@@ -56,6 +57,7 @@ git switch --track origin/codex/mech-program-gpu
 | Cross-language checked/unchecked chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_cross_language_comparison.py` |
 | Ranked throughput table | `benchmarks/archive/compute/parallel-ekf/results/parallel-ekf-throughput-table.md` |
 | Threaded Julia SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-threaded-2026-08-31.json` |
+| NumPy/Numba threaded evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-numba-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
 | Source-edit cost report/renderer | `benchmarks/archive/compute/parallel-ekf/source_diff_report.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -102,6 +104,9 @@ Raw samples, checksums, and the direct-vs-WGPU distinction are recorded in
 The complete comparison is split into two charts so the integrity contract is
 never hidden by a mixed bar. Mech rows use the project yellow; Rust, Python,
 NumPy, Julia, Lua, LuaJIT, and Taichi retain distinct language-family colors.
+GPU rows keep their family color but use a diagonal hatch, while CPU rows are
+solid, so the accelerator distinction is visible without introducing a second
+palette.
 The CPU language rows use 10,000 resident filters and 20 turns. GPU rows use
 100,000 resident filters and 5 synchronized turns. Both are steady-state
 throughput measurements; setup, compilation, allocation, and final readback
@@ -116,6 +121,11 @@ eight-worker CPU controls at 104.783 M/s checked and 110.469 M/s unchecked.
 
 The complete ranked values behind both charts are in
 [`results/parallel-ekf-throughput-table.md`](results/parallel-ekf-throughput-table.md).
+
+The chart also includes a NumPy/Numba control using `@njit(parallel=True)` and
+an eight-worker `prange` over the same 500,000-filter, 40-turn synchronous
+boundary. It is labeled separately from plain NumPy because the JIT and worker
+pool are an additional compiled runtime, not a feature of NumPy's array API.
 Each contract is sorted independently from slowest to fastest, with the new
 resident scalar Mech unchecked measurement included explicitly.
 
@@ -232,7 +242,8 @@ python3 plot_cross_language_comparison.py \
   results/apple-m1-lua-2026-08-31.json \
   --taichi-optimized results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
   --minimal-source results/apple-m1-minimal-source-2026-08-31.json \
-  --julia-threaded results/apple-m1-julia-threaded-2026-08-31.json
+  --julia-threaded results/apple-m1-julia-threaded-2026-08-31.json \
+  --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json
 
 python3 plot_mech_progression.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \

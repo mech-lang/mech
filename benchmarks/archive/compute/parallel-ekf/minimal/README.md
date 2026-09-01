@@ -14,7 +14,9 @@ controls still validate finite state/covariance, positive covariance
 diagonals, and covariance symmetry before publishing a candidate.
 
 `measure.py` currently executes the compact NumPy, Halide, and Futhark
-controls. The Rust, Julia, Lua, and Taichi files are compact copies of their
+controls. `numpy_numba.py` is a separate eight-worker `@njit(parallel=True)`
+control because Numba is an additional JIT runtime rather than plain NumPy.
+The Rust, Julia, Lua, and Taichi files are compact copies of their
 measured controls; their existing throughput rows are retained in the report
 until a compact-source rerun is recorded. Runtime availability remains
 environment-dependent (for example, Rust SIMD needs its Cargo dependency and

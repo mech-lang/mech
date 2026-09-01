@@ -32,6 +32,11 @@ def esc(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
+def is_gpu_row(row: dict[str, object]) -> bool:
+    label = str(row["label"])
+    return "GPU" in label or "native Metal" in label
+
+
 def _median_mech_throughputs(cross_language: dict) -> dict[str, float]:
     """Recover backend-only Mech flavors from backend-setting stdout."""
     import re
@@ -62,6 +67,7 @@ def load_rows(
     taichi_optimized: dict | None = None,
     minimal: dict | None = None,
     julia_threaded: dict | None = None,
+    numpy_numba: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -262,6 +268,20 @@ def load_rows(
                         "throughput": statistics.median(row["throughput_millions"]),
                     }
                 )
+    if numpy_numba is not None:
+        import statistics
+
+        for mode in ("checked", "unchecked"):
+            row = numpy_numba.get("rows", {}).get(mode)
+            if row is not None and "throughput_millions" in row:
+                rows.append(
+                    {
+                        "label": "NumPy/Numba parallel JIT, 8 workers",
+                        "family": "NumPy",
+                        "mode": mode,
+                        "throughput": statistics.median(row["throughput_millions"]),
+                    }
+                )
     return rows
 
 
@@ -294,6 +314,12 @@ def render(
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#080c14"/>',
+        '<defs>',
+        *(
+            f'<pattern id="gpu-{family.lower()}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="{color}"/><path d="M0 0V8" stroke="#ffffff" stroke-opacity="0.38" stroke-width="2"/></pattern>'
+            for family, color in COLORS.items()
+        ),
+        '</defs>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="52" y="42" font-size="26" font-weight="700">Cross-language EKF runtime throughput ({esc(mode)}; slowest to fastest)</text>',
         f'<text x="52" y="68" class="muted" font-size="15">Apple M1 | CPU/language: {scalar_instances:,}x{scalar_turns}; Mech backend: {backend_instances:,}x{backend_turns}; matched runtime/native controls: {runtime_instances:,}x{runtime_turns} | steady-state, sorted</text>',
@@ -311,18 +337,24 @@ def render(
         y_pos = 27 + (index // 4) * 22
         lines.append(f'<rect x="{x_pos}" y="{y_pos - 11}" width="14" height="14" rx="2" fill="{COLORS[family]}"/>')
         lines.append(f'<text x="{x_pos + 22}" y="{y_pos}" font-size="13">{family}</text>')
+    key_y = 93
+    lines.append(f'<rect x="{legend_x}" y="{key_y - 11}" width="14" height="14" rx="2" fill="{COLORS["Mech"]}"/>')
+    lines.append(f'<text x="{legend_x + 22}" y="{key_y}" font-size="13">CPU solid</text>')
+    lines.append(f'<rect x="{legend_x + 115}" y="{key_y - 11}" width="14" height="14" rx="2" fill="url(#gpu-mech)"/>')
+    lines.append(f'<text x="{legend_x + 137}" y="{key_y}" font-size="13">GPU hatched</text>')
 
     for index, row in enumerate(visible):
         value = float(row["throughput"])
         y = top + index * row_height
         bar_width = max(1.0, chart_width * value / max_value)
         color = COLORS[str(row["family"])]
+        fill = f'url(#gpu-{str(row["family"]).lower()})' if is_gpu_row(row) else color
         lines.append(f'<text x="{left - 16}" y="{y + 19}" text-anchor="end" class="label">{esc(row["label"])}</text>')
-        lines.append(f'<rect x="{left}" y="{y + 5}" width="{bar_width:.1f}" height="19" rx="3" fill="{color}" opacity="0.9"/>')
+        lines.append(f'<rect x="{left}" y="{y + 5}" width="{bar_width:.1f}" height="19" rx="3" fill="{fill}" opacity="0.9"/>')
         value_x = min(left + bar_width + 9, width - right + 10)
         lines.append(f'<text x="{value_x:.1f}" y="{y + 19}" class="value">{value:.2f}</text>')
 
-    note = "Rows are ordered by throughput from slowest to fastest. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. "
+    note = "Rows are ordered by throughput from slowest to fastest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. "
     note += "Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. "
     note += "Compilation, allocation, warmup, and final readback are excluded from the timed region."
     lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{esc(note)}</text>')
@@ -387,6 +419,7 @@ def main() -> None:
     parser.add_argument("--taichi-optimized", type=Path, help="optimized Taichi evidence JSON")
     parser.add_argument("--minimal-source", type=Path, help="Halide/Futhark/NumPy minimal-control evidence JSON")
     parser.add_argument("--julia-threaded", type=Path, help="threaded Julia SIMD evidence JSON")
+    parser.add_argument("--numpy-numba", type=Path, help="NumPy/Numba threaded JIT evidence JSON")
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
@@ -407,8 +440,20 @@ def main() -> None:
         if args.julia_threaded
         else None
     )
+    numpy_numba = (
+        json.loads(args.numpy_numba.read_text(encoding="utf-8"))
+        if args.numpy_numba
+        else None
+    )
     rows = load_rows(
-        cross_language, runtime, native, lua, taichi_optimized, minimal, julia_threaded
+        cross_language,
+        runtime,
+        native,
+        lua,
+        taichi_optimized,
+        minimal,
+        julia_threaded,
+        numpy_numba,
     )
     configuration = cross_language["configuration"]
     render(
