@@ -46,6 +46,6 @@ This report measures source edits and runtime factors behind the parallel EKF va
 
 ## Mech backend support footprint
 
-The high-level Mech source delta is zero, but the native-Metal backend support changed **433 line slots** (348 added / 85 deleted) across the backend files in the report JSON. This is intentionally reported separately: generated WGSL/MSL is a build artifact, not a second user program.
+The high-level Mech source delta is zero, but the native-Metal backend support changed **455 line slots** (370 added / 85 deleted) across the backend files in the report JSON. This is intentionally reported separately: generated WGSL/MSL is a build artifact, not a second user program.
 
 The Mech row deliberately reports zero high-level source edits: the same `.mec` recurrence feeds the scalar, SIMD, JIT, WGPU, and native-Metal backends. Conversely, Taichi, Julia, Rust, and LuaJIT advanced rows include their source-level layout or execution changes.

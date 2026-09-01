@@ -53,6 +53,7 @@ git switch --track origin/codex/mech-program-gpu
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
 | Cross-language checked/unchecked chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_cross_language_comparison.py` |
+| Ranked throughput table | `benchmarks/archive/compute/parallel-ekf/results/parallel-ekf-throughput-table.md` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
 | Source-edit cost report/renderer | `benchmarks/archive/compute/parallel-ekf/source_diff_report.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -103,11 +104,17 @@ The CPU language rows use 10,000 resident filters and 20 turns. GPU rows use
 100,000 resident filters and 5 synchronized turns. Both are steady-state
 throughput measurements; setup, compilation, allocation, and final readback
 are outside the timed region. The subtitle on each chart records those two
-workloads explicitly.
+workloads explicitly. The ranking includes every retained scalar, SIMD/JIT,
+worker-parallel, WGPU, native-Metal, and fused GPU lane.
 
 ![Cross-language checked EKF throughput](results/parallel-ekf-cross-language-checked.svg)
 
 ![Cross-language unchecked EKF throughput](results/parallel-ekf-cross-language-unchecked.svg)
+
+The complete ranked values behind both charts are in
+[`results/parallel-ekf-throughput-table.md`](results/parallel-ekf-throughput-table.md).
+Each contract is sorted independently from slowest to fastest, with the new
+resident scalar Mech unchecked measurement included explicitly.
 
 Plain PUC Lua now runs the same fixed-shape flat source as LuaJIT. Its table
 arrays are explicitly zero-initialized so the warmup has the same defined state
@@ -203,7 +210,7 @@ and pins Futhark's multicore control to one and eight workers. It reports
 steady-state throughput only; JIT compilation, warmup, and input construction
 are not included in those numbers.
 
-Regenerate all three charts from the checked-in evidence with:
+Regenerate the charts and ranked table from the checked-in evidence with:
 
 ```text
 python3 plot_cross_language_comparison.py \

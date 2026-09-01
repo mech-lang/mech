@@ -33,13 +33,16 @@ def esc(value: object) -> str:
 
 
 def _median_mech_throughputs(cross_language: dict) -> dict[str, float]:
-    """Recover every explicitly printed Mech flavor from retained stdout."""
+    """Recover backend-only Mech flavors from backend-setting stdout."""
     import re
     import statistics
 
     outputs: list[str] = []
-    for name in ("mech_scalar_settings", "mech_backend_settings"):
-        outputs.extend(cross_language.get("runs", {}).get(name, {}).get("measured_stdout", []))
+    outputs.extend(
+        cross_language.get("runs", {})
+        .get("mech_backend_settings", {})
+        .get("measured_stdout", [])
+    )
     values: dict[str, list[float]] = {}
     for text in outputs:
         for match in re.finditer(
@@ -79,8 +82,14 @@ def load_rows(
     def mech_backend(label: str, family: str, mode: str) -> dict[str, object]:
         aliases = {
             "Mech SIMD": "Mech SIMD (4xf32)",
-            "GPU one-submit": "Mech GPU, unchecked one submission",
-            "GPU checked repeated": "Mech GPU, checked repeated API call",
+            "Mech GPU, checked one-turn": "Mech GPU, checked one-turn API call",
+            "Mech GPU, checked repeated": "Mech GPU, checked repeated API call",
+            "Mech GPU, unchecked one-turn": "Mech GPU, unchecked one-turn API call",
+            "Mech GPU, unchecked repeated": "Mech GPU, unchecked repeated dispatches",
+            "Mech GPU, unchecked one-submit": "Mech GPU, unchecked one submission",
+            "Mech GPU, unchecked ping-pong one-turn": "GPU unchecked ping-pong one-turn",
+            "Mech GPU, unchecked in-place one-turn": "GPU unchecked in-place one-turn",
+            "Mech GPU, unchecked in-place repeated": "GPU unchecked in-place repeated",
         }
         key = aliases.get(label, label)
         # JIT lanes are stored in the scalar summary because their resident
@@ -109,10 +118,18 @@ def load_rows(
         mech_backend("Mech Cranelift JIT unchecked fast", "Mech", "unchecked"),
         mech_backend("Mech Cranelift SIMD-JIT", "Mech", "checked"),
         mech_backend("Mech Cranelift SIMD-JIT checked fast", "Mech", "checked"),
+        mech_backend("Mech Cranelift SIMD-JIT parallel", "Mech", "checked"),
         mech_backend("Mech Cranelift SIMD-JIT unchecked", "Mech", "unchecked"),
         mech_backend("Mech Cranelift SIMD-JIT unchecked fast", "Mech", "unchecked"),
-        mech_backend("GPU one-submit", "Mech", "unchecked"),
-        mech_backend("GPU checked repeated", "Mech", "checked"),
+        mech_backend("Mech Cranelift SIMD-JIT parallel unchecked fast", "Mech", "unchecked"),
+        mech_backend("Mech GPU, checked one-turn", "Mech", "checked"),
+        mech_backend("Mech GPU, checked repeated", "Mech", "checked"),
+        mech_backend("Mech GPU, unchecked one-turn", "Mech", "unchecked"),
+        mech_backend("Mech GPU, unchecked repeated", "Mech", "unchecked"),
+        mech_backend("Mech GPU, unchecked ping-pong one-turn", "Mech", "unchecked"),
+        mech_backend("Mech GPU, unchecked in-place one-turn", "Mech", "unchecked"),
+        mech_backend("Mech GPU, unchecked in-place repeated", "Mech", "unchecked"),
+        mech_backend("Mech GPU, unchecked one-submit", "Mech", "unchecked"),
         {
             "label": "Mech GPU, WGPU per-turn",
             "family": "Mech",
@@ -239,7 +256,7 @@ def render(
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
-        f'<text x="52" y="42" font-size="26" font-weight="700">Cross-language EKF runtime throughput ({esc(mode)})</text>',
+        f'<text x="52" y="42" font-size="26" font-weight="700">Cross-language EKF runtime throughput ({esc(mode)}; slowest to fastest)</text>',
         f'<text x="52" y="68" class="muted" font-size="15">Apple M1 | CPU/language: {scalar_instances:,}x{scalar_turns}; Mech backend: {backend_instances:,}x{backend_turns}; matched GPU runtime/native: {runtime_instances:,}x{runtime_turns} | steady-state, sorted</text>',
     ]
     for tick in range(0, int(max_value) + 1, 20):
@@ -266,13 +283,58 @@ def render(
         value_x = min(left + bar_width + 9, width - right + 10)
         lines.append(f'<text x="{value_x:.1f}" y="{y + 19}" class="value">{value:.2f}</text>')
 
-    note = "Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. "
+    note = "Rows are ordered by throughput from slowest to fastest. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. "
     note += "Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. "
     note += "Compilation, allocation, warmup, and final readback are excluded from the timed region."
     lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{esc(note)}</text>')
     lines.append('</svg>')
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def markdown_table(
+    rows: list[dict[str, object]],
+    output: Path,
+    scalar_instances: int,
+    scalar_turns: int,
+    backend_instances: int,
+    backend_turns: int,
+    runtime_instances: int,
+    runtime_turns: int,
+) -> None:
+    """Write the exact chart rows as ranked tables for audit-friendly review."""
+    lines = [
+        "# Parallel EKF throughput table",
+        "",
+        "This table is generated from the same retained evidence and row set as the SVG charts. Each contract is ranked independently from slowest to fastest; checked and unchecked values are never mixed in one rank.",
+        "",
+        f"Workloads: CPU/language {scalar_instances:,} filters x {scalar_turns} turns; Mech backend {backend_instances:,} filters x {backend_turns} CPU turns; matched GPU runtime/native {runtime_instances:,} filters x {runtime_turns} turns. Setup, compilation, allocation, warmup, and final readback are outside the timed region.",
+        "",
+    ]
+    for mode in ("checked", "unchecked"):
+        visible = [row for row in rows if row["mode"] == mode]
+        visible.sort(key=lambda row: (float(row["throughput"]), str(row["label"])))
+        lines.extend(
+            [
+                f"## {mode.title()} (slowest to fastest)",
+                "",
+                "| Rank | Runtime/lane | Family | Million EKF turns/s |",
+                "| ---: | --- | --- | ---: |",
+            ]
+        )
+        for rank, row in enumerate(visible, start=1):
+            lines.append(
+                f"| {rank} | {row['label']} | {row['family']} | {float(row['throughput']):.3f} |"
+            )
+        lines.append("")
+    lines.extend(
+        [
+            "Checked rows include candidate validation/publication. Unchecked rows explicitly omit those guarantees. The GPU one-submit row is a fused unchecked control and is therefore shown only in the unchecked section.",
+            "",
+        ]
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:
@@ -305,6 +367,16 @@ def main() -> None:
         rows,
         "checked",
         args.output_directory / "parallel-ekf-cross-language-checked.svg",
+        configuration["scalar_instances"],
+        configuration["scalar_turns"],
+        configuration["backend_instances"],
+        configuration["backend_cpu_turns"],
+        runtime["configuration"]["instances"],
+        runtime["configuration"]["turns"],
+    )
+    markdown_table(
+        rows,
+        args.output_directory / "parallel-ekf-throughput-table.md",
         configuration["scalar_instances"],
         configuration["scalar_turns"],
         configuration["backend_instances"],

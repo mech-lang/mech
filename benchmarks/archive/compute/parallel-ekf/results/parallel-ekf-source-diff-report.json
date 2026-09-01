@@ -13,9 +13,9 @@
       "hosts/gpu/src/batched/mod.rs",
       "hosts/gpu/src/metal.rs"
     ],
-    "added_lines": 348,
+    "added_lines": 370,
     "deleted_lines": 85,
-    "changed_line_slots": 433,
+    "changed_line_slots": 455,
     "note": "This is backend/compiler support for native Metal and the direct benchmark path; generated WGSL/MSL is an artifact, not a second user program."
   },
   "rows": [
