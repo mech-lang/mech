@@ -41,8 +41,8 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 31 | Mech GPU, WGPU per-turn | Mech | 152.972 |
 | 32 | Taichi optimized native Metal, checked | Taichi | 168.798 |
 | 33 | Taichi GPU, native Metal | Taichi | 176.710 |
-| 34 | Julia GPU, native Metal | Julia | 197.078 |
-| 35 | Mech GPU, native Metal | Mech | 246.151 |
+| 34 | Mech GPU, native Metal | Mech | 187.999 |
+| 35 | Julia GPU, native Metal | Julia | 197.078 |
 
 ## Unchecked (slowest to fastest)
 
@@ -87,7 +87,7 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 37 | Halide GPU, native Metal (strict fault-observing) | Halide | 212.283 |
 | 38 | Julia GPU, native Metal | Julia | 216.462 |
 | 39 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
-| 40 | Mech GPU, native Metal | Mech | 241.028 |
+| 40 | Mech GPU, native Metal | Mech | 275.534 |
 | 41 | Mech GPU, unchecked repeated | Mech | 350.930 |
 | 42 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
 | 43 | Mech GPU, unchecked one-submit | Mech | 3729.673 |

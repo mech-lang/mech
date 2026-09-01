@@ -253,6 +253,48 @@ def diff_metrics(old: str, new: str) -> dict[str, int]:
     }
 
 
+def performance_maxima(table: Path) -> dict[str, dict[str, dict[str, dict[str, object]]]]:
+    """Read the canonical ranked table and keep the best lane per execution class."""
+    maxima: dict[str, dict[str, dict[str, dict[str, object]]]] = {}
+    mode: str | None = None
+    for raw in table.read_text(encoding="utf-8").splitlines():
+        heading = raw.strip().lower()
+        if heading.startswith("## checked"):
+            mode = "checked"
+            continue
+        if heading.startswith("## unchecked"):
+            mode = "unchecked"
+            continue
+        if mode is None or not raw.startswith("|"):
+            continue
+        fields = [field.strip() for field in raw.strip().strip("|").split("|")]
+        if len(fields) != 4 or not fields[0].isdigit():
+            continue
+        family = fields[2]
+        try:
+            throughput = float(fields[3])
+        except ValueError:
+            continue
+        label = fields[1]
+        lowered = label.lower()
+        if any(marker in lowered for marker in ("gpu", "metal", "wgpu")):
+            category = "gpu"
+        elif any(
+            marker in lowered
+            for marker in ("worker", "workers", "multicore", "parallel", "pool", "thread")
+        ):
+            category = "simd_multicore"
+        else:
+            category = "single_core"
+        current = maxima.setdefault(family, {}).setdefault(category, {}).get(mode)
+        if current is None or throughput > float(current["throughput"]):
+            maxima[family][category][mode] = {
+                "throughput": throughput,
+                "label": label,
+            }
+    return maxima
+
+
 def scalar_throughput(cross: dict, label: str) -> dict[str, float | None]:
     row = cross.get("summary", {}).get("scalar_outer_loop", {}).get(label)
     if row is None:
@@ -400,6 +442,7 @@ def build_report(
     minimal: dict | None = None,
     strict_mech: dict | None = None,
     strict_halide: dict | None = None,
+    maxima: dict[str, dict[str, dict[str, dict[str, object]]]] | None = None,
 ) -> dict:
     base = read(BASE_MECH)
     variants_throughput = throughput_variants(
@@ -452,6 +495,7 @@ def build_report(
                 "baseline_to_base_mech": diff_metrics(base, baseline),
                 "advanced_to_base_mech": diff_metrics(base, advanced),
                 "throughput_millions": variants_throughput[variant["language"]]["advanced"],
+                "performance_maxima": (maxima or {}).get(variant["language"], {}),
             }
         )
     return {
@@ -467,7 +511,7 @@ def build_report(
             "lua": lua.get("generated_at"),
             "minimal": (minimal or {}).get("generated_at"),
         },
-        "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. This is an edit-size measure, not a claim about semantic difficulty.",
+        "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. The max single-core, SIMD/multicore, and GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker. This is an edit-size measure, not a claim about semantic difficulty.",
         "mech_backend_support_delta": mech_support_delta(),
         "rows": rows,
     }
@@ -477,13 +521,23 @@ def markdown(report: dict) -> str:
     lines = [
         "# Parallel EKF source-edit cost",
         "",
-        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the compact checked-in Mech EKF source. The full teaching listing is retained as a separate reference path in the JSON. The workload column shows lanes x turns for each side; throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate. Throughput provenance, including strict Mech and Halide evidence when present, is recorded in the JSON `benchmark_evidence` field.",
+        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the compact checked-in Mech EKF source. The full teaching listing is retained as a separate reference path in the JSON. The workload column shows lanes x turns for each side; throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate. The three max columns are the best retained result in that execution class for each family, shown as checked / unchecked M/s. Throughput provenance, including strict Mech and Halide evidence when present, is recorded in the JSON `benchmark_evidence` field.",
         "",
         "## Variant matrix",
         "",
-        "| Language | Baseline model | Advanced model | Workload (baseline -> advanced) | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Baseline checked M/s | Baseline unchecked M/s | Advanced checked M/s | Advanced unchecked M/s |",
-        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Language | Baseline model | Advanced model | Workload (baseline -> advanced) | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Baseline checked M/s | Baseline unchecked M/s | Advanced checked M/s | Advanced unchecked M/s | Max single-core M/s (checked / unchecked) | Max SIMD/multicore M/s (checked / unchecked) | Max GPU M/s (checked / unchecked) |",
+        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
+    def maximum_cell(row: dict, category: str) -> str:
+        values = row.get("performance_maxima", {}).get(category, {})
+        checked = values.get("checked")
+        unchecked = values.get("unchecked")
+
+        def value(entry: dict[str, object] | None) -> str:
+            return "--" if entry is None else f"{float(entry['throughput']):.3f}"
+
+        return f"{value(checked)} / {value(unchecked)}"
+
     for row in report["rows"]:
         baseline_throughput = row["throughput_variants"]["baseline"]
         advanced_throughput = row["throughput_variants"]["advanced"]
@@ -492,7 +546,7 @@ def markdown(report: dict) -> str:
         advanced_checked = "--" if advanced_throughput["checked"] is None else f"{advanced_throughput['checked']:.3f}"
         advanced_unchecked = "--" if advanced_throughput["unchecked"] is None else f"{advanced_throughput['unchecked']:.3f}"
         lines.append(
-            f"| {row['language']} | {row['baseline_label']} | {row['advanced_label']} | {row['workload']} | {row['baseline_code']['lines']} / {row['baseline_code']['chars']:,} | {row['advanced_code']['lines']} / {row['advanced_code']['chars']:,} | {row['baseline_to_advanced']['changed_line_slots']} / {row['baseline_to_advanced']['changed_chars']:,} | {row['baseline_to_base_mech']['changed_line_slots']} / {row['baseline_to_base_mech']['changed_chars']:,} | {row['advanced_to_base_mech']['changed_line_slots']} / {row['advanced_to_base_mech']['changed_chars']:,} | {baseline_checked} | {baseline_unchecked} | {advanced_checked} | {advanced_unchecked} |"
+            f"| {row['language']} | {row['baseline_label']} | {row['advanced_label']} | {row['workload']} | {row['baseline_code']['lines']} / {row['baseline_code']['chars']:,} | {row['advanced_code']['lines']} / {row['advanced_code']['chars']:,} | {row['baseline_to_advanced']['changed_line_slots']} / {row['baseline_to_advanced']['changed_chars']:,} | {row['baseline_to_base_mech']['changed_line_slots']} / {row['baseline_to_base_mech']['changed_chars']:,} | {row['advanced_to_base_mech']['changed_line_slots']} / {row['advanced_to_base_mech']['changed_chars']:,} | {baseline_checked} | {baseline_unchecked} | {advanced_checked} | {advanced_unchecked} | {maximum_cell(row, 'single_core')} | {maximum_cell(row, 'simd_multicore')} | {maximum_cell(row, 'gpu')} |"
         )
     lines += [
         "",
@@ -509,6 +563,7 @@ def markdown(report: dict) -> str:
         "## Interpretation",
         "",
         "`--` means that exact checked/unchecked baseline was not part of the retained evidence; it is not a zero-throughput result. Futhark baseline/advanced values differ only by worker count, while Halide and Mech keep the same source across both sides. The source pair and execution-boundary columns make those cases explicit.",
+        "Max columns are checked / unchecked M/s. Single-thread SIMD/JIT rows remain in the single-core column; the SIMD/multicore column requires an explicit worker, thread, pool, or parallel marker. The Mech unchecked GPU maximum includes the one-submit fused control (3,729.673 M/s), which is not per-turn observable; it is retained as a throughput ceiling, not as an equivalent synchronized GPU lane.",
         "",
     ]
     for row in report["rows"]:
@@ -576,9 +631,12 @@ def main() -> None:
     parser.add_argument("output_directory", type=Path)
     parser.add_argument("--strict-mech", type=Path)
     parser.add_argument("--strict-halide", type=Path)
+    parser.add_argument("--throughput-table", type=Path)
     args = parser.parse_args()
     strict_mech_path = args.strict_mech or (args.output_directory / "apple-m1-mech-halide-strict-2026-08-31.json")
     strict_halide_path = args.strict_halide or (args.output_directory / "apple-m1-halide-metal-strict-2026-08-31.json")
+    throughput_table_path = args.throughput_table or (args.output_directory / "parallel-ekf-throughput-table.md")
+    maxima = performance_maxima(throughput_table_path) if throughput_table_path.exists() else None
     report = build_report(
         json.loads(args.cross_language.read_text(encoding="utf-8")),
         json.loads(args.native.read_text(encoding="utf-8")),
@@ -589,6 +647,7 @@ def main() -> None:
         else None,
         json.loads(strict_mech_path.read_text(encoding="utf-8")) if strict_mech_path.exists() else None,
         json.loads(strict_halide_path.read_text(encoding="utf-8")) if strict_halide_path.exists() else None,
+        maxima,
     )
     args.output_directory.mkdir(parents=True, exist_ok=True)
     (args.output_directory / "parallel-ekf-source-diff-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

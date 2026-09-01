@@ -193,8 +193,8 @@
 <rect x="550" y="1303" width="730.1" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
 <text x="1289.1" y="1317" class="value">217.30</text>
 <text x="534" y="1348" text-anchor="end" class="label">Mech GPU, native Metal</text>
-<rect x="550" y="1334" width="737.6" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="1296.6" y="1348" class="value">241.03</text>
+<rect x="550" y="1334" width="747.4" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="1306.4" y="1348" class="value">275.53</text>
 <text x="534" y="1379" text-anchor="end" class="label">Mech GPU, unchecked repeated</text>
 <rect x="550" y="1365" width="765.1" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
 <text x="1324.1" y="1379" class="value">350.93</text>

@@ -174,11 +174,11 @@
 <text x="534" y="1131" text-anchor="end" class="label">Taichi GPU, native Metal</text>
 <rect x="550" y="1117" width="715.0" height="19" rx="3" fill="url(#gpu-taichi)" opacity="0.9"/>
 <text x="1274.0" y="1131" class="value">176.71</text>
-<text x="534" y="1162" text-anchor="end" class="label">Julia GPU, native Metal</text>
-<rect x="550" y="1148" width="722.9" height="19" rx="3" fill="url(#gpu-julia)" opacity="0.9"/>
-<text x="1281.9" y="1162" class="value">197.08</text>
-<text x="534" y="1193" text-anchor="end" class="label">Mech GPU, native Metal</text>
-<rect x="550" y="1179" width="739.2" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
-<text x="1298.2" y="1193" class="value">246.15</text>
+<text x="534" y="1162" text-anchor="end" class="label">Mech GPU, native Metal</text>
+<rect x="550" y="1148" width="719.5" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
+<text x="1278.5" y="1162" class="value">188.00</text>
+<text x="534" y="1193" text-anchor="end" class="label">Julia GPU, native Metal</text>
+<rect x="550" y="1179" width="722.9" height="19" rx="3" fill="url(#gpu-julia)" opacity="0.9"/>
+<text x="1281.9" y="1193" class="value">197.08</text>
 <text x="52" y="1250" class="muted" font-size="12">Rows are ordered by throughput from slowest to fastest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. Compilation, allocation, warmup, and final readback are excluded from the timed region.</text>
 </svg>

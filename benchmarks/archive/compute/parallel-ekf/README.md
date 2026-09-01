@@ -205,10 +205,12 @@ actual baseline-to-advanced edit surface rather than comparing file lengths:
 changed line slots, changed character slots, and each variant's distance from
 the base Mech `.mec`. The full matrix also records code-only line/character
 counts, data layout, turn boundary, validation contract, and checked/unchecked
-throughput for both sides of each pair. This makes the portability cost
-visible. Mech's high-level source delta is zero because the same program is
-compiled to every backend; the native-Metal implementation work is explicitly
-identified as backend support instead of being hidden as a source rewrite.
+throughput for both sides of each pair, plus the best checked/unchecked result
+for single-core, SIMD/multicore, and GPU execution classes. This makes both the
+portability cost and the performance ceiling visible. Mech's high-level source
+delta is zero because the same program is compiled to every backend; the
+native-Metal implementation work is explicitly identified as backend support
+instead of being hidden as a source rewrite.
 
 ![Parallel EKF source-edit cost](results/parallel-ekf-source-edit-cost.svg)
 
@@ -335,7 +337,8 @@ python3 plot_cross_language_comparison.py \
   --mech-persistent results/apple-m1-mech-persistent-simd-2026-08-31.json \
   --fused-references results/apple-m1-fused-reference-controls-2026-08-31.json \
   --julia-gpu results/apple-m1-julia-metal-2026-08-31.json \
-  --numpy-gpu results/apple-m1-numpy-gpu-2026-08-31.json
+  --numpy-gpu results/apple-m1-numpy-gpu-2026-08-31.json \
+  --strict-mech results/apple-m1-mech-halide-strict-2026-08-31.json
 
 python3 plot_mech_progression.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \

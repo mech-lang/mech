@@ -76,12 +76,20 @@ def load_rows(
     futhark_fixed: dict | None = None,
     mech_persistent: dict | None = None,
     fused_references: dict | None = None,
+    strict_mech: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
     printed_mech = _median_mech_throughputs(cross_language)
     runtime_rows = {row["label"]: row for row in runtime["rows"]}
     native_rows = {row["label"]: row for row in native["rows"]}
+    strict_mech_rows = (strict_mech or {}).get("rows", {})
+
+    def native_mech_metric(mode: str) -> float:
+        strict_row = strict_mech_rows.get(f"Mech native Metal {mode}")
+        if strict_row is not None:
+            return strict_row["median_million_turns_per_second"]
+        return native_rows[f"Mech native Metal, {mode}"]["throughput_millions"]
 
     def scalar(label: str, family: str, mode: str) -> dict[str, object]:
         key = f"{label} {mode}"
@@ -185,13 +193,13 @@ def load_rows(
             "label": "Mech GPU, native Metal",
             "family": "Mech",
             "mode": "checked",
-            "throughput": native_rows["Mech native Metal, checked"]["throughput_millions"],
+            "throughput": native_mech_metric("checked"),
         },
         {
             "label": "Mech GPU, native Metal",
             "family": "Mech",
             "mode": "unchecked",
-            "throughput": native_rows["Mech native Metal, unchecked"]["throughput_millions"],
+            "throughput": native_mech_metric("unchecked"),
         },
         scalar("Rust packed SIMD", "Rust", "checked"),
         scalar("Rust optimized fixed-shape", "Rust", "unchecked"),
@@ -567,6 +575,11 @@ def main() -> None:
         type=Path,
         help="fused worker-local Rust/Julia/Numba evidence JSON",
     )
+    parser.add_argument(
+        "--strict-mech",
+        type=Path,
+        help="strict retained-state Mech native Metal evidence JSON",
+    )
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
@@ -627,6 +640,11 @@ def main() -> None:
         if args.fused_references
         else None
     )
+    strict_mech = (
+        json.loads(args.strict_mech.read_text(encoding="utf-8"))
+        if args.strict_mech
+        else None
+    )
     rows = load_rows(
         cross_language,
         runtime,
@@ -643,6 +661,7 @@ def main() -> None:
         futhark_fixed,
         mech_persistent,
         fused_references,
+        strict_mech,
     )
     configuration = cross_language["configuration"]
     render(
