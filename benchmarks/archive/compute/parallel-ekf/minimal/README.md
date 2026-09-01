@@ -66,6 +66,12 @@ observable after the block; per-turn host observation requires the ordinary
 synchronous mode. Raw measurements are retained in
 `results/apple-m1-fused-reference-controls-2026-08-31.json`.
 
+Rust checked mode uses the same strict contract as Mech: it snapshots the
+publication boundary, rejects a block when any lane violates a predicate,
+restores the complete prior state, and returns turn/instance/constraint fault
+metadata. It does not selectively commit valid lanes from a partially invalid
+SIMD group.
+
 For example, the comparable controls are:
 
 ```text

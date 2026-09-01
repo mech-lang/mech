@@ -90,6 +90,13 @@ impl std::ops::Neg for V4 {
     }
 }
 type Matrix<const ROWS: usize, const COLS: usize> = [[V4; COLS]; ROWS];
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Fault {
+    turn: u32,
+    instance: usize,
+    constraint: u8,
+}
 #[inline(always)]
 fn transpose<const ROWS: usize, const COLS: usize>(
     input: &Matrix<ROWS, COLS>,
@@ -110,15 +117,17 @@ fn matmul<const ROWS: usize, const INNER: usize, const COLS: usize>(
     })
 }
 #[inline(always)]
-fn valid_candidate(state: &[V4; 3], covariance: &Matrix<3, 3>) -> [bool; LANES] {
-    let mut valid = [true; LANES];
+fn candidate_faults(state: &[V4; 3], covariance: &Matrix<3, 3>) -> [u8; LANES] {
+    let mut faults = [0; LANES];
     for value in state
         .iter()
         .copied()
         .chain(covariance.iter().flat_map(|row| row.iter().copied()))
     {
         for (index, finite) in value.is_finite().into_iter().enumerate() {
-            valid[index] &= finite;
+            if !finite && faults[index] == 0 {
+                faults[index] = 1;
+            }
         }
     }
     for diagonal in 0..3 {
@@ -127,7 +136,9 @@ fn valid_candidate(state: &[V4; 3], covariance: &Matrix<3, 3>) -> [bool; LANES] 
             .into_iter()
             .enumerate()
         {
-            valid[index] &= value > 0.0;
+            if value <= 0.0 && faults[index] == 0 {
+                faults[index] = 2;
+            }
         }
     }
     for row in 0..3 {
@@ -135,11 +146,15 @@ fn valid_candidate(state: &[V4; 3], covariance: &Matrix<3, 3>) -> [bool; LANES] 
             let left = covariance[row][column].lanes();
             let right = covariance[column][row].lanes();
             for index in 0..LANES {
-                valid[index] &= (left[index] - right[index]).abs() <= SYMMETRY_TOLERANCE;
+                if (left[index] - right[index]).abs() > SYMMETRY_TOLERANCE
+                    && faults[index] == 0
+                {
+                    faults[index] = 3;
+                }
             }
         }
     }
-    valid
+    faults
 }
 #[inline(always)]
 fn step_group(
@@ -149,7 +164,7 @@ fn step_group(
     angular_velocity: V4,
     bearing: V4,
     checked: bool,
-) {
+) -> [u8; LANES] {
     let theta = state[2];
     let (sin_theta, cos_theta) = theta.sin_cos();
     let distance = velocity * V4::splat(DT);
@@ -219,38 +234,14 @@ fn step_group(
     if !checked {
         *state = next_state;
         *covariance = next_covariance;
-        return;
+        return [0; LANES];
     }
-    let valid = valid_candidate(&next_state, &next_covariance);
-    if valid.into_iter().all(|lane| lane) {
+    let faults = candidate_faults(&next_state, &next_covariance);
+    if faults.into_iter().all(|constraint| constraint == 0) {
         *state = next_state;
         *covariance = next_covariance;
-    } else {
-        for lane in 0..LANES {
-            if valid[lane] {
-                for row in 0..3 {
-                    state[row] = V4::from_lane(state[row], next_state[row], lane);
-                }
-                for row in 0..3 {
-                    for column in 0..3 {
-                        covariance[row][column] = V4::from_lane(
-                            covariance[row][column],
-                            next_covariance[row][column],
-                            lane,
-                        );
-                    }
-                }
-            }
-        }
     }
-}
-impl V4 {
-    #[inline(always)]
-    fn from_lane(current: Self, replacement: Self, lane: usize) -> Self {
-        let mut values = current.lanes();
-        values[lane] = replacement.lanes()[lane];
-        Self(f32x4::new(values))
-    }
+    faults
 }
 fn inputs(instances: usize) -> (Vec<f32>, Vec<f32>, Vec<f32>) {
     let denominator = instances as f32;
@@ -287,8 +278,11 @@ fn dispatch(
     bearing: &[f32],
     turns: u32,
     checked: bool,
-) {
-    for _ in 0..turns {
+) -> Option<Fault> {
+    // Checked mode snapshots each publication boundary. A failed candidate
+    // rejects the whole turn and restores the previously published arrays.
+    for turn in 0..turns {
+        let checkpoint = checked.then(|| (state.clone(), covariance.clone()));
         for base in (0..velocity.len()).step_by(LANES) {
             let mut packed_state = std::array::from_fn(|row| V4::load(&state[row], base));
             let packed_covariance: [V4; 9] =
@@ -296,7 +290,7 @@ fn dispatch(
             let mut matrix = std::array::from_fn(|row| {
                 std::array::from_fn(|column| packed_covariance[row * 3 + column])
             });
-            step_group(
+            let faults = step_group(
                 &mut packed_state,
                 &mut matrix,
                 V4::load(velocity, base),
@@ -304,6 +298,17 @@ fn dispatch(
                 V4::load(bearing, base),
                 checked,
             );
+            if let Some(lane) = faults.iter().position(|constraint| *constraint != 0) {
+                if let Some((checkpoint_state, checkpoint_covariance)) = checkpoint {
+                    *state = checkpoint_state;
+                    *covariance = checkpoint_covariance;
+                }
+                return Some(Fault {
+                    turn,
+                    instance: base + lane,
+                    constraint: faults[lane],
+                });
+            }
             for row in 0..3 {
                 packed_state[row].store(&mut state[row], base);
             }
@@ -314,6 +319,7 @@ fn dispatch(
             }
         }
     }
+    None
 }
 
 fn dispatch_parallel_fused(
@@ -325,7 +331,7 @@ fn dispatch_parallel_fused(
     turns: u32,
     checked: bool,
     workers: usize,
-) {
+) -> Option<Fault> {
     let groups = velocity.len() / LANES;
     let workers = workers.max(1).min(groups.max(1));
     // Convert the disjoint buffer starts to integers before crossing the
@@ -342,14 +348,18 @@ fn dispatch_parallel_fused(
     let velocity_ptr = velocity.as_ptr() as usize;
     let angular_velocity_ptr = angular_velocity.as_ptr() as usize;
     let bearing_ptr = bearing.as_ptr() as usize;
-    std::thread::scope(|scope| {
+    // Checked mode uses one block-start checkpoint, matching Mech's fused
+    // boundary: no partial worker result becomes externally visible.
+    let checkpoints = checked.then(|| (state.clone(), covariance.clone()));
+    let faults = std::thread::scope(|scope| {
+        let mut handles = Vec::with_capacity(workers);
         for worker in 0..workers {
             let start_group = groups * worker / workers;
             let end_group = groups * (worker + 1) / workers;
             let group_count = end_group - start_group;
             let state_ptrs = state_ptrs;
             let covariance_ptrs = covariance_ptrs;
-            scope.spawn(move || {
+            handles.push(scope.spawn(move || {
                 let count = group_count * LANES;
                 let offset = start_group * LANES;
                 let state_slices = unsafe {
@@ -388,7 +398,8 @@ fn dispatch_parallel_fused(
                 let bearings = unsafe {
                     slice::from_raw_parts((bearing_ptr as *const f32).add(offset), count)
                 };
-                for group in 0..group_count {
+                let mut first_fault = None;
+                'groups: for group in 0..group_count {
                     let base = group * LANES;
                     let mut packed_state =
                         std::array::from_fn(|row| V4::load(state_slices[row], base));
@@ -400,8 +411,8 @@ fn dispatch_parallel_fused(
                     let velocity = V4::load(velocities, base);
                     let angular_velocity = V4::load(angular_velocities, base);
                     let bearing = V4::load(bearings, base);
-                    for _ in 0..turns {
-                        step_group(
+                    for turn in 0..turns {
+                        let faults = step_group(
                             &mut packed_state,
                             &mut matrix,
                             velocity,
@@ -409,6 +420,14 @@ fn dispatch_parallel_fused(
                             bearing,
                             checked,
                         );
+                        if let Some(lane) = faults.iter().position(|constraint| *constraint != 0) {
+                            first_fault = Some(Fault {
+                                turn,
+                                instance: offset + base + lane,
+                                constraint: faults[lane],
+                            });
+                            break 'groups;
+                        }
                     }
                     for row in 0..3 {
                         packed_state[row].store(state_slices[row], base);
@@ -422,9 +441,21 @@ fn dispatch_parallel_fused(
                         }
                     }
                 }
-            });
+                first_fault
+            }));
         }
+        handles
+            .into_iter()
+            .filter_map(|handle| handle.join().expect("Rust EKF worker must not panic"))
+            .min_by_key(|fault| (fault.turn, fault.instance))
     });
+    if let Some((checkpoint_state, checkpoint_covariance)) = checkpoints {
+        if faults.is_some() {
+            *state = checkpoint_state;
+            *covariance = checkpoint_covariance;
+        }
+    }
+    faults
 }
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
     env::args()
@@ -450,7 +481,7 @@ fn main() {
     let mut state = std::array::from_fn(|_| vec![0.0; instances]);
     let mut covariance = std::array::from_fn(|_| vec![0.0; instances]);
     reset(&mut state, &mut covariance);
-    if fused {
+    let warmup_fault = if fused {
         dispatch_parallel_fused(
             &mut state,
             &mut covariance,
@@ -460,7 +491,7 @@ fn main() {
             5,
             checked,
             workers,
-        );
+        )
     } else {
         dispatch(
             &mut state,
@@ -470,11 +501,17 @@ fn main() {
             &bearing,
             5,
             checked,
+        )
+    };
+    if let Some(fault) = warmup_fault {
+        panic!(
+            "warmup rejected candidate at turn {} instance {} constraint {}",
+            fault.turn, fault.instance, fault.constraint
         );
     }
     reset(&mut state, &mut covariance);
     let started = Instant::now();
-    if fused {
+    let fault = if fused {
         dispatch_parallel_fused(
             &mut state,
             &mut covariance,
@@ -484,7 +521,7 @@ fn main() {
             turns,
             checked,
             workers,
-        );
+        )
     } else {
         dispatch(
             &mut state,
@@ -494,6 +531,12 @@ fn main() {
             &bearing,
             turns,
             checked,
+        )
+    };
+    if let Some(fault) = fault {
+        panic!(
+            "timed run rejected candidate at turn {} instance {} constraint {}",
+            fault.turn, fault.instance, fault.constraint
         );
     }
     let elapsed = started.elapsed().as_secs_f64();
@@ -520,4 +563,36 @@ fn main() {
     println!("elapsed_s: {elapsed:.9}");
     println!("throughput: {throughput:.3}");
     println!("checksum: {checksum:.9}");
+    println!("faults: {}", u64::from(fault.is_some()));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn checked_fused_rejects_a_block_atomically() {
+        let instances = 8;
+        let (velocity, angular_velocity, mut bearing) = inputs(instances);
+        bearing[0] = f32::NAN;
+        let mut state = std::array::from_fn(|_| vec![0.0; instances]);
+        let mut covariance = std::array::from_fn(|_| vec![0.0; instances]);
+        reset(&mut state, &mut covariance);
+        let published_state = state.clone();
+        let published_covariance = covariance.clone();
+        let fault = dispatch_parallel_fused(
+            &mut state,
+            &mut covariance,
+            &velocity,
+            &angular_velocity,
+            &bearing,
+            3,
+            true,
+            2,
+        );
+        assert_eq!(fault.unwrap().instance, 0);
+        assert_eq!(fault.unwrap().constraint, 1);
+        assert_eq!(state, published_state);
+        assert_eq!(covariance, published_covariance);
+    }
 }

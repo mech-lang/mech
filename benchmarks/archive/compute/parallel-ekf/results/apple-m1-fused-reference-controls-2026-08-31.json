@@ -39,12 +39,15 @@
       "faults": 0
     },
     "rust_fused_checked": {
-      "label": "Rust packed SIMD, fused worker-local block checked (8 workers)",
+      "label": "Rust packed SIMD, fused worker-local block strict checked (8 workers)",
       "family": "Rust",
       "mode": "checked",
-      "throughput_millions": [138.169655, 140.858504, 139.702161],
+      "throughput_millions": [141.568074, 146.508742, 146.999240],
       "checksum": 133818339.815538272,
-      "faults": 0
+      "faults": 0,
+      "notes": [
+        "Checked rerun after changing the control to group-atomic publication with block-start rollback and fault metadata; invalid lanes no longer commit selectively."
+      ]
     },
     "julia_fused": {
       "label": "Julia SIMD.jl, fused worker-local block (8 workers)",

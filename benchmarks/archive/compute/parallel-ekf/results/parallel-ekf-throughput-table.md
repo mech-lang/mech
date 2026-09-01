@@ -35,8 +35,8 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 25 | Julia SIMD.jl, 8 workers | Julia | 106.341 |
 | 26 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 108.718 |
 | 27 | Julia SIMD.jl, fused worker-local block checked (8 workers) | Julia | 128.544 |
-| 28 | Rust packed SIMD, fused worker-local block checked (8 workers) | Rust | 139.702 |
-| 29 | Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers) | Mech | 145.573 |
+| 28 | Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers) | Mech | 145.573 |
+| 29 | Rust packed SIMD, fused worker-local block strict checked (8 workers) | Rust | 146.509 |
 | 30 | Mech GPU, WGPU per-turn | Mech | 152.972 |
 | 31 | Taichi optimized native Metal, checked | Taichi | 168.798 |
 | 32 | Taichi GPU, native Metal | Taichi | 176.710 |

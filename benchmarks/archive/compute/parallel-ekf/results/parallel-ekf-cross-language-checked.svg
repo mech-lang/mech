@@ -156,12 +156,12 @@
 <text x="534" y="945" text-anchor="end" class="label">Julia SIMD.jl, fused worker-local block checked (8 workers)</text>
 <rect x="550" y="931" width="691.7" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
 <text x="1250.7" y="945" class="value">128.54</text>
-<text x="534" y="976" text-anchor="end" class="label">Rust packed SIMD, fused worker-local block checked (8 workers)</text>
-<rect x="550" y="962" width="697.8" height="19" rx="3" fill="#dea584" opacity="0.9"/>
-<text x="1256.8" y="976" class="value">139.70</text>
-<text x="534" y="1007" text-anchor="end" class="label">Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers)</text>
-<rect x="550" y="993" width="700.8" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="1259.8" y="1007" class="value">145.57</text>
+<text x="534" y="976" text-anchor="end" class="label">Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers)</text>
+<rect x="550" y="962" width="700.8" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="1259.8" y="976" class="value">145.57</text>
+<text x="534" y="1007" text-anchor="end" class="label">Rust packed SIMD, fused worker-local block strict checked (8 workers)</text>
+<rect x="550" y="993" width="701.3" height="19" rx="3" fill="#dea584" opacity="0.9"/>
+<text x="1260.3" y="1007" class="value">146.51</text>
 <text x="534" y="1038" text-anchor="end" class="label">Mech GPU, WGPU per-turn</text>
 <rect x="550" y="1024" width="704.4" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
 <text x="1263.4" y="1038" class="value">152.97</text>
