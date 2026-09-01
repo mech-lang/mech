@@ -36,6 +36,7 @@ def load_rows(
     native: dict,
     historical: dict,
     mech_simd_jit: dict | None = None,
+    mech_trials: dict | None = None,
     strict_mech: dict | None = None,
 ) -> list[dict[str, object]]:
     scalar_values = printed_mech(cross, "mech_scalar_settings")
@@ -44,6 +45,7 @@ def load_rows(
     native_rows = {row["label"]: row for row in native["rows"]}
     old = historical["summary"]["mech_backends_million_ekf_turns_per_second"]
     optimized_rows = (mech_simd_jit or {}).get("rows", {})
+    trial_rows = (mech_trials or {}).get("rows", {})
     strict_rows = (strict_mech or {}).get("rows", {})
 
     def optimized(mode: str, fallback: float | None) -> float | None:
@@ -54,6 +56,14 @@ def load_rows(
 
     def row(label: str, checked: float | None, unchecked: float | None, note: str = "") -> dict[str, object]:
         return {"label": label, "checked": checked, "unchecked": unchecked, "note": note}
+
+    def trial(label: str, fallback: float | None = None) -> float | None:
+        evidence = trial_rows.get(label)
+        if isinstance(evidence, dict):
+            value = evidence.get("median_throughput_millions")
+            if value is not None:
+                return float(value)
+        return fallback
 
     return [
         row(
@@ -81,10 +91,10 @@ def load_rows(
             "500k filters x 40 synchronized turns",
         ),
         row(
-            "Cranelift SIMD-JIT, parallel checked",
-            backend_values.get("Mech Cranelift SIMD-JIT parallel"),
-            None,
-            "100k filters x 5; unchecked counterpart was fast-only",
+            "Cranelift SIMD-JIT, parallel",
+            trial("Mech Cranelift SIMD-JIT parallel", backend_values.get("Mech Cranelift SIMD-JIT parallel")),
+            trial("Mech Cranelift SIMD-JIT parallel unchecked"),
+            "100k filters x 5; per-turn publication",
         ),
         row(
             "Cranelift SIMD-JIT, strict resident",
@@ -94,68 +104,62 @@ def load_rows(
         ),
         row(
             "Cranelift SIMD-JIT, resident baseline",
-            scalar_values.get("Mech Cranelift SIMD-JIT"),
-            scalar_values.get("Mech Cranelift SIMD-JIT unchecked"),
+            trial("Mech Cranelift SIMD-JIT", scalar_values.get("Mech Cranelift SIMD-JIT")),
+            trial("Mech Cranelift SIMD-JIT unchecked", scalar_values.get("Mech Cranelift SIMD-JIT unchecked")),
             "100k filters x 5; generic resident lane",
         ),
         row(
             "Cranelift JIT, resident",
-            scalar_values.get("Mech Cranelift JIT"),
-            scalar_values.get("Mech Cranelift JIT unchecked"),
+            trial("Mech Cranelift JIT", scalar_values.get("Mech Cranelift JIT")),
+            trial("Mech Cranelift JIT unchecked", scalar_values.get("Mech Cranelift JIT unchecked")),
             "100k filters x 5; generic resident lane",
         ),
         row(
             "resident SIMD CPU (4 lanes)",
-            scalar_values.get("Mech SIMD"),
-            None,
-            "100k filters x 5; unchecked trial not retained",
-        ),
-        row(
-            "resident scalar CPU",
-            scalar_values.get("Mech scalar"),
-            scalar_values.get("Mech scalar unchecked"),
+            trial("Mech SIMD", scalar_values.get("Mech SIMD")),
+            trial("Mech SIMD unchecked"),
             "100k filters x 5",
         ),
         row(
-            "GPU API, checked one-turn",
-            backend_values.get("GPU checked one-turn"),
-            None,
-            "100k filters x 5; synchronous API boundary",
+            "resident scalar CPU",
+            trial("Mech scalar", scalar_values.get("Mech scalar")),
+            trial("Mech scalar unchecked", scalar_values.get("Mech scalar unchecked")),
+            "100k filters x 5",
         ),
         row(
-            "GPU API, checked repeated",
-            backend_values.get("GPU checked repeated"),
-            None,
-            "100k filters x 5; per-turn validation",
+            "Cranelift SIMD-JIT, fused block",
+            trial("Mech Cranelift SIMD-JIT parallel checked fused block"),
+            trial("Mech Cranelift SIMD-JIT parallel unchecked fused block"),
+            "100k filters x 5; one publication per block",
         ),
         row(
-            "GPU API, unchecked one-turn",
-            None,
-            backend_values.get("GPU unchecked one-turn"),
-            "100k filters x 5; ping-pong state",
+            "GPU API, one-turn",
+            trial("GPU checked one-turn", backend_values.get("GPU checked one-turn")),
+            trial("GPU unchecked one-turn", backend_values.get("GPU unchecked one-turn")),
+            "100k filters x 5; synchronous ping-pong boundary",
+        ),
+        row(
+            "GPU API, repeated dispatches",
+            trial("GPU checked repeated", backend_values.get("GPU checked repeated")),
+            trial("GPU unchecked repeated", backend_values.get("GPU unchecked repeated")),
+            "100k filters x 5; per-turn dispatch loop",
         ),
         row(
             "GPU API, unchecked in-place one-turn",
             None,
-            backend_values.get("GPU unchecked in-place one-turn"),
+            trial("GPU unchecked in-place one-turn", backend_values.get("GPU unchecked in-place one-turn")),
             "100k filters x 5; in-place state",
-        ),
-        row(
-            "GPU API, unchecked repeated dispatches",
-            None,
-            backend_values.get("GPU unchecked repeated"),
-            "100k filters x 5; device dispatch loop",
         ),
         row(
             "GPU API, unchecked in-place repeated",
             None,
-            backend_values.get("GPU unchecked in-place repeated"),
+            trial("GPU unchecked in-place repeated", backend_values.get("GPU unchecked in-place repeated")),
             "100k filters x 5; in-place dispatch loop",
         ),
         row(
             "GPU API, unchecked one-submit",
             None,
-            backend_values.get("GPU unchecked one-submit"),
+            trial("GPU unchecked one-submit", backend_values.get("GPU unchecked one-submit")),
             "100k filters x 5; device-resident ceiling",
         ),
         row(
@@ -258,6 +262,7 @@ def main() -> None:
     parser.add_argument("historical", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--mech-simd-jit", type=Path)
+    parser.add_argument("--mech-trials", type=Path)
     parser.add_argument("--strict-mech", type=Path)
     args = parser.parse_args()
     rows = load_rows(
@@ -267,6 +272,9 @@ def main() -> None:
         json.loads(args.historical.read_text(encoding="utf-8")),
         json.loads(args.mech_simd_jit.read_text(encoding="utf-8"))
         if args.mech_simd_jit
+        else None,
+        json.loads(args.mech_trials.read_text(encoding="utf-8"))
+        if args.mech_trials
         else None,
         json.loads(args.strict_mech.read_text(encoding="utf-8"))
         if args.strict_mech

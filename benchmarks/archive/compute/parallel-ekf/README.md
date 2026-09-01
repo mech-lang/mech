@@ -58,6 +58,7 @@ git switch --track origin/codex/mech-program-gpu
 | NumPy-compatible GPU capability probe | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_gpu.py` |
 | Minimal cross-control runner | `benchmarks/archive/compute/parallel-ekf/minimal/measure.py` |
 | PUC Lua baseline/advanced runner | `benchmarks/archive/compute/parallel-ekf/minimal/measure_lua.py` |
+| Mech execution-trial runner | `benchmarks/archive/compute/parallel-ekf/measure_mech_trials.py` |
 | Compact-source equivalence check | `benchmarks/archive/compute/parallel-ekf/minimal/check_sources.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
@@ -72,6 +73,7 @@ git switch --track origin/codex/mech-program-gpu
 | Mech persistent SIMD/JIT evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-persistent-simd-2026-08-31.json` |
 | Mech strict resident SIMD-JIT optimization evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json` |
 | Mech strict resident SIMD-JIT optimization summary | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.md` |
+| Mech progression-trial evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-progression-2026-09-01.json` |
 | Fused Rust/Julia/Numba reference evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json` |
 | Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
 | Pure-Python scalar evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-pure-python-2026-09-01.json` |
@@ -239,10 +241,10 @@ The Mech-only progression view keeps checked and unchecked bars together while
 sorting every retained execution trial by checked throughput on a logarithmic
 axis. It includes resident scalar/SIMD, Cranelift JIT and SIMD-JIT variants,
 the eight-worker block, synchronized WGPU, direct and strict native Metal,
-the API boundary trials, and the historical fused device batch. Fast-arithmetic
-controls are excluded. The fused batch is marked historical because it has no
-per-turn publication boundary and therefore is not an apples-to-apples
-replacement for the synchronized rows.
+the API boundary trials, the checked/unchecked fused CPU blocks, and the
+historical fused device batch. Fast-arithmetic controls are excluded. The fused
+batch is marked historical because it has no per-turn publication boundary and
+therefore is not an apples-to-apples replacement for the synchronized rows.
 
 ![Mech EKF execution-lane progression](results/parallel-ekf-mech-progression.svg)
 
@@ -429,6 +431,7 @@ python3 plot_mech_progression.py \
   results/apple-m1-2026-08-14.json \
   results/parallel-ekf-mech-progression.svg \
   --mech-simd-jit results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json \
+  --mech-trials results/apple-m1-mech-progression-2026-09-01.json \
   --strict-mech results/apple-m1-mech-halide-strict-2026-08-31.json
 
 python3 source_diff_report.py \
