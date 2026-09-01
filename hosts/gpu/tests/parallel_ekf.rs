@@ -1201,7 +1201,7 @@ fn simd_jit_matches_scalar_and_retains_state_on_fault() {
     }
     assert_eq!(batched_unchecked.attempted_turns(), 3);
 
-    let mut invalid_inputs = inputs;
+    let mut invalid_inputs = inputs.clone();
     invalid_inputs
         .get_mut("bearing")
         .unwrap()
@@ -1228,6 +1228,33 @@ fn simd_jit_matches_scalar_and_retains_state_on_fault() {
     ));
     assert_eq!(parallel_checked.state(), &parallel_published);
     assert_eq!(parallel_checked.fault_count(), 1);
+
+    let mut fused_checked = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    fused_checked
+        .dispatch_turns_parallel_checked_fused(3, 2)
+        .unwrap();
+    for (slot, expected) in scalar.state() {
+        assert_close(expected, &fused_checked.state()[slot], 1.0e-4);
+    }
+    assert_eq!(fused_checked.attempted_turns(), 3);
+
+    let mut fused_fault = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    fused_fault
+        .dispatch_turns_parallel_checked_fused(2, 2)
+        .unwrap();
+    let fused_published = fused_fault.state().clone();
+    let mut invalid_update = BTreeMap::new();
+    invalid_update.insert("bearing".to_owned(), vec![f32::NAN; 8]);
+    fused_fault.update_inputs(&invalid_update).unwrap();
+    assert!(matches!(
+        fused_fault
+            .dispatch_turns_parallel_checked_fused(3, 2)
+            .unwrap_err(),
+        BatchedExecutionError::Integrity(_)
+    ));
+    assert_eq!(fused_fault.state(), &fused_published);
+    assert_eq!(fused_fault.attempted_turns(), 3);
+    assert_eq!(fused_fault.fault_count(), 1);
 }
 
 #[cfg(feature = "native")]

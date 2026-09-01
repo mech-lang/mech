@@ -158,6 +158,19 @@ from `results/apple-m1-fused-reference-controls-2026-08-31.json`. They expose
 the final state after the block; intermediate values still require an explicit
 synchronization/checkpoint boundary.
 
+The Rust checked row is a useful arithmetic control, but it is not the same
+runtime contract as Mech checked. It evaluates the finite/diagonal/symmetry
+predicates and keeps invalid lanes at their previous values, yet it does not
+return a structured fault, preserve an atomic block publication, or retain a
+host-visible fault record. Mech's `dispatch_turns_parallel_checked_fused`
+control now uses one block-start checkpoint: a successful block is published at
+the boundary, while any fault restores the checkpoint and returns the normal
+integrity error with its attempted turn. This makes the checked comparison
+explicit: the Rust result is both efficient and relaxed at the runtime boundary,
+not evidence that the full Mech contract costs 139.702 M turns/s. The new Mech
+control measured **139.668--147.381 M/s** across three standalone Apple M1
+runs (median **145.573 M/s**) at the same 500,000-filter/40-turn boundary.
+
 Plain PUC Lua now runs the same fixed-shape flat source as LuaJIT. Its table
 arrays are explicitly zero-initialized so the warmup has the same defined state
 as LuaJIT's FFI arrays. The raw three-sample medians are recorded in

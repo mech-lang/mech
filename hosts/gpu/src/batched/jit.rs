@@ -48,9 +48,15 @@ enum ParallelWorkerCommand {
     Shutdown,
 }
 
+#[derive(Clone, Copy, Debug)]
+struct ParallelWorkerResult {
+    packed_fault: u64,
+    fault_turn: u32,
+}
+
 struct ParallelWorker {
     command: Sender<ParallelWorkerCommand>,
-    result: Receiver<u64>,
+    result: Receiver<ParallelWorkerResult>,
     handle: Option<thread::JoinHandle<()>>,
 }
 
@@ -117,12 +123,15 @@ impl ParallelWorkerPool {
                     while let Ok(command) = commands.recv() {
                         match command {
                             ParallelWorkerCommand::Run { turns } => {
-                                let mut packed_fault = 0;
-                                for _ in 0..turns {
+                                let mut result = ParallelWorkerResult {
+                                    packed_fault: 0,
+                                    fault_turn: turns,
+                                };
+                                for turn_index in 0..turns {
                                     // SAFETY: this worker owns a disjoint SIMD
                                     // group range and all backing buffers stay
                                     // live until the pool is dropped.
-                                    packed_fault = unsafe {
+                                    let packed_fault = unsafe {
                                         turn(
                                             input_pointers.as_ptr(),
                                             state_pointers.as_ptr(),
@@ -132,11 +141,15 @@ impl ParallelWorkerPool {
                                         )
                                     };
                                     if packed_fault != 0 {
+                                        result = ParallelWorkerResult {
+                                            packed_fault,
+                                            fault_turn: turn_index,
+                                        };
                                         break;
                                     }
                                     mem::swap(&mut state_pointers, &mut next_state_pointers);
                                 }
-                                if results.send(packed_fault).is_err() {
+                                if results.send(result).is_err() {
                                     break;
                                 }
                             }
@@ -158,7 +171,7 @@ impl ParallelWorkerPool {
         self.workers.len()
     }
 
-    fn run(&self, turns: u32) -> Result<u64, String> {
+    fn run(&self, turns: u32) -> Result<ParallelWorkerResult, String> {
         for worker in &self.workers {
             worker
                 .command
@@ -175,9 +188,15 @@ impl ParallelWorkerPool {
             })
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .filter(|fault| *fault != 0)
-            .min()
-            .map_or(Ok(0), Ok)
+            .filter(|result| result.packed_fault != 0)
+            .min_by_key(|result| (result.fault_turn, result.packed_fault))
+            .map_or(
+                Ok(ParallelWorkerResult {
+                    packed_fault: 0,
+                    fault_turn: turns,
+                }),
+                Ok,
+            )
     }
 }
 
@@ -226,6 +245,7 @@ pub struct BatchedJitSimdCpuSession {
     state: BTreeMap<CellSlotId, Vec<f32>>,
     packed_state: BTreeMap<CellSlotId, Vec<f32>>,
     packed_next_state: BTreeMap<CellSlotId, Vec<f32>>,
+    packed_checkpoint_state: Option<BTreeMap<CellSlotId, Vec<f32>>>,
     logical_state_dirty: bool,
     input_pointers: Vec<*const f32>,
     state_pointers: Vec<*mut f32>,
@@ -388,7 +408,7 @@ impl FixedShapeKernel {
                 (input.slot, packed)
             })
             .collect();
-        let packed_state = self
+        let packed_state: BTreeMap<CellSlotId, Vec<f32>> = self
             .states
             .iter()
             .map(|descriptor| {
@@ -403,6 +423,12 @@ impl FixedShapeKernel {
             .iter()
             .map(|descriptor| (descriptor.slot, vec![0.0; state[&descriptor.slot].len()]))
             .collect();
+        let packed_checkpoint_state = checked.then(|| {
+            packed_state
+                .iter()
+                .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
+                .collect()
+        });
         let kernel = NativeSimdKernel::compile(self, checked, &input_broadcast, fast_math)?;
         let input_pointers = self
             .inputs
@@ -421,6 +447,7 @@ impl FixedShapeKernel {
             state,
             packed_state,
             packed_next_state,
+            packed_checkpoint_state,
             logical_state_dirty: false,
             input_pointers,
             state_pointers: Vec::with_capacity(self.states.len()),
@@ -638,12 +665,13 @@ impl BatchedJitSimdCpuSession {
         self.ensure_parallel_pool(groups, workers)?;
         for _ in 0..turns {
             let attempted_turn = self.faults.next_turn();
-            let packed_fault = self
+            let worker_result = self
                 .parallel_pool
                 .as_ref()
                 .expect("parallel worker pool initialized")
                 .run(1)
                 .map_err(BatchedExecutionError::Native)?;
+            let packed_fault = worker_result.packed_fault;
             if let Some(fault) = self
                 .program
                 .failed_packed_constraint(packed_fault, attempted_turn)
@@ -658,6 +686,103 @@ impl BatchedJitSimdCpuSession {
             mem::swap(&mut self.packed_state, &mut self.packed_next_state);
             self.logical_state_dirty = true;
         }
+        Ok(())
+    }
+
+    /// Runs a checked turn block with one host synchronization at its end.
+    ///
+    /// Each worker validates every candidate turn in the native kernel, while
+    /// the session keeps a block-start checkpoint. A successful block is
+    /// published once; a fault restores that checkpoint, records the exact
+    /// attempted turn, drops the worker pool (its private pointer orientation
+    /// may differ after a partial block), and returns the normal structured
+    /// integrity error. Intermediate turns are intentionally not observable.
+    pub fn dispatch_turns_parallel_checked_fused(
+        &mut self,
+        turns: u32,
+        workers: usize,
+    ) -> Result<(), BatchedExecutionError> {
+        if turns == 0 {
+            return Err(BatchedExecutionError::ZeroTurns);
+        }
+        if !self.checked {
+            return Err(BatchedExecutionError::Native(
+                "checked fused parallel dispatch requires a checked session".to_owned(),
+            ));
+        }
+        if workers <= 1 {
+            return self.dispatch_turns(turns);
+        }
+        let groups = self.program.instances as usize / SIMD_JIT_LANES;
+        if groups == 0 {
+            return Err(BatchedExecutionError::Native(
+                "parallel SIMD JIT requires at least one instance group".to_owned(),
+            ));
+        }
+        let workers = workers.min(groups);
+        self.ensure_parallel_pool(groups, workers)?;
+        for descriptor in &self.program.states {
+            self.packed_checkpoint_state
+                .as_mut()
+                .expect("checked sessions have a packed checkpoint")
+                .get_mut(&descriptor.slot)
+                .expect("packed checkpoint descriptor exists")
+                .clone_from(&self.packed_state[&descriptor.slot]);
+        }
+        let block_start = self.faults.attempted_turns();
+        let worker_result = match self
+            .parallel_pool
+            .as_ref()
+            .expect("parallel worker pool initialized")
+            .run(turns)
+        {
+            Ok(result) => result,
+            Err(error) => {
+                for descriptor in &self.program.states {
+                    self.packed_state
+                        .get_mut(&descriptor.slot)
+                        .expect("packed state descriptor exists")
+                        .clone_from(
+                            &self
+                                .packed_checkpoint_state
+                                .as_ref()
+                                .expect("checked sessions have a packed checkpoint")
+                                [&descriptor.slot],
+                        );
+                }
+                self.parallel_pool.take();
+                return Err(BatchedExecutionError::Native(error));
+            }
+        };
+        if let Some(fault) = self.program.failed_packed_constraint(
+            worker_result.packed_fault,
+            block_start.saturating_add(worker_result.fault_turn as u64 + 1),
+        ) {
+            for descriptor in &self.program.states {
+                self.packed_state
+                    .get_mut(&descriptor.slot)
+                    .expect("packed state descriptor exists")
+                    .clone_from(
+                        &self
+                            .packed_checkpoint_state
+                            .as_ref()
+                            .expect("checked sessions have a packed checkpoint")[&descriptor.slot],
+                    );
+            }
+            self.parallel_pool.take();
+            for _ in 0..=worker_result.fault_turn {
+                self.faults.next_turn();
+            }
+            return Err(self.faults.record(fault));
+        }
+        for _ in 0..turns {
+            self.faults.next_turn();
+        }
+        if turns % 2 == 1 {
+            mem::swap(&mut self.state_pointers, &mut self.next_state_pointers);
+            mem::swap(&mut self.packed_state, &mut self.packed_next_state);
+        }
+        self.logical_state_dirty = true;
         Ok(())
     }
 
@@ -689,12 +814,13 @@ impl BatchedJitSimdCpuSession {
         }
         let workers = workers.min(groups);
         self.ensure_parallel_pool(groups, workers)?;
-        let packed_fault = self
+        let worker_result = self
             .parallel_pool
             .as_ref()
             .expect("parallel worker pool initialized")
             .run(turns)
             .map_err(BatchedExecutionError::Native)?;
+        let packed_fault = worker_result.packed_fault;
         if let Some(fault) = self.program.failed_packed_constraint(
             packed_fault,
             self.faults.attempted_turns().saturating_add(1),

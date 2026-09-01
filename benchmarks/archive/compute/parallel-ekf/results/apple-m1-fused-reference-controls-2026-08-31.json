@@ -18,6 +18,18 @@
     ]
   },
   "rows": {
+    "mech_fused_checked": {
+      "label": "Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers)",
+      "family": "Mech",
+      "mode": "checked",
+      "throughput_millions": [139.668, 145.573, 147.381],
+      "checksum": 133818338.381598204,
+      "faults": 0,
+      "notes": [
+        "Three standalone Apple M1 release runs at 500,000 filters x 40 turns; one host synchronization at the block boundary.",
+        "The block-start packed-state checkpoint restores the published state before returning a structured integrity fault."
+      ]
+    },
     "rust_fused": {
       "label": "Rust packed SIMD, fused worker-local block (8 workers)",
       "family": "Rust",

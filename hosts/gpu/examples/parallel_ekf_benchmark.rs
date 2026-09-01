@@ -323,6 +323,26 @@ fn main() {
         "batched parallel unchecked SIMD-JIT result differs from single-thread unchecked result by {jit_simd_parallel_unchecked_fast_block_max_error}"
     );
 
+    let mut jit_simd_parallel_checked_fused_warmup = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    jit_simd_parallel_checked_fused_warmup
+        .dispatch_turns_parallel_checked_fused(5, parallel_workers)
+        .unwrap();
+    let mut jit_simd_parallel_checked_fused = program.prepare_jit_simd_cpu(&inputs).unwrap();
+    let jit_simd_parallel_checked_fused_started = Instant::now();
+    jit_simd_parallel_checked_fused
+        .dispatch_turns_parallel_checked_fused(cpu_turns, parallel_workers)
+        .unwrap();
+    let jit_simd_parallel_checked_fused_per_turn =
+        jit_simd_parallel_checked_fused_started.elapsed() / cpu_turns;
+    let jit_simd_parallel_checked_fused_checksum =
+        state_checksum(jit_simd_parallel_checked_fused.state());
+    let jit_simd_parallel_checked_fused_max_error =
+        maximum_error(cpu.state(), jit_simd_parallel_checked_fused.state());
+    assert!(
+        jit_simd_parallel_checked_fused_max_error <= 1.0e-4,
+        "checked fused parallel SIMD-JIT result differs from scalar CPU lowering by {jit_simd_parallel_checked_fused_max_error}"
+    );
+
     let jit_validation_overhead =
         (jit_per_turn.as_secs_f64() / jit_unchecked_per_turn.as_secs_f64() - 1.0) * 100.0;
     let jit_checked_fast_validation_overhead =
@@ -537,6 +557,17 @@ fn main() {
     println!(
         "Mech Cranelift SIMD-JIT parallel unchecked fast block CPU ({parallel_workers} workers): {:.3} ms/turn ({cpu_turns} turns)",
         millis(jit_simd_parallel_unchecked_fast_block_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT parallel checked fused block CPU ({parallel_workers} workers): {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_simd_parallel_checked_fused_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT parallel checked fused block throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_simd_parallel_checked_fused_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT parallel checked fused block checksum: {jit_simd_parallel_checked_fused_checksum:.9}"
     );
     println!(
         "resident GPU, checked one-turn API call: {:.3} ms/turn ({single_gpu_turns} turns)",
