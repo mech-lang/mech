@@ -979,7 +979,7 @@
       "title": "Baseline",
       "description": "The most direct scalar or fixed-shape control retained for each language.",
       "workload": "10,000 filters x 20 turns where available",
-      "note": "Historical mixed view retained for compatibility. Use the interpreted and compiled baseline views for like-for-like execution-boundary comparisons."
+      "note": "Historical mixed view retained for compatibility. Interpreted rows are hatched and compiled rows are solid; checked and unchecked remain separate by opacity. Use the interpreted and compiled baseline views for like-for-like execution-boundary comparisons."
     },
     "single-core": {
       "title": "Single-core",

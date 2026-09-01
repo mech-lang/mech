@@ -2,7 +2,7 @@
 
 The most direct scalar or fixed-shape control retained for each language. Workload: **10,000 filters x 20 turns where available**. Rows are ordered by checked throughput, fastest to slowest; checked and unchecked are separate columns; source edits are measured against each language's baseline source.
 
-**Scope note:** Historical mixed view retained for compatibility. Use the interpreted and compiled baseline views for like-for-like execution-boundary comparisons.
+**Scope note:** Historical mixed view retained for compatibility. Interpreted rows are hatched and compiled rows are solid; checked and unchecked remain separate by opacity. Use the interpreted and compiled baseline views for like-for-like execution-boundary comparisons.
 
 | Language | Representative source | Code L/C | Edit vs baseline L/C | Checked M/s | Unchecked M/s | Result |
 | --- | --- | ---: | ---: | ---: | ---: | --- |

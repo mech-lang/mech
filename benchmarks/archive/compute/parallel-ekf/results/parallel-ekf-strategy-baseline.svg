@@ -1,10 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="863" viewBox="0 0 1500 863">
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="845" viewBox="0 0 1500 845">
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: Baseline throughput</text>
-<text x="38" y="69" class="muted" font-size="15">The most direct scalar or fixed-shape control retained for each language. Checked is solid; unchecked is lighter. Checked throughput is ranked fastest to slowest. Linear M/s axis.</text>
+<text x="38" y="69" class="muted" font-size="15">The most direct scalar or fixed-shape control retained for each language. Checked is solid; unchecked is lighter. Checked throughput is ranked fastest to slowest. Linear M/s axis. Interpreted rows are hatched; compiled rows are solid.</text>
+<defs>
+<pattern id="baseline-interpreted-key" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="#dce5f2"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>
+<pattern id="baseline-interpreted-lua" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="#000080"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>
+<pattern id="baseline-interpreted-mech" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="#f4c430"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>
+<pattern id="baseline-interpreted-numpy" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="#4d77cf"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>
+<pattern id="baseline-interpreted-python" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="#4d77cf"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>
+</defs>
 <rect x="38" y="87" width="18" height="12" fill="#dce5f2"/><text x="64" y="98" class="muted" font-size="13">checked</text>
 <rect x="145" y="87" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="98" class="muted" font-size="13">unchecked</text>
+<rect x="270" y="87" width="18" height="12" fill="#dce5f2"/><text x="296" y="98" class="muted" font-size="13">compiled</text>
+<rect x="386" y="87" width="18" height="12" fill="url(#baseline-interpreted-key)"/><text x="412" y="98" class="muted" font-size="13">interpreted</text>
 <line x1="300.0" y1="110" x2="300.0" y2="675" class="grid"/>
 <text x="300.0" y="699" text-anchor="middle" class="muted" font-size="12">0</text>
 <line x1="520.0" y1="110" x2="520.0" y2="675" class="grid"/>
@@ -48,31 +57,31 @@
 <rect x="300" y="429" width="76.5" height="16" rx="2" fill="#000080" opacity="0.42"/>
 <text x="383.5" y="442" class="value">1.740</text>
 <text x="286" y="479" text-anchor="end" class="label">Mech</text>
-<rect x="300" y="459" width="40.4" height="16" rx="2" fill="#f4c430" opacity="0.92"/>
+<rect x="300" y="459" width="40.4" height="16" rx="2" fill="url(#baseline-interpreted-mech)" opacity="0.92"/>
 <text x="347.4" y="472" class="value">0.919</text>
-<rect x="300" y="484" width="45.3" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
+<rect x="300" y="484" width="45.3" height="16" rx="2" fill="url(#baseline-interpreted-mech)" opacity="0.42"/>
 <text x="352.3" y="497" class="value">1.029</text>
 <text x="286" y="534" text-anchor="end" class="label">Lua</text>
-<rect x="300" y="514" width="24.8" height="16" rx="2" fill="#000080" opacity="0.92"/>
+<rect x="300" y="514" width="24.8" height="16" rx="2" fill="url(#baseline-interpreted-lua)" opacity="0.92"/>
 <text x="331.8" y="527" class="value">0.564</text>
-<rect x="300" y="539" width="36.8" height="16" rx="2" fill="#000080" opacity="0.42"/>
+<rect x="300" y="539" width="36.8" height="16" rx="2" fill="url(#baseline-interpreted-lua)" opacity="0.42"/>
 <text x="343.8" y="552" class="value">0.836</text>
 <text x="286" y="589" text-anchor="end" class="label">Python</text>
-<rect x="300" y="569" width="10.8" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
+<rect x="300" y="569" width="10.8" height="16" rx="2" fill="url(#baseline-interpreted-python)" opacity="0.92"/>
 <text x="317.8" y="582" class="value">0.246</text>
-<rect x="300" y="594" width="15.7" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
+<rect x="300" y="594" width="15.7" height="16" rx="2" fill="url(#baseline-interpreted-python)" opacity="0.42"/>
 <text x="322.7" y="607" class="value">0.356</text>
 <text x="286" y="644" text-anchor="end" class="label">NumPy</text>
-<rect x="300" y="624" width="2.0" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
+<rect x="300" y="624" width="2.0" height="16" rx="2" fill="url(#baseline-interpreted-numpy)" opacity="0.92"/>
 <text x="308.8" y="637" class="value">0.040</text>
-<rect x="300" y="649" width="2.3" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
+<rect x="300" y="649" width="2.3" height="16" rx="2" fill="url(#baseline-interpreted-numpy)" opacity="0.42"/>
 <text x="309.3" y="662" class="value">0.053</text>
-<text x="38" y="720" class="muted" font-size="12">Bars show only languages with at least one measured result; checked is solid and unchecked is lighter.</text>
+<text x="38" y="720" class="muted" font-size="12">Checked is solid and unchecked is lighter; interpreted baseline rows are hatched.</text>
 <g aria-label="Test machine">
-<rect x="1010" y="773" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
-<text x="1022" y="789" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
-<text x="1022" y="804" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
-<text x="1022" y="819" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
-<text x="1022" y="834" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
+<rect x="1010" y="755" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
+<text x="1022" y="771" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
+<text x="1022" y="786" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
+<text x="1022" y="801" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
+<text x="1022" y="816" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
 </g>
 </svg>

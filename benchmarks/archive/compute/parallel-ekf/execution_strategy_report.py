@@ -25,6 +25,12 @@ HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 LANGUAGES = ("Mech", "Rust", "NumPy", "Python", "Julia", "LuaJIT", "Lua", "Taichi", "Halide", "Futhark")
 
+# The historical baseline intentionally mixes execution boundaries.  Keep the
+# distinction visible in that chart: interpreter-driven controls are hatched,
+# while compiled/JIT/AOT controls remain solid.  The split baseline charts do
+# not need this overlay because their title already identifies the boundary.
+INTERPRETED_BASELINE_LANGUAGES = {"Mech", "NumPy", "Python", "Lua"}
+
 STRATEGIES = {
     "interpreted-baseline": {
         "title": "Interpreted baseline",
@@ -44,7 +50,7 @@ STRATEGIES = {
         "title": "Baseline",
         "description": "The most direct scalar or fixed-shape control retained for each language.",
         "workload": "10,000 filters x 20 turns where available",
-        "note": "Historical mixed view retained for compatibility. Use the interpreted and compiled baseline views for like-for-like execution-boundary comparisons.",
+        "note": "Historical mixed view retained for compatibility. Interpreted rows are hatched and compiled rows are solid; checked and unchecked remain separate by opacity. Use the interpreted and compiled baseline views for like-for-like execution-boundary comparisons.",
     },
     "single-core": {
         "title": "Single-core",
@@ -582,7 +588,10 @@ def svg(report: dict, strategy: str) -> str:
     maximum = tick_step * math.ceil(maximum_value / tick_step)
     width, left, right, row_height = 1500, 300, 100, 55
     top = 145 if STRATEGIES[strategy].get("chart_note") else 125
-    bottom = 170 + 18 * (1 + len(omitted))
+    # The chart stays focused on measured bars.  Unavailable controls remain in
+    # the Markdown/JSON notes rather than consuming chart space; the machine
+    # specification box occupies the freed footer area.
+    bottom = 170
     height = top + row_height * len(rows) + bottom
 
     def esc(value: object) -> str:
@@ -591,13 +600,24 @@ def svg(report: dict, strategy: str) -> str:
     def x(value: float) -> float:
         return left + value / maximum * (width - left - right)
 
+    def slug(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+
+    mixed_baseline = strategy == "baseline"
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: {esc(STRATEGIES[strategy]["title"])} throughput</text>',
-        f'<text x="38" y="69" class="muted" font-size="15">{esc(STRATEGIES[strategy]["description"])} Checked is solid; unchecked is lighter. Checked throughput is ranked fastest to slowest. Linear M/s axis.</text>',
+        f'<text x="38" y="69" class="muted" font-size="15">{esc(STRATEGIES[strategy]["description"])} Checked is solid; unchecked is lighter. Checked throughput is ranked fastest to slowest. Linear M/s axis.{" Interpreted rows are hatched; compiled rows are solid." if mixed_baseline else ""}</text>',
     ]
+    if mixed_baseline:
+        lines.append('<defs>')
+        lines.append('<pattern id="baseline-interpreted-key" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="#dce5f2"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>')
+        for language in sorted(INTERPRETED_BASELINE_LANGUAGES):
+            color = COLORS[language]
+            lines.append(f'<pattern id="baseline-interpreted-{slug(language)}" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="{color}"/><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="#080c14" stroke-width="2" stroke-opacity="0.65"/></pattern>')
+        lines.append('</defs>')
     if STRATEGIES[strategy].get("chart_note"):
         lines.append(f'<text x="38" y="91" class="muted" font-size="13">{esc(STRATEGIES[strategy]["chart_note"])}</text>')
         legend_y = 108
@@ -607,6 +627,11 @@ def svg(report: dict, strategy: str) -> str:
         f'<rect x="38" y="{legend_y}" width="18" height="12" fill="#dce5f2"/><text x="64" y="{legend_y + 11}" class="muted" font-size="13">checked</text>',
         f'<rect x="145" y="{legend_y}" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="{legend_y + 11}" class="muted" font-size="13">unchecked</text>',
     ])
+    if mixed_baseline:
+        lines.extend([
+            f'<rect x="270" y="{legend_y}" width="18" height="12" fill="#dce5f2"/><text x="296" y="{legend_y + 11}" class="muted" font-size="13">compiled</text>',
+            f'<rect x="386" y="{legend_y}" width="18" height="12" fill="url(#baseline-interpreted-key)"/><text x="412" y="{legend_y + 11}" class="muted" font-size="13">interpreted</text>',
+        ])
     tick = 0.0
     while tick <= maximum * 1.0001:
         tick_x = x(tick)
@@ -623,12 +648,12 @@ def svg(report: dict, strategy: str) -> str:
                 lines.append(f'<text x="{left + 8}" y="{y + offset + 14}" class="muted" font-size="12">N/A</text>')
                 continue
             end = x(value)
-            lines.append(f'<rect x="{left}" y="{y + offset}" width="{max(2, end - left):.1f}" height="16" rx="2" fill="{color}" opacity="{0.92 if mode == "checked" else 0.42}"/>')
+            fill = f'url(#baseline-interpreted-{slug(row["language"])})' if mixed_baseline and row["language"] in INTERPRETED_BASELINE_LANGUAGES else color
+            lines.append(f'<rect x="{left}" y="{y + offset}" width="{max(2, end - left):.1f}" height="16" rx="2" fill="{fill}" opacity="{0.92 if mode == "checked" else 0.42}"/>')
             lines.append(f'<text x="{min(end + 7, width - right - 35):.1f}" y="{y + offset + 13}" class="value">{value:.3f}</text>')
     footer_y = height - bottom + 45
-    lines.append(f'<text x="38" y="{footer_y}" class="muted" font-size="12">Bars show only languages with at least one measured result; checked is solid and unchecked is lighter.</text>')
-    for index, item in enumerate(omitted, start=1):
-        lines.append(f'<text x="38" y="{footer_y + 18 * index}" class="muted" font-size="12">{esc(item["language"])}: {esc(item["reason"])}.</text>')
+    footer_note = "Checked is solid and unchecked is lighter; interpreted baseline rows are hatched." if mixed_baseline else "Checked is solid and unchecked is lighter."
+    lines.append(f'<text x="38" y="{footer_y}" class="muted" font-size="12">{footer_note}</text>')
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
