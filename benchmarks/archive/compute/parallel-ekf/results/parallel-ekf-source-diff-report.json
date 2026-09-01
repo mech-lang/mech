@@ -11,7 +11,7 @@
     "lua": "2026-08-31",
     "minimal": "2026-08-31T18:45:52.116140-04:00"
   },
-  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. The max single-core, SIMD/multicore, and GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker. This is an edit-size measure, not a claim about semantic difficulty.",
+  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. The max single-core, SIMD/multicore, and synchronized GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker; multi-turn/fused GPU rows are retained separately as gpu_batched maxima. This is an edit-size measure, not a claim about semantic difficulty.",
   "mech_backend_support_delta": {
     "base_commit": "1ca47cdeef1cef071a891babf5423af03f51466f",
     "head_commit": "HEAD",
@@ -96,10 +96,10 @@
             "label": "Mech Cranelift SIMD-JIT unchecked fast"
           }
         },
-        "gpu": {
+        "gpu_batched": {
           "checked": {
-            "throughput": 187.999,
-            "label": "Mech GPU, native Metal"
+            "throughput": 56.279,
+            "label": "Mech GPU, checked repeated"
           },
           "unchecked": {
             "throughput": 3729.673,
@@ -114,6 +114,16 @@
           "unchecked": {
             "throughput": 165.83,
             "label": "Mech SIMD/JIT CPU, fused unchecked block (8 workers)"
+          }
+        },
+        "gpu": {
+          "checked": {
+            "throughput": 187.999,
+            "label": "Mech GPU, native Metal"
+          },
+          "unchecked": {
+            "throughput": 275.534,
+            "label": "Mech GPU, native Metal"
           }
         }
       }

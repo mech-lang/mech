@@ -278,7 +278,19 @@ def performance_maxima(table: Path) -> dict[str, dict[str, dict[str, dict[str, o
         label = fields[1]
         lowered = label.lower()
         if any(marker in lowered for marker in ("gpu", "metal", "wgpu")):
-            category = "gpu"
+            if any(
+                marker in lowered
+                for marker in (
+                    "one-submit",
+                    "one submission",
+                    "repeated",
+                    "batched",
+                    "turns/submission",
+                )
+            ):
+                category = "gpu_batched"
+            else:
+                category = "gpu"
         elif any(
             marker in lowered
             for marker in ("worker", "workers", "multicore", "parallel", "pool", "thread")
@@ -511,7 +523,7 @@ def build_report(
             "lua": lua.get("generated_at"),
             "minimal": (minimal or {}).get("generated_at"),
         },
-        "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. The max single-core, SIMD/multicore, and GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker. This is an edit-size measure, not a claim about semantic difficulty.",
+        "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. The max single-core, SIMD/multicore, and synchronized GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker; multi-turn/fused GPU rows are retained separately as gpu_batched maxima. This is an edit-size measure, not a claim about semantic difficulty.",
         "mech_backend_support_delta": mech_support_delta(),
         "rows": rows,
     }
@@ -521,7 +533,7 @@ def markdown(report: dict) -> str:
     lines = [
         "# Parallel EKF source-edit cost",
         "",
-        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the compact checked-in Mech EKF source. The full teaching listing is retained as a separate reference path in the JSON. The workload column shows lanes x turns for each side; throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate. The three max columns are the best retained result in that execution class for each family, shown as checked / unchecked M/s. Throughput provenance, including strict Mech and Halide evidence when present, is recorded in the JSON `benchmark_evidence` field.",
+        "This report measures source edits and runtime factors behind the parallel EKF variants. Source sizes count non-empty, non-comment code only, so comments and formatting do not make a control look larger. `Edit L/C` is the line/character span changed from baseline to advanced; the two `vs Mech` columns use the same metric against the compact checked-in Mech EKF source. The full teaching listing is retained as a separate reference path in the JSON. The workload column shows lanes x turns for each side; throughput is reported for both baseline and advanced controls, with checked and unchecked kept separate. The three max columns are the best retained result in that execution class for each family, shown as checked / unchecked M/s; GPU maxima use synchronized per-turn rows. Throughput provenance, including strict Mech and Halide evidence when present, is recorded in the JSON `benchmark_evidence` field.",
         "",
         "## Variant matrix",
         "",
@@ -563,7 +575,7 @@ def markdown(report: dict) -> str:
         "## Interpretation",
         "",
         "`--` means that exact checked/unchecked baseline was not part of the retained evidence; it is not a zero-throughput result. Futhark baseline/advanced values differ only by worker count, while Halide and Mech keep the same source across both sides. The source pair and execution-boundary columns make those cases explicit.",
-        "Max columns are checked / unchecked M/s. Single-thread SIMD/JIT rows remain in the single-core column; the SIMD/multicore column requires an explicit worker, thread, pool, or parallel marker. The Mech unchecked GPU maximum includes the one-submit fused control (3,729.673 M/s), which is not per-turn observable; it is retained as a throughput ceiling, not as an equivalent synchronized GPU lane.",
+        "Max columns are checked / unchecked M/s. The GPU column uses synchronized/per-turn GPU rows only. Single-thread SIMD/JIT rows remain in the single-core column; the SIMD/multicore column requires an explicit worker, thread, pool, or parallel marker. Multi-turn/fused GPU maxima are retained under gpu_batched in the JSON and in the ranked throughput table; Mech's 3,729.673 M/s one-submit control is a device-resident ceiling, not an equivalent synchronized GPU lane.",
         "",
     ]
     for row in report["rows"]:

@@ -210,7 +210,9 @@ for single-core, SIMD/multicore, and GPU execution classes. This makes both the
 portability cost and the performance ceiling visible. Mech's high-level source
 delta is zero because the same program is compiled to every backend; the
 native-Metal implementation work is explicitly identified as backend support
-instead of being hidden as a source rewrite.
+instead of being hidden as a source rewrite. The GPU maxima use synchronized
+per-turn rows; fused or repeated device-resident rows remain visible in the
+ranked throughput table and JSON as a separate batch ceiling.
 
 ![Parallel EKF source-edit cost](results/parallel-ekf-source-edit-cost.svg)
 
