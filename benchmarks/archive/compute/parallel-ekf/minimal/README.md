@@ -14,7 +14,12 @@ controls still validate finite state/covariance, positive covariance
 diagonals, and covariance symmetry before publishing a candidate.
 
 `measure.py` currently executes the compact NumPy, Halide, and Futhark
-controls. `numpy_numba.py` is a separate eight-worker `@njit(parallel=True)`
+controls. Pass `--halide-metal` to schedule the same Halide pipeline with
+`gpu_tile` for Apple's native Metal backend; the state buffers remain resident
+on the device across turns and the final readback is outside the timed region.
+For the matched 500,000-filter x 40-turn workload, the five-sample Apple M1
+medians are 63.112 M turns/s unchecked and 57.843 M turns/s checked; rerun that
+control with `measure_halide_gpu.py`. `numpy_numba.py` is a separate eight-worker `@njit(parallel=True)`
 control because Numba is an additional JIT runtime rather than plain NumPy.
 `julia_metal_ekf.jl` is a direct Julia/Metal control: it stores the same
 structure-of-arrays state on the device, launches one thread per filter, and

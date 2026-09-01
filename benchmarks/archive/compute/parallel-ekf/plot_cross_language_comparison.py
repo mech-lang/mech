@@ -71,6 +71,7 @@ def load_rows(
     numpy_numba: dict | None = None,
     simd_controls: dict | None = None,
     julia_gpu: dict | None = None,
+    halide_gpu: dict | None = None,
     numpy_gpu: dict | None = None,
     futhark_fixed: dict | None = None,
     mech_persistent: dict | None = None,
@@ -326,6 +327,20 @@ def load_rows(
                         "throughput": statistics.median(row["throughput_millions"]),
                     }
                 )
+    if halide_gpu is not None:
+        import statistics
+
+        for mode in ("checked", "unchecked"):
+            row = halide_gpu.get("rows", {}).get(f"Halide GPU Metal {mode}")
+            if row is not None and "throughput" in row:
+                rows.append(
+                    {
+                        "label": "Halide GPU, native Metal",
+                        "family": "Halide",
+                        "mode": mode,
+                        "throughput": statistics.median(row["throughput"]) / 1_000_000,
+                    }
+                )
     # NumPy has no native GPU backend on the Apple M1.  Keep the evidence file
     # in the report inputs so the absence is auditable, but never turn an
     # unavailable backend into a zero-throughput chart row.
@@ -537,6 +552,7 @@ def main() -> None:
     parser.add_argument("--numpy-numba", type=Path, help="NumPy/Numba threaded JIT evidence JSON")
     parser.add_argument("--simd-controls", type=Path, help="Halide and Futhark SIMD evidence JSON")
     parser.add_argument("--julia-gpu", type=Path, help="Julia Metal GPU evidence JSON")
+    parser.add_argument("--halide-gpu", type=Path, help="Halide native Metal GPU evidence JSON")
     parser.add_argument("--numpy-gpu", type=Path, help="NumPy GPU capability evidence JSON")
     parser.add_argument("--futhark-fixed", type=Path, help="fixed-mode Futhark ISPC evidence JSON")
     parser.add_argument("--mech-persistent", type=Path, help="persistent Mech SIMD/JIT evidence JSON")
@@ -580,6 +596,11 @@ def main() -> None:
         if args.julia_gpu
         else None
     )
+    halide_gpu = (
+        json.loads(args.halide_gpu.read_text(encoding="utf-8"))
+        if args.halide_gpu
+        else None
+    )
     numpy_gpu = (
         json.loads(args.numpy_gpu.read_text(encoding="utf-8"))
         if args.numpy_gpu
@@ -611,6 +632,7 @@ def main() -> None:
         numpy_numba,
         simd_controls,
         julia_gpu,
+        halide_gpu,
         numpy_gpu,
         futhark_fixed,
         mech_persistent,

@@ -65,6 +65,7 @@ def main() -> None:
     p.add_argument("--samples", type=int, default=5)
     p.add_argument("--halide-cxx", default=shutil.which("clang++") or "clang++")
     p.add_argument("--halide-simd", action="store_true", help="also measure Halide JIT SIMD with eight workers")
+    p.add_argument("--halide-metal", action="store_true", help="also measure Halide's native Metal GPU schedule")
     p.add_argument("--futhark-ispc", action="store_true", help="also measure Futhark ISPC SIMD with eight workers")
     p.add_argument("--futhark-ispc-fixed", action="store_true", help="use fixed checked/unchecked Futhark entry points so unchecked code removes validation")
     p.add_argument("--julia-metal", action="store_true", help="also measure Julia Metal GPU with per-turn synchronization")
@@ -114,6 +115,20 @@ def main() -> None:
                 command = [str(halide), str(args.instances), str(args.turns), mode]
                 out = samples(command, args.samples, simd_halide_env)
                 rows[f"Halide JIT SIMD 8 workers {mode}"] = {"command": command, "throughput": [value(x, "throughput") for x in out], "checksums": [value(x, "checksum") for x in out]}
+        if args.halide_metal:
+            for mode in ("unchecked", "checked"):
+                command = [str(halide), str(args.instances), str(args.turns), mode, "gpu"]
+                try:
+                    out = samples(command, args.samples, halide_env)
+                except (subprocess.CalledProcessError, FileNotFoundError) as error:
+                    detail = (error.stdout or str(error)).strip() if isinstance(error, subprocess.CalledProcessError) else str(error)
+                    rows[f"Halide GPU Metal {mode}"] = {"available": False, "error": detail, "command": command}
+                else:
+                    rows[f"Halide GPU Metal {mode}"] = {
+                        "command": command,
+                        "throughput": [value(x, "throughput") for x in out],
+                        "checksums": [value(x, "checksum") for x in out],
+                    }
         futhark = Path(temp) / "futhark-ekf"
         run(["futhark", "multicore", str(HERE / "futhark_ekf.fut"), "-o", str(futhark)], env=env)
         inp = futhark_input(args.instances, args.turns)
