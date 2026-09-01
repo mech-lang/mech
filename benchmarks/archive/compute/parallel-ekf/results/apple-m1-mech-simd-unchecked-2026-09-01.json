@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T13:31:49-04:00",
+  "platform": {
+    "description": "macOS arm64",
+    "device": "Apple M1 CPU"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 7,
+    "workers": 1,
+    "source": "hosts/gpu/fixtures/ekf-kernel-taichi-comparable.mec",
+    "backend": "Mech Cranelift SIMD-JIT CPU",
+    "boundary": "resident state; one worker; synchronous steady-state",
+    "artifact_policy": "checked rows use the source artifact; unchecked rows use without_integrity_constraints()",
+    "notes": [
+      "Compilation, input construction, process startup, warmup, and final state readback are outside the timed region.",
+      "The ordinary unchecked row removes integrity predicates and their dead register computations but keeps the normal arithmetic policy.",
+      "The unchecked-fast row additionally enables algebraic zero/one-term simplification; it is an explicit weaker numeric policy, not the representative checked result.",
+      "The SIMD transcendental helpers pass native vectors on arm64 and x86_64 and retain a pointer ABI fallback on other targets."
+    ]
+  },
+  "rows": {
+    "simd_checked": {
+      "label": "Mech Cranelift SIMD-JIT checked",
+      "mode": "checked",
+      "throughput_millions": [33.365, 33.122, 33.373, 33.245, 33.271, 33.373, 33.327],
+      "median_throughput_millions": 33.327,
+      "faults": 0
+    },
+    "simd_checked_fast": {
+      "label": "Mech Cranelift SIMD-JIT checked-fast",
+      "mode": "checked-fast",
+      "throughput_millions": [38.597, 38.702, 38.703, 38.683, 38.655, 38.639, 38.552],
+      "median_throughput_millions": 38.655,
+      "faults": 0
+    },
+    "simd_unchecked": {
+      "label": "Mech Cranelift SIMD-JIT unchecked",
+      "mode": "unchecked",
+      "throughput_millions": [36.093, 40.132, 40.253, 40.253, 40.282, 40.092, 40.234],
+      "median_throughput_millions": 40.234,
+      "faults": 0
+    },
+    "simd_unchecked_fast": {
+      "label": "Mech Cranelift SIMD-JIT unchecked-fast",
+      "mode": "unchecked-fast",
+      "throughput_millions": [42.488, 42.526, 42.546, 42.540, 41.847, 42.497, 42.428],
+      "median_throughput_millions": 42.497,
+      "faults": 0
+    }
+  }
+}

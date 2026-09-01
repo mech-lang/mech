@@ -916,6 +916,26 @@ python3 plot.py --checked-only results/apple-m1-checked-cross-language-2026-08-3
 
 ## What "checked-fast" means
 
+The latest one-worker SIMD-JIT rerun is recorded in
+[`results/apple-m1-mech-simd-unchecked-2026-09-01.md`](results/apple-m1-mech-simd-unchecked-2026-09-01.md).
+It reports the ordinary unchecked artifact separately from the opt-in
+unchecked-fast lowering:
+
+| Mech SIMD-JIT path | Contract | Median M EKF-turns/s |
+| --- | --- | ---: |
+| Strict checked | candidate validation and retained-state publication | 33.327 |
+| Checked-fast | checked publication with limited algebraic simplification | 38.655 |
+| Ordinary unchecked | no integrity predicates; normal arithmetic policy | 40.234 |
+| Unchecked-fast | no integrity predicates plus algebraic simplification | 42.497 |
+
+The fast rows are not the default checked numbers. They are a separate
+numeric policy. Futhark's bounded control performs a comparable source-level
+optimization by scalarizing the fixed matrix products and deleting known zero
+terms before its ISPC backend vectorizes the map; it does not imply that the
+two systems expose the same runtime guarantees. The fair strict comparison is
+Mech checked versus Futhark checked, and the fair unchecked comparison is
+Mech ordinary unchecked versus Futhark unchecked.
+
 The Rust control currently has ordinary `checked` and `unchecked` modes. It
 does not have a Rust-specific `checked-fast` mode because that would be a new
 floating-point policy, not a free compiler switch. The Mech checked-fast path

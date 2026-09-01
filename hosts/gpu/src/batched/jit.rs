@@ -2,6 +2,11 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::{mem, sync::Arc, thread};
 
+#[cfg(target_arch = "aarch64")]
+use core::arch::aarch64::{float32x4_t, vst1q_f32};
+#[cfg(target_arch = "x86_64")]
+use core::arch::x86_64::{__m128, _mm_storeu_ps};
+
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, MemFlags, StackSlotData, StackSlotKind, Type, UserFuncName, Value,
     condcodes::{FloatCC, IntCC},
@@ -1325,19 +1330,32 @@ impl NativeSimdKernel {
         let pointer_type = module.target_config().pointer_type();
         let simd_unary_signature = {
             let mut signature = module.make_signature();
+            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+            signature.params.push(AbiParam::new(types::F32X4));
             signature.params.push(AbiParam::new(pointer_type));
+            #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
             signature.params.push(AbiParam::new(pointer_type));
             signature
         };
         let simd_binary_signature = {
             let mut signature = module.make_signature();
+            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+            {
+                signature.params.push(AbiParam::new(types::F32X4));
+                signature.params.push(AbiParam::new(types::F32X4));
+            }
+            #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
             signature.params.push(AbiParam::new(pointer_type));
+            #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
             signature.params.push(AbiParam::new(pointer_type));
             signature.params.push(AbiParam::new(pointer_type));
             signature
         };
         let simd_sincos_signature = {
             let mut signature = module.make_signature();
+            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+            signature.params.push(AbiParam::new(types::F32X4));
+            #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
             signature.params.push(AbiParam::new(pointer_type));
             signature.params.push(AbiParam::new(pointer_type));
             signature.params.push(AbiParam::new(pointer_type));
@@ -2356,12 +2374,24 @@ fn call_simd_unary_math(
     value: Value,
     pointer_type: Type,
 ) -> Value {
-    let input_slot = simd_stack_slot(builder);
     let output_slot = simd_stack_slot(builder);
-    let input = stack_address(builder, input_slot, pointer_type);
     let output = stack_address(builder, output_slot, pointer_type);
+    #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+    {
+        builder.ins().call(function, &[value, output]);
+        builder
+            .ins()
+            .load(types::F32X4, MemFlags::trusted(), output, 0)
+    }
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    let input_slot = simd_stack_slot(builder);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    let input = stack_address(builder, input_slot, pointer_type);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     builder.ins().store(MemFlags::trusted(), value, input, 0);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     builder.ins().call(function, &[input, output]);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     builder
         .ins()
         .load(types::F32X4, MemFlags::trusted(), output, 0)
@@ -2374,21 +2404,36 @@ fn call_simd_binary_math(
     right: Value,
     pointer_type: Type,
 ) -> Value {
-    let left_slot = simd_stack_slot(builder);
-    let right_slot = simd_stack_slot(builder);
     let output_slot = simd_stack_slot(builder);
-    let left_address = stack_address(builder, left_slot, pointer_type);
-    let right_address = stack_address(builder, right_slot, pointer_type);
     let output = stack_address(builder, output_slot, pointer_type);
+    #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+    {
+        builder.ins().call(function, &[left, right, output]);
+        builder
+            .ins()
+            .load(types::F32X4, MemFlags::trusted(), output, 0)
+    }
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    let left_slot = simd_stack_slot(builder);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    let right_slot = simd_stack_slot(builder);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    let left_address = stack_address(builder, left_slot, pointer_type);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    let right_address = stack_address(builder, right_slot, pointer_type);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     builder
         .ins()
         .store(MemFlags::trusted(), left, left_address, 0);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     builder
         .ins()
         .store(MemFlags::trusted(), right, right_address, 0);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     builder
         .ins()
         .call(function, &[left_address, right_address, output]);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     builder
         .ins()
         .load(types::F32X4, MemFlags::trusted(), output, 0)
@@ -2640,20 +2685,38 @@ fn call_simd_sincos(
     value: Value,
     pointer_type: Type,
 ) -> (Value, Value) {
-    let input_slot = simd_stack_slot(builder);
     let sin_slot = simd_stack_slot(builder);
     let cos_slot = simd_stack_slot(builder);
-    let input = stack_address(builder, input_slot, pointer_type);
     let sin = stack_address(builder, sin_slot, pointer_type);
     let cos = stack_address(builder, cos_slot, pointer_type);
+    #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+    {
+        builder.ins().call(function, &[value, sin, cos]);
+        let sin_value = builder
+            .ins()
+            .load(types::F32X4, MemFlags::trusted(), sin, 0);
+        let cos_value = builder
+            .ins()
+            .load(types::F32X4, MemFlags::trusted(), cos, 0);
+        (sin_value, cos_value)
+    }
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    let input_slot = simd_stack_slot(builder);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    let input = stack_address(builder, input_slot, pointer_type);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     builder.ins().store(MemFlags::trusted(), value, input, 0);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     builder.ins().call(function, &[input, sin, cos]);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     let sin = builder
         .ins()
         .load(types::F32X4, MemFlags::trusted(), sin, 0);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     let cos = builder
         .ins()
         .load(types::F32X4, MemFlags::trusted(), cos, 0);
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     (sin, cos)
 }
 
@@ -2692,23 +2755,77 @@ extern "C" fn mech_jit_sincos_pack(value: f32) -> u64 {
     u64::from(sin.to_bits()) | (u64::from(cos.to_bits()) << 32)
 }
 
-/// Vector math entry points used by the SIMD JIT. `wide` selects the native
-/// NEON/SSE implementation on the host, while pointer arguments keep the JIT
-/// ABI portable across platforms with different vector calling conventions.
+/// Vector math entry points used by the SIMD JIT. Native vector arguments
+/// keep each helper on the SIMD register path on the two targets we support;
+/// the pointer ABI remains the portable fallback for other architectures.
+#[cfg(target_arch = "aarch64")]
+#[allow(improper_ctypes_definitions)]
+extern "C" fn mech_jit_sinf_f32x4(value: float32x4_t, output: *mut f32) {
+    let value = unsafe { wide_from_aarch64(value) };
+    unsafe { *(output as *mut [f32; 4]) = value.sin().to_array() };
+}
+
+#[cfg(target_arch = "x86_64")]
+#[allow(improper_ctypes_definitions)]
+extern "C" fn mech_jit_sinf_f32x4(value: __m128, output: *mut f32) {
+    let value = unsafe { wide_from_x86(value) };
+    unsafe { *(output as *mut [f32; 4]) = value.sin().to_array() };
+}
+
+#[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
 extern "C" fn mech_jit_sinf_f32x4(input: *const f32, output: *mut f32) {
-    // SAFETY: the generated JIT call supplies 16-byte buffers for four f32s.
     let value = unsafe { f32x4::new(*(input as *const [f32; 4])) };
     unsafe { *(output as *mut [f32; 4]) = value.sin().to_array() };
 }
 
+#[cfg(target_arch = "aarch64")]
+#[allow(improper_ctypes_definitions)]
+extern "C" fn mech_jit_cosf_f32x4(value: float32x4_t, output: *mut f32) {
+    let value = unsafe { wide_from_aarch64(value) };
+    unsafe { *(output as *mut [f32; 4]) = value.cos().to_array() };
+}
+
+#[cfg(target_arch = "x86_64")]
+#[allow(improper_ctypes_definitions)]
+extern "C" fn mech_jit_cosf_f32x4(value: __m128, output: *mut f32) {
+    let value = unsafe { wide_from_x86(value) };
+    unsafe { *(output as *mut [f32; 4]) = value.cos().to_array() };
+}
+
+#[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
 extern "C" fn mech_jit_cosf_f32x4(input: *const f32, output: *mut f32) {
-    // SAFETY: the generated JIT call supplies 16-byte buffers for four f32s.
     let value = unsafe { f32x4::new(*(input as *const [f32; 4])) };
     unsafe { *(output as *mut [f32; 4]) = value.cos().to_array() };
 }
 
+#[cfg(target_arch = "aarch64")]
+#[allow(improper_ctypes_definitions)]
+extern "C" fn mech_jit_sincos_f32x4(
+    value: float32x4_t,
+    sin_output: *mut f32,
+    cos_output: *mut f32,
+) {
+    let value = unsafe { wide_from_aarch64(value) };
+    let (sin, cos) = value.sin_cos();
+    unsafe {
+        *(sin_output as *mut [f32; 4]) = sin.to_array();
+        *(cos_output as *mut [f32; 4]) = cos.to_array();
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[allow(improper_ctypes_definitions)]
+extern "C" fn mech_jit_sincos_f32x4(value: __m128, sin_output: *mut f32, cos_output: *mut f32) {
+    let value = unsafe { wide_from_x86(value) };
+    let (sin, cos) = value.sin_cos();
+    unsafe {
+        *(sin_output as *mut [f32; 4]) = sin.to_array();
+        *(cos_output as *mut [f32; 4]) = cos.to_array();
+    }
+}
+
+#[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
 extern "C" fn mech_jit_sincos_f32x4(input: *const f32, sin_output: *mut f32, cos_output: *mut f32) {
-    // SAFETY: the generated JIT call supplies three distinct 16-byte buffers.
     let value = unsafe { f32x4::new(*(input as *const [f32; 4])) };
     let (sin, cos) = value.sin_cos();
     unsafe {
@@ -2717,11 +2834,41 @@ extern "C" fn mech_jit_sincos_f32x4(input: *const f32, sin_output: *mut f32, cos
     }
 }
 
+#[cfg(target_arch = "aarch64")]
+#[allow(improper_ctypes_definitions)]
+extern "C" fn mech_jit_atan2_f32x4(y: float32x4_t, x: float32x4_t, output: *mut f32) {
+    let y = unsafe { wide_from_aarch64(y) };
+    let x = unsafe { wide_from_aarch64(x) };
+    unsafe { *(output as *mut [f32; 4]) = y.atan2(x).to_array() };
+}
+
+#[cfg(target_arch = "x86_64")]
+#[allow(improper_ctypes_definitions)]
+extern "C" fn mech_jit_atan2_f32x4(y: __m128, x: __m128, output: *mut f32) {
+    let y = unsafe { wide_from_x86(y) };
+    let x = unsafe { wide_from_x86(x) };
+    unsafe { *(output as *mut [f32; 4]) = y.atan2(x).to_array() };
+}
+
+#[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
 extern "C" fn mech_jit_atan2_f32x4(y_input: *const f32, x_input: *const f32, output: *mut f32) {
-    // SAFETY: the generated JIT call supplies three 16-byte buffers.
     let y = unsafe { f32x4::new(*(y_input as *const [f32; 4])) };
     let x = unsafe { f32x4::new(*(x_input as *const [f32; 4])) };
     unsafe { *(output as *mut [f32; 4]) = y.atan2(x).to_array() };
+}
+
+#[cfg(target_arch = "aarch64")]
+unsafe fn wide_from_aarch64(value: float32x4_t) -> f32x4 {
+    let mut lanes = [0.0; 4];
+    unsafe { vst1q_f32(lanes.as_mut_ptr(), value) };
+    f32x4::new(lanes)
+}
+
+#[cfg(target_arch = "x86_64")]
+unsafe fn wide_from_x86(value: __m128) -> f32x4 {
+    let mut lanes = [0.0; 4];
+    unsafe { _mm_storeu_ps(lanes.as_mut_ptr(), value) };
+    f32x4::new(lanes)
 }
 
 extern "C" fn mech_jit_sqrtf(value: f32) -> f32 {
