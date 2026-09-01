@@ -299,25 +299,37 @@ def main() -> None:
             ],
             "Lua fixed-shape flat unchecked": [
                 required["lua"],
-                str(HERE / "luajit_fast.lua"),
+                str(HERE / "minimal" / "luajit_fast.lua"),
                 *common,
                 "unchecked",
             ],
             "Lua fixed-shape flat checked": [
                 required["lua"],
-                str(HERE / "luajit_fast.lua"),
+                str(HERE / "minimal" / "luajit_fast.lua"),
+                *common,
+                "checked",
+            ],
+            "Lua advanced fixed-shape flat unchecked": [
+                required["lua"],
+                str(HERE / "minimal" / "lua_advanced.lua"),
+                *common,
+                "unchecked",
+            ],
+            "Lua advanced fixed-shape flat checked": [
+                required["lua"],
+                str(HERE / "minimal" / "lua_advanced.lua"),
                 *common,
                 "checked",
             ],
             "LuaJIT fixed-shape flat unchecked": [
                 required["luajit"],
-                str(HERE / "luajit_fast.lua"),
+                str(HERE / "minimal" / "luajit_fast.lua"),
                 *common,
                 "unchecked",
             ],
             "LuaJIT fixed-shape flat checked": [
                 required["luajit"],
-                str(HERE / "luajit_fast.lua"),
+                str(HERE / "minimal" / "luajit_fast.lua"),
                 *common,
                 "checked",
             ],
@@ -405,7 +417,7 @@ def main() -> None:
             if command is not None:
                 count = (
                     args.luajit_samples
-                    if lane.startswith(("LuaJIT", "Lua fixed-shape"))
+                    if lane.startswith(("LuaJIT", "Lua fixed-shape", "Lua advanced"))
                     else args.samples
                 )
                 scalar[lane] = medians(

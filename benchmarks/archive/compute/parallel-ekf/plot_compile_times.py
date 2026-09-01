@@ -83,7 +83,7 @@ def render(data: dict) -> str:
         advanced_phase = advanced_entry.get("phase", "") if isinstance(advanced_entry, dict) else ""
         phase = f"{base_phase} / {advanced_phase}" if base_phase and advanced_phase and base_phase != advanced_phase else (base_phase or advanced_phase)
         lines.append(f'<text x="{width - right + 15}" y="{y + 19}" class="phase">{esc(phase)}</text>')
-    lines.append('<text x="42" y="{}" class="muted" font-size="12">AOT and bytecode rows time artifact creation; Julia/Taichi rows include cold startup and specialization; Mech uses retained source/artifact and backend preparation intervals.</text>'.format(height - 36))
+    lines.append('<text x="42" y="{}" class="muted" font-size="12">AOT and bytecode rows time artifact creation; Julia/Taichi include cold startup and specialization; Mech uses source/artifact preparation.</text>'.format(height - 96))
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     return "\n".join(lines) + "\n"

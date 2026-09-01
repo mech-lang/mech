@@ -11,7 +11,7 @@ One process and one host worker; explicit SIMD/JIT controls are used where the r
 | NumPy | batched fixed-shape arrays | 108 / 2,974 | 94 / 3,123 | 11.129 | 12.558 | measured |
 | Julia | explicit SIMD.jl lanes | 196 / 6,935 | 204 / 8,960 | 30.835 | 32.260 | measured |
 | LuaJIT | flat scalarized FFI state | 153 / 7,031 | 242 / 9,393 | 1.263 | 15.991 | measured |
-| Lua | flat scalarized Lua state | 153 / 7,031 | 0 / 0 | 0.565 | 0.835 | measured |
+| Lua | flat scalarized Lua state (PUC Lua advanced) | 196 / 5,884 | 181 / 7,203 | 0.584 | 0.879 | measured |
 | Halide | fixed-shape pipeline, one host worker | 324 / 8,928 | 0 / 0 | 2.707 | 5.058 | measured |
 | Futhark | strict scalarized ISPC program, one worker | 105 / 3,566 | 112 / 4,266 | 30.576 | 43.337 | measured |
 

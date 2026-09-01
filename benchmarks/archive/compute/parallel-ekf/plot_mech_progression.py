@@ -132,7 +132,7 @@ def render(rows: list[dict[str, object]], output: Path) -> None:
             lines.append(f'<text x="{left + 8}" y="{y + 39}" class="note">{esc(item["note"])}</text>')
 
     lines.append(f'<text x="{left + chart_width / 2:.1f}" y="{height - 28}" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>')
-    lines.append('<text x="52" y="%d" class="muted" font-size="12">Checked bars include candidate validation/publication. Unchecked bars omit integrity checks. Missing bars mean that lane was not implemented as a separately measured mode.</text>' % (height - 55))
+    lines.append('<text x="52" y="%d" class="muted" font-size="12">Checked bars validate candidate publication; unchecked bars omit integrity checks. Missing bars were not measured.</text>' % (height - 96))
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     output.parent.mkdir(parents=True, exist_ok=True)

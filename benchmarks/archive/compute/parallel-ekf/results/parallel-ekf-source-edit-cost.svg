@@ -11,24 +11,24 @@
 <text x="940.0" y="542" text-anchor="middle" class="muted" font-size="12">0</text>
 <line x1="364.0" y1="108" x2="364.0" y2="520" class="grid"/>
 <line x1="1064.0" y1="108" x2="1064.0" y2="520" class="grid"/>
-<text x="364.0" y="542" text-anchor="middle" class="muted" font-size="12">141</text>
-<text x="1064.0" y="542" text-anchor="middle" class="muted" font-size="12">4,890</text>
+<text x="364.0" y="542" text-anchor="middle" class="muted" font-size="12">48</text>
+<text x="1064.0" y="542" text-anchor="middle" class="muted" font-size="12">2,328</text>
 <line x1="488.0" y1="108" x2="488.0" y2="520" class="grid"/>
 <line x1="1188.0" y1="108" x2="1188.0" y2="520" class="grid"/>
-<text x="488.0" y="542" text-anchor="middle" class="muted" font-size="12">283</text>
-<text x="1188.0" y="542" text-anchor="middle" class="muted" font-size="12">9,781</text>
+<text x="488.0" y="542" text-anchor="middle" class="muted" font-size="12">96</text>
+<text x="1188.0" y="542" text-anchor="middle" class="muted" font-size="12">4,656</text>
 <line x1="612.0" y1="108" x2="612.0" y2="520" class="grid"/>
 <line x1="1312.0" y1="108" x2="1312.0" y2="520" class="grid"/>
-<text x="612.0" y="542" text-anchor="middle" class="muted" font-size="12">424</text>
-<text x="1312.0" y="542" text-anchor="middle" class="muted" font-size="12">14,671</text>
+<text x="612.0" y="542" text-anchor="middle" class="muted" font-size="12">145</text>
+<text x="1312.0" y="542" text-anchor="middle" class="muted" font-size="12">6,984</text>
 <line x1="736.0" y1="108" x2="736.0" y2="520" class="grid"/>
 <line x1="1436.0" y1="108" x2="1436.0" y2="520" class="grid"/>
-<text x="736.0" y="542" text-anchor="middle" class="muted" font-size="12">566</text>
-<text x="1436.0" y="542" text-anchor="middle" class="muted" font-size="12">19,562</text>
+<text x="736.0" y="542" text-anchor="middle" class="muted" font-size="12">193</text>
+<text x="1436.0" y="542" text-anchor="middle" class="muted" font-size="12">9,312</text>
 <line x1="860.0" y1="108" x2="860.0" y2="520" class="grid"/>
 <line x1="1560.0" y1="108" x2="1560.0" y2="520" class="grid"/>
-<text x="860.0" y="542" text-anchor="middle" class="muted" font-size="12">708</text>
-<text x="1560.0" y="542" text-anchor="middle" class="muted" font-size="12">24,453</text>
+<text x="860.0" y="542" text-anchor="middle" class="muted" font-size="12">242</text>
+<text x="1560.0" y="542" text-anchor="middle" class="muted" font-size="12">11,640</text>
 <text x="226" y="137" text-anchor="end" class="label">Mech</text>
 <rect x="240" y="123" width="1.0" height="22" rx="3" fill="#f4c430" opacity="0.9"/>
 <text x="248.0" y="138" class="value">0</text>
@@ -39,46 +39,52 @@
 <text x="248.0" y="178" class="value">0</text>
 <rect x="940.0" y="163" width="1.0" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
 <text x="948.0" y="178" class="value">0</text>
-<text x="226" y="217" text-anchor="end" class="label">Lua</text>
-<rect x="240" y="203" width="1.0" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<text x="226" y="217" text-anchor="end" class="label">Halide</text>
+<rect x="240" y="203" width="1.0" height="22" rx="3" fill="#ff8f00" opacity="0.9"/>
 <text x="248.0" y="218" class="value">0</text>
-<rect x="940.0" y="203" width="1.0" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<rect x="940.0" y="203" width="1.0" height="22" rx="3" fill="#ff8f00" opacity="0.9"/>
 <text x="948.0" y="218" class="value">0</text>
-<text x="226" y="257" text-anchor="end" class="label">Halide</text>
-<rect x="240" y="243" width="1.0" height="22" rx="3" fill="#ff8f00" opacity="0.9"/>
+<text x="226" y="257" text-anchor="end" class="label">Futhark</text>
+<rect x="240" y="243" width="1.0" height="22" rx="3" fill="#e94f37" opacity="0.9"/>
 <text x="248.0" y="258" class="value">0</text>
-<rect x="940.0" y="243" width="1.0" height="22" rx="3" fill="#ff8f00" opacity="0.9"/>
+<rect x="940.0" y="243" width="1.0" height="22" rx="3" fill="#e94f37" opacity="0.9"/>
 <text x="948.0" y="258" class="value">0</text>
-<text x="226" y="297" text-anchor="end" class="label">Futhark</text>
-<rect x="240" y="283" width="1.0" height="22" rx="3" fill="#e94f37" opacity="0.9"/>
-<text x="248.0" y="298" class="value">0</text>
-<rect x="940.0" y="283" width="1.0" height="22" rx="3" fill="#e94f37" opacity="0.9"/>
-<text x="948.0" y="298" class="value">0</text>
-<text x="226" y="337" text-anchor="end" class="label">NumPy</text>
-<rect x="240" y="323" width="82.3" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="330.3" y="338" class="value">94</text>
-<rect x="940.0" y="323" width="79.2" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="1027.2" y="338" class="value">3,123</text>
+<text x="226" y="297" text-anchor="end" class="label">NumPy</text>
+<rect x="240" y="283" width="240.8" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="488.8" y="298" class="value">94</text>
+<rect x="940.0" y="283" width="166.3" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="1114.3" y="298" class="value">3,123</text>
+<text x="226" y="337" text-anchor="end" class="label">Lua</text>
+<rect x="240" y="323" width="463.7" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<text x="711.7" y="338" class="value">181</text>
+<rect x="940.0" y="323" width="383.7" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<text x="1331.7" y="338" class="value">7,203</text>
 <text x="226" y="377" text-anchor="end" class="label">Julia</text>
-<rect x="240" y="363" width="178.6" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="426.6" y="378" class="value">204</text>
-<rect x="940.0" y="363" width="227.2" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="1175.2" y="378" class="value">8,960</text>
+<rect x="240" y="363" width="522.6" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="770.6" y="378" class="value">204</text>
+<rect x="940.0" y="363" width="477.3" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="1425.3" y="378" class="value">8,960</text>
 <text x="226" y="417" text-anchor="end" class="label">Taichi</text>
-<rect x="240" y="403" width="196.2" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
-<text x="444.2" y="418" class="value">224</text>
-<rect x="940.0" y="403" width="295.1" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
-<text x="1243.1" y="418" class="value">11,640</text>
-<text x="226" y="457" text-anchor="end" class="label">LuaJIT</text>
-<rect x="240" y="443" width="211.9" height="22" rx="3" fill="#000080" opacity="0.9"/>
-<text x="459.9" y="458" class="value">242</text>
-<rect x="940.0" y="443" width="238.2" height="22" rx="3" fill="#000080" opacity="0.9"/>
-<text x="1186.2" y="458" class="value">9,393</text>
-<text x="226" y="497" text-anchor="end" class="label">Rust</text>
-<rect x="240" y="483" width="620.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
-<text x="852.0" y="498" class="value">708</text>
-<rect x="940.0" y="483" width="620.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
-<text x="1552.0" y="498" class="value">24,453</text>
-<text x="42" y="575" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed 1082 backend line slots and is intentionally not counted as program edits.</text>
-<text x="1560" y="592" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
+<rect x="240" y="403" width="573.9" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="821.9" y="418" class="value">224</text>
+<rect x="940.0" y="403" width="620.0" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="1552.0" y="418" class="value">11,640</text>
+<text x="226" y="457" text-anchor="end" class="label">Rust</text>
+<rect x="240" y="443" width="599.5" height="22" rx="3" fill="#dea584" opacity="0.9"/>
+<text x="847.5" y="458" class="value">234</text>
+<rect x="940.0" y="443" width="441.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
+<text x="1389.0" y="458" class="value">8,279</text>
+<text x="226" y="497" text-anchor="end" class="label">LuaJIT</text>
+<rect x="240" y="483" width="620.0" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<text x="852.0" y="498" class="value">242</text>
+<rect x="940.0" y="483" width="500.3" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<text x="1448.3" y="498" class="value">9,393</text>
+<text x="42" y="514" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed 1082 backend line slots and is not counted as program edits.</text>
+<g aria-label="Test machine">
+<rect x="1170" y="520" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
+<text x="1182" y="536" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
+<text x="1182" y="551" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
+<text x="1182" y="566" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
+<text x="1182" y="581" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
+</g>
 </svg>

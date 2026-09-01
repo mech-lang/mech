@@ -90,7 +90,12 @@ def main() -> None:
     batched = args.mode == "unchecked-batched"
 
     architecture = arch_from_environment()
-    init_kwargs = {"arch": architecture, "default_fp": ti.f32, "kernel_profiler": False}
+    init_kwargs = {
+        "arch": architecture,
+        "default_fp": ti.f32,
+        "fast_math": False,
+        "kernel_profiler": False,
+    }
     if architecture == ti.cpu and args.cpu_threads is not None:
         if args.cpu_threads < 1:
             raise SystemExit("--cpu-threads must be at least 1")

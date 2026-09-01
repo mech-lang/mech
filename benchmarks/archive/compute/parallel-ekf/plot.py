@@ -161,7 +161,7 @@ def main() -> None:
         lines.append(f'<text x="{value_x:.1f}" y="{y + 19}" class="value">{value:.2f}</text>')
 
     note = "Checked controls only; unchecked-only controls are omitted. " if args.checked_only else ""
-    lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{note}Checked GPU rows synchronize and validate each turn; the unchecked row batches all turns in one device submission. Parse, compilation, setup, and final readback are excluded.</text>')
+    lines.append(f'<text x="52" y="{height - 96}" class="muted" font-size="12">{note}Checked GPU rows synchronize and validate each turn; unchecked rows batch turns. Setup and readback are excluded.</text>')
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     args.output.parent.mkdir(parents=True, exist_ok=True)

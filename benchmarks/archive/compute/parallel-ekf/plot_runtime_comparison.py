@@ -79,7 +79,7 @@ def main() -> None:
     note += "Every GPU row submits and waits once per turn; setup, compilation, allocation, warmup, and final readback are excluded."
     if "mech_native_metal_backend" in configuration:
         note += " Native Metal rows use direct Metal command submission; WGPU-over-Metal rows are shown only as a transport control."
-    lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{esc(note)}</text>')
+    lines.append(f'<text x="52" y="{height - 96}" class="muted" font-size="12">{esc(note)}</text>')
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     args.output.parent.mkdir(parents=True, exist_ok=True)

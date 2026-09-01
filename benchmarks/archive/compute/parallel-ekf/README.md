@@ -19,7 +19,7 @@ git switch --track origin/codex/mech-program-gpu
 | High-level Mech EKF (full reference) | `hosts/gpu/fixtures/ekf-kernel.mec` |
 | Minimized Mech EKF source | `benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec` |
 | Taichi-comparable Mech EKF | `hosts/gpu/fixtures/ekf-kernel-taichi-comparable.mec` |
-| Source-specialized Taichi control | `benchmarks/archive/compute/parallel-ekf/taichi_optimized.py` |
+| Source-specialized Taichi control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py` |
 | Mech artifact benchmark harness | `hosts/gpu/examples/parallel_ekf_benchmark.rs` |
 | Generic scalar, SIMD, and WGPU lowering/execution | `hosts/gpu/src/batched.rs` |
 | macOS native Metal measurement backend | `hosts/gpu/src/metal.rs` |
@@ -32,7 +32,7 @@ git switch --track origin/codex/mech-program-gpu
 | Julia packed-lane control | `benchmarks/archive/compute/parallel-ekf/julia_simd.jl` |
 | Julia SIMD intrinsics control | `benchmarks/archive/compute/parallel-ekf/julia_simd_intrinsics.jl` |
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
-| Plain Lua and LuaJIT fixed-shape control | `benchmarks/archive/compute/parallel-ekf/luajit_fast.lua` |
+| Plain Lua/LuaJIT baseline fixed-shape control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua` |
 | NumPy batched fixed-shape control | `benchmarks/archive/compute/parallel-ekf/numpy_vectorized.py` |
 | LuaJIT flat fixed-shape control | `benchmarks/archive/compute/parallel-ekf/luajit_fast.lua` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
@@ -40,6 +40,7 @@ git switch --track origin/codex/mech-program-gpu
 | Minimal NumPy batched control | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py` |
 | NumPy/Numba eight-worker JIT control | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_numba.py` |
 | Minimized Rust scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs` |
+| Minimized Rust optimized scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs` |
 | Minimized Rust packed-lane SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs` |
 | Minimized Julia scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl` |
 | Minimized Julia packed-lane SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl` |
@@ -48,6 +49,7 @@ git switch --track origin/codex/mech-program-gpu
 | Pure-Python scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py` |
 | Minimized LuaJIT scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua` |
 | Minimized LuaJIT flat control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua` |
+| Minimized PUC Lua advanced flat control | `benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua` |
 | Minimized Taichi comparable control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py` |
 | Minimized Taichi optimized control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py` |
 | Minimal Halide fixed-shape pipeline | `benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp` |
@@ -55,6 +57,7 @@ git switch --track origin/codex/mech-program-gpu
 | Futhark/ISPC compatibility shim | `benchmarks/archive/compute/parallel-ekf/minimal/futhark-ispc-compat.sh` |
 | NumPy-compatible GPU capability probe | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_gpu.py` |
 | Minimal cross-control runner | `benchmarks/archive/compute/parallel-ekf/minimal/measure.py` |
+| PUC Lua baseline/advanced runner | `benchmarks/archive/compute/parallel-ekf/minimal/measure_lua.py` |
 | Compact-source equivalence check | `benchmarks/archive/compute/parallel-ekf/minimal/check_sources.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
 | Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
@@ -73,8 +76,11 @@ git switch --track origin/codex/mech-program-gpu
 | Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
 | Pure-Python scalar evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-pure-python-2026-09-01.json` |
 | Rust scalar checked/unchecked evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-rust-scalar-2026-09-01.json` |
+| Rust optimized scalar checked/unchecked evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-rust-scalar-optimized-2026-09-01.json` |
+| PUC Lua baseline/advanced checked/unchecked evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-lua-2026-09-01.json` |
 | LuaJIT scalar checked/unchecked evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-luajit-scalar-2026-09-01.json` |
 | Taichi one-worker CPU baseline evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-taichi-cpu-baseline-2026-09-01.json` |
+| Taichi strict one-worker CPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-taichi-cpu-strict-2026-09-01.json` |
 | NumPy GPU capability evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-gpu-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
 | Source-edit cost report/renderer | `benchmarks/archive/compute/parallel-ekf/source_diff_report.py` |
@@ -187,10 +193,32 @@ At the matched 500,000-filter/40-turn boundary, Rust measured
 run-to-run scheduling noise, so the earlier Rust value must not be described as
 a relaxed guarantee.
 
-Plain PUC Lua now runs the same fixed-shape flat source as LuaJIT. Its table
-arrays are explicitly zero-initialized so the warmup has the same defined state
-as LuaJIT's FFI arrays. The raw three-sample medians are recorded in
-`results/apple-m1-lua-2026-08-31.json`.
+The PUC Lua comparison now has two real source variants, both executed by PUC
+Lua 5.5.1 (no JIT and no FFI). The baseline is the compact flat recurrence
+using zero-based Lua tables, which exercises the hash-part access pattern that
+the old Lua row actually measured. The advanced source is
+`minimal/lua_advanced.lua`: it keeps the same scalar EKF and checked
+publication contract but uses dense one-based `1..N` array storage, so its
+improvement is a source/layout change rather than quietly switching to
+LuaJIT. At 10,000 filters x 20 turns, PUC Lua measured **0.564 / 0.836 M/s**
+(checked / unchecked) for the baseline and **0.584 / 0.879 M/s** for the
+advanced source. The five-sample evidence, checksums, and exact source paths
+are in `results/apple-m1-lua-2026-09-01.json`.
+
+The compiled scalar comparison is likewise explicit. Rust's advanced control
+is `minimal/rust_scalar_optimized.rs`, a fixed-shape 3x3 unrolled AOT program
+with `sin_cos` and the same checked finite/diagonal/symmetry publication
+contract. It measured **20.011 / 24.713 M/s** checked / unchecked, versus
+**16.323 / 19.008 M/s** for the strict one-worker Taichi Vector/Matrix kernel
+with `fast_math=False`. Mech's one-worker Cranelift SIMD/JIT path remains
+**41.496 / 49.787 M/s**, so the best Mech CPU path is not the scalar JIT row.
+The Rust and Taichi source/compile details are retained in their evidence
+files and in the source-edit report.
+
+Taichi's comparable and optimized controls explicitly set `fast_math=False`.
+Taichi documents `fast_math` as enabled by default, so older evidence that did
+not pin this setting is historical and is not used for the strict scalar
+comparison. See the [Taichi global settings documentation](https://docs.taichi-lang.org/docs/global_settings).
 
 The source-specialized Taichi control is also included in both charts. It uses
 stock Taichi 1.7.4 and the normal Metal backend, but changes the Taichi program
@@ -249,8 +277,12 @@ The report now measures the checked-in compact controls under `minimal/`, not
 the explanatory listings. The Mech control is a single 42-line code-only
 recurrence with one statement per line, compact matrix literals, broadcast
 inputs, and the three publication predicates. The other compact controls are
-comment-free copies of the same benchmark programs; their harness behavior is
-unchanged, so source size is not being reduced by deleting numerical work.
+copy-only controls that remove comments/blank scaffolding, and explicitly
+labeled source specializations. The source-edit report names those changes:
+Rust unrolls the fixed 3x3 scalar path, PUC Lua switches to dense one-based
+arrays, and Taichi pins strict arithmetic. Their harness boundaries and
+numerical contracts remain unchanged, so source size is not being reduced by
+deleting numerical work.
 The longer reference files remain in the source map for auditability.
 
 The scalar Mech evidence now includes both publication modes: on this Apple
@@ -347,6 +379,12 @@ with:
 python3 minimal/measure_halide_gpu.py \
   --instances 500000 --turns 40 --samples 5 \
   --output results/apple-m1-halide-metal-strict-2026-08-31.json
+
+# PUC Lua baseline versus source-specialized advanced control
+python3 minimal/measure_lua.py \
+  --lua /opt/homebrew/bin/lua \
+  --instances 10000 --turns 20 --samples 5 \
+  --output results/apple-m1-lua-2026-09-01.json
 ```
 
 The runner uses one OpenMP/BLAS thread for NumPy, compiles Halide with `-O3`,
@@ -364,7 +402,8 @@ python3 plot_cross_language_comparison.py \
   results/apple-m1-mech-taichi-runtime-2026-08-31.json \
   results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
   results \
-  results/apple-m1-lua-2026-08-31.json \
+  results/apple-m1-lua-2026-09-01.json \
+  --rust-scalar-optimized results/apple-m1-rust-scalar-optimized-2026-09-01.json \
   --taichi-optimized results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
   --minimal-source results/apple-m1-minimal-source-2026-08-31.json \
   --halide-gpu results/apple-m1-halide-metal-strict-2026-08-31.json \
@@ -393,12 +432,16 @@ python3 source_diff_report.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \
   results/apple-m1-mech-taichi-native-metal-2026-08-31.json \
   results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
-  results/apple-m1-lua-2026-08-31.json \
+  results/apple-m1-lua-2026-09-01.json \
   results \
   --strict-mech results/apple-m1-mech-halide-strict-2026-08-31.json \
   --strict-halide results/apple-m1-halide-metal-strict-2026-08-31.json \
   --strict-julia results/apple-m1-julia-metal-2026-08-31.json \
-  --pure-python results/apple-m1-pure-python-2026-09-01.json
+  --pure-python results/apple-m1-pure-python-2026-09-01.json \
+  --rust-scalar results/apple-m1-rust-scalar-2026-09-01.json \
+  --rust-scalar-optimized results/apple-m1-rust-scalar-optimized-2026-09-01.json \
+  --luajit-scalar results/apple-m1-luajit-scalar-2026-09-01.json \
+  --compile-times results/apple-m1-compile-times-2026-09-01.json
 
 # Measure source-to-artifact and first-run compiler costs for every retained
 # language control, then let source_diff_report.py include the medians in its

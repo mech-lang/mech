@@ -1,0 +1,79 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-09-01T16:24:10.948274-04:00",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "machine": {
+    "model": "Mac mini Macmini9,1",
+    "cpu": "Apple M1, 8 (4 performance and 4 efficiency)",
+    "architecture": "arm64",
+    "memory": "8 GB",
+    "gpu": "Apple M1, Metal 3"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 5,
+    "synchronization": "after every measured process invocation",
+    "runtime": "PUC Lua; no JIT or FFI",
+    "timed_region": "steady-state scalar turn loop",
+    "note": "Input construction, five-turn warmup, reset, and checksum are outside the timed region."
+  },
+  "variants": {
+    "baseline": {
+      "source": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+      "description": "flat fixed-shape source using zero-based Lua tables",
+      "checked": {
+        "throughput_millions": [
+          0.563242248,
+          0.564217867,
+          0.5619066620000001,
+          0.5650148460000001,
+          0.5663059300000001
+        ],
+        "checksum": 2682056.217546998,
+        "faults": 0
+      },
+      "unchecked": {
+        "throughput_millions": [
+          0.839172576,
+          0.836823585,
+          0.835840856,
+          0.83026826,
+          0.833000133
+        ],
+        "checksum": 2682056.217546998,
+        "faults": 0
+      }
+    },
+    "advanced": {
+      "source": "benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua",
+      "description": "flat fixed-shape source using dense one-based Lua array storage",
+      "checked": {
+        "throughput_millions": [
+          0.584072916,
+          0.581958698,
+          0.585881429,
+          0.582429839,
+          0.586111502
+        ],
+        "checksum": 2682056.217546998,
+        "faults": 0
+      },
+      "unchecked": {
+        "throughput_millions": [
+          0.8797202489999999,
+          0.878055634,
+          0.878398855,
+          0.879097694,
+          0.8800066879999999
+        ],
+        "checksum": 2682056.217546998,
+        "faults": 0
+      }
+    }
+  },
+  "notes": [
+    "Both variants execute with PUC Lua only; no JIT or FFI is used.",
+    "Checked mode validates finite state/covariance values, positive covariance diagonals, and covariance symmetry before publication."
+  ]
+}

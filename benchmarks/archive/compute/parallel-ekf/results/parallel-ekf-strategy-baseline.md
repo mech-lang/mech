@@ -12,8 +12,8 @@ The most direct scalar or fixed-shape control retained for each language. Worklo
 | Python | standard-library lists and math | 158 / 5,118 | 0 / 0 | 0.246 | 0.356 | measured |
 | Julia | generic scalar arrays | 126 / 4,322 | 0 / 0 | 3.073 | 3.123 | measured |
 | LuaJIT | generic FFI helper loop | 205 / 4,810 | 0 / 0 | 1.068 | 1.740 | measured |
-| Lua | flat fixed-shape Lua arrays | 153 / 7,031 | 0 / 0 | 0.565 | 0.835 | measured |
-| Taichi | Vector/Matrix resident fields | 260 / 8,891 | 0 / 0 | 19.405 | 22.452 | measured |
+| Lua | flat fixed-shape Lua tables (PUC Lua baseline) | 153 / 7,031 | 0 / 0 | 0.564 | 0.836 | measured |
+| Taichi | Vector/Matrix resident fields | 265 / 8,909 | 0 / 0 | 16.323 | 19.008 | measured |
 | Halide | fixed-shape pipeline | 324 / 8,928 | 0 / 0 | 2.707 | 5.058 | measured |
 | Futhark | data-parallel array program | 56 / 3,098 | 0 / 0 | 19.614 | 19.635 | measured |
 

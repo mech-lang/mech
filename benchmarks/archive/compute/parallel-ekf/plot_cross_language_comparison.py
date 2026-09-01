@@ -77,6 +77,7 @@ def load_rows(
     runtime: dict,
     native: dict,
     lua: dict | None = None,
+    rust_scalar_optimized: dict | None = None,
     taichi_optimized: dict | None = None,
     minimal: dict | None = None,
     julia_threaded: dict | None = None,
@@ -117,6 +118,21 @@ def load_rows(
             "mode": mode,
             "throughput": cross_scalar[key]["ekf_turns_per_second"] / 1_000_000,
         }
+
+    def evidence_scalar(label: str, family: str, mode: str, evidence: dict | None) -> dict[str, object]:
+        """Use a dedicated v2 evidence row when the cross-run summary is stale."""
+        row = (evidence or {}).get("rows", {}).get(mode)
+        if isinstance(row, dict):
+            values = row.get("throughput_millions")
+            if isinstance(values, list):
+                import statistics
+
+                throughput = statistics.median(values)
+            else:
+                throughput = values
+            if throughput is not None:
+                return {"label": f"{label}, {mode}", "family": family, "mode": mode, "throughput": throughput}
+        return scalar(label, family, mode)
 
     def mech_backend(label: str, family: str, mode: str) -> dict[str, object]:
         aliases = {
@@ -227,7 +243,8 @@ def load_rows(
             "throughput": native_mech_metric("unchecked"),
         },
         scalar("Rust packed SIMD", "Rust", "checked"),
-        scalar("Rust optimized fixed-shape", "Rust", "unchecked"),
+        evidence_scalar("Rust optimized fixed-shape", "Rust", "checked", rust_scalar_optimized),
+        evidence_scalar("Rust optimized fixed-shape", "Rust", "unchecked", rust_scalar_optimized),
         scalar("Rust packed SIMD", "Rust", "unchecked"),
         scalar("Julia generic", "Julia", "checked"),
         scalar("Julia generic", "Julia", "unchecked"),
@@ -257,15 +274,33 @@ def load_rows(
         },
     ]
     if lua is not None:
-        rows.extend(
-            {
-                "label": row["label"],
-                "family": "Lua",
-                "mode": row["mode"],
-                "throughput": row["throughput_millions"],
-            }
-            for row in lua["rows"]
-        )
+        # v2 evidence keeps PUC Lua's source variants separate.  Preserve
+        # that distinction in the chart instead of rendering two identical
+        # rows or silently treating the advanced source as a runtime change.
+        variants = lua.get("variants", {})
+        if variants:
+            for variant, label in (("baseline", "Lua PUC baseline"), ("advanced", "Lua PUC advanced")):
+                for mode in ("checked", "unchecked"):
+                    row = variants.get(variant, {}).get(mode)
+                    if not isinstance(row, dict):
+                        continue
+                    value = row.get("throughput_millions")
+                    if isinstance(value, list):
+                        import statistics
+
+                        value = statistics.median(value)
+                    if value is not None:
+                        rows.append({"label": label, "family": "Lua", "mode": mode, "throughput": value})
+        else:
+            rows.extend(
+                {
+                    "label": row["label"],
+                    "family": "Lua",
+                    "mode": row["mode"],
+                    "throughput": row["throughput_millions"],
+                }
+                for row in lua.get("rows", [])
+            )
     if taichi_optimized is not None:
         rows.extend(
             {
@@ -576,7 +611,7 @@ def render(
     note += "Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. "
     note += "Futhark multicore rows show worker count explicitly; only the 1-worker row is a single-core comparison. "
     note += "Compilation, allocation, warmup, and final readback are excluded from the timed region."
-    lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{esc(note)}</text>')
+    lines.append(f'<text x="52" y="{height - 96}" class="muted" font-size="12">{esc(note)}</text>')
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -638,6 +673,7 @@ def main() -> None:
     parser.add_argument("native", type=Path)
     parser.add_argument("output_directory", type=Path)
     parser.add_argument("lua", type=Path, nargs="?", help="plain Lua evidence JSON")
+    parser.add_argument("--rust-scalar-optimized", type=Path, help="optimized fixed-shape Rust scalar evidence JSON")
     parser.add_argument("--taichi-optimized", type=Path, help="optimized Taichi evidence JSON")
     parser.add_argument("--minimal-source", type=Path, help="Halide/Futhark/NumPy minimal-control evidence JSON")
     parser.add_argument("--julia-threaded", type=Path, help="threaded Julia SIMD evidence JSON")
@@ -670,6 +706,11 @@ def main() -> None:
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
     native = json.loads(args.native.read_text(encoding="utf-8"))
     lua = json.loads(args.lua.read_text(encoding="utf-8")) if args.lua else None
+    rust_scalar_optimized = (
+        json.loads(args.rust_scalar_optimized.read_text(encoding="utf-8"))
+        if args.rust_scalar_optimized
+        else None
+    )
     taichi_optimized = (
         json.loads(args.taichi_optimized.read_text(encoding="utf-8"))
         if args.taichi_optimized
@@ -750,6 +791,7 @@ def main() -> None:
         runtime,
         native,
         lua,
+        rust_scalar_optimized,
         taichi_optimized,
         minimal,
         julia_threaded,

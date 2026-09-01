@@ -53,10 +53,10 @@ VARIANTS = [
     {
         "language": "Rust",
         "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
-        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
         "baseline_label": "compact fixed-shape scalar control",
-        "advanced_label": "compact packed four-lane SIMD control",
-        "note": "The compact controls preserve the checked-in Rust algorithms while removing narrative scaffolding; the advanced control still changes the value representation and execution loop.",
+        "advanced_label": "compact fixed-shape unrolled scalar control",
+        "note": "The advanced control specializes all 3x3 operations and computes sin/cos together, matching the source-level specialization Taichi receives while preserving the checked publication contract.",
     },
     {
         "language": "NumPy",
@@ -93,10 +93,10 @@ VARIANTS = [
     {
         "language": "Lua",
         "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
-        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
-        "baseline_label": "same compact flat source under PUC Lua",
-        "advanced_label": "same compact flat source under PUC Lua",
-        "note": "The Lua comparison isolates the runtime: the source is identical to the LuaJIT flat control.",
+        "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua",
+        "baseline_label": "compact flat source with zero-based Lua tables",
+        "advanced_label": "compact flat source with one-based array storage",
+        "note": "Both variants run under PUC Lua without JIT or FFI. The advanced source uses Lua's dense 1..N array part and keeps the flattened scalar recurrence, so this is a real source-level optimization rather than a runtime substitution.",
     },
     {
         "language": "Taichi",
@@ -333,6 +333,33 @@ def scalar_throughput(cross: dict, label: str) -> dict[str, float | None]:
             "unchecked": row["ekf_turns_per_second"] / 1e6 if mode == "unchecked" else None}
 
 
+def lua_variant_metric(data: dict | None, variant: str, mode: str) -> float | None:
+    """Read either the v2 variant-shaped Lua evidence or the legacy rows list."""
+    if data is None:
+        return None
+    variants = data.get("variants", {})
+    row = variants.get(variant, {}).get(mode)
+    if isinstance(row, dict):
+        value = row.get("throughput_millions")
+        if isinstance(value, list):
+            return statistics.median(float(item) for item in value)
+        if value is not None:
+            return float(value)
+    rows = data.get("rows", [])
+    if isinstance(rows, list):
+        labels = {
+            ("baseline", "checked"): ("Lua fixed-shape flat baseline checked", "Lua fixed-shape flat checked"),
+            ("baseline", "unchecked"): ("Lua fixed-shape flat baseline unchecked", "Lua fixed-shape flat unchecked"),
+            ("advanced", "checked"): ("Lua advanced fixed-shape flat checked",),
+            ("advanced", "unchecked"): ("Lua advanced fixed-shape flat unchecked",),
+        }[(variant, mode)]
+        for label in labels:
+            row = next((item for item in rows if item.get("label") == label), None)
+            if row is not None:
+                return float(row["throughput_millions"])
+    return None
+
+
 def throughput_rows(cross: dict, native: dict, taichi: dict, lua: dict, minimal: dict | None) -> dict[str, dict[str, float | None]]:
     scalar = cross["summary"]["scalar_outer_loop"]
     native_rows = {row["label"]: row for row in native["rows"]}
@@ -342,7 +369,10 @@ def throughput_rows(cross: dict, native: dict, taichi: dict, lua: dict, minimal:
         "NumPy": {"checked": scalar["NumPy vectorized fixed-shape checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["NumPy vectorized fixed-shape unchecked"]["ekf_turns_per_second"] / 1e6},
         "Julia": {"checked": scalar["Julia SIMD.jl intrinsics checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["Julia SIMD.jl intrinsics unchecked"]["ekf_turns_per_second"] / 1e6},
         "LuaJIT": {"checked": scalar["LuaJIT fixed-shape flat checked"]["ekf_turns_per_second"] / 1e6, "unchecked": scalar["LuaJIT fixed-shape flat unchecked"]["ekf_turns_per_second"] / 1e6},
-        "Lua": {"checked": lua["rows"][0]["throughput_millions"], "unchecked": lua["rows"][1]["throughput_millions"]},
+        "Lua": {
+            "checked": lua_variant_metric(lua, "baseline", "checked"),
+            "unchecked": lua_variant_metric(lua, "baseline", "unchecked"),
+        },
         "Taichi": {"checked": taichi["rows"][0]["throughput_millions"], "unchecked": taichi["rows"][1]["throughput_millions"]},
     }
     if minimal is not None:
@@ -372,6 +402,7 @@ def throughput_variants(
     strict_halide: dict | None = None,
     pure_python: dict | None = None,
     rust_scalar: dict | None = None,
+    rust_scalar_optimized: dict | None = None,
     luajit_scalar: dict | None = None,
 ) -> dict[str, dict[str, dict[str, float | None]]]:
     """Return benchmark values for both sides of every source pair."""
@@ -434,7 +465,12 @@ def throughput_variants(
                 scalar_evidence_metric(rust_scalar, "checked"),
                 scalar_evidence_metric(rust_scalar, "unchecked") or m("Rust optimized fixed-shape", ""),
             ),
-            "advanced": pair(m("Rust packed SIMD", "checked"), m("Rust packed SIMD", "unchecked")),
+            "advanced": pair(
+                scalar_evidence_metric(rust_scalar_optimized, "checked")
+                or m("Rust packed SIMD", "checked"),
+                scalar_evidence_metric(rust_scalar_optimized, "unchecked")
+                or m("Rust packed SIMD", "unchecked"),
+            ),
         },
         "NumPy": {
             "baseline": pair(min_m("NumPy scalar checked"), min_m("NumPy scalar unchecked")),
@@ -456,8 +492,14 @@ def throughput_variants(
             "advanced": pair(m("LuaJIT fixed-shape flat", "checked"), m("LuaJIT fixed-shape flat", "unchecked")),
         },
         "Lua": {
-            "baseline": pair(lua["rows"][0]["throughput_millions"], lua["rows"][1]["throughput_millions"]),
-            "advanced": pair(lua["rows"][0]["throughput_millions"], lua["rows"][1]["throughput_millions"]),
+            "baseline": pair(
+                lua_variant_metric(lua, "baseline", "checked"),
+                lua_variant_metric(lua, "baseline", "unchecked"),
+            ),
+            "advanced": pair(
+                lua_variant_metric(lua, "advanced", "checked"),
+                lua_variant_metric(lua, "advanced", "unchecked"),
+            ),
         },
         "Taichi": {
             "baseline": pair(native_rows["Taichi native Metal, checked"]["throughput_millions"], native_rows["Taichi native Metal, unchecked"]["throughput_millions"]),
@@ -537,6 +579,7 @@ def build_report(
     pure_python: dict | None = None,
     maxima: dict[str, dict[str, dict[str, dict[str, object]]]] | None = None,
     rust_scalar: dict | None = None,
+    rust_scalar_optimized: dict | None = None,
     luajit_scalar: dict | None = None,
     compile_evidence: dict | None = None,
 ) -> dict:
@@ -551,6 +594,7 @@ def build_report(
         strict_halide,
         pure_python,
         rust_scalar,
+        rust_scalar_optimized,
         luajit_scalar,
     )
     compile_times = recorded_compile_times(cross, compile_evidence)
@@ -611,6 +655,7 @@ def build_report(
             "strict_julia": (strict_julia or {}).get("generated_at"),
             "pure_python": (pure_python or {}).get("generated_at"),
             "rust_scalar": (rust_scalar or {}).get("generated_at"),
+            "rust_scalar_optimized": (rust_scalar_optimized or {}).get("generated_at"),
             "luajit_scalar": (luajit_scalar or {}).get("generated_at"),
             "taichi": taichi.get("generated_at"),
             "lua": lua.get("generated_at"),
@@ -736,7 +781,7 @@ def svg(report: dict) -> str:
         lines.append(f'<rect x="{char_x}" y="{y + 3}" width="{max(1, char_width):.1f}" height="22" rx="3" fill="{color}" opacity="0.9"/>')
         lines.append(f'<text x="{min(char_x + char_width + 8, char_x + panel_width - 8):.1f}" y="{y + 18}" class="value">{char_value:,}</text>')
     support = report["mech_backend_support_delta"]
-    lines.append(f'<text x="42" y="{height - 35}" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed {support["changed_line_slots"]} backend line slots and is intentionally not counted as program edits.</text>')
+    lines.append(f'<text x="42" y="{height - 96}" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed {support["changed_line_slots"]} backend line slots and is not counted as program edits.</text>')
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     return "\n".join(lines) + "\n"
@@ -754,6 +799,7 @@ def main() -> None:
     parser.add_argument("--strict-julia", type=Path)
     parser.add_argument("--pure-python", type=Path)
     parser.add_argument("--rust-scalar", type=Path)
+    parser.add_argument("--rust-scalar-optimized", type=Path)
     parser.add_argument("--luajit-scalar", type=Path)
     parser.add_argument("--compile-times", type=Path)
     parser.add_argument("--throughput-table", type=Path)
@@ -763,6 +809,7 @@ def main() -> None:
     strict_julia_path = args.strict_julia or (args.output_directory / "apple-m1-julia-metal-2026-08-31.json")
     pure_python_path = args.pure_python or (args.output_directory / "apple-m1-pure-python-2026-09-01.json")
     rust_scalar_path = args.rust_scalar or (args.output_directory / "apple-m1-rust-scalar-2026-09-01.json")
+    rust_scalar_optimized_path = args.rust_scalar_optimized or (args.output_directory / "apple-m1-rust-scalar-optimized-2026-09-01.json")
     luajit_scalar_path = args.luajit_scalar or (args.output_directory / "apple-m1-luajit-scalar-2026-09-01.json")
     compile_times_path = args.compile_times or (args.output_directory / "apple-m1-compile-times-2026-09-01.json")
     throughput_table_path = args.throughput_table or (args.output_directory / "parallel-ekf-throughput-table.md")
@@ -781,6 +828,7 @@ def main() -> None:
         json.loads(pure_python_path.read_text(encoding="utf-8")) if pure_python_path.exists() else None,
         maxima,
         json.loads(rust_scalar_path.read_text(encoding="utf-8")) if rust_scalar_path.exists() else None,
+        json.loads(rust_scalar_optimized_path.read_text(encoding="utf-8")) if rust_scalar_optimized_path.exists() else None,
         json.loads(luajit_scalar_path.read_text(encoding="utf-8")) if luajit_scalar_path.exists() else None,
         json.loads(compile_times_path.read_text(encoding="utf-8")) if compile_times_path.exists() else None,
     )

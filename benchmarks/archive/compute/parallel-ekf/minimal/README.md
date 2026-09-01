@@ -47,11 +47,15 @@ uses Python lists and `math` calls and deliberately does not import NumPy.
 The `futhark-ispc-compat.sh` wrapper is used only when Futhark 0.27 is paired
 with ISPC 1.31; it removes four unused declarations that otherwise conflict
 with ISPC's standard library.
-The Rust, Julia, Lua, and Taichi files are compact copies of their
-measured controls; their existing throughput rows are retained in the report
-until a compact-source rerun is recorded. Runtime availability remains
-environment-dependent (for example, Rust SIMD needs its Cargo dependency and
-Taichi needs its Python environment).
+The compact Rust, Julia, Lua, and Taichi files are the measured controls. The
+source-edit report distinguishes copy-only minimization from deliberate
+specialization: `rust_scalar_optimized.rs` unrolls the fixed 3x3 scalar path,
+`lua_advanced.lua` uses dense one-based PUC Lua arrays, and
+`taichi_comparable.py` pins `fast_math=False`. Those are source-level changes,
+not JIT substitutions, and their evidence records the exact checked and
+unchecked contracts. Runtime availability remains environment-dependent (for
+example, Rust SIMD needs its Cargo dependency and Taichi needs its Python
+environment).
 
 ## GPU controls
 

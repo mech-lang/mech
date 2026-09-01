@@ -6,7 +6,7 @@ One GPU dispatch and completion wait per turn; checked rows retain the prior pub
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | Mech | same `.mec`; native Metal dispatch | 42 / 1,513 | 0 / 0 | 187.999 | 275.534 | measured |
 | Julia | direct Metal kernel with retained state | 320 / 9,298 | 361 / 13,273 | 178.135 | 199.454 | measured |
-| Taichi | optimized native Metal kernel | 277 / 11,406 | 224 / 11,640 | 168.798 | 217.297 | measured |
+| Taichi | optimized native Metal kernel | 282 / 11,424 | 224 / 11,640 | 168.798 | 217.297 | measured |
 | Halide | strict native Metal pipeline | 324 / 8,928 | 0 / 0 | 111.474 | 212.283 | measured |
 
 `partial` means the source exists but one checked/unchecked measurement is not recorded yet; it is not treated as zero.

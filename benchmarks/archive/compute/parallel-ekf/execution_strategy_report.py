@@ -38,7 +38,7 @@ STRATEGIES = {
         "description": "Direct native, JIT, or ahead-of-time compiled controls, with no interpreter in the timed loop.",
         "workload": "10,000 filters x 20 turns where available",
         "languages": ("Mech", "Rust", "Julia", "LuaJIT", "Taichi", "Halide", "Futhark"),
-        "note": "This view uses each language's retained native/JIT/AOT scalar control. Mech uses the paired scalar Cranelift JIT checked/unchecked measurements from the backend evidence; the single-core and multicore views remain separate SIMD/JIT controls.",
+        "note": "This view uses each language's retained native/JIT/AOT scalar control. Rust uses the fixed-shape unrolled control, Taichi pins fast_math=False, and Mech uses the paired scalar Cranelift JIT measurements; SIMD/JIT population kernels remain separate.",
     },
     "baseline": {
         "title": "Baseline",
@@ -92,10 +92,10 @@ SOURCES = {
     },
     "compiled-baseline": {
         "Mech": BASELINES["Mech"],
-        "Rust": BASELINES["Rust"],
+        "Rust": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
         "Julia": BASELINES["Julia"],
         "LuaJIT": BASELINES["LuaJIT"],
-        "Taichi": BASELINES["Taichi"],
+        "Taichi": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
         "Halide": BASELINES["Halide"],
         "Futhark": BASELINES["Futhark"],
     },
@@ -107,7 +107,7 @@ SOURCES = {
         "Python": None,
         "Julia": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
         "LuaJIT": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
-        "Lua": BASELINES["Lua"],
+        "Lua": "benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua",
         "Taichi": None,
         "Halide": BASELINES["Halide"],
         "Futhark": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_scalar_ekf.fut",
@@ -159,10 +159,10 @@ SOURCE_LABELS = {
     },
     "compiled-baseline": {
         "Mech": "scalar Cranelift JIT",
-        "Rust": "fixed-shape scalar arrays",
+        "Rust": "fixed-shape unrolled scalar arrays",
         "Julia": "generic scalar JIT arrays",
         "LuaJIT": "generic FFI JIT loop",
-        "Taichi": "Vector/Matrix resident fields with compiled kernel",
+        "Taichi": "Vector/Matrix resident fields with strict compiled kernel",
         "Halide": "fixed-shape compiled pipeline",
         "Futhark": "compiled data-parallel array program",
     },
@@ -173,7 +173,7 @@ SOURCE_LABELS = {
         "Python": "standard-library lists and math",
         "Julia": "generic scalar arrays",
         "LuaJIT": "generic FFI helper loop",
-        "Lua": "flat fixed-shape Lua arrays",
+        "Lua": "flat fixed-shape Lua tables (PUC Lua baseline)",
         "Taichi": "Vector/Matrix resident fields",
         "Halide": "fixed-shape pipeline",
         "Futhark": "data-parallel array program",
@@ -185,7 +185,7 @@ SOURCE_LABELS = {
         "Python": "not applicable: no optimized source",
         "Julia": "explicit SIMD.jl lanes",
         "LuaJIT": "flat scalarized FFI state",
-        "Lua": "flat scalarized Lua state",
+        "Lua": "flat scalarized Lua state (PUC Lua advanced)",
         "Taichi": "not applicable: no single-core row",
         "Halide": "fixed-shape pipeline, one host worker",
         "Futhark": "strict scalarized ISPC program, one worker",
@@ -267,6 +267,28 @@ def row_metric(data: dict | None, label: str) -> float | None:
     return median_value(row, "throughput", 1_000_000)
 
 
+def lua_variant_metric(data: dict | None, variant: str, mode: str) -> float | None:
+    """Read v2 Lua evidence without pretending its two sources are one row."""
+    if data is None:
+        return None
+    row = data.get("variants", {}).get(variant, {}).get(mode)
+    if isinstance(row, dict):
+        return median_value(row, "throughput_millions")
+    rows = data.get("rows", [])
+    if isinstance(rows, list):
+        labels = {
+            ("baseline", "checked"): ("Lua fixed-shape flat baseline checked", "Lua fixed-shape flat checked"),
+            ("baseline", "unchecked"): ("Lua fixed-shape flat baseline unchecked", "Lua fixed-shape flat unchecked"),
+            ("advanced", "checked"): ("Lua advanced fixed-shape flat checked",),
+            ("advanced", "unchecked"): ("Lua advanced fixed-shape flat unchecked",),
+        }[(variant, mode)]
+        for label in labels:
+            value = row_metric(data, label)
+            if value is not None:
+                return value
+    return None
+
+
 def strict_futhark_available(data: dict | None) -> bool:
     if data is None:
         return False
@@ -290,6 +312,7 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
     julia_gpu = data["julia_gpu"]
     pure_python = data["pure_python"]
     rust_scalar = data["rust_scalar"]
+    rust_scalar_optimized = data["rust_scalar_optimized"]
     luajit_scalar = data["luajit_scalar"]
     halide_gpu = data["halide_gpu"]
     strict_mech = data["strict_mech"]
@@ -345,7 +368,10 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
             "Python": pair(row_metric(pure_python, "checked"), row_metric(pure_python, "unchecked")),
             "Julia": pair(m("Julia generic", "checked"), m("Julia generic", "unchecked")),
             "LuaJIT": pair(row_metric(luajit_scalar, "checked"), row_metric(luajit_scalar, "unchecked")),
-            "Lua": pair(row_metric(lua, "Lua fixed-shape flat checked"), row_metric(lua, "Lua fixed-shape flat unchecked")),
+            "Lua": pair(
+                lua_variant_metric(lua, "baseline", "checked"),
+                lua_variant_metric(lua, "baseline", "unchecked"),
+            ),
             "Taichi": pair(row_metric(data["taichi_cpu_baseline"], "checked"), row_metric(data["taichi_cpu_baseline"], "unchecked")),
             "Halide": pair(min_m("Halide checked"), min_m("Halide unchecked")),
             "Futhark": pair(min_m("Futhark multicore 1 threads checked"), min_m("Futhark multicore 1 threads unchecked")),
@@ -360,7 +386,10 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
             "Python": pair(None, None),
             "Julia": pair(m("Julia SIMD.jl intrinsics", "checked"), m("Julia SIMD.jl intrinsics", "unchecked")),
             "LuaJIT": pair(m("LuaJIT fixed-shape flat", "checked"), m("LuaJIT fixed-shape flat", "unchecked")),
-            "Lua": pair(row_metric(lua, "Lua fixed-shape flat checked"), row_metric(lua, "Lua fixed-shape flat unchecked")),
+            "Lua": pair(
+                lua_variant_metric(lua, "advanced", "checked"),
+                lua_variant_metric(lua, "advanced", "unchecked"),
+            ),
             "Taichi": pair(None, None),
             "Halide": pair(min_m("Halide checked"), min_m("Halide unchecked")),
             "Futhark": pair(
@@ -416,6 +445,10 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
     metrics["compiled-baseline"]["Mech"] = pair(
         mech_backend_metric("Mech Cranelift JIT"),
         mech_backend_metric("Mech Cranelift JIT unchecked"),
+    )
+    metrics["compiled-baseline"]["Rust"] = pair(
+        row_metric(rust_scalar_optimized, "checked"),
+        row_metric(rust_scalar_optimized, "unchecked"),
     )
     return metrics
 
@@ -539,7 +572,7 @@ def svg(report: dict, strategy: str) -> str:
     maximum = tick_step * math.ceil(maximum_value / tick_step)
     width, left, right, row_height = 1500, 300, 100, 55
     top = 145 if STRATEGIES[strategy].get("chart_note") else 125
-    bottom = 90 + 18 * (1 + len(omitted))
+    bottom = 170 + 18 * (1 + len(omitted))
     height = top + row_height * len(rows) + bottom
 
     def esc(value: object) -> str:
@@ -598,8 +631,9 @@ def load_inputs(results: Path) -> dict[str, dict | None]:
         "native": "apple-m1-mech-taichi-native-metal-2026-08-31.json",
         "taichi": "apple-m1-taichi-optimized-native-metal-2026-08-31.json",
         "taichi_optimized": "apple-m1-taichi-optimized-native-metal-2026-08-31.json",
-        "taichi_cpu_baseline": "apple-m1-taichi-cpu-baseline-2026-09-01.json",
-        "lua": "apple-m1-lua-2026-08-31.json",
+        "taichi_cpu_baseline": "apple-m1-taichi-cpu-strict-2026-09-01.json",
+        "lua": "apple-m1-lua-2026-09-01.json",
+        "rust_scalar_optimized": "apple-m1-rust-scalar-optimized-2026-09-01.json",
         "minimal": "apple-m1-minimal-source-2026-08-31.json",
         "julia_threaded": "apple-m1-julia-threaded-2026-08-31.json",
         "numpy_numba": "apple-m1-numpy-numba-2026-08-31.json",

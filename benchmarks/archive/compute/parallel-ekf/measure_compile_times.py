@@ -257,7 +257,7 @@ def main() -> None:
         record_python(rows, "Python", "advanced", MINIMAL / "pure_python.py", args.python, cache, args.samples)
 
         record_lua(rows, "Lua", "baseline", MINIMAL / "luajit_fast.lua", args.luac, temp / "lua-baseline.luac", args.samples, "PUC Lua bytecode compile")
-        record_lua(rows, "Lua", "advanced", MINIMAL / "luajit_fast.lua", args.luac, temp / "lua-advanced.luac", args.samples, "PUC Lua bytecode compile")
+        record_lua(rows, "Lua", "advanced", MINIMAL / "lua_advanced.lua", args.luac, temp / "lua-advanced.luac", args.samples, "PUC Lua bytecode compile")
         # LuaJIT's bytecode switch has a different shape from PUC Lua's
         # compiler, so keep it explicit rather than treating it as Lua.
         for variant, source, output in (
@@ -277,14 +277,10 @@ def main() -> None:
 
         if args.rustc:
             scalar_command = [args.rustc, "--edition=2024", "-C", "opt-level=3", "-C", "target-cpu=native", "-C", "codegen-units=1", str(MINIMAL / "rust_scalar.rs"), "-o", str(temp / "rust-scalar")]
-            simd_libraries = sorted((ROOT / "target/release/deps").glob("libwide-*.rlib"))
-            simd_command = [args.rustc, "--edition=2024", "-C", "opt-level=3", "-C", "target-cpu=native", "-C", "codegen-units=1", str(MINIMAL / "rust_simd.rs")]
-            if simd_libraries:
-                simd_command.extend(["--extern", f"wide={simd_libraries[-1]}", "-L", f"dependency={ROOT / 'target/release/deps'}"])
-            simd_command.extend(["-o", str(temp / "rust-simd")])
+            optimized_scalar_command = [args.rustc, "--edition=2024", "-C", "opt-level=3", "-C", "target-cpu=native", "-C", "codegen-units=1", str(MINIMAL / "rust_scalar_optimized.rs"), "-o", str(temp / "rust-scalar-optimized")]
             for language, variant, command, phase in (
                 ("Rust", "baseline", scalar_command, "rustc AOT compile"),
-                ("Rust", "advanced", simd_command, "rustc AOT compile"),
+                ("Rust", "advanced", optimized_scalar_command, "rustc AOT compile"),
             ):
                 try:
                     times, _ = measured_command(command, env, args.samples)

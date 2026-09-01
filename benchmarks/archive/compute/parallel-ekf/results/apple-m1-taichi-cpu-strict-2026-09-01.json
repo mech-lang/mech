@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01",
+  "platform": "Apple M1 Mac mini (Macmini9,1), macOS 15.6.1, arm64",
+  "machine": {
+    "model": "Macmini9,1",
+    "cpu": "Apple M1, 8-core (4P + 4E)",
+    "memory": "8 GB LPDDR4",
+    "gpu": "integrated Apple GPU, Metal 3",
+    "architecture": "arm64"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 5,
+    "backend": "Taichi LLVM CPU",
+    "workers": 1,
+    "fast_math": false,
+    "source": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
+    "synchronization": "after every turn",
+    "timed_region": "steady-state compiled kernel loop"
+  },
+  "rows": {
+    "checked": {
+      "throughput_millions": [16.272622323, 16.322809390, 16.307280932, 16.338924354, 16.405438014],
+      "checksum": [2682056.074097527, 2682056.074097527, 2682056.074097527, 2682056.074097527, 2682056.074097527],
+      "faults": [0, 0, 0, 0, 0]
+    },
+    "unchecked": {
+      "throughput_millions": [18.528385859, 19.007570231, 19.024065098, 19.023687599, 18.988329874],
+      "checksum": [2682056.074097527, 2682056.074097527, 2682056.074097527, 2682056.074097527, 2682056.074097527],
+      "faults": [0, 0, 0, 0, 0]
+    }
+  },
+  "notes": [
+    "Taichi was rerun with fast_math=False so its arithmetic contract is explicit and comparable to strict Mech/Rust controls.",
+    "Vector/Matrix resident fields and the outer population kernel are unchanged; this is the one-worker compiled baseline.",
+    "Input construction, state allocation, five-turn warmup, reset, compilation, and checksum are outside the timed region.",
+    "Median throughput is 16.323 M/s checked and 19.008 M/s unchecked."
+  ]
+}

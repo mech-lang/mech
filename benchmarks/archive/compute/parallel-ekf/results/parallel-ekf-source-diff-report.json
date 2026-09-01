@@ -10,9 +10,10 @@
     "strict_julia": "2026-09-01T08:42:44-04:00",
     "pure_python": "2026-09-01T08:51:47-04:00",
     "rust_scalar": "2026-09-01T09:52:23-04:00",
+    "rust_scalar_optimized": "2026-09-01",
     "luajit_scalar": "2026-09-01T09:52:23-04:00",
     "taichi": "2026-08-31",
-    "lua": "2026-08-31",
+    "lua": "2026-09-01T16:24:10.948274-04:00",
     "minimal": "2026-08-31T18:45:52.116140-04:00"
   },
   "compile_times": {
@@ -59,36 +60,36 @@
         "available": true,
         "phase": "CPython bytecode compile",
         "command": [
-          "/tmp/mech-ekf-python-20260901/bin/python",
+          "/opt/homebrew/bin/python3",
           "-B",
           "-m",
           "py_compile",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py"
         ],
         "milliseconds": [
-          93.287416,
-          86.337625,
-          85.470708
+          156.458917,
+          145.004292,
+          144.743416
         ],
-        "median_milliseconds": 86.337625,
+        "median_milliseconds": 145.004292,
         "notes": ""
       },
       "advanced": {
         "available": true,
         "phase": "CPython bytecode compile",
         "command": [
-          "/tmp/mech-ekf-python-20260901/bin/python",
+          "/opt/homebrew/bin/python3",
           "-B",
           "-m",
           "py_compile",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py"
         ],
         "milliseconds": [
-          86.657042,
-          85.676125,
-          85.804834
+          146.391791,
+          145.715416,
+          145.050584
         ],
-        "median_milliseconds": 85.804834,
+        "median_milliseconds": 145.715416,
         "notes": ""
       }
     },
@@ -97,36 +98,36 @@
         "available": true,
         "phase": "CPython bytecode compile",
         "command": [
-          "/tmp/mech-ekf-python-20260901/bin/python",
+          "/opt/homebrew/bin/python3",
           "-B",
           "-m",
           "py_compile",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
         ],
         "milliseconds": [
-          86.559916,
-          86.207084,
-          85.664875
+          145.7015,
+          145.516125,
+          146.045
         ],
-        "median_milliseconds": 86.207084,
+        "median_milliseconds": 145.7015,
         "notes": ""
       },
       "advanced": {
         "available": true,
         "phase": "CPython bytecode compile",
         "command": [
-          "/tmp/mech-ekf-python-20260901/bin/python",
+          "/opt/homebrew/bin/python3",
           "-B",
           "-m",
           "py_compile",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
         ],
         "milliseconds": [
-          85.98575,
-          86.222791,
-          85.812375
+          145.632583,
+          145.446,
+          145.906
         ],
-        "median_milliseconds": 85.98575,
+        "median_milliseconds": 145.632583,
         "notes": ""
       }
     },
@@ -137,15 +138,15 @@
         "command": [
           "/opt/homebrew/bin/luac",
           "-o",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/lua-baseline.luac",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-baseline.luac",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua"
         ],
         "milliseconds": [
-          5.335833,
-          2.9435,
-          2.799458
+          5.346,
+          2.878541,
+          3.125333
         ],
-        "median_milliseconds": 2.9435,
+        "median_milliseconds": 3.125333,
         "notes": ""
       },
       "advanced": {
@@ -154,15 +155,15 @@
         "command": [
           "/opt/homebrew/bin/luac",
           "-o",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/lua-advanced.luac",
-          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua"
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-advanced.luac",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua"
         ],
         "milliseconds": [
-          3.099917,
-          2.724834,
-          2.843208
+          3.27825,
+          2.966084,
+          2.83225
         ],
-        "median_milliseconds": 2.843208,
+        "median_milliseconds": 2.966084,
         "notes": ""
       }
     },
@@ -174,14 +175,14 @@
           "/opt/homebrew/bin/luajit",
           "-b",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/luajit-baseline.ljbc"
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-baseline.ljbc"
         ],
         "milliseconds": [
-          4.80575,
-          2.98875,
-          3.372708
+          5.041041,
+          2.98725,
+          2.895333
         ],
-        "median_milliseconds": 3.372708,
+        "median_milliseconds": 2.98725,
         "notes": ""
       },
       "advanced": {
@@ -191,14 +192,14 @@
           "/opt/homebrew/bin/luajit",
           "-b",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/luajit-advanced.ljbc"
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-advanced.ljbc"
         ],
         "milliseconds": [
-          3.546125,
-          4.359708,
-          3.598833
+          3.045208,
+          2.961958,
+          2.883
         ],
-        "median_milliseconds": 3.598833,
+        "median_milliseconds": 2.961958,
         "notes": ""
       }
     },
@@ -217,14 +218,14 @@
           "codegen-units=1",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
           "-o",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/rust-scalar"
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar"
         ],
         "milliseconds": [
-          409.498667,
-          405.4945,
-          405.699667
+          927.054125,
+          406.385333,
+          405.215667
         ],
-        "median_milliseconds": 405.699667,
+        "median_milliseconds": 406.385333,
         "notes": ""
       },
       "advanced": {
@@ -239,20 +240,16 @@
           "target-cpu=native",
           "-C",
           "codegen-units=1",
-          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs",
-          "--extern",
-          "wide=/private/tmp/mech-pr11-taichi/target/release/deps/libwide-24e8d1268668e37f.rlib",
-          "-L",
-          "dependency=/private/tmp/mech-pr11-taichi/target/release/deps",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
           "-o",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/rust-simd"
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar-optimized"
         ],
         "milliseconds": [
-          709.328792,
-          708.7945,
-          707.165125
+          276.141708,
+          271.686291,
+          270.716916
         ],
-        "median_milliseconds": 708.7945,
+        "median_milliseconds": 271.686291,
         "notes": ""
       }
     },
@@ -269,14 +266,14 @@
           "-L/opt/homebrew/opt/halide/lib",
           "-lHalide",
           "-o",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/halide-ekf"
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
         ],
         "milliseconds": [
-          1443.237208,
-          1440.496833,
-          1433.790875
+          1521.451959,
+          1424.995958,
+          1424.809167
         ],
-        "median_milliseconds": 1440.496833,
+        "median_milliseconds": 1424.995958,
         "notes": ""
       },
       "advanced": {
@@ -291,14 +288,14 @@
           "-L/opt/homebrew/opt/halide/lib",
           "-lHalide",
           "-o",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/halide-ekf"
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
         ],
         "milliseconds": [
-          1429.134208,
-          1435.551459,
-          1461.922292
+          1425.204209,
+          1454.198,
+          1456.779958
         ],
-        "median_milliseconds": 1435.551459,
+        "median_milliseconds": 1454.198,
         "notes": ""
       }
     },
@@ -311,14 +308,14 @@
           "multicore",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
           "-o",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/futhark-multicore"
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-multicore"
         ],
         "milliseconds": [
-          835.66925,
-          802.384667,
-          801.937583
+          1004.830667,
+          796.943625,
+          803.145292
         ],
-        "median_milliseconds": 802.384667,
+        "median_milliseconds": 803.145292,
         "notes": ""
       },
       "advanced": {
@@ -329,14 +326,14 @@
           "ispc",
           "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
           "-o",
-          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/futhark-ispc"
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-ispc"
         ],
         "milliseconds": [
-          1610.853208,
-          1501.164583,
-          1489.338167
+          1621.986625,
+          1483.802333,
+          1478.940875
         ],
-        "median_milliseconds": 1501.164583,
+        "median_milliseconds": 1483.802333,
         "notes": ""
       }
     },
@@ -353,11 +350,11 @@
           "unchecked"
         ],
         "milliseconds": [
-          1474.322916,
-          1279.981958,
-          1282.44025
+          1751.447083,
+          1290.286958,
+          1276.622417
         ],
-        "median_milliseconds": 1282.44025,
+        "median_milliseconds": 1290.286958,
         "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
       },
       "advanced": {
@@ -372,11 +369,11 @@
           "unchecked"
         ],
         "milliseconds": [
-          1403.978916,
-          1379.127792,
-          1378.7765
+          1418.290416,
+          1379.164792,
+          1371.402666
         ],
-        "median_milliseconds": 1379.127792,
+        "median_milliseconds": 1379.164792,
         "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
       }
     },
@@ -392,11 +389,11 @@
           "unchecked"
         ],
         "milliseconds": [
-          593.025375,
-          435.336917,
-          446.896625
+          632.510625,
+          434.038625,
+          436.311625
         ],
-        "median_milliseconds": 446.896625,
+        "median_milliseconds": 436.311625,
         "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
       },
       "advanced": {
@@ -410,11 +407,11 @@
           "unchecked"
         ],
         "milliseconds": [
-          412.177792,
-          391.228542,
-          374.817708
+          397.430625,
+          383.183041,
+          396.749958
         ],
-        "median_milliseconds": 391.228542,
+        "median_milliseconds": 396.749958,
         "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
       }
     }
@@ -577,21 +574,21 @@
     {
       "language": "Rust",
       "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
-      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
       "baseline_label": "compact fixed-shape scalar control",
-      "advanced_label": "compact packed four-lane SIMD control",
-      "note": "The compact controls preserve the checked-in Rust algorithms while removing narrative scaffolding; the advanced control still changes the value representation and execution loop.",
+      "advanced_label": "compact fixed-shape unrolled scalar control",
+      "note": "The advanced control specializes all 3x3 operations and computes sin/cos together, matching the source-level specialization Taichi receives while preserving the checked publication contract.",
       "baseline_lines": 248,
       "baseline_chars": 7865,
-      "advanced_lines": 598,
-      "advanced_chars": 20655,
+      "advanced_lines": 225,
+      "advanced_chars": 8327,
       "baseline_code": {
         "lines": 243,
         "chars": 6059
       },
       "advanced_code": {
-        "lines": 566,
-        "chars": 13848
+        "lines": 213,
+        "chars": 7103
       },
       "factors": {
         "layout": "fixed scalar arrays -> four-lane packed values",
@@ -604,16 +601,16 @@
           "unchecked": 20.543574349
         },
         "advanced": {
-          "checked": 25.650480145,
-          "unchecked": 18.626814473
+          "checked": 20.010589604,
+          "unchecked": 24.712842943
         }
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 708,
-        "added_lines": 562,
-        "deleted_lines": 212,
-        "changed_chars": 24453
+        "changed_line_slots": 234,
+        "added_lines": 165,
+        "deleted_lines": 188,
+        "changed_chars": 8279
       },
       "baseline_to_base_mech": {
         "changed_line_slots": 248,
@@ -622,14 +619,14 @@
         "changed_chars": 7865
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 596,
-        "added_lines": 596,
+        "changed_line_slots": 225,
+        "added_lines": 223,
         "deleted_lines": 44,
-        "changed_chars": 20653
+        "changed_chars": 8483
       },
       "throughput_millions": {
-        "checked": 25.650480145,
-        "unchecked": 18.626814473
+        "checked": 20.010589604,
+        "unchecked": 24.712842943
       },
       "performance_maxima": {
         "single_core": {
@@ -638,8 +635,8 @@
             "label": "Rust packed SIMD, checked"
           },
           "unchecked": {
-            "throughput": 18.627,
-            "label": "Rust packed SIMD, unchecked"
+            "throughput": 24.713,
+            "label": "Rust optimized fixed-shape, unchecked"
           }
         },
         "simd_multicore": {
@@ -668,14 +665,14 @@
             "codegen-units=1",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
             "-o",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/rust-scalar"
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar"
           ],
           "milliseconds": [
-            409.498667,
-            405.4945,
-            405.699667
+            927.054125,
+            406.385333,
+            405.215667
           ],
-          "median_milliseconds": 405.699667,
+          "median_milliseconds": 406.385333,
           "notes": ""
         },
         "advanced": {
@@ -690,20 +687,16 @@
             "target-cpu=native",
             "-C",
             "codegen-units=1",
-            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs",
-            "--extern",
-            "wide=/private/tmp/mech-pr11-taichi/target/release/deps/libwide-24e8d1268668e37f.rlib",
-            "-L",
-            "dependency=/private/tmp/mech-pr11-taichi/target/release/deps",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
             "-o",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/rust-simd"
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar-optimized"
           ],
           "milliseconds": [
-            709.328792,
-            708.7945,
-            707.165125
+            276.141708,
+            271.686291,
+            270.716916
           ],
-          "median_milliseconds": 708.7945,
+          "median_milliseconds": 271.686291,
           "notes": ""
         }
       }
@@ -792,36 +785,36 @@
           "available": true,
           "phase": "CPython bytecode compile",
           "command": [
-            "/tmp/mech-ekf-python-20260901/bin/python",
+            "/opt/homebrew/bin/python3",
             "-B",
             "-m",
             "py_compile",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py"
           ],
           "milliseconds": [
-            93.287416,
-            86.337625,
-            85.470708
+            156.458917,
+            145.004292,
+            144.743416
           ],
-          "median_milliseconds": 86.337625,
+          "median_milliseconds": 145.004292,
           "notes": ""
         },
         "advanced": {
           "available": true,
           "phase": "CPython bytecode compile",
           "command": [
-            "/tmp/mech-ekf-python-20260901/bin/python",
+            "/opt/homebrew/bin/python3",
             "-B",
             "-m",
             "py_compile",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py"
           ],
           "milliseconds": [
-            86.657042,
-            85.676125,
-            85.804834
+            146.391791,
+            145.715416,
+            145.050584
           ],
-          "median_milliseconds": 85.804834,
+          "median_milliseconds": 145.715416,
           "notes": ""
         }
       }
@@ -900,36 +893,36 @@
           "available": true,
           "phase": "CPython bytecode compile",
           "command": [
-            "/tmp/mech-ekf-python-20260901/bin/python",
+            "/opt/homebrew/bin/python3",
             "-B",
             "-m",
             "py_compile",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
           ],
           "milliseconds": [
-            86.559916,
-            86.207084,
-            85.664875
+            145.7015,
+            145.516125,
+            146.045
           ],
-          "median_milliseconds": 86.207084,
+          "median_milliseconds": 145.7015,
           "notes": ""
         },
         "advanced": {
           "available": true,
           "phase": "CPython bytecode compile",
           "command": [
-            "/tmp/mech-ekf-python-20260901/bin/python",
+            "/opt/homebrew/bin/python3",
             "-B",
             "-m",
             "py_compile",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
           ],
           "milliseconds": [
-            85.98575,
-            86.222791,
-            85.812375
+            145.632583,
+            145.446,
+            145.906
           ],
-          "median_milliseconds": 85.98575,
+          "median_milliseconds": 145.632583,
           "notes": ""
         }
       }
@@ -1036,11 +1029,11 @@
             "unchecked"
           ],
           "milliseconds": [
-            1474.322916,
-            1279.981958,
-            1282.44025
+            1751.447083,
+            1290.286958,
+            1276.622417
           ],
-          "median_milliseconds": 1282.44025,
+          "median_milliseconds": 1290.286958,
           "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
         },
         "advanced": {
@@ -1055,11 +1048,11 @@
             "unchecked"
           ],
           "milliseconds": [
-            1403.978916,
-            1379.127792,
-            1378.7765
+            1418.290416,
+            1379.164792,
+            1371.402666
           ],
-          "median_milliseconds": 1379.127792,
+          "median_milliseconds": 1379.164792,
           "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
         }
       }
@@ -1141,14 +1134,14 @@
             "/opt/homebrew/bin/luajit",
             "-b",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/luajit-baseline.ljbc"
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-baseline.ljbc"
           ],
           "milliseconds": [
-            4.80575,
-            2.98875,
-            3.372708
+            5.041041,
+            2.98725,
+            2.895333
           ],
-          "median_milliseconds": 3.372708,
+          "median_milliseconds": 2.98725,
           "notes": ""
         },
         "advanced": {
@@ -1158,14 +1151,14 @@
             "/opt/homebrew/bin/luajit",
             "-b",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/luajit-advanced.ljbc"
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-advanced.ljbc"
           ],
           "milliseconds": [
-            3.546125,
-            4.359708,
-            3.598833
+            3.045208,
+            2.961958,
+            2.883
           ],
-          "median_milliseconds": 3.598833,
+          "median_milliseconds": 2.961958,
           "notes": ""
         }
       }
@@ -1173,21 +1166,21 @@
     {
       "language": "Lua",
       "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
-      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
-      "baseline_label": "same compact flat source under PUC Lua",
-      "advanced_label": "same compact flat source under PUC Lua",
-      "note": "The Lua comparison isolates the runtime: the source is identical to the LuaJIT flat control.",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua",
+      "baseline_label": "compact flat source with zero-based Lua tables",
+      "advanced_label": "compact flat source with one-based array storage",
+      "note": "Both variants run under PUC Lua without JIT or FFI. The advanced source uses Lua's dense 1..N array part and keeps the flattened scalar recurrence, so this is a real source-level optimization rather than a runtime substitution.",
       "baseline_lines": 153,
       "baseline_chars": 7444,
-      "advanced_lines": 153,
-      "advanced_chars": 7444,
+      "advanced_lines": 204,
+      "advanced_chars": 6416,
       "baseline_code": {
         "lines": 153,
         "chars": 7031
       },
       "advanced_code": {
-        "lines": 153,
-        "chars": 7031
+        "lines": 196,
+        "chars": 5884
       },
       "factors": {
         "layout": "flat fixed-shape Lua tables/FFI-compatible arrays",
@@ -1196,20 +1189,20 @@
       },
       "throughput_variants": {
         "baseline": {
-          "checked": 0.565098,
-          "unchecked": 0.83461
+          "checked": 0.564217867,
+          "unchecked": 0.835840856
         },
         "advanced": {
-          "checked": 0.565098,
-          "unchecked": 0.83461
+          "checked": 0.584072916,
+          "unchecked": 0.879097694
         }
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 0,
-        "added_lines": 0,
-        "deleted_lines": 0,
-        "changed_chars": 0
+        "changed_line_slots": 181,
+        "added_lines": 178,
+        "deleted_lines": 127,
+        "changed_chars": 7203
       },
       "baseline_to_base_mech": {
         "changed_line_slots": 153,
@@ -1218,24 +1211,24 @@
         "changed_chars": 7444
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 153,
-        "added_lines": 153,
-        "deleted_lines": 46,
-        "changed_chars": 7444
+        "changed_line_slots": 202,
+        "added_lines": 202,
+        "deleted_lines": 44,
+        "changed_chars": 6578
       },
       "throughput_millions": {
-        "checked": 0.565098,
-        "unchecked": 0.83461
+        "checked": 0.584072916,
+        "unchecked": 0.879097694
       },
       "performance_maxima": {
         "single_core": {
           "checked": {
-            "throughput": 0.565,
-            "label": "Lua fixed-shape flat checked"
+            "throughput": 0.584,
+            "label": "Lua PUC advanced"
           },
           "unchecked": {
-            "throughput": 0.835,
-            "label": "Lua fixed-shape flat unchecked"
+            "throughput": 0.879,
+            "label": "Lua PUC advanced"
           }
         }
       },
@@ -1246,15 +1239,15 @@
           "command": [
             "/opt/homebrew/bin/luac",
             "-o",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/lua-baseline.luac",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-baseline.luac",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua"
           ],
           "milliseconds": [
-            5.335833,
-            2.9435,
-            2.799458
+            5.346,
+            2.878541,
+            3.125333
           ],
-          "median_milliseconds": 2.9435,
+          "median_milliseconds": 3.125333,
           "notes": ""
         },
         "advanced": {
@@ -1263,15 +1256,15 @@
           "command": [
             "/opt/homebrew/bin/luac",
             "-o",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/lua-advanced.luac",
-            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua"
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-advanced.luac",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua"
           ],
           "milliseconds": [
-            3.099917,
-            2.724834,
-            2.843208
+            3.27825,
+            2.966084,
+            2.83225
           ],
-          "median_milliseconds": 2.843208,
+          "median_milliseconds": 2.966084,
           "notes": ""
         }
       }
@@ -1283,17 +1276,17 @@
       "baseline_label": "compact Vector/Matrix resident fields",
       "advanced_label": "compact scalar SoA fields and unrolled 3x3 arithmetic",
       "note": "This is the compact source-specialized Taichi control; it still uses stock Taichi 1.7.4 and per-turn sync.",
-      "baseline_lines": 260,
-      "baseline_chars": 11243,
-      "advanced_lines": 277,
-      "advanced_chars": 13907,
+      "baseline_lines": 265,
+      "baseline_chars": 11302,
+      "advanced_lines": 282,
+      "advanced_chars": 13966,
       "baseline_code": {
-        "lines": 260,
-        "chars": 8891
+        "lines": 265,
+        "chars": 8909
       },
       "advanced_code": {
-        "lines": 277,
-        "chars": 11406
+        "lines": 282,
+        "chars": 11424
       },
       "factors": {
         "layout": "Vector/Matrix fields -> scalar SoA fields",
@@ -1318,16 +1311,16 @@
         "changed_chars": 11640
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 260,
-        "added_lines": 260,
+        "changed_line_slots": 265,
+        "added_lines": 265,
         "deleted_lines": 46,
-        "changed_chars": 11243
+        "changed_chars": 11302
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 277,
-        "added_lines": 277,
+        "changed_line_slots": 282,
+        "added_lines": 282,
         "deleted_lines": 46,
-        "changed_chars": 13907
+        "changed_chars": 13966
       },
       "throughput_millions": {
         "checked": 168.798,
@@ -1367,11 +1360,11 @@
             "unchecked"
           ],
           "milliseconds": [
-            593.025375,
-            435.336917,
-            446.896625
+            632.510625,
+            434.038625,
+            436.311625
           ],
-          "median_milliseconds": 446.896625,
+          "median_milliseconds": 436.311625,
           "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
         },
         "advanced": {
@@ -1385,11 +1378,11 @@
             "unchecked"
           ],
           "milliseconds": [
-            412.177792,
-            391.228542,
-            374.817708
+            397.430625,
+            383.183041,
+            396.749958
           ],
-          "median_milliseconds": 391.228542,
+          "median_milliseconds": 396.749958,
           "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
         }
       }
@@ -1496,14 +1489,14 @@
             "-L/opt/homebrew/opt/halide/lib",
             "-lHalide",
             "-o",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/halide-ekf"
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
           ],
           "milliseconds": [
-            1443.237208,
-            1440.496833,
-            1433.790875
+            1521.451959,
+            1424.995958,
+            1424.809167
           ],
-          "median_milliseconds": 1440.496833,
+          "median_milliseconds": 1424.995958,
           "notes": ""
         },
         "advanced": {
@@ -1518,14 +1511,14 @@
             "-L/opt/homebrew/opt/halide/lib",
             "-lHalide",
             "-o",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/halide-ekf"
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
           ],
           "milliseconds": [
-            1429.134208,
-            1435.551459,
-            1461.922292
+            1425.204209,
+            1454.198,
+            1456.779958
           ],
-          "median_milliseconds": 1435.551459,
+          "median_milliseconds": 1454.198,
           "notes": ""
         }
       }
@@ -1608,14 +1601,14 @@
             "multicore",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
             "-o",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/futhark-multicore"
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-multicore"
           ],
           "milliseconds": [
-            835.66925,
-            802.384667,
-            801.937583
+            1004.830667,
+            796.943625,
+            803.145292
           ],
-          "median_milliseconds": 802.384667,
+          "median_milliseconds": 803.145292,
           "notes": ""
         },
         "advanced": {
@@ -1626,14 +1619,14 @@
             "ispc",
             "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
             "-o",
-            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-vmidpqsr/futhark-ispc"
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-ispc"
           ],
           "milliseconds": [
-            1610.853208,
-            1501.164583,
-            1489.338167
+            1621.986625,
+            1483.802333,
+            1478.940875
           ],
-          "median_milliseconds": 1501.164583,
+          "median_milliseconds": 1483.802333,
           "notes": ""
         }
       }

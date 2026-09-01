@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-01T15:38:30.259349-04:00",
+  "generated_at": "2026-09-01T16:31:55.580823-04:00",
   "strategies": {
     "interpreted-baseline": [
       {
@@ -68,8 +68,8 @@
         "source": "PUC Lua flat fixed-shape arrays",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
         "values": {
-          "checked": 0.565098,
-          "unchecked": 0.83461
+          "checked": 0.564217867,
+          "unchecked": 0.835840856
         },
         "status": "measured",
         "code": {
@@ -107,22 +107,22 @@
       },
       {
         "language": "Rust",
-        "source": "fixed-shape scalar arrays",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
+        "source": "fixed-shape unrolled scalar arrays",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
         "values": {
-          "checked": 19.798876479,
-          "unchecked": 20.543574349
+          "checked": 20.010589604,
+          "unchecked": 24.712842943
         },
         "status": "measured",
         "code": {
-          "lines": 243,
-          "chars": 6059
+          "lines": 213,
+          "chars": 7103
         },
         "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
+          "changed_line_slots": 234,
+          "added_lines": 165,
+          "deleted_lines": 188,
+          "changed_chars": 8279
         }
       },
       {
@@ -167,16 +167,16 @@
       },
       {
         "language": "Taichi",
-        "source": "Vector/Matrix resident fields with compiled kernel",
+        "source": "Vector/Matrix resident fields with strict compiled kernel",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
         "values": {
-          "checked": 19.404682822,
-          "unchecked": 22.452358274
+          "checked": 16.32280939,
+          "unchecked": 19.007570231
         },
         "status": "measured",
         "code": {
-          "lines": 260,
-          "chars": 8891
+          "lines": 265,
+          "chars": 8909
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -349,11 +349,11 @@
       },
       {
         "language": "Lua",
-        "source": "flat fixed-shape Lua arrays",
+        "source": "flat fixed-shape Lua tables (PUC Lua baseline)",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
         "values": {
-          "checked": 0.565098,
-          "unchecked": 0.83461
+          "checked": 0.564217867,
+          "unchecked": 0.835840856
         },
         "status": "measured",
         "code": {
@@ -372,13 +372,13 @@
         "source": "Vector/Matrix resident fields",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
         "values": {
-          "checked": 19.404682822,
-          "unchecked": 22.452358274
+          "checked": 16.32280939,
+          "unchecked": 19.007570231
         },
         "status": "measured",
         "code": {
-          "lines": 260,
-          "chars": 8891
+          "lines": 265,
+          "chars": 8909
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -531,22 +531,22 @@
       },
       {
         "language": "Lua",
-        "source": "flat scalarized Lua state",
-        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+        "source": "flat scalarized Lua state (PUC Lua advanced)",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua",
         "values": {
-          "checked": 0.565098,
-          "unchecked": 0.83461
+          "checked": 0.584072916,
+          "unchecked": 0.879097694
         },
         "status": "measured",
         "code": {
-          "lines": 153,
-          "chars": 7031
+          "lines": 196,
+          "chars": 5884
         },
         "edit_vs_baseline": {
-          "changed_line_slots": 0,
-          "added_lines": 0,
-          "deleted_lines": 0,
-          "changed_chars": 0
+          "changed_line_slots": 181,
+          "added_lines": 178,
+          "deleted_lines": 127,
+          "changed_chars": 7203
         }
       },
       {
@@ -681,8 +681,8 @@
         },
         "status": "measured",
         "code": {
-          "lines": 277,
-          "chars": 11406
+          "lines": 282,
+          "chars": 11424
         },
         "edit_vs_baseline": {
           "changed_line_slots": 224,
@@ -763,8 +763,8 @@
         },
         "status": "measured",
         "code": {
-          "lines": 277,
-          "chars": 11406
+          "lines": 282,
+          "chars": 11424
         },
         "edit_vs_baseline": {
           "changed_line_slots": 224,
@@ -928,8 +928,9 @@
     "native": "2026-08-31",
     "taichi": "2026-08-31",
     "taichi_optimized": "2026-08-31",
-    "taichi_cpu_baseline": "2026-09-01T09:37:03-04:00",
-    "lua": "2026-08-31",
+    "taichi_cpu_baseline": "2026-09-01",
+    "lua": "2026-09-01T16:24:10.948274-04:00",
+    "rust_scalar_optimized": "2026-09-01",
     "minimal": "2026-08-31T18:45:52.116140-04:00",
     "julia_threaded": "2026-08-31T20:26:54-04:00",
     "numpy_numba": "2026-08-31T20:37:55-04:00",
@@ -972,7 +973,7 @@
         "Halide",
         "Futhark"
       ],
-      "note": "This view uses each language's retained native/JIT/AOT scalar control. Mech uses the paired scalar Cranelift JIT checked/unchecked measurements from the backend evidence; the single-core and multicore views remain separate SIMD/JIT controls."
+      "note": "This view uses each language's retained native/JIT/AOT scalar control. Rust uses the fixed-shape unrolled control, Taichi pins fast_math=False, and Mech uses the paired scalar Cranelift JIT measurements; SIMD/JIT population kernels remain separate."
     },
     "baseline": {
       "title": "Baseline",

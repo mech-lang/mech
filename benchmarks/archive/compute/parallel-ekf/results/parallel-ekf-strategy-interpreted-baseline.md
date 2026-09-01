@@ -9,6 +9,6 @@ Interpreter and host-loop controls kept separate from native/JIT/data-parallel c
 | Mech | resident scalar interpreter | 42 / 1,513 | 0 / 0 | 0.919 | 1.029 | measured |
 | NumPy | Python loop over scalar NumPy operations | 66 / 1,819 | 0 / 0 | 0.040 | 0.053 | measured |
 | Python | standard-library lists and math | 158 / 5,118 | 0 / 0 | 0.246 | 0.356 | measured |
-| Lua | PUC Lua flat fixed-shape arrays | 153 / 7,031 | 0 / 0 | 0.565 | 0.835 | measured |
+| Lua | PUC Lua flat fixed-shape arrays | 153 / 7,031 | 0 / 0 | 0.564 | 0.836 | measured |
 
 `partial` means the source exists but one checked/unchecked measurement is not recorded yet; it is not treated as zero.

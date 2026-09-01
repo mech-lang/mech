@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="729" viewBox="0 0 1500 729">
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="809" viewBox="0 0 1500 809">
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: Single-core throughput</text>
@@ -44,10 +44,10 @@
 <rect x="300" y="394" width="351.8" height="16" rx="2" fill="#000080" opacity="0.42"/>
 <text x="658.8" y="407" class="value">15.991</text>
 <text x="286" y="444" text-anchor="end" class="label">Lua</text>
-<rect x="300" y="424" width="12.4" height="16" rx="2" fill="#000080" opacity="0.92"/>
-<text x="319.4" y="437" class="value">0.565</text>
-<rect x="300" y="449" width="18.4" height="16" rx="2" fill="#000080" opacity="0.42"/>
-<text x="325.4" y="462" class="value">0.835</text>
+<rect x="300" y="424" width="12.8" height="16" rx="2" fill="#000080" opacity="0.92"/>
+<text x="319.8" y="437" class="value">0.584</text>
+<rect x="300" y="449" width="19.3" height="16" rx="2" fill="#000080" opacity="0.42"/>
+<text x="326.3" y="462" class="value">0.879</text>
 <text x="286" y="499" text-anchor="end" class="label">Halide</text>
 <rect x="300" y="479" width="59.6" height="16" rx="2" fill="#ff8f00" opacity="0.92"/>
 <text x="366.6" y="492" class="value">2.707</text>
@@ -61,5 +61,11 @@
 <text x="38" y="630" class="muted" font-size="12">Bars show only languages with at least one measured result; checked is solid and unchecked is lighter.</text>
 <text x="38" y="648" class="muted" font-size="12">Python: backend/strategy unavailable.</text>
 <text x="38" y="666" class="muted" font-size="12">Taichi: backend/strategy unavailable.</text>
-<text x="1400" y="711" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
+<g aria-label="Test machine">
+<rect x="1010" y="719" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
+<text x="1022" y="735" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
+<text x="1022" y="750" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
+<text x="1022" y="765" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
+<text x="1022" y="780" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
+</g>
 </svg>
