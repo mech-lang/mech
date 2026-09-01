@@ -68,6 +68,7 @@ def main() -> None:
     p.add_argument("--halide-metal", action="store_true", help="also measure Halide's native Metal GPU schedule")
     p.add_argument("--futhark-ispc", action="store_true", help="also measure Futhark ISPC SIMD with eight workers")
     p.add_argument("--futhark-ispc-fixed", action="store_true", help="use fixed checked/unchecked Futhark entry points so unchecked code removes validation")
+    p.add_argument("--futhark-ispc-scalarized", action="store_true", help="measure the scalar-expanded Futhark EKF with one ISPC worker, matching Mech's single-core SIMD boundary")
     p.add_argument("--julia-metal", action="store_true", help="also measure Julia Metal GPU with per-turn synchronization")
     p.add_argument("--julia", default=shutil.which("julia") or "julia")
     p.add_argument("--output", type=Path, default=HERE.parent / "results/apple-m1-minimal-source-2026-08-31.json")
@@ -147,11 +148,12 @@ def main() -> None:
                     times.append(args.instances * args.turns / (micros / 1e6))
                     checksums.append(float(output.strip().removesuffix("f32").removesuffix("f64")))
                 rows[f"Futhark multicore {threads} threads {'checked' if checked else 'unchecked'}"] = {"command": command, "throughput": times, "checksums": checksums}
-        if args.futhark_ispc:
+        if args.futhark_ispc or args.futhark_ispc_scalarized:
             ispc_path = Path(temp) / "ispc-bin"
             ispc_path.mkdir()
             (ispc_path / "ispc").symlink_to(HERE / "futhark-ispc-compat.sh")
             ispc_env = env | {"PATH": f"{ispc_path}{os.pathsep}{env.get('PATH', '')}"}
+        if args.futhark_ispc:
             futhark_ispc = Path(temp) / "futhark-ekf-ispc"
             compile_command = ["futhark", "ispc"]
             if args.futhark_ispc_fixed:
@@ -177,6 +179,22 @@ def main() -> None:
                     checksums.append(float(output.strip().removesuffix("f32").removesuffix("f64")))
                 label = "Futhark ISPC fixed SIMD 8 workers" if args.futhark_ispc_fixed else "Futhark ISPC SIMD 8 workers"
                 rows[f"{label} {'checked' if checked else 'unchecked'}"] = {"command": command, "throughput": times, "checksums": checksums}
+        if args.futhark_ispc_scalarized:
+            scalarized = Path(temp) / "futhark-ekf-scalarized-ispc"
+            compile_command = ["futhark", "ispc", "--entry-point=main_unchecked", "--entry-point=main_checked", str(HERE / "futhark_scalar_ekf.fut"), "-o", str(scalarized)]
+            run(compile_command, env=ispc_env)
+            for checked, entry in ((False, "main_unchecked"), (True, "main_checked")):
+                times: list[float] = []
+                checksums: list[float] = []
+                command = [str(scalarized), "--num-threads", "1", "--entry-point", entry, "-r", "1", "-t", str(Path(temp) / "time-ispc-scalarized")]
+                run(command, stdin=inp, env=ispc_env)
+                for _ in range(args.samples):
+                    output = run(command, stdin=inp, env=ispc_env)
+                    with open(Path(temp) / "time-ispc-scalarized", encoding="utf-8") as timing:
+                        micros = float(timing.read().strip())
+                    times.append(args.instances * args.turns / (micros / 1e6))
+                    checksums.append(float(output.strip().removesuffix("f32").removesuffix("f64")))
+                rows[f"Futhark ISPC scalarized SIMD 1 worker {'checked' if checked else 'unchecked'}"] = {"command": command, "throughput": times, "checksums": checksums}
         opencl = Path(temp) / "futhark-opencl"
         try:
             run(["futhark", "opencl", str(HERE / "futhark_ekf.fut"), "-o", str(opencl)], env=env)

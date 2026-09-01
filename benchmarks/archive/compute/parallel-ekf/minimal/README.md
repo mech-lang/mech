@@ -83,6 +83,33 @@ earlier unchecked row looked artificially slow: it still paid for validation
 arithmetic. Raw evidence is in
 `results/apple-m1-futhark-ispc-fixed-2026-08-31.json`.
 
+## Mech-level Futhark control
+
+`futhark_scalar_ekf.fut` is the deliberately bounded Futhark comparison for
+Mech's single-core SIMD/JIT strategy. It keeps the same EKF recurrence, f32
+state, finite/positive-diagonal/symmetry checks, and per-candidate rollback,
+but expands the 3x3 covariance products into scalar bindings. It is compiled
+with Futhark's ISPC backend and run with one worker, giving the backend the
+same SIMD-shaped boundary as Mech without using Futhark's eight-worker or GPU
+maximum. On the Apple M1, 10,000 filters x 20 resident turns, five samples
+after warm-up measured **37.569 M turns/s checked** and **52.597 M turns/s
+unchecked**. The old array-valued source under the same one-worker ISPC
+boundary measured **28.533 M/s checked** and **51.593 M/s unchecked**. The
+checksums differ only by f32 reassociation (about 2.5e-5 over 2.68e6); no
+faults occur for this valid workload.
+
+The control is opt-in so it cannot silently replace the published Futhark
+worker-count rows:
+
+```text
+python3 minimal/measure.py --futhark-ispc-scalarized \
+  --instances 10000 --turns 20 --samples 5
+```
+
+This row is a source-level comparison, not Futhark's maximum possible result:
+it intentionally uses one ISPC worker and remains synchronous at the
+resident-loop boundary.
+
 The fused reference controls use the same boundary as Mech's unchecked block:
 each worker loads its assigned filters once, advances all turns locally, and
 publishes one final state. Rust's packed SIMD control, Julia's eight-thread
