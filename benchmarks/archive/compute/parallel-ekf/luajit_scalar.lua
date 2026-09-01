@@ -5,6 +5,9 @@ local atan2 = math.atan2
 local pi = math.pi
 local instances = math.max(1, tonumber(arg[1]) or 10000)
 local turns = math.max(1, tonumber(arg[2]) or 5)
+local checked = string.lower(arg[3] or "unchecked") == "checked"
+local finite_limit = 3.402823466e38
+local symmetry_tolerance = 1e-4
 local velocity = ffi.new("float[?]", instances)
 local omega = ffi.new("float[?]", instances)
 local bearing = ffi.new("float[?]", instances)
@@ -56,6 +59,27 @@ local s = {
   cp = arr(9)
 }
 local process = ffi.new("float[4]", { 0.01, 0, 0, 0.0025 })
+
+local function finite(value)
+  return value == value and value > -finite_limit and value < finite_limit
+end
+
+local function valid_candidate(x0, x1, x2)
+  if not finite(x0) or not finite(x1) or not finite(x2) then
+    return false
+  end
+  for i = 0, 8 do
+    if not finite(s.cp[i]) then
+      return false
+    end
+  end
+  if s.cp[0] <= 0 or s.cp[4] <= 0 or s.cp[8] <= 0 then
+    return false
+  end
+  return math.abs(s.cp[1] - s.cp[3]) <= symmetry_tolerance
+    and math.abs(s.cp[2] - s.cp[6]) <= symmetry_tolerance
+    and math.abs(s.cp[5] - s.cp[7]) <= symmetry_tolerance
+end
 
 local function transpose(a, rows, cols, out)
   for c = 0, cols - 1 do
@@ -127,9 +151,9 @@ local function step(lane)
   local k0 = s.pht[0] / variance
   local k1 = s.pht[1] / variance
   local k2 = s.pht[2] / variance
-  state[xi] = x0 + k0 * innovation
-  state[xi + 1] = x1 + k1 * innovation
-  state[xi + 2] = x2 + k2 * innovation
+  local next0 = x0 + k0 * innovation
+  local next1 = x1 + k1 * innovation
+  local next2 = x2 + k2 * innovation
   local k = { k0, k1, k2 }
   local h = { h0, h1, h2 }
   for c = 0, 2 do
@@ -142,23 +166,39 @@ local function step(lane)
   matmul(s.ap, 3, 3, s.at, 3, s.cp)
   for c = 0, 2 do
     for r = 0, 2 do
-      covariance[qi + r + c * 3] = s.cp[r + c * 3] + k[r + 1] * k[c + 1] * 0.25
+      s.cp[r + c * 3] = s.cp[r + c * 3] + k[r + 1] * k[c + 1] * 0.25
     end
   end
+  if checked and not valid_candidate(next0, next1, next2) then
+    return false
+  end
+  state[xi] = next0
+  state[xi + 1] = next1
+  state[xi + 2] = next2
+  for c = 0, 2 do
+    for r = 0, 2 do
+      covariance[qi + r + c * 3] = s.cp[r + c * 3]
+    end
+  end
+  return true
 end
 
 local function dispatch(count)
+  local faults = 0
   for _ = 1, count do
     for lane = 0, instances - 1 do
-      step(lane)
+      if not step(lane) then
+        faults = faults + 1
+      end
     end
   end
+  return faults
 end
 
 dispatch(5)
 reset()
 local started = os.clock()
-dispatch(turns)
+local faults = dispatch(turns)
 local elapsed = os.clock() - started
 local checksum = 0
 for i = 0, instances * 3 - 1 do
@@ -170,6 +210,8 @@ end
 print("lane: LuaJIT scalar outer loop")
 print("instances: " .. instances)
 print("turns: " .. turns)
+print("validation: " .. (checked and "checked" or "unchecked"))
+print("faults: " .. faults)
 print(string.format("elapsed_s: %.9f", elapsed))
 print(string.format("throughput: %.3f", instances * turns / elapsed))
 print(string.format("checksum: %.9f", checksum))

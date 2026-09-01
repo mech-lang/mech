@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-01T09:38:24.607953-04:00",
+  "generated_at": "2026-09-01T09:57:14.607493-04:00",
   "strategies": {
     "baseline": [
       {
@@ -28,13 +28,13 @@
         "source": "fixed-shape scalar arrays",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
         "values": {
-          "checked": null,
-          "unchecked": 16.907063983
+          "checked": 19.798876479,
+          "unchecked": 20.543574349
         },
-        "status": "partial: missing checked",
+        "status": "measured",
         "code": {
-          "lines": 206,
-          "chars": 5003
+          "lines": 243,
+          "chars": 6059
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -108,13 +108,13 @@
         "source": "generic FFI helper loop",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
         "values": {
-          "checked": null,
-          "unchecked": 1.0739408259999998
+          "checked": 1.06752923,
+          "unchecked": 1.739718914
         },
-        "status": "partial: missing checked",
+        "status": "measured",
         "code": {
-          "lines": 165,
-          "chars": 3790
+          "lines": 205,
+          "chars": 4810
         },
         "edit_vs_baseline": {
           "changed_line_slots": 0,
@@ -239,10 +239,10 @@
           "chars": 13848
         },
         "edit_vs_baseline": {
-          "changed_line_slots": 701,
-          "added_lines": 578,
-          "deleted_lines": 190,
-          "changed_chars": 23858
+          "changed_line_slots": 708,
+          "added_lines": 562,
+          "deleted_lines": 212,
+          "changed_chars": 24453
         }
       },
       {
@@ -311,10 +311,10 @@
           "chars": 7031
         },
         "edit_vs_baseline": {
-          "changed_line_slots": 224,
-          "added_lines": 129,
-          "deleted_lines": 151,
-          "changed_chars": 9071
+          "changed_line_slots": 242,
+          "added_lines": 121,
+          "deleted_lines": 185,
+          "changed_chars": 9393
         }
       },
       {
@@ -393,11 +393,11 @@
     "multicore": [
       {
         "language": "Mech",
-        "source": "same `.mec`; eight-worker SIMD/JIT",
+        "source": "same `.mec`; checkpointed fused eight-worker SIMD/JIT block",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
         "values": {
-          "checked": 104.783,
-          "unchecked": 110.469
+          "checked": 145.573,
+          "unchecked": 165.83
         },
         "status": "measured",
         "code": {
@@ -425,10 +425,10 @@
           "chars": 13848
         },
         "edit_vs_baseline": {
-          "changed_line_slots": 701,
-          "added_lines": 578,
-          "deleted_lines": 190,
-          "changed_chars": 23858
+          "changed_line_slots": 708,
+          "added_lines": 562,
+          "deleted_lines": 212,
+          "changed_chars": 24453
         }
       },
       {
@@ -855,18 +855,6 @@
   },
   "missing_cells": [
     {
-      "strategy": "baseline",
-      "language": "Rust",
-      "mode": "checked",
-      "status": "not recorded"
-    },
-    {
-      "strategy": "baseline",
-      "language": "LuaJIT",
-      "mode": "checked",
-      "status": "not recorded"
-    },
-    {
       "strategy": "gpu-batched",
       "language": "Mech",
       "mode": "checked",
@@ -888,9 +876,12 @@
     "futhark_fixed": "2026-08-31T21:46:00-04:00",
     "julia_gpu": "2026-09-01T08:42:44-04:00",
     "pure_python": "2026-09-01T08:51:47-04:00",
+    "rust_scalar": "2026-09-01T09:52:23-04:00",
+    "luajit_scalar": "2026-09-01T09:52:23-04:00",
     "halide_gpu": "2026-09-01T00:05:05.531733-04:00",
     "strict_mech": "2026-08-31",
-    "fused": "2026-08-31T23:10:00-04:00"
+    "fused": "2026-08-31T23:10:00-04:00",
+    "mech_persistent": "2026-08-31T22:20:00-04:00"
   },
   "definitions": {
     "baseline": {
@@ -905,7 +896,7 @@
     },
     "multicore": {
       "title": "Eight-worker multicore",
-      "description": "Explicit eight-worker CPU execution with a synchronous publication boundary.",
+      "description": "Matched eight-worker CPU fused block; checked mode validates each candidate and publishes at the block boundary.",
       "workload": "500,000 filters x 40 turns where available"
     },
     "gpu": {

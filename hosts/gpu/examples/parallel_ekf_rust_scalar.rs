@@ -20,12 +20,13 @@ struct Scratch {
 fn main() {
     let instances = argument(1, 100_000_usize).max(1);
     let turns = argument(2, 5_u32).max(1);
+    let checked = env::args().nth(3).as_deref() == Some("checked");
     let (velocity, angular_velocity, bearing) = inputs(instances);
     let mut state = vec![0.0_f32; instances * 3];
     let mut covariance = vec![0.0_f32; instances * 9];
     reset(&mut state, &mut covariance);
     let mut scratch = Scratch::default();
-    dispatch(
+    dispatch::<false>(
         &mut state,
         &mut covariance,
         &velocity,
@@ -36,15 +37,27 @@ fn main() {
     );
     reset(&mut state, &mut covariance);
     let started = Instant::now();
-    dispatch(
-        &mut state,
-        &mut covariance,
-        &velocity,
-        &angular_velocity,
-        &bearing,
-        turns,
-        &mut scratch,
-    );
+    let faults = if checked {
+        dispatch::<true>(
+            &mut state,
+            &mut covariance,
+            &velocity,
+            &angular_velocity,
+            &bearing,
+            turns,
+            &mut scratch,
+        )
+    } else {
+        dispatch::<false>(
+            &mut state,
+            &mut covariance,
+            &velocity,
+            &angular_velocity,
+            &bearing,
+            turns,
+            &mut scratch,
+        )
+    };
     let elapsed = started.elapsed();
     let seconds = elapsed.as_secs_f64();
     let throughput = instances as f64 * turns as f64 / seconds;
@@ -57,6 +70,8 @@ fn main() {
     println!("lane: Rust optimized fixed-shape");
     println!("instances: {instances}");
     println!("turns: {turns}");
+    println!("validation: {}", if checked { "checked" } else { "unchecked" });
+    println!("faults: {faults}");
     println!("elapsed_s: {seconds:.9}");
     println!("throughput: {throughput:.3}");
     println!("checksum: {checksum:.9}");
@@ -91,7 +106,7 @@ fn reset(state: &mut [f32], covariance: &mut [f32]) {
     }
 }
 
-fn dispatch(
+fn dispatch<const CHECKED: bool>(
     state: &mut [f32],
     covariance: &mut [f32],
     velocity: &[f32],
@@ -99,30 +114,34 @@ fn dispatch(
     bearing: &[f32],
     turns: u32,
     scratch: &mut Scratch,
-) {
+) -> usize {
+    let mut faults = 0;
     for _ in 0..turns {
         for lane in 0..velocity.len() {
-            step(
+            if !step::<CHECKED>(
                 &mut state[lane * 3..lane * 3 + 3],
                 &mut covariance[lane * 9..lane * 9 + 9],
                 velocity[lane],
                 angular_velocity[lane],
                 bearing[lane],
                 scratch,
-            );
+            ) {
+                faults += 1;
+            }
         }
     }
+    faults
 }
 
 #[inline(always)]
-fn step(
+fn step<const CHECKED: bool>(
     state: &mut [f32],
     covariance: &mut [f32],
     velocity: f32,
     angular_velocity: f32,
     bearing: f32,
     s: &mut Scratch,
-) {
+) -> bool {
     let dt = 0.1_f32;
     let sin_theta = state[2].sin();
     let cos_theta = state[2].cos();
@@ -180,9 +199,11 @@ fn step(
         .sum::<f32>()
         + 0.25;
     let gain = s.pht.map(|value| value / innovation_variance);
-    for row in 0..3 {
-        state[row] = predicted_state[row] + gain[row] * innovation;
-    }
+    let candidate_state = [
+        predicted_state[0] + gain[0] * innovation,
+        predicted_state[1] + gain[1] * innovation,
+        predicted_state[2] + gain[2] * innovation,
+    ];
     for column in 0..3 {
         for row in 0..3 {
             s.a[row + column * 3] = f32::from(row == column) - gain[row] * h[column];
@@ -193,10 +214,28 @@ fn step(
     matmul(&s.ap, 3, 3, &s.at, 3, &mut s.corrected_p);
     for column in 0..3 {
         for row in 0..3 {
-            covariance[row + column * 3] =
+            s.corrected_p[row + column * 3] =
                 s.corrected_p[row + column * 3] + gain[row] * gain[column] * 0.25;
         }
     }
+    if CHECKED && !valid_candidate(&candidate_state, &s.corrected_p) {
+        return false;
+    }
+    state.copy_from_slice(&candidate_state);
+    covariance.copy_from_slice(&s.corrected_p);
+    true
+}
+
+#[inline(always)]
+fn valid_candidate(state: &[f32; 3], covariance: &[f32; 9]) -> bool {
+    state.iter().all(|value| value.is_finite())
+        && covariance.iter().all(|value| value.is_finite())
+        && covariance[0] > 0.0
+        && covariance[4] > 0.0
+        && covariance[8] > 0.0
+        && (covariance[1] - covariance[3]).abs() <= 1.0e-4
+        && (covariance[2] - covariance[6]).abs() <= 1.0e-4
+        && (covariance[5] - covariance[7]).abs() <= 1.0e-4
 }
 
 #[inline(always)]

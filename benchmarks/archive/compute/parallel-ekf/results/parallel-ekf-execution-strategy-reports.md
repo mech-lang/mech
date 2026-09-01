@@ -16,8 +16,6 @@ The generator does not turn an absent measurement into zero. Applicable cells st
 
 | Strategy | Language | Mode |
 | --- | --- | --- |
-| baseline | Rust | checked |
-| baseline | LuaJIT | checked |
 | gpu-batched | Mech | checked |
 
 `N/A` means the backend or strategy is not available in this comparison. `partial` means a source exists but a checked/unchecked measurement is not retained; those cells are listed above rather than being fabricated.

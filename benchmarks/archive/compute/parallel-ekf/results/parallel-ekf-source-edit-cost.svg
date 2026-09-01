@@ -11,24 +11,24 @@
 <text x="940.0" y="542" text-anchor="middle" class="muted" font-size="12">0</text>
 <line x1="364.0" y1="108" x2="364.0" y2="520" class="grid"/>
 <line x1="1064.0" y1="108" x2="1064.0" y2="520" class="grid"/>
-<text x="364.0" y="542" text-anchor="middle" class="muted" font-size="12">140</text>
-<text x="1064.0" y="542" text-anchor="middle" class="muted" font-size="12">4,771</text>
+<text x="364.0" y="542" text-anchor="middle" class="muted" font-size="12">141</text>
+<text x="1064.0" y="542" text-anchor="middle" class="muted" font-size="12">4,890</text>
 <line x1="488.0" y1="108" x2="488.0" y2="520" class="grid"/>
 <line x1="1188.0" y1="108" x2="1188.0" y2="520" class="grid"/>
-<text x="488.0" y="542" text-anchor="middle" class="muted" font-size="12">280</text>
-<text x="1188.0" y="542" text-anchor="middle" class="muted" font-size="12">9,543</text>
+<text x="488.0" y="542" text-anchor="middle" class="muted" font-size="12">283</text>
+<text x="1188.0" y="542" text-anchor="middle" class="muted" font-size="12">9,781</text>
 <line x1="612.0" y1="108" x2="612.0" y2="520" class="grid"/>
 <line x1="1312.0" y1="108" x2="1312.0" y2="520" class="grid"/>
-<text x="612.0" y="542" text-anchor="middle" class="muted" font-size="12">420</text>
-<text x="1312.0" y="542" text-anchor="middle" class="muted" font-size="12">14,314</text>
+<text x="612.0" y="542" text-anchor="middle" class="muted" font-size="12">424</text>
+<text x="1312.0" y="542" text-anchor="middle" class="muted" font-size="12">14,671</text>
 <line x1="736.0" y1="108" x2="736.0" y2="520" class="grid"/>
 <line x1="1436.0" y1="108" x2="1436.0" y2="520" class="grid"/>
-<text x="736.0" y="542" text-anchor="middle" class="muted" font-size="12">560</text>
-<text x="1436.0" y="542" text-anchor="middle" class="muted" font-size="12">19,086</text>
+<text x="736.0" y="542" text-anchor="middle" class="muted" font-size="12">566</text>
+<text x="1436.0" y="542" text-anchor="middle" class="muted" font-size="12">19,562</text>
 <line x1="860.0" y1="108" x2="860.0" y2="520" class="grid"/>
 <line x1="1560.0" y1="108" x2="1560.0" y2="520" class="grid"/>
-<text x="860.0" y="542" text-anchor="middle" class="muted" font-size="12">701</text>
-<text x="1560.0" y="542" text-anchor="middle" class="muted" font-size="12">23,858</text>
+<text x="860.0" y="542" text-anchor="middle" class="muted" font-size="12">708</text>
+<text x="1560.0" y="542" text-anchor="middle" class="muted" font-size="12">24,453</text>
 <text x="226" y="137" text-anchor="end" class="label">Mech</text>
 <rect x="240" y="123" width="1.0" height="22" rx="3" fill="#f4c430" opacity="0.9"/>
 <text x="248.0" y="138" class="value">0</text>
@@ -55,29 +55,29 @@
 <rect x="940.0" y="283" width="1.0" height="22" rx="3" fill="#e94f37" opacity="0.9"/>
 <text x="948.0" y="298" class="value">0</text>
 <text x="226" y="337" text-anchor="end" class="label">NumPy</text>
-<rect x="240" y="323" width="83.1" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="331.1" y="338" class="value">94</text>
-<rect x="940.0" y="323" width="81.2" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="1029.2" y="338" class="value">3,123</text>
+<rect x="240" y="323" width="82.3" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="330.3" y="338" class="value">94</text>
+<rect x="940.0" y="323" width="79.2" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="1027.2" y="338" class="value">3,123</text>
 <text x="226" y="377" text-anchor="end" class="label">Julia</text>
-<rect x="240" y="363" width="180.4" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="428.4" y="378" class="value">204</text>
-<rect x="940.0" y="363" width="232.8" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="1180.8" y="378" class="value">8,960</text>
-<text x="226" y="417" text-anchor="end" class="label">LuaJIT</text>
-<rect x="240" y="403" width="198.1" height="22" rx="3" fill="#000080" opacity="0.9"/>
-<text x="446.1" y="418" class="value">224</text>
-<rect x="940.0" y="403" width="235.7" height="22" rx="3" fill="#000080" opacity="0.9"/>
-<text x="1183.7" y="418" class="value">9,071</text>
-<text x="226" y="457" text-anchor="end" class="label">Taichi</text>
-<rect x="240" y="443" width="198.1" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
-<text x="446.1" y="458" class="value">224</text>
-<rect x="940.0" y="443" width="302.5" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
-<text x="1250.5" y="458" class="value">11,640</text>
+<rect x="240" y="363" width="178.6" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="426.6" y="378" class="value">204</text>
+<rect x="940.0" y="363" width="227.2" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="1175.2" y="378" class="value">8,960</text>
+<text x="226" y="417" text-anchor="end" class="label">Taichi</text>
+<rect x="240" y="403" width="196.2" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="444.2" y="418" class="value">224</text>
+<rect x="940.0" y="403" width="295.1" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="1243.1" y="418" class="value">11,640</text>
+<text x="226" y="457" text-anchor="end" class="label">LuaJIT</text>
+<rect x="240" y="443" width="211.9" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<text x="459.9" y="458" class="value">242</text>
+<rect x="940.0" y="443" width="238.2" height="22" rx="3" fill="#000080" opacity="0.9"/>
+<text x="1186.2" y="458" class="value">9,393</text>
 <text x="226" y="497" text-anchor="end" class="label">Rust</text>
 <rect x="240" y="483" width="620.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
-<text x="852.0" y="498" class="value">701</text>
+<text x="852.0" y="498" class="value">708</text>
 <rect x="940.0" y="483" width="620.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
-<text x="1552.0" y="498" class="value">23,858</text>
+<text x="1552.0" y="498" class="value">24,453</text>
 <text x="42" y="575" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed 523 backend line slots and is intentionally not counted as program edits.</text>
 </svg>

@@ -70,6 +70,8 @@ git switch --track origin/codex/mech-program-gpu
 | Fused Rust/Julia/Numba reference evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json` |
 | Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
 | Pure-Python scalar evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-pure-python-2026-09-01.json` |
+| Rust scalar checked/unchecked evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-rust-scalar-2026-09-01.json` |
+| LuaJIT scalar checked/unchecked evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-luajit-scalar-2026-09-01.json` |
 | Taichi one-worker CPU baseline evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-taichi-cpu-baseline-2026-09-01.json` |
 | NumPy GPU capability evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-gpu-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |

@@ -369,6 +369,8 @@ def throughput_variants(
     strict_mech: dict | None = None,
     strict_halide: dict | None = None,
     pure_python: dict | None = None,
+    rust_scalar: dict | None = None,
+    luajit_scalar: dict | None = None,
 ) -> dict[str, dict[str, dict[str, float | None]]]:
     """Return benchmark values for both sides of every source pair."""
     scalar = cross["summary"]["scalar_outer_loop"]
@@ -409,6 +411,14 @@ def throughput_variants(
             return None
         return statistics.median(row["throughput_millions"])
 
+    def scalar_evidence_metric(evidence: dict | None, mode: str) -> float | None:
+        if evidence is None:
+            return None
+        row = evidence.get("rows", {}).get(mode)
+        if row is None or "throughput_millions" not in row:
+            return None
+        return statistics.median(row["throughput_millions"])
+
     def pair(checked: float | None, unchecked: float | None) -> dict[str, float | None]:
         return {"checked": checked, "unchecked": unchecked}
 
@@ -418,7 +428,10 @@ def throughput_variants(
             "advanced": pair(mech_metric("checked"), mech_metric("unchecked")),
         },
         "Rust": {
-            "baseline": pair(None, m("Rust optimized fixed-shape", "")),
+            "baseline": pair(
+                scalar_evidence_metric(rust_scalar, "checked"),
+                scalar_evidence_metric(rust_scalar, "unchecked") or m("Rust optimized fixed-shape", ""),
+            ),
             "advanced": pair(m("Rust packed SIMD", "checked"), m("Rust packed SIMD", "unchecked")),
         },
         "NumPy": {
@@ -434,7 +447,10 @@ def throughput_variants(
             "advanced": pair(m("Julia SIMD.jl intrinsics", "checked"), m("Julia SIMD.jl intrinsics", "unchecked")),
         },
         "LuaJIT": {
-            "baseline": pair(None, m("LuaJIT scalar outer loop", "")),
+            "baseline": pair(
+                scalar_evidence_metric(luajit_scalar, "checked"),
+                scalar_evidence_metric(luajit_scalar, "unchecked") or m("LuaJIT scalar outer loop", ""),
+            ),
             "advanced": pair(m("LuaJIT fixed-shape flat", "checked"), m("LuaJIT fixed-shape flat", "unchecked")),
         },
         "Lua": {
@@ -483,6 +499,8 @@ def build_report(
     strict_julia: dict | None = None,
     pure_python: dict | None = None,
     maxima: dict[str, dict[str, dict[str, dict[str, object]]]] | None = None,
+    rust_scalar: dict | None = None,
+    luajit_scalar: dict | None = None,
 ) -> dict:
     base = read(BASE_MECH)
     variants_throughput = throughput_variants(
@@ -494,6 +512,8 @@ def build_report(
         strict_mech,
         strict_halide,
         pure_python,
+        rust_scalar,
+        luajit_scalar,
     )
     cross_config = cross.get("configuration", {})
     native_config = (strict_mech or native).get("configuration", {})
@@ -550,6 +570,8 @@ def build_report(
             "strict_halide": (strict_halide or {}).get("generated_at"),
             "strict_julia": (strict_julia or {}).get("generated_at"),
             "pure_python": (pure_python or {}).get("generated_at"),
+            "rust_scalar": (rust_scalar or {}).get("generated_at"),
+            "luajit_scalar": (luajit_scalar or {}).get("generated_at"),
             "taichi": taichi.get("generated_at"),
             "lua": lua.get("generated_at"),
             "minimal": (minimal or {}).get("generated_at"),
@@ -676,12 +698,16 @@ def main() -> None:
     parser.add_argument("--strict-halide", type=Path)
     parser.add_argument("--strict-julia", type=Path)
     parser.add_argument("--pure-python", type=Path)
+    parser.add_argument("--rust-scalar", type=Path)
+    parser.add_argument("--luajit-scalar", type=Path)
     parser.add_argument("--throughput-table", type=Path)
     args = parser.parse_args()
     strict_mech_path = args.strict_mech or (args.output_directory / "apple-m1-mech-halide-strict-2026-08-31.json")
     strict_halide_path = args.strict_halide or (args.output_directory / "apple-m1-halide-metal-strict-2026-08-31.json")
     strict_julia_path = args.strict_julia or (args.output_directory / "apple-m1-julia-metal-2026-08-31.json")
     pure_python_path = args.pure_python or (args.output_directory / "apple-m1-pure-python-2026-09-01.json")
+    rust_scalar_path = args.rust_scalar or (args.output_directory / "apple-m1-rust-scalar-2026-09-01.json")
+    luajit_scalar_path = args.luajit_scalar or (args.output_directory / "apple-m1-luajit-scalar-2026-09-01.json")
     throughput_table_path = args.throughput_table or (args.output_directory / "parallel-ekf-throughput-table.md")
     maxima = performance_maxima(throughput_table_path) if throughput_table_path.exists() else None
     report = build_report(
@@ -697,6 +723,8 @@ def main() -> None:
         json.loads(strict_julia_path.read_text(encoding="utf-8")) if strict_julia_path.exists() else None,
         json.loads(pure_python_path.read_text(encoding="utf-8")) if pure_python_path.exists() else None,
         maxima,
+        json.loads(rust_scalar_path.read_text(encoding="utf-8")) if rust_scalar_path.exists() else None,
+        json.loads(luajit_scalar_path.read_text(encoding="utf-8")) if luajit_scalar_path.exists() else None,
     )
     args.output_directory.mkdir(parents=True, exist_ok=True)
     (args.output_directory / "parallel-ekf-source-diff-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

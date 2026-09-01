@@ -9,6 +9,8 @@
     "strict_halide": "2026-09-01T00:05:05.531733-04:00",
     "strict_julia": "2026-09-01T08:42:44-04:00",
     "pure_python": "2026-09-01T08:51:47-04:00",
+    "rust_scalar": "2026-09-01T09:52:23-04:00",
+    "luajit_scalar": "2026-09-01T09:52:23-04:00",
     "taichi": "2026-08-31",
     "lua": "2026-08-31",
     "minimal": "2026-08-31T18:45:52.116140-04:00"
@@ -137,13 +139,13 @@
       "baseline_label": "compact fixed-shape scalar control",
       "advanced_label": "compact packed four-lane SIMD control",
       "note": "The compact controls preserve the checked-in Rust algorithms while removing narrative scaffolding; the advanced control still changes the value representation and execution loop.",
-      "baseline_lines": 210,
-      "baseline_chars": 6454,
+      "baseline_lines": 248,
+      "baseline_chars": 7865,
       "advanced_lines": 598,
       "advanced_chars": 20655,
       "baseline_code": {
-        "lines": 206,
-        "chars": 5003
+        "lines": 243,
+        "chars": 6059
       },
       "advanced_code": {
         "lines": 566,
@@ -156,8 +158,8 @@
       },
       "throughput_variants": {
         "baseline": {
-          "checked": null,
-          "unchecked": 16.907063983
+          "checked": 19.798876479,
+          "unchecked": 20.543574349
         },
         "advanced": {
           "checked": 25.650480145,
@@ -166,16 +168,16 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 701,
-        "added_lines": 578,
-        "deleted_lines": 190,
-        "changed_chars": 23858
+        "changed_line_slots": 708,
+        "added_lines": 562,
+        "deleted_lines": 212,
+        "changed_chars": 24453
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 210,
-        "added_lines": 210,
+        "changed_line_slots": 248,
+        "added_lines": 248,
         "deleted_lines": 46,
-        "changed_chars": 6454
+        "changed_chars": 7865
       },
       "advanced_to_base_mech": {
         "changed_line_slots": 596,
@@ -457,13 +459,13 @@
       "baseline_label": "compact generic matrix helper loop",
       "advanced_label": "compact flat fixed-shape scalarized state",
       "note": "The compact controls preserve the Lua algorithms; the advanced source removes helper-level matrix temporaries and writes each component directly.",
-      "baseline_lines": 175,
-      "baseline_chars": 4289,
+      "baseline_lines": 217,
+      "baseline_chars": 5449,
       "advanced_lines": 153,
       "advanced_chars": 7444,
       "baseline_code": {
-        "lines": 165,
-        "chars": 3790
+        "lines": 205,
+        "chars": 4810
       },
       "advanced_code": {
         "lines": 153,
@@ -476,8 +478,8 @@
       },
       "throughput_variants": {
         "baseline": {
-          "checked": null,
-          "unchecked": 1.0739408259999998
+          "checked": 1.06752923,
+          "unchecked": 1.739718914
         },
         "advanced": {
           "checked": 1.262674091,
@@ -486,16 +488,16 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 224,
-        "added_lines": 129,
-        "deleted_lines": 151,
-        "changed_chars": 9071
+        "changed_line_slots": 242,
+        "added_lines": 121,
+        "deleted_lines": 185,
+        "changed_chars": 9393
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 173,
-        "added_lines": 173,
+        "changed_line_slots": 215,
+        "added_lines": 215,
         "deleted_lines": 44,
-        "changed_chars": 4287
+        "changed_chars": 5447
       },
       "advanced_to_base_mech": {
         "changed_line_slots": 153,

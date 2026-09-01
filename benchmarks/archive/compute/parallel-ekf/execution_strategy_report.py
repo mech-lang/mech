@@ -36,7 +36,7 @@ STRATEGIES = {
     },
     "multicore": {
         "title": "Eight-worker multicore",
-        "description": "Explicit eight-worker CPU execution with a synchronous publication boundary.",
+        "description": "Matched eight-worker CPU fused block; checked mode validates each candidate and publishes at the block boundary.",
         "workload": "500,000 filters x 40 turns where available",
     },
     "gpu": {
@@ -142,7 +142,7 @@ SOURCE_LABELS = {
         "Futhark": "same data-parallel program, one worker",
     },
     "multicore": {
-        "Mech": "same `.mec`; eight-worker SIMD/JIT",
+        "Mech": "same `.mec`; checkpointed fused eight-worker SIMD/JIT block",
         "Rust": "packed SIMD with eight worker-local blocks",
         "NumPy": "Numba `prange` eight-worker loop",
         "Python": "not applicable: no worker implementation",
@@ -231,9 +231,12 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
     simd_controls = data["simd_controls"]
     julia_gpu = data["julia_gpu"]
     pure_python = data["pure_python"]
+    rust_scalar = data["rust_scalar"]
+    luajit_scalar = data["luajit_scalar"]
     halide_gpu = data["halide_gpu"]
     strict_mech = data["strict_mech"]
     fused = data["fused"]
+    mech_persistent = data["mech_persistent"]
     futhark_fixed = data["futhark_fixed"]
 
     def m(label: str, mode: str | None = None) -> float | None:
@@ -252,11 +255,11 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
     return {
         "baseline": {
             "Mech": pair(m("Mech scalar"), m("Mech scalar unchecked")),
-            "Rust": pair(None, m("Rust optimized fixed-shape")),
+            "Rust": pair(row_metric(rust_scalar, "checked"), row_metric(rust_scalar, "unchecked")),
             "NumPy": pair(min_m("NumPy scalar checked"), min_m("NumPy scalar unchecked")),
             "Python": pair(row_metric(pure_python, "checked"), row_metric(pure_python, "unchecked")),
             "Julia": pair(m("Julia generic", "checked"), m("Julia generic", "unchecked")),
-            "LuaJIT": pair(None, m("LuaJIT scalar outer loop")),
+            "LuaJIT": pair(row_metric(luajit_scalar, "checked"), row_metric(luajit_scalar, "unchecked")),
             "Lua": pair(row_metric(lua, "Lua fixed-shape flat checked"), row_metric(lua, "Lua fixed-shape flat unchecked")),
             "Taichi": pair(row_metric(data["taichi_cpu_baseline"], "checked"), row_metric(data["taichi_cpu_baseline"], "unchecked")),
             "Halide": pair(min_m("Halide checked"), min_m("Halide unchecked")),
@@ -275,7 +278,7 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
             "Futhark": pair(min_m("Futhark multicore 1 threads checked"), min_m("Futhark multicore 1 threads unchecked")),
         },
         "multicore": {
-            "Mech": pair(run_m("Mech SIMD/JIT CPU, checked (8 workers)"), run_m("Mech SIMD/JIT CPU, unchecked (8 workers)")),
+            "Mech": pair(row_metric(fused, "mech_fused_checked"), row_metric(mech_persistent, "fused_unchecked_block")),
             "Rust": pair(row_metric(fused, "rust_fused_checked"), row_metric(fused, "rust_fused")),
             "NumPy": pair(row_metric(fused, "numba_fused_checked"), row_metric(fused, "numba_fused")),
             "Python": pair(None, None),
@@ -458,9 +461,12 @@ def load_inputs(results: Path) -> dict[str, dict | None]:
         "futhark_fixed": "apple-m1-futhark-ispc-fixed-2026-08-31.json",
         "julia_gpu": "apple-m1-julia-metal-2026-08-31.json",
         "pure_python": "apple-m1-pure-python-2026-09-01.json",
+        "rust_scalar": "apple-m1-rust-scalar-2026-09-01.json",
+        "luajit_scalar": "apple-m1-luajit-scalar-2026-09-01.json",
         "halide_gpu": "apple-m1-halide-metal-strict-2026-08-31.json",
         "strict_mech": "apple-m1-mech-halide-strict-2026-08-31.json",
         "fused": "apple-m1-fused-reference-controls-2026-08-31.json",
+        "mech_persistent": "apple-m1-mech-persistent-simd-2026-08-31.json",
     }
     return {key: load_json(results / filename) for key, filename in names.items()}
 

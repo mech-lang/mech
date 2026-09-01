@@ -21,9 +21,10 @@
 <rect x="300" y="154" width="553.4" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
 <text x="860.4" y="167" class="value">1.029</text>
 <text x="286" y="204" text-anchor="end" class="label">Rust</text>
-<text x="308" y="198" class="muted" font-size="12">N/A</text>
-<rect x="300" y="209" width="887.7" height="16" rx="2" fill="#dea584" opacity="0.42"/>
-<text x="1194.7" y="222" class="value">16.907</text>
+<rect x="300" y="184" width="906.6" height="16" rx="2" fill="#dea584" opacity="0.92"/>
+<text x="1213.6" y="197" class="value">19.799</text>
+<rect x="300" y="209" width="911.0" height="16" rx="2" fill="#dea584" opacity="0.42"/>
+<text x="1218.0" y="222" class="value">20.544</text>
 <text x="286" y="259" text-anchor="end" class="label">NumPy</text>
 <rect x="300" y="239" width="166.2" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
 <text x="473.2" y="252" class="value">0.040</text>
@@ -40,9 +41,10 @@
 <rect x="300" y="374" width="686.0" height="16" rx="2" fill="#9558b2" opacity="0.42"/>
 <text x="993.0" y="387" class="value">3.123</text>
 <text x="286" y="424" text-anchor="end" class="label">LuaJIT</text>
-<text x="308" y="418" class="muted" font-size="12">N/A</text>
-<rect x="300" y="429" width="558.5" height="16" rx="2" fill="#000080" opacity="0.42"/>
-<text x="865.5" y="442" class="value">1.074</text>
+<rect x="300" y="404" width="557.8" height="16" rx="2" fill="#000080" opacity="0.92"/>
+<text x="864.8" y="417" class="value">1.068</text>
+<rect x="300" y="429" width="616.1" height="16" rx="2" fill="#000080" opacity="0.42"/>
+<text x="923.1" y="442" class="value">1.740</text>
 <text x="286" y="479" text-anchor="end" class="label">Lua</text>
 <rect x="300" y="459" width="481.8" height="16" rx="2" fill="#000080" opacity="0.92"/>
 <text x="788.8" y="472" class="value">0.565</text>
