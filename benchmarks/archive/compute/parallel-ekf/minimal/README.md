@@ -92,9 +92,9 @@ but expands the 3x3 covariance products into scalar bindings. It is compiled
 with Futhark's ISPC backend and run with one worker, giving the backend the
 same SIMD-shaped boundary as Mech without using Futhark's eight-worker or GPU
 maximum. On the Apple M1, 10,000 filters x 20 resident turns, five samples
-after warm-up measured **37.569 M turns/s checked** and **52.597 M turns/s
+after warm-up measured **37.608 M turns/s checked** and **52.673 M turns/s
 unchecked**. The old array-valued source under the same one-worker ISPC
-boundary measured **28.533 M/s checked** and **51.593 M/s unchecked**. The
+boundary measured **28.620 M/s checked** and **51.693 M/s unchecked**. The
 checksums differ only by f32 reassociation (about 2.5e-5 over 2.68e6); no
 faults occur for this valid workload.
 
