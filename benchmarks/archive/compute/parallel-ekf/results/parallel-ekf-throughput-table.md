@@ -36,7 +36,8 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 26 | Mech GPU, WGPU per-turn | Mech | 152.972 |
 | 27 | Taichi optimized native Metal, checked | Taichi | 168.798 |
 | 28 | Taichi GPU, native Metal | Taichi | 176.710 |
-| 29 | Mech GPU, native Metal | Mech | 246.151 |
+| 29 | Julia GPU, native Metal | Julia | 197.078 |
+| 30 | Mech GPU, native Metal | Mech | 246.151 |
 
 ## Unchecked (slowest to fastest)
 
@@ -72,11 +73,13 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 28 | Mech SIMD/JIT CPU, 8 workers | Mech | 110.469 |
 | 29 | Mech GPU, WGPU per-turn | Mech | 157.141 |
 | 30 | Taichi GPU, native Metal | Taichi | 194.793 |
-| 31 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
-| 32 | Mech GPU, native Metal | Mech | 241.028 |
-| 33 | Mech GPU, unchecked repeated | Mech | 350.930 |
-| 34 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
-| 35 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
+| 31 | Julia GPU, native Metal | Julia | 216.462 |
+| 32 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
+| 33 | Mech GPU, native Metal | Mech | 241.028 |
+| 34 | Mech GPU, unchecked repeated | Mech | 350.930 |
+| 35 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
+| 36 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
 
 Checked rows include candidate validation/publication. Unchecked rows explicitly omit those guarantees. The GPU one-submit row is a fused unchecked control and is therefore shown only in the unchecked section.
 Futhark GPU has no numeric row on this Apple M1: Futhark 0.27 exposes CUDA/OpenCL backends but no Metal backend; the generated OpenCL kernel is rejected by Apple's driver.
+NumPy GPU has no numeric row on this Apple M1: plain NumPy has no GPU backend and CuPy requires CUDA/NVIDIA. The capability result is retained separately.

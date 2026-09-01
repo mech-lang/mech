@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T21:20:00-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "device": "Apple M1, Metal 3.2"
+  },
+  "available": false,
+  "backend": "NumPy",
+  "reason": "NumPy has no native GPU execution backend. CuPy is CUDA-only and cannot target Apple's Metal device; Numba's CUDA target also requires CUDA. The local capability probe found no CuPy installation.",
+  "probe_command": ["python3", "minimal/numpy_gpu.py"],
+  "source": "No numeric row is emitted: a different Metal library would not be a NumPy result.",
+  "portable_retest": "Run a CuPy control on the NVIDIA RTX machine with the CUDA toolkit installed. Keep it labeled CuPy/NumPy-compatible rather than NumPy itself."
+}

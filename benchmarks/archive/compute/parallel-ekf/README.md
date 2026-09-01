@@ -44,6 +44,7 @@ git switch --track origin/codex/mech-program-gpu
 | Minimized Julia scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl` |
 | Minimized Julia packed-lane SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl` |
 | Minimized Julia eight-worker SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_simd_threads.jl` |
+| Julia/Metal resident GPU control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_metal_ekf.jl` |
 | Minimized LuaJIT scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua` |
 | Minimized LuaJIT flat control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua` |
 | Minimized Taichi comparable control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py` |
@@ -51,6 +52,7 @@ git switch --track origin/codex/mech-program-gpu
 | Minimal Halide fixed-shape pipeline | `benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp` |
 | Minimal Futhark data-parallel program | `benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut` |
 | Futhark/ISPC compatibility shim | `benchmarks/archive/compute/parallel-ekf/minimal/futhark-ispc-compat.sh` |
+| NumPy-compatible GPU capability probe | `benchmarks/archive/compute/parallel-ekf/minimal/numpy_gpu.py` |
 | Minimal cross-control runner | `benchmarks/archive/compute/parallel-ekf/minimal/measure.py` |
 | Compact-source equivalence check | `benchmarks/archive/compute/parallel-ekf/minimal/check_sources.py` |
 | Dependency-free chart renderer | `benchmarks/archive/compute/parallel-ekf/plot.py` |
@@ -60,6 +62,8 @@ git switch --track origin/codex/mech-program-gpu
 | Threaded Julia SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-threaded-2026-08-31.json` |
 | NumPy/Numba threaded evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-numba-2026-08-31.json` |
 | Halide/Futhark SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-halide-simd-2026-08-31.json` |
+| Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
+| NumPy GPU capability evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-gpu-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
 | Source-edit cost report/renderer | `benchmarks/archive/compute/parallel-ekf/source_diff_report.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -251,7 +255,9 @@ python3 plot_cross_language_comparison.py \
   --minimal-source results/apple-m1-minimal-source-2026-08-31.json \
   --julia-threaded results/apple-m1-julia-threaded-2026-08-31.json \
   --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json \
-  --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json
+  --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json \
+  --julia-gpu results/apple-m1-julia-metal-2026-08-31.json \
+  --numpy-gpu results/apple-m1-numpy-gpu-2026-08-31.json
 
 python3 plot_mech_progression.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \

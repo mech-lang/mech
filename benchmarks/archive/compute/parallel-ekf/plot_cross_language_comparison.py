@@ -69,6 +69,8 @@ def load_rows(
     julia_threaded: dict | None = None,
     numpy_numba: dict | None = None,
     simd_controls: dict | None = None,
+    julia_gpu: dict | None = None,
+    numpy_gpu: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -301,6 +303,24 @@ def load_rows(
                             "throughput": statistics.median(row["throughput_millions"]),
                         }
                     )
+    if julia_gpu is not None:
+        import statistics
+
+        for mode in ("checked", "unchecked"):
+            row = julia_gpu.get("rows", {}).get(mode)
+            if row is not None and "throughput_millions" in row:
+                rows.append(
+                    {
+                        "label": "Julia GPU, native Metal",
+                        "family": "Julia",
+                        "mode": mode,
+                        "throughput": statistics.median(row["throughput_millions"]),
+                    }
+                )
+    # NumPy has no native GPU backend on the Apple M1.  Keep the evidence file
+    # in the report inputs so the absence is auditable, but never turn an
+    # unavailable backend into a zero-throughput chart row.
+    _ = numpy_gpu
     return rows
 
 
@@ -421,6 +441,7 @@ def markdown_table(
         [
             "Checked rows include candidate validation/publication. Unchecked rows explicitly omit those guarantees. The GPU one-submit row is a fused unchecked control and is therefore shown only in the unchecked section.",
             "Futhark GPU has no numeric row on this Apple M1: Futhark 0.27 exposes CUDA/OpenCL backends but no Metal backend; the generated OpenCL kernel is rejected by Apple's driver.",
+            "NumPy GPU has no numeric row on this Apple M1: plain NumPy has no GPU backend and CuPy requires CUDA/NVIDIA. The capability result is retained separately.",
             "",
         ]
     )
@@ -440,6 +461,8 @@ def main() -> None:
     parser.add_argument("--julia-threaded", type=Path, help="threaded Julia SIMD evidence JSON")
     parser.add_argument("--numpy-numba", type=Path, help="NumPy/Numba threaded JIT evidence JSON")
     parser.add_argument("--simd-controls", type=Path, help="Halide and Futhark SIMD evidence JSON")
+    parser.add_argument("--julia-gpu", type=Path, help="Julia Metal GPU evidence JSON")
+    parser.add_argument("--numpy-gpu", type=Path, help="NumPy GPU capability evidence JSON")
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
@@ -470,6 +493,16 @@ def main() -> None:
         if args.simd_controls
         else None
     )
+    julia_gpu = (
+        json.loads(args.julia_gpu.read_text(encoding="utf-8"))
+        if args.julia_gpu
+        else None
+    )
+    numpy_gpu = (
+        json.loads(args.numpy_gpu.read_text(encoding="utf-8"))
+        if args.numpy_gpu
+        else None
+    )
     rows = load_rows(
         cross_language,
         runtime,
@@ -480,6 +513,8 @@ def main() -> None:
         julia_threaded,
         numpy_numba,
         simd_controls,
+        julia_gpu,
+        numpy_gpu,
     )
     configuration = cross_language["configuration"]
     render(

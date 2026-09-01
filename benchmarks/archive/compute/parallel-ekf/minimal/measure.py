@@ -66,6 +66,8 @@ def main() -> None:
     p.add_argument("--halide-cxx", default=shutil.which("clang++") or "clang++")
     p.add_argument("--halide-simd", action="store_true", help="also measure Halide JIT SIMD with eight workers")
     p.add_argument("--futhark-ispc", action="store_true", help="also measure Futhark ISPC SIMD with eight workers")
+    p.add_argument("--julia-metal", action="store_true", help="also measure Julia Metal GPU with per-turn synchronization")
+    p.add_argument("--julia", default=shutil.which("julia") or "julia")
     p.add_argument("--output", type=Path, default=HERE.parent / "results/apple-m1-minimal-source-2026-08-31.json")
     args = p.parse_args()
     env = os.environ.copy()
@@ -83,6 +85,20 @@ def main() -> None:
             command = [args.python, str(script), str(args.instances), str(args.turns), mode]
             out = samples(command, args.samples, env)
             rows[f"{label} {mode}"] = {"command": command, "throughput": [value(x, "throughput") for x in out], "checksums": [value(x, "checksum") for x in out]}
+    if args.julia_metal:
+        script = HERE / "julia_metal_ekf.jl"
+        for mode in ("unchecked", "checked"):
+            command = [args.julia, "--startup-file=no", str(script), str(args.instances), str(args.turns), mode]
+            try:
+                out = samples(command, args.samples, env)
+            except (FileNotFoundError, subprocess.CalledProcessError) as error:
+                rows[f"Julia Metal GPU {mode}"] = {"available": False, "error": str(error)}
+            else:
+                rows[f"Julia Metal GPU {mode}"] = {
+                    "command": command,
+                    "throughput": [value(x, "throughput") / 1_000_000 for x in out],
+                    "checksums": [value(x, "checksum") for x in out],
+                }
     with tempfile.TemporaryDirectory(prefix="mech-ekf-minimal-") as temp:
         halide = Path(temp) / "halide-ekf"
         run([args.halide_cxx, "-O3", "-std=c++17", str(HERE / "halide_ekf.cpp"), "-I/opt/homebrew/opt/halide/include", "-L/opt/homebrew/opt/halide/lib", "-lHalide", "-o", str(halide)], env=env)
