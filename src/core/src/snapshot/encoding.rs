@@ -1,4 +1,4 @@
-use super::sequence::SequenceStorage;
+use super::sequence::{SequenceStorage, SequenceView};
 use super::{KeyHash, ReifiedType, SnapshotValueError, Value, ValueData, ValueHash};
 use crate::{FloatWidth, IntegerWidth, SchemaBody, SchemaTable};
 use sha2::{Digest, Sha256};
@@ -44,6 +44,79 @@ impl SnapshotByteSink for LengthSnapshotSink {
 
 struct Sha256SnapshotSink {
     hash: Sha256,
+}
+
+/// Conservative, schema-directed accounting for one immutable canonical
+/// value. `encoded_bytes` measures the canonical payload, while
+/// `retained_bytes` includes owned in-memory containers and payloads. The
+/// latter is deliberately conservative: inline root storage may be counted
+/// alongside its enclosing value so admission never mistakes serialized size
+/// for peak retained memory.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct ValueFootprint {
+    pub encoded_bytes: u64,
+    pub retained_bytes: u64,
+    pub node_count: u64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ValueFootprintError {
+    InvalidValue(SnapshotValueError),
+    IndexOutOfRange,
+    ArithmeticOverflow,
+}
+
+impl From<SnapshotValueError> for ValueFootprintError {
+    fn from(error: SnapshotValueError) -> Self {
+        Self::InvalidValue(error)
+    }
+}
+
+impl ValueFootprint {
+    pub const fn zero() -> Self {
+        Self {
+            encoded_bytes: 0,
+            retained_bytes: 0,
+            node_count: 0,
+        }
+    }
+
+    pub fn checked_add(self, other: Self) -> Result<Self, ValueFootprintError> {
+        Ok(Self {
+            encoded_bytes: self
+                .encoded_bytes
+                .checked_add(other.encoded_bytes)
+                .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+            retained_bytes: self
+                .retained_bytes
+                .checked_add(other.retained_bytes)
+                .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+            node_count: self
+                .node_count
+                .checked_add(other.node_count)
+                .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+        })
+    }
+
+    /// Accounts for cloning this value `multiplicity` times. Selection
+    /// planning uses this operation so repeated selectors charge every
+    /// retained copy rather than the source payload once.
+    pub fn checked_multiply(self, multiplicity: u64) -> Result<Self, ValueFootprintError> {
+        Ok(Self {
+            encoded_bytes: self
+                .encoded_bytes
+                .checked_mul(multiplicity)
+                .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+            retained_bytes: self
+                .retained_bytes
+                .checked_mul(multiplicity)
+                .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+            node_count: self
+                .node_count
+                .checked_mul(multiplicity)
+                .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+        })
+    }
 }
 
 impl Sha256SnapshotSink {
@@ -111,6 +184,44 @@ impl Value {
         Ok(sink.len)
     }
 
+    /// Traverses the validated value without cloning it and returns a
+    /// conservative in-memory footprint in a checked `u64` accounting
+    /// domain.
+    pub fn retained_footprint(
+        &self,
+        schemas: &SchemaTable,
+    ) -> Result<ValueFootprint, ValueFootprintError> {
+        let schema = self.validate_against(schemas)?;
+        let encoded_bytes = u64::try_from(canonical_data_payload_len(schema.body(), self.data()))
+            .map_err(|_| ValueFootprintError::ArithmeticOverflow)?;
+        let data = retained_data_footprint(schema.body(), self.data())?;
+        let shape_bytes = checked_bytes(
+            self.shape().parameter_values().len(),
+            core::mem::size_of::<u64>(),
+        )?;
+        let retained_bytes = checked_size_of::<Value>()?
+            .checked_add(shape_bytes)
+            .and_then(|bytes| bytes.checked_add(data.retained_bytes))
+            .ok_or(ValueFootprintError::ArithmeticOverflow)?;
+        Ok(ValueFootprint {
+            encoded_bytes,
+            retained_bytes,
+            node_count: data
+                .node_count
+                .checked_add(1)
+                .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+        })
+    }
+
+    pub fn clone_footprint(
+        &self,
+        multiplicity: u64,
+        schemas: &SchemaTable,
+    ) -> Result<ValueFootprint, ValueFootprintError> {
+        self.retained_footprint(schemas)?
+            .checked_multiply(multiplicity)
+    }
+
     pub fn value_hash(&self, schemas: &SchemaTable) -> Result<ValueHash, SnapshotValueError> {
         let schema = self.validate_against(schemas)?;
         let mut sink = Sha256SnapshotSink::new();
@@ -145,6 +256,424 @@ pub fn canonical_data_payload_len(schema: &SchemaBody, data: &ValueData) -> usiz
     let mut sink = LengthSnapshotSink { len: 0 };
     encode_data(schema, data, &mut sink);
     sink.len
+}
+
+/// Returns the conservative retained footprint of already validated
+/// schema-directed data without allocating or cloning it.
+pub fn canonical_data_retained_footprint(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueFootprint, ValueFootprintError> {
+    let encoded_bytes = u64::try_from(canonical_data_payload_len(schema, data))
+        .map_err(|_| ValueFootprintError::ArithmeticOverflow)?;
+    let retained = retained_data_footprint(schema, data)?;
+    Ok(ValueFootprint {
+        encoded_bytes,
+        ..retained
+    })
+}
+
+/// Returns the retained footprint of one borrowed canonical sequence element
+/// without first expanding the packed sequence into owned `ValueData` nodes.
+/// Selection planners use this to charge repeated positions with
+/// multiplicity before allocating selector or output materialization.
+pub fn canonical_sequence_element_retained_footprint(
+    schema: &SchemaBody,
+    values: SequenceView<'_>,
+    index: usize,
+) -> Result<ValueFootprint, ValueFootprintError> {
+    let fixed = |encoded_bytes: u64, payload_bytes: u64| {
+        Ok(ValueFootprint {
+            encoded_bytes,
+            ..payload_footprint(payload_bytes)?
+        })
+    };
+    match values {
+        SequenceView::U8(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(1, 0)),
+        SequenceView::U16(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(2, 0)),
+        SequenceView::U32(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(4, 0)),
+        SequenceView::U64(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(8, 0)),
+        SequenceView::U128(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(16, 0)),
+        SequenceView::I8(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(1, 0)),
+        SequenceView::I16(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(2, 0)),
+        SequenceView::I32(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(4, 0)),
+        SequenceView::I64(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(8, 0)),
+        SequenceView::I128(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(16, 0)),
+        SequenceView::F32(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(4, 0)),
+        SequenceView::F64(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(8, 0)),
+        SequenceView::Complex32(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(8, 0)),
+        SequenceView::Complex64(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(16, 0)),
+        SequenceView::Rational64(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(16, 0)),
+        SequenceView::Bool(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(1, 0)),
+        SequenceView::Id(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(8, 0)),
+        SequenceView::Index(values) => values
+            .get(index)
+            .ok_or(ValueFootprintError::IndexOutOfRange)
+            .and_then(|_| fixed(8, 0)),
+        SequenceView::String(values) => {
+            let value = values
+                .get(index)
+                .ok_or(ValueFootprintError::IndexOutOfRange)?;
+            let payload =
+                u64::try_from(value.len()).map_err(|_| ValueFootprintError::ArithmeticOverflow)?;
+            fixed(
+                payload
+                    .checked_add(8)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+                payload,
+            )
+        }
+        SequenceView::Unit(count) => {
+            if u64::try_from(index).map_or(true, |index| index >= count) {
+                return Err(ValueFootprintError::IndexOutOfRange);
+            }
+            fixed(0, 0)
+        }
+        SequenceView::Values(values) => canonical_data_retained_footprint(
+            schema,
+            values
+                .get(index)
+                .ok_or(ValueFootprintError::IndexOutOfRange)?,
+        ),
+    }
+}
+
+fn checked_size_of<T>() -> Result<u64, ValueFootprintError> {
+    u64::try_from(core::mem::size_of::<T>()).map_err(|_| ValueFootprintError::ArithmeticOverflow)
+}
+
+fn checked_bytes(count: usize, element: usize) -> Result<u64, ValueFootprintError> {
+    let count = u64::try_from(count).map_err(|_| ValueFootprintError::ArithmeticOverflow)?;
+    let element = u64::try_from(element).map_err(|_| ValueFootprintError::ArithmeticOverflow)?;
+    count
+        .checked_mul(element)
+        .ok_or(ValueFootprintError::ArithmeticOverflow)
+}
+
+fn payload_footprint(bytes: u64) -> Result<ValueFootprint, ValueFootprintError> {
+    Ok(ValueFootprint {
+        encoded_bytes: 0,
+        retained_bytes: checked_size_of::<ValueData>()?
+            .checked_add(bytes)
+            .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+        node_count: 1,
+    })
+}
+
+fn aggregate_footprint<'a>(
+    values: impl IntoIterator<Item = (&'a SchemaBody, &'a ValueData)>,
+) -> Result<ValueFootprint, ValueFootprintError> {
+    values.into_iter().try_fold(
+        ValueFootprint {
+            encoded_bytes: 0,
+            retained_bytes: checked_size_of::<ValueData>()?,
+            node_count: 1,
+        },
+        |total, (schema, value)| total.checked_add(retained_data_footprint(schema, value)?),
+    )
+}
+
+fn retained_sequence_footprint(
+    schema: &SchemaBody,
+    values: &SequenceStorage,
+) -> Result<ValueFootprint, ValueFootprintError> {
+    let (retained_bytes, node_count) = match values {
+        SequenceStorage::U8(values) => {
+            (checked_bytes(values.len(), core::mem::size_of::<u8>())?, 1)
+        }
+        SequenceStorage::U16(values) => {
+            (checked_bytes(values.len(), core::mem::size_of::<u16>())?, 1)
+        }
+        SequenceStorage::U32(values) => {
+            (checked_bytes(values.len(), core::mem::size_of::<u32>())?, 1)
+        }
+        SequenceStorage::U64(values) => {
+            (checked_bytes(values.len(), core::mem::size_of::<u64>())?, 1)
+        }
+        SequenceStorage::U128(values) => (
+            checked_bytes(values.len(), core::mem::size_of::<u128>())?,
+            1,
+        ),
+        SequenceStorage::I8(values) => {
+            (checked_bytes(values.len(), core::mem::size_of::<i8>())?, 1)
+        }
+        SequenceStorage::I16(values) => {
+            (checked_bytes(values.len(), core::mem::size_of::<i16>())?, 1)
+        }
+        SequenceStorage::I32(values) => {
+            (checked_bytes(values.len(), core::mem::size_of::<i32>())?, 1)
+        }
+        SequenceStorage::I64(values) => {
+            (checked_bytes(values.len(), core::mem::size_of::<i64>())?, 1)
+        }
+        SequenceStorage::I128(values) => (
+            checked_bytes(values.len(), core::mem::size_of::<i128>())?,
+            1,
+        ),
+        SequenceStorage::F32(values) => (
+            checked_bytes(values.len(), core::mem::size_of::<super::F32Bits>())?,
+            1,
+        ),
+        SequenceStorage::F64(values) => (
+            checked_bytes(values.len(), core::mem::size_of::<super::F64Bits>())?,
+            1,
+        ),
+        SequenceStorage::Complex32(values) => (
+            checked_bytes(values.len(), core::mem::size_of::<super::Complex32Bits>())?,
+            1,
+        ),
+        SequenceStorage::Complex64(values) => (
+            checked_bytes(values.len(), core::mem::size_of::<super::Complex64Bits>())?,
+            1,
+        ),
+        SequenceStorage::Rational64(values) => (
+            checked_bytes(values.len(), core::mem::size_of::<super::Rational64Value>())?,
+            1,
+        ),
+        SequenceStorage::Bool(values) => (
+            checked_bytes(values.len(), core::mem::size_of::<bool>())?,
+            1,
+        ),
+        SequenceStorage::Id(values) | SequenceStorage::Index(values) => {
+            (checked_bytes(values.len(), core::mem::size_of::<u64>())?, 1)
+        }
+        SequenceStorage::Unit(_) => (0, 1),
+        SequenceStorage::String(values) => {
+            let containers = checked_bytes(values.len(), core::mem::size_of::<Box<str>>())?;
+            let payload = values.iter().try_fold(0_u64, |bytes, value| {
+                bytes
+                    .checked_add(
+                        u64::try_from(value.len())
+                            .map_err(|_| ValueFootprintError::ArithmeticOverflow)?,
+                    )
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)
+            })?;
+            (
+                containers
+                    .checked_add(payload)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+                u64::try_from(values.len())
+                    .map_err(|_| ValueFootprintError::ArithmeticOverflow)?
+                    .checked_add(1)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+            )
+        }
+        SequenceStorage::Values(values) => {
+            let total = values
+                .iter()
+                .try_fold(ValueFootprint::zero(), |total, value| {
+                    total.checked_add(retained_data_footprint(schema, value)?)
+                })?;
+            (
+                total.retained_bytes,
+                total
+                    .node_count
+                    .checked_add(1)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+            )
+        }
+    };
+    Ok(ValueFootprint {
+        encoded_bytes: 0,
+        retained_bytes,
+        node_count,
+    })
+}
+
+fn retained_data_footprint(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueFootprint, ValueFootprintError> {
+    let inline = checked_size_of::<ValueData>()?;
+    match (schema, data) {
+        (SchemaBody::Dynamic, ValueData::Dynamic(value)) => {
+            let canonical = u64::try_from(value.canonical.len())
+                .map_err(|_| ValueFootprintError::ArithmeticOverflow)?;
+            let nested = match value.value.as_deref() {
+                Some(value) => {
+                    let schemas = value.schemas().ok_or_else(|| {
+                        ValueFootprintError::InvalidValue(
+                            SnapshotValueError::UnknownSnapshotSchema {
+                                schema: value.schema(),
+                            },
+                        )
+                    })?;
+                    value.retained_footprint(&schemas)?
+                }
+                None => ValueFootprint::zero(),
+            };
+            Ok(ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: inline
+                    .checked_add(canonical)
+                    .and_then(|bytes| bytes.checked_add(nested.retained_bytes))
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+                node_count: nested
+                    .node_count
+                    .checked_add(1)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+            })
+        }
+        (SchemaBody::String, ValueData::String(value)) => payload_footprint(
+            u64::try_from(value.len()).map_err(|_| ValueFootprintError::ArithmeticOverflow)?,
+        ),
+        (SchemaBody::Enum { variants, .. }, ValueData::Enum(value)) => {
+            let mut result = ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: inline,
+                node_count: 1,
+            };
+            if let (Some(payload_schema), Some(payload)) = (
+                variants[value.ordinal() as usize].payload.as_ref(),
+                value.payload(),
+            ) {
+                result = result.checked_add(retained_data_footprint(payload_schema, payload)?)?;
+            }
+            Ok(result)
+        }
+        (SchemaBody::Option(element), ValueData::Option(value)) => match value.as_deref() {
+            Some(value) => ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: inline,
+                node_count: 1,
+            }
+            .checked_add(retained_data_footprint(element, value)?),
+            None => Ok(ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: inline,
+                node_count: 1,
+            }),
+        },
+        (SchemaBody::Tuple(elements), ValueData::Tuple(values)) => {
+            aggregate_footprint(elements.iter().zip(values.iter()))
+        }
+        (SchemaBody::Record(fields), ValueData::Record(value)) => aggregate_footprint(
+            fields
+                .iter()
+                .map(|field| &field.schema)
+                .zip(value.fields().iter()),
+        ),
+        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(value)) => {
+            let sequence = retained_sequence_footprint(element, &value.elements)?;
+            Ok(ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: inline
+                    .checked_add(sequence.retained_bytes)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+                node_count: sequence
+                    .node_count
+                    .checked_add(1)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+            })
+        }
+        (SchemaBody::Table { columns, .. }, ValueData::Table(value)) => {
+            let mut result = ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: inline
+                    .checked_add(checked_bytes(
+                        value.columns.len(),
+                        core::mem::size_of::<SequenceStorage>(),
+                    )?)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+                node_count: 1,
+            };
+            for (column, values) in columns.iter().zip(value.columns.iter()) {
+                result =
+                    result.checked_add(retained_sequence_footprint(&column.schema, values)?)?;
+            }
+            Ok(result)
+        }
+        (SchemaBody::Set { element, .. }, ValueData::Set(value)) => {
+            let mut result = ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: inline
+                    .checked_add(checked_bytes(
+                        value.elements.len(),
+                        core::mem::size_of::<super::CanonicalKeyValue>(),
+                    )?)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+                node_count: 1,
+            };
+            for key in value.elements.iter() {
+                result = result.checked_add(retained_data_footprint(element, key.data())?)?;
+            }
+            Ok(result)
+        }
+        (SchemaBody::Map { key, value, .. }, ValueData::Map(map)) => {
+            let mut result = ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: inline
+                    .checked_add(checked_bytes(
+                        map.entries.len(),
+                        core::mem::size_of::<super::MapEntryValue>(),
+                    )?)
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)?,
+                node_count: 1,
+            };
+            for entry in map.entries.iter() {
+                result = result.checked_add(retained_data_footprint(key, entry.key().data())?)?;
+                result = result.checked_add(retained_data_footprint(value, entry.value())?)?;
+            }
+            Ok(result)
+        }
+        (SchemaBody::ReifiedType, ValueData::Type(ReifiedType::Kind(kind))) => payload_footprint(
+            u64::try_from(kind.canonical_bytes().len())
+                .map_err(|_| ValueFootprintError::ArithmeticOverflow)?,
+        ),
+        (SchemaBody::ReifiedType, ValueData::Type(ReifiedType::Schema(_))) => payload_footprint(0),
+        _ => payload_footprint(0),
+    }
 }
 
 pub(super) fn encode_data(schema: &SchemaBody, data: &ValueData, sink: &mut dyn SnapshotByteSink) {
@@ -411,5 +940,38 @@ mod tests {
                 .canonical_snapshot_bytes(&different_schemas)
                 .unwrap()
         );
+    }
+
+    #[test]
+    fn retained_footprint_counts_containers_and_clone_multiplicity() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::String,
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let id = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let payload = "x".repeat(1_024);
+        let value = ValueDraft {
+            schema: id,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::String(payload),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+
+        let single = value.retained_footprint(&schemas).unwrap();
+        assert_eq!(single.encoded_bytes, 1_032);
+        assert!(single.retained_bytes > single.encoded_bytes);
+        assert!(single.node_count >= 2);
+
+        let repeated = value.clone_footprint(4, &schemas).unwrap();
+        assert_eq!(repeated.encoded_bytes, single.encoded_bytes * 4);
+        assert_eq!(repeated.retained_bytes, single.retained_bytes * 4);
+        assert_eq!(repeated.node_count, single.node_count * 4);
     }
 }

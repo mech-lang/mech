@@ -20,7 +20,10 @@ pub use self::draft::{
     EnumDraft, MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, TableColumnDraft,
     ValueDataDraft, ValueDraft,
 };
-pub use self::encoding::canonical_data_payload_len;
+pub use self::encoding::{
+    ValueFootprint, ValueFootprintError, canonical_data_payload_len,
+    canonical_data_retained_footprint, canonical_sequence_element_retained_footprint,
+};
 pub use self::error::{
     SchemaDataKind, SnapshotPath, SnapshotPathSegment, SnapshotValueError, ValueDataKind,
 };

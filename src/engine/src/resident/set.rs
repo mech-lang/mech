@@ -1,4 +1,7 @@
-use super::budget::{KernelCostEstimate, checked_product, checked_sum};
+use super::budget::{
+    KernelCostEstimate, PreparedKernel, checked_cost_product, checked_cost_sum, checked_product,
+    checked_sum, checked_u64,
+};
 use mech_core::snapshot::{F64Bits, SnapshotValidationContext, Value, ValueDataDraft, ValueDraft};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
@@ -587,21 +590,22 @@ fn set_cardinality(value: &Value) -> Result<usize, ResidentKernelError> {
     Ok(set.elements().len())
 }
 
-fn set_payload_len(
+fn value_retained_cost(
     kernel: &BoundResidentKernel,
     value: &Value,
-) -> Result<usize, ResidentKernelError> {
-    value
-        .canonical_payload_len(
+) -> Result<(u64, u64), ResidentKernelError> {
+    let footprint = value
+        .retained_footprint(
             kernel
                 .snapshot_schemas()
                 .ok_or(ResidentKernelError::InvalidInput)?,
         )
-        .map_err(|_| ResidentKernelError::InvalidInput)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    Ok((footprint.retained_bytes, footprint.node_count))
 }
 
 fn admit_set_read(comparison_work: usize) -> Result<(), ResidentKernelError> {
-    KernelCostEstimate {
+    super::budget::resident_cost! {
         comparison_work,
         compute_work: comparison_work,
         ..KernelCostEstimate::default()
@@ -612,19 +616,27 @@ fn admit_set_read(comparison_work: usize) -> Result<(), ResidentKernelError> {
 fn admit_set_materialization(
     output_elements: usize,
     comparison_work: usize,
-    cloned_bytes: usize,
-) -> Result<(), ResidentKernelError> {
-    let container_bytes = checked_product(&[output_elements, std::mem::size_of::<usize>()])?;
-    let output_bytes = checked_sum(&[cloned_bytes, container_bytes])?;
-    KernelCostEstimate {
-        comparison_work,
-        compute_work: checked_sum(&[comparison_work, output_elements])?,
-        output_elements,
-        output_bytes,
-        temporary_bytes: checked_sum(&[output_bytes, output_bytes])?,
-        cloned_bytes,
-    }
-    .admit()
+    cloned_bytes: u64,
+    retained_nodes: u64,
+) -> Result<PreparedKernel<()>, ResidentKernelError> {
+    let container_bytes = checked_cost_product(&[
+        checked_u64(output_elements)?,
+        checked_u64(std::mem::size_of::<usize>())?,
+    ])?;
+    let output_bytes = checked_cost_sum(&[cloned_bytes, container_bytes])?;
+    Ok(PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work,
+            compute_work: checked_sum(&[comparison_work, output_elements])?,
+            output_elements,
+            output_bytes,
+            temporary_bytes: checked_cost_sum(&[output_bytes, output_bytes])?,
+            cloned_bytes,
+            retained_nodes,
+            ..KernelCostEstimate::default()
+        },
+    ))
 }
 
 fn finalize_snapshot(
@@ -701,14 +713,16 @@ fn merged_set_element_drafts(
         .ok_or(ResidentKernelError::InvalidInput)?;
     let left_count = set_cardinality(left)?;
     let right_count = set_cardinality(right)?;
+    let (left_bytes, left_nodes) = value_retained_cost(kernel, left)?;
+    let (right_bytes, right_nodes) = value_retained_cost(kernel, right)?;
     admit_set_materialization(
         maximum_output_elements,
         checked_sum(&[left_count, right_count])?,
-        checked_sum(&[
-            set_payload_len(kernel, left)?,
-            set_payload_len(kernel, right)?,
-        ])?,
-    )?;
+        checked_cost_sum(&[left_bytes, right_bytes])?,
+        checked_cost_sum(&[left_nodes, right_nodes])?,
+    )?
+    .admit()?
+    .into_plan();
     let elements =
         merge(left, schemas, right, schemas).map_err(|_| ResidentKernelError::InvalidInput)?;
     left.set_element_data_drafts(schemas, &elements)
@@ -787,34 +801,46 @@ fn set_cartesian_product(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
-    let left_payload_len = set_payload_len(kernel, left)?;
-    let right_payload_len = set_payload_len(kernel, right)?;
+    let (left_retained_bytes, left_retained_nodes) = value_retained_cost(kernel, left)?;
+    let (right_retained_bytes, right_retained_nodes) = value_retained_cost(kernel, right)?;
     let left_count = set_cardinality(left)?;
     let right_count = set_cardinality(right)?;
     let output_len = checked_product(&[left_count, right_count])?;
-    let result_cloned_bytes = checked_sum(&[
-        checked_product(&[left_payload_len, right_count])?,
-        checked_product(&[right_payload_len, left_count])?,
+    let result_cloned_bytes = checked_cost_sum(&[
+        checked_cost_product(&[left_retained_bytes, checked_u64(right_count)?])?,
+        checked_cost_product(&[right_retained_bytes, checked_u64(left_count)?])?,
     ])?;
     // Both canonical element draft arrays are materialized before the nested
     // product loop, even when one side is empty and the result has no pairs.
-    let input_staging_bytes = checked_sum(&[left_payload_len, right_payload_len])?;
-    let cloned_bytes = checked_sum(&[result_cloned_bytes, input_staging_bytes])?;
-    // Each Cartesian result contributes the outer tuple node plus two nested
-    // member nodes. Charge all three before constructing any pair so compact
-    // values cannot bypass the resident element budget.
-    let output_nodes = checked_product(&[output_len, 3])?;
-    let container_bytes = checked_product(&[output_len, 2, std::mem::size_of::<usize>()])?;
-    let output_bytes = checked_sum(&[result_cloned_bytes, container_bytes])?;
-    KernelCostEstimate {
-        compute_work: output_len,
-        output_elements: output_nodes,
-        output_bytes,
-        temporary_bytes: checked_sum(&[output_bytes, input_staging_bytes])?,
-        cloned_bytes,
-        ..KernelCostEstimate::default()
-    }
-    .admit()?;
+    let input_staging_bytes = checked_cost_sum(&[left_retained_bytes, right_retained_bytes])?;
+    let cloned_bytes = checked_cost_sum(&[result_cloned_bytes, input_staging_bytes])?;
+    let result_cloned_nodes = checked_cost_sum(&[
+        checked_cost_product(&[left_retained_nodes, checked_u64(right_count)?])?,
+        checked_cost_product(&[right_retained_nodes, checked_u64(left_count)?])?,
+    ])?;
+    let input_staging_nodes = checked_cost_sum(&[left_retained_nodes, right_retained_nodes])?;
+    // Every result adds its tuple node around recursively cloned member trees.
+    let output_nodes = checked_cost_sum(&[result_cloned_nodes, checked_u64(output_len)?, 1])?;
+    let container_bytes = checked_cost_product(&[
+        checked_u64(output_len)?,
+        2,
+        checked_u64(std::mem::size_of::<usize>())?,
+    ])?;
+    let output_bytes = checked_cost_sum(&[result_cloned_bytes, container_bytes])?;
+    PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work: output_len,
+            output_elements: output_len,
+            output_bytes,
+            temporary_bytes: checked_cost_sum(&[output_bytes, input_staging_bytes])?,
+            cloned_bytes,
+            retained_nodes: checked_cost_sum(&[output_nodes, input_staging_nodes])?,
+            ..KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
     let left = set_element_drafts(left)?;
     let right = set_element_drafts(right)?;
     let mut elements = Vec::with_capacity(output_len);
@@ -854,22 +880,37 @@ fn set_powerset(
     };
     let member_copies = checked_product(&[element_count, copies_per_element])?;
     let output_elements = checked_sum(&[subset_count, member_copies])?;
-    let cloned_bytes = input
-        .canonical_payload_len(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?
-        .checked_mul(copies_per_element)
+    let footprint = input
+        .retained_footprint(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let retained_bytes = footprint
+        .retained_bytes
+        .checked_mul(checked_u64(copies_per_element)?)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let subset_headers = checked_product(&[subset_count, std::mem::size_of::<usize>()])?;
-    let output_bytes = checked_sum(&[cloned_bytes, subset_headers])?;
-    KernelCostEstimate {
-        compute_work: member_copies,
-        output_elements,
-        output_bytes,
-        temporary_bytes: output_bytes,
-        cloned_bytes,
-        ..KernelCostEstimate::default()
-    }
-    .admit()?;
+    let cloned_nodes = footprint
+        .node_count
+        .checked_mul(checked_u64(copies_per_element)?)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_nodes = checked_cost_sum(&[cloned_nodes, checked_u64(subset_count)?, 1])?;
+    let subset_headers = checked_cost_product(&[
+        checked_u64(subset_count)?,
+        checked_u64(std::mem::size_of::<usize>())?,
+    ])?;
+    let output_bytes = checked_cost_sum(&[retained_bytes, subset_headers])?;
+    PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work: member_copies,
+            output_elements,
+            output_bytes,
+            temporary_bytes: output_bytes,
+            cloned_bytes: retained_bytes,
+            retained_nodes: output_nodes,
+            ..KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
     let elements = set_element_drafts(input)?;
     let mut subsets = vec![Vec::new()];
     for element in elements {
@@ -1118,18 +1159,18 @@ fn insert(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    let (set_bytes, set_nodes) = value_retained_cost(kernel, set)?;
+    let (element_bytes, element_nodes) = value_retained_cost(kernel, &element)?;
     admit_set_materialization(
         set_cardinality(set)?
             .checked_add(1)
             .ok_or(ResidentKernelError::InvalidShape)?,
         set_cardinality(set)?,
-        checked_sum(&[
-            set_payload_len(kernel, set)?,
-            element
-                .canonical_payload_len(schemas)
-                .map_err(|_| ResidentKernelError::InvalidInput)?,
-        ])?,
-    )?;
+        checked_cost_sum(&[set_bytes, element_bytes])?,
+        checked_cost_sum(&[set_nodes, element_nodes])?,
+    )?
+    .admit()?
+    .into_plan();
     let mut elements = set_element_drafts(set)?;
     if !set
         .set_contains(schemas, &element, schemas)
@@ -1154,11 +1195,15 @@ fn remove(
         return Err(ResidentKernelError::InvalidInput);
     };
     let element = scalar_element_value(kernel, inputs, 1)?;
+    let (set_bytes, set_nodes) = value_retained_cost(kernel, set)?;
     admit_set_materialization(
         set_cardinality(set)?,
         set_cardinality(set)?,
-        set_payload_len(kernel, set)?,
-    )?;
+        set_bytes,
+        set_nodes,
+    )?
+    .admit()?
+    .into_plan();
     let mut elements = Vec::new();
     for candidate in set_element_drafts(set)? {
         if !set_element_key_matches(kernel, candidate.clone(), &element)? {
@@ -1265,6 +1310,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            resolved_selector: None,
         };
         let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
             inputs: vec![numbers, strings]

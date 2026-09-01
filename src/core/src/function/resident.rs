@@ -24,6 +24,65 @@ pub struct ResidentShape {
     pub columns: u32,
 }
 
+/// Selector identity that is proven immutable by the artifact source. This is
+/// deliberately narrower than `Value`: binders only need an ordinal or a
+/// field identifier to close heterogeneous aggregate access.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ResidentResolvedSelector {
+    Ordinal(usize),
+    Id(u64),
+}
+
+/// Canonical semantic selection chosen by specialization. Backends consume
+/// this identity directly; they must not reconstruct it from coincidental
+/// input and output dimensions.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ResolvedSelectionMode {
+    Whole,
+    LinearScalar,
+    LinearGather,
+    Rows,
+    Columns,
+    Rectangle,
+    Field { ordinal: u32 },
+    TableColumn { ordinal: u32 },
+    MapKey,
+}
+
+/// Canonical mapping from assignment source positions to selected outputs.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u64)]
+pub enum ResolvedSourceRouting {
+    ScalarBroadcast = 0,
+    Positional = 1,
+    CompactSelectionOrder = 2,
+}
+
+impl ResolvedSourceRouting {
+    pub const fn from_parameter(value: u64) -> Option<Self> {
+        Some(match value {
+            0 => Self::ScalarBroadcast,
+            1 => Self::Positional,
+            2 => Self::CompactSelectionOrder,
+            _ => return None,
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ResolvedRangeMode {
+    Exclusive,
+    ExclusiveIncrement,
+    Inclusive,
+    InclusiveIncrement,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ResolvedReductionMode {
+    Rows,
+    Columns,
+}
+
 impl ResidentShape {
     pub const SCALAR: Self = Self {
         rows: 1,
@@ -45,6 +104,9 @@ pub struct ResidentPortLayout {
     pub shape: ResidentShape,
     /// Fully resolved semantic shape for self-describing dynamic values.
     pub shape_instance: ShapeInstance,
+    /// Present only when the input is an immutable artifact constant whose
+    /// selector identity can be embedded in the execution plan.
+    pub resolved_selector: Option<ResidentResolvedSelector>,
 }
 
 pub struct ResidentKernelBindRequest<'a> {

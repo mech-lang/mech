@@ -1,4 +1,7 @@
-use super::budget::{KernelCostEstimate, checked_product, checked_sum};
+use super::budget::{
+    KernelCostEstimate, PreparedKernel, checked_cost_product, checked_cost_sum, checked_product,
+    checked_sum, checked_u64,
+};
 use crate::intrinsics::table_ops::{JoinMode, joined_table, joined_table_fields};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
@@ -187,9 +190,11 @@ fn validate_join_bounds(
     left_columns: usize,
     right_columns: usize,
     common_columns: usize,
-    left_payload_bytes: usize,
-    right_payload_bytes: usize,
-) -> Result<(), ResidentKernelError> {
+    left_retained_bytes: u64,
+    right_retained_bytes: u64,
+    left_retained_nodes: u64,
+    right_retained_nodes: u64,
+) -> Result<PreparedKernel<()>, ResidentKernelError> {
     let comparisons = checked_product(&[left_rows, right_rows])?;
     let comparison_work = checked_product(&[comparisons, common_columns.max(1)])?;
     let output_rows = match mode {
@@ -212,39 +217,65 @@ fn validate_join_bounds(
             .ok_or(ResidentKernelError::InvalidShape)?
     };
     let output_cells = checked_product(&[output_rows, output_columns])?;
-    let paired_clone_bytes = checked_sum(&[
-        checked_product(&[left_payload_bytes, right_rows])?,
-        checked_product(&[right_payload_bytes, left_rows])?,
+    let paired_clone_bytes = checked_cost_sum(&[
+        checked_cost_product(&[left_retained_bytes, checked_u64(right_rows)?])?,
+        checked_cost_product(&[right_retained_bytes, checked_u64(left_rows)?])?,
     ])?;
     let cloned_bytes = match mode {
         JoinMode::Inner => paired_clone_bytes,
-        JoinMode::LeftOuter => checked_sum(&[paired_clone_bytes, left_payload_bytes])?,
-        JoinMode::RightOuter => checked_sum(&[paired_clone_bytes, right_payload_bytes])?,
-        JoinMode::FullOuter => {
-            checked_sum(&[paired_clone_bytes, left_payload_bytes, right_payload_bytes])?
-        }
-        JoinMode::LeftSemi | JoinMode::LeftAnti => left_payload_bytes,
+        JoinMode::LeftOuter => checked_cost_sum(&[paired_clone_bytes, left_retained_bytes])?,
+        JoinMode::RightOuter => checked_cost_sum(&[paired_clone_bytes, right_retained_bytes])?,
+        JoinMode::FullOuter => checked_cost_sum(&[
+            paired_clone_bytes,
+            left_retained_bytes,
+            right_retained_bytes,
+        ])?,
+        JoinMode::LeftSemi | JoinMode::LeftAnti => left_retained_bytes,
     };
-    let output_bytes = checked_sum(&[
+    let paired_clone_nodes = checked_cost_sum(&[
+        checked_cost_product(&[left_retained_nodes, checked_u64(right_rows)?])?,
+        checked_cost_product(&[right_retained_nodes, checked_u64(left_rows)?])?,
+    ])?;
+    let cloned_nodes = match mode {
+        JoinMode::Inner => paired_clone_nodes,
+        JoinMode::LeftOuter => checked_cost_sum(&[paired_clone_nodes, left_retained_nodes])?,
+        JoinMode::RightOuter => checked_cost_sum(&[paired_clone_nodes, right_retained_nodes])?,
+        JoinMode::FullOuter => checked_cost_sum(&[
+            paired_clone_nodes,
+            left_retained_nodes,
+            right_retained_nodes,
+        ])?,
+        JoinMode::LeftSemi | JoinMode::LeftAnti => left_retained_nodes,
+    };
+    let output_bytes = checked_cost_sum(&[
         cloned_bytes,
-        checked_product(&[output_cells, std::mem::size_of::<usize>()])?,
+        checked_cost_product(&[
+            checked_u64(output_cells)?,
+            checked_u64(std::mem::size_of::<usize>())?,
+        ])?,
     ])?;
     // Execution can retain four independent materializations of each input at
     // the peak inside CanonicalTable::from_cell: the ValueCell snapshot, the
     // canonical draft tree, the snapshot used to expose columns, and the
     // canonical-column value tree. Include every copy even when the join
     // output is empty.
-    let retained_input_bytes =
-        checked_product(&[checked_sum(&[left_payload_bytes, right_payload_bytes])?, 4])?;
-    KernelCostEstimate {
-        comparison_work,
-        compute_work: checked_sum(&[comparison_work, output_cells])?,
-        output_elements: output_cells,
-        output_bytes,
-        temporary_bytes: checked_sum(&[retained_input_bytes, output_bytes])?,
-        cloned_bytes,
-    }
-    .admit()
+    let retained_input_bytes = checked_cost_product(&[
+        checked_cost_sum(&[left_retained_bytes, right_retained_bytes])?,
+        4,
+    ])?;
+    Ok(PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work,
+            compute_work: checked_sum(&[comparison_work, output_cells])?,
+            output_elements: output_cells,
+            output_bytes,
+            temporary_bytes: checked_cost_sum(&[retained_input_bytes, output_bytes])?,
+            cloned_bytes,
+            retained_nodes: checked_cost_sum(&[cloned_nodes, checked_u64(output_cells)?])?,
+            ..KernelCostEstimate::default()
+        },
+    ))
 }
 
 fn table_join(
@@ -271,6 +302,15 @@ fn table_join(
         value if value == JoinMode::LeftAnti as u64 => JoinMode::LeftAnti,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let left_footprint = left
+        .retained_footprint(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let right_footprint = right
+        .retained_footprint(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
     validate_join_bounds(
         mode,
         table_rows(left)?,
@@ -278,20 +318,13 @@ fn table_join(
         usize::try_from(*left_columns).map_err(|_| ResidentKernelError::InvalidInput)?,
         usize::try_from(*right_columns).map_err(|_| ResidentKernelError::InvalidInput)?,
         usize::try_from(*common_columns).map_err(|_| ResidentKernelError::InvalidInput)?,
-        left.canonical_payload_len(
-            kernel
-                .snapshot_schemas()
-                .ok_or(ResidentKernelError::InvalidInput)?,
-        )
-        .map_err(|_| ResidentKernelError::InvalidInput)?,
-        right
-            .canonical_payload_len(
-                kernel
-                    .snapshot_schemas()
-                    .ok_or(ResidentKernelError::InvalidInput)?,
-            )
-            .map_err(|_| ResidentKernelError::InvalidInput)?,
-    )?;
+        left_footprint.retained_bytes,
+        right_footprint.retained_bytes,
+        left_footprint.node_count,
+        right_footprint.node_count,
+    )?
+    .admit()?
+    .into_plan();
     let left =
         ValueCell::from_snapshot(left.clone()).map_err(|_| ResidentKernelError::InvalidInput)?;
     let right =
@@ -301,9 +334,6 @@ fn table_join(
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let metadata = kernel
         .snapshot_output()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    let schemas = kernel
-        .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let next = joined
         .rebind(metadata.schema, &metadata.shape, schemas)
@@ -328,31 +358,45 @@ mod tests {
     #[test]
     fn resident_join_bounds_work_and_output_before_materialization() {
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 256, 256, 1, 1, 1, 0, 0),
+            validate_join_bounds(JoinMode::Inner, 256, 256, 1, 1, 1, 0, 0, 0, 0)
+                .and_then(PreparedKernel::admit)
+                .map(|admitted| admitted.into_plan()),
             Ok(())
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 257, 257, 1, 1, 1, 0, 0),
+            validate_join_bounds(JoinMode::Inner, 257, 257, 1, 1, 1, 0, 0, 0, 0)
+                .and_then(PreparedKernel::admit)
+                .map(|admitted| admitted.into_plan()),
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::FullOuter, 0, 65_537, 1, 1, 1, 0, 0),
+            validate_join_bounds(JoinMode::FullOuter, 0, 65_537, 1, 1, 1, 0, 0, 0, 0)
+                .and_then(PreparedKernel::admit)
+                .map(|admitted| admitted.into_plan()),
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 256, 256, 64, 64, 0, 0, 0),
+            validate_join_bounds(JoinMode::Inner, 256, 256, 64, 64, 0, 0, 0, 0, 0)
+                .and_then(PreparedKernel::admit)
+                .map(|admitted| admitted.into_plan()),
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 64, 64, 17, 17, 17, 0, 0),
+            validate_join_bounds(JoinMode::Inner, 64, 64, 17, 17, 17, 0, 0, 0, 0)
+                .and_then(PreparedKernel::admit)
+                .map(|admitted| admitted.into_plan()),
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 256, 256, 1, 1, 1, 32_768, 32_768),
+            validate_join_bounds(JoinMode::Inner, 256, 256, 1, 1, 1, 32_768, 32_768, 1, 1,)
+                .and_then(PreparedKernel::admit)
+                .map(|admitted| admitted.into_plan()),
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(
-            validate_join_bounds(JoinMode::Inner, 1, 0, 1, 1, 1, 6 * 1024 * 1024, 0,),
+            validate_join_bounds(JoinMode::Inner, 1, 0, 1, 1, 1, 6 * 1024 * 1024, 0, 1, 0,)
+                .and_then(PreparedKernel::admit)
+                .map(|admitted| admitted.into_plan()),
             Err(ResidentKernelError::InvalidShape),
             "all retained snapshot, draft, and column copies coexist",
         );

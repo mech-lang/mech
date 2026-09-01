@@ -6,8 +6,9 @@ use mech_core::{
     InputId, IntegrityConstraintId, MechError, NodeId, OperationContractDeclaration,
     OperationContractError, OperationContractId, OperationContractTable,
     OperationContractTableBuilder, OutputId, PortDirection, ProgramRevision, ResolvedInputPort,
-    ResolvedOperationContract, ResolvedOutputPort, SchemaId, SchemaTable, SemanticModelError,
-    SnapshotValueError, validate_declaration,
+    ResolvedOperationContract, ResolvedOutputPort, ResolvedRangeMode, ResolvedReductionMode,
+    ResolvedSelectionMode, SchemaId, SchemaTable, SemanticModelError, SnapshotValueError,
+    validate_declaration,
 };
 
 use super::CompilerIrError;
@@ -24,6 +25,119 @@ pub struct ComputeRegionDeclaration {
 pub struct OperationReference {
     pub module_path: Box<[String]>,
     pub operation_name: String,
+}
+
+impl OperationReference {
+    fn module_is(&self, expected: &[&str]) -> bool {
+        self.module_path.len() == expected.len()
+            && self
+                .module_path
+                .iter()
+                .zip(expected)
+                .all(|(actual, expected)| actual == expected)
+    }
+
+    /// Returns the semantic selection encoded by this canonical operation
+    /// identity. The result depends only on artifact data, never on shapes.
+    pub fn resolved_selection_mode(&self, selector_count: usize) -> Option<ResolvedSelectionMode> {
+        match self.operation_name.as_str() {
+            "scalar" if self.module_is(&["access"]) && selector_count == 1 => {
+                Some(ResolvedSelectionMode::LinearScalar)
+            }
+            "range" if self.module_is(&["access"]) && selector_count == 1 => {
+                Some(ResolvedSelectionMode::LinearGather)
+            }
+            "scalar" | "range" if self.module_is(&["access"]) && selector_count == 2 => {
+                Some(ResolvedSelectionMode::Rectangle)
+            }
+            "index" if self.module_is(&["access"]) && selector_count == 0 => {
+                Some(ResolvedSelectionMode::LinearScalar)
+            }
+            "rows" if self.module_is(&["access"]) => Some(ResolvedSelectionMode::Rows),
+            "columns" if self.module_is(&["access"]) => Some(ResolvedSelectionMode::Columns),
+            "rectangle" if self.module_is(&["access"]) => Some(ResolvedSelectionMode::Rectangle),
+            "assign" if self.module_is(&["core"]) => Some(ResolvedSelectionMode::Whole),
+            "range-all"
+                if self.module_is(&["math", "add-assign"])
+                    || self.module_is(&["math", "sub-assign"]) =>
+            {
+                Some(ResolvedSelectionMode::Rows)
+            }
+            _ => None,
+        }
+    }
+
+    pub fn resolved_range_mode(&self) -> Option<ResolvedRangeMode> {
+        if !self.module_is(&["range"]) {
+            return None;
+        }
+        match self.operation_name.as_str() {
+            "exclusive" => Some(ResolvedRangeMode::Exclusive),
+            "exclusive-increment" => Some(ResolvedRangeMode::ExclusiveIncrement),
+            "inclusive" => Some(ResolvedRangeMode::Inclusive),
+            "inclusive-increment" => Some(ResolvedRangeMode::InclusiveIncrement),
+            _ => None,
+        }
+    }
+
+    pub fn resolved_reduction_mode(&self) -> Option<ResolvedReductionMode> {
+        if !self.module_is(&["stats", "sum"]) {
+            return None;
+        }
+        match self.operation_name.as_str() {
+            "row" => Some(ResolvedReductionMode::Rows),
+            "column" => Some(ResolvedReductionMode::Columns),
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod operation_mode_tests {
+    use super::*;
+
+    fn operation(module_path: &[&str], operation_name: &str) -> OperationReference {
+        OperationReference {
+            module_path: module_path
+                .iter()
+                .map(|segment| (*segment).to_owned())
+                .collect(),
+            operation_name: operation_name.to_owned(),
+        }
+    }
+
+    #[test]
+    fn semantic_modes_are_resolved_from_artifact_identity_and_selector_arity() {
+        let scalar = operation(&["access"], "scalar");
+        assert_eq!(
+            scalar.resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::LinearScalar)
+        );
+        assert_eq!(
+            operation(&["access"], "range").resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::LinearGather)
+        );
+        assert_eq!(
+            scalar.resolved_selection_mode(2),
+            Some(ResolvedSelectionMode::Rectangle)
+        );
+        assert_eq!(
+            operation(&["access"], "rows").resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::Rows)
+        );
+        assert_eq!(
+            operation(&["access"], "columns").resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::Columns)
+        );
+        assert_eq!(
+            operation(&["range"], "inclusive-increment").resolved_range_mode(),
+            Some(ResolvedRangeMode::InclusiveIncrement)
+        );
+        assert_eq!(
+            operation(&["stats", "sum"], "row").resolved_reduction_mode(),
+            Some(ResolvedReductionMode::Rows)
+        );
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

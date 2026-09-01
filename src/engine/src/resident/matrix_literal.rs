@@ -157,6 +157,37 @@ fn target_index(source: usize, rows: usize, columns: usize) -> usize {
     column * rows + row
 }
 
+fn checked_cost_usize(value: u64) -> Result<usize, ResidentKernelError> {
+    usize::try_from(value).map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+fn admit_literal_stage(
+    count: usize,
+    output_bytes: usize,
+    temporary_bytes: usize,
+    container_bytes: usize,
+    cloned_bytes: usize,
+    retained_nodes: usize,
+) -> Result<usize, ResidentKernelError> {
+    super::budget::PreparedKernel::new(
+        count,
+        super::budget::resident_cost! {
+            compute_work: count
+                .checked_mul(2)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            output_elements: count,
+            output_bytes,
+            temporary_bytes,
+            cloned_bytes,
+            container_bytes,
+            retained_nodes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()
+    .map(super::budget::AdmittedKernel::into_plan)
+}
+
 fn matrix_literal(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -190,31 +221,90 @@ fn matrix_literal(
                 if *value > 1 {
                     return Err(ResidentKernelError::InvalidInput);
                 }
-                target[target_index(source, plan.rows, plan.columns)] = *value;
             }
+            let count = admit_literal_stage(count, count, 0, count, 0, count)?;
+            let mut next = vec![0_u8; count];
+            for source in 0..count {
+                let Some(ResidentValueRef::Bool([value])) = inputs.get(source) else {
+                    unreachable!("literal inputs were validated before admission")
+                };
+                next[target_index(source, plan.rows, plan.columns)] = *value;
+            }
+            target.copy_from_slice(&next);
         }
         ResidentValueMut::Index(target) if plan.kind == ResidentValueKind::Index => {
             for source in 0..count {
                 let Some(ResidentValueRef::Index([value])) = inputs.get(source) else {
                     return Err(ResidentKernelError::InvalidInput);
                 };
-                target[target_index(source, plan.rows, plan.columns)] = *value;
+                let _ = value;
             }
+            let bytes = count
+                .checked_mul(core::mem::size_of::<u64>())
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let count = admit_literal_stage(count, bytes, 0, bytes, 0, count)?;
+            let mut next = vec![0_u64; count];
+            for source in 0..count {
+                let Some(ResidentValueRef::Index([value])) = inputs.get(source) else {
+                    unreachable!("literal inputs were validated before admission")
+                };
+                next[target_index(source, plan.rows, plan.columns)] = *value;
+            }
+            target.copy_from_slice(&next);
         }
         ResidentValueMut::F64(target) if plan.kind == ResidentValueKind::F64 => {
             for source in 0..count {
                 let Some(ResidentValueRef::F64([value])) = inputs.get(source) else {
                     return Err(ResidentKernelError::InvalidInput);
                 };
-                target[target_index(source, plan.rows, plan.columns)] = *value;
+                let _ = value;
             }
+            let bytes = count
+                .checked_mul(core::mem::size_of::<f64>())
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let count = admit_literal_stage(count, bytes, 0, bytes, 0, count)?;
+            let mut next = vec![0.0_f64; count];
+            for source in 0..count {
+                let Some(ResidentValueRef::F64([value])) = inputs.get(source) else {
+                    unreachable!("literal inputs were validated before admission")
+                };
+                next[target_index(source, plan.rows, plan.columns)] = *value;
+            }
+            target.copy_from_slice(&next);
         }
         ResidentValueMut::String(target) if plan.kind == ResidentValueKind::String => {
+            let mut payload_bytes = 0usize;
             for source in 0..count {
                 let Some(ResidentValueRef::String([value])) = inputs.get(source) else {
                     return Err(ResidentKernelError::InvalidInput);
                 };
-                target[target_index(source, plan.rows, plan.columns)] = value.clone();
+                payload_bytes = payload_bytes
+                    .checked_add(value.len())
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+            }
+            let container_bytes = count
+                .checked_mul(core::mem::size_of::<String>())
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let output_bytes = payload_bytes
+                .checked_add(container_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let count = admit_literal_stage(
+                count,
+                output_bytes,
+                payload_bytes,
+                container_bytes,
+                payload_bytes,
+                count,
+            )?;
+            let mut next = vec![String::new(); count];
+            for source in 0..count {
+                let Some(ResidentValueRef::String([value])) = inputs.get(source) else {
+                    unreachable!("literal inputs were validated before admission")
+                };
+                next[target_index(source, plan.rows, plan.columns)] = value.clone();
+            }
+            for (target, value) in target.iter_mut().zip(next) {
+                *target = value;
             }
         }
         ResidentValueMut::Snapshot([target]) if plan.kind == ResidentValueKind::Snapshot => {
@@ -224,34 +314,38 @@ fn matrix_literal(
             let metadata = kernel
                 .snapshot_output()
                 .ok_or(ResidentKernelError::InvalidOutput)?;
-            let mut payload_bytes = 0usize;
+            let mut retained_bytes = 0usize;
+            let mut retained_nodes = 0usize;
             for source in 0..count {
                 let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
                     return Err(ResidentKernelError::InvalidInput);
                 };
-                payload_bytes = payload_bytes
-                    .checked_add(
-                        value
-                            .canonical_payload_len(schemas)
-                            .map_err(|_| ResidentKernelError::InvalidInput)?,
-                    )
+                let footprint = value
+                    .retained_footprint(schemas)
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                retained_bytes = retained_bytes
+                    .checked_add(checked_cost_usize(footprint.retained_bytes)?)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                retained_nodes = retained_nodes
+                    .checked_add(checked_cost_usize(footprint.node_count)?)
                     .ok_or(ResidentKernelError::InvalidShape)?;
             }
             let container_bytes = count
                 .checked_mul(core::mem::size_of::<ValueDataDraft>())
                 .ok_or(ResidentKernelError::InvalidShape)?;
-            super::budget::KernelCostEstimate {
-                compute_work: count,
-                output_elements: count,
-                output_bytes: payload_bytes,
-                temporary_bytes: payload_bytes
+            let output_bytes = retained_bytes
+                .checked_add(container_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let count = admit_literal_stage(
+                count,
+                output_bytes,
+                retained_bytes
                     .checked_mul(2)
-                    .and_then(|bytes| bytes.checked_add(container_bytes))
                     .ok_or(ResidentKernelError::InvalidShape)?,
-                cloned_bytes: payload_bytes,
-                ..super::budget::KernelCostEstimate::default()
-            }
-            .admit()?;
+                container_bytes,
+                retained_bytes,
+                retained_nodes,
+            )?;
             let mut elements = Vec::with_capacity(count);
             for source in 0..count {
                 let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
@@ -358,6 +452,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            resolved_selector: None,
         }
     }
 
@@ -555,6 +650,81 @@ mod tests {
             )
             .unwrap();
         assert_eq!(output, source);
+    }
+
+    #[test]
+    fn dense_literal_first_middle_and_last_failures_are_atomic() {
+        let (schemas, scalar, matrix) = schemas_for(SchemaBody::Bool, 1, 3);
+        let input_layout = layout(
+            &schemas,
+            scalar,
+            ResidentValueKind::Bool,
+            ResidentShape::SCALAR,
+        );
+        let kernel = bind_matrix_literal(&ResidentKernelBindRequest {
+            contract: &contract(scalar, matrix, 3),
+            schemas: &schemas,
+            inputs: &[input_layout.clone(), input_layout.clone(), input_layout],
+            output: layout(
+                &schemas,
+                matrix,
+                ResidentValueKind::Bool,
+                ResidentShape {
+                    rows: 1,
+                    columns: 3,
+                },
+            ),
+        })
+        .unwrap();
+
+        for invalid in 0..3 {
+            let mut values = [[1_u8]; 3];
+            values[invalid] = [2];
+            let inputs = Inputs(
+                values
+                    .iter()
+                    .map(|value| ResidentValueRef::Bool(value))
+                    .collect(),
+            );
+            let mut output = [9_u8, 9, 9];
+            assert_eq!(
+                kernel.execute(&inputs, ResidentValueMut::Bool(&mut output)),
+                Err(ResidentKernelError::InvalidInput)
+            );
+            assert_eq!(output, [9, 9, 9]);
+        }
+    }
+
+    #[test]
+    fn string_literal_rejects_clone_amplification_before_publication() {
+        let (schemas, scalar, matrix) = schemas_for(SchemaBody::String, 1, 1);
+        let kernel = bind_matrix_literal(&ResidentKernelBindRequest {
+            contract: &contract(scalar, matrix, 1),
+            schemas: &schemas,
+            inputs: &[layout(
+                &schemas,
+                scalar,
+                ResidentValueKind::String,
+                ResidentShape::SCALAR,
+            )],
+            output: layout(
+                &schemas,
+                matrix,
+                ResidentValueKind::String,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let source = ["x".repeat(16 * 1024 * 1024 + 1)];
+        let mut output = ["unchanged".to_owned()];
+        assert_eq!(
+            kernel.execute(
+                &Inputs(vec![ResidentValueRef::String(&source)]),
+                ResidentValueMut::String(&mut output),
+            ),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(output, ["unchanged"]);
     }
 
     #[test]

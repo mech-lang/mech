@@ -434,6 +434,87 @@ fn composite_child_data(
     })
 }
 
+fn checked_cost_usize(value: u64) -> Result<usize, ResidentKernelError> {
+    usize::try_from(value).map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+fn resident_child_clone_cost(
+    input: ResidentValueRef<'_>,
+    plan: &CompositeChildPlan,
+) -> Result<(usize, usize), ResidentKernelError> {
+    let expected_len = if plan.input_is_matrix {
+        plan.shape.len().ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        1
+    };
+    if input.len() != expected_len {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let container = expected_len
+        .checked_mul(core::mem::size_of::<ValueData>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let (payload, nodes) = match input {
+        ResidentValueRef::Bool(values) => {
+            if values.iter().any(|value| *value > 1) {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            (values.len(), values.len())
+        }
+        ResidentValueRef::Index(values) => (
+            values
+                .len()
+                .checked_mul(core::mem::size_of::<u64>())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            values.len(),
+        ),
+        ResidentValueRef::F64(values) => (
+            values
+                .len()
+                .checked_mul(core::mem::size_of::<f64>())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            values.len(),
+        ),
+        ResidentValueRef::String(values) => {
+            let payload = values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(value.len())
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
+            (payload, values.len())
+        }
+        ResidentValueRef::Snapshot(values) => {
+            let mut retained = 0usize;
+            let mut nodes = 0usize;
+            for value in values {
+                let value = value.as_ref().ok_or(ResidentKernelError::InvalidInput)?;
+                let schemas = value.schemas().ok_or(ResidentKernelError::InvalidInput)?;
+                let footprint = value
+                    .retained_footprint(&schemas)
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                retained = retained
+                    .checked_add(checked_cost_usize(footprint.retained_bytes)?)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                nodes = nodes
+                    .checked_add(checked_cost_usize(footprint.node_count)?)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+            }
+            (retained, nodes)
+        }
+    };
+    let dynamic_overhead = usize::from(plan.dynamic.is_some())
+        .checked_mul(core::mem::size_of::<ValueData>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok((
+        container
+            .checked_add(payload)
+            .and_then(|bytes| bytes.checked_add(dynamic_overhead))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        nodes
+            .checked_add(1 + usize::from(plan.dynamic.is_some()))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    ))
+}
+
 fn composite_pack(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -450,7 +531,55 @@ fn composite_pack(
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let children = (1..inputs.len())
+    let template_schemas = template
+        .schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let template_footprint = template
+        .retained_footprint(&template_schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let mut retained_bytes = checked_cost_usize(template_footprint.retained_bytes)?;
+    let mut retained_nodes = checked_cost_usize(template_footprint.node_count)?;
+    for (index, child) in plan.children.iter().enumerate() {
+        let (bytes, nodes) = resident_child_clone_cost(
+            inputs
+                .get(index + 1)
+                .ok_or(ResidentKernelError::InvalidInput)?,
+            child,
+        )?;
+        retained_bytes = retained_bytes
+            .checked_add(bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        retained_nodes = retained_nodes
+            .checked_add(nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+    }
+    let child_containers = plan
+        .children
+        .len()
+        .checked_mul(core::mem::size_of::<ValueData>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let admitted_children = super::budget::PreparedKernel::new(
+        plan.children.len(),
+        super::budget::resident_cost! {
+            compute_work: plan
+                .children
+                .len()
+                .checked_mul(2)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            output_elements: plan.children.len(),
+            output_bytes: retained_bytes,
+            temporary_bytes: retained_bytes
+                .checked_mul(3)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes: retained_bytes,
+            container_bytes: child_containers,
+            retained_nodes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    let children = (1..=admitted_children)
         .map(|index| composite_child_data(inputs.get(index)?, plan.children.get(index - 1)?))
         .collect::<Option<Vec<_>>>()
         .ok_or(ResidentKernelError::InvalidInput)?
@@ -501,6 +630,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            resolved_selector: None,
         }
     }
 

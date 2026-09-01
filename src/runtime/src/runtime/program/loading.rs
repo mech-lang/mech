@@ -13,7 +13,7 @@ use mech_engine::{
     ProgramArtifact, decode_program_artifact_sections,
     resident::{
         ActivationFacts, ResidentActivationOptions, ResidentExternalAdmission,
-        ResidentIntegrityMode, activate_with_options, preflight_activation,
+        ResidentIntegrityMode, activate_with_options, preflight_resident_target,
     },
 };
 
@@ -419,13 +419,21 @@ impl MechRuntime {
             self.preflight_provider_contract_presence(&artifact)?;
         }
 
-        let preflight = preflight_activation(
+        let preflight = preflight_resident_target(
             &artifact,
             &self.function_catalog,
             &ActivationFacts::default(),
             activation_options,
         )
-        .map_err(|error| activation_failure_for_artifact(&artifact, error))?;
+        .map_err(|error| {
+            route_failure(
+                ResidentRouteFailureClass::SemanticUnsupported,
+                format!(
+                    "OperationUnavailableForTarget({:?}) at {:?} ({:?}): {}",
+                    error.target, error.node, error.operation, error.reason,
+                ),
+            )
+        })?;
         if !external && !preflight.plan.inputs.is_empty() {
             return Err(super::unsupported_route(
                 "pure production resident programs cannot require turn inputs",

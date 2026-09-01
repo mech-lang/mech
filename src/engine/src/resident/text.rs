@@ -19,6 +19,51 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+fn checked_string_payload<'a>(
+    values: impl IntoIterator<Item = &'a String>,
+) -> Result<usize, ResidentKernelError> {
+    values.into_iter().try_fold(0usize, |bytes, value| {
+        bytes
+            .checked_add(value.len())
+            .ok_or(ResidentKernelError::InvalidShape)
+    })
+}
+
+fn admit_string_materialization(
+    output_elements: usize,
+    payload_bytes: usize,
+    compute_work: usize,
+    staged_containers: usize,
+    selector_bytes: usize,
+    index_bytes: usize,
+) -> Result<(), ResidentKernelError> {
+    let container_bytes = staged_containers
+        .checked_mul(core::mem::size_of::<String>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_bytes = output_elements
+        .checked_mul(core::mem::size_of::<String>())
+        .and_then(|bytes| bytes.checked_add(payload_bytes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work,
+            output_elements,
+            output_bytes,
+            temporary_bytes: payload_bytes,
+            cloned_bytes: payload_bytes,
+            container_bytes,
+            selector_bytes,
+            index_bytes,
+            retained_nodes: output_elements,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
 pub(super) fn bind_string_transpose(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -75,18 +120,27 @@ fn string_transpose(
         return Err(ResidentKernelError::InvalidInput);
     };
     let (rows, columns) = (*rows as usize, *columns as usize);
-    if input.len() != rows * columns || output.len() != input.len() {
+    if rows.checked_mul(columns) != Some(input.len()) || output.len() != input.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let mut changed = false;
-    for (index, target) in output.iter_mut().enumerate() {
+    let payload_bytes = checked_string_payload(input.iter())?;
+    admit_string_materialization(
+        output.len(),
+        payload_bytes,
+        output.len(),
+        output.len(),
+        0,
+        0,
+    )?;
+    let mut next = Vec::with_capacity(output.len());
+    for index in 0..output.len() {
         let output_row = index % columns;
         let output_column = index / columns;
-        let source = &input[output_column + output_row * rows];
-        if *target != *source {
-            target.clone_from(source);
-            changed = true;
-        }
+        next.push(input[output_column + output_row * rows].clone());
+    }
+    let changed = output != next;
+    for (target, value) in output.iter_mut().zip(next) {
+        *target = value;
     }
     Ok(changed)
 }
@@ -157,16 +211,32 @@ fn string_gather(
     if indexes_len != output.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
+    let mut payload_bytes = 0usize;
     for ordinal in 0..indexes_len {
-        checked_string_index(string_index_at(inputs, 1, ordinal)?, source.len())?;
-    }
-    let mut changed = false;
-    for (ordinal, target) in output.iter_mut().enumerate() {
         let index = checked_string_index(string_index_at(inputs, 1, ordinal)?, source.len())?;
-        if *target != source[index] {
-            target.clone_from(&source[index]);
-            changed = true;
-        }
+        payload_bytes = payload_bytes
+            .checked_add(source[index].len())
+            .ok_or(ResidentKernelError::InvalidShape)?;
+    }
+    let index_bytes = indexes_len
+        .checked_mul(core::mem::size_of::<u64>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_materialization(
+        output.len(),
+        payload_bytes,
+        output.len(),
+        output.len(),
+        0,
+        index_bytes,
+    )?;
+    let mut next = Vec::with_capacity(output.len());
+    for ordinal in 0..output.len() {
+        let index = checked_string_index(string_index_at(inputs, 1, ordinal)?, source.len())?;
+        next.push(source[index].clone());
+    }
+    let changed = output != next;
+    for (target, value) in output.iter_mut().zip(next) {
+        *target = value;
     }
     Ok(changed)
 }
@@ -327,9 +397,11 @@ fn string_scalar_access(
     let ResidentValueMut::String([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let changed = target != next;
+    admit_string_materialization(1, next.len(), 1, 0, 0, core::mem::size_of::<u64>())?;
+    let next = next.clone();
+    let changed = *target != next;
     if changed {
-        target.clone_from(next);
+        *target = next;
     }
     Ok(changed)
 }
@@ -385,13 +457,22 @@ fn f64_vector_to_string(
     if source.len() != target.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let mut changed = false;
-    for (source, target) in source.iter().zip(target) {
-        let next = source.to_string();
-        if *target != next {
-            *target = next;
-            changed = true;
-        }
+    let payload_upper = source
+        .len()
+        .checked_mul(32)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_materialization(
+        source.len(),
+        payload_upper,
+        source.len(),
+        source.len(),
+        0,
+        0,
+    )?;
+    let next = source.iter().map(f64::to_string).collect::<Vec<_>>();
+    let changed = target != next;
+    for (target, value) in target.iter_mut().zip(next) {
+        *target = value;
     }
     Ok(changed)
 }
@@ -565,7 +646,12 @@ fn concat(
     let ResidentValueMut::String([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let mut next = String::with_capacity(left.len() + right.len());
+    let length = left
+        .len()
+        .checked_add(right.len())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_materialization(1, length, length, 0, 0, 0)?;
+    let mut next = String::with_capacity(length);
     next.push_str(left);
     next.push_str(right);
     let changed = *target != next;
@@ -590,6 +676,15 @@ fn string_mask_assign(
     if indexes.len() != target.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
+    if indexes.iter().any(|selected| *selected > 1) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let selected = indexes.iter().filter(|selected| **selected != 0).count();
+    let cloned_bytes = source
+        .len()
+        .checked_mul(selected)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_materialization(selected, cloned_bytes, target.len(), 0, indexes.len(), 0)?;
     let mut changed = false;
     for (target, selected) in target.iter_mut().zip(indexes) {
         if *selected != 0 && target != source {
@@ -614,13 +709,15 @@ fn string_index_assign(
     let ResidentValueMut::String(target) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let Some(target) = usize::try_from(*index)
+    let Some(target_index) = usize::try_from(*index)
         .ok()
         .and_then(|index| index.checked_sub(1))
-        .and_then(|index| target.get_mut(index))
+        .filter(|index| *index < target.len())
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
+    admit_string_materialization(1, source.len(), 1, 0, 0, core::mem::size_of::<u64>())?;
+    let target = &mut target[target_index];
     let changed = target != source;
     if changed {
         target.clone_from(source);
@@ -645,6 +742,22 @@ fn string_indices_assign(
     for index in indexes {
         checked_string_index(*index, target.len())?;
     }
+    let cloned_bytes = source
+        .len()
+        .checked_mul(indexes.len())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let index_bytes = indexes
+        .len()
+        .checked_mul(core::mem::size_of::<u64>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_materialization(
+        indexes.len(),
+        cloned_bytes,
+        indexes.len(),
+        0,
+        0,
+        index_bytes,
+    )?;
     let mut changed = false;
     for index in indexes {
         let index = checked_string_index(*index, target.len())?;
@@ -703,9 +816,17 @@ fn string_all_assign(
     let ResidentValueMut::String(target) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
+    if *selected > 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
     if *selected == 0 {
         return Ok(false);
     }
+    let cloned_bytes = source
+        .len()
+        .checked_mul(target.len())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_materialization(target.len(), cloned_bytes, target.len(), 0, 1, 0)?;
     let mut changed = false;
     for target in target {
         if target != source {
@@ -735,6 +856,18 @@ mod tests {
         }
     }
 
+    struct Refs<'a>(Vec<ResidentValueRef<'a>>);
+
+    impl ResidentKernelInputs for Refs<'_> {
+        fn len(&self) -> usize {
+            self.0.len()
+        }
+
+        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+            self.0.get(index).copied()
+        }
+    }
+
     #[test]
     fn scalar_concat_writes_the_normal_resident_output() {
         let kernel = BoundResidentKernel::new(concat, Box::new([]));
@@ -747,6 +880,58 @@ mod tests {
                 .unwrap()
         );
         assert_eq!(output[0], "Hello, Ada");
+    }
+
+    #[test]
+    fn string_gather_first_middle_and_last_failures_are_atomic() {
+        let kernel = BoundResidentKernel::new(string_gather, Box::new([]));
+        let source = ["a".to_owned(), "b".to_owned(), "c".to_owned()];
+        for invalid in 0..3 {
+            let mut indexes = [1_u64, 2, 3];
+            indexes[invalid] = 4;
+            let inputs = Refs(vec![
+                ResidentValueRef::String(&source),
+                ResidentValueRef::Index(&indexes),
+            ]);
+            let mut output = ["x".to_owned(), "y".to_owned(), "z".to_owned()];
+            assert!(matches!(
+                kernel.execute(&inputs, ResidentValueMut::String(&mut output)),
+                Err(ResidentKernelError::IndexOutOfRange { .. })
+            ));
+            assert_eq!(output, ["x", "y", "z"]);
+        }
+    }
+
+    #[test]
+    fn string_mask_first_middle_and_last_failures_are_atomic() {
+        let kernel = BoundResidentKernel::new(string_mask_assign, Box::new([]));
+        let source = ["replacement".to_owned()];
+        for invalid in 0..3 {
+            let mut mask = [1_u8, 0, 1];
+            mask[invalid] = 2;
+            let inputs = Refs(vec![
+                ResidentValueRef::String(&source),
+                ResidentValueRef::Bool(&mask),
+            ]);
+            let mut output = ["x".to_owned(), "y".to_owned(), "z".to_owned()];
+            assert_eq!(
+                kernel.execute(&inputs, ResidentValueMut::String(&mut output)),
+                Err(ResidentKernelError::InvalidInput)
+            );
+            assert_eq!(output, ["x", "y", "z"]);
+        }
+    }
+
+    #[test]
+    fn string_concat_rejects_clone_amplification_before_publication() {
+        let kernel = BoundResidentKernel::new(concat, Box::new([]));
+        let inputs = Inputs(["x".repeat(16 * 1024 * 1024 + 1), String::new()]);
+        let mut output = ["unchanged".to_owned()];
+        assert_eq!(
+            kernel.execute(&inputs, ResidentValueMut::String(&mut output)),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(output, ["unchanged"]);
     }
 
     #[test]

@@ -50,6 +50,77 @@ impl RuntimeFunctionId {
     }
 }
 
+/// An executable destination is a capability claim, not a consequence of an
+/// operation having semantic meaning.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ExecutionTarget {
+    DirectRuntime,
+    ResidentCpu,
+    Native,
+    GpuBatch,
+}
+
+/// Compact target availability for one concrete runtime signature. Semantic
+/// contract presence never adds a target implicitly.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct ExecutionTargetSet(u8);
+
+impl ExecutionTargetSet {
+    pub const NONE: Self = Self(0);
+    pub const DIRECT_RUNTIME: Self = Self(1 << 0);
+    pub const RESIDENT_CPU: Self = Self(1 << 1);
+    pub const NATIVE: Self = Self(1 << 2);
+    pub const GPU_BATCH: Self = Self(1 << 3);
+
+    pub const fn contains(self, target: ExecutionTarget) -> bool {
+        let bit = match target {
+            ExecutionTarget::DirectRuntime => Self::DIRECT_RUNTIME.0,
+            ExecutionTarget::ResidentCpu => Self::RESIDENT_CPU.0,
+            ExecutionTarget::Native => Self::NATIVE.0,
+            ExecutionTarget::GpuBatch => Self::GPU_BATCH.0,
+        };
+        self.0 & bit != 0
+    }
+
+    pub const fn with(self, target: ExecutionTarget) -> Self {
+        let bit = match target {
+            ExecutionTarget::DirectRuntime => Self::DIRECT_RUNTIME.0,
+            ExecutionTarget::ResidentCpu => Self::RESIDENT_CPU.0,
+            ExecutionTarget::Native => Self::NATIVE.0,
+            ExecutionTarget::GpuBatch => Self::GPU_BATCH.0,
+        };
+        Self(self.0 | bit)
+    }
+
+    pub fn iter(self) -> impl Iterator<Item = ExecutionTarget> {
+        [
+            ExecutionTarget::DirectRuntime,
+            ExecutionTarget::ResidentCpu,
+            ExecutionTarget::Native,
+            ExecutionTarget::GpuBatch,
+        ]
+        .into_iter()
+        .filter(move |target| self.contains(*target))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RuntimeExecutionCapability {
+    pub runtime_factory: RuntimeFunctionId,
+    pub operation_binding: RuntimeOperationBinding,
+    pub signature: RuntimeFunctionSignature,
+    pub targets: ExecutionTargetSet,
+}
+
+/// Declares whether a concrete runtime factory owns one fixed semantic
+/// identity or receives the identity selected by the source compiler. This is
+/// explicit capability data; absence never implies target support.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeOperationBinding {
+    CompilerResolved,
+    Fixed(OperationId),
+}
+
 type RuntimeFunctionInvocationFactory = fn(FunctionInvocation) -> MResult<Box<dyn MechFunction>>;
 
 #[cfg(feature = "native-plan")]
@@ -118,6 +189,8 @@ pub struct RuntimeFunctionEntry {
     signature: RuntimeFunctionSignature,
     contract: RuntimeFunctionContract,
     semantic_contract: Option<&'static OperationContractDeclaration>,
+    operation_binding: RuntimeOperationBinding,
+    execution_targets: ExecutionTargetSet,
 
     #[cfg(feature = "native-plan")]
     pub native_linkage: Option<NativeFunctionLinkage>,
@@ -132,6 +205,8 @@ impl Clone for RuntimeFunctionEntry {
             signature: self.signature,
             contract: self.contract,
             semantic_contract: self.semantic_contract,
+            operation_binding: self.operation_binding,
+            execution_targets: self.execution_targets,
             #[cfg(feature = "native-plan")]
             native_linkage: self.native_linkage.clone(),
         }
@@ -175,6 +250,15 @@ impl RuntimeFunctionEntry {
 
     pub const fn semantic_contract(&self) -> Option<&'static OperationContractDeclaration> {
         self.semantic_contract
+    }
+
+    pub const fn execution_capability(&self) -> RuntimeExecutionCapability {
+        RuntimeExecutionCapability {
+            runtime_factory: self.id,
+            operation_binding: self.operation_binding,
+            signature: self.signature,
+            targets: self.execution_targets,
+        }
     }
 
     fn wrap_contract_error(&self, error: MechError) -> MechError {
@@ -286,6 +370,14 @@ impl FunctionCatalog {
 
     pub fn runtime_entries(&self) -> impl ExactSizeIterator<Item = &RuntimeFunctionEntry> + '_ {
         self.runtime_factories.values()
+    }
+
+    pub fn runtime_execution_capabilities(
+        &self,
+    ) -> impl ExactSizeIterator<Item = RuntimeExecutionCapability> + '_ {
+        self.runtime_factories
+            .values()
+            .map(RuntimeFunctionEntry::execution_capability)
     }
 
     pub fn specializer(&self, operation: OperationId) -> Option<&FunctionSpecializerEntry> {
@@ -691,6 +783,8 @@ impl FunctionCatalogBuilder {
             signature: F::SIGNATURE,
             contract,
             semantic_contract: None,
+            operation_binding: RuntimeOperationBinding::CompilerResolved,
+            execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
             #[cfg(feature = "native-plan")]
             native_linkage: None,
         })
@@ -739,6 +833,7 @@ impl FunctionCatalogBuilder {
         &mut self,
         name: impl Into<String>,
         contract: RuntimeFunctionContract,
+        semantic_operation: OperationId,
         semantic_contract: &'static OperationContractDeclaration,
     ) -> MResult<()>
     where
@@ -753,6 +848,8 @@ impl FunctionCatalogBuilder {
             signature: F::SIGNATURE,
             contract,
             semantic_contract: Some(semantic_contract),
+            operation_binding: RuntimeOperationBinding::Fixed(semantic_operation),
+            execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
             #[cfg(feature = "native-plan")]
             native_linkage: None,
         })
@@ -777,6 +874,8 @@ impl FunctionCatalogBuilder {
             signature: F::SIGNATURE,
             contract,
             semantic_contract: None,
+            operation_binding: RuntimeOperationBinding::CompilerResolved,
+            execution_targets: ExecutionTargetSet::DIRECT_RUNTIME.with(ExecutionTarget::Native),
             native_linkage: Some(linkage),
         })
     }
@@ -787,6 +886,7 @@ impl FunctionCatalogBuilder {
         name: impl Into<String>,
         contract: RuntimeFunctionContract,
         linkage: NativeFunctionLinkage,
+        semantic_operation: OperationId,
         semantic_contract: &'static OperationContractDeclaration,
     ) -> MResult<()>
     where
@@ -801,6 +901,8 @@ impl FunctionCatalogBuilder {
             signature: F::SIGNATURE,
             contract,
             semantic_contract: Some(semantic_contract),
+            operation_binding: RuntimeOperationBinding::Fixed(semantic_operation),
+            execution_targets: ExecutionTargetSet::DIRECT_RUNTIME.with(ExecutionTarget::Native),
             native_linkage: Some(linkage),
         })
     }

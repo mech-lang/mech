@@ -11,17 +11,18 @@ use std::collections::{BTreeMap, BTreeSet};
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirementId, BoundResidentKernel, CellSlotId,
     ChangeDetectionPolicy, ConstantId, DeliveryMode, DimensionExpr, DimensionLifetime,
-    ExternalInteraction, FunctionCatalog, InputId, InstanceEpoch, IntegrityConstraintId,
-    LayoutGeneration, NodeId, ObservationReplayPolicy, OutputConstruction, PlanGeneration,
-    ProgramRevision, ReactiveInstanceId, ResidentKernelBindError, ResidentKernelBindRequest,
-    ResidentKernelInputs, ResidentPortLayout, ResidentShape, ResidentValueKind, ResidentValueMut,
-    ResidentValueRef, SchemaBody, SchemaId, SchemaKey, ShapeInstance, SlotIndex, Value,
+    ExecutionTarget, ExecutionTargetSet, ExternalInteraction, FunctionCatalog, InputId,
+    InstanceEpoch, IntegrityConstraintId, LayoutGeneration, NodeId, ObservationReplayPolicy,
+    OutputConstruction, PlanGeneration, ProgramRevision, ReactiveInstanceId,
+    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs, ResidentPortLayout,
+    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, SchemaBody, SchemaId,
+    SchemaKey, ShapeInstance, SlotIndex, Value,
 };
 use sha2::{Digest, Sha256};
 
 use crate::{
-    ArtifactSource, BindingDeclaration, InitializerReference, ProducerReference, ProgramArtifact,
-    SlotRole,
+    ArtifactSource, BindingDeclaration, InitializerReference, OperationReference,
+    ProducerReference, ProgramArtifact, SlotRole,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1089,6 +1090,24 @@ pub fn activate_with_options(
 #[doc(hidden)]
 pub struct ResidentActivationPreflight {
     pub plan: ActivatedPlan,
+    pub concrete_cases: Box<[ConcreteExecutionCase]>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ConcreteExecutionCase {
+    pub node: NodeId,
+    pub operation: OperationReference,
+    pub input_schemas: Box<[SchemaId]>,
+    pub output_schema: SchemaId,
+    pub targets: ExecutionTargetSet,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OperationUnavailableForTarget {
+    pub node: Option<NodeId>,
+    pub operation: Option<OperationReference>,
+    pub target: ExecutionTarget,
+    pub reason: String,
 }
 
 /// Validates and plans resident activation without allocating an instance
@@ -1112,7 +1131,108 @@ pub fn preflight_activation(
         facts_fingerprint,
         options,
     )?;
-    Ok(ResidentActivationPreflight { plan })
+    Ok(ResidentActivationPreflight {
+        plan,
+        concrete_cases: resident_concrete_execution_cases(artifact)?,
+    })
+}
+
+/// Produces the concrete resident capability witness before any resident
+/// instance or target-specific artifact is emitted. An unsupported concrete
+/// layout is reported as target unavailability rather than escaping later as
+/// a missing factory during loading.
+pub fn preflight_resident_target(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    facts: &ActivationFacts,
+    options: ResidentActivationOptions,
+) -> Result<ResidentActivationPreflight, OperationUnavailableForTarget> {
+    preflight_activation(artifact, catalog, facts, options).map_err(|error| {
+        let node = resident_activation_error_node(&error);
+        let operation = node.and_then(|node| {
+            artifact
+                .nodes()
+                .get(node.get() as usize)
+                .map(|node| node.operation.clone())
+        });
+        OperationUnavailableForTarget {
+            node,
+            operation,
+            target: ExecutionTarget::ResidentCpu,
+            reason: format!("{error:?}"),
+        }
+    })
+}
+
+fn resident_activation_error_node(error: &ResidentActivationError) -> Option<NodeId> {
+    match error {
+        ResidentActivationError::LegacyOpaque { node }
+        | ResidentActivationError::UnsupportedInteraction { node }
+        | ResidentActivationError::UnsupportedDelivery { node }
+        | ResidentActivationError::UnsupportedConstruction { node }
+        | ResidentActivationError::UnsupportedChangeDetection { node }
+        | ResidentActivationError::InvalidAlias { node }
+        | ResidentActivationError::InvalidNodeOutput { node }
+        | ResidentActivationError::InvalidExternalNode { node }
+        | ResidentActivationError::MissingResidentFactory { node }
+        | ResidentActivationError::KernelBind { node, .. }
+        | ResidentActivationError::ActivationKernel { node }
+        | ResidentActivationError::InvalidDependency { node } => Some(*node),
+        _ => None,
+    }
+}
+
+fn resident_concrete_execution_cases(
+    artifact: &ProgramArtifact,
+) -> Result<Box<[ConcreteExecutionCase]>, ResidentActivationError> {
+    artifact
+        .nodes()
+        .iter()
+        .filter(|node| {
+            artifact
+                .contracts()
+                .get(node.contract)
+                .is_some_and(|contract| {
+                    matches!(
+                        contract,
+                        mech_core::ResolvedOperationContract::Declared(contract)
+                            if contract.interaction == ExternalInteraction::Pure
+                    )
+                })
+        })
+        .map(|node| {
+            let input_schemas = node_inputs(artifact, node.node)?
+                .into_iter()
+                .map(|source| match source {
+                    ArtifactSource::Constant(constant) => artifact
+                        .constants()
+                        .get(constant)
+                        .map(Value::schema)
+                        .ok_or(ResidentActivationError::InvalidDependency { node: node.node }),
+                    ArtifactSource::Slot(slot) => artifact
+                        .slots()
+                        .get(slot.get() as usize)
+                        .map(|slot| slot.schema)
+                        .ok_or(ResidentActivationError::InvalidDependency { node: node.node }),
+                })
+                .collect::<Result<Vec<_>, _>>()?
+                .into_boxed_slice();
+            let output = node_output_slot(artifact, node.node)?;
+            let output_schema = artifact
+                .slots()
+                .get(output.get() as usize)
+                .map(|slot| slot.schema)
+                .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?;
+            Ok(ConcreteExecutionCase {
+                node: node.node,
+                operation: node.operation.clone(),
+                input_schemas,
+                output_schema,
+                targets: ExecutionTargetSet::RESIDENT_CPU,
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(Vec::into_boxed_slice)
 }
 
 /// Activates an external resident instance structurally. Safe engine consumers
@@ -2485,6 +2605,7 @@ fn source_port_layout(
                 kind: region.kind,
                 shape: region.shape,
                 shape_instance: value.shape().clone(),
+                resolved_selector: resident_resolved_selector(value),
             })
         }
         ArtifactSource::Slot(slot) => Ok(slot_port_layout(&layout.slots[slot.get() as usize])),
@@ -2498,7 +2619,45 @@ fn slot_port_layout(slot: &ResolvedSlot) -> ResidentPortLayout {
         kind: slot.region.kind,
         shape: slot.region.shape,
         shape_instance: slot.shape.clone(),
+        resolved_selector: None,
     }
+}
+
+fn resident_resolved_selector(
+    value: &mech_core::Value,
+) -> Option<mech_core::ResidentResolvedSelector> {
+    use mech_core::ResidentResolvedSelector;
+
+    let one_based = match value.data() {
+        mech_core::ValueData::Index(value) | mech_core::ValueData::U64(value) => u128::from(*value),
+        mech_core::ValueData::U8(value) => u128::from(*value),
+        mech_core::ValueData::U16(value) => u128::from(*value),
+        mech_core::ValueData::U32(value) => u128::from(*value),
+        mech_core::ValueData::U128(value) => *value,
+        mech_core::ValueData::I8(value) if *value >= 0 => *value as u128,
+        mech_core::ValueData::I16(value) if *value >= 0 => *value as u128,
+        mech_core::ValueData::I32(value) if *value >= 0 => *value as u128,
+        mech_core::ValueData::I64(value) if *value >= 0 => *value as u128,
+        mech_core::ValueData::I128(value) if *value >= 0 => *value as u128,
+        mech_core::ValueData::F32(value)
+            if value.to_f32().is_finite()
+                && value.to_f32() >= 1.0
+                && value.to_f32().fract() == 0.0 =>
+        {
+            value.to_f32() as u128
+        }
+        mech_core::ValueData::F64(value)
+            if value.to_f64().is_finite()
+                && value.to_f64() >= 1.0
+                && value.to_f64().fract() == 0.0 =>
+        {
+            value.to_f64() as u128
+        }
+        mech_core::ValueData::Id(value) => return Some(ResidentResolvedSelector::Id(*value)),
+        _ => return None,
+    };
+    let ordinal = usize::try_from(one_based.checked_sub(1)?).ok()?;
+    Some(ResidentResolvedSelector::Ordinal(ordinal))
 }
 
 fn node_inputs(

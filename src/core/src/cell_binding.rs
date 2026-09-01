@@ -1847,6 +1847,29 @@ fn dynamic_matrix_cell(
                 .collect::<Vec<_>>();
             matrix!(&values)
         }
+        #[cfg(feature = "complex")]
+        SequenceView::Complex64(values) => {
+            let values = values
+                .iter()
+                .map(|value| crate::C64::new(value.real().to_f64(), value.imaginary().to_f64()))
+                .collect::<Vec<_>>();
+            matrix!(&values)
+        }
+        #[cfg(feature = "rational")]
+        SequenceView::Rational64(values) => {
+            let Some(values) = values
+                .iter()
+                .map(|value| {
+                    i64::try_from(value.denominator())
+                        .ok()
+                        .map(|denominator| crate::R64::new(value.numerator(), denominator))
+                })
+                .collect::<Option<Vec<_>>>()
+            else {
+                return Ok(None);
+            };
+            matrix!(&values)
+        }
         #[cfg(feature = "bool")]
         SequenceView::Bool(values) => matrix!(values),
         #[cfg(feature = "string")]
@@ -3208,6 +3231,46 @@ mod tests {
                 .try_ref::<crate::DMatrix<f64>>()
                 .unwrap()
                 .same_handle(&dynamic)
+        );
+    }
+
+    #[cfg(all(feature = "complex", feature = "rational", feature = "matrixd"))]
+    #[test]
+    fn canonical_complex_and_rational_matrices_recover_exact_dynamic_backings() {
+        let complex = ValueCell::dynamic_matrix(
+            SchemaBody::Complex(crate::FloatWidth::W64),
+            vec![2, 2].into_boxed_slice(),
+            (1..=4)
+                .map(|value| {
+                    ValueDataDraft::Complex64(crate::snapshot::Complex64Bits::new(
+                        crate::snapshot::F64Bits::from_f64(f64::from(value)),
+                        crate::snapshot::F64Bits::from_f64(0.0),
+                    ))
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        )
+        .unwrap();
+        assert!(
+            complex.try_ref::<crate::DMatrix<crate::C64>>().is_ok(),
+            "canonical c64 matrices must retain an exact planning/runtime backing",
+        );
+
+        let rational = ValueCell::dynamic_matrix(
+            SchemaBody::Rational64,
+            vec![2, 2].into_boxed_slice(),
+            (1..=4)
+                .map(|numerator| ValueDataDraft::Rational64 {
+                    numerator,
+                    denominator: 1,
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        )
+        .unwrap();
+        assert!(
+            rational.try_ref::<crate::DMatrix<crate::R64>>().is_ok(),
+            "canonical r64 matrices must retain an exact planning/runtime backing",
         );
     }
 

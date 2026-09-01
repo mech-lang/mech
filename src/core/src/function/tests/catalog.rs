@@ -98,6 +98,8 @@ fn runtime_entry(id: RuntimeFunctionId, name: &str) -> RuntimeFunctionEntry {
         signature: IndexUnaryFactory::SIGNATURE,
         contract: contract(RuntimeOutputAliasPolicy::DisallowInputAlias),
         semantic_contract: None,
+        operation_binding: RuntimeOperationBinding::CompilerResolved,
+        execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
         #[cfg(feature = "native-plan")]
         native_linkage: None,
     }
@@ -144,6 +146,35 @@ fn runtime_ids_reject_collisions_and_duplicate_registrations() {
     assert_eq!(
         duplicate.kind_name(),
         "FunctionCatalogDuplicateRuntimeFactory"
+    );
+}
+
+#[test]
+fn generated_runtime_capability_matrix_does_not_infer_backend_support() {
+    let mut builder = FunctionCatalogBuilder::new();
+    builder
+        .insert_runtime_factory::<IndexUnaryFactory>(
+            "IndexUnaryCapability",
+            contract(RuntimeOutputAliasPolicy::DisallowInputAlias),
+        )
+        .unwrap();
+    let catalog = builder.build().unwrap();
+    let capabilities = catalog.runtime_execution_capabilities().collect::<Vec<_>>();
+    let [capability] = capabilities.as_slice() else {
+        panic!("one registered runtime factory must produce one capability row")
+    };
+    assert_eq!(
+        capability.runtime_factory,
+        RuntimeFunctionId::from_name("IndexUnaryCapability")
+    );
+    assert_eq!(capability.signature, IndexUnaryFactory::SIGNATURE);
+    assert_eq!(
+        capability.operation_binding,
+        RuntimeOperationBinding::CompilerResolved
+    );
+    assert_eq!(
+        capability.targets.iter().collect::<Vec<_>>(),
+        vec![ExecutionTarget::DirectRuntime]
     );
 }
 
@@ -322,6 +353,14 @@ fn native_linkage_is_preserved_and_invalid_metadata_is_rejected() {
         .as_ref()
         .unwrap();
     assert_eq!(stored, &linkage);
+    let capability = catalog
+        .runtime_execution_capabilities()
+        .next()
+        .expect("linked factory has a capability row");
+    assert!(capability.targets.contains(ExecutionTarget::DirectRuntime));
+    assert!(capability.targets.contains(ExecutionTarget::Native));
+    assert!(!capability.targets.contains(ExecutionTarget::ResidentCpu));
+    assert!(!capability.targets.contains(ExecutionTarget::GpuBatch));
 
     let invalid = NativeFunctionLinkage {
         package: "Invalid Package",

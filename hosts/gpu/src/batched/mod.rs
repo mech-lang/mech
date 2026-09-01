@@ -10,12 +10,12 @@ use mech_compute::{
     build_compute_region_interface, plan_compute_artifact,
 };
 use mech_core::{
-    CellSlotId, DimensionExpr, FloatWidth, IntegrityConstraintId, NodeId, SchemaBody, ValueData,
-    snapshot::SequenceView,
+    CellSlotId, DimensionExpr, ExecutionTargetSet, FloatWidth, IntegrityConstraintId, NodeId,
+    ResolvedSelectionMode, SchemaBody, SchemaId, ValueData, snapshot::SequenceView,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, ProducerReference,
-    ProgramArtifact, SlotRole,
+    ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, OperationReference,
+    ProducerReference, ProgramArtifact, SlotRole,
 };
 use wide::{CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, f32x4};
 
@@ -419,7 +419,19 @@ pub struct FixedShapeKernel {
     inputs: Vec<BatchedInput>,
     states: Vec<BatchedState>,
     constraints: Vec<BatchedConstraint>,
+    concrete_cases: Box<[ConcreteGpuExecutionCase]>,
     wgsl: String,
+}
+
+/// One concrete operation specialization that completed GPU binding and
+/// lowering. Cases appear only after the full batch compiler succeeds.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ConcreteGpuExecutionCase {
+    pub node: NodeId,
+    pub operation: OperationReference,
+    pub input_schemas: Box<[SchemaId]>,
+    pub output_schema: SchemaId,
+    pub targets: ExecutionTargetSet,
 }
 
 /// One immutable browser/native storage binding for a fixed-shape input after
@@ -664,12 +676,17 @@ impl FixedShapeKernel {
             inputs,
             states,
             constraints,
+            concrete_cases: Box::new([]),
             wgsl,
         })
     }
 
     pub fn compute_program(&self) -> &ComputeProgram {
         &self.compute
+    }
+
+    pub fn concrete_execution_cases(&self) -> &[ConcreteGpuExecutionCase] {
+        &self.concrete_cases
     }
 
     fn fixed_ir(&self) -> &FixedShapeIr {
@@ -1264,41 +1281,59 @@ struct BatchCompiler<'a> {
     instructions: Vec<ScalarInstruction>,
     inputs: Vec<(CellSlotId, String, FixedShape)>,
     states: BTreeMap<CellSlotId, PendingState>,
+    concrete_cases: Vec<ConcreteGpuExecutionCase>,
     diagnostics: Vec<GpuDiagnostic>,
 }
 
-fn single_selector_access_axes(
-    operation: &str,
+fn linear_access_components(
+    mode: ResolvedSelectionMode,
     source: FixedShape,
     result: FixedShape,
     selector: Vec<usize>,
-) -> Result<(Vec<usize>, Vec<usize>), String> {
-    if operation == "access/rows" {
-        return Ok((selector, (0..source.columns).collect()));
-    }
-    if operation == "access/columns" {
-        return Ok(((0..source.rows).collect(), selector));
-    }
-    let selects_columns = result.rows == source.rows && result.columns == selector.len();
-    let selects_rows = result.rows == selector.len() && result.columns == source.columns;
-    match (selects_rows, selects_columns) {
-        (false, true) => Ok(((0..source.rows).collect(), selector)),
-        (true, false) => Ok((selector, (0..source.columns).collect())),
-        (true, true) if source.rows == 1 || source.columns == 1 => {
-            if result.rows == source.rows {
-                Ok(((0..source.rows).collect(), selector))
-            } else {
-                Ok((selector, (0..source.columns).collect()))
-            }
+) -> Result<Vec<usize>, String> {
+    match mode {
+        ResolvedSelectionMode::LinearScalar if selector.len() == 1 && result.elements() == 1 => {}
+        ResolvedSelectionMode::LinearGather => {}
+        ResolvedSelectionMode::LinearScalar => {
+            return Err(format!(
+                "scalar linear access requires one selector and one output, found {} and {}",
+                selector.len(),
+                result.elements(),
+            ));
         }
-        (true, true) => Err(format!(
-            "matrix access selector is ambiguous for {}x{} -> {}x{}",
-            source.rows, source.columns, result.rows, result.columns
-        )),
-        (false, false) => Err(format!(
-            "matrix access selector cannot produce {}x{} from {}x{}",
-            result.rows, result.columns, source.rows, source.columns
-        )),
+        _ => return Err(format!("{mode:?} is not a linear access mode")),
+    }
+    if selector
+        .iter()
+        .any(|component| *component >= source.elements())
+    {
+        return Err(format!(
+            "linear matrix selector exceeds {} source elements",
+            source.elements(),
+        ));
+    }
+    if result.elements() != selector.len() {
+        return Err(format!(
+            "linear matrix access selected {} elements but output contains {}",
+            selector.len(),
+            result.elements(),
+        ));
+    }
+    Ok(selector)
+}
+
+fn matrix_selector_access_axes(
+    mode: ResolvedSelectionMode,
+    source: FixedShape,
+    first: Vec<usize>,
+    second: Option<Vec<usize>>,
+) -> Result<(Vec<usize>, Vec<usize>), String> {
+    match (mode, second) {
+        (ResolvedSelectionMode::Rows, None) => Ok((first, (0..source.columns).collect())),
+        (ResolvedSelectionMode::Columns, None) => Ok(((0..source.rows).collect(), first)),
+        (ResolvedSelectionMode::Rectangle, Some(columns)) => Ok((first, columns)),
+        (_, Some(_)) => Err(format!("{mode:?} does not declare a rectangle selection")),
+        (_, None) => Err(format!("{mode:?} does not declare a single matrix axis")),
     }
 }
 
@@ -1313,6 +1348,7 @@ impl<'a> BatchCompiler<'a> {
             instructions: Vec::new(),
             inputs: Vec::new(),
             states: BTreeMap::new(),
+            concrete_cases: Vec::new(),
             diagnostics: Vec::new(),
         }
     }
@@ -1473,7 +1509,9 @@ impl<'a> BatchCompiler<'a> {
         };
         let program =
             ComputeProgram::new(interface, plan, kernel).with_fixed_shape_storage(storage);
-        FixedShapeKernel::from_compute_program(&program)
+        let mut kernel = FixedShapeKernel::from_compute_program(&program)?;
+        kernel.concrete_cases = self.concrete_cases.into_boxed_slice();
+        Ok(kernel)
     }
 
     fn collect_slots(&mut self) {
@@ -1622,7 +1660,21 @@ impl<'a> BatchCompiler<'a> {
                 continue;
             }
             if outputs.iter().any(|slot| self.states.contains_key(slot)) {
-                self.lower_state(node.node, &operation, &inputs, &outputs);
+                match self.lower_state(&operation, &inputs, &outputs) {
+                    Ok(output) => match self.concrete_execution_case(node, &inputs, output) {
+                        Ok(case) => self.concrete_cases.push(case),
+                        Err(detail) => self.reject(
+                            Some(node.node),
+                            Some(display_operation(&node.operation)),
+                            detail,
+                        ),
+                    },
+                    Err(detail) => self.reject(
+                        Some(node.node),
+                        Some(display_operation(&node.operation)),
+                        detail,
+                    ),
+                }
                 continue;
             }
             if outputs.len() != 1 {
@@ -1638,7 +1690,7 @@ impl<'a> BatchCompiler<'a> {
                 operation.as_str(),
                 "access/scalar" | "access/range" | "access/rows" | "access/columns"
             ) {
-                self.lower_access(output, &inputs, &operation)
+                self.lower_access(output, &inputs, &node.operation)
             } else if operation == "matrix/horzcat" {
                 self.lower_concatenate(output, &inputs, true)
             } else if operation == "matrix/vertcat" {
@@ -1666,40 +1718,79 @@ impl<'a> BatchCompiler<'a> {
                     "generic fixed-shape lowering does not support {operation}"
                 ))
             };
-            if let Err(detail) = result {
-                self.reject(
+            match result {
+                Ok(()) => match self.concrete_execution_case(node, &inputs, output) {
+                    Ok(case) => self.concrete_cases.push(case),
+                    Err(detail) => self.reject(
+                        Some(node.node),
+                        Some(display_operation(&node.operation)),
+                        detail,
+                    ),
+                },
+                Err(detail) => self.reject(
                     Some(node.node),
                     Some(display_operation(&node.operation)),
                     detail,
-                );
+                ),
             }
         }
     }
 
+    fn concrete_execution_case(
+        &self,
+        node: &mech_engine::NodeDeclaration,
+        inputs: &[ArtifactSource],
+        output: CellSlotId,
+    ) -> Result<ConcreteGpuExecutionCase, String> {
+        let input_schemas = inputs
+            .iter()
+            .map(|source| match source {
+                ArtifactSource::Constant(constant) => self
+                    .artifact
+                    .constants()
+                    .get(*constant)
+                    .map(mech_core::Value::schema)
+                    .ok_or_else(|| format!("constant {} does not exist", constant.get())),
+                ArtifactSource::Slot(slot) => self
+                    .artifact
+                    .slots()
+                    .get(slot.get() as usize)
+                    .map(|slot| slot.schema)
+                    .ok_or_else(|| format!("slot {} does not exist", slot.get())),
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_boxed_slice();
+        let output_schema = self
+            .artifact
+            .slots()
+            .get(output.get() as usize)
+            .map(|slot| slot.schema)
+            .ok_or_else(|| format!("output slot {} does not exist", output.get()))?;
+        Ok(ConcreteGpuExecutionCase {
+            node: node.node,
+            operation: node.operation.clone(),
+            input_schemas,
+            output_schema,
+            targets: ExecutionTargetSet::GPU_BATCH,
+        })
+    }
+
     fn lower_state(
         &mut self,
-        node: NodeId,
         name: &str,
         inputs: &[ArtifactSource],
         outputs: &[CellSlotId],
-    ) {
+    ) -> Result<CellSlotId, String> {
         if name != "core/assign" || inputs.len() != 1 || outputs.len() != 1 {
-            self.reject(
-                Some(node),
-                Some(name.to_owned()),
-                "batch state requires one whole-value Assign",
-            );
-            return;
+            return Err("batch state requires one whole-value Assign".to_owned());
         }
         let target = outputs[0];
         let shape = self.states[&target].shape;
         let update = (0..shape.elements())
             .map(|component| self.operand(inputs[0], component))
-            .collect::<Result<Vec<_>, _>>();
-        match update {
-            Ok(update) => self.states.get_mut(&target).unwrap().update = Some(update),
-            Err(detail) => self.reject(Some(node), Some(name.to_owned()), detail),
-        }
+            .collect::<Result<Vec<_>, _>>()?;
+        self.states.get_mut(&target).unwrap().update = Some(update);
+        Ok(target)
     }
 
     fn lower_elementwise(
@@ -1745,7 +1836,7 @@ impl<'a> BatchCompiler<'a> {
         &mut self,
         output: CellSlotId,
         inputs: &[ArtifactSource],
-        operation: &str,
+        operation: &OperationReference,
     ) -> Result<(), String> {
         if inputs.len() != 2 && inputs.len() != 3 {
             return Err(format!(
@@ -1755,19 +1846,48 @@ impl<'a> BatchCompiler<'a> {
         }
         let source = self.source_shape(inputs[0])?;
         let result = self.shape(output)?;
-        let (rows, columns) = if inputs.len() == 3 {
-            (
-                self.constant_indices(inputs[1], source.rows, "row")?,
-                self.constant_indices(inputs[2], source.columns, "column")?,
+        let operation_name = display_operation(operation);
+        let mode = operation
+            .resolved_selection_mode(inputs.len() - 1)
+            .ok_or_else(|| format!("{operation_name} has no canonical selection mode"))?;
+        if inputs.len() == 2
+            && matches!(
+                mode,
+                ResolvedSelectionMode::LinearScalar | ResolvedSelectionMode::LinearGather
             )
+        {
+            let selector = linear_access_components(
+                mode,
+                source,
+                result,
+                self.constant_indices(inputs[1], source.elements(), "linear")?,
+            )?;
+            for (canonical_output, source_component) in selector.into_iter().enumerate() {
+                let result_row = canonical_output / result.columns;
+                let result_column = canonical_output % result.columns;
+                self.emit(
+                    output,
+                    result.index(result_row, result_column),
+                    ScalarComputation::Copy(self.operand(inputs[0], source_component)?),
+                );
+            }
+            return Ok(());
+        }
+        let (rows, columns) = if inputs.len() == 3 {
+            matrix_selector_access_axes(
+                mode,
+                source,
+                self.constant_indices(inputs[1], source.rows, "row")?,
+                Some(self.constant_indices(inputs[2], source.columns, "column")?),
+            )?
         } else {
-            let upper = match operation {
-                "access/rows" => source.rows,
-                "access/columns" => source.columns,
-                _ => source.rows.max(source.columns),
+            let upper = match mode {
+                ResolvedSelectionMode::Rows => source.rows,
+                ResolvedSelectionMode::Columns => source.columns,
+                _ => return Err(format!("{operation_name} does not declare a matrix axis")),
             };
             let selector = self.constant_indices(inputs[1], upper, "matrix")?;
-            single_selector_access_axes(operation, source, result, selector)?
+            matrix_selector_access_axes(mode, source, selector, None)?
         };
         if result.rows != rows.len() || result.columns != columns.len() {
             return Err(format!(
@@ -2697,14 +2817,119 @@ mod axis_tests {
         };
         let selector = vec![2, 0, 1];
         assert_eq!(
-            single_selector_access_axes("access/rows", square, square, selector.clone()),
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Rows,
+                square,
+                selector.clone(),
+                None,
+            ),
             Ok((selector.clone(), vec![0, 1, 2]))
         );
         assert_eq!(
-            single_selector_access_axes("access/columns", square, square, selector.clone()),
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Columns,
+                square,
+                selector.clone(),
+                None,
+            ),
             Ok((vec![0, 1, 2], selector.clone()))
         );
-        assert!(single_selector_access_axes("access/range", square, square, selector).is_err());
+        assert!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::LinearGather,
+                square,
+                selector,
+                None,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rectangular_linear_selection_uses_cardinality_and_preserves_duplicates() {
+        let source = FixedShape {
+            rows: 2,
+            columns: 3,
+        };
+        assert_eq!(
+            linear_access_components(
+                ResolvedSelectionMode::LinearScalar,
+                source,
+                FixedShape::scalar(),
+                vec![5],
+            ),
+            Ok(vec![5]),
+        );
+        let result = FixedShape {
+            rows: 1,
+            columns: 3,
+        };
+        assert_eq!(
+            linear_access_components(
+                ResolvedSelectionMode::LinearGather,
+                source,
+                result,
+                vec![5, 0, 5],
+            ),
+            Ok(vec![5, 0, 5]),
+        );
+        assert!(
+            linear_access_components(
+                ResolvedSelectionMode::LinearGather,
+                source,
+                result,
+                vec![6, 0, 5],
+            )
+            .is_err()
+        );
+        assert!(
+            linear_access_components(
+                ResolvedSelectionMode::LinearScalar,
+                source,
+                result,
+                vec![5, 0, 5],
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rectangular_axis_and_rectangle_modes_preserve_selector_order() {
+        let source = FixedShape {
+            rows: 2,
+            columns: 3,
+        };
+        assert_eq!(
+            matrix_selector_access_axes(ResolvedSelectionMode::Rows, source, vec![1, 0, 1], None,),
+            Ok((vec![1, 0, 1], vec![0, 1, 2])),
+        );
+        assert_eq!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Columns,
+                source,
+                vec![2, 0, 2],
+                None,
+            ),
+            Ok((vec![0, 1], vec![2, 0, 2])),
+        );
+        assert_eq!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Rectangle,
+                source,
+                vec![1, 0, 1],
+                Some(vec![2, 0, 2]),
+            ),
+            Ok((vec![1, 0, 1], vec![2, 0, 2])),
+        );
+        assert!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Rows,
+                source,
+                vec![1],
+                Some(vec![2]),
+            )
+            .is_err(),
+        );
     }
 }
 
