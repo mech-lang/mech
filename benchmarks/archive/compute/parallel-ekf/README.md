@@ -236,10 +236,12 @@ The complete table is in
 
 That source-edit mega view is intentionally complemented by compact
 execution-strategy views. `results/parallel-ekf-execution-strategy-reports.md`
-links one diff table and one graph for each baseline, single-core, multicore,
-synchronized-GPU, and GPU-batch strategy. Each strategy has one row per
-language with paired checked/unchecked throughput; unsupported backends are
-shown as `N/A`, and unrecorded applicable cells are called out explicitly.
+links one diff table and one graph for interpreted-baseline, compiled-baseline,
+single-core, multicore, synchronized-GPU, and GPU-batch strategies. The old
+mixed baseline remains as a historical compatibility view. The split baseline
+charts use linear axes within their execution regime; languages without a
+result are omitted from the bars and listed under the report's missing-backend
+notes. Each measured row keeps checked and unchecked throughput separate.
 
 The report now measures the checked-in compact controls under `minimal/`, not
 the explanatory listings. The Mech control is a single 42-line code-only

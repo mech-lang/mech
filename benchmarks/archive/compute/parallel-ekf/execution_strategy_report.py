@@ -24,10 +24,25 @@ RESULTS = HERE / "results"
 LANGUAGES = ("Mech", "Rust", "NumPy", "Python", "Julia", "LuaJIT", "Lua", "Taichi", "Halide", "Futhark")
 
 STRATEGIES = {
+    "interpreted-baseline": {
+        "title": "Interpreted baseline",
+        "description": "Interpreter and host-loop controls kept separate from native/JIT/data-parallel compilation.",
+        "workload": "10,000 filters x 20 turns where available",
+        "languages": ("Mech", "NumPy", "Python", "Lua"),
+        "note": "NumPy is included here because this row is a Python loop invoking one-filter NumPy operations; its array kernels are native, but the outer execution remains interpreter-driven.",
+    },
+    "compiled-baseline": {
+        "title": "Compiled baseline",
+        "description": "Direct native, JIT, or ahead-of-time compiled controls, with no interpreter in the timed loop.",
+        "workload": "10,000 filters x 20 turns where available",
+        "languages": ("Rust", "Julia", "LuaJIT", "Taichi", "Halide", "Futhark"),
+        "note": "This view uses each language's retained native/JIT/AOT scalar control. Mech's paired compiled controls are reported in the single-core and multicore views; its baseline scalar row is intentionally kept in the interpreted view because no paired scalar Cranelift checked/unchecked evidence is retained.",
+    },
     "baseline": {
         "title": "Baseline",
         "description": "The most direct scalar or fixed-shape control retained for each language.",
         "workload": "10,000 filters x 20 turns where available",
+        "note": "Historical mixed view retained for compatibility. Use the interpreted and compiled baseline views for like-for-like execution-boundary comparisons.",
     },
     "single-core": {
         "title": "Single-core",
@@ -65,6 +80,20 @@ BASELINES = {
 }
 
 SOURCES = {
+    "interpreted-baseline": {
+        "Mech": BASELINES["Mech"],
+        "NumPy": BASELINES["NumPy"],
+        "Python": BASELINES["Python"],
+        "Lua": BASELINES["Lua"],
+    },
+    "compiled-baseline": {
+        "Rust": BASELINES["Rust"],
+        "Julia": BASELINES["Julia"],
+        "LuaJIT": BASELINES["LuaJIT"],
+        "Taichi": BASELINES["Taichi"],
+        "Halide": BASELINES["Halide"],
+        "Futhark": BASELINES["Futhark"],
+    },
     "baseline": dict(BASELINES),
     "single-core": {
         "Mech": BASELINES["Mech"],
@@ -117,6 +146,20 @@ SOURCES = {
 }
 
 SOURCE_LABELS = {
+    "interpreted-baseline": {
+        "Mech": "resident scalar interpreter",
+        "NumPy": "Python loop over scalar NumPy operations",
+        "Python": "standard-library lists and math",
+        "Lua": "PUC Lua flat fixed-shape arrays",
+    },
+    "compiled-baseline": {
+        "Rust": "fixed-shape scalar arrays",
+        "Julia": "generic scalar JIT arrays",
+        "LuaJIT": "generic FFI JIT loop",
+        "Taichi": "Vector/Matrix resident fields with compiled kernel",
+        "Halide": "fixed-shape compiled pipeline",
+        "Futhark": "compiled data-parallel array program",
+    },
     "baseline": {
         "Mech": "same high-level `.mec` recurrence",
         "Rust": "fixed-shape scalar arrays",
@@ -252,7 +295,7 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
         row = (strict_mech or {}).get("rows", {}).get(f"Mech native Metal {mode}")
         return None if row is None else float(row["median_million_turns_per_second"])
 
-    return {
+    metrics = {
         "baseline": {
             "Mech": pair(m("Mech scalar"), m("Mech scalar unchecked")),
             "Rust": pair(row_metric(rust_scalar, "checked"), row_metric(rust_scalar, "unchecked")),
@@ -314,6 +357,15 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
             "Futhark": pair(None, None),
         },
     }
+    metrics["interpreted-baseline"] = {
+        language: metrics["baseline"][language]
+        for language in STRATEGIES["interpreted-baseline"]["languages"]
+    }
+    metrics["compiled-baseline"] = {
+        language: metrics["baseline"][language]
+        for language in STRATEGIES["compiled-baseline"]["languages"]
+    }
+    return metrics
 
 
 def status(source_path: str | None, values: dict[str, float | None]) -> str:
@@ -328,14 +380,24 @@ def status(source_path: str | None, values: dict[str, float | None]) -> str:
 def build_report(data: dict[str, dict | None], output_directory: Path) -> dict:
     metrics = build_metrics(data)
     strategies: dict[str, list[dict[str, object]]] = {}
+    omitted: dict[str, list[dict[str, str]]] = {}
     missing_cells: list[dict[str, str]] = []
     for strategy in STRATEGIES:
         rows = []
-        for language in LANGUAGES:
+        omitted[strategy] = []
+        for language in STRATEGIES[strategy].get("languages", LANGUAGES):
             baseline_path = ROOT / BASELINES[language]
             source_name = SOURCES[strategy][language]
             source_path = ROOT / source_name if source_name is not None else None
             values = metrics[strategy][language]
+            if source_name is None or all(value is None for value in values.values()):
+                omitted[strategy].append(
+                    {
+                        "language": language,
+                        "reason": "backend/strategy unavailable" if source_name is None else "source exists but was not tested",
+                    }
+                )
+                continue
             row: dict[str, object] = {
                 "language": language,
                 "source": SOURCE_LABELS[strategy][language],
@@ -361,6 +423,7 @@ def build_report(data: dict[str, dict | None], output_directory: Path) -> dict:
         "schema_version": 1,
         "generated_at": dt.datetime.now().astimezone().isoformat(),
         "strategies": strategies,
+        "omitted": omitted,
         "missing_cells": missing_cells,
         "evidence": evidence,
         "definitions": STRATEGIES,
@@ -378,6 +441,10 @@ def markdown(report: dict, strategy: str) -> str:
         "",
         f"{spec['description']} Workload: **{spec['workload']}**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.",
         "",
+    ]
+    if spec.get("note"):
+        lines += [f"**Scope note:** {spec['note']}", ""]
+    lines += [
         "| Language | Representative source | Code L/C | Edit vs baseline L/C | Checked M/s | Unchecked M/s | Result |",
         "| --- | --- | ---: | ---: | ---: | ---: | --- |",
     ]
@@ -390,45 +457,59 @@ def markdown(report: dict, strategy: str) -> str:
         lines.append(f"| {row['language']} | {row['source']} | {code_cell} | {edit_cell} | {fmt(values['checked'])} | {fmt(values['unchecked'])} | {row['status']} |")
     lines += [
         "",
-        "`N/A` means the language/backend does not provide this strategy in the retained comparison. `partial` means the source exists but one checked/unchecked measurement is not recorded yet; it is not treated as zero.",
+        "`partial` means the source exists but one checked/unchecked measurement is not recorded yet; it is not treated as zero.",
         "",
     ]
+    if report["omitted"][strategy]:
+        lines += ["## Missing backends and untested controls", ""]
+        for item in report["omitted"][strategy]:
+            lines.append(f"- **{item['language']}**: {item['reason']}.")
+        lines.append("")
     return "\n".join(lines)
 
 
 def svg(report: dict, strategy: str) -> str:
     rows = report["strategies"][strategy]
+    omitted = report["omitted"][strategy]
     positive = [value for row in rows for value in row["values"].values() if value is not None and value > 0]
-    minimum = 10 ** math.floor(math.log10(min(positive))) if positive else 0.1
-    maximum = 10 ** math.ceil(math.log10(max(positive))) if positive else 1.0
-    if minimum == maximum:
-        maximum *= 10
-    log_min = math.log10(minimum)
-    log_span = math.log10(maximum) - log_min
-    width, left, right, top, row_height, bottom = 1500, 300, 100, 125, 55, 90
+    maximum_value = max(positive) if positive else 1.0
+    raw_step = maximum_value / 6.0
+    magnitude = 10 ** math.floor(math.log10(raw_step)) if raw_step > 0 else 1.0
+    fraction = raw_step / magnitude
+    if fraction <= 1.0:
+        tick_step = magnitude
+    elif fraction <= 2.0:
+        tick_step = 2.0 * magnitude
+    elif fraction <= 5.0:
+        tick_step = 5.0 * magnitude
+    else:
+        tick_step = 10.0 * magnitude
+    maximum = tick_step * math.ceil(maximum_value / tick_step)
+    width, left, right, top, row_height = 1500, 300, 100, 125, 55
+    bottom = 90 + 18 * (1 + len(omitted))
     height = top + row_height * len(rows) + bottom
 
     def esc(value: object) -> str:
         return html.escape(str(value), quote=True)
 
     def x(value: float) -> float:
-        return left + (math.log10(value) - log_min) / log_span * (width - left - right)
+        return left + value / maximum * (width - left - right)
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: {esc(STRATEGIES[strategy]["title"])} throughput</text>',
-        f'<text x="38" y="69" class="muted" font-size="15">{esc(STRATEGIES[strategy]["description"])} Checked is solid; unchecked is lighter. Logarithmic M/s axis.</text>',
+        f'<text x="38" y="69" class="muted" font-size="15">{esc(STRATEGIES[strategy]["description"])} Checked is solid; unchecked is lighter. Linear M/s axis.</text>',
         '<rect x="38" y="87" width="18" height="12" fill="#dce5f2"/><text x="64" y="98" class="muted" font-size="13">checked</text>',
         '<rect x="145" y="87" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="98" class="muted" font-size="13">unchecked</text>',
     ]
-    tick = minimum
+    tick = 0.0
     while tick <= maximum * 1.0001:
         tick_x = x(tick)
         lines.append(f'<line x1="{tick_x:.1f}" y1="{top - 15}" x2="{tick_x:.1f}" y2="{height - bottom}" class="grid"/>')
         lines.append(f'<text x="{tick_x:.1f}" y="{height - bottom + 24}" text-anchor="middle" class="muted" font-size="12">{tick:g}</text>')
-        tick *= 10
+        tick += tick_step
     for index, row in enumerate(rows):
         y = top + index * row_height
         color = COLORS[row["language"]]
@@ -441,7 +522,11 @@ def svg(report: dict, strategy: str) -> str:
             end = x(value)
             lines.append(f'<rect x="{left}" y="{y + offset}" width="{max(2, end - left):.1f}" height="16" rx="2" fill="{color}" opacity="{0.92 if mode == "checked" else 0.42}"/>')
             lines.append(f'<text x="{min(end + 7, width - right - 35):.1f}" y="{y + offset + 13}" class="value">{value:.3f}</text>')
-    lines += [f'<text x="38" y="{height - 35}" class="muted" font-size="12">One row per language and strategy; unsupported cells are N/A, not zero.</text>', "</svg>"]
+    footer_y = height - bottom + 45
+    lines.append(f'<text x="38" y="{footer_y}" class="muted" font-size="12">Bars show only languages with at least one measured result; checked is solid and unchecked is lighter.</text>')
+    for index, item in enumerate(omitted, start=1):
+        lines.append(f'<text x="38" y="{footer_y + 18 * index}" class="muted" font-size="12">{esc(item["language"])}: {esc(item["reason"])}.</text>')
+    lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
 
@@ -478,16 +563,20 @@ def main() -> None:
     report = build_report(load_inputs(args.results), args.results)
     args.results.mkdir(parents=True, exist_ok=True)
     (args.results / "parallel-ekf-execution-strategy-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    index = ["# Parallel EKF execution-strategy reports", "", "The existing source-edit mega report remains the complete cross-variant view. These compact reports select one representative source and one checked/unchecked result per language for each execution strategy.", "", "| Strategy | Diff table | Graph |", "| --- | --- | --- |"]
+    index = ["# Parallel EKF execution-strategy reports", "", "The existing source-edit mega report remains the complete cross-variant view. These compact reports select one representative source and one checked/unchecked result per language for each execution strategy. The baseline is split into interpreted and compiled controls; the historical mixed baseline remains for compatibility.", "", "| Strategy | Diff table | Graph |", "| --- | --- | --- |"]
     for strategy in STRATEGIES:
         stem = f"parallel-ekf-strategy-{strategy}"
         (args.results / f"{stem}.md").write_text(markdown(report, strategy), encoding="utf-8")
         (args.results / f"{stem}.svg").write_text(svg(report, strategy), encoding="utf-8")
         index.append(f"| {STRATEGIES[strategy]['title']} | [`{stem}.md`]({stem}.md) | [`{stem}.svg`]({stem}.svg) |")
+    index += ["", "## Omitted controls", "", "Languages with no measured result are omitted from the corresponding tables and graphs. The reason is retained here:", "", "| Strategy | Language | Reason |", "| --- | --- | --- |"]
+    for strategy in STRATEGIES:
+        for item in report["omitted"][strategy]:
+            index.append(f"| {strategy} | {item['language']} | {item['reason']} |")
     index += ["", "## Evidence gaps", "", "The generator does not turn an absent measurement into zero. Applicable cells still awaiting a run are listed here and in the JSON `missing_cells` array:", "", "| Strategy | Language | Mode |", "| --- | --- | --- |"]
     for cell in report["missing_cells"]:
         index.append(f"| {cell['strategy']} | {cell['language']} | {cell['mode']} |")
-    index += ["", "`N/A` means the backend or strategy is not available in this comparison. `partial` means a source exists but a checked/unchecked measurement is not retained; those cells are listed above rather than being fabricated.", ""]
+    index += ["", "`partial` means a source exists but a checked/unchecked measurement is not retained; those cells are listed above rather than being fabricated.", ""]
     (args.results / "parallel-ekf-execution-strategy-reports.md").write_text("\n".join(index), encoding="utf-8")
 
 

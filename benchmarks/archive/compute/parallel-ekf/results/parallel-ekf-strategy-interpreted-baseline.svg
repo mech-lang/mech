@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="453" viewBox="0 0 1500 453">
+<rect width="100%" height="100%" fill="#080c14"/>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
+<text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: Interpreted baseline throughput</text>
+<text x="38" y="69" class="muted" font-size="15">Interpreter and host-loop controls kept separate from native/JIT/data-parallel compilation. Checked is solid; unchecked is lighter. Linear M/s axis.</text>
+<rect x="38" y="87" width="18" height="12" fill="#dce5f2"/><text x="64" y="98" class="muted" font-size="13">checked</text>
+<rect x="145" y="87" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="98" class="muted" font-size="13">unchecked</text>
+<line x1="300.0" y1="110" x2="300.0" y2="345" class="grid"/>
+<text x="300.0" y="369" text-anchor="middle" class="muted" font-size="12">0</text>
+<line x1="483.3" y1="110" x2="483.3" y2="345" class="grid"/>
+<text x="483.3" y="369" text-anchor="middle" class="muted" font-size="12">0.2</text>
+<line x1="666.7" y1="110" x2="666.7" y2="345" class="grid"/>
+<text x="666.7" y="369" text-anchor="middle" class="muted" font-size="12">0.4</text>
+<line x1="850.0" y1="110" x2="850.0" y2="345" class="grid"/>
+<text x="850.0" y="369" text-anchor="middle" class="muted" font-size="12">0.6</text>
+<line x1="1033.3" y1="110" x2="1033.3" y2="345" class="grid"/>
+<text x="1033.3" y="369" text-anchor="middle" class="muted" font-size="12">0.8</text>
+<line x1="1216.7" y1="110" x2="1216.7" y2="345" class="grid"/>
+<text x="1216.7" y="369" text-anchor="middle" class="muted" font-size="12">1</text>
+<line x1="1400.0" y1="110" x2="1400.0" y2="345" class="grid"/>
+<text x="1400.0" y="369" text-anchor="middle" class="muted" font-size="12">1.2</text>
+<text x="286" y="149" text-anchor="end" class="label">Mech</text>
+<rect x="300" y="129" width="842.4" height="16" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="1149.4" y="142" class="value">0.919</text>
+<rect x="300" y="154" width="943.2" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
+<text x="1250.2" y="167" class="value">1.029</text>
+<text x="286" y="204" text-anchor="end" class="label">NumPy</text>
+<rect x="300" y="184" width="36.9" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
+<text x="343.9" y="197" class="value">0.040</text>
+<rect x="300" y="209" width="48.1" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
+<text x="355.1" y="222" class="value">0.053</text>
+<text x="286" y="259" text-anchor="end" class="label">Python</text>
+<rect x="300" y="239" width="225.9" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
+<text x="532.9" y="252" class="value">0.246</text>
+<rect x="300" y="264" width="326.3" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
+<text x="633.3" y="277" class="value">0.356</text>
+<text x="286" y="314" text-anchor="end" class="label">Lua</text>
+<rect x="300" y="294" width="518.0" height="16" rx="2" fill="#000080" opacity="0.92"/>
+<text x="825.0" y="307" class="value">0.565</text>
+<rect x="300" y="319" width="765.1" height="16" rx="2" fill="#000080" opacity="0.42"/>
+<text x="1072.1" y="332" class="value">0.835</text>
+<text x="38" y="390" class="muted" font-size="12">Bars show only languages with at least one measured result; checked is solid and unchecked is lighter.</text>
+</svg>

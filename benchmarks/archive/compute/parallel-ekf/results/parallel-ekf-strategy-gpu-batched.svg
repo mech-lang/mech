@@ -1,44 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="765" viewBox="0 0 1500 765">
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="450" viewBox="0 0 1500 450">
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
 <text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: GPU batch ceiling throughput</text>
-<text x="38" y="69" class="muted" font-size="15">A device-resident multi-turn submission. This is a throughput ceiling, not a replacement for per-turn observation. Checked is solid; unchecked is lighter. Logarithmic M/s axis.</text>
+<text x="38" y="69" class="muted" font-size="15">A device-resident multi-turn submission. This is a throughput ceiling, not a replacement for per-turn observation. Checked is solid; unchecked is lighter. Linear M/s axis.</text>
 <rect x="38" y="87" width="18" height="12" fill="#dce5f2"/><text x="64" y="98" class="muted" font-size="13">checked</text>
 <rect x="145" y="87" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="98" class="muted" font-size="13">unchecked</text>
-<line x1="300.0" y1="110" x2="300.0" y2="675" class="grid"/>
-<text x="300.0" y="699" text-anchor="middle" class="muted" font-size="12">1000</text>
-<line x1="1400.0" y1="110" x2="1400.0" y2="675" class="grid"/>
-<text x="1400.0" y="699" text-anchor="middle" class="muted" font-size="12">10000</text>
+<line x1="300.0" y1="110" x2="300.0" y2="180" class="grid"/>
+<text x="300.0" y="204" text-anchor="middle" class="muted" font-size="12">0</text>
+<line x1="575.0" y1="110" x2="575.0" y2="180" class="grid"/>
+<text x="575.0" y="204" text-anchor="middle" class="muted" font-size="12">1000</text>
+<line x1="850.0" y1="110" x2="850.0" y2="180" class="grid"/>
+<text x="850.0" y="204" text-anchor="middle" class="muted" font-size="12">2000</text>
+<line x1="1125.0" y1="110" x2="1125.0" y2="180" class="grid"/>
+<text x="1125.0" y="204" text-anchor="middle" class="muted" font-size="12">3000</text>
+<line x1="1400.0" y1="110" x2="1400.0" y2="180" class="grid"/>
+<text x="1400.0" y="204" text-anchor="middle" class="muted" font-size="12">4000</text>
 <text x="286" y="149" text-anchor="end" class="label">Mech</text>
 <text x="308" y="143" class="muted" font-size="12">N/A</text>
-<rect x="300" y="154" width="628.8" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
-<text x="935.8" y="167" class="value">3729.673</text>
-<text x="286" y="204" text-anchor="end" class="label">Rust</text>
-<text x="308" y="198" class="muted" font-size="12">N/A</text>
-<text x="308" y="223" class="muted" font-size="12">N/A</text>
-<text x="286" y="259" text-anchor="end" class="label">NumPy</text>
-<text x="308" y="253" class="muted" font-size="12">N/A</text>
-<text x="308" y="278" class="muted" font-size="12">N/A</text>
-<text x="286" y="314" text-anchor="end" class="label">Python</text>
-<text x="308" y="308" class="muted" font-size="12">N/A</text>
-<text x="308" y="333" class="muted" font-size="12">N/A</text>
-<text x="286" y="369" text-anchor="end" class="label">Julia</text>
-<text x="308" y="363" class="muted" font-size="12">N/A</text>
-<text x="308" y="388" class="muted" font-size="12">N/A</text>
-<text x="286" y="424" text-anchor="end" class="label">LuaJIT</text>
-<text x="308" y="418" class="muted" font-size="12">N/A</text>
-<text x="308" y="443" class="muted" font-size="12">N/A</text>
-<text x="286" y="479" text-anchor="end" class="label">Lua</text>
-<text x="308" y="473" class="muted" font-size="12">N/A</text>
-<text x="308" y="498" class="muted" font-size="12">N/A</text>
-<text x="286" y="534" text-anchor="end" class="label">Taichi</text>
-<text x="308" y="528" class="muted" font-size="12">N/A</text>
-<text x="308" y="553" class="muted" font-size="12">N/A</text>
-<text x="286" y="589" text-anchor="end" class="label">Halide</text>
-<text x="308" y="583" class="muted" font-size="12">N/A</text>
-<text x="308" y="608" class="muted" font-size="12">N/A</text>
-<text x="286" y="644" text-anchor="end" class="label">Futhark</text>
-<text x="308" y="638" class="muted" font-size="12">N/A</text>
-<text x="308" y="663" class="muted" font-size="12">N/A</text>
-<text x="38" y="730" class="muted" font-size="12">One row per language and strategy; unsupported cells are N/A, not zero.</text>
+<rect x="300" y="154" width="1025.7" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
+<text x="1332.7" y="167" class="value">3729.673</text>
+<text x="38" y="225" class="muted" font-size="12">Bars show only languages with at least one measured result; checked is solid and unchecked is lighter.</text>
+<text x="38" y="243" class="muted" font-size="12">Rust: backend/strategy unavailable.</text>
+<text x="38" y="261" class="muted" font-size="12">NumPy: backend/strategy unavailable.</text>
+<text x="38" y="279" class="muted" font-size="12">Python: backend/strategy unavailable.</text>
+<text x="38" y="297" class="muted" font-size="12">Julia: backend/strategy unavailable.</text>
+<text x="38" y="315" class="muted" font-size="12">LuaJIT: backend/strategy unavailable.</text>
+<text x="38" y="333" class="muted" font-size="12">Lua: backend/strategy unavailable.</text>
+<text x="38" y="351" class="muted" font-size="12">Taichi: backend/strategy unavailable.</text>
+<text x="38" y="369" class="muted" font-size="12">Halide: backend/strategy unavailable.</text>
+<text x="38" y="387" class="muted" font-size="12">Futhark: backend/strategy unavailable.</text>
 </svg>
