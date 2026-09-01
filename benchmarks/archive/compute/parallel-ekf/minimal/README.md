@@ -16,13 +16,23 @@ diagonals, and covariance symmetry before publishing a candidate.
 `measure.py` currently executes the compact NumPy, Halide, and Futhark
 controls. Pass `--halide-metal` to schedule the same Halide pipeline with
 `gpu_tile` for Apple's native Metal backend; the state buffers remain resident
-on the device across turns and the final readback is outside the timed region.
-For the matched 500,000-filter x 500-turn workload, the five-sample Apple M1
-medians are 275.831 M turns/s unchecked and 274.112 M turns/s checked; rerun that
-control with `measure_halide_gpu.py`. The Halide GPU pipeline now emits one
-fused tuple kernel, materializes shared per-lane intermediates once, and waits
-for completion after every turn. `numpy_numba.py` is a separate eight-worker `@njit(parallel=True)`
+on the device across turns. The ordinary final state readback is outside the
+timed region; strict checked mode additionally reads its fault buffer after each
+turn because that observation is part of the checked contract.
+The earlier fused-only row (275.831 M turns/s unchecked and 274.112 M turns/s
+checked) did not expose per-lane fault observations and is retained only as a
+kernel-throughput control. The strict checked control is in
+`results/apple-m1-halide-metal-strict-2026-08-31.json`; it emits a fault code
+for every lane, synchronizes, scans those codes, and retains the previous state
+for invalid candidates. On the matched Apple M1 500,000-filter x 40-turn run,
+the five-sample medians were **111.474 M turns/s strict checked** and
+**212.283 M turns/s unchecked**. The Halide GPU pipeline emits one fused tuple
+kernel, materializes shared per-lane intermediates once, and waits for
+completion after every turn. `numpy_numba.py` is a separate eight-worker `@njit(parallel=True)`
 control because Numba is an additional JIT runtime rather than plain NumPy.
+For a fault-path smoke test, pass `fault` as the sixth Halide argument; lane 0
+receives an infinite velocity, the candidate is rejected, and the checked
+runner reports the fault while retaining that lane's prior publication.
 `julia_metal_ekf.jl` is a direct Julia/Metal control: it stores the same
 structure-of-arrays state on the device, launches one thread per filter, and
 calls `Metal.synchronize()` after every turn. Its first kernel compilation and

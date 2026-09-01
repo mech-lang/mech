@@ -34,15 +34,15 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 24 | Mech SIMD/JIT CPU, 8 workers | Mech | 104.783 |
 | 25 | Julia SIMD.jl, 8 workers | Julia | 106.341 |
 | 26 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 108.718 |
-| 27 | Julia SIMD.jl, fused worker-local block checked (8 workers) | Julia | 128.544 |
-| 28 | Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers) | Mech | 145.573 |
-| 29 | Rust packed SIMD, fused worker-local block strict checked (8 workers) | Rust | 146.509 |
-| 30 | Mech GPU, WGPU per-turn | Mech | 152.972 |
-| 31 | Taichi optimized native Metal, checked | Taichi | 168.798 |
-| 32 | Taichi GPU, native Metal | Taichi | 176.710 |
-| 33 | Julia GPU, native Metal | Julia | 197.078 |
-| 34 | Mech GPU, native Metal | Mech | 246.151 |
-| 35 | Halide GPU, native Metal (fused) | Halide | 274.112 |
+| 27 | Halide GPU, native Metal (strict fault-observing) | Halide | 111.474 |
+| 28 | Julia SIMD.jl, fused worker-local block checked (8 workers) | Julia | 128.544 |
+| 29 | Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers) | Mech | 145.573 |
+| 30 | Rust packed SIMD, fused worker-local block strict checked (8 workers) | Rust | 146.509 |
+| 31 | Mech GPU, WGPU per-turn | Mech | 152.972 |
+| 32 | Taichi optimized native Metal, checked | Taichi | 168.798 |
+| 33 | Taichi GPU, native Metal | Taichi | 176.710 |
+| 34 | Julia GPU, native Metal | Julia | 197.078 |
+| 35 | Mech GPU, native Metal | Mech | 246.151 |
 
 ## Unchecked (slowest to fastest)
 
@@ -84,10 +84,10 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 34 | Rust packed SIMD, fused worker-local block (8 workers) | Rust | 163.866 |
 | 35 | Mech SIMD/JIT CPU, fused unchecked block (8 workers) | Mech | 165.830 |
 | 36 | Taichi GPU, native Metal | Taichi | 194.793 |
-| 37 | Julia GPU, native Metal | Julia | 216.462 |
-| 38 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
-| 39 | Mech GPU, native Metal | Mech | 241.028 |
-| 40 | Halide GPU, native Metal (fused) | Halide | 275.831 |
+| 37 | Halide GPU, native Metal (strict fault-observing) | Halide | 212.283 |
+| 38 | Julia GPU, native Metal | Julia | 216.462 |
+| 39 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
+| 40 | Mech GPU, native Metal | Mech | 241.028 |
 | 41 | Mech GPU, unchecked repeated | Mech | 350.930 |
 | 42 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
 | 43 | Mech GPU, unchecked one-submit | Mech | 3729.673 |

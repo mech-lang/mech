@@ -330,12 +330,18 @@ def load_rows(
     if halide_gpu is not None:
         import statistics
 
+        strict_halide = "checked_fault_observation" in halide_gpu.get("configuration", {})
+        halide_label = (
+            "Halide GPU, native Metal (strict fault-observing)"
+            if strict_halide
+            else "Halide GPU, native Metal (fused kernel control)"
+        )
         for mode in ("checked", "unchecked"):
             row = halide_gpu.get("rows", {}).get(f"Halide GPU Metal {mode}")
             if row is not None and "throughput" in row:
                 rows.append(
                     {
-                        "label": "Halide GPU, native Metal (fused)",
+                        "label": halide_label,
                         "family": "Halide",
                         "mode": mode,
                         "throughput": statistics.median(row["throughput"]) / 1_000_000,

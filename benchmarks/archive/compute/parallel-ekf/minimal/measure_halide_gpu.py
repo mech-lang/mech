@@ -45,6 +45,13 @@ def checksum(output: str) -> float:
     return float(match.group(1))
 
 
+def integer_field(output: str, name: str) -> int:
+    match = re.search(rf"^{re.escape(name)}: (-?\d+)$", output, re.MULTILINE)
+    if match is None:
+        raise RuntimeError(f"missing {name} in output:\n{output}")
+    return int(match.group(1))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--instances", type=int, default=500_000)
@@ -54,7 +61,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=HERE.parent / "results/apple-m1-halide-metal-fused-2026-08-31.json",
+        default=HERE.parent / "results/apple-m1-halide-metal-strict-2026-08-31.json",
     )
     args = parser.parse_args()
     env = os.environ.copy()
@@ -85,6 +92,8 @@ def main() -> None:
                 "samples": args.samples,
                 "backend": "native Metal",
                 "synchronized_per_turn": True,
+                "checked_contract": "finite state/covariance, positive diagonal, symmetric covariance; invalid lanes retain prior state",
+                "checked_fault_observation": "per-lane fault code in the fused output tuple; host scans after each synchronized turn",
                 "schedule": "single fused tuple output with shared scalar intermediates",
             },
             "rows": {},
@@ -94,11 +103,16 @@ def main() -> None:
             command = [str(binary), str(args.instances), str(args.turns), mode, "gpu"]
             run(command, env)  # warm the Metal runtime before collecting samples
             outputs = [run(command, env) for _ in range(args.samples)]
-            rows[f"Halide GPU Metal {mode}"] = {
+            row: dict[str, object] = {
                 "command": command,
                 "throughput": [throughput(output) for output in outputs],
                 "checksums": [checksum(output) for output in outputs],
             }
+            if mode == "checked":
+                row["fault_lanes"] = [integer_field(output, "fault_lanes") for output in outputs]
+                row["first_fault_instance"] = [integer_field(output, "first_fault_instance") for output in outputs]
+                row["first_fault_code"] = [integer_field(output, "first_fault_code") for output in outputs]
+            rows[f"Halide GPU Metal {mode}"] = row
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

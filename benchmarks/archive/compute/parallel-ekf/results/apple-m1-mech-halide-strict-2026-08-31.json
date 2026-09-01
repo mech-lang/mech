@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31",
+  "platform": "Apple M1",
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples": 3,
+    "synchronization": "after every turn",
+    "mech_native_metal_threadgroup_size": 64,
+    "timed_region": "resident native Metal dispatch plus completion wait per turn; setup, compilation, allocation, warmup, and final readback excluded",
+    "checked_contract": "finite state/covariance, positive covariance diagonal, covariance symmetry; invalid candidate is not published and fault metadata is retained"
+  },
+  "rows": {
+    "Mech native Metal checked": {
+      "samples_million_turns_per_second": [185.928, 187.999, 216.923],
+      "median_million_turns_per_second": 187.999,
+      "checksum": 133818338.344719559,
+      "maximum_error": 1.221e-4
+    },
+    "Mech native Metal unchecked": {
+      "samples_million_turns_per_second": [265.321, 276.595, 275.534],
+      "median_million_turns_per_second": 275.534,
+      "checksum": 133818337.958878681,
+      "maximum_error": 1.907e-4
+    }
+  },
+  "command": "MECH_NATIVE_METAL_ONLY=1 target/release/examples/parallel_ekf_benchmark 500000 3 40 40"
+}

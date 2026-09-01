@@ -62,6 +62,8 @@ git switch --track origin/codex/mech-program-gpu
 | Threaded Julia SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-threaded-2026-08-31.json` |
 | NumPy/Numba threaded evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-numba-2026-08-31.json` |
 | Halide/Futhark SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-halide-simd-2026-08-31.json` |
+| Halide strict checked Metal evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-halide-metal-strict-2026-08-31.json` |
+| Matched Mech/strict-Halide evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-halide-strict-2026-08-31.json` |
 | Futhark fixed-mode ISPC evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-ispc-fixed-2026-08-31.json` |
 | Mech persistent SIMD/JIT evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-persistent-simd-2026-08-31.json` |
 | Fused Rust/Julia/Numba reference evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json` |
@@ -254,16 +256,37 @@ clock variance; its result is reported separately below.
 | Halide native Metal GPU, fused (500 turns) | 274.112 | 275.831 |
 | Futhark multicore, 8 workers | 48.391 | 47.824 |
 
-The Halide GPU row uses the same fixed-shape EKF expression and per-turn
-publication boundary as the CPU control, scheduled with `gpu_tile` and compiled
-for the native Metal target. The twelve outputs are emitted as one fused tuple
-kernel, shared scalar intermediates are materialized once per lane, and state and
-input buffers stay device-resident during the timed loop. At the matched 500,000
-filters x 500 turns workload, five samples measured **274.112 M/s checked** and
-**275.831 M/s unchecked**. Checked mode evaluates the same
-finite/positive-diagonal/symmetry predicate and keeps the previous lane value
-when a candidate is invalid. The GPU schedule is an Apple-Metal control, not a
-WGPU transport comparison.
+The earlier fused-only Halide row uses the same fixed-shape EKF expression and
+per-turn publication boundary as the CPU control, scheduled with `gpu_tile` and
+compiled for native Metal. It emits twelve state outputs as one fused tuple
+kernel, materializes shared scalar intermediates once per lane, and keeps state
+and input buffers device-resident during the timed loop. Its checked number is a
+kernel-throughput control only: it did not expose per-lane fault observations.
+The strict checked measurement is separate below. The GPU schedule is an
+Apple-Metal control, not a WGPU transport comparison.
+
+The strict Halide control emits a thirteenth per-lane fault-code output in the
+same fused kernel. After each synchronized turn the host scans that output,
+reports the first failing lane and constraint, and the kernel selects the prior
+published state for every invalid lane. It checks finite state and covariance,
+positive covariance diagonal entries, and covariance symmetry with the same
+tolerance used by the Mech control. On 500,000 filters x 40 turns (five fresh
+processes), the medians were:
+
+| Control | Checked M turns/s | Unchecked M turns/s |
+| --- | ---: | ---: |
+| Halide native Metal, strict fault-observing | 111.474 | 212.283 |
+| Mech native Metal, retained-state/fault-reporting | 187.999 | 275.534 |
+
+Raw samples and zero-fault evidence are in
+`results/apple-m1-halide-metal-strict-2026-08-31.json`. This is the fair
+checked control for comparisons with Mech's retained-state and fault-reporting
+contract; the older 274.112 M/s checked row must not be used for that claim.
+The matched Mech run is retained in
+`results/apple-m1-mech-halide-strict-2026-08-31.json`; its checked path uses a
+two-word device fault reduction, so it reports the same first-fault metadata
+without copying a per-lane fault array to the host each turn. That is an
+implementation advantage, not a weaker validity contract.
 
 The Futhark OpenCL compiler is installed on that machine, but its Apple OpenCL
 driver rejects the generated kernel (`Invalid kernel`), so those rows are
@@ -280,15 +303,18 @@ with:
   --python /tmp/mech-ekf-venv/bin/python \
   --instances 10000 --turns 20 --samples 5 --halide-metal
 
-# Matched GPU workload (Halide only)
+# Matched GPU workload (Halide strict checked contract and unchecked control)
 python3 minimal/measure_halide_gpu.py \
-  --instances 500000 --turns 500 --samples 5
+  --instances 500000 --turns 40 --samples 5 \
+  --output results/apple-m1-halide-metal-strict-2026-08-31.json
 ```
 
 The runner uses one OpenMP/BLAS thread for NumPy, compiles Halide with `-O3`,
 and pins Futhark's multicore control to one and eight workers. It reports
 steady-state throughput only; JIT compilation, warmup, and input construction
-are not included in those numbers.
+are not included in those numbers. The strict Halide checked row deliberately
+keeps its per-turn fault-buffer readback inside the timed region because fault
+observation is part of that contract.
 
 Regenerate the charts and ranked table from the checked-in evidence with:
 
@@ -301,7 +327,7 @@ python3 plot_cross_language_comparison.py \
   results/apple-m1-lua-2026-08-31.json \
   --taichi-optimized results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
   --minimal-source results/apple-m1-minimal-source-2026-08-31.json \
-  --halide-gpu results/apple-m1-halide-metal-fused-2026-08-31.json \
+  --halide-gpu results/apple-m1-halide-metal-strict-2026-08-31.json \
   --julia-threaded results/apple-m1-julia-threaded-2026-08-31.json \
   --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json \
   --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json \
