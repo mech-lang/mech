@@ -1,0 +1,18 @@
+# Parallel EKF: Eight-worker multicore
+
+Explicit eight-worker CPU execution with a synchronous publication boundary. Workload: **500,000 filters x 40 turns where available**. Checked and unchecked are separate columns; source edits are measured against each language's baseline source.
+
+| Language | Representative source | Code L/C | Edit vs baseline L/C | Checked M/s | Unchecked M/s | Result |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Mech | same `.mec`; eight-worker SIMD/JIT | 42 / 1,513 | 0 / 0 | 104.783 | 110.469 | measured |
+| Rust | packed SIMD with eight worker-local blocks | 566 / 13,848 | 701 / 23,858 | 146.509 | 163.866 | measured |
+| NumPy | Numba `prange` eight-worker loop | 217 / 7,871 | 244 / 11,087 | 80.323 | 81.972 | measured |
+| Python | not applicable: no worker implementation | N/A | N/A | N/A | N/A | N/A: no implementation |
+| Julia | Threads.@threads static publication | 238 / 8,371 | 252 / 11,429 | 106.341 | 109.628 | measured |
+| LuaJIT | not applicable: no worker implementation | N/A | N/A | N/A | N/A | N/A: no implementation |
+| Lua | not applicable: no worker implementation | N/A | N/A | N/A | N/A | N/A: no implementation |
+| Taichi | scalar SoA fields with eight CPU workers | 277 / 11,406 | 224 / 11,640 | 86.047 | 98.140 | measured |
+| Halide | parallel/vectorized pipeline with eight workers | 324 / 8,928 | 0 / 0 | 3.270 | 5.593 | measured |
+| Futhark | ISPC fixed-mode with eight workers | 56 / 3,098 | 0 / 0 | 108.718 | 152.330 | measured |
+
+`N/A` means the language/backend does not provide this strategy in the retained comparison. `partial` means the source exists but one checked/unchecked measurement is not recorded yet; it is not treated as zero.

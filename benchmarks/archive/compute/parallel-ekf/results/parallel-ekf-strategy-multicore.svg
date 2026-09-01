@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="765" viewBox="0 0 1500 765">
+<rect width="100%" height="100%" fill="#080c14"/>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>
+<text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: Eight-worker multicore throughput</text>
+<text x="38" y="69" class="muted" font-size="15">Explicit eight-worker CPU execution with a synchronous publication boundary. Checked is solid; unchecked is lighter. Logarithmic M/s axis.</text>
+<rect x="38" y="87" width="18" height="12" fill="#dce5f2"/><text x="64" y="98" class="muted" font-size="13">checked</text>
+<rect x="145" y="87" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="98" class="muted" font-size="13">unchecked</text>
+<line x1="300.0" y1="110" x2="300.0" y2="675" class="grid"/>
+<text x="300.0" y="699" text-anchor="middle" class="muted" font-size="12">1</text>
+<line x1="666.7" y1="110" x2="666.7" y2="675" class="grid"/>
+<text x="666.7" y="699" text-anchor="middle" class="muted" font-size="12">10</text>
+<line x1="1033.3" y1="110" x2="1033.3" y2="675" class="grid"/>
+<text x="1033.3" y="699" text-anchor="middle" class="muted" font-size="12">100</text>
+<line x1="1400.0" y1="110" x2="1400.0" y2="675" class="grid"/>
+<text x="1400.0" y="699" text-anchor="middle" class="muted" font-size="12">1000</text>
+<text x="286" y="149" text-anchor="end" class="label">Mech</text>
+<rect x="300" y="129" width="740.8" height="16" rx="2" fill="#f4c430" opacity="0.92"/>
+<text x="1047.8" y="142" class="value">104.783</text>
+<rect x="300" y="154" width="749.2" height="16" rx="2" fill="#f4c430" opacity="0.42"/>
+<text x="1056.2" y="167" class="value">110.469</text>
+<text x="286" y="204" text-anchor="end" class="label">Rust</text>
+<rect x="300" y="184" width="794.1" height="16" rx="2" fill="#dea584" opacity="0.92"/>
+<text x="1101.1" y="197" class="value">146.509</text>
+<rect x="300" y="209" width="812.0" height="16" rx="2" fill="#dea584" opacity="0.42"/>
+<text x="1119.0" y="222" class="value">163.866</text>
+<text x="286" y="259" text-anchor="end" class="label">NumPy</text>
+<rect x="300" y="239" width="698.4" height="16" rx="2" fill="#4d77cf" opacity="0.92"/>
+<text x="1005.4" y="252" class="value">80.323</text>
+<rect x="300" y="264" width="701.7" height="16" rx="2" fill="#4d77cf" opacity="0.42"/>
+<text x="1008.7" y="277" class="value">81.972</text>
+<text x="286" y="314" text-anchor="end" class="label">Python</text>
+<text x="308" y="308" class="muted" font-size="12">N/A</text>
+<text x="308" y="333" class="muted" font-size="12">N/A</text>
+<text x="286" y="369" text-anchor="end" class="label">Julia</text>
+<rect x="300" y="349" width="743.1" height="16" rx="2" fill="#9558b2" opacity="0.92"/>
+<text x="1050.1" y="362" class="value">106.341</text>
+<rect x="300" y="374" width="748.0" height="16" rx="2" fill="#9558b2" opacity="0.42"/>
+<text x="1055.0" y="387" class="value">109.628</text>
+<text x="286" y="424" text-anchor="end" class="label">LuaJIT</text>
+<text x="308" y="418" class="muted" font-size="12">N/A</text>
+<text x="308" y="443" class="muted" font-size="12">N/A</text>
+<text x="286" y="479" text-anchor="end" class="label">Lua</text>
+<text x="308" y="473" class="muted" font-size="12">N/A</text>
+<text x="308" y="498" class="muted" font-size="12">N/A</text>
+<text x="286" y="534" text-anchor="end" class="label">Taichi</text>
+<rect x="300" y="514" width="709.4" height="16" rx="2" fill="#e36b6b" opacity="0.92"/>
+<text x="1016.4" y="527" class="value">86.047</text>
+<rect x="300" y="539" width="730.3" height="16" rx="2" fill="#e36b6b" opacity="0.42"/>
+<text x="1037.3" y="552" class="value">98.140</text>
+<text x="286" y="589" text-anchor="end" class="label">Halide</text>
+<rect x="300" y="569" width="188.7" height="16" rx="2" fill="#ff8f00" opacity="0.92"/>
+<text x="495.7" y="582" class="value">3.270</text>
+<rect x="300" y="594" width="274.1" height="16" rx="2" fill="#ff8f00" opacity="0.42"/>
+<text x="581.1" y="607" class="value">5.593</text>
+<text x="286" y="644" text-anchor="end" class="label">Futhark</text>
+<rect x="300" y="624" width="746.6" height="16" rx="2" fill="#e94f37" opacity="0.92"/>
+<text x="1053.6" y="637" class="value">108.718</text>
+<rect x="300" y="649" width="800.4" height="16" rx="2" fill="#e94f37" opacity="0.42"/>
+<text x="1107.4" y="662" class="value">152.330</text>
+<text x="38" y="730" class="muted" font-size="12">One row per language and strategy; unsupported cells are N/A, not zero.</text>
+</svg>

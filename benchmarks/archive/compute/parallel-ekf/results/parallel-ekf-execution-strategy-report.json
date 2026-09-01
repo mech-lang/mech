@@ -1,0 +1,922 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T09:38:24.607953-04:00",
+  "strategies": {
+    "baseline": [
+      {
+        "language": "Mech",
+        "source": "same high-level `.mec` recurrence",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+        "values": {
+          "checked": 0.919,
+          "unchecked": 1.029
+        },
+        "status": "measured",
+        "code": {
+          "lines": 42,
+          "chars": 1513
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Rust",
+        "source": "fixed-shape scalar arrays",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
+        "values": {
+          "checked": null,
+          "unchecked": 16.907063983
+        },
+        "status": "partial: missing checked",
+        "code": {
+          "lines": 206,
+          "chars": 5003
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "NumPy",
+        "source": "per-filter NumPy loop",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
+        "values": {
+          "checked": 0.040220152,
+          "unchecked": 0.052509955000000004
+        },
+        "status": "measured",
+        "code": {
+          "lines": 66,
+          "chars": 1819
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Python",
+        "source": "standard-library lists and math",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
+        "values": {
+          "checked": 0.246483833,
+          "unchecked": 0.355909091
+        },
+        "status": "measured",
+        "code": {
+          "lines": 158,
+          "chars": 5118
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Julia",
+        "source": "generic scalar arrays",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+        "values": {
+          "checked": 3.072806272900473,
+          "unchecked": 3.123446427029506
+        },
+        "status": "measured",
+        "code": {
+          "lines": 126,
+          "chars": 4322
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "LuaJIT",
+        "source": "generic FFI helper loop",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+        "values": {
+          "checked": null,
+          "unchecked": 1.0739408259999998
+        },
+        "status": "partial: missing checked",
+        "code": {
+          "lines": 165,
+          "chars": 3790
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Lua",
+        "source": "flat fixed-shape Lua arrays",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+        "values": {
+          "checked": 0.565098,
+          "unchecked": 0.83461
+        },
+        "status": "measured",
+        "code": {
+          "lines": 153,
+          "chars": 7031
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Taichi",
+        "source": "Vector/Matrix resident fields",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
+        "values": {
+          "checked": 19.404682822,
+          "unchecked": 22.452358274
+        },
+        "status": "measured",
+        "code": {
+          "lines": 260,
+          "chars": 8891
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Halide",
+        "source": "fixed-shape pipeline",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+        "values": {
+          "checked": 2.707078841979349,
+          "unchecked": 5.058051765922671
+        },
+        "status": "measured",
+        "code": {
+          "lines": 324,
+          "chars": 8928
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Futhark",
+        "source": "data-parallel array program",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+        "values": {
+          "checked": 19.61361184662156,
+          "unchecked": 19.6347928529354
+        },
+        "status": "measured",
+        "code": {
+          "lines": 56,
+          "chars": 3098
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      }
+    ],
+    "single-core": [
+      {
+        "language": "Mech",
+        "source": "same `.mec`; Cranelift SIMD/JIT backend",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+        "values": {
+          "checked": 36.654,
+          "unchecked": 40.86
+        },
+        "status": "measured",
+        "code": {
+          "lines": 42,
+          "chars": 1513
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Rust",
+        "source": "packed four-lane SIMD",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs",
+        "values": {
+          "checked": 25.650480145,
+          "unchecked": 18.626814473
+        },
+        "status": "measured",
+        "code": {
+          "lines": 566,
+          "chars": 13848
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 701,
+          "added_lines": 578,
+          "deleted_lines": 190,
+          "changed_chars": 23858
+        }
+      },
+      {
+        "language": "NumPy",
+        "source": "batched fixed-shape arrays",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py",
+        "values": {
+          "checked": 11.128708067,
+          "unchecked": 12.557587858
+        },
+        "status": "measured",
+        "code": {
+          "lines": 108,
+          "chars": 2974
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 94,
+          "added_lines": 91,
+          "deleted_lines": 46,
+          "changed_chars": 3123
+        }
+      },
+      {
+        "language": "Python",
+        "source": "not applicable: no optimized source",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Julia",
+        "source": "explicit SIMD.jl lanes",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
+        "values": {
+          "checked": 30.83544633229325,
+          "unchecked": 32.260447626615
+        },
+        "status": "measured",
+        "code": {
+          "lines": 196,
+          "chars": 6935
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 204,
+          "added_lines": 182,
+          "deleted_lines": 112,
+          "changed_chars": 8960
+        }
+      },
+      {
+        "language": "LuaJIT",
+        "source": "flat scalarized FFI state",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+        "values": {
+          "checked": 1.262674091,
+          "unchecked": 15.991045015000001
+        },
+        "status": "measured",
+        "code": {
+          "lines": 153,
+          "chars": 7031
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 224,
+          "added_lines": 129,
+          "deleted_lines": 151,
+          "changed_chars": 9071
+        }
+      },
+      {
+        "language": "Lua",
+        "source": "flat scalarized Lua state",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+        "values": {
+          "checked": 0.565098,
+          "unchecked": 0.83461
+        },
+        "status": "measured",
+        "code": {
+          "lines": 153,
+          "chars": 7031
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Taichi",
+        "source": "not applicable: no single-core row",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Halide",
+        "source": "fixed-shape pipeline, one host worker",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+        "values": {
+          "checked": 2.707078841979349,
+          "unchecked": 5.058051765922671
+        },
+        "status": "measured",
+        "code": {
+          "lines": 324,
+          "chars": 8928
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Futhark",
+        "source": "same data-parallel program, one worker",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+        "values": {
+          "checked": 19.61361184662156,
+          "unchecked": 19.6347928529354
+        },
+        "status": "measured",
+        "code": {
+          "lines": 56,
+          "chars": 3098
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      }
+    ],
+    "multicore": [
+      {
+        "language": "Mech",
+        "source": "same `.mec`; eight-worker SIMD/JIT",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+        "values": {
+          "checked": 104.783,
+          "unchecked": 110.469
+        },
+        "status": "measured",
+        "code": {
+          "lines": 42,
+          "chars": 1513
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Rust",
+        "source": "packed SIMD with eight worker-local blocks",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs",
+        "values": {
+          "checked": 146.508742,
+          "unchecked": 163.865925
+        },
+        "status": "measured",
+        "code": {
+          "lines": 566,
+          "chars": 13848
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 701,
+          "added_lines": 578,
+          "deleted_lines": 190,
+          "changed_chars": 23858
+        }
+      },
+      {
+        "language": "NumPy",
+        "source": "Numba `prange` eight-worker loop",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_numba.py",
+        "values": {
+          "checked": 80.322749,
+          "unchecked": 81.971832
+        },
+        "status": "measured",
+        "code": {
+          "lines": 217,
+          "chars": 7871
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 244,
+          "added_lines": 241,
+          "deleted_lines": 62,
+          "changed_chars": 11087
+        }
+      },
+      {
+        "language": "Python",
+        "source": "not applicable: no worker implementation",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Julia",
+        "source": "Threads.@threads static publication",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd_threads.jl",
+        "values": {
+          "checked": 106.34138001186791,
+          "unchecked": 109.62848752816718
+        },
+        "status": "measured",
+        "code": {
+          "lines": 238,
+          "chars": 8371
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 252,
+          "added_lines": 233,
+          "deleted_lines": 113,
+          "changed_chars": 11429
+        }
+      },
+      {
+        "language": "LuaJIT",
+        "source": "not applicable: no worker implementation",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Lua",
+        "source": "not applicable: no worker implementation",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Taichi",
+        "source": "scalar SoA fields with eight CPU workers",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+        "values": {
+          "checked": 86.047,
+          "unchecked": 98.14
+        },
+        "status": "measured",
+        "code": {
+          "lines": 277,
+          "chars": 11406
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 224,
+          "added_lines": 179,
+          "deleted_lines": 162,
+          "changed_chars": 11640
+        }
+      },
+      {
+        "language": "Halide",
+        "source": "parallel/vectorized pipeline with eight workers",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+        "values": {
+          "checked": 3.269659012819973,
+          "unchecked": 5.59278251416547
+        },
+        "status": "measured",
+        "code": {
+          "lines": 324,
+          "chars": 8928
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Futhark",
+        "source": "ISPC fixed-mode with eight workers",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+        "values": {
+          "checked": 108.717514,
+          "unchecked": 152.329886
+        },
+        "status": "measured",
+        "code": {
+          "lines": 56,
+          "chars": 3098
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      }
+    ],
+    "gpu": [
+      {
+        "language": "Mech",
+        "source": "same `.mec`; native Metal dispatch",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+        "values": {
+          "checked": 187.999,
+          "unchecked": 275.534
+        },
+        "status": "measured",
+        "code": {
+          "lines": 42,
+          "chars": 1513
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Rust",
+        "source": "not applicable: no GPU row",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "NumPy",
+        "source": "not applicable on Apple M1",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Python",
+        "source": "not applicable: no GPU backend",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Julia",
+        "source": "direct Metal kernel with retained state",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_metal_ekf.jl",
+        "values": {
+          "checked": 178.1349058037759,
+          "unchecked": 199.4539111475908
+        },
+        "status": "measured",
+        "code": {
+          "lines": 320,
+          "chars": 9298
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 361,
+          "added_lines": 329,
+          "deleted_lines": 119,
+          "changed_chars": 13273
+        }
+      },
+      {
+        "language": "LuaJIT",
+        "source": "not applicable: no GPU backend",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Lua",
+        "source": "not applicable: no GPU backend",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Taichi",
+        "source": "optimized native Metal kernel",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+        "values": {
+          "checked": 168.798,
+          "unchecked": 217.297
+        },
+        "status": "measured",
+        "code": {
+          "lines": 277,
+          "chars": 11406
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 224,
+          "added_lines": 179,
+          "deleted_lines": 162,
+          "changed_chars": 11640
+        }
+      },
+      {
+        "language": "Halide",
+        "source": "strict native Metal pipeline",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+        "values": {
+          "checked": 111.47389174440411,
+          "unchecked": 212.28295726080685
+        },
+        "status": "measured",
+        "code": {
+          "lines": 324,
+          "chars": 8928
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Futhark",
+        "source": "not applicable: no Metal backend",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      }
+    ],
+    "gpu-batched": [
+      {
+        "language": "Mech",
+        "source": "same `.mec`; device-resident one-submit control",
+        "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+        "values": {
+          "checked": null,
+          "unchecked": 3729.673
+        },
+        "status": "partial: missing checked",
+        "code": {
+          "lines": 42,
+          "chars": 1513
+        },
+        "edit_vs_baseline": {
+          "changed_line_slots": 0,
+          "added_lines": 0,
+          "deleted_lines": 0,
+          "changed_chars": 0
+        }
+      },
+      {
+        "language": "Rust",
+        "source": "not applicable: no GPU row",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "NumPy",
+        "source": "not applicable on Apple M1",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Python",
+        "source": "not applicable: no GPU backend",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Julia",
+        "source": "not applicable: no batch row",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "LuaJIT",
+        "source": "not applicable: no GPU backend",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Lua",
+        "source": "not applicable: no GPU backend",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Taichi",
+        "source": "not applicable: no batch row",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Halide",
+        "source": "not applicable: no batch row",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      },
+      {
+        "language": "Futhark",
+        "source": "not applicable: no Metal backend",
+        "source_path": null,
+        "values": {
+          "checked": null,
+          "unchecked": null
+        },
+        "status": "N/A: no implementation",
+        "code": null,
+        "edit_vs_baseline": null
+      }
+    ]
+  },
+  "missing_cells": [
+    {
+      "strategy": "baseline",
+      "language": "Rust",
+      "mode": "checked",
+      "status": "not recorded"
+    },
+    {
+      "strategy": "baseline",
+      "language": "LuaJIT",
+      "mode": "checked",
+      "status": "not recorded"
+    },
+    {
+      "strategy": "gpu-batched",
+      "language": "Mech",
+      "mode": "checked",
+      "status": "not recorded"
+    }
+  ],
+  "evidence": {
+    "cross": "2026-08-31T19:43:33.948743-04:00",
+    "runtime": "2026-08-31",
+    "native": "2026-08-31",
+    "taichi": "2026-08-31",
+    "taichi_optimized": "2026-08-31",
+    "taichi_cpu_baseline": "2026-09-01T09:37:03-04:00",
+    "lua": "2026-08-31",
+    "minimal": "2026-08-31T18:45:52.116140-04:00",
+    "julia_threaded": "2026-08-31T20:26:54-04:00",
+    "numpy_numba": "2026-08-31T20:37:55-04:00",
+    "simd_controls": "2026-08-31T20:56:00-04:00",
+    "futhark_fixed": "2026-08-31T21:46:00-04:00",
+    "julia_gpu": "2026-09-01T08:42:44-04:00",
+    "pure_python": "2026-09-01T08:51:47-04:00",
+    "halide_gpu": "2026-09-01T00:05:05.531733-04:00",
+    "strict_mech": "2026-08-31",
+    "fused": "2026-08-31T23:10:00-04:00"
+  },
+  "definitions": {
+    "baseline": {
+      "title": "Baseline",
+      "description": "The most direct scalar or fixed-shape control retained for each language.",
+      "workload": "10,000 filters x 20 turns where available"
+    },
+    "single-core": {
+      "title": "Single-core",
+      "description": "One process and one host worker; explicit SIMD/JIT controls are used where the retained evidence provides them.",
+      "workload": "10,000 filters x 20 turns where available"
+    },
+    "multicore": {
+      "title": "Eight-worker multicore",
+      "description": "Explicit eight-worker CPU execution with a synchronous publication boundary.",
+      "workload": "500,000 filters x 40 turns where available"
+    },
+    "gpu": {
+      "title": "Synchronized GPU",
+      "description": "One GPU dispatch and completion wait per turn; checked rows retain the prior published state on a fault.",
+      "workload": "500,000 filters x 40 turns, synchronized per turn"
+    },
+    "gpu-batched": {
+      "title": "GPU batch ceiling",
+      "description": "A device-resident multi-turn submission. This is a throughput ceiling, not a replacement for per-turn observation.",
+      "workload": "500,000 filters x 40 turns, one submission where available"
+    }
+  }
+}

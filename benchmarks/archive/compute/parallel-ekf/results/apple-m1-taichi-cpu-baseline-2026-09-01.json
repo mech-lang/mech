@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T09:37:03-04:00",
+  "platform": "Apple M1",
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 5,
+    "backend": "Taichi LLVM CPU",
+    "workers": 1,
+    "source": "minimal/taichi_comparable.py",
+    "synchronization": "after every turn",
+    "environment": "isolated Python 3.12 environment with Taichi 1.7.4 and NumPy"
+  },
+  "rows": {
+    "checked": {
+      "command": [
+        "python3",
+        "minimal/taichi_comparable.py",
+        "10000",
+        "20",
+        "checked",
+        "--cpu-threads",
+        "1"
+      ],
+      "throughput_millions": [
+        19.385946467,
+        19.329668526,
+        19.431863613,
+        19.404682822,
+        19.452253417
+      ],
+      "checksum": 2682056.104482247,
+      "faults": 0
+    },
+    "unchecked": {
+      "command": [
+        "python3",
+        "minimal/taichi_comparable.py",
+        "10000",
+        "20",
+        "unchecked",
+        "--cpu-threads",
+        "1"
+      ],
+      "throughput_millions": [
+        22.452358274,
+        22.512585632,
+        22.539124944,
+        22.441846677,
+        22.390780621
+      ],
+      "checksum": 2682056.104158118,
+      "faults": 0
+    }
+  },
+  "notes": [
+    "Input construction, state allocation, five-turn warmup, reset, and final checksum are outside the timed region.",
+    "Checked mode uses Taichi's alternate resident fields and the same finite, positive-diagonal, and symmetric-covariance predicates as the matched GPU control.",
+    "This fills the one-worker CPU baseline cell; it is not the eight-worker multicore result already retained elsewhere."
+  ]
+}

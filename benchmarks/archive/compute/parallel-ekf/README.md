@@ -70,9 +70,12 @@ git switch --track origin/codex/mech-program-gpu
 | Fused Rust/Julia/Numba reference evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json` |
 | Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
 | Pure-Python scalar evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-pure-python-2026-09-01.json` |
+| Taichi one-worker CPU baseline evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-taichi-cpu-baseline-2026-09-01.json` |
 | NumPy GPU capability evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-gpu-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
 | Source-edit cost report/renderer | `benchmarks/archive/compute/parallel-ekf/source_diff_report.py` |
+| Per-execution-strategy report/renderer | `benchmarks/archive/compute/parallel-ekf/execution_strategy_report.py` |
+| Per-execution-strategy tables/graphs | `benchmarks/archive/compute/parallel-ekf/results/parallel-ekf-execution-strategy-reports.md` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
 
 ## Native Metal control
@@ -229,6 +232,13 @@ The complete table is in
 `results/parallel-ekf-source-diff-report.md`, with machine-readable metrics in
 `results/parallel-ekf-source-diff-report.json`.
 
+That source-edit mega view is intentionally complemented by compact
+execution-strategy views. `results/parallel-ekf-execution-strategy-reports.md`
+links one diff table and one graph for each baseline, single-core, multicore,
+synchronized-GPU, and GPU-batch strategy. Each strategy has one row per
+language with paired checked/unchecked throughput; unsupported backends are
+shown as `N/A`, and unrecorded applicable cells are called out explicitly.
+
 The report now measures the checked-in compact controls under `minimal/`, not
 the explanatory listings. The Mech control is a single 42-line code-only
 recurrence with one statement per line, compact matrix literals, broadcast
@@ -380,6 +390,8 @@ python3 source_diff_report.py \
   --strict-halide results/apple-m1-halide-metal-strict-2026-08-31.json \
   --strict-julia results/apple-m1-julia-metal-2026-08-31.json \
   --pure-python results/apple-m1-pure-python-2026-09-01.json
+
+python3 execution_strategy_report.py --results results
 ```
 
 To isolate the direct control from the other backend warmups, build the
