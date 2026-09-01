@@ -331,23 +331,16 @@ def load_rows(
     if futhark_fixed is not None:
         import statistics
 
+        # The raw evidence also retains dynamic-mode runs for diagnostics, but
+        # the chart presents one canonical matched Futhark ISPC result rather
+        # than separate dynamic and fixed rows. The fixed entry point is the
+        # representative steady-state comparison.
         for mode in ("checked", "unchecked"):
             row = futhark_fixed.get("rows", {}).get(mode)
             if row is not None and "throughput_millions" in row:
                 rows.append(
                     {
                         "label": "Futhark ISPC fixed-mode, 8 workers (500k x 40)",
-                        "family": "Futhark",
-                        "mode": mode,
-                        "throughput": statistics.median(row["throughput_millions"]),
-                    }
-                )
-        for key, mode in (("dynamic_checked", "checked"), ("dynamic_unchecked", "unchecked")):
-            row = futhark_fixed.get("rows", {}).get(key)
-            if row is not None and "throughput_millions" in row:
-                rows.append(
-                    {
-                        "label": "Futhark ISPC dynamic-mode, 8 workers (500k x 40)",
                         "family": "Futhark",
                         "mode": mode,
                         "throughput": statistics.median(row["throughput_millions"]),
