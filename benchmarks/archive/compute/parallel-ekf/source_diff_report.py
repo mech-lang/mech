@@ -537,7 +537,7 @@ def markdown(report: dict) -> str:
         "",
         "## Variant matrix",
         "",
-        "| Language | Baseline model | Advanced model | Workload (baseline -> advanced) | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Baseline checked M/s | Baseline unchecked M/s | Advanced checked M/s | Advanced unchecked M/s | Max single-core M/s (checked / unchecked) | Max SIMD/multicore M/s (checked / unchecked) | Max GPU M/s (checked / unchecked) |",
+        "| Language | Baseline model | Advanced model | Workload (baseline -> advanced) | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Baseline checked M/s | Baseline unchecked M/s | Advanced checked M/s | Advanced unchecked M/s | Max single-core M/s (checked / unchecked) | Max SIMD/multicore M/s (checked / unchecked) | Max GPU M/s (synchronized per-turn; checked / unchecked) |",
         "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     def maximum_cell(row: dict, category: str) -> str:

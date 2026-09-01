@@ -4,7 +4,7 @@ This report measures source edits and runtime factors behind the parallel EKF va
 
 ## Variant matrix
 
-| Language | Baseline model | Advanced model | Workload (baseline -> advanced) | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Baseline checked M/s | Baseline unchecked M/s | Advanced checked M/s | Advanced unchecked M/s | Max single-core M/s (checked / unchecked) | Max SIMD/multicore M/s (checked / unchecked) | Max GPU M/s (checked / unchecked) |
+| Language | Baseline model | Advanced model | Workload (baseline -> advanced) | Baseline L/C | Advanced L/C | Edit L/C | Baseline vs Mech L/C | Advanced vs Mech L/C | Baseline checked M/s | Baseline unchecked M/s | Advanced checked M/s | Advanced unchecked M/s | Max single-core M/s (checked / unchecked) | Max SIMD/multicore M/s (checked / unchecked) | Max GPU M/s (synchronized per-turn; checked / unchecked) |
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Mech | compact high-level `.mec` program | same compact `.mec`; native backend selected at build | 10,000 x 20 -> 500,000 x 40 | 42 / 1,513 | 42 / 1,513 | 0 / 0 | 0 / 0 | 0 / 0 | 0.919 | 1.029 | 187.999 | 275.534 | 36.654 / 40.860 | 145.573 / 165.830 | 187.999 / 275.534 |
 | Rust | compact fixed-shape scalar control | compact packed four-lane SIMD control | 10,000 x 20 -> 10,000 x 20 | 206 / 5,003 | 566 / 13,848 | 701 / 23,858 | 210 / 6,454 | 596 / 20,653 | -- | 16.907 | 25.650 | 18.627 | 25.650 / 18.627 | 146.509 / 163.866 | -- / -- |
