@@ -3,6 +3,7 @@ use crate::portable_index::PORTABLE_INDEX_MAX;
 use crate::portable_index::ToPortableIndex;
 use mech_core::snapshot::{
     F32Bits, F64Bits, SequenceView, SnapshotValidationContext, ValueDataDraft, ValueDraft,
+    schema_data_language_eq, schema_data_partial_cmp,
 };
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
@@ -13,6 +14,35 @@ use mech_core::{
 };
 
 const MAX_MATRIX_SOLVE_WORK: usize = 16_777_216;
+
+#[derive(Clone, Copy)]
+#[repr(u64)]
+enum SemanticComparison {
+    Equal = 0,
+    NotEqual = 1,
+    Less = 2,
+    LessEqual = 3,
+    Greater = 4,
+    GreaterEqual = 5,
+}
+
+impl SemanticComparison {
+    fn from_parameter(value: u64) -> Option<Self> {
+        Some(match value {
+            0 => Self::Equal,
+            1 => Self::NotEqual,
+            2 => Self::Less,
+            3 => Self::LessEqual,
+            4 => Self::Greater,
+            5 => Self::GreaterEqual,
+            _ => return None,
+        })
+    }
+
+    fn is_equality(self) -> bool {
+        matches!(self, Self::Equal | Self::NotEqual)
+    }
+}
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     // ProgramArtifact nodes carry semantic identities. These factories select
@@ -855,7 +885,183 @@ fn bind_semantic_equal(
     bind_f64_equal(request)
         .or_else(|_| bind_f64_vector_equal(request))
         .or_else(|_| super::text::bind_string_equal(request))
+        .or_else(|_| bind_dense_comparison(request, SemanticComparison::Equal))
+        .or_else(|_| bind_snapshot_comparison(request, SemanticComparison::Equal))
         .or_else(|_| bind_snapshot_equality(request, snapshot_equal))
+}
+
+fn comparison_logical_layout<'a>(
+    request: &'a ResidentKernelBindRequest<'_>,
+    port: &'a mech_core::ResidentPortLayout,
+) -> Result<(&'a SchemaBody, ResidentShape), ResidentKernelBindError> {
+    let schema = request
+        .schemas
+        .get(port.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    match schema.body() {
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } if dimensions.len() == 2 => {
+            let rows = port
+                .shape_instance
+                .resolve_dimension(&dimensions[0])
+                .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+            let columns = port
+                .shape_instance
+                .resolve_dimension(&dimensions[1])
+                .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+            Ok((
+                element,
+                ResidentShape {
+                    rows: u32::try_from(rows)
+                        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?,
+                    columns: u32::try_from(columns)
+                        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?,
+                },
+            ))
+        }
+        body => Ok((body, ResidentShape::SCALAR)),
+    }
+}
+
+fn validate_semantic_comparison_contract(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<ResidentShape, ResidentKernelBindError> {
+    let (output_element, logical_output) = comparison_logical_layout(request, &request.output)?;
+    if output_element != &SchemaBody::Bool
+        || request.output.kind != ResidentValueKind::Bool
+        || request.output.shape != logical_output
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let change_detection = if matches!(output_schema.body(), SchemaBody::Bool) {
+        ChangeDetectionPolicy::ExactScalar
+    } else {
+        ChangeDetectionPolicy::KernelReported
+    };
+    validate_full_write(request, 2, ShapeRule::Declared, change_detection)?;
+    Ok(logical_output)
+}
+
+fn bind_dense_comparison(
+    request: &ResidentKernelBindRequest<'_>,
+    comparison: SemanticComparison,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let output = validate_semantic_comparison_contract(request)?;
+    let [left, right] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if left.kind != right.kind
+        || !matches!(
+            left.kind,
+            ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::String
+        )
+        || (!comparison.is_equality() && !matches!(left.kind, ResidentValueKind::Index))
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let (left_element, left_shape) = comparison_logical_layout(request, left)?;
+    let (right_element, right_shape) = comparison_logical_layout(request, right)?;
+    let kind_matches_schema = matches!(
+        (left.kind, left_element),
+        (ResidentValueKind::Bool, SchemaBody::Bool)
+            | (ResidentValueKind::Index, SchemaBody::Index)
+            | (ResidentValueKind::String, SchemaBody::String)
+    );
+    if left_element != right_element
+        || !kind_matches_schema
+        || left.shape != left_shape
+        || right.shape != right_shape
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let left_mode = binary_broadcast_mode(left_shape, output)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let right_mode = binary_broadcast_mode(right_shape, output)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    bound(
+        dense_comparison,
+        vec![
+            output.rows as u64,
+            output.columns as u64,
+            left_mode,
+            right_mode,
+            comparison as u64,
+        ]
+        .into_boxed_slice(),
+    )
+}
+
+fn snapshot_comparison_element_supported(
+    element: &SchemaBody,
+    comparison: SemanticComparison,
+) -> bool {
+    if comparison.is_equality() {
+        matches!(
+            element,
+            SchemaBody::Bool
+                | SchemaBody::String
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Rational64
+                | SchemaBody::Complex(_)
+        )
+    } else {
+        matches!(
+            element,
+            SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Rational64
+                | SchemaBody::Complex(_)
+        )
+    }
+}
+
+fn bind_snapshot_comparison(
+    request: &ResidentKernelBindRequest<'_>,
+    comparison: SemanticComparison,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let output = validate_semantic_comparison_contract(request)?;
+    let [left, right] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if left.kind != ResidentValueKind::Snapshot
+        || right.kind != ResidentValueKind::Snapshot
+        || left.shape != ResidentShape::SCALAR
+        || right.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let (left_element, left_shape) = comparison_logical_layout(request, left)?;
+    let (right_element, right_shape) = comparison_logical_layout(request, right)?;
+    if left_element != right_element
+        || !snapshot_comparison_element_supported(left_element, comparison)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let left_mode = binary_broadcast_mode(left_shape, output)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let right_mode = binary_broadcast_mode(right_shape, output)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    Ok(bound(
+        snapshot_comparison,
+        vec![
+            output.rows as u64,
+            output.columns as u64,
+            left_mode,
+            right_mode,
+            comparison as u64,
+        ]
+        .into_boxed_slice(),
+    )?
+    .with_snapshot_schemas(request.schemas.clone()))
 }
 
 fn bind_snapshot_equality(
@@ -889,6 +1095,9 @@ fn bind_semantic_not_equal(
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_not_equal(request)
         .or_else(|_| bind_f64_vector_not_equal(request))
+        .or_else(|_| super::text::bind_string_not_equal(request))
+        .or_else(|_| bind_dense_comparison(request, SemanticComparison::NotEqual))
+        .or_else(|_| bind_snapshot_comparison(request, SemanticComparison::NotEqual))
         .or_else(|_| bind_snapshot_equality(request, snapshot_not_equal))
 }
 
@@ -957,7 +1166,9 @@ fn bind_f64_less(
 fn bind_semantic_less(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_less(request).or_else(|_| bind_f64_vector_comparison(request, f64_vector_less))
+    bind_f64_less(request)
+        .or_else(|_| bind_f64_vector_comparison(request, f64_vector_less))
+        .or_else(|_| bind_snapshot_comparison(request, SemanticComparison::Less))
 }
 
 fn bind_f64_less_equal(
@@ -971,6 +1182,7 @@ fn bind_semantic_less_equal(
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_less_equal(request)
         .or_else(|_| bind_f64_vector_comparison(request, f64_vector_less_equal))
+        .or_else(|_| bind_snapshot_comparison(request, SemanticComparison::LessEqual))
 }
 
 fn bind_f64_greater(
@@ -982,7 +1194,9 @@ fn bind_f64_greater(
 fn bind_semantic_greater(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_greater(request).or_else(|_| bind_f64_vector_comparison(request, f64_vector_greater))
+    bind_f64_greater(request)
+        .or_else(|_| bind_f64_vector_comparison(request, f64_vector_greater))
+        .or_else(|_| bind_snapshot_comparison(request, SemanticComparison::Greater))
 }
 
 fn bind_f64_greater_equal(
@@ -996,6 +1210,7 @@ fn bind_semantic_greater_equal(
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_greater_equal(request)
         .or_else(|_| bind_f64_vector_comparison(request, f64_vector_greater_equal))
+        .or_else(|_| bind_snapshot_comparison(request, SemanticComparison::GreaterEqual))
 }
 
 fn bind_bool_binary(
@@ -1107,19 +1322,41 @@ fn bind_semantic_bool_xor(
 fn bind_bool_not(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let [input] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let Some(input_schema) = request.schemas.get(input.schema_id) else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let Some(output_schema) = request.schemas.get(request.output.schema_id) else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if input_schema.body() != output_schema.body() {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let scalar = match output_schema.body() {
+        SchemaBody::Bool => true,
+        SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool => false,
+        _ => return Err(ResidentKernelBindError::UnsupportedLayout),
+    };
     validate_full_write(
         request,
         1,
         ShapeRule::Declared,
-        ChangeDetectionPolicy::ExactScalar,
+        if scalar {
+            ChangeDetectionPolicy::ExactScalar
+        } else {
+            ChangeDetectionPolicy::KernelReported
+        },
     )?;
     require_kind(request, &[ResidentValueKind::Bool], ResidentValueKind::Bool)?;
-    if request.inputs[0].shape != ResidentShape::SCALAR
-        || request.output.shape != ResidentShape::SCALAR
-    {
+    if request.inputs[0].shape != request.output.shape {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(bool_not, Vec::<u64>::new().into_boxed_slice())
+    bound(
+        if scalar { bool_not } else { bool_vector_not },
+        Vec::<u64>::new().into_boxed_slice(),
+    )
 }
 
 fn bind_strict_comparison(
@@ -1474,6 +1711,12 @@ fn bind_indexed_assign(
         // the aggregate itself instead of the selected member.
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    if base.kind == ResidentValueKind::Snapshot {
+        // A matrix whose element type lacks a dense resident lane is stored as
+        // one whole-value snapshot. Indexed assignment cannot address members
+        // of that lane without an explicit schema-aware aggregate capability.
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     if request
         .schemas
         .get(base.schema_id)
@@ -2345,6 +2588,22 @@ impl<'a> ValidatedPositions<'a> {
         }
     }
 
+    fn is_mask(self) -> bool {
+        matches!(self, Self::Mask(_))
+    }
+
+    fn maximum_position(self) -> Option<usize> {
+        let mut maximum = None;
+        let result = self.try_for_each(|_, position| {
+            maximum = Some(maximum.map_or(position, |current: usize| current.max(position)));
+            Ok::<(), core::convert::Infallible>(())
+        });
+        match result {
+            Ok(()) => maximum,
+            Err(error) => match error {},
+        }
+    }
+
     fn try_for_each<E>(
         self,
         mut visitor: impl FnMut(usize, usize) -> Result<(), E>,
@@ -2430,6 +2689,253 @@ fn write_bool(output: ResidentValueMut<'_>, next: bool) -> Result<bool, Resident
     let next = u8::from(next);
     let changed = *output != next;
     *output = next;
+    Ok(changed)
+}
+
+fn semantic_comparison_result<T: PartialEq + PartialOrd>(
+    comparison: SemanticComparison,
+    left: &T,
+    right: &T,
+) -> bool {
+    match comparison {
+        SemanticComparison::Equal => left == right,
+        SemanticComparison::NotEqual => left != right,
+        SemanticComparison::Less => left < right,
+        SemanticComparison::LessEqual => left <= right,
+        SemanticComparison::Greater => left > right,
+        SemanticComparison::GreaterEqual => left >= right,
+    }
+}
+
+fn dense_comparison_slices<T: PartialEq + PartialOrd>(
+    kernel: &BoundResidentKernel,
+    left: &[T],
+    right: &[T],
+    output: &mut [u8],
+) -> Result<bool, ResidentKernelError> {
+    let [rows, columns, left_mode, right_mode, comparison] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let comparison =
+        SemanticComparison::from_parameter(*comparison).ok_or(ResidentKernelError::InvalidInput)?;
+    if output.len()
+        != rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    validate_binary_broadcast_len(left.len(), *left_mode, rows, columns)?;
+    validate_binary_broadcast_len(right.len(), *right_mode, rows, columns)?;
+    let mut changed = false;
+    for (index, target) in output.iter_mut().enumerate() {
+        let left = &left[binary_broadcast_index(*left_mode, index, rows)];
+        let right = &right[binary_broadcast_index(*right_mode, index, rows)];
+        let next = u8::from(semantic_comparison_result(comparison, left, right));
+        changed |= *target != next;
+        *target = next;
+    }
+    Ok(changed)
+}
+
+fn binary_broadcast_index(mode: u64, index: usize, rows: usize) -> usize {
+    match mode {
+        BINARY_BROADCAST_SCALAR => 0,
+        BINARY_BROADCAST_EXACT => index,
+        BINARY_BROADCAST_COLUMN => index % rows,
+        BINARY_BROADCAST_ROW => index / rows,
+        _ => unreachable!("validated binary broadcast mode"),
+    }
+}
+
+fn dense_comparison(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let ResidentValueMut::Bool(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    match (inputs.get(0), inputs.get(1)) {
+        (Some(ResidentValueRef::Bool(left)), Some(ResidentValueRef::Bool(right))) => {
+            if left.iter().chain(right).any(|value| *value > 1) {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            dense_comparison_slices(kernel, left, right, output)
+        }
+        (Some(ResidentValueRef::Index(left)), Some(ResidentValueRef::Index(right))) => {
+            dense_comparison_slices(kernel, left, right, output)
+        }
+        (Some(ResidentValueRef::String(left)), Some(ResidentValueRef::String(right))) => {
+            dense_comparison_slices(kernel, left, right, output)
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+enum SnapshotComparisonValues<'a> {
+    Scalar(&'a ValueData),
+    Matrix(Vec<ValueData>),
+}
+
+impl SnapshotComparisonValues<'_> {
+    fn len(&self) -> usize {
+        match self {
+            Self::Scalar(_) => 1,
+            Self::Matrix(values) => values.len(),
+        }
+    }
+
+    fn get(&self, index: usize) -> Option<&ValueData> {
+        match self {
+            Self::Scalar(value) if index == 0 => Some(value),
+            Self::Scalar(_) => None,
+            Self::Matrix(values) => values.get(index),
+        }
+    }
+}
+
+fn snapshot_comparison(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let (
+        Some(ResidentValueRef::Snapshot([Some(left)])),
+        Some(ResidentValueRef::Snapshot([Some(right)])),
+    ) = (inputs.get(0), inputs.get(1))
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::Bool(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let [rows, columns, left_mode, right_mode, comparison] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if output.len() != output_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let comparison =
+        SemanticComparison::from_parameter(*comparison).ok_or(ResidentKernelError::InvalidInput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let left_schema = left
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let right_schema = right
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (left_element, left_count, left_matrix) = match (left_schema.body(), left.data()) {
+        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) => (
+            element.as_ref(),
+            matrix.elements().len(),
+            Some(matrix.elements()),
+        ),
+        (body, _) => (body, 1, None),
+    };
+    let (right_element, right_count, right_matrix) = match (right_schema.body(), right.data()) {
+        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) => (
+            element.as_ref(),
+            matrix.elements().len(),
+            Some(matrix.elements()),
+        ),
+        (body, _) => (body, 1, None),
+    };
+    if left_element != right_element
+        || !snapshot_comparison_element_supported(left_element, comparison)
+    {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    validate_binary_broadcast_len(left_count, *left_mode, rows, columns)?;
+    validate_binary_broadcast_len(right_count, *right_mode, rows, columns)?;
+
+    let staged_elements = left_matrix
+        .map_or(0, SequenceView::len)
+        .checked_add(right_matrix.map_or(0, SequenceView::len))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let cloned_bytes = left
+        .canonical_payload_len(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?
+        .checked_add(
+            right
+                .canonical_payload_len(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+        )
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let container_bytes = staged_elements
+        .checked_mul(core::mem::size_of::<ValueData>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    super::budget::KernelCostEstimate {
+        comparison_work: output_len,
+        compute_work: output_len,
+        temporary_bytes: cloned_bytes
+            .checked_add(container_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        cloned_bytes,
+        ..super::budget::KernelCostEstimate::default()
+    }
+    .admit()?;
+
+    let left_values = match left_matrix {
+        Some(values) => SnapshotComparisonValues::Matrix(values.to_values()),
+        None => SnapshotComparisonValues::Scalar(left.data()),
+    };
+    let right_values = match right_matrix {
+        Some(values) => SnapshotComparisonValues::Matrix(values.to_values()),
+        None => SnapshotComparisonValues::Scalar(right.data()),
+    };
+    debug_assert_eq!(left_values.len(), left_count);
+    debug_assert_eq!(right_values.len(), right_count);
+    let canonical_index = |mode: u64, index: usize| {
+        let row = index % rows;
+        let column = index / rows;
+        match mode {
+            BINARY_BROADCAST_SCALAR => 0,
+            BINARY_BROADCAST_EXACT => row * columns + column,
+            BINARY_BROADCAST_COLUMN => row,
+            BINARY_BROADCAST_ROW => column,
+            _ => unreachable!("validated snapshot broadcast mode"),
+        }
+    };
+    let mut changed = false;
+    for (index, target) in output.iter_mut().enumerate() {
+        let left = left_values
+            .get(canonical_index(*left_mode, index))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let right = right_values
+            .get(canonical_index(*right_mode, index))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let equal = schema_data_language_eq(left_element, left, right);
+        let ordered = || schema_data_partial_cmp(left_element, left, right);
+        let next = match comparison {
+            SemanticComparison::Equal => equal,
+            SemanticComparison::NotEqual => !equal,
+            SemanticComparison::Less => matches!(ordered(), Some(core::cmp::Ordering::Less)),
+            SemanticComparison::LessEqual => matches!(
+                ordered(),
+                Some(core::cmp::Ordering::Less | core::cmp::Ordering::Equal)
+            ),
+            SemanticComparison::Greater => {
+                matches!(ordered(), Some(core::cmp::Ordering::Greater))
+            }
+            SemanticComparison::GreaterEqual => matches!(
+                ordered(),
+                Some(core::cmp::Ordering::Greater | core::cmp::Ordering::Equal)
+            ),
+        };
+        let next = u8::from(next);
+        changed |= *target != next;
+        *target = next;
+    }
     Ok(changed)
 }
 
@@ -2553,16 +3059,26 @@ fn indexed_assign(
     }
     let positions = ValidatedPositions::new(input(inputs, 1)?, output_len)?;
     let source = input(inputs, 0)?;
+    let mask_routing = positions.is_mask();
     let source_index = |ordinal: usize, position: usize| {
         if source.len() == 1 {
             0
-        } else if source.len() == output_len {
+        } else if mask_routing || source.len() == output_len {
             position
         } else {
             ordinal
         }
     };
-    if source.len() != 1 && source.len() != output_len && source.len() != positions.len() {
+    let source_shape_valid = if source.len() == 1 {
+        true
+    } else if mask_routing {
+        positions
+            .maximum_position()
+            .is_none_or(|position| position < source.len())
+    } else {
+        source.len() == output_len || source.len() == positions.len()
+    };
+    if !source_shape_valid {
         return Err(ResidentKernelError::InvalidShape);
     }
     // The declared RMW contract permits the candidate to alias only the base
@@ -3598,6 +4114,33 @@ fn bool_not(
         return Err(ResidentKernelError::InvalidInput);
     }
     write_bool(output, !bool_scalar(inputs, 0)?)
+}
+
+fn bool_vector_not(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::Bool(input)) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::Bool(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if input.len() != output.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    if input.iter().any(|value| *value > 1) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let changed = input
+        .iter()
+        .zip(output.iter())
+        .any(|(input, output)| *output != u8::from(*input == 0));
+    for (input, output) in input.iter().zip(output.iter_mut()) {
+        *output = u8::from(*input == 0);
+    }
+    Ok(changed)
 }
 
 fn strict_value_equal(
@@ -5336,15 +5879,23 @@ mod tests {
                 cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
             }))
             .unwrap();
-        let tuple = builder
-            .insert(schema(SchemaBody::Tuple(
-                vec![SchemaBody::Bool].into_boxed_slice(),
-            )))
+        let tuple_body = SchemaBody::Tuple(vec![SchemaBody::Bool].into_boxed_slice());
+        let tuple = builder.insert(schema(tuple_body.clone())).unwrap();
+        let tuple_matrix = builder
+            .insert(schema(SchemaBody::Matrix {
+                element: Box::new(tuple_body),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(2),
+                    mech_core::DimensionExpr::Constant(1),
+                ]
+                .into_boxed_slice(),
+            }))
             .unwrap();
         let index = builder.insert(schema(SchemaBody::Index)).unwrap();
         let build = builder.finish().unwrap();
         let map = build.resolve(map).unwrap();
         let tuple = build.resolve(tuple).unwrap();
+        let tuple_matrix = build.resolve(tuple_matrix).unwrap();
         let index = build.resolve(index).unwrap();
         let (schemas, _) = build.into_parts();
         let port = |schema_id, kind| mech_core::ResidentPortLayout {
@@ -5395,6 +5946,74 @@ mod tests {
             }),
             Err(ResidentKernelBindError::UnsupportedLayout)
         ));
+
+        let matrix_contract =
+            ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+                inputs: [tuple_matrix, tuple, index]
+                    .into_iter()
+                    .map(|schema| mech_core::ResolvedInputPort {
+                        schema,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                outputs: vec![mech_core::ResolvedOutputPort {
+                    schema: tuple_matrix,
+                    access: AccessMode::ReadWrite,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::ReadModifyWrite {
+                        base_input: 0,
+                        regions: RegionPolicy::IndexedAxis { axis: 0 },
+                    },
+                    alias: AliasPolicy::MayAlias { input: 0 },
+                    change_detection: ChangeDetectionPolicy::KernelReported,
+                }]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            });
+        assert!(matches!(
+            bind_indexed_assign(&ResidentKernelBindRequest {
+                contract: &matrix_contract,
+                schemas: &schemas,
+                inputs: &[
+                    port(tuple_matrix, ResidentValueKind::Snapshot),
+                    port(tuple, ResidentValueKind::Snapshot),
+                    port(index, ResidentValueKind::Index),
+                ],
+                output: port(tuple_matrix, ResidentValueKind::Snapshot),
+            }),
+            Err(ResidentKernelBindError::UnsupportedLayout)
+        ));
+    }
+
+    #[test]
+    fn boolean_mask_assignment_routes_vector_sources_by_physical_position() {
+        let kernel = BoundResidentKernel::new(indexed_assign, Box::new([3]));
+        let source = [10.0, 20.0];
+        let selector = [0_u8, 1, 0];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Bool(&selector),
+        ];
+        let mut output = [1.0, 2.0, 3.0];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Ok(true),
+        );
+        assert_eq!(output, [1.0, 20.0, 3.0]);
+
+        let selector = [0_u8, 0, 1];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Bool(&selector),
+        ];
+        let previous = output;
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(output, previous);
     }
 
     #[test]
@@ -5494,6 +6113,274 @@ mod tests {
             );
             assert_eq!(output, expected);
         }
+    }
+
+    #[test]
+    fn boolean_matrix_not_preserves_shape_and_rejects_noncanonical_input_atomically() {
+        let kernel = BoundResidentKernel::new(bool_vector_not, Box::new([]));
+        let input = [1_u8, 0, 0, 1];
+        let inputs = [ResidentValueRef::Bool(&input)];
+        let mut output = [1_u8; 4];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Ok(true),
+        );
+        assert_eq!(output, [0, 1, 1, 0]);
+
+        let invalid = [1_u8, 2, 0, 1];
+        let inputs = [ResidentValueRef::Bool(&invalid)];
+        let previous = output;
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Err(ResidentKernelError::InvalidInput),
+        );
+        assert_eq!(output, previous);
+    }
+
+    #[test]
+    fn one_by_one_boolean_matrix_not_uses_matrix_change_contract() {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                mech_core::SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Bool),
+                        dimensions: vec![
+                            mech_core::DimensionExpr::Constant(1),
+                            mech_core::DimensionExpr::Constant(1),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let port = mech_core::ResidentPortLayout {
+            schema_id: schema,
+            schema_key: schemas.entry(schema).unwrap().key(),
+            kind: ResidentValueKind::Bool,
+            shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(schema)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+        };
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: vec![mech_core::ResolvedInputPort {
+                schema,
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+            outputs: vec![mech_core::ResolvedOutputPort {
+                schema,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        });
+        let kernel = bind_bool_not(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[port.clone()],
+            output: port,
+        })
+        .unwrap();
+        let input = [1_u8];
+        let inputs = [ResidentValueRef::Bool(&input)];
+        let mut output = [1_u8];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Ok(true),
+        );
+        assert_eq!(output, [0]);
+    }
+
+    #[test]
+    fn dense_string_matrix_inequality_uses_declared_broadcast_layout() {
+        let left = [
+            "a".to_owned(),
+            "b".to_owned(),
+            "c".to_owned(),
+            "b".to_owned(),
+        ];
+        let right = ["a".to_owned(), "b".to_owned()];
+        let inputs = [
+            ResidentValueRef::String(&left),
+            ResidentValueRef::String(&right),
+        ];
+        let kernel = BoundResidentKernel::new(
+            dense_comparison,
+            Box::new([
+                2,
+                2,
+                BINARY_BROADCAST_EXACT,
+                BINARY_BROADCAST_ROW,
+                SemanticComparison::NotEqual as u64,
+            ]),
+        );
+        let mut output = [0_u8; 4];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Ok(true),
+        );
+        assert_eq!(output, [0, 1, 1, 0]);
+    }
+
+    #[test]
+    fn snapshot_u64_matrix_ordering_broadcasts_into_column_major_output() {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let scalar_handle = builder
+            .insert(
+                mech_core::SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let matrix_handle = builder
+            .insert(
+                mech_core::SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(
+                            mech_core::IntegerWidth::W64,
+                        )),
+                        dimensions: vec![
+                            mech_core::DimensionExpr::Constant(2),
+                            mech_core::DimensionExpr::Constant(2),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let output_handle = builder
+            .insert(
+                mech_core::SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Bool),
+                        dimensions: vec![
+                            mech_core::DimensionExpr::Constant(2),
+                            mech_core::DimensionExpr::Constant(2),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let scalar_schema = build.resolve(scalar_handle).unwrap();
+        let matrix_schema = build.resolve(matrix_handle).unwrap();
+        let output_schema = build.resolve(output_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let matrix = ValueDraft {
+            schema: matrix_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                [1_u64, 2, 3, 4]
+                    .into_iter()
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let scalar = ValueDraft {
+            schema: scalar_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::U64(2),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let left = [Some(matrix)];
+        let right = [Some(scalar)];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
+        let port = |schema_id, kind, shape| mech_core::ResidentPortLayout {
+            schema_id,
+            schema_key: schemas.entry(schema_id).unwrap().key(),
+            kind,
+            shape,
+            shape_instance: schemas
+                .get(schema_id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+        };
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: [matrix_schema, scalar_schema]
+                .into_iter()
+                .map(|schema| mech_core::ResolvedInputPort {
+                    schema,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            outputs: vec![mech_core::ResolvedOutputPort {
+                schema: output_schema,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        });
+        let output_shape = ResidentShape {
+            rows: 2,
+            columns: 2,
+        };
+        let kernel = bind_semantic_greater(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                port(
+                    matrix_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+                port(
+                    scalar_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+            ],
+            output: port(output_schema, ResidentValueKind::Bool, output_shape),
+        })
+        .unwrap();
+        let mut output = [0_u8; 4];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Ok(true),
+        );
+        assert_eq!(output, [0, 1, 0, 1]);
     }
 
     #[test]

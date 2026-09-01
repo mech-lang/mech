@@ -792,17 +792,21 @@ fn set_cartesian_product(
     let left_count = set_cardinality(left)?;
     let right_count = set_cardinality(right)?;
     let output_len = checked_product(&[left_count, right_count])?;
-    let cloned_bytes = checked_sum(&[
+    let result_cloned_bytes = checked_sum(&[
         checked_product(&[left_payload_len, right_count])?,
         checked_product(&[right_payload_len, left_count])?,
     ])?;
+    // Both canonical element draft arrays are materialized before the nested
+    // product loop, even when one side is empty and the result has no pairs.
+    let input_staging_bytes = checked_sum(&[left_payload_len, right_payload_len])?;
+    let cloned_bytes = checked_sum(&[result_cloned_bytes, input_staging_bytes])?;
     let container_bytes = checked_product(&[output_len, 2, std::mem::size_of::<usize>()])?;
-    let output_bytes = checked_sum(&[cloned_bytes, container_bytes])?;
+    let output_bytes = checked_sum(&[result_cloned_bytes, container_bytes])?;
     KernelCostEstimate {
         compute_work: output_len,
         output_elements: output_len,
         output_bytes,
-        temporary_bytes: output_bytes,
+        temporary_bytes: checked_sum(&[output_bytes, input_staging_bytes])?,
         cloned_bytes,
         ..KernelCostEstimate::default()
     }
@@ -844,6 +848,8 @@ fn set_powerset(
     } else {
         subset_count / 2
     };
+    let member_copies = checked_product(&[element_count, copies_per_element])?;
+    let output_elements = checked_sum(&[subset_count, member_copies])?;
     let cloned_bytes = input
         .canonical_payload_len(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?
@@ -852,8 +858,8 @@ fn set_powerset(
     let subset_headers = checked_product(&[subset_count, std::mem::size_of::<usize>()])?;
     let output_bytes = checked_sum(&[cloned_bytes, subset_headers])?;
     KernelCostEstimate {
-        compute_work: checked_product(&[element_count, copies_per_element])?,
-        output_elements: subset_count,
+        compute_work: member_copies,
+        output_elements,
         output_bytes,
         temporary_bytes: output_bytes,
         cloned_bytes,
@@ -1657,7 +1663,27 @@ mod tests {
         );
         assert!(cartesian_output[0].is_none());
 
-        let input = [Some(set(16, 1024))];
+        // An empty opposite side does not erase the cost of staging the input
+        // element drafts that the implementation materializes unconditionally.
+        let large = [Some(set(1, 16 * 1024 * 1024))];
+        let empty = [Some(set(0, 0))];
+        let empty_product_inputs = [
+            ResidentValueRef::Snapshot(&large),
+            ResidentValueRef::Snapshot(&empty),
+        ];
+        let mut empty_product_output = [None];
+        assert_eq!(
+            output_kernel(set_cartesian_product, pair_set_schema).execute(
+                &Inputs(&empty_product_inputs),
+                ResidentValueMut::Snapshot(&mut empty_product_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(empty_product_output[0].is_none());
+
+        // Sixteen short elements stay below the byte budget, but their
+        // powerset contains 65,536 subsets plus 524,288 nested member copies.
+        let input = [Some(set(16, 1))];
         let powerset_inputs = [ResidentValueRef::Snapshot(&input)];
         let mut powerset_output = [None];
         assert_eq!(

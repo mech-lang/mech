@@ -174,6 +174,19 @@ fn string_gather(
 pub(super) fn bind_string_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_string_scalar_comparison(request, string_equal)
+}
+
+pub(super) fn bind_string_not_equal(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_string_scalar_comparison(request, string_not_equal)
+}
+
+fn bind_string_scalar_comparison(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
         return Err(ResidentKernelBindError::UnsupportedContract);
     };
@@ -209,7 +222,7 @@ pub(super) fn bind_string_equal(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(BoundResidentKernel::new(string_equal, Box::new([])))
+    Ok(BoundResidentKernel::new(executor, Box::new([])))
 }
 
 fn string_equal(
@@ -227,6 +240,26 @@ fn string_equal(
         return Err(ResidentKernelError::InvalidOutput);
     };
     let next = u8::from(left == right);
+    let changed = *target != next;
+    *target = next;
+    Ok(changed)
+}
+
+fn string_not_equal(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String([left])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let Some(ResidentValueRef::String([right])) = inputs.get(1) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::Bool([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let next = u8::from(left != right);
     let changed = *target != next;
     *target = next;
     Ok(changed)
@@ -714,6 +747,19 @@ mod tests {
                 .unwrap()
         );
         assert_eq!(output[0], "Hello, Ada");
+    }
+
+    #[test]
+    fn scalar_string_not_equal_writes_boolean_output() {
+        let kernel = BoundResidentKernel::new(string_not_equal, Box::new([]));
+        let inputs = Inputs(["left".to_owned(), "right".to_owned()]);
+        let mut output = [0_u8];
+
+        assert_eq!(
+            kernel.execute(&inputs, ResidentValueMut::Bool(&mut output)),
+            Ok(true),
+        );
+        assert_eq!(output, [1]);
     }
 
     struct NumericInput([f64; 4]);

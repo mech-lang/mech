@@ -23,7 +23,7 @@ pub use self::draft::{
 pub use self::error::{
     SchemaDataKind, SnapshotPath, SnapshotPathSegment, SnapshotValueError, ValueDataKind,
 };
-pub use self::relations::{SetValueRelation, schema_data_language_eq};
+pub use self::relations::{SetValueRelation, schema_data_language_eq, schema_data_partial_cmp};
 pub use self::sequence::SequenceView;
 pub use self::validation::{
     SnapshotValidationContext, Value, build_f64_set_snapshot, build_f64_set_snapshot_after_remove,

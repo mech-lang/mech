@@ -217,17 +217,23 @@ impl Value {
         relation: SetValueRelation,
     ) -> Result<bool, SnapshotValueError> {
         let (element, left, right) = self.validated_set_pair(self_schemas, other, other_schemas)?;
-        let subset = set_is_subset(element, left, right)?;
-        let superset = set_is_subset(element, right, left)?;
-        Ok(match relation {
-            SetValueRelation::Disjoint => set_is_disjoint(element, left, right)?,
-            SetValueRelation::Equal => subset && superset,
-            SetValueRelation::NotEqual => !(subset && superset),
-            SetValueRelation::ProperSubset => subset && left.len() < right.len(),
-            SetValueRelation::ProperSuperset => superset && left.len() > right.len(),
-            SetValueRelation::Subset => subset,
-            SetValueRelation::Superset => superset,
-        })
+        match relation {
+            SetValueRelation::Disjoint => set_is_disjoint(element, left, right),
+            SetValueRelation::Equal => {
+                Ok(left.len() == right.len() && set_is_subset(element, left, right)?)
+            }
+            SetValueRelation::NotEqual => {
+                Ok(left.len() != right.len() || !set_is_subset(element, left, right)?)
+            }
+            SetValueRelation::ProperSubset => {
+                Ok(left.len() < right.len() && set_is_subset(element, left, right)?)
+            }
+            SetValueRelation::ProperSuperset => {
+                Ok(left.len() > right.len() && set_is_subset(element, right, left)?)
+            }
+            SetValueRelation::Subset => set_is_subset(element, left, right),
+            SetValueRelation::Superset => set_is_subset(element, right, left),
+        }
     }
 
     fn merge_set_elements(
@@ -371,19 +377,18 @@ fn set_is_subset(
     left: &[CanonicalKeyValue],
     right: &[CanonicalKeyValue],
 ) -> Result<bool, SnapshotValueError> {
-    for candidate in left {
-        let mut present = false;
-        for value in right {
-            if compare_key_data(element, candidate.data(), value.data())? == Ordering::Equal {
-                present = true;
-                break;
+    let (mut left_index, mut right_index) = (0, 0);
+    while left_index < left.len() && right_index < right.len() {
+        match compare_key_data(element, left[left_index].data(), right[right_index].data())? {
+            Ordering::Less => return Ok(false),
+            Ordering::Equal => {
+                left_index += 1;
+                right_index += 1;
             }
-        }
-        if !present {
-            return Ok(false);
+            Ordering::Greater => right_index += 1,
         }
     }
-    Ok(true)
+    Ok(left_index == left.len())
 }
 
 fn set_is_disjoint(
@@ -391,11 +396,12 @@ fn set_is_disjoint(
     left: &[CanonicalKeyValue],
     right: &[CanonicalKeyValue],
 ) -> Result<bool, SnapshotValueError> {
-    for candidate in left {
-        for value in right {
-            if compare_key_data(element, candidate.data(), value.data())? == Ordering::Equal {
-                return Ok(false);
-            }
+    let (mut left_index, mut right_index) = (0, 0);
+    while left_index < left.len() && right_index < right.len() {
+        match compare_key_data(element, left[left_index].data(), right[right_index].data())? {
+            Ordering::Less => left_index += 1,
+            Ordering::Equal => return Ok(false),
+            Ordering::Greater => right_index += 1,
         }
     }
     Ok(true)
@@ -662,6 +668,70 @@ fn lexicographic_refs(
 /// payloads under one shared schema.
 pub fn schema_data_language_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
     language_data_eq(schema, left, right)
+}
+
+/// Applies the source language's scalar numeric ordering to two already
+/// validated payloads under one shared schema. `None` represents an unordered
+/// floating-point comparison (for example, one involving NaN).
+pub fn schema_data_partial_cmp(
+    schema: &SchemaBody,
+    left: &ValueData,
+    right: &ValueData,
+) -> Option<Ordering> {
+    macro_rules! ordinary {
+        ($variant:ident) => {
+            if let (ValueData::$variant(left), ValueData::$variant(right)) = (left, right) {
+                return left.partial_cmp(right);
+            }
+        };
+    }
+    match (schema, left, right) {
+        (SchemaBody::UnsignedInteger(_), _, _) | (SchemaBody::SignedInteger(_), _, _) => {
+            ordinary!(U8);
+            ordinary!(U16);
+            ordinary!(U32);
+            ordinary!(U64);
+            ordinary!(U128);
+            ordinary!(I8);
+            ordinary!(I16);
+            ordinary!(I32);
+            ordinary!(I64);
+            ordinary!(I128);
+            None
+        }
+        (
+            SchemaBody::FloatingPoint(FloatWidth::W32),
+            ValueData::F32(left),
+            ValueData::F32(right),
+        ) => left.to_f32().partial_cmp(&right.to_f32()),
+        (
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueData::F64(left),
+            ValueData::F64(right),
+        ) => left.to_f64().partial_cmp(&right.to_f64()),
+        (
+            SchemaBody::Complex(FloatWidth::W32),
+            ValueData::Complex32(left),
+            ValueData::Complex32(right),
+        ) => left
+            .real()
+            .to_f32()
+            .hypot(left.imaginary().to_f32())
+            .partial_cmp(&right.real().to_f32().hypot(right.imaginary().to_f32())),
+        (
+            SchemaBody::Complex(FloatWidth::W64),
+            ValueData::Complex64(left),
+            ValueData::Complex64(right),
+        ) => left
+            .real()
+            .to_f64()
+            .hypot(left.imaginary().to_f64())
+            .partial_cmp(&right.real().to_f64().hypot(right.imaginary().to_f64())),
+        (SchemaBody::Rational64, ValueData::Rational64(left), ValueData::Rational64(right)) => {
+            Some(rational_cmp(left, right))
+        }
+        _ => None,
+    }
 }
 
 fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
