@@ -3520,28 +3520,41 @@ Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layou
                 {"identifier": desktop_transfer_script},
                 session_id,
             )
-        mobile_expected = evaluate_json(f"""
+        evaluate(f"""
 (() => {{
-  const shell = document.querySelector('.content-shell');
   if (!document.getElementById('mech-late-layout-spacer')) {{
     const spacer = document.createElement('div');
     spacer.id = 'mech-late-layout-spacer';
     spacer.style.height = '900px';
     (document.querySelector('.content-column') || document.body).append(spacer);
   }}
-  let origin = 0;
-  for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
-  return {{ y: origin + {desktop_position['y']}, origin }};
 }})()
 """)
-        wait_for(
-            f"Math.abs(window.scrollY - {mobile_expected['y']}) <= 2",
-            "a desktop content-shell offset translating onto the mobile window",
-        )
         wait_for(
             "!document.documentElement.dataset.mechPagePositionRestore",
             "the mobile canonical restore reaching a stable mapping",
         )
+        mobile_expected = evaluate_json(f"""
+(() => {{
+  const shell = document.querySelector('.content-shell');
+  let origin = 0;
+  for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
+  return {{
+    y: origin + {desktop_position['y']},
+    origin,
+    windowY: window.scrollY,
+    maximum: Math.max(0, document.documentElement.scrollHeight - innerHeight),
+  }};
+}})()
+""")
+        if (
+            mobile_expected is None or
+            abs(mobile_expected["windowY"] - mobile_expected["y"]) > 2
+        ):
+            fail(
+                "desktop content-shell offset did not translate onto the mobile window: "
+                f"desktop={desktop_position!r}, mobile={mobile_expected!r}"
+            )
         if mobile_expected["origin"] <= desktop_position["origin"] + 20:
             fail(
                 "responsive persistence coverage did not cross the compact-header origin: "
