@@ -63,6 +63,7 @@ git switch --track origin/codex/mech-program-gpu
 | NumPy/Numba threaded evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-numba-2026-08-31.json` |
 | Halide/Futhark SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-halide-simd-2026-08-31.json` |
 | Futhark fixed-mode ISPC evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-ispc-fixed-2026-08-31.json` |
+| Mech persistent SIMD/JIT evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-persistent-simd-2026-08-31.json` |
 | Julia Metal GPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-metal-2026-08-31.json` |
 | NumPy GPU capability evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-gpu-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
@@ -123,6 +124,9 @@ are outside the timed region. The subtitle on each chart records those two
 workloads explicitly. The ranking includes every retained scalar, SIMD/JIT,
 worker-parallel, WGPU, native-Metal, and fused GPU lane, including the matched
 eight-worker CPU controls at 104.783 M/s checked and 110.469 M/s unchecked.
+The persistent Mech worker-pool lane reaches 150.395 M/s with a per-turn
+command and 165.830 M/s when the unchecked turn block is submitted as one
+command, exceeding the fixed Futhark ISPC unchecked result of 152.330 M/s.
 
 ![Cross-language checked EKF throughput](results/parallel-ekf-cross-language-checked.svg)
 
@@ -260,6 +264,7 @@ python3 plot_cross_language_comparison.py \
   --numpy-numba results/apple-m1-numpy-numba-2026-08-31.json \
   --simd-controls results/apple-m1-futhark-halide-simd-2026-08-31.json \
   --futhark-fixed results/apple-m1-futhark-ispc-fixed-2026-08-31.json \
+  --mech-persistent results/apple-m1-mech-persistent-simd-2026-08-31.json \
   --julia-gpu results/apple-m1-julia-metal-2026-08-31.json \
   --numpy-gpu results/apple-m1-numpy-gpu-2026-08-31.json
 

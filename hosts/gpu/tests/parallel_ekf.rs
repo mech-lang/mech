@@ -1186,6 +1186,21 @@ fn simd_jit_matches_scalar_and_retains_state_on_fault() {
         assert_close(expected, &parallel.state()[slot], 1.0e-4);
     }
 
+    let mut batched_unchecked = program
+        .prepare_jit_simd_cpu_unchecked_fast(&inputs)
+        .unwrap();
+    batched_unchecked
+        .dispatch_turns_parallel_unchecked_fast(3, 2)
+        .unwrap();
+    let mut scalar_unchecked = program
+        .prepare_jit_simd_cpu_unchecked_fast(&inputs)
+        .unwrap();
+    scalar_unchecked.dispatch_turns(3).unwrap();
+    for (slot, expected) in scalar_unchecked.state() {
+        assert_close(expected, &batched_unchecked.state()[slot], 1.0e-4);
+    }
+    assert_eq!(batched_unchecked.attempted_turns(), 3);
+
     let mut invalid_inputs = inputs;
     invalid_inputs
         .get_mut("bearing")

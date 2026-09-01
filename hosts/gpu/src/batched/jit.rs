@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::{mem, sync::Arc, thread};
 
 use cranelift_codegen::ir::{
@@ -42,6 +43,157 @@ struct NativeSimdKernel {
     turn: NativeSimdTurn,
 }
 
+enum ParallelWorkerCommand {
+    Run { turns: u32 },
+    Shutdown,
+}
+
+struct ParallelWorker {
+    command: Sender<ParallelWorkerCommand>,
+    result: Receiver<u64>,
+    handle: Option<thread::JoinHandle<()>>,
+}
+
+/// Long-lived workers for the SIMD/JIT CPU path. The worker owns its pointer
+/// tables, so the hot loop only sends a small command and receives one fault
+/// word instead of rebuilding vectors and spawning threads for every turn.
+struct ParallelWorkerPool {
+    workers: Vec<ParallelWorker>,
+}
+
+impl ParallelWorkerPool {
+    fn new(
+        turn: NativeSimdTurn,
+        input_pointers: &[*const f32],
+        state_pointers: &[*mut f32],
+        next_state_pointers: &[*mut f32],
+        groups: usize,
+        workers: usize,
+    ) -> Result<Self, String> {
+        let input_addresses = input_pointers
+            .iter()
+            .map(|pointer| *pointer as usize)
+            .collect::<Vec<_>>();
+        let state_addresses = state_pointers
+            .iter()
+            .map(|pointer| *pointer as usize)
+            .collect::<Vec<_>>();
+        let next_state_addresses = next_state_pointers
+            .iter()
+            .map(|pointer| *pointer as usize)
+            .collect::<Vec<_>>();
+        let mut pool = Self {
+            workers: Vec::with_capacity(workers),
+        };
+
+        for worker_index in 0..workers {
+            let (command, commands) = mpsc::channel();
+            let (results, result) = mpsc::channel();
+            let input_addresses = input_addresses.clone();
+            let state_addresses = state_addresses.clone();
+            let next_state_addresses = next_state_addresses.clone();
+            let start_group = groups * worker_index / workers;
+            let end_group = groups * (worker_index + 1) / workers;
+            let handle = thread::Builder::new()
+                .name(format!("mech-simd-worker-{worker_index}"))
+                .spawn(move || {
+                    // Raw pointers are reconstructed only inside the worker;
+                    // the address vectors crossing the thread boundary are
+                    // integer handles whose allocations remain owned by the
+                    // session for the worker's entire lifetime.
+                    let input_pointers = input_addresses
+                        .iter()
+                        .map(|pointer| *pointer as *const f32)
+                        .collect::<Vec<_>>();
+                    let mut state_pointers = state_addresses
+                        .iter()
+                        .map(|pointer| *pointer as *mut f32)
+                        .collect::<Vec<_>>();
+                    let mut next_state_pointers = next_state_addresses
+                        .iter()
+                        .map(|pointer| *pointer as *mut f32)
+                        .collect::<Vec<_>>();
+
+                    while let Ok(command) = commands.recv() {
+                        match command {
+                            ParallelWorkerCommand::Run { turns } => {
+                                let mut packed_fault = 0;
+                                for _ in 0..turns {
+                                    // SAFETY: this worker owns a disjoint SIMD
+                                    // group range and all backing buffers stay
+                                    // live until the pool is dropped.
+                                    packed_fault = unsafe {
+                                        turn(
+                                            input_pointers.as_ptr(),
+                                            state_pointers.as_ptr(),
+                                            next_state_pointers.as_ptr(),
+                                            start_group,
+                                            end_group,
+                                        )
+                                    };
+                                    if packed_fault != 0 {
+                                        break;
+                                    }
+                                    mem::swap(&mut state_pointers, &mut next_state_pointers);
+                                }
+                                if results.send(packed_fault).is_err() {
+                                    break;
+                                }
+                            }
+                            ParallelWorkerCommand::Shutdown => break,
+                        }
+                    }
+                })
+                .map_err(|error| format!("failed to start SIMD worker: {error}"))?;
+            pool.workers.push(ParallelWorker {
+                command,
+                result,
+                handle: Some(handle),
+            });
+        }
+        Ok(pool)
+    }
+
+    fn worker_count(&self) -> usize {
+        self.workers.len()
+    }
+
+    fn run(&self, turns: u32) -> Result<u64, String> {
+        for worker in &self.workers {
+            worker
+                .command
+                .send(ParallelWorkerCommand::Run { turns })
+                .map_err(|error| format!("SIMD worker command failed: {error}"))?;
+        }
+        self.workers
+            .iter()
+            .map(|worker| {
+                worker
+                    .result
+                    .recv()
+                    .map_err(|error| format!("SIMD worker result failed: {error}"))
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .filter(|fault| *fault != 0)
+            .min()
+            .map_or(Ok(0), Ok)
+    }
+}
+
+impl Drop for ParallelWorkerPool {
+    fn drop(&mut self) {
+        for worker in &self.workers {
+            let _ = worker.command.send(ParallelWorkerCommand::Shutdown);
+        }
+        for worker in &mut self.workers {
+            if let Some(handle) = worker.handle.take() {
+                let _ = handle.join();
+            }
+        }
+    }
+}
+
 pub struct BatchedJitCpuSession {
     program: Arc<FixedShapeKernel>,
     kernel: NativeKernel,
@@ -65,6 +217,7 @@ pub struct BatchedJitCpuSession {
 pub struct BatchedJitSimdCpuSession {
     program: Arc<FixedShapeKernel>,
     kernel: NativeSimdKernel,
+    parallel_pool: Option<ParallelWorkerPool>,
     checked: bool,
     fast_math: bool,
     inputs: BTreeMap<CellSlotId, Vec<f32>>,
@@ -259,6 +412,7 @@ impl FixedShapeKernel {
         let mut session = BatchedJitSimdCpuSession {
             program: Arc::new(self.clone()),
             kernel,
+            parallel_pool: None,
             checked,
             fast_math,
             inputs,
@@ -378,6 +532,9 @@ impl BatchedJitSimdCpuSession {
         &mut self,
         updates: &BTreeMap<String, Vec<f32>>,
     ) -> Result<(), BatchedExecutionError> {
+        // Input replacement can move packed buffers, invalidating the raw
+        // addresses owned by the persistent worker pool.
+        self.parallel_pool.take();
         let mut recompile = false;
         for (name, values) in updates {
             let (index, input) = self
@@ -427,6 +584,9 @@ impl BatchedJitSimdCpuSession {
         if turns == 0 {
             return Err(BatchedExecutionError::ZeroTurns);
         }
+        // The single-thread path owns the pointer-table orientation. Stop a
+        // pool created by the parallel path before changing that orientation.
+        self.parallel_pool.take();
         for _ in 0..turns {
             let attempted_turn = self.faults.next_turn();
             // SAFETY: the generated function uses the exact ABI below. Its
@@ -455,9 +615,8 @@ impl BatchedJitSimdCpuSession {
     }
 
     /// Dispatches the resident SIMD kernel across disjoint instance ranges.
-    /// Workers join before the next turn starts, preserving the synchronous
-    /// resident-loop contract while exposing the parallel CPU baseline used by
-    /// Taichi's CPU backend.
+    /// The worker pool is created on the first call and reused thereafter;
+    /// checked mode still performs validation and publication once per turn.
     pub fn dispatch_turns_parallel(
         &mut self,
         turns: u32,
@@ -476,19 +635,81 @@ impl BatchedJitSimdCpuSession {
             ));
         }
         let workers = workers.min(groups);
+        self.ensure_parallel_pool(groups, workers)?;
         for _ in 0..turns {
             let attempted_turn = self.faults.next_turn();
-            let packed_fault = self.dispatch_parallel_once(groups, workers);
+            let packed_fault = self
+                .parallel_pool
+                .as_ref()
+                .expect("parallel worker pool initialized")
+                .run(1)
+                .map_err(BatchedExecutionError::Native)?;
             if let Some(fault) = self
                 .program
                 .failed_packed_constraint(packed_fault, attempted_turn)
             {
+                // A rejected turn leaves worker-local pointer orientation
+                // unspecified. Discard the pool so the published state stays
+                // authoritative if the caller continues after the fault.
+                self.parallel_pool.take();
                 return Err(self.faults.record(fault));
             }
             mem::swap(&mut self.state_pointers, &mut self.next_state_pointers);
             mem::swap(&mut self.packed_state, &mut self.packed_next_state);
             self.logical_state_dirty = true;
         }
+        Ok(())
+    }
+
+    /// Runs an unchecked fixed-mode turn block as one worker-pool command.
+    /// This is the CPU analogue of Futhark's fixed `main_unchecked` entry
+    /// point: no integrity publication occurs inside the block, while the
+    /// public session still exposes the resulting state at its boundary.
+    pub fn dispatch_turns_parallel_unchecked_fast(
+        &mut self,
+        turns: u32,
+        workers: usize,
+    ) -> Result<(), BatchedExecutionError> {
+        if turns == 0 {
+            return Err(BatchedExecutionError::ZeroTurns);
+        }
+        if self.checked {
+            return Err(BatchedExecutionError::Native(
+                "fixed unchecked parallel dispatch requires an unchecked session".to_owned(),
+            ));
+        }
+        if workers <= 1 {
+            return self.dispatch_turns(turns);
+        }
+        let groups = self.program.instances as usize / SIMD_JIT_LANES;
+        if groups == 0 {
+            return Err(BatchedExecutionError::Native(
+                "parallel SIMD JIT requires at least one instance group".to_owned(),
+            ));
+        }
+        let workers = workers.min(groups);
+        self.ensure_parallel_pool(groups, workers)?;
+        let packed_fault = self
+            .parallel_pool
+            .as_ref()
+            .expect("parallel worker pool initialized")
+            .run(turns)
+            .map_err(BatchedExecutionError::Native)?;
+        if let Some(fault) = self.program.failed_packed_constraint(
+            packed_fault,
+            self.faults.attempted_turns().saturating_add(1),
+        ) {
+            self.parallel_pool.take();
+            return Err(self.faults.record(fault));
+        }
+        for _ in 0..turns {
+            self.faults.next_turn();
+        }
+        if turns % 2 == 1 {
+            mem::swap(&mut self.state_pointers, &mut self.next_state_pointers);
+            mem::swap(&mut self.packed_state, &mut self.packed_next_state);
+        }
+        self.logical_state_dirty = true;
         Ok(())
     }
 
@@ -533,72 +754,38 @@ impl BatchedJitSimdCpuSession {
         }
     }
 
-    fn dispatch_parallel_once(&self, groups: usize, workers: usize) -> u64 {
-        let turn = self.kernel.turn;
-        // Raw pointers cannot be sent across a thread boundary directly. The
-        // generated kernel's range contract makes these addresses safe to
-        // reconstruct in each worker: workers receive disjoint SIMD groups.
-        let input_addresses = Arc::new(
-            self.input_pointers
-                .iter()
-                .map(|pointer| *pointer as usize)
-                .collect::<Vec<_>>(),
-        );
-        let state_addresses = Arc::new(
-            self.state_pointers
-                .iter()
-                .map(|pointer| *pointer as usize)
-                .collect::<Vec<_>>(),
-        );
-        let next_state_addresses = Arc::new(
-            self.next_state_pointers
-                .iter()
-                .map(|pointer| *pointer as usize)
-                .collect::<Vec<_>>(),
-        );
-        thread::scope(|scope| {
-            let mut handles = Vec::with_capacity(workers);
-            for worker in 0..workers {
-                let input_addresses = Arc::clone(&input_addresses);
-                let state_addresses = Arc::clone(&state_addresses);
-                let next_state_addresses = Arc::clone(&next_state_addresses);
-                let start_group = groups * worker / workers;
-                let end_group = groups * (worker + 1) / workers;
-                handles.push(scope.spawn(move || {
-                    let input_pointers = input_addresses
-                        .iter()
-                        .map(|pointer| *pointer as *const f32)
-                        .collect::<Vec<_>>();
-                    let state_pointers = state_addresses
-                        .iter()
-                        .map(|pointer| *pointer as *mut f32)
-                        .collect::<Vec<_>>();
-                    let next_state_pointers = next_state_addresses
-                        .iter()
-                        .map(|pointer| *pointer as *mut f32)
-                        .collect::<Vec<_>>();
-                    // SAFETY: each invocation receives a non-overlapping
-                    // [start_group, end_group) range. The generated function
-                    // only accesses that range and all backing allocations
-                    // remain live through the scoped join.
-                    unsafe {
-                        turn(
-                            input_pointers.as_ptr(),
-                            state_pointers.as_ptr(),
-                            next_state_pointers.as_ptr(),
-                            start_group,
-                            end_group,
-                        )
-                    }
-                }));
-            }
-            handles
-                .drain(..)
-                .map(|handle| handle.join().expect("parallel SIMD worker panicked"))
-                .filter(|fault| *fault != 0)
-                .min()
-                .unwrap_or(0)
-        })
+    fn ensure_parallel_pool(
+        &mut self,
+        groups: usize,
+        workers: usize,
+    ) -> Result<(), BatchedExecutionError> {
+        let needs_pool = self
+            .parallel_pool
+            .as_ref()
+            .is_none_or(|pool| pool.worker_count() != workers);
+        if needs_pool {
+            self.parallel_pool.take();
+            self.parallel_pool = Some(
+                ParallelWorkerPool::new(
+                    self.kernel.turn,
+                    &self.input_pointers,
+                    &self.state_pointers,
+                    &self.next_state_pointers,
+                    groups,
+                    workers,
+                )
+                .map_err(BatchedExecutionError::Native)?,
+            );
+        }
+        Ok(())
+    }
+}
+
+impl Drop for BatchedJitSimdCpuSession {
+    fn drop(&mut self) {
+        // Join workers while the JIT module and all state buffers are still
+        // alive. This also makes session shutdown deterministic for hosts.
+        self.parallel_pool.take();
     }
 }
 

@@ -297,6 +297,32 @@ fn main() {
     let jit_simd_parallel_unchecked_fast_checksum =
         state_checksum(jit_simd_parallel_unchecked_fast.state());
 
+    let mut jit_simd_parallel_unchecked_fast_block_warmup = program
+        .prepare_jit_simd_cpu_unchecked_fast(&inputs)
+        .unwrap();
+    jit_simd_parallel_unchecked_fast_block_warmup
+        .dispatch_turns_parallel_unchecked_fast(5, parallel_workers)
+        .unwrap();
+    let mut jit_simd_parallel_unchecked_fast_block = program
+        .prepare_jit_simd_cpu_unchecked_fast(&inputs)
+        .unwrap();
+    let jit_simd_parallel_unchecked_fast_block_started = Instant::now();
+    jit_simd_parallel_unchecked_fast_block
+        .dispatch_turns_parallel_unchecked_fast(cpu_turns, parallel_workers)
+        .unwrap();
+    let jit_simd_parallel_unchecked_fast_block_per_turn =
+        jit_simd_parallel_unchecked_fast_block_started.elapsed() / cpu_turns;
+    let jit_simd_parallel_unchecked_fast_block_checksum =
+        state_checksum(jit_simd_parallel_unchecked_fast_block.state());
+    let jit_simd_parallel_unchecked_fast_block_max_error = maximum_error(
+        jit_simd_unchecked_fast.state(),
+        jit_simd_parallel_unchecked_fast_block.state(),
+    );
+    assert!(
+        jit_simd_parallel_unchecked_fast_block_max_error <= 1.0e-4,
+        "batched parallel unchecked SIMD-JIT result differs from single-thread unchecked result by {jit_simd_parallel_unchecked_fast_block_max_error}"
+    );
+
     let jit_validation_overhead =
         (jit_per_turn.as_secs_f64() / jit_unchecked_per_turn.as_secs_f64() - 1.0) * 100.0;
     let jit_checked_fast_validation_overhead =
@@ -509,6 +535,10 @@ fn main() {
         millis(jit_simd_parallel_unchecked_fast_per_turn)
     );
     println!(
+        "Mech Cranelift SIMD-JIT parallel unchecked fast block CPU ({parallel_workers} workers): {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_simd_parallel_unchecked_fast_block_per_turn)
+    );
+    println!(
         "resident GPU, checked one-turn API call: {:.3} ms/turn ({single_gpu_turns} turns)",
         millis(single_per_turn)
     );
@@ -579,6 +609,10 @@ fn main() {
     println!(
         "Mech Cranelift SIMD-JIT parallel unchecked fast throughput: {:.3} million EKF-turns/s",
         throughput(instances, jit_simd_parallel_unchecked_fast_per_turn)
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT parallel unchecked fast block throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_simd_parallel_unchecked_fast_block_per_turn)
     );
     println!("JIT integrity validation time overhead: {jit_validation_overhead:.2}%");
     println!(
@@ -659,6 +693,9 @@ fn main() {
     println!("Mech Cranelift SIMD-JIT parallel checksum: {jit_simd_parallel_checksum:.9}");
     println!(
         "Mech Cranelift SIMD-JIT parallel unchecked fast checksum: {jit_simd_parallel_unchecked_fast_checksum:.9}"
+    );
+    println!(
+        "Mech Cranelift SIMD-JIT parallel unchecked fast block checksum: {jit_simd_parallel_unchecked_fast_block_checksum:.9}"
     );
     println!("Mech GPU checked checksum: {gpu_checksum:.9}");
     println!("Mech GPU unchecked checksum: {gpu_unchecked_checksum:.9}");

@@ -70,15 +70,17 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 25 | Taichi LLVM CPU, 8 workers | Taichi | 98.140 |
 | 26 | Julia SIMD.jl, 8 workers | Julia | 109.628 |
 | 27 | Mech SIMD/JIT CPU, 8 workers | Mech | 110.469 |
-| 28 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 152.330 |
-| 29 | Mech GPU, WGPU per-turn | Mech | 157.141 |
-| 30 | Taichi GPU, native Metal | Taichi | 194.793 |
-| 31 | Julia GPU, native Metal | Julia | 216.462 |
-| 32 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
-| 33 | Mech GPU, native Metal | Mech | 241.028 |
-| 34 | Mech GPU, unchecked repeated | Mech | 350.930 |
-| 35 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
-| 36 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
+| 28 | Mech SIMD/JIT CPU, persistent pool per-turn (8 workers) | Mech | 150.395 |
+| 29 | Futhark ISPC fixed-mode, 8 workers (500k x 40) | Futhark | 152.330 |
+| 30 | Mech GPU, WGPU per-turn | Mech | 157.141 |
+| 31 | Mech SIMD/JIT CPU, fused unchecked block (8 workers) | Mech | 165.830 |
+| 32 | Taichi GPU, native Metal | Taichi | 194.793 |
+| 33 | Julia GPU, native Metal | Julia | 216.462 |
+| 34 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
+| 35 | Mech GPU, native Metal | Mech | 241.028 |
+| 36 | Mech GPU, unchecked repeated | Mech | 350.930 |
+| 37 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
+| 38 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
 
 Checked rows include candidate validation/publication. Unchecked rows explicitly omit those guarantees. The GPU one-submit row is a fused unchecked control and is therefore shown only in the unchecked section.
 Futhark GPU has no numeric row on this Apple M1: Futhark 0.27 exposes CUDA/OpenCL backends but no Metal backend; the generated OpenCL kernel is rejected by Apple's driver.

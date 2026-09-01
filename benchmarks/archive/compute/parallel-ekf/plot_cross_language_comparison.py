@@ -73,6 +73,7 @@ def load_rows(
     julia_gpu: dict | None = None,
     numpy_gpu: dict | None = None,
     futhark_fixed: dict | None = None,
+    mech_persistent: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -346,6 +347,20 @@ def load_rows(
                         "throughput": statistics.median(row["throughput_millions"]),
                     }
                 )
+    if mech_persistent is not None:
+        import statistics
+
+        for key in ("persistent_per_turn_unchecked_fast", "fused_unchecked_block"):
+            row = mech_persistent.get("rows", {}).get(key)
+            if row is not None and "throughput_millions" in row:
+                rows.append(
+                    {
+                        "label": row.get("label", key),
+                        "family": "Mech",
+                        "mode": row.get("mode", "unchecked"),
+                        "throughput": statistics.median(row["throughput_millions"]),
+                    }
+                )
     return rows
 
 
@@ -510,6 +525,7 @@ def main() -> None:
     parser.add_argument("--julia-gpu", type=Path, help="Julia Metal GPU evidence JSON")
     parser.add_argument("--numpy-gpu", type=Path, help="NumPy GPU capability evidence JSON")
     parser.add_argument("--futhark-fixed", type=Path, help="fixed-mode Futhark ISPC evidence JSON")
+    parser.add_argument("--mech-persistent", type=Path, help="persistent Mech SIMD/JIT evidence JSON")
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
@@ -555,6 +571,11 @@ def main() -> None:
         if args.futhark_fixed
         else None
     )
+    mech_persistent = (
+        json.loads(args.mech_persistent.read_text(encoding="utf-8"))
+        if args.mech_persistent
+        else None
+    )
     rows = load_rows(
         cross_language,
         runtime,
@@ -568,6 +589,7 @@ def main() -> None:
         julia_gpu,
         numpy_gpu,
         futhark_fixed,
+        mech_persistent,
     )
     configuration = cross_language["configuration"]
     render(
