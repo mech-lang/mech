@@ -539,7 +539,7 @@ pub(super) fn insert_map_entry(
     Ok(())
 }
 
-pub(super) fn compare_key_data(
+pub fn compare_key_data(
     schema: &SchemaBody,
     left: &ValueData,
     right: &ValueData,

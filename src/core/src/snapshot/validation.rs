@@ -875,6 +875,15 @@ fn canonical_data_to_draft(
     canonical_data_to_draft_with_target(schema, data, path, None)
 }
 
+/// Materializes a canonical draft for schema-directed data that has already
+/// been validated as part of a finalized snapshot value.
+pub fn canonical_snapshot_data_draft(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueDataDraft, SnapshotValueError> {
+    canonical_data_to_draft(schema, data, &SnapshotPath::root())
+}
+
 fn canonical_data_to_rebound_draft(
     schema: &SchemaBody,
     data: &ValueData,

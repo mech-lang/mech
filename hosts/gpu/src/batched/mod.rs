@@ -1267,6 +1267,41 @@ struct BatchCompiler<'a> {
     diagnostics: Vec<GpuDiagnostic>,
 }
 
+fn single_selector_access_axes(
+    operation: &str,
+    source: FixedShape,
+    result: FixedShape,
+    selector: Vec<usize>,
+) -> Result<(Vec<usize>, Vec<usize>), String> {
+    if operation == "access/rows" {
+        return Ok((selector, (0..source.columns).collect()));
+    }
+    if operation == "access/columns" {
+        return Ok(((0..source.rows).collect(), selector));
+    }
+    let selects_columns = result.rows == source.rows && result.columns == selector.len();
+    let selects_rows = result.rows == selector.len() && result.columns == source.columns;
+    match (selects_rows, selects_columns) {
+        (false, true) => Ok(((0..source.rows).collect(), selector)),
+        (true, false) => Ok((selector, (0..source.columns).collect())),
+        (true, true) if source.rows == 1 || source.columns == 1 => {
+            if result.rows == source.rows {
+                Ok(((0..source.rows).collect(), selector))
+            } else {
+                Ok((selector, (0..source.columns).collect()))
+            }
+        }
+        (true, true) => Err(format!(
+            "matrix access selector is ambiguous for {}x{} -> {}x{}",
+            source.rows, source.columns, result.rows, result.columns
+        )),
+        (false, false) => Err(format!(
+            "matrix access selector cannot produce {}x{} from {}x{}",
+            result.rows, result.columns, source.rows, source.columns
+        )),
+    }
+}
+
 impl<'a> BatchCompiler<'a> {
     fn new(artifact: &'a ProgramArtifact, instances: u32) -> Self {
         Self {
@@ -1603,7 +1638,7 @@ impl<'a> BatchCompiler<'a> {
                 operation.as_str(),
                 "access/scalar" | "access/range" | "access/rows" | "access/columns"
             ) {
-                self.lower_access(output, &inputs)
+                self.lower_access(output, &inputs, &operation)
             } else if operation == "matrix/horzcat" {
                 self.lower_concatenate(output, &inputs, true)
             } else if operation == "matrix/vertcat" {
@@ -1710,6 +1745,7 @@ impl<'a> BatchCompiler<'a> {
         &mut self,
         output: CellSlotId,
         inputs: &[ArtifactSource],
+        operation: &str,
     ) -> Result<(), String> {
         if inputs.len() != 2 && inputs.len() != 3 {
             return Err(format!(
@@ -1725,33 +1761,13 @@ impl<'a> BatchCompiler<'a> {
                 self.constant_indices(inputs[2], source.columns, "column")?,
             )
         } else {
-            let selector =
-                self.constant_indices(inputs[1], source.rows.max(source.columns), "matrix")?;
-            let selects_columns = result.rows == source.rows && result.columns == selector.len();
-            let selects_rows = result.rows == selector.len() && result.columns == source.columns;
-            match (selects_rows, selects_columns) {
-                (false, true) => ((0..source.rows).collect(), selector),
-                (true, false) => (selector, (0..source.columns).collect()),
-                (true, true) if source.rows == 1 || source.columns == 1 => {
-                    if result.rows == source.rows {
-                        ((0..source.rows).collect(), selector)
-                    } else {
-                        (selector, (0..source.columns).collect())
-                    }
-                }
-                (true, true) => {
-                    return Err(format!(
-                        "matrix access selector is ambiguous for {}x{} -> {}x{}",
-                        source.rows, source.columns, result.rows, result.columns
-                    ));
-                }
-                (false, false) => {
-                    return Err(format!(
-                        "matrix access selector cannot produce {}x{} from {}x{}",
-                        result.rows, result.columns, source.rows, source.columns
-                    ));
-                }
-            }
+            let upper = match operation {
+                "access/rows" => source.rows,
+                "access/columns" => source.columns,
+                _ => source.rows.max(source.columns),
+            };
+            let selector = self.constant_indices(inputs[1], upper, "matrix")?;
+            single_selector_access_axes(operation, source, result, selector)?
         };
         if result.rows != rows.len() || result.columns != columns.len() {
             return Err(format!(
@@ -2667,6 +2683,29 @@ fn generate_wgsl(
     }
     shader.push_str("}\n");
     shader
+}
+
+#[cfg(test)]
+mod axis_tests {
+    use super::*;
+
+    #[test]
+    fn declared_access_axis_disambiguates_square_matrix_selection() {
+        let square = FixedShape {
+            rows: 3,
+            columns: 3,
+        };
+        let selector = vec![2, 0, 1];
+        assert_eq!(
+            single_selector_access_axes("access/rows", square, square, selector.clone()),
+            Ok((selector.clone(), vec![0, 1, 2]))
+        );
+        assert_eq!(
+            single_selector_access_axes("access/columns", square, square, selector.clone()),
+            Ok((vec![0, 1, 2], selector.clone()))
+        );
+        assert!(single_selector_access_axes("access/range", square, square, selector).is_err());
+    }
 }
 
 #[cfg(feature = "native")]

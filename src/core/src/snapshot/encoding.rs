@@ -139,6 +139,14 @@ pub(super) fn canonical_material(schema: &SchemaBody, data: &ValueData) -> Box<[
     sink.finish()
 }
 
+/// Returns the canonical payload length for already validated schema-directed
+/// data without allocating its encoded representation.
+pub fn canonical_data_payload_len(schema: &SchemaBody, data: &ValueData) -> usize {
+    let mut sink = LengthSnapshotSink { len: 0 };
+    encode_data(schema, data, &mut sink);
+    sink.len
+}
+
 pub(super) fn encode_data(schema: &SchemaBody, data: &ValueData, sink: &mut dyn SnapshotByteSink) {
     match (schema, data) {
         (SchemaBody::Dynamic, ValueData::Dynamic(value)) => sink.write(&value.canonical),

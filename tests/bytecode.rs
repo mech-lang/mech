@@ -375,6 +375,44 @@ fn declared_abs_family_activates_for_snapshot_numeric_representations() -> MResu
 }
 
 #[test]
+#[cfg(feature = "distribution-full")]
+fn typed_range_stats_and_combinatorics_contracts_execute_residently() -> MResult<()> {
+    let (_, range) = run_compiled_source("1<u64>..=4<u64>")?;
+    assert_u64_matrix(&range, &[1, 2, 3, 4]);
+    let (_, range) = run_compiled_source("1f32..=3f32")?;
+    assert_f32_matrix(&range, &[1.0, 2.0, 3.0]);
+
+    let (_, columns) =
+        run_compiled_source("+> stats\nstats/sum/column([1<u64> 2<u64>; 3<u64> 4<u64>])")?;
+    assert_u64_matrix(&columns, &[3, 7]);
+
+    let (_, rows) = run_compiled_source("+> stats\nstats/sum/row([1<u64> 2<u64>; 3<u64> 4<u64>])")?;
+    assert_u64_matrix(&rows, &[4, 6]);
+    let (_, scalar) =
+        run_compiled_source("+> combinatorics\ncombinatorics/n-choose-k(5<u64>, 2<u64>)")?;
+    assert_u64(&scalar, 10);
+    let (_, scalar) = run_compiled_source("+> combinatorics\ncombinatorics/n-choose-k(5/1, 2/1)")?;
+    assert!(matches!(
+        scalar.data(),
+        ValueData::Rational64(value)
+            if value.numerator() == 10 && value.denominator() == 1
+    ));
+    let (_, scalar) =
+        run_compiled_source("+> combinatorics\ncombinatorics/n-choose-k(5+0i, 2+0i)")?;
+    assert!(matches!(
+        scalar.data(),
+        ValueData::Complex64(value)
+            if value.real().to_f64() == 10.0 && value.imaginary().to_f64() == 0.0
+    ));
+
+    let (_, matrix) = run_compiled_source(
+        "+> combinatorics\ncombinatorics/n-choose-k([1<u64> 2<u64> 3<u64>], 2<u64>)",
+    )?;
+    assert_u64_matrix(&matrix, &[1, 1, 2, 2, 3, 3]);
+    Ok(())
+}
+
+#[test]
 fn dynamic_strict_equality_round_trips_through_bytecode() -> MResult<()> {
     let (parsed, value) = run_compiled_source("x := 1 + [4 5 6]\nx === [5 6 7]")?;
     assert_bool(&value, true);
