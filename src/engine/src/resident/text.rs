@@ -65,25 +65,80 @@ fn admit_string_materialization(
     Ok(())
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum StringMutationSelection {
+    Bitmap(Box<[u8]>),
+    One(usize),
+    All,
+}
+
+impl StringMutationSelection {
+    fn is_selected(&self, index: usize) -> bool {
+        match self {
+            Self::Bitmap(selected) => selected[index] != 0,
+            Self::One(selected) => *selected == index,
+            Self::All => true,
+        }
+    }
+
+    fn retained_nodes(&self) -> Result<u64, ResidentKernelError> {
+        match self {
+            Self::Bitmap(selected) => super::budget::checked_u64(selected.len())?
+                .checked_add(1)
+                .ok_or(ResidentKernelError::InvalidShape),
+            Self::One(_) | Self::All => Ok(1),
+        }
+    }
+}
+
+fn admit_string_selection_normalization(
+    compute_work: usize,
+    selector_bytes: usize,
+    index_bytes: usize,
+) -> Result<(), ResidentKernelError> {
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work,
+            selector_bytes,
+            index_bytes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
 fn prepare_string_mutation(
+    plan: StringMutationSelection,
     output_elements: usize,
     output_payload_bytes: usize,
     compute_work: usize,
     selector_bytes: usize,
     index_bytes: usize,
-) -> Result<super::budget::AdmittedMutationPlan<()>, ResidentKernelError> {
+) -> Result<super::budget::AdmittedMutationPlan<StringMutationSelection>, ResidentKernelError> {
     let container_bytes = output_elements
         .checked_mul(core::mem::size_of::<String>())
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_bytes = container_bytes
         .checked_add(output_payload_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let lane_nodes = super::budget::checked_u64(output_elements)?
+        .checked_add(1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let plan_nodes = plan.retained_nodes()?;
     super::budget::PreparedMutationPlan::new(
-        (),
+        plan,
         super::budget::PublishedOutputFootprint {
             elements: super::budget::checked_u64(output_elements)?,
             retained_bytes: super::budget::checked_u64(output_bytes)?,
-            retained_nodes: super::budget::checked_u64(output_elements)?,
+            retained_nodes: lane_nodes,
+        },
+        super::budget::MutationRetainedNodeFootprint {
+            current_persistent: lane_nodes,
+            normalized_plan: plan_nodes,
+            temporary_draft: lane_nodes,
         },
         super::budget::resident_cost! {
             compute_work,
@@ -94,7 +149,7 @@ fn prepare_string_mutation(
             index_bytes,
             ..super::budget::KernelCostEstimate::default()
         },
-    )
+    )?
     .admit()
 }
 
@@ -725,42 +780,59 @@ fn string_mask_assign(
     if indexes.len() != target.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
-    if indexes.iter().any(|selected| *selected > 1) {
-        return Err(ResidentKernelError::InvalidInput);
-    }
-    let selected = indexes.iter().filter(|selected| **selected != 0).count();
+    let compute_work = target
+        .len()
+        .checked_mul(4)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_selection_normalization(compute_work, indexes.len(), 0)?;
+    let mut selected = 0usize;
+    let plan = indexes
+        .iter()
+        .map(|selected_value| {
+            if *selected_value > 1 {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            selected = selected
+                .checked_add(usize::from(*selected_value != 0))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(*selected_value)
+        })
+        .collect::<Result<Vec<_>, ResidentKernelError>>()?
+        .into_boxed_slice();
     if selected == 0 {
         return Ok(false);
     }
+    let plan = StringMutationSelection::Bitmap(plan);
     let output_payload_bytes =
         target
             .iter()
-            .zip(indexes)
-            .try_fold(0usize, |bytes, (target, selected)| {
+            .enumerate()
+            .try_fold(0usize, |bytes, (ordinal, target)| {
                 bytes
-                    .checked_add(if *selected == 0 {
-                        target.len()
-                    } else {
+                    .checked_add(if plan.is_selected(ordinal) {
                         source.len()
+                    } else {
+                        target.len()
                     })
                     .ok_or(ResidentKernelError::InvalidShape)
             })?;
     let admitted = prepare_string_mutation(
+        plan,
         target.len(),
         output_payload_bytes,
-        target.len(),
+        compute_work,
         indexes.len(),
         0,
     )?;
-    admitted.into_plan();
+    let plan = admitted.into_plan();
     let next = target
         .iter()
-        .zip(indexes)
-        .map(|(target, selected)| {
-            if *selected == 0 {
-                target.clone()
-            } else {
+        .enumerate()
+        .map(|(ordinal, target)| {
+            if plan.is_selected(ordinal) {
                 source.clone()
+            } else {
+                target.clone()
             }
         })
         .collect::<Vec<_>>();
@@ -792,32 +864,38 @@ fn string_index_assign(
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
+    let plan = StringMutationSelection::One(target_index);
     let output_payload_bytes =
         target
             .iter()
             .enumerate()
             .try_fold(0usize, |bytes, (ordinal, value)| {
                 bytes
-                    .checked_add(if ordinal == target_index {
+                    .checked_add(if plan.is_selected(ordinal) {
                         source.len()
                     } else {
                         value.len()
                     })
                     .ok_or(ResidentKernelError::InvalidShape)
             })?;
+    let compute_work = target
+        .len()
+        .checked_mul(3)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let admitted = prepare_string_mutation(
+        plan,
         target.len(),
         output_payload_bytes,
-        target.len(),
+        compute_work,
         0,
         core::mem::size_of::<u64>(),
     )?;
-    admitted.into_plan();
+    let plan = admitted.into_plan();
     let next = target
         .iter()
         .enumerate()
         .map(|(ordinal, value)| {
-            if ordinal == target_index {
+            if plan.is_selected(ordinal) {
                 source.clone()
             } else {
                 value.clone()
@@ -845,9 +923,6 @@ fn string_indices_assign(
     let ResidentValueMut::String(target) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    for index in indexes {
-        checked_string_index(*index, target.len())?;
-    }
     if indexes.is_empty() {
         return Ok(false);
     }
@@ -855,39 +930,44 @@ fn string_indices_assign(
         .len()
         .checked_mul(core::mem::size_of::<u64>())
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let compute_work = target
+        .len()
+        .checked_mul(4)
+        .and_then(|work| work.checked_add(indexes.len()))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_selection_normalization(compute_work, 0, index_bytes)?;
+    let mut selected = vec![0u8; target.len()];
+    for index in indexes {
+        selected[checked_string_index(*index, target.len())?] = 1;
+    }
+    let plan = StringMutationSelection::Bitmap(selected.into_boxed_slice());
     let output_payload_bytes =
         target
             .iter()
             .enumerate()
             .try_fold(0usize, |bytes, (ordinal, value)| {
-                let selected = indexes
-                    .iter()
-                    .any(|index| *index as usize == ordinal.saturating_add(1));
                 bytes
-                    .checked_add(if selected { source.len() } else { value.len() })
+                    .checked_add(if plan.is_selected(ordinal) {
+                        source.len()
+                    } else {
+                        value.len()
+                    })
                     .ok_or(ResidentKernelError::InvalidShape)
             })?;
-    let compute_work = target
-        .len()
-        .checked_mul(indexes.len())
-        .and_then(|work| work.checked_add(indexes.len()))
-        .ok_or(ResidentKernelError::InvalidShape)?;
     let admitted = prepare_string_mutation(
+        plan,
         target.len(),
         output_payload_bytes,
         compute_work,
         0,
         index_bytes,
     )?;
-    admitted.into_plan();
+    let plan = admitted.into_plan();
     let next = target
         .iter()
         .enumerate()
         .map(|(ordinal, value)| {
-            if indexes
-                .iter()
-                .any(|index| *index as usize == ordinal.saturating_add(1))
-            {
+            if plan.is_selected(ordinal) {
                 source.clone()
             } else {
                 value.clone()
@@ -935,10 +1015,24 @@ fn string_all_assign(
         .len()
         .checked_mul(target.len())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let admitted = prepare_string_mutation(target.len(), output_payload_bytes, target.len(), 1, 0)?;
-    admitted.into_plan();
+    let compute_work = target
+        .len()
+        .checked_mul(2)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let admitted = prepare_string_mutation(
+        StringMutationSelection::All,
+        target.len(),
+        output_payload_bytes,
+        compute_work,
+        1,
+        0,
+    )?;
+    let plan = admitted.into_plan();
     let next = (0..target.len())
-        .map(|_| source.clone())
+        .map(|ordinal| {
+            debug_assert!(plan.is_selected(ordinal));
+            source.clone()
+        })
         .collect::<Vec<_>>();
     let changed = target != next;
     for (target, next) in target.iter_mut().zip(next) {

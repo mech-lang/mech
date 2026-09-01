@@ -21,8 +21,9 @@ pub use self::draft::{
     ValueDataDraft, ValueDraft,
 };
 pub use self::encoding::{
-    ValueFootprint, ValueFootprintError, canonical_data_payload_len,
-    canonical_data_retained_footprint, canonical_sequence_element_retained_footprint,
+    CanonicalDataWork, CanonicalDataWorkError, ValueFootprint, ValueFootprintError,
+    canonical_data_payload_len, canonical_data_retained_footprint,
+    canonical_sequence_element_retained_footprint, visit_canonical_data_work,
 };
 pub use self::error::{
     SchemaDataKind, SnapshotPath, SnapshotPathSegment, SnapshotValueError, ValueDataKind,

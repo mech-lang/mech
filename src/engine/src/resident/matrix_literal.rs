@@ -316,13 +316,16 @@ fn matrix_literal(
                 .ok_or(ResidentKernelError::InvalidOutput)?;
             let mut retained_bytes = 0usize;
             let mut retained_nodes = 0usize;
+            let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
             for source in 0..count {
                 let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
                     return Err(ResidentKernelError::InvalidInput);
                 };
-                let footprint = value
-                    .retained_footprint(schemas)
-                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                let footprint = super::budget::measure_canonical_value_footprint(
+                    &mut footprint_meter,
+                    value,
+                    schemas,
+                )?;
                 retained_bytes = retained_bytes
                     .checked_add(checked_cost_usize(footprint.retained_bytes)?)
                     .ok_or(ResidentKernelError::InvalidShape)?;

@@ -5,7 +5,7 @@ use super::budget::{
 };
 use mech_core::snapshot::{
     F64Bits, SnapshotValidationContext, Value, ValueDataDraft, ValueDraft,
-    canonical_data_retained_footprint, canonical_snapshot_data_draft,
+    canonical_snapshot_data_draft,
 };
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
@@ -596,16 +596,17 @@ fn set_cardinality(value: &Value) -> Result<usize, ResidentKernelError> {
 }
 
 fn value_retained_cost(
+    meter: &mut ResidentBudgetMeter,
     kernel: &BoundResidentKernel,
     value: &Value,
 ) -> Result<(u64, u64), ResidentKernelError> {
-    let footprint = value
-        .retained_footprint(
-            kernel
-                .snapshot_schemas()
-                .ok_or(ResidentKernelError::InvalidInput)?,
-        )
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let footprint = super::budget::measure_canonical_value_footprint(
+        meter,
+        value,
+        kernel
+            .snapshot_schemas()
+            .ok_or(ResidentKernelError::InvalidInput)?,
+    )?;
     Ok((footprint.retained_bytes, footprint.node_count))
 }
 
@@ -616,17 +617,31 @@ struct SetCandidateCost {
     comparison_work: u64,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct SetCandidateOperationPlan {
+    candidate_index: usize,
+    maximum_output_elements: Option<usize>,
+    candidate_retained_in_output: bool,
+}
+
 fn scalar_element_retained_cost(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     index: usize,
+    meter: &mut ResidentBudgetMeter,
 ) -> Result<SetCandidateCost, ResidentKernelError> {
-    let (retained_bytes, retained_nodes, comparison_work) = match inputs.get(index) {
+    let (retained_bytes, retained_nodes, comparison_work, work_already_metered) = match inputs
+        .get(index)
+    {
         Some(ResidentValueRef::Bool([value])) if *value <= 1 => {
-            (checked_u64(core::mem::size_of::<u8>())?, 1, 1)
+            (checked_u64(core::mem::size_of::<u8>())?, 1, 1, false)
         }
-        Some(ResidentValueRef::Index([_])) => (checked_u64(core::mem::size_of::<u64>())?, 1, 1),
-        Some(ResidentValueRef::F64([_])) => (checked_u64(core::mem::size_of::<f64>())?, 1, 1),
+        Some(ResidentValueRef::Index([_])) => {
+            (checked_u64(core::mem::size_of::<u64>())?, 1, 1, false)
+        }
+        Some(ResidentValueRef::F64([_])) => {
+            (checked_u64(core::mem::size_of::<f64>())?, 1, 1, false)
+        }
         Some(ResidentValueRef::String([value])) => (
             checked_cost_sum(&[
                 checked_u64(core::mem::size_of::<String>())?,
@@ -636,23 +651,30 @@ fn scalar_element_retained_cost(
             checked_u64(value.len())?
                 .checked_add(8)
                 .ok_or(ResidentKernelError::InvalidShape)?,
+            false,
         ),
-        Some(ResidentValueRef::Snapshot([Some(value)])) => value
-            .retained_footprint(
-                kernel
-                    .snapshot_schemas()
-                    .ok_or(ResidentKernelError::InvalidInput)?,
+        Some(ResidentValueRef::Snapshot([Some(value)])) => {
+            let schemas = kernel
+                .snapshot_schemas()
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            let footprint = super::budget::charge_canonical_value_footprint(meter, value, schemas)?;
+            (
+                footprint.retained_bytes,
+                footprint.node_count,
+                footprint.encoded_bytes.max(footprint.node_count).max(1),
+                true,
             )
-            .map(|footprint| {
-                (
-                    footprint.retained_bytes,
-                    footprint.node_count,
-                    footprint.encoded_bytes.max(footprint.node_count).max(1),
-                )
-            })
-            .map_err(|_| ResidentKernelError::InvalidInput)?,
+        }
         _ => return Err(ResidentKernelError::InvalidInput),
     };
+    if !work_already_metered {
+        meter.charge_retained_nodes(retained_nodes)?;
+        meter.charge_comparison_work(comparison_work)?;
+    }
+    if !work_already_metered {
+        meter.charge_temporary_bytes(retained_bytes)?;
+    }
+    meter.charge_cloned_bytes(retained_bytes)?;
     Ok(SetCandidateCost {
         retained_bytes,
         retained_nodes,
@@ -667,7 +689,12 @@ fn admit_set_candidate_operation(
     set: &Value,
     output_elements: Option<usize>,
     candidate_retained_in_output: bool,
-) -> Result<(), ResidentKernelError> {
+) -> Result<SetCandidateOperationPlan, ResidentKernelError> {
+    let operation = SetCandidateOperationPlan {
+        candidate_index,
+        maximum_output_elements: output_elements,
+        candidate_retained_in_output,
+    };
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
@@ -681,12 +708,8 @@ fn admit_set_candidate_operation(
         return Err(ResidentKernelError::InvalidInput);
     };
     let cardinality = set_value.elements().len();
-    let candidate = scalar_element_retained_cost(kernel, inputs, candidate_index)?;
     let mut meter = ResidentBudgetMeter::default();
-    meter.charge_temporary_bytes(candidate.retained_bytes)?;
-    meter.charge_cloned_bytes(candidate.retained_bytes)?;
-    meter.charge_retained_nodes(candidate.retained_nodes)?;
-    meter.charge_comparison_work(candidate.comparison_work)?;
+    let candidate = scalar_element_retained_cost(kernel, inputs, candidate_index, &mut meter)?;
     let set_container_bytes = checked_cost_sum(&[
         checked_u64(core::mem::size_of::<Value>())?,
         checked_cost_product(&[
@@ -697,16 +720,9 @@ fn admit_set_candidate_operation(
     meter.charge_selector_bytes(set_container_bytes)?;
     meter.charge_retained_nodes(1)?;
     for key in set_value.elements() {
-        let footprint = canonical_data_retained_footprint(element, key.data())
-            .map_err(|_| ResidentKernelError::InvalidInput)?;
-        meter.charge_selector_bytes(footprint.retained_bytes)?;
-        meter.charge_retained_nodes(footprint.node_count)?;
-        meter.charge_comparison_work(
-            candidate
-                .comparison_work
-                .checked_add(footprint.encoded_bytes.max(footprint.node_count).max(1))
-                .ok_or(ResidentKernelError::InvalidShape)?,
-        )?;
+        super::budget::charge_canonical_key_footprint(&mut meter, element, key.data())?;
+        // Each ordered-key comparison also inspects the borrowed candidate.
+        meter.charge_comparison_work(candidate.comparison_work)?;
     }
     let mut cost = meter.estimate();
     let set_bytes = cost.selector_bytes;
@@ -714,16 +730,25 @@ fn admit_set_candidate_operation(
         .retained_nodes
         .checked_sub(candidate.retained_nodes)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let current_persistent_nodes = cost.retained_nodes;
+    cost.retained_nodes = 0;
     let Some(output_elements) = output_elements else {
         return PreparedMutationPlan::new(
-            (),
+            operation,
             PublishedOutputFootprint {
                 elements: 1,
                 retained_bytes: checked_u64(core::mem::size_of::<u8>())?,
                 retained_nodes: 1,
             },
+            super::budget::MutationRetainedNodeFootprint {
+                current_persistent: current_persistent_nodes,
+                // `set_contains` clones and normalizes the candidate before
+                // the ordered lookup while both borrowed inputs remain live.
+                temporary_draft: candidate.retained_nodes,
+                ..super::budget::MutationRetainedNodeFootprint::default()
+            },
             cost,
-        )
+        )?
         .admit()
         .map(|admitted| admitted.into_plan());
     };
@@ -761,18 +786,29 @@ fn admit_set_candidate_operation(
         .container_bytes
         .checked_add(container_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    PreparedMutationPlan::new(
-        (),
+    // The cloned `ValueData` population and the canonical draft tree coexist
+    // while the immutable current set remains borrowed. The mutation plan
+    // adds the final published population separately.
+    let admitted = PreparedMutationPlan::new(
+        operation,
         PublishedOutputFootprint {
             elements: checked_u64(output_elements)?,
             retained_bytes: checked_cost_sum(&[output_clone_bytes, container_bytes])?,
             retained_nodes: output_nodes,
         },
+        super::budget::MutationRetainedNodeFootprint {
+            current_persistent: current_persistent_nodes,
+            temporary_draft: output_nodes
+                .checked_mul(2)
+                .and_then(|nodes| nodes.checked_add(candidate.retained_nodes))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            ..super::budget::MutationRetainedNodeFootprint::default()
+        },
         cost,
-    )
+    )?
     .admit()?
     .into_plan();
-    Ok(())
+    Ok(admitted)
 }
 
 fn admit_set_read(comparison_work: usize) -> Result<(), ResidentKernelError> {
@@ -884,8 +920,9 @@ fn merged_set_element_drafts(
         .ok_or(ResidentKernelError::InvalidInput)?;
     let left_count = set_cardinality(left)?;
     let right_count = set_cardinality(right)?;
-    let (left_bytes, left_nodes) = value_retained_cost(kernel, left)?;
-    let (right_bytes, right_nodes) = value_retained_cost(kernel, right)?;
+    let mut footprint_meter = ResidentBudgetMeter::default();
+    let (left_bytes, left_nodes) = value_retained_cost(&mut footprint_meter, kernel, left)?;
+    let (right_bytes, right_nodes) = value_retained_cost(&mut footprint_meter, kernel, right)?;
     admit_set_materialization(
         maximum_output_elements,
         checked_sum(&[left_count, right_count])?,
@@ -972,8 +1009,11 @@ fn set_cartesian_product(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
-    let (left_retained_bytes, left_retained_nodes) = value_retained_cost(kernel, left)?;
-    let (right_retained_bytes, right_retained_nodes) = value_retained_cost(kernel, right)?;
+    let mut footprint_meter = ResidentBudgetMeter::default();
+    let (left_retained_bytes, left_retained_nodes) =
+        value_retained_cost(&mut footprint_meter, kernel, left)?;
+    let (right_retained_bytes, right_retained_nodes) =
+        value_retained_cost(&mut footprint_meter, kernel, right)?;
     let left_count = set_cardinality(left)?;
     let right_count = set_cardinality(right)?;
     let output_len = checked_product(&[left_count, right_count])?;
@@ -1051,9 +1091,9 @@ fn set_powerset(
     };
     let member_copies = checked_product(&[element_count, copies_per_element])?;
     let output_elements = checked_sum(&[subset_count, member_copies])?;
-    let footprint = input
-        .retained_footprint(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let mut footprint_meter = ResidentBudgetMeter::default();
+    let footprint =
+        super::budget::measure_canonical_value_footprint(&mut footprint_meter, input, schemas)?;
     let retained_bytes = footprint
         .retained_bytes
         .checked_mul(checked_u64(copies_per_element)?)
@@ -1304,8 +1344,8 @@ fn element_of(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    admit_set_candidate_operation(kernel, inputs, 0, set, None, false)?;
-    let element = set_candidate_value(kernel, inputs, 0)?;
+    let plan = admit_set_candidate_operation(kernel, inputs, 0, set, None, false)?;
+    let element = set_candidate_value(kernel, inputs, plan.candidate_index)?;
     let next = set
         .set_contains(schemas, element.value(), element.schemas(schemas))
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -1342,8 +1382,8 @@ fn not_element_of(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    admit_set_candidate_operation(kernel, inputs, 0, set, None, false)?;
-    let element = set_candidate_value(kernel, inputs, 0)?;
+    let plan = admit_set_candidate_operation(kernel, inputs, 0, set, None, false)?;
+    let element = set_candidate_value(kernel, inputs, plan.candidate_index)?;
     let next = set
         .set_contains(schemas, element.value(), element.schemas(schemas))
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -1380,8 +1420,11 @@ fn insert(
     let maximum_output_elements = set_cardinality(set)?
         .checked_add(1)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_set_candidate_operation(kernel, inputs, 1, set, Some(maximum_output_elements), true)?;
-    let element = set_candidate_value(kernel, inputs, 1)?;
+    let plan =
+        admit_set_candidate_operation(kernel, inputs, 1, set, Some(maximum_output_elements), true)?;
+    debug_assert_eq!(plan.maximum_output_elements, Some(maximum_output_elements));
+    debug_assert!(plan.candidate_retained_in_output);
+    let element = set_candidate_value(kernel, inputs, plan.candidate_index)?;
     let elements = set
         .set_elements_after_insert(schemas, element.value(), element.schemas(schemas))
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -1398,8 +1441,11 @@ fn remove(
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    admit_set_candidate_operation(kernel, inputs, 1, set, Some(set_cardinality(set)?), false)?;
-    let element = set_candidate_value(kernel, inputs, 1)?;
+    let output_elements = set_cardinality(set)?;
+    let plan = admit_set_candidate_operation(kernel, inputs, 1, set, Some(output_elements), false)?;
+    debug_assert_eq!(plan.maximum_output_elements, Some(output_elements));
+    debug_assert!(!plan.candidate_retained_in_output);
+    let element = set_candidate_value(kernel, inputs, plan.candidate_index)?;
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
@@ -2045,5 +2091,66 @@ mod tests {
             };
             assert!(output.elements().is_empty());
         }
+    }
+
+    #[test]
+    fn recursively_large_set_candidate_stops_during_incremental_measurement() {
+        let width = super::super::budget::MAX_RESIDENT_RETAINED_NODES as usize + 1;
+        let element_body = SchemaBody::Tuple(vec![SchemaBody::Bool; width].into_boxed_slice());
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let element_handle = builder.insert(schema(element_body.clone())).unwrap();
+        let set_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(element_body),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let element_schema = build.resolve(element_handle).unwrap();
+        let set_schema = build.resolve(set_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let metadata = SetElementMetadata {
+            schema: element_schema,
+            schema_key: schemas.entry(element_schema).unwrap().key(),
+            shape: schemas
+                .get(element_schema)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+        };
+        let candidate = ValueDraft {
+            schema: element_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Tuple(
+                (0..width)
+                    .map(|_| ValueDataDraft::Bool(false))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let set = ValueDraft {
+            schema: set_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(Box::new([])),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let candidate_slot = [Some(candidate)];
+        let set_slot = [Some(set)];
+        let inputs = [
+            ResidentValueRef::Snapshot(&candidate_slot),
+            ResidentValueRef::Snapshot(&set_slot),
+        ];
+        let kernel = BoundResidentKernel::new(element_of, Box::new([]))
+            .with_snapshot_schemas(schemas)
+            .with_retained_state(Arc::new(metadata));
+        let mut output = [1_u8];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(output, [1]);
     }
 }

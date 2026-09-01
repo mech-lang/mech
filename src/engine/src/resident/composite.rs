@@ -439,6 +439,7 @@ fn checked_cost_usize(value: u64) -> Result<usize, ResidentKernelError> {
 }
 
 fn resident_child_clone_cost(
+    meter: &mut super::budget::ResidentBudgetMeter,
     input: ResidentValueRef<'_>,
     plan: &CompositeChildPlan,
 ) -> Result<(usize, usize), ResidentKernelError> {
@@ -488,9 +489,8 @@ fn resident_child_clone_cost(
             for value in values {
                 let value = value.as_ref().ok_or(ResidentKernelError::InvalidInput)?;
                 let schemas = value.schemas().ok_or(ResidentKernelError::InvalidInput)?;
-                let footprint = value
-                    .retained_footprint(&schemas)
-                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                let footprint =
+                    super::budget::measure_canonical_value_footprint(meter, value, &schemas)?;
                 retained = retained
                     .checked_add(checked_cost_usize(footprint.retained_bytes)?)
                     .ok_or(ResidentKernelError::InvalidShape)?;
@@ -534,13 +534,17 @@ fn composite_pack(
     let template_schemas = template
         .schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    let template_footprint = template
-        .retained_footprint(&template_schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
+    let template_footprint = super::budget::measure_canonical_value_footprint(
+        &mut footprint_meter,
+        template,
+        &template_schemas,
+    )?;
     let mut retained_bytes = checked_cost_usize(template_footprint.retained_bytes)?;
     let mut retained_nodes = checked_cost_usize(template_footprint.node_count)?;
     for (index, child) in plan.children.iter().enumerate() {
         let (bytes, nodes) = resident_child_clone_cost(
+            &mut footprint_meter,
             inputs
                 .get(index + 1)
                 .ok_or(ResidentKernelError::InvalidInput)?,

@@ -20,7 +20,10 @@ use mech_engine::resident::{
     ActivationFacts, ResidentActivationOptions, preflight_resident_target,
 };
 #[cfg(feature = "distribution-full")]
-use mech_engine::{ProgramArtifactDraft, encode_program_artifact_bytecode_v1};
+use mech_engine::{
+    ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft,
+    encode_program_artifact_bytecode_v1,
+};
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder, RuntimeProgramRoute};
 
 fn compile_source(source: &str) -> MResult<Vec<u8>> {
@@ -29,6 +32,57 @@ fn compile_source(source: &str) -> MResult<Vec<u8>> {
         .build_compiler()?
         .compile_source(source)
         .map(|product| product.into_parts().1)
+}
+
+#[cfg(feature = "distribution-full")]
+fn expected_artifact_selector(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+) -> Option<mech_core::ResidentResolvedSelector> {
+    fn resolve(
+        artifact: &ProgramArtifact,
+        source: ArtifactSource,
+        visited: &mut std::collections::BTreeSet<mech_core::CellSlotId>,
+    ) -> Option<mech_core::ResidentResolvedSelector> {
+        match source {
+            ArtifactSource::Constant(constant) => {
+                artifact
+                    .constants()
+                    .get(constant)
+                    .and_then(|value| match value.data() {
+                        ValueData::Id(id) => Some(mech_core::ResidentResolvedSelector::Id(*id)),
+                        data => mech_core::canonical_positional_ordinal(data)
+                            .ok()
+                            .and_then(|one_based| one_based.checked_sub(1))
+                            .and_then(|ordinal| usize::try_from(ordinal).ok())
+                            .map(mech_core::ResidentResolvedSelector::Ordinal),
+                    })
+            }
+            ArtifactSource::Slot(slot) => {
+                if !visited.insert(slot) {
+                    return None;
+                }
+                let declaration = artifact.slots().get(slot.get() as usize)?;
+                let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                    return None;
+                };
+                let node = artifact.nodes().get(node.get() as usize)?;
+                if node.operation.module_path.as_ref() != ["access"]
+                    || node.operation.operation_name != "index"
+                {
+                    return None;
+                }
+                let bindings = &artifact.bindings()
+                    [node.input_bindings.start as usize..node.input_bindings.end as usize];
+                let [BindingDeclaration::Input { source, .. }] = bindings else {
+                    return None;
+                };
+                resolve(artifact, *source, visited)
+            }
+        }
+    }
+
+    resolve(artifact, source, &mut std::collections::BTreeSet::new())
 }
 
 fn run_compiled_source(source: &str) -> MResult<(ParsedProgram, Value)> {
@@ -75,6 +129,47 @@ fn assert_source_and_bytecode_resident_parity(source: &str) -> MResult<()> {
         decoded.nodes().len(),
         "every node needs an exact resident capability witness: {source}",
     );
+    for case in &preflight.concrete_cases {
+        let node = &decoded.nodes()[case.node.get() as usize];
+        let bindings = &decoded.bindings()
+            [node.input_bindings.start as usize..node.input_bindings.end as usize];
+        assert_eq!(
+            case.input_resolved_selectors.len(),
+            bindings.len(),
+            "{source}"
+        );
+        for (binding, actual) in bindings.iter().zip(&case.input_resolved_selectors) {
+            let BindingDeclaration::Input {
+                source: artifact_source,
+                ..
+            } = binding
+            else {
+                panic!("node input range contained an output binding: {source}");
+            };
+            let expected = expected_artifact_selector(&decoded, *artifact_source);
+            assert_eq!(
+                *actual, expected,
+                "resident/native static selector planning diverged for {source}: {:?}",
+                case.operation,
+            );
+        }
+        let selector_count = bindings.len().saturating_sub(1);
+        if (case.operation.module_path.as_ref() == ["access"]
+            || (case.operation.module_path.as_ref() == ["core"]
+                && case.operation.operation_name.starts_with("assign")))
+            && case.operation.resolved_selection_mode(selector_count)
+                != Some(ResolvedSelectionMode::LinearGather)
+        {
+            assert!(
+                case.input_resolved_selectors
+                    .iter()
+                    .skip(1)
+                    .all(Option::is_some),
+                "resident/native planning did not retain every static selector for {source}: {:?}",
+                case.operation,
+            );
+        }
+    }
 
     let mut bytecode_runtime = RuntimeBuilder::new().function_catalog(catalog).build()?;
     let bytecode_loaded = bytecode_runtime

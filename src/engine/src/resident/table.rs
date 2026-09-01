@@ -1,6 +1,6 @@
 use super::budget::{
-    KernelCostEstimate, PreparedKernel, checked_cost_product, checked_cost_sum, checked_product,
-    checked_sum, checked_u64,
+    KernelCostEstimate, PreparedKernel, ResidentBudgetMeter, checked_cost_product,
+    checked_cost_sum, checked_product, checked_sum, checked_u64,
 };
 use crate::intrinsics::table_ops::{JoinMode, joined_table, joined_table_fields};
 use mech_core::{
@@ -305,12 +305,11 @@ fn table_join(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    let left_footprint = left
-        .retained_footprint(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
-    let right_footprint = right
-        .retained_footprint(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let mut footprint_meter = ResidentBudgetMeter::default();
+    let left_footprint =
+        super::budget::measure_canonical_value_footprint(&mut footprint_meter, left, schemas)?;
+    let right_footprint =
+        super::budget::measure_canonical_value_footprint(&mut footprint_meter, right, schemas)?;
     validate_join_bounds(
         mode,
         table_rows(left)?,

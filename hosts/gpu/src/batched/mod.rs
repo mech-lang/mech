@@ -2745,6 +2745,14 @@ fn generate_wgsl(
 mod axis_tests {
     use super::*;
 
+    fn typed_selector(kind: &str, value: u8) -> String {
+        match kind {
+            "f32" => format!("{value}.9<f32>"),
+            "f64" => format!("{value}.9"),
+            _ => format!("{value}<{kind}>"),
+        }
+    }
+
     #[test]
     fn declared_access_axis_disambiguates_square_matrix_selection() {
         let square = FixedShape {
@@ -2921,6 +2929,140 @@ mod axis_tests {
             )))
             .is_err()
         );
+    }
+
+    #[test]
+    fn generated_selector_family_survives_bytecode_and_gpu_static_lowering() {
+        let mut compiler = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap();
+        for kind in [
+            "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64",
+        ] {
+            let first = typed_selector(kind, 1);
+            let second = typed_selector(kind, 2);
+            let fourth = typed_selector(kind, 4);
+            let cases = [
+                (
+                    format!(
+                        "~result := 0f32\nmatrix := [1f32 2f32; 3f32 4f32]\nselector := {first}\nresult = matrix[selector]\nresult"
+                    ),
+                    ResolvedSelectionMode::LinearScalar,
+                    vec![1.0],
+                ),
+                (
+                    format!(
+                        "~result := [0f32; 0f32; 0f32]\nmatrix := [1f32 2f32; 3f32 4f32]\nselectors := [{fourth} {first} {fourth}]\nresult = matrix[selectors]\nresult"
+                    ),
+                    ResolvedSelectionMode::LinearGather,
+                    vec![4.0, 1.0, 4.0],
+                ),
+                (
+                    format!(
+                        "~result := [0f32 0f32]\nmatrix := [1f32 2f32; 3f32 4f32]\nselector := {second}\nresult = matrix[selector,:]\nresult"
+                    ),
+                    ResolvedSelectionMode::Rows,
+                    vec![3.0, 4.0],
+                ),
+                (
+                    format!(
+                        "~result := [0f32; 0f32]\nmatrix := [1f32 2f32; 3f32 4f32]\nselector := {second}\nresult = matrix[:,selector]\nresult"
+                    ),
+                    ResolvedSelectionMode::Columns,
+                    vec![2.0, 4.0],
+                ),
+                (
+                    format!(
+                        "~result := 0f32\nmatrix := [1f32 2f32; 3f32 4f32]\nrow := {second}\ncolumn := {first}\nresult = matrix[row,column]\nresult"
+                    ),
+                    ResolvedSelectionMode::Rectangle,
+                    vec![3.0],
+                ),
+            ];
+            for (source, expected_mode, expected) in cases {
+                let artifact = compiler
+                    .compile_source_artifact(&source)
+                    .unwrap_or_else(|error| panic!("{kind} GPU source did not compile: {error:?}"))
+                    .into_artifact();
+                let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact)
+                    .unwrap_or_else(|error| {
+                        panic!("{kind} GPU artifact did not encode: {error:?}")
+                    });
+                let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes)
+                    .unwrap_or_else(|error| {
+                        panic!("{kind} GPU artifact did not decode: {error:?}")
+                    });
+                let kernel = crate::ComputeLowerer
+                    .compile_batched(&artifact, 1)
+                    .unwrap_or_else(|error| {
+                        panic!("{kind} GPU lowering failed for {source:?}: {error:?}")
+                    });
+                let access = kernel
+                    .concrete_execution_cases()
+                    .iter()
+                    .find(|case| case.operation.module_path.as_ref() == ["access"])
+                    .unwrap_or_else(|| panic!("{kind} produced no GPU access witness: {source:?}"));
+                assert_eq!(
+                    access.operation.resolved_selection_mode(
+                        usize::from(expected_mode == ResolvedSelectionMode::Rectangle) + 1
+                    ),
+                    Some(expected_mode),
+                    "{kind}: {source}",
+                );
+                let mut session = kernel.prepare_cpu(&BTreeMap::new()).unwrap();
+                session.dispatch_turns(1).unwrap();
+                let actual =
+                    session.state().values().next().unwrap_or_else(|| {
+                        panic!("{kind} produced no GPU-backed state: {source:?}")
+                    });
+                assert_eq!(actual, &expected, "{kind}: {source}");
+            }
+
+            for source in [
+                format!(
+                    "~matrix := [1f32 2f32; 3f32 4f32]\nselector := {first}\nmatrix[selector] = 9f32\nmatrix"
+                ),
+                format!(
+                    "~matrix := [1f32 2f32; 3f32 4f32]\nselector := {second}\nmatrix[selector,:] = [9f32 10f32]\nmatrix"
+                ),
+                format!(
+                    "~matrix := [1f32 2f32; 3f32 4f32]\nselector := {second}\nmatrix[:,selector] = [9f32; 10f32]\nmatrix"
+                ),
+                format!(
+                    "~matrix := [1f32 2f32; 3f32 4f32]\nrow := {second}\ncolumn := {first}\nmatrix[row,column] = 9f32\nmatrix"
+                ),
+            ] {
+                let artifact = compiler
+                    .compile_source_artifact(&source)
+                    .unwrap_or_else(|error| {
+                        panic!("{kind} GPU-unavailable source did not compile: {error:?}")
+                    })
+                    .into_artifact();
+                let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact)
+                    .unwrap_or_else(|error| panic!("{kind} assignment did not encode: {error:?}"));
+                let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes)
+                    .unwrap_or_else(|error| panic!("{kind} assignment did not decode: {error:?}"));
+                let error = crate::ComputeLowerer
+                    .compile_batched(&artifact, 1)
+                    .unwrap_err();
+                assert!(
+                    error.diagnostics().iter().all(
+                        |diagnostic| diagnostic.code == GpuDiagnosticCode::OperationUnsupported
+                    ),
+                    "{kind} assignment must fail at GPU target admission: {error:?}",
+                );
+                assert!(
+                    error.diagnostics().iter().any(|diagnostic| {
+                        diagnostic
+                            .operation
+                            .as_deref()
+                            .is_some_and(|operation| operation.starts_with("core/assign"))
+                    }),
+                    "{kind} assignment must name the unavailable target operation: {error:?}",
+                );
+            }
+        }
     }
 }
 

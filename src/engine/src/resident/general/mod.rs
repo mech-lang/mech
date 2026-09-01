@@ -1098,6 +1098,9 @@ pub struct ConcreteExecutionCase {
     pub node: NodeId,
     pub operation: OperationReference,
     pub input_schemas: Box<[SchemaId]>,
+    /// Static selector identities retained by the resident/native plan for
+    /// each artifact input. Dynamic slot inputs remain `None`.
+    pub input_resolved_selectors: Box<[Option<mech_core::ResidentResolvedSelector>]>,
     pub output_schema: SchemaId,
     pub targets: ExecutionTargetSet,
 }
@@ -1201,22 +1204,37 @@ fn resident_concrete_execution_cases(
                 })
         })
         .map(|node| {
-            let input_schemas = node_inputs(artifact, node.node)?
-                .into_iter()
-                .map(|source| match source {
-                    ArtifactSource::Constant(constant) => artifact
-                        .constants()
-                        .get(constant)
-                        .map(Value::schema)
-                        .ok_or(ResidentActivationError::InvalidDependency { node: node.node }),
-                    ArtifactSource::Slot(slot) => artifact
-                        .slots()
-                        .get(slot.get() as usize)
-                        .map(|slot| slot.schema)
-                        .ok_or(ResidentActivationError::InvalidDependency { node: node.node }),
-                })
-                .collect::<Result<Vec<_>, _>>()?
-                .into_boxed_slice();
+            let mut input_schemas = Vec::new();
+            let mut input_resolved_selectors = Vec::new();
+            for source in node_inputs(artifact, node.node)? {
+                match source {
+                    ArtifactSource::Constant(constant) => {
+                        let value = artifact.constants().get(constant).ok_or(
+                            ResidentActivationError::InvalidDependency { node: node.node },
+                        )?;
+                        input_schemas.push(value.schema());
+                        input_resolved_selectors.push(artifact_static_selector(
+                            artifact,
+                            ArtifactSource::Constant(constant),
+                        ));
+                    }
+                    ArtifactSource::Slot(slot) => {
+                        input_schemas.push(
+                            artifact
+                                .slots()
+                                .get(slot.get() as usize)
+                                .map(|slot| slot.schema)
+                                .ok_or(ResidentActivationError::InvalidDependency {
+                                    node: node.node,
+                                })?,
+                        );
+                        input_resolved_selectors.push(artifact_static_selector(
+                            artifact,
+                            ArtifactSource::Slot(slot),
+                        ));
+                    }
+                }
+            }
             let output = node_output_slot(artifact, node.node)?;
             let output_schema = artifact
                 .slots()
@@ -1226,7 +1244,8 @@ fn resident_concrete_execution_cases(
             Ok(ConcreteExecutionCase {
                 node: node.node,
                 operation: node.operation.clone(),
-                input_schemas,
+                input_schemas: input_schemas.into_boxed_slice(),
+                input_resolved_selectors: input_resolved_selectors.into_boxed_slice(),
                 output_schema,
                 targets: ExecutionTargetSet::RESIDENT_CPU,
             })
@@ -2608,7 +2627,11 @@ fn source_port_layout(
                 resolved_selector: resident_resolved_selector(value),
             })
         }
-        ArtifactSource::Slot(slot) => Ok(slot_port_layout(&layout.slots[slot.get() as usize])),
+        ArtifactSource::Slot(slot) => {
+            let mut port = slot_port_layout(&layout.slots[slot.get() as usize]);
+            port.resolved_selector = artifact_static_selector(artifact, source);
+            Ok(port)
+        }
     }
 }
 
@@ -2634,6 +2657,49 @@ fn resident_resolved_selector(
     };
     let ordinal = usize::try_from(one_based.checked_sub(1)?).ok()?;
     Some(ResidentResolvedSelector::Ordinal(ordinal))
+}
+
+/// Resolves immutable scalar selector conversions embedded in the artifact.
+/// This follows only the canonical `access/index` conversion node; arbitrary
+/// derived slots and mutable inputs/state never acquire a static identity.
+fn artifact_static_selector(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+) -> Option<mech_core::ResidentResolvedSelector> {
+    fn resolve(
+        artifact: &ProgramArtifact,
+        source: ArtifactSource,
+        visited: &mut BTreeSet<CellSlotId>,
+    ) -> Option<mech_core::ResidentResolvedSelector> {
+        match source {
+            ArtifactSource::Constant(constant) => artifact
+                .constants()
+                .get(constant)
+                .and_then(resident_resolved_selector),
+            ArtifactSource::Slot(slot) => {
+                if !visited.insert(slot) {
+                    return None;
+                }
+                let declaration = artifact.slots().get(slot.get() as usize)?;
+                let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                    return None;
+                };
+                let node = artifact.nodes().get(node.get() as usize)?;
+                if node.operation.module_path.as_ref() != ["access"]
+                    || node.operation.operation_name != "index"
+                {
+                    return None;
+                }
+                let inputs = node_inputs(artifact, node.node).ok()?;
+                let [input] = inputs.as_slice() else {
+                    return None;
+                };
+                resolve(artifact, *input, visited)
+            }
+        }
+    }
+
+    resolve(artifact, source, &mut BTreeSet::new())
 }
 
 fn node_inputs(
