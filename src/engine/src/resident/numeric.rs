@@ -2259,6 +2259,112 @@ fn index_at(
     }
 }
 
+#[derive(Clone, Copy)]
+enum ValidatedIndices<'a> {
+    Index(&'a [u64]),
+    F64(&'a [f64]),
+}
+
+impl<'a> ValidatedIndices<'a> {
+    fn new(selector: ResidentValueRef<'a>, upper: usize) -> Result<Self, ResidentKernelError> {
+        let indices = match selector {
+            ResidentValueRef::Index(values) => Self::Index(values),
+            ResidentValueRef::F64(values) => {
+                if values
+                    .iter()
+                    .any(|value| !value.is_finite() || *value < 0.0 || value.fract() != 0.0)
+                {
+                    return Err(ResidentKernelError::InvalidInput);
+                }
+                Self::F64(values)
+            }
+            _ => return Err(ResidentKernelError::InvalidShape),
+        };
+        indices.try_for_each(|_, index| checked_one_based(index, upper).map(|_| ()))?;
+        Ok(indices)
+    }
+
+    fn len(self) -> usize {
+        match self {
+            Self::Index(values) => values.len(),
+            Self::F64(values) => values.len(),
+        }
+    }
+
+    fn try_for_each<E>(
+        self,
+        mut visitor: impl FnMut(usize, u64) -> Result<(), E>,
+    ) -> Result<(), E> {
+        match self {
+            Self::Index(values) => {
+                for (ordinal, index) in values.iter().copied().enumerate() {
+                    visitor(ordinal, index)?;
+                }
+            }
+            Self::F64(values) => {
+                for (ordinal, index) in values.iter().copied().enumerate() {
+                    visitor(ordinal, index as u64)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn try_for_each_position<E>(
+        self,
+        mut visitor: impl FnMut(usize, usize) -> Result<(), E>,
+    ) -> Result<(), E> {
+        self.try_for_each(|ordinal, index| visitor(ordinal, index as usize - 1))
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ValidatedPositions<'a> {
+    Mask(&'a [u8]),
+    Indices(ValidatedIndices<'a>),
+}
+
+impl<'a> ValidatedPositions<'a> {
+    fn new(selector: ResidentValueRef<'a>, output_len: usize) -> Result<Self, ResidentKernelError> {
+        match selector {
+            ResidentValueRef::Bool(values) if values.len() == output_len => {
+                if values.iter().any(|value| *value > 1) {
+                    return Err(ResidentKernelError::InvalidInput);
+                }
+                Ok(Self::Mask(values))
+            }
+            ResidentValueRef::Bool(_) => Err(ResidentKernelError::InvalidShape),
+            selector => ValidatedIndices::new(selector, output_len).map(Self::Indices),
+        }
+    }
+
+    fn len(self) -> usize {
+        match self {
+            Self::Mask(values) => values.iter().filter(|value| **value != 0).count(),
+            Self::Indices(indices) => indices.len(),
+        }
+    }
+
+    fn try_for_each<E>(
+        self,
+        mut visitor: impl FnMut(usize, usize) -> Result<(), E>,
+    ) -> Result<(), E> {
+        match self {
+            Self::Mask(values) => {
+                let mut ordinal = 0;
+                for (position, selected) in values.iter().copied().enumerate() {
+                    if selected != 0 {
+                        visitor(ordinal, position)?;
+                        ordinal += 1;
+                    }
+                }
+                Ok(())
+            }
+            Self::Indices(indices) => indices.try_for_each_position(visitor),
+        }
+    }
+}
+
 fn replace_f64(output: &mut [f64], mut next: impl FnMut(usize) -> f64) -> bool {
     let mut changed = false;
     for (index, target) in output.iter_mut().enumerate() {
@@ -2445,33 +2551,7 @@ fn indexed_assign(
     if output.len() != output_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let selector = input(inputs, 1)?;
-    let positions = match selector {
-        ResidentValueRef::Bool(values) if values.len() == output_len => {
-            if values.iter().any(|value| *value > 1) {
-                return Err(ResidentKernelError::InvalidInput);
-            }
-            values
-                .iter()
-                .enumerate()
-                .filter_map(|(index, include)| (*include != 0).then_some(index))
-                .collect::<Vec<_>>()
-        }
-        ResidentValueRef::Index(values) => values
-            .iter()
-            .map(|index| checked_one_based(*index, output_len))
-            .collect::<Result<Vec<_>, _>>()?,
-        ResidentValueRef::F64(values) => values
-            .iter()
-            .map(|index| {
-                if !index.is_finite() || index.fract() != 0.0 || *index < 1.0 {
-                    return Err(ResidentKernelError::InvalidInput);
-                }
-                checked_one_based(*index as u64, output_len)
-            })
-            .collect::<Result<Vec<_>, _>>()?,
-        _ => return Err(ResidentKernelError::InvalidShape),
-    };
+    let positions = ValidatedPositions::new(input(inputs, 1)?, output_len)?;
     let source = input(inputs, 0)?;
     let source_index = |ordinal: usize, position: usize| {
         if source.len() == 1 {
@@ -2485,54 +2565,57 @@ fn indexed_assign(
     if source.len() != 1 && source.len() != output_len && source.len() != positions.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
+    // The declared RMW contract permits the candidate to alias only the base
+    // input consumed by the execution layer. The source and selector lanes are
+    // immutable and cannot alias this output, so the validated plan is safe to
+    // replay without staging heap copies.
     match (source, output) {
         (ResidentValueRef::Bool(source), ResidentValueMut::Bool(output)) => {
-            let source = source.to_vec();
             let mut changed = false;
-            for (ordinal, position) in positions.into_iter().enumerate() {
+            positions.try_for_each(|ordinal, position| {
                 let next = source[source_index(ordinal, position)];
                 changed |= output[position] != next;
                 output[position] = next;
-            }
+                Ok::<(), ResidentKernelError>(())
+            })?;
             Ok(changed)
         }
         (ResidentValueRef::Index(source), ResidentValueMut::Index(output)) => {
-            let source = source.to_vec();
             let mut changed = false;
-            for (ordinal, position) in positions.into_iter().enumerate() {
+            positions.try_for_each(|ordinal, position| {
                 let next = source[source_index(ordinal, position)];
                 changed |= output[position] != next;
                 output[position] = next;
-            }
+                Ok::<(), ResidentKernelError>(())
+            })?;
             Ok(changed)
         }
         (ResidentValueRef::F64(source), ResidentValueMut::F64(output)) => {
-            let source = source.to_vec();
             let mut changed = false;
-            for (ordinal, position) in positions.into_iter().enumerate() {
+            positions.try_for_each(|ordinal, position| {
                 let next = source[source_index(ordinal, position)];
                 changed |= output[position].to_bits() != next.to_bits();
                 output[position] = next;
-            }
+                Ok::<(), ResidentKernelError>(())
+            })?;
             Ok(changed)
         }
         (ResidentValueRef::String(source), ResidentValueMut::String(output)) => {
-            let source = source.to_vec();
             let mut changed = false;
-            for (ordinal, position) in positions.into_iter().enumerate() {
+            positions.try_for_each(|ordinal, position| {
                 let next = &source[source_index(ordinal, position)];
                 changed |= output[position] != *next;
                 output[position].clone_from(next);
-            }
+                Ok::<(), ResidentKernelError>(())
+            })?;
             Ok(changed)
         }
         (ResidentValueRef::Snapshot(source), ResidentValueMut::Snapshot(output)) => {
-            let source = source.to_vec();
             let schemas = kernel
                 .snapshot_schemas()
                 .ok_or(ResidentKernelError::InvalidInput)?;
             let mut changed = false;
-            for (ordinal, position) in positions.into_iter().enumerate() {
+            positions.try_for_each(|ordinal, position| {
                 let next = &source[source_index(ordinal, position)];
                 let equal = match (next, &output[position]) {
                     (None, None) => true,
@@ -2542,8 +2625,13 @@ fn indexed_assign(
                     _ => false,
                 };
                 changed |= !equal;
+                Ok(())
+            })?;
+            positions.try_for_each(|ordinal, position| {
+                let next = &source[source_index(ordinal, position)];
                 output[position].clone_from(next);
-            }
+                Ok::<(), ResidentKernelError>(())
+            })?;
             Ok(changed)
         }
         _ => Err(ResidentKernelError::InvalidShape),
@@ -4072,15 +4160,15 @@ fn gather_1d(
     if output.len() != indices_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let indices = (0..indices_len)
-        .map(|ordinal| checked_one_based(index_at(inputs, 1, ordinal)?, source_values.len()))
-        .collect::<Result<Vec<_>, _>>()?;
+    let indices = ValidatedIndices::new(input(inputs, 1)?, source_values.len())?;
     let mut changed = false;
-    for (index, target) in indices.into_iter().zip(output.iter_mut()) {
+    indices.try_for_each_position(|ordinal, index| {
+        let target = &mut output[ordinal];
         let next = source_values[index];
         changed |= target.to_bits() != next.to_bits();
         *target = next;
-    }
+        Ok::<(), ResidentKernelError>(())
+    })?;
     Ok(changed)
 }
 
@@ -4619,11 +4707,9 @@ fn all_rows_columns(
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let columns = (0..selected_columns)
-        .map(|ordinal| checked_one_based(index_at(inputs, 1, ordinal)?, source_columns))
-        .collect::<Result<Vec<_>, _>>()?;
+    let selected_columns = ValidatedIndices::new(input(inputs, 1)?, source_columns)?;
     let mut changed = false;
-    for (ordinal, column) in columns.into_iter().enumerate() {
+    selected_columns.try_for_each_position(|ordinal, column| {
         let source = &source[column * rows..(column + 1) * rows];
         let target = &mut output[ordinal * rows..(ordinal + 1) * rows];
         changed |= target
@@ -4631,7 +4717,8 @@ fn all_rows_columns(
             .zip(source)
             .any(|(left, right)| left.to_bits() != right.to_bits());
         target.copy_from_slice(source);
-    }
+        Ok::<(), ResidentKernelError>(())
+    })?;
     Ok(changed)
 }
 
@@ -4682,18 +4769,17 @@ fn rows_all_columns(
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let selected_rows = (0..selected_rows)
-        .map(|ordinal| checked_one_based(index_at(inputs, 1, ordinal)?, rows))
-        .collect::<Result<Vec<_>, _>>()?;
+    let selected_rows = ValidatedIndices::new(input(inputs, 1)?, rows)?;
     let mut changed = false;
     let mut target_index = 0;
     for column in 0..columns {
-        for &row in &selected_rows {
+        selected_rows.try_for_each_position(|_, row| {
             let next = source[row + column * rows];
             changed |= output[target_index].to_bits() != next.to_bits();
             output[target_index] = next;
             target_index += 1;
-        }
+            Ok::<(), ResidentKernelError>(())
+        })?;
     }
     Ok(changed)
 }
@@ -4753,12 +4839,11 @@ fn indexed_rows(
     if index_count != source_rows {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let rows = (0..index_count)
-        .map(|occurrence| checked_one_based(index_at(inputs, 1, occurrence)?, target_rows))
-        .collect::<Result<Vec<_>, _>>()?;
-    let source_values = source_values.to_vec();
+    let rows = ValidatedIndices::new(input(inputs, 1)?, target_rows)?;
+    // As with indexed assignment, the RMW alias policy applies only to the
+    // hidden base input; source_values remains immutable while this plan runs.
     let mut changed = false;
-    for (occurrence, row) in rows.into_iter().enumerate() {
+    rows.try_for_each_position(|occurrence, row| {
         for column in 0..columns {
             let target = row + column * target_rows;
             let source = occurrence + column * source_rows;
@@ -4766,7 +4851,8 @@ fn indexed_rows(
             changed |= next.to_bits() != output[target].to_bits();
             output[target] = next;
         }
-    }
+        Ok::<(), ResidentKernelError>(())
+    })?;
     Ok(changed)
 }
 
