@@ -13,9 +13,9 @@
       "hosts/gpu/src/batched/mod.rs",
       "hosts/gpu/src/metal.rs"
     ],
-    "added_lines": 370,
+    "added_lines": 438,
     "deleted_lines": 85,
-    "changed_line_slots": 455,
+    "changed_line_slots": 523,
     "note": "This is backend/compiler support for native Metal and the direct benchmark path; generated WGSL/MSL is an artifact, not a second user program."
   },
   "rows": [
@@ -86,15 +86,15 @@
       "note": "The compact controls preserve the checked-in Rust algorithms while removing narrative scaffolding; the advanced control still changes the value representation and execution loop.",
       "baseline_lines": 210,
       "baseline_chars": 6454,
-      "advanced_lines": 377,
-      "advanced_chars": 12024,
+      "advanced_lines": 598,
+      "advanced_chars": 20655,
       "baseline_code": {
         "lines": 206,
         "chars": 5003
       },
       "advanced_code": {
-        "lines": 359,
-        "chars": 8900
+        "lines": 566,
+        "chars": 13848
       },
       "factors": {
         "layout": "fixed scalar arrays -> four-lane packed values",
@@ -113,10 +113,10 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 493,
-        "added_lines": 342,
-        "deleted_lines": 175,
-        "changed_chars": 15950
+        "changed_line_slots": 701,
+        "added_lines": 578,
+        "deleted_lines": 190,
+        "changed_chars": 23858
       },
       "baseline_to_base_mech": {
         "changed_line_slots": 210,
@@ -125,10 +125,10 @@
         "changed_chars": 6454
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 377,
-        "added_lines": 377,
-        "deleted_lines": 46,
-        "changed_chars": 12024
+        "changed_line_slots": 596,
+        "added_lines": 596,
+        "deleted_lines": 44,
+        "changed_chars": 20653
       },
       "throughput_millions": {
         "checked": 25.650480145,
@@ -430,24 +430,24 @@
       "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
       "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
       "baseline_label": "same fixed-shape JIT pipeline",
-      "advanced_label": "same pipeline; checked publication select",
-      "note": "Halide is a fixed-shape C++ pipeline JIT. Checked mode selects the previous lane state when the candidate fails the finite/diagonal/symmetry checks.",
-      "baseline_lines": 29,
-      "baseline_chars": 4093,
-      "advanced_lines": 29,
-      "advanced_chars": 4093,
+      "advanced_label": "same pipeline; strict checked publication and fault output",
+      "note": "Halide is a fixed-shape C++ pipeline JIT. Checked mode selects the previous lane state when the candidate fails the finite/diagonal/symmetry checks and emits a per-lane fault code for host observation.",
+      "baseline_lines": 32,
+      "baseline_chars": 7517,
+      "advanced_lines": 32,
+      "advanced_chars": 7517,
       "baseline_code": {
-        "lines": 18,
-        "chars": 3875
+        "lines": 20,
+        "chars": 7278
       },
       "advanced_code": {
-        "lines": 18,
-        "chars": 3875
+        "lines": 20,
+        "chars": 7278
       },
       "factors": {
         "layout": "fixed-shape lane buffers, vectorized by eight",
         "boundary": "one JIT pipeline call per host turn",
-        "contract": "checked select keeps prior lane; unchecked selects candidate"
+        "contract": "checked validates finite/positive/symmetric candidates, reports per-lane faults, and keeps prior; unchecked omits checks"
       },
       "throughput_variants": {
         "baseline": {
@@ -467,16 +467,16 @@
         "changed_chars": 0
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 53,
-        "added_lines": 28,
+        "changed_line_slots": 54,
+        "added_lines": 31,
         "deleted_lines": 45,
-        "changed_chars": 4092
+        "changed_chars": 7516
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 53,
-        "added_lines": 28,
+        "changed_line_slots": 54,
+        "added_lines": 31,
         "deleted_lines": 45,
-        "changed_chars": 4092
+        "changed_chars": 7516
       },
       "throughput_millions": {
         "checked": 2.707078841979349,
@@ -490,17 +490,17 @@
       "baseline_label": "same data-parallel program",
       "advanced_label": "same program; multicore worker count",
       "note": "Futhark expresses the lane map in the source. The reported advanced control uses the same source with eight multicore workers and keeps the turns loop inside one compiled invocation; OpenCL is recorded separately when the local driver can execute it.",
-      "baseline_lines": 45,
-      "baseline_chars": 2430,
-      "advanced_lines": 45,
-      "advanced_chars": 2430,
+      "baseline_lines": 58,
+      "baseline_chars": 3246,
+      "advanced_lines": 58,
+      "advanced_chars": 3246,
       "baseline_code": {
-        "lines": 45,
-        "chars": 2307
+        "lines": 56,
+        "chars": 3098
       },
       "advanced_code": {
-        "lines": 45,
-        "chars": 2307
+        "lines": 56,
+        "chars": 3098
       },
       "factors": {
         "layout": "fixed-size array of 12-value lane states",
@@ -525,16 +525,16 @@
         "changed_chars": 0
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 46,
-        "added_lines": 45,
-        "deleted_lines": 46,
-        "changed_chars": 2430
+        "changed_line_slots": 87,
+        "added_lines": 56,
+        "deleted_lines": 44,
+        "changed_chars": 4332
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 46,
-        "added_lines": 45,
-        "deleted_lines": 46,
-        "changed_chars": 2430
+        "changed_line_slots": 87,
+        "added_lines": 56,
+        "deleted_lines": 44,
+        "changed_chars": 4332
       },
       "throughput_millions": {
         "checked": 48.390999274135005,

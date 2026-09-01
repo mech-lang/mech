@@ -11,24 +11,24 @@
 <text x="940.0" y="502" text-anchor="middle" class="muted" font-size="12">0</text>
 <line x1="364.0" y1="108" x2="364.0" y2="480" class="grid"/>
 <line x1="1064.0" y1="108" x2="1064.0" y2="480" class="grid"/>
-<text x="364.0" y="502" text-anchor="middle" class="muted" font-size="12">98</text>
-<text x="1064.0" y="502" text-anchor="middle" class="muted" font-size="12">3,190</text>
+<text x="364.0" y="502" text-anchor="middle" class="muted" font-size="12">140</text>
+<text x="1064.0" y="502" text-anchor="middle" class="muted" font-size="12">4,771</text>
 <line x1="488.0" y1="108" x2="488.0" y2="480" class="grid"/>
 <line x1="1188.0" y1="108" x2="1188.0" y2="480" class="grid"/>
-<text x="488.0" y="502" text-anchor="middle" class="muted" font-size="12">197</text>
-<text x="1188.0" y="502" text-anchor="middle" class="muted" font-size="12">6,380</text>
+<text x="488.0" y="502" text-anchor="middle" class="muted" font-size="12">280</text>
+<text x="1188.0" y="502" text-anchor="middle" class="muted" font-size="12">9,543</text>
 <line x1="612.0" y1="108" x2="612.0" y2="480" class="grid"/>
 <line x1="1312.0" y1="108" x2="1312.0" y2="480" class="grid"/>
-<text x="612.0" y="502" text-anchor="middle" class="muted" font-size="12">295</text>
-<text x="1312.0" y="502" text-anchor="middle" class="muted" font-size="12">9,570</text>
+<text x="612.0" y="502" text-anchor="middle" class="muted" font-size="12">420</text>
+<text x="1312.0" y="502" text-anchor="middle" class="muted" font-size="12">14,314</text>
 <line x1="736.0" y1="108" x2="736.0" y2="480" class="grid"/>
 <line x1="1436.0" y1="108" x2="1436.0" y2="480" class="grid"/>
-<text x="736.0" y="502" text-anchor="middle" class="muted" font-size="12">394</text>
-<text x="1436.0" y="502" text-anchor="middle" class="muted" font-size="12">12,760</text>
+<text x="736.0" y="502" text-anchor="middle" class="muted" font-size="12">560</text>
+<text x="1436.0" y="502" text-anchor="middle" class="muted" font-size="12">19,086</text>
 <line x1="860.0" y1="108" x2="860.0" y2="480" class="grid"/>
 <line x1="1560.0" y1="108" x2="1560.0" y2="480" class="grid"/>
-<text x="860.0" y="502" text-anchor="middle" class="muted" font-size="12">493</text>
-<text x="1560.0" y="502" text-anchor="middle" class="muted" font-size="12">15,950</text>
+<text x="860.0" y="502" text-anchor="middle" class="muted" font-size="12">701</text>
+<text x="1560.0" y="502" text-anchor="middle" class="muted" font-size="12">23,858</text>
 <text x="226" y="137" text-anchor="end" class="label">Mech</text>
 <rect x="240" y="123" width="1.0" height="22" rx="3" fill="#f4c430" opacity="0.9"/>
 <text x="248.0" y="138" class="value">0</text>
@@ -50,29 +50,29 @@
 <rect x="940.0" y="243" width="1.0" height="22" rx="3" fill="#e94f37" opacity="0.9"/>
 <text x="948.0" y="258" class="value">0</text>
 <text x="226" y="297" text-anchor="end" class="label">NumPy</text>
-<rect x="240" y="283" width="36.5" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="284.5" y="298" class="value">29</text>
-<rect x="940.0" y="283" width="120.1" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="1068.1" y="298" class="value">3,090</text>
+<rect x="240" y="283" width="25.6" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="273.6" y="298" class="value">29</text>
+<rect x="940.0" y="283" width="80.3" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="1028.3" y="298" class="value">3,090</text>
 <text x="226" y="337" text-anchor="end" class="label">LuaJIT</text>
-<rect x="240" y="323" width="188.6" height="22" rx="3" fill="#5ba37f" opacity="0.9"/>
-<text x="436.6" y="338" class="value">150</text>
-<rect x="940.0" y="323" width="300.0" height="22" rx="3" fill="#5ba37f" opacity="0.9"/>
-<text x="1248.0" y="338" class="value">7,719</text>
+<rect x="240" y="323" width="132.7" height="22" rx="3" fill="#5ba37f" opacity="0.9"/>
+<text x="380.7" y="338" class="value">150</text>
+<rect x="940.0" y="323" width="200.6" height="22" rx="3" fill="#5ba37f" opacity="0.9"/>
+<text x="1148.6" y="338" class="value">7,719</text>
 <text x="226" y="377" text-anchor="end" class="label">Julia</text>
-<rect x="240" y="363" width="251.5" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="499.5" y="378" class="value">200</text>
-<rect x="940.0" y="363" width="349.0" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="1297.0" y="378" class="value">8,979</text>
+<rect x="240" y="363" width="176.9" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="424.9" y="378" class="value">200</text>
+<rect x="940.0" y="363" width="233.3" height="22" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="1181.3" y="378" class="value">8,979</text>
 <text x="226" y="417" text-anchor="end" class="label">Taichi</text>
-<rect x="240" y="403" width="281.7" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
-<text x="529.7" y="418" class="value">224</text>
-<rect x="940.0" y="403" width="452.5" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
-<text x="1400.5" y="418" class="value">11,640</text>
+<rect x="240" y="403" width="198.1" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="446.1" y="418" class="value">224</text>
+<rect x="940.0" y="403" width="302.5" height="22" rx="3" fill="#e36b6b" opacity="0.9"/>
+<text x="1250.5" y="418" class="value">11,640</text>
 <text x="226" y="457" text-anchor="end" class="label">Rust</text>
 <rect x="240" y="443" width="620.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
-<text x="852.0" y="458" class="value">493</text>
+<text x="852.0" y="458" class="value">701</text>
 <rect x="940.0" y="443" width="620.0" height="22" rx="3" fill="#dea584" opacity="0.9"/>
-<text x="1552.0" y="458" class="value">15,950</text>
-<text x="42" y="535" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed 455 backend line slots and is intentionally not counted as program edits.</text>
+<text x="1552.0" y="458" class="value">23,858</text>
+<text x="42" y="535" class="muted" font-size="12">Mech uses the same high-level `.mec` source for every backend; native-Metal support changed 523 backend line slots and is intentionally not counted as program edits.</text>
 </svg>

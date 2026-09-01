@@ -101,8 +101,8 @@ VARIANTS = [
         "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
         "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
         "baseline_label": "same fixed-shape JIT pipeline",
-        "advanced_label": "same pipeline; checked publication select",
-        "note": "Halide is a fixed-shape C++ pipeline JIT. Checked mode selects the previous lane state when the candidate fails the finite/diagonal/symmetry checks.",
+        "advanced_label": "same pipeline; strict checked publication and fault output",
+        "note": "Halide is a fixed-shape C++ pipeline JIT. Checked mode selects the previous lane state when the candidate fails the finite/diagonal/symmetry checks and emits a per-lane fault code for host observation.",
     },
     {
         "language": "Futhark",
@@ -154,7 +154,7 @@ FACTORS = {
     "Halide": {
         "layout": "fixed-shape lane buffers, vectorized by eight",
         "boundary": "one JIT pipeline call per host turn",
-        "contract": "checked select keeps prior lane; unchecked selects candidate",
+        "contract": "checked validates finite/positive/symmetric candidates, reports per-lane faults, and keeps prior; unchecked omits checks",
     },
     "Futhark": {
         "layout": "fixed-size array of 12-value lane states",
@@ -369,9 +369,14 @@ def build_report(cross: dict, native: dict, taichi: dict, lua: dict, minimal: di
     cross_config = cross.get("configuration", {})
     native_config = native.get("configuration", {})
     minimal_config = (minimal or {}).get("configuration", {})
-    scalar_workload = f"{cross_config.get('scalar_instances', '?'):,} x {cross_config.get('scalar_turns', '?')}"
-    native_workload = f"{native_config.get('instances', '?'):,} x {native_config.get('turns', '?')}"
-    minimal_workload = f"{minimal_config.get('instances', '?'):,} x {minimal_config.get('turns', '?')}"
+
+    def extent(config: dict, key: str) -> str:
+        value = config.get(key, "?")
+        return f"{value:,}" if isinstance(value, int) else str(value)
+
+    scalar_workload = f"{extent(cross_config, 'scalar_instances')} x {extent(cross_config, 'scalar_turns')}"
+    native_workload = f"{extent(native_config, 'instances')} x {extent(native_config, 'turns')}"
+    minimal_workload = f"{extent(minimal_config, 'instances')} x {extent(minimal_config, 'turns')}"
     workload = {
         "Mech": f"{scalar_workload} -> {native_workload}",
         "Taichi": f"{native_workload} -> {native_workload}",
