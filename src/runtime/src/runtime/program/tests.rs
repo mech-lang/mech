@@ -2784,20 +2784,20 @@ fn production_source_and_bytecode_load_residently_without_engine_selection() {
 }
 
 #[test]
-fn production_unsupported_semantics_fail_without_installing_legacy() {
+fn production_tuple_access_loads_residently_without_legacy_fallback() {
     let mut runtime = runtime();
-    let error = runtime
+    let outcome = runtime
         .load_source_program(
             "tuple := (1, 2); tuple.2",
             crate::ResidentDurabilityPolicy::Volatile,
         )
-        .unwrap_err();
-    let failure = error.kind_as::<ResidentRouteFailure>().unwrap();
-    assert_eq!(
-        failure.class,
-        ResidentRouteFailureClass::SemanticUnsupported
-    );
-    assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
+        .unwrap();
+    assert_eq!(outcome.route, RuntimeProgramRoute::ResidentPure);
+    assert!(matches!(
+        outcome.initial_value.value().data(),
+        ValueData::F64(value) if value.to_f64() == 2.0
+    ));
+    assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
 }
 
 #[test]
