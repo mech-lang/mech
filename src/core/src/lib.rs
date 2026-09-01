@@ -125,6 +125,7 @@ pub mod read_source;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub mod resident_execution;
+pub mod selector;
 pub mod snapshot;
 pub mod state_journal;
 pub mod stdlib;
@@ -147,6 +148,7 @@ pub use self::program::*;
 pub use self::reactive_transaction::*;
 pub use self::read_source::ReadSource;
 pub use self::schema::*;
+pub use self::selector::*;
 pub use self::semantic_error::*;
 pub use self::semantic_identity::*;
 pub use self::snapshot::{

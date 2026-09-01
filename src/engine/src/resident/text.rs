@@ -65,6 +65,39 @@ fn admit_string_materialization(
     Ok(())
 }
 
+fn prepare_string_mutation(
+    output_elements: usize,
+    output_payload_bytes: usize,
+    compute_work: usize,
+    selector_bytes: usize,
+    index_bytes: usize,
+) -> Result<super::budget::AdmittedMutationPlan<()>, ResidentKernelError> {
+    let container_bytes = output_elements
+        .checked_mul(core::mem::size_of::<String>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_bytes = container_bytes
+        .checked_add(output_payload_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    super::budget::PreparedMutationPlan::new(
+        (),
+        super::budget::PublishedOutputFootprint {
+            elements: super::budget::checked_u64(output_elements)?,
+            retained_bytes: super::budget::checked_u64(output_bytes)?,
+            retained_nodes: super::budget::checked_u64(output_elements)?,
+        },
+        super::budget::resident_cost! {
+            compute_work,
+            temporary_bytes: output_payload_bytes,
+            cloned_bytes: output_payload_bytes,
+            container_bytes,
+            selector_bytes,
+            index_bytes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()
+}
+
 pub(super) fn bind_string_transpose(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -699,10 +732,6 @@ fn string_mask_assign(
     if selected == 0 {
         return Ok(false);
     }
-    let cloned_bytes = source
-        .len()
-        .checked_mul(selected)
-        .ok_or(ResidentKernelError::InvalidShape)?;
     let output_payload_bytes =
         target
             .iter()
@@ -716,21 +745,28 @@ fn string_mask_assign(
                     })
                     .ok_or(ResidentKernelError::InvalidShape)
             })?;
-    admit_string_materialization(
+    let admitted = prepare_string_mutation(
         target.len(),
         output_payload_bytes,
-        cloned_bytes,
         target.len(),
-        0,
         indexes.len(),
         0,
     )?;
-    let mut changed = false;
-    for (target, selected) in target.iter_mut().zip(indexes) {
-        if *selected != 0 && target != source {
-            target.clone_from(source);
-            changed = true;
-        }
+    admitted.into_plan();
+    let next = target
+        .iter()
+        .zip(indexes)
+        .map(|(target, selected)| {
+            if *selected == 0 {
+                target.clone()
+            } else {
+                source.clone()
+            }
+        })
+        .collect::<Vec<_>>();
+    let changed = target != next;
+    for (target, next) in target.iter_mut().zip(next) {
+        *target = next;
     }
     Ok(changed)
 }
@@ -769,19 +805,28 @@ fn string_index_assign(
                     })
                     .ok_or(ResidentKernelError::InvalidShape)
             })?;
-    admit_string_materialization(
+    let admitted = prepare_string_mutation(
         target.len(),
         output_payload_bytes,
-        source.len(),
         target.len(),
-        0,
         0,
         core::mem::size_of::<u64>(),
     )?;
-    let target = &mut target[target_index];
-    let changed = target != source;
-    if changed {
-        target.clone_from(source);
+    admitted.into_plan();
+    let next = target
+        .iter()
+        .enumerate()
+        .map(|(ordinal, value)| {
+            if ordinal == target_index {
+                source.clone()
+            } else {
+                value.clone()
+            }
+        })
+        .collect::<Vec<_>>();
+    let changed = target != next;
+    for (target, next) in target.iter_mut().zip(next) {
+        *target = next;
     }
     Ok(changed)
 }
@@ -806,10 +851,6 @@ fn string_indices_assign(
     if indexes.is_empty() {
         return Ok(false);
     }
-    let cloned_bytes = source
-        .len()
-        .checked_mul(indexes.len())
-        .ok_or(ResidentKernelError::InvalidShape)?;
     let index_bytes = indexes
         .len()
         .checked_mul(core::mem::size_of::<u64>())
@@ -831,22 +872,31 @@ fn string_indices_assign(
         .checked_mul(indexes.len())
         .and_then(|work| work.checked_add(indexes.len()))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_materialization(
+    let admitted = prepare_string_mutation(
         target.len(),
         output_payload_bytes,
-        cloned_bytes,
         compute_work,
-        0,
         0,
         index_bytes,
     )?;
-    let mut changed = false;
-    for index in indexes {
-        let index = checked_string_index(*index, target.len())?;
-        if target[index] != *source {
-            target[index].clone_from(source);
-            changed = true;
-        }
+    admitted.into_plan();
+    let next = target
+        .iter()
+        .enumerate()
+        .map(|(ordinal, value)| {
+            if indexes
+                .iter()
+                .any(|index| *index as usize == ordinal.saturating_add(1))
+            {
+                source.clone()
+            } else {
+                value.clone()
+            }
+        })
+        .collect::<Vec<_>>();
+    let changed = target != next;
+    for (target, next) in target.iter_mut().zip(next) {
+        *target = next;
     }
     Ok(changed)
 }
@@ -881,25 +931,18 @@ fn string_all_assign(
     if *selected == 0 {
         return Ok(false);
     }
-    let cloned_bytes = source
+    let output_payload_bytes = source
         .len()
         .checked_mul(target.len())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_materialization(
-        target.len(),
-        cloned_bytes,
-        cloned_bytes,
-        target.len(),
-        0,
-        1,
-        0,
-    )?;
-    let mut changed = false;
-    for target in target {
-        if target != source {
-            target.clone_from(source);
-            changed = true;
-        }
+    let admitted = prepare_string_mutation(target.len(), output_payload_bytes, target.len(), 1, 0)?;
+    admitted.into_plan();
+    let next = (0..target.len())
+        .map(|_| source.clone())
+        .collect::<Vec<_>>();
+    let changed = target != next;
+    for (target, next) in target.iter_mut().zip(next) {
+        *target = next;
     }
     Ok(changed)
 }
@@ -1045,6 +1088,21 @@ mod tests {
             super::super::budget::MAX_RESIDENT_OUTPUT_BYTES as usize
         );
         assert_eq!(output[1], "old");
+
+        let source = ["y".repeat(super::super::budget::MAX_RESIDENT_CLONED_BYTES as usize / 2)];
+        let repeated = [2_u64, 2, 2];
+        let inputs = Refs(vec![
+            ResidentValueRef::String(&source),
+            ResidentValueRef::Index(&repeated),
+        ]);
+        let mut output = ["left".to_owned(), "right".to_owned()];
+        assert_eq!(
+            BoundResidentKernel::new(string_indices_assign, Box::new([]))
+                .execute(&inputs, ResidentValueMut::String(&mut output)),
+            Ok(true),
+        );
+        assert_eq!(output[0], "left");
+        assert_eq!(output[1], source[0]);
     }
 
     #[test]

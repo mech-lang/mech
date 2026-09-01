@@ -50,6 +50,38 @@ pub(crate) struct KernelCostEstimate {
     pub retained_nodes: u64,
 }
 
+/// Complete retained state after a mutation publishes, never merely the bytes
+/// changed by the current execution.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(crate) struct PublishedOutputFootprint {
+    pub elements: u64,
+    pub retained_bytes: u64,
+    pub retained_nodes: u64,
+}
+
+/// A mutation plan whose final published footprint is part of the admission
+/// authority rather than an optional call-site convention.
+#[derive(Clone, Debug)]
+pub(crate) struct PreparedMutationPlan<P> {
+    operation: P,
+    final_output: PublishedOutputFootprint,
+    cost: KernelCostEstimate,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct AdmittedMutationPlan<P> {
+    operation: P,
+    _permit: ResidentBudgetPermit,
+}
+
+/// Incremental fail-closed accounting for data-dependent borrowed traversals.
+/// Every charge is checked immediately, so measuring a late or missing key
+/// cannot perform more resident work than the shared limits permit.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(crate) struct ResidentBudgetMeter {
+    accumulated: KernelCostEstimate,
+}
+
 /// Authority proving one complete checked estimate passed central resident
 /// admission. Its fields and constructor are private so materializers cannot
 /// manufacture a permit locally.
@@ -139,6 +171,115 @@ impl<P> AdmittedKernel<P> {
     /// Consumes the admission authority immediately before materialization.
     pub(crate) fn into_plan(self) -> P {
         self.plan
+    }
+}
+
+impl<P> PreparedMutationPlan<P> {
+    pub(crate) fn new(
+        operation: P,
+        final_output: PublishedOutputFootprint,
+        mut cost: KernelCostEstimate,
+    ) -> Self {
+        cost.output_elements = final_output.elements;
+        cost.output_bytes = final_output.retained_bytes;
+        cost.retained_nodes = cost.retained_nodes.max(final_output.retained_nodes);
+        Self {
+            operation,
+            final_output,
+            cost,
+        }
+    }
+
+    pub(crate) fn admit(self) -> Result<AdmittedMutationPlan<P>, ResidentKernelError> {
+        let _final_output = self.final_output;
+        Ok(AdmittedMutationPlan {
+            operation: self.operation,
+            _permit: self.cost.permit()?,
+        })
+    }
+}
+
+impl<P> AdmittedMutationPlan<P> {
+    /// Consumes the complete post-state admission immediately before staging.
+    pub(crate) fn into_plan(self) -> P {
+        self.operation
+    }
+}
+
+impl ResidentBudgetMeter {
+    fn charge(
+        &mut self,
+        update: impl FnOnce(&mut KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    ) -> Result<(), ResidentKernelError> {
+        let mut next = self.accumulated;
+        update(&mut next)?;
+        next.checked()?;
+        self.accumulated = next;
+        Ok(())
+    }
+
+    pub(crate) fn charge_comparison_work(
+        &mut self,
+        amount: u64,
+    ) -> Result<(), ResidentKernelError> {
+        self.charge(|cost| {
+            cost.comparison_work = cost
+                .comparison_work
+                .checked_add(amount)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            cost.compute_work = cost
+                .compute_work
+                .checked_add(amount)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(())
+        })
+    }
+
+    pub(crate) fn charge_temporary_bytes(
+        &mut self,
+        amount: u64,
+    ) -> Result<(), ResidentKernelError> {
+        self.charge(|cost| {
+            cost.temporary_bytes = cost
+                .temporary_bytes
+                .checked_add(amount)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(())
+        })
+    }
+
+    pub(crate) fn charge_cloned_bytes(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
+        self.charge(|cost| {
+            cost.cloned_bytes = cost
+                .cloned_bytes
+                .checked_add(amount)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(())
+        })
+    }
+
+    pub(crate) fn charge_retained_nodes(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
+        self.charge(|cost| {
+            cost.retained_nodes = cost
+                .retained_nodes
+                .checked_add(amount)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(())
+        })
+    }
+
+    pub(crate) fn charge_selector_bytes(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
+        self.charge(|cost| {
+            cost.selector_bytes = cost
+                .selector_bytes
+                .checked_add(amount)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(())
+        })
+    }
+
+    pub(crate) fn estimate(self) -> KernelCostEstimate {
+        self.accumulated
     }
 }
 
@@ -253,6 +394,22 @@ mod tests {
             .admit()
             .unwrap_err(),
             ResidentKernelError::InvalidShape
+        );
+    }
+
+    #[test]
+    fn incremental_meter_rejects_the_first_over_limit_charge() {
+        let mut meter = ResidentBudgetMeter::default();
+        meter
+            .charge_comparison_work(MAX_RESIDENT_COMPARISON_WORK)
+            .unwrap();
+        assert_eq!(
+            meter.charge_comparison_work(1),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(
+            meter.estimate().comparison_work,
+            MAX_RESIDENT_COMPARISON_WORK,
         );
     }
 }

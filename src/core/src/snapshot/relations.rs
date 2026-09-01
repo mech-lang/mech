@@ -118,12 +118,7 @@ impl Value {
     ) -> Result<bool, SnapshotValueError> {
         let (element, elements, candidate) =
             self.validated_set_candidate(self_schemas, candidate, candidate_schemas)?;
-        for existing in elements {
-            if compare_key_data(element, existing.data(), &candidate)? == Ordering::Equal {
-                return Ok(true);
-            }
-        }
-        Ok(false)
+        Ok(set_key_search(element, elements, &candidate)?.is_ok())
     }
 
     pub fn set_elements_after_insert(
@@ -138,15 +133,8 @@ impl Value {
             .iter()
             .map(|value| value.data().clone())
             .collect::<Vec<_>>();
-        let mut contains = false;
-        for existing in elements {
-            if compare_key_data(element, existing.data(), &candidate)? == Ordering::Equal {
-                contains = true;
-                break;
-            }
-        }
-        if !contains {
-            next.push(candidate);
+        if let Err(position) = set_key_search(element, elements, &candidate)? {
+            next.insert(position, candidate);
         }
         Ok(next.into_boxed_slice())
     }
@@ -159,10 +147,12 @@ impl Value {
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
         let (element, elements, candidate) =
             self.validated_set_candidate(self_schemas, candidate, candidate_schemas)?;
-        let mut next = Vec::with_capacity(elements.len());
-        for existing in elements {
-            if compare_key_data(element, existing.data(), &candidate)? != Ordering::Equal {
-                next.push(existing.data().clone());
+        let found = set_key_search(element, elements, &candidate)?.ok();
+        let mut next =
+            Vec::with_capacity(elements.len().saturating_sub(usize::from(found.is_some())));
+        for (index, existing) in elements.iter().enumerate() {
+            if Some(index) != found {
+                next.push(existing.data().clone())
             }
         }
         Ok(next.into_boxed_slice())
@@ -370,6 +360,24 @@ enum SetMerge {
     Intersection,
     Difference,
     SymmetricDifference,
+}
+
+fn set_key_search(
+    element: &SchemaBody,
+    elements: &[CanonicalKeyValue],
+    candidate: &ValueData,
+) -> Result<core::result::Result<usize, usize>, SnapshotValueError> {
+    let mut lower = 0usize;
+    let mut upper = elements.len();
+    while lower < upper {
+        let middle = lower + (upper - lower) / 2;
+        match compare_key_data(element, elements[middle].data(), candidate)? {
+            Ordering::Less => lower = middle + 1,
+            Ordering::Greater => upper = middle,
+            Ordering::Equal => return Ok(Ok(middle)),
+        }
+    }
+    Ok(Err(lower))
 }
 
 fn set_is_subset(

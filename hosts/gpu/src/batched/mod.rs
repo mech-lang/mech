@@ -2570,85 +2570,21 @@ fn fixed_shape(
 }
 
 fn static_numeric_indices(data: &ValueData) -> Result<Vec<u64>, String> {
-    macro_rules! unsigned_scalar {
-        ($value:expr) => {
-            u64::try_from(*$value)
-                .map(|value| vec![value])
-                .map_err(|_| "static selector exceeds the portable index range".to_owned())
-        };
-    }
-    macro_rules! signed_scalar {
-        ($value:expr) => {
-            u64::try_from(*$value)
-                .map(|value| vec![value])
-                .map_err(|_| "static selector must be a nonnegative integer".to_owned())
-        };
-    }
     match data {
-        ValueData::Index(value) | ValueData::U64(value) => Ok(vec![*value]),
-        ValueData::U8(value) => Ok(vec![u64::from(*value)]),
-        ValueData::U16(value) => Ok(vec![u64::from(*value)]),
-        ValueData::U32(value) => Ok(vec![u64::from(*value)]),
-        ValueData::U128(value) => unsigned_scalar!(value),
-        ValueData::I8(value) => signed_scalar!(value),
-        ValueData::I16(value) => signed_scalar!(value),
-        ValueData::I32(value) => signed_scalar!(value),
-        ValueData::I64(value) => signed_scalar!(value),
-        ValueData::I128(value) => signed_scalar!(value),
-        ValueData::F32(value) => {
-            canonical_float_index(f64::from(value.to_f32())).map(|value| vec![value])
+        ValueData::Matrix(matrix) => {
+            let elements = matrix.elements();
+            let mut indices = Vec::with_capacity(elements.len());
+            mech_core::visit_canonical_positional_sequence(elements, u32::MAX as usize, |index| {
+                indices.push(index as u64 + 1);
+                Ok::<(), core::convert::Infallible>(())
+            })
+            .map_err(|error| format!("invalid static selector: {error:?}"))?;
+            Ok(indices)
         }
-        ValueData::F64(value) => canonical_float_index(value.to_f64()).map(|value| vec![value]),
-        ValueData::Matrix(matrix) => match matrix.elements() {
-            SequenceView::Index(values) | SequenceView::U64(values) => Ok(values.to_vec()),
-            SequenceView::U8(values) => Ok(values.iter().copied().map(u64::from).collect()),
-            SequenceView::U16(values) => Ok(values.iter().copied().map(u64::from).collect()),
-            SequenceView::U32(values) => Ok(values.iter().copied().map(u64::from).collect()),
-            SequenceView::U128(values) => values
-                .iter()
-                .map(|value| {
-                    u64::try_from(*value)
-                        .map_err(|_| "static selector exceeds the portable index range".to_owned())
-                })
-                .collect(),
-            SequenceView::I8(values) => signed_indices(values),
-            SequenceView::I16(values) => signed_indices(values),
-            SequenceView::I32(values) => signed_indices(values),
-            SequenceView::I64(values) => signed_indices(values),
-            SequenceView::I128(values) => signed_indices(values),
-            SequenceView::F32(values) => values
-                .iter()
-                .map(|value| canonical_float_index(f64::from(value.to_f32())))
-                .collect(),
-            SequenceView::F64(values) => values
-                .iter()
-                .map(|value| canonical_float_index(value.to_f64()))
-                .collect(),
-            _ => Err("static matrix selector must contain real integers".to_owned()),
-        },
-        _ => Err("static selector must be a real integer or index".to_owned()),
+        value => mech_core::canonical_positional_ordinal(value)
+            .map(|value| vec![value])
+            .map_err(|error| format!("invalid static selector: {error:?}")),
     }
-}
-
-fn signed_indices<T>(values: &[T]) -> Result<Vec<u64>, String>
-where
-    T: Copy,
-    u64: TryFrom<T>,
-{
-    values
-        .iter()
-        .map(|value| {
-            u64::try_from(*value)
-                .map_err(|_| "static selector must contain nonnegative integers".to_owned())
-        })
-        .collect()
-}
-
-fn canonical_float_index(value: f64) -> Result<u64, String> {
-    if !value.is_finite() || value < 0.0 || value > u32::MAX as f64 {
-        return Err("static selector must fit the portable nonnegative index range".to_owned());
-    }
-    Ok(value.trunc() as u64)
 }
 
 fn artifact_constant_values(
@@ -2934,6 +2870,21 @@ mod axis_tests {
 
     #[test]
     fn static_float_selectors_use_source_truncation_semantics() {
+        for value in [
+            ValueData::Index(1),
+            ValueData::U8(1),
+            ValueData::U16(1),
+            ValueData::U32(1),
+            ValueData::U64(1),
+            ValueData::U128(1),
+            ValueData::I8(1),
+            ValueData::I16(1),
+            ValueData::I32(1),
+            ValueData::I64(1),
+            ValueData::I128(1),
+        ] {
+            assert_eq!(static_numeric_indices(&value), Ok(vec![1]), "{value:?}");
+        }
         assert_eq!(
             static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
                 2.75,
@@ -2956,6 +2907,12 @@ mod axis_tests {
             static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
                 -1.0,
             )))
+            .is_err()
+        );
+        assert!(
+            static_numeric_indices(&ValueData::F64(
+                mech_core::snapshot::F64Bits::from_f64(0.5,)
+            ))
             .is_err()
         );
         assert!(

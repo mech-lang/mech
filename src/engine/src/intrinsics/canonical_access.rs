@@ -40,30 +40,15 @@ pub(crate) fn canonical_draft(cell: &ValueCell) -> MResult<ValueDataDraft> {
 #[cfg(feature = "semantic-compiler")]
 fn canonical_index(cell: &ValueCell) -> MResult<usize> {
     let snapshot = cell.snapshot()?;
-    let value = match snapshot.data() {
-        ValueData::Index(value) => *value as u128,
-        ValueData::U8(value) => u128::from(*value),
-        ValueData::U16(value) => u128::from(*value),
-        ValueData::U32(value) => u128::from(*value),
-        ValueData::U64(value) => u128::from(*value),
-        ValueData::U128(value) => *value,
-        ValueData::I8(value) if *value >= 0 => *value as u128,
-        ValueData::I16(value) if *value >= 0 => *value as u128,
-        ValueData::I32(value) if *value >= 0 => *value as u128,
-        ValueData::I64(value) if *value >= 0 => *value as u128,
-        ValueData::I128(value) if *value >= 0 => *value as u128,
-        ValueData::F32(value) => value.to_f32().trunc().max(0.0) as u128,
-        ValueData::F64(value) => value.to_f64().trunc().max(0.0) as u128,
-        _ => {
-            return Err(MechError::new(
-                GenericError {
-                    msg: "access selector must contain indices or booleans".to_owned(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-    };
+    let value = mech_core::canonical_positional_ordinal(snapshot.data()).map_err(|error| {
+        MechError::new(
+            GenericError {
+                msg: format!("invalid positional access selector: {error:?}"),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
     usize::try_from(value).map_err(|_| {
         MechError::new(
             GenericError {

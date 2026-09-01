@@ -2629,32 +2629,8 @@ fn resident_resolved_selector(
     use mech_core::ResidentResolvedSelector;
 
     let one_based = match value.data() {
-        mech_core::ValueData::Index(value) | mech_core::ValueData::U64(value) => u128::from(*value),
-        mech_core::ValueData::U8(value) => u128::from(*value),
-        mech_core::ValueData::U16(value) => u128::from(*value),
-        mech_core::ValueData::U32(value) => u128::from(*value),
-        mech_core::ValueData::U128(value) => *value,
-        mech_core::ValueData::I8(value) if *value >= 0 => *value as u128,
-        mech_core::ValueData::I16(value) if *value >= 0 => *value as u128,
-        mech_core::ValueData::I32(value) if *value >= 0 => *value as u128,
-        mech_core::ValueData::I64(value) if *value >= 0 => *value as u128,
-        mech_core::ValueData::I128(value) if *value >= 0 => *value as u128,
-        mech_core::ValueData::F32(value)
-            if value.to_f32().is_finite()
-                && value.to_f32() >= 1.0
-                && value.to_f32().fract() == 0.0 =>
-        {
-            value.to_f32() as u128
-        }
-        mech_core::ValueData::F64(value)
-            if value.to_f64().is_finite()
-                && value.to_f64() >= 1.0
-                && value.to_f64().fract() == 0.0 =>
-        {
-            value.to_f64() as u128
-        }
         mech_core::ValueData::Id(value) => return Some(ResidentResolvedSelector::Id(*value)),
-        _ => return None,
+        value => mech_core::canonical_positional_ordinal(value).ok()?,
     };
     let ordinal = usize::try_from(one_based.checked_sub(1)?).ok()?;
     Some(ResidentResolvedSelector::Ordinal(ordinal))

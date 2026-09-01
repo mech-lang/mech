@@ -103,6 +103,15 @@ fn typed_number(kind: &str, value: u8) -> String {
     }
 }
 
+#[cfg(feature = "distribution-full")]
+fn typed_selector(kind: &str, value: u8) -> String {
+    match kind {
+        "f32" => format!("{value}.9<f32>"),
+        "f64" => format!("{value}.9"),
+        _ => format!("{value}<{kind}>"),
+    }
+}
+
 #[test]
 #[cfg(feature = "distribution-full")]
 fn generated_resident_capability_matrix_survives_bytecode_and_exact_binding() -> MResult<()> {
@@ -229,6 +238,42 @@ fn generated_resident_capability_matrix_survives_bytecode_and_exact_binding() ->
         assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure, "{source}");
     }
     assert_eq!(witnessed_modes, [true; 7]);
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn canonical_selector_family_survives_every_access_and_assignment_mode() -> MResult<()> {
+    for kind in [
+        "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64",
+    ] {
+        let first = typed_selector(kind, 1);
+        let second = typed_selector(kind, 2);
+        let fourth = typed_selector(kind, 4);
+        let gather = format!("[{fourth} {first} {fourth}]");
+        let sources = [
+            format!("matrix := [1 2; 3 4]\nselector := {first}\nmatrix[selector]"),
+            format!("matrix := [1 2; 3 4]\nselectors := {gather}\nmatrix[selectors]"),
+            format!("matrix := [1 2; 3 4]\nselector := {second}\nmatrix[selector,:]"),
+            format!("matrix := [1 2; 3 4]\nselector := {second}\nmatrix[:,selector]"),
+            format!("matrix := [1 2; 3 4]\nrow := {second}\ncolumn := {first}\nmatrix[row,column]"),
+            format!("~matrix := [1 2; 3 4]\nselector := {first}\nmatrix[selector] = 9\nmatrix"),
+            format!(
+                "~matrix := [1 2; 3 4]\nselector := {second}\nmatrix[selector,:] = [9 10]\nmatrix"
+            ),
+            format!(
+                "~matrix := [1 2; 3 4]\nselector := {second}\nmatrix[:,selector] = [9; 10]\nmatrix"
+            ),
+            format!(
+                "~matrix := [1 2; 3 4]\nrow := {second}\ncolumn := {first}\nmatrix[row,column] = 9\nmatrix"
+            ),
+        ];
+        for source in sources {
+            assert_source_and_bytecode_resident_parity(&source).unwrap_or_else(|error| {
+                panic!("selector family {kind} failed for {source:?}: {error:?}")
+            });
+        }
+    }
     Ok(())
 }
 

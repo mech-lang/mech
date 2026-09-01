@@ -61,11 +61,6 @@ pub mod literals;
 pub mod mechdown;
 #[cfg(feature = "semantic-compiler")]
 pub mod patterns;
-#[cfg(any(
-    all(feature = "subscript_formula", feature = "semantic-compiler"),
-    feature = "resident-artifact"
-))]
-mod portable_index;
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
 mod resident;
