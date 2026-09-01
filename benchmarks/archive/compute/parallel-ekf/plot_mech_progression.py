@@ -10,6 +10,7 @@ import re
 import statistics
 from pathlib import Path
 
+from chart_machine_specs import svg_machine_specs
 
 def esc(value: object) -> str:
     return html.escape(str(value), quote=True)
@@ -117,6 +118,7 @@ def render(rows: list[dict[str, object]], output: Path) -> None:
 
     lines.append(f'<text x="{left + chart_width / 2:.1f}" y="{height - 28}" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>')
     lines.append('<text x="52" y="%d" class="muted" font-size="12">Checked bars include candidate validation/publication. Unchecked bars omit integrity checks. Missing bars mean that lane was not implemented as a separately measured mode.</text>' % (height - 55))
+    lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(lines) + "\n", encoding="utf-8")

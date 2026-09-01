@@ -29,4 +29,5 @@
 <text x="38" y="351" class="muted" font-size="12">Taichi: backend/strategy unavailable.</text>
 <text x="38" y="369" class="muted" font-size="12">Halide: backend/strategy unavailable.</text>
 <text x="38" y="387" class="muted" font-size="12">Futhark: backend/strategy unavailable.</text>
+<text x="1400" y="432" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

@@ -53,7 +53,7 @@
 <rect x="430" y="404" width="144.9" height="19" rx="3" fill="#66a6ff" opacity="0.9"/>
 <text x="583.9" y="418" class="value">10.67</text>
 <text x="414" y="449" text-anchor="end" class="label">LuaJIT fixed-shape flat checked</text>
-<rect x="430" y="435" width="17.1" height="19" rx="3" fill="#f276ad" opacity="0.9"/>
+<rect x="430" y="435" width="17.1" height="19" rx="3" fill="#000080" opacity="0.9"/>
 <text x="456.1" y="449" class="value">1.26</text>
 <text x="414" y="480" text-anchor="end" class="label">Mech GPU, checked one-turn API call</text>
 <rect x="430" y="466" width="852.3" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
@@ -62,4 +62,5 @@
 <rect x="430" y="497" width="763.8" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
 <text x="1202.8" y="511" class="value">56.28</text>
 <text x="52" y="568" class="muted" font-size="12">Checked controls only; unchecked-only controls are omitted. Checked GPU rows synchronize and validate each turn; the unchecked row batches all turns in one device submission. Parse, compilation, setup, and final readback are excluded.</text>
+<text x="1380" y="605" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

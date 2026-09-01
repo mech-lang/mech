@@ -437,4 +437,5 @@
 <text x="578" y="619" class="note">100k-filter control</text>
 <text x="1110.0" y="706" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>
 <text x="52" y="679" class="muted" font-size="12">Checked bars include candidate validation/publication. Unchecked bars omit integrity checks. Missing bars mean that lane was not implemented as a separately measured mode.</text>
+<text x="1650" y="716" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

@@ -211,4 +211,5 @@
 <rect x="550" y="1458" width="937.9" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
 <text x="1496.9" y="1472" class="value">3729.67</text>
 <text x="52" y="1529" class="muted" font-size="12">Rows are ordered by throughput from slowest to fastest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. Compilation, allocation, warmup, and final readback are excluded from the timed region.</text>
+<text x="1560" y="1566" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

@@ -8,6 +8,7 @@ import html
 import json
 from pathlib import Path
 
+from chart_machine_specs import svg_machine_specs
 
 COLORS = {
     "Mech": "#40d4b0",
@@ -79,6 +80,7 @@ def main() -> None:
     if "mech_native_metal_backend" in configuration:
         note += " Native Metal rows use direct Metal command submission; WGPU-over-Metal rows are shown only as a transport control."
     lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{esc(note)}</text>')
+    lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("\n".join(lines) + "\n", encoding="utf-8")

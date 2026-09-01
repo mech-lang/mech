@@ -54,4 +54,5 @@
 <rect x="430" y="435" width="856.1" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
 <text x="1295.1" y="449" class="value">54.07</text>
 <text x="52" y="506" class="muted" font-size="12">Checked controls only; unchecked-only controls are omitted. GPU rows are Mech context measurements, not CPU comparisons. Parse, compilation, setup, and readback are excluded.</text>
+<text x="1380" y="543" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

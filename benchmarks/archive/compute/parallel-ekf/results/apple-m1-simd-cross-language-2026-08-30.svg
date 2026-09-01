@@ -81,4 +81,5 @@
 <rect x="430" y="714" width="856.1" height="19" rx="3" fill="#56c7e8" opacity="0.9"/>
 <text x="1295.1" y="728" class="value">54.07</text>
 <text x="52" y="785" class="muted" font-size="12">GPU rows are Mech context measurements, not CPU comparisons. Parse, compilation, setup, and readback are excluded.</text>
+<text x="1380" y="822" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

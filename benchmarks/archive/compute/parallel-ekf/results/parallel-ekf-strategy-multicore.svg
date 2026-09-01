@@ -54,4 +54,5 @@
 <text x="38" y="573" class="muted" font-size="12">Python: backend/strategy unavailable.</text>
 <text x="38" y="591" class="muted" font-size="12">LuaJIT: backend/strategy unavailable.</text>
 <text x="38" y="609" class="muted" font-size="12">Lua: backend/strategy unavailable.</text>
+<text x="1400" y="654" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

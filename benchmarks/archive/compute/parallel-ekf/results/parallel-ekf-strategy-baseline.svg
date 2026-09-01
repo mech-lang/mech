@@ -68,4 +68,5 @@
 <rect x="300" y="649" width="863.9" height="16" rx="2" fill="#e94f37" opacity="0.42"/>
 <text x="1170.9" y="662" class="value">19.635</text>
 <text x="38" y="720" class="muted" font-size="12">Bars show only languages with at least one measured result; checked is solid and unchecked is lighter.</text>
+<text x="1400" y="765" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>

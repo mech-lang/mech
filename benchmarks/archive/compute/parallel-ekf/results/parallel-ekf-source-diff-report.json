@@ -15,7 +15,13 @@
     "lua": "2026-08-31",
     "minimal": "2026-08-31T18:45:52.116140-04:00"
   },
-  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. The max single-core, SIMD/multicore, and synchronized GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker; multi-turn/fused GPU rows are retained separately as gpu_batched maxima. This is an edit-size measure, not a claim about semantic difficulty.",
+  "compile_times": {
+    "Mech": {
+      "milliseconds": 2.937,
+      "label": "scalar Cranelift JIT prepare"
+    }
+  },
+  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. Compile/JIT time is included only when the evidence records a separable compiler interval; it is not inferred from process startup or steady-state timing. The max single-core, SIMD/multicore, and synchronized GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker; multi-turn/fused GPU rows are retained separately as gpu_batched maxima. This is an edit-size measure, not a claim about semantic difficulty.",
   "mech_backend_support_delta": {
     "base_commit": "1ca47cdeef1cef071a891babf5423af03f51466f",
     "head_commit": "HEAD",
@@ -130,6 +136,10 @@
             "label": "Mech GPU, native Metal"
           }
         }
+      },
+      "compile_time": {
+        "milliseconds": 2.937,
+        "label": "scalar Cranelift JIT prepare"
       }
     },
     {
@@ -210,7 +220,8 @@
             "label": "Rust packed SIMD, fused worker-local block (8 workers)"
           }
         }
-      }
+      },
+      "compile_time": null
     },
     {
       "language": "NumPy",
@@ -290,7 +301,8 @@
             "label": "NumPy/Numba, fused worker-local block fast math (8 workers)"
           }
         }
-      }
+      },
+      "compile_time": null
     },
     {
       "language": "Python",
@@ -360,7 +372,8 @@
             "label": "Python pure scalar"
           }
         }
-      }
+      },
+      "compile_time": null
     },
     {
       "language": "Julia",
@@ -450,7 +463,8 @@
             "label": "Julia GPU, native Metal (strict retained-state)"
           }
         }
-      }
+      },
+      "compile_time": null
     },
     {
       "language": "LuaJIT",
@@ -520,7 +534,8 @@
             "label": "LuaJIT fixed-shape flat, unchecked"
           }
         }
-      }
+      },
+      "compile_time": null
     },
     {
       "language": "Lua",
@@ -590,7 +605,8 @@
             "label": "Lua fixed-shape flat unchecked"
           }
         }
-      }
+      },
+      "compile_time": null
     },
     {
       "language": "Taichi",
@@ -670,7 +686,8 @@
             "label": "Taichi optimized native Metal, unchecked"
           }
         }
-      }
+      },
+      "compile_time": null
     },
     {
       "language": "Halide",
@@ -760,7 +777,8 @@
             "label": "Halide GPU, native Metal (strict fault-observing)"
           }
         }
-      }
+      },
+      "compile_time": null
     },
     {
       "language": "Futhark",
@@ -840,7 +858,8 @@
             "label": "Futhark ISPC fixed-mode, 8 workers (500k x 40)"
           }
         }
-      }
+      },
+      "compile_time": null
     }
   ]
 }

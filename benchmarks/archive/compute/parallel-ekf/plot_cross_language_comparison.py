@@ -15,6 +15,7 @@ import json
 import math
 from pathlib import Path
 
+from chart_machine_specs import svg_machine_specs
 
 COLORS = {
     "Mech": "#f4c430",      # Mech brand yellow
@@ -517,6 +518,7 @@ def render(
     note += "Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. "
     note += "Compilation, allocation, warmup, and final readback are excluded from the timed region."
     lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{esc(note)}</text>')
+    lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append('</svg>')
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(lines) + "\n", encoding="utf-8")

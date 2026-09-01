@@ -17,6 +17,7 @@ import re
 import statistics
 from pathlib import Path
 
+from chart_machine_specs import svg_machine_specs
 from source_diff_report import COLORS, ROOT, diff_metrics, source_metrics
 
 
@@ -547,6 +548,7 @@ def svg(report: dict, strategy: str) -> str:
     lines.append(f'<text x="38" y="{footer_y}" class="muted" font-size="12">Bars show only languages with at least one measured result; checked is solid and unchecked is lighter.</text>')
     for index, item in enumerate(omitted, start=1):
         lines.append(f'<text x="38" y="{footer_y + 18 * index}" class="muted" font-size="12">{esc(item["language"])}: {esc(item["reason"])}.</text>')
+    lines.append(svg_machine_specs(width, height, right=right, bottom=18))
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 

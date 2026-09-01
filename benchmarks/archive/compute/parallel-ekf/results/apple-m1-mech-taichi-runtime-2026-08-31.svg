@@ -59,4 +59,5 @@
 <rect x="430" y="426" width="851.8" height="24" rx="3" fill="#b68cff" opacity="0.9"/>
 <text x="1291.8" y="443" class="value">222.21</text>
 <text x="52" y="506" class="muted" font-size="12">Checked rows validate and publish only valid candidates; unchecked rows omit those checks. Every GPU row submits and waits once per turn; setup, compilation, allocation, warmup, and final readback are excluded.</text>
+<text x="1350" y="543" text-anchor="end" fill="#91a0b5" font-size="12">Machine: Apple M1 | macOS 15.6.1 | arm64</text>
 </svg>
