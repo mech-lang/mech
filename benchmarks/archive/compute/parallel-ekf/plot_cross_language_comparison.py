@@ -61,6 +61,7 @@ def load_rows(
     lua: dict | None = None,
     taichi_optimized: dict | None = None,
     minimal: dict | None = None,
+    julia_threaded: dict | None = None,
 ) -> list[dict[str, object]]:
     cross_scalar = cross_language["summary"]["scalar_outer_loop"]
     cross_mech = cross_language["summary"]["mech_backends_million_ekf_turns_per_second"]
@@ -247,6 +248,20 @@ def load_rows(
                         "throughput": statistics.median(row["throughput"]) / 1_000_000,
                     }
                 )
+    if julia_threaded is not None:
+        for mode in ("checked", "unchecked"):
+            row = julia_threaded.get("rows", {}).get(mode)
+            if row is not None and "throughput_millions" in row:
+                import statistics
+
+                rows.append(
+                    {
+                        "label": "Julia SIMD.jl, 8 workers",
+                        "family": "Julia",
+                        "mode": mode,
+                        "throughput": statistics.median(row["throughput_millions"]),
+                    }
+                )
     return rows
 
 
@@ -354,6 +369,7 @@ def markdown_table(
     lines.extend(
         [
             "Checked rows include candidate validation/publication. Unchecked rows explicitly omit those guarantees. The GPU one-submit row is a fused unchecked control and is therefore shown only in the unchecked section.",
+            "Futhark GPU has no numeric row on this Apple M1: Futhark 0.27 exposes CUDA/OpenCL backends but no Metal backend; the generated OpenCL kernel is rejected by Apple's driver.",
             "",
         ]
     )
@@ -370,6 +386,7 @@ def main() -> None:
     parser.add_argument("lua", type=Path, nargs="?", help="plain Lua evidence JSON")
     parser.add_argument("--taichi-optimized", type=Path, help="optimized Taichi evidence JSON")
     parser.add_argument("--minimal-source", type=Path, help="Halide/Futhark/NumPy minimal-control evidence JSON")
+    parser.add_argument("--julia-threaded", type=Path, help="threaded Julia SIMD evidence JSON")
     args = parser.parse_args()
     cross_language = json.loads(args.cross_language.read_text(encoding="utf-8"))
     runtime = json.loads(args.runtime.read_text(encoding="utf-8"))
@@ -385,7 +402,14 @@ def main() -> None:
         if args.minimal_source
         else None
     )
-    rows = load_rows(cross_language, runtime, native, lua, taichi_optimized, minimal)
+    julia_threaded = (
+        json.loads(args.julia_threaded.read_text(encoding="utf-8"))
+        if args.julia_threaded
+        else None
+    )
+    rows = load_rows(
+        cross_language, runtime, native, lua, taichi_optimized, minimal, julia_threaded
+    )
     configuration = cross_language["configuration"]
     render(
         rows,

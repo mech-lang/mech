@@ -42,6 +42,7 @@ git switch --track origin/codex/mech-program-gpu
 | Minimized Rust packed-lane SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs` |
 | Minimized Julia scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl` |
 | Minimized Julia packed-lane SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl` |
+| Minimized Julia eight-worker SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_simd_threads.jl` |
 | Minimized LuaJIT scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua` |
 | Minimized LuaJIT flat control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua` |
 | Minimized Taichi comparable control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py` |
@@ -54,6 +55,7 @@ git switch --track origin/codex/mech-program-gpu
 | Matched Mech/Taichi chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_runtime_comparison.py` |
 | Cross-language checked/unchecked chart renderer | `benchmarks/archive/compute/parallel-ekf/plot_cross_language_comparison.py` |
 | Ranked throughput table | `benchmarks/archive/compute/parallel-ekf/results/parallel-ekf-throughput-table.md` |
+| Threaded Julia SIMD evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-julia-threaded-2026-08-31.json` |
 | Mech execution-lane progression renderer | `benchmarks/archive/compute/parallel-ekf/plot_mech_progression.py` |
 | Source-edit cost report/renderer | `benchmarks/archive/compute/parallel-ekf/source_diff_report.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -128,6 +130,14 @@ to scalar component fields, fixed-shape unrolled arithmetic, in-place
 unchecked state, and a tuned 32-thread block. It does not modify Taichi's
 compiler/runtime or bypass the per-turn `ti.sync()` boundary. Its raw samples
 are in `results/apple-m1-taichi-optimized-native-metal-2026-08-31.json`.
+
+The Julia SIMD source also has an eight-worker control using a static threaded
+outer loop and a barrier between turns. At the matched 500,000-filter/40-turn
+boundary it measured **106.341 M/s checked** and **109.628 M/s unchecked**. This
+is the appropriate comparison for Mech's 104.783/110.469 M/s eight-worker
+runtime row; the one-worker Julia SIMD rows remain in the language-control
+section. Samples and checksums are in
+`results/apple-m1-julia-threaded-2026-08-31.json`.
 
 The Mech-only progression view keeps checked and unchecked bars together while
 sorting execution lanes from resident scalar through SIMD, Cranelift JIT,
@@ -221,7 +231,8 @@ python3 plot_cross_language_comparison.py \
   results \
   results/apple-m1-lua-2026-08-31.json \
   --taichi-optimized results/apple-m1-taichi-optimized-native-metal-2026-08-31.json \
-  --minimal-source results/apple-m1-minimal-source-2026-08-31.json
+  --minimal-source results/apple-m1-minimal-source-2026-08-31.json \
+  --julia-threaded results/apple-m1-julia-threaded-2026-08-31.json
 
 python3 plot_mech_progression.py \
   results/apple-m1-checked-cross-language-2026-08-31.json \

@@ -29,10 +29,11 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 19 | Mech GPU, checked one-turn | Mech | 62.798 |
 | 20 | Taichi LLVM CPU, 8 workers | Taichi | 86.047 |
 | 21 | Mech SIMD/JIT CPU, 8 workers | Mech | 104.783 |
-| 22 | Mech GPU, WGPU per-turn | Mech | 152.972 |
-| 23 | Taichi optimized native Metal, checked | Taichi | 168.798 |
-| 24 | Taichi GPU, native Metal | Taichi | 176.710 |
-| 25 | Mech GPU, native Metal | Mech | 246.151 |
+| 22 | Julia SIMD.jl, 8 workers | Julia | 106.341 |
+| 23 | Mech GPU, WGPU per-turn | Mech | 152.972 |
+| 24 | Taichi optimized native Metal, checked | Taichi | 168.798 |
+| 25 | Taichi GPU, native Metal | Taichi | 176.710 |
+| 26 | Mech GPU, native Metal | Mech | 246.151 |
 
 ## Unchecked (slowest to fastest)
 
@@ -61,13 +62,15 @@ Workloads: CPU/language 10,000 filters x 20 turns; Mech backend 100,000 filters 
 | 21 | Mech GPU, unchecked in-place one-turn | Mech | 54.635 |
 | 22 | Mech Cranelift SIMD-JIT parallel unchecked fast | Mech | 61.823 |
 | 23 | Taichi LLVM CPU, 8 workers | Taichi | 98.140 |
-| 24 | Mech SIMD/JIT CPU, 8 workers | Mech | 110.469 |
-| 25 | Mech GPU, WGPU per-turn | Mech | 157.141 |
-| 26 | Taichi GPU, native Metal | Taichi | 194.793 |
-| 27 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
-| 28 | Mech GPU, native Metal | Mech | 241.028 |
-| 29 | Mech GPU, unchecked repeated | Mech | 350.930 |
-| 30 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
-| 31 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
+| 24 | Julia SIMD.jl, 8 workers | Julia | 109.628 |
+| 25 | Mech SIMD/JIT CPU, 8 workers | Mech | 110.469 |
+| 26 | Mech GPU, WGPU per-turn | Mech | 157.141 |
+| 27 | Taichi GPU, native Metal | Taichi | 194.793 |
+| 28 | Taichi optimized native Metal, unchecked | Taichi | 217.297 |
+| 29 | Mech GPU, native Metal | Mech | 241.028 |
+| 30 | Mech GPU, unchecked repeated | Mech | 350.930 |
+| 31 | Mech GPU, unchecked in-place repeated | Mech | 433.892 |
+| 32 | Mech GPU, unchecked one-submit | Mech | 3729.673 |
 
 Checked rows include candidate validation/publication. Unchecked rows explicitly omit those guarantees. The GPU one-submit row is a fused unchecked control and is therefore shown only in the unchecked section.
+Futhark GPU has no numeric row on this Apple M1: Futhark 0.27 exposes CUDA/OpenCL backends but no Metal backend; the generated OpenCL kernel is rejected by Apple's driver.
