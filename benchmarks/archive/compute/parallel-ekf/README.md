@@ -114,6 +114,8 @@ NumPy, Julia, Lua, LuaJIT, and Taichi retain distinct language-family colors.
 GPU rows keep their family color but use a diagonal hatch, while CPU rows are
 solid, so the accelerator distinction is visible without introducing a second
 palette.
+Both charts use a logarithmic horizontal throughput axis so the scalar,
+SIMD, worker-parallel, and GPU regimes remain legible in one figure.
 The CPU language rows use 10,000 resident filters and 20 turns. GPU rows use
 100,000 resident filters and 5 synchronized turns. Both are steady-state
 throughput measurements; setup, compilation, allocation, and final readback

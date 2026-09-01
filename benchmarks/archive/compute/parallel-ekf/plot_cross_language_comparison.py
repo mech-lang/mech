@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import math
 from pathlib import Path
 
 
@@ -375,11 +376,21 @@ def render(
     row_height = 31
     bottom = 100
     chart_width = width - left - right
-    max_value = max(10.0, ((max(float(row["throughput"]) for row in visible) + 19.999) // 20) * 20)
+    positive_values = [float(row["throughput"]) for row in visible if float(row["throughput"]) > 0.0]
+    if not positive_values:
+        raise ValueError("logarithmic throughput axis requires at least one positive value")
+    min_value = 10.0 ** math.floor(math.log10(min(positive_values)))
+    max_value = 10.0 ** math.ceil(math.log10(max(positive_values)))
+    if min_value == max_value:
+        max_value *= 10.0
+    log_min = math.log10(min_value)
+    log_span = math.log10(max_value) - log_min
     height = top + row_height * len(visible) + bottom
 
     def x(value: float) -> float:
-        return left + chart_width * value / max_value
+        if value <= 0.0:
+            return left
+        return left + chart_width * (math.log10(value) - log_min) / log_span
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
@@ -390,15 +401,24 @@ def render(
             for family, color in COLORS.items()
         ),
         '</defs>',
-        '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
+        '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5} .muted{fill:#91a0b5} .grid{stroke:#263246;stroke-width:1} .minor-grid{stroke:#1b2536;stroke-width:1} .axis{fill:#91a0b5;font-size:13px} .label{font-size:14px} .value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="52" y="42" font-size="26" font-weight="700">Cross-language EKF runtime throughput ({esc(mode)}; slowest to fastest)</text>',
         f'<text x="52" y="68" class="muted" font-size="15">Apple M1 | CPU/language: {scalar_instances:,}x{scalar_turns}; Mech backend: {backend_instances:,}x{backend_turns}; matched runtime/native controls: {runtime_instances:,}x{runtime_turns} | steady-state, sorted</text>',
     ]
-    for tick in range(0, int(max_value) + 1, 20):
-        tick_x = x(tick)
-        lines.append(f'<line x1="{tick_x:.1f}" y1="{top - 18}" x2="{tick_x:.1f}" y2="{height - bottom + 4}" class="grid"/>')
-        lines.append(f'<text x="{tick_x:.1f}" y="{height - bottom + 28}" text-anchor="middle" class="axis">{tick}</text>')
-    lines.append(f'<text x="{left + chart_width / 2:.1f}" y="{height - 28}" text-anchor="middle" class="muted" font-size="14">million EKF turns per second</text>')
+    first_exponent = math.floor(math.log10(min_value))
+    last_exponent = math.ceil(math.log10(max_value))
+    for exponent in range(first_exponent, last_exponent + 1):
+        decade = 10.0 ** exponent
+        for multiplier in (1, 2, 5):
+            tick = multiplier * decade
+            if tick < min_value or tick > max_value:
+                continue
+            tick_x = x(tick)
+            major = multiplier == 1
+            grid_class = "grid" if major else "minor-grid"
+            lines.append(f'<line x1="{tick_x:.1f}" y1="{top - 18}" x2="{tick_x:.1f}" y2="{height - bottom + 4}" class="{grid_class}"/>')
+            lines.append(f'<text x="{tick_x:.1f}" y="{height - bottom + 28}" text-anchor="middle" class="axis">{tick:g}</text>')
+    lines.append(f'<text x="{left + chart_width / 2:.1f}" y="{height - 28}" text-anchor="middle" class="muted" font-size="14">million EKF turns per second (log scale)</text>')
 
     legend = list(COLORS)
     legend_x = width - right - 460
