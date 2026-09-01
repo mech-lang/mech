@@ -313,6 +313,11 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
                 values.append(float(match.group(1)))
         return statistics.median(values) if values else None
 
+    def mech_simd_metric(mode: str) -> float | None:
+        """Use the strict SIMD-JIT row; checked-fast is kept out of headlines."""
+        label = "Mech Cranelift SIMD-JIT" if mode == "checked" else "Mech Cranelift SIMD-JIT unchecked"
+        return mech_backend_metric(label)
+
     metrics = {
         "baseline": {
             "Mech": pair(m("Mech scalar"), m("Mech scalar unchecked")),
@@ -327,7 +332,7 @@ def build_metrics(data: dict[str, dict | None]) -> dict[str, dict[str, dict[str,
             "Futhark": pair(min_m("Futhark multicore 1 threads checked"), min_m("Futhark multicore 1 threads unchecked")),
         },
         "single-core": {
-            "Mech": pair(m("Mech Cranelift SIMD-JIT checked fast"), m("Mech Cranelift SIMD-JIT unchecked fast")),
+            "Mech": pair(mech_simd_metric("checked"), mech_simd_metric("unchecked")),
             "Rust": pair(m("Rust packed SIMD", "checked"), m("Rust packed SIMD", "unchecked")),
             "NumPy": pair(min_m("NumPy advanced checked"), min_m("NumPy advanced unchecked")),
             "Python": pair(None, None),

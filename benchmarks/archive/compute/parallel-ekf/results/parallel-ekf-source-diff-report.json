@@ -419,7 +419,7 @@
       }
     }
   },
-  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. Compile/JIT time is included only when the evidence records a separable compiler interval; it is not inferred from process startup or steady-state timing. The max single-core, SIMD/multicore, and synchronized GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker; multi-turn/fused GPU rows are retained separately as gpu_batched maxima. This is an edit-size measure, not a claim about semantic difficulty.",
+  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. Compile/JIT time is shown as baseline / advanced medians from the companion compile-evidence run, with phase and command retained per row; it is not inferred from process startup or steady-state throughput. The max single-core, SIMD/multicore, and synchronized GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker; multi-turn/fused GPU rows are retained separately as gpu_batched maxima. This is an edit-size measure, not a claim about semantic difficulty.",
   "mech_backend_support_delta": {
     "base_commit": "1ca47cdeef1cef071a891babf5423af03f51466f",
     "head_commit": "HEAD",
@@ -496,12 +496,12 @@
       "performance_maxima": {
         "single_core": {
           "checked": {
-            "throughput": 36.654,
-            "label": "Mech Cranelift SIMD-JIT checked fast"
+            "throughput": 34.551,
+            "label": "Mech Cranelift SIMD-JIT"
           },
           "unchecked": {
-            "throughput": 40.86,
-            "label": "Mech Cranelift SIMD-JIT unchecked fast"
+            "throughput": 38.226,
+            "label": "Mech Cranelift SIMD-JIT unchecked"
           }
         },
         "gpu_batched": {

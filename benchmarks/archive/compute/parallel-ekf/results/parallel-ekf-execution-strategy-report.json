@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-01T10:21:03.198569-04:00",
+  "generated_at": "2026-09-01T10:45:52.202840-04:00",
   "strategies": {
     "interpreted-baseline": [
       {
@@ -434,8 +434,8 @@
         "source": "same `.mec`; Cranelift SIMD/JIT backend",
         "source_path": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
         "values": {
-          "checked": 36.654,
-          "unchecked": 40.86
+          "checked": 34.521,
+          "unchecked": 38.226
         },
         "status": "measured",
         "code": {

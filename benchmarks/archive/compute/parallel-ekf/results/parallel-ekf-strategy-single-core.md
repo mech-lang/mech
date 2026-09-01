@@ -4,7 +4,7 @@ One process and one host worker; explicit SIMD/JIT controls are used where the r
 
 | Language | Representative source | Code L/C | Edit vs baseline L/C | Checked M/s | Unchecked M/s | Result |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| Mech | same `.mec`; Cranelift SIMD/JIT backend | 42 / 1,513 | 0 / 0 | 36.654 | 40.860 | measured |
+| Mech | same `.mec`; Cranelift SIMD/JIT backend | 42 / 1,513 | 0 / 0 | 34.521 | 38.226 | measured |
 | Rust | packed four-lane SIMD | 566 / 13,848 | 708 / 24,453 | 25.650 | 18.627 | measured |
 | NumPy | batched fixed-shape arrays | 108 / 2,974 | 94 / 3,123 | 11.129 | 12.558 | measured |
 | Julia | explicit SIMD.jl lanes | 196 / 6,935 | 204 / 8,960 | 30.835 | 32.260 | measured |
