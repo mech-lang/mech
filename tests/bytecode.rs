@@ -54,6 +54,29 @@ fn assert_bool(value: &Value, expected: bool) {
     assert!(matches!(value.data(), ValueData::Bool(actual) if *actual == expected));
 }
 
+#[cfg(feature = "distribution-full")]
+fn assert_u64(value: &Value, expected: u64) {
+    assert!(matches!(value.data(), ValueData::U64(actual) if *actual == expected));
+}
+
+#[cfg(feature = "distribution-full")]
+fn assert_bool_matrix(value: &Value, expected: &[bool]) {
+    let matrix = value.matrix_view().expect("expected canonical matrix");
+    let SequenceView::Bool(actual) = matrix.elements() else {
+        panic!("expected canonical bool matrix");
+    };
+    assert_eq!(actual, expected);
+}
+
+#[cfg(feature = "distribution-full")]
+fn assert_u64_matrix(value: &Value, expected: &[u64]) {
+    let matrix = value.matrix_view().expect("expected canonical matrix");
+    let SequenceView::U64(actual) = matrix.elements() else {
+        panic!("expected canonical u64 matrix");
+    };
+    assert_eq!(actual, expected);
+}
+
 fn assert_f64_matrix(value: &Value, expected: &[f64], rows: u64, columns: u64) {
     let matrix = value.matrix_view().expect("expected canonical matrix");
     let SequenceView::F64(actual) = matrix.elements() else {
@@ -165,6 +188,11 @@ fn scalar_add_returns_the_final_function_register() -> MResult<()> {
 #[cfg(feature = "distribution-full")]
 fn completed_math_lowerings_activate_and_execute_through_bytecode_v1() -> MResult<()> {
     for (source, expected, tolerance) in [
+        (
+            "+> math\nmath/atan2(1.0, 1.0)",
+            core::f64::consts::FRAC_PI_4,
+            1.0e-12,
+        ),
         ("+> math\nmath/copysign(3.0, -2.0)", -3.0, 0.0),
         ("+> math\nmath/fdim(5.0, 3.0)", 2.0, 0.0),
         ("+> math\nmath/fmod(5.3, 2.0)", 1.3, 1.0e-12),
@@ -209,6 +237,11 @@ fn completed_math_lowerings_activate_and_execute_through_bytecode_v1() -> MResul
 #[cfg(feature = "distribution-full")]
 fn completed_f32_math_lowerings_activate_for_scalars_and_matrices() -> MResult<()> {
     for (source, expected, tolerance) in [
+        (
+            "+> math\nmath/atan2(1f32, 1f32)",
+            core::f32::consts::FRAC_PI_4,
+            1.0e-5,
+        ),
         ("+> math\nmath/copysign(3f32, 2f32)", 3.0, 0.0),
         ("+> math\nmath/fdim(5f32, 3f32)", 2.0, 0.0),
         ("+> math\nmath/fmod(5.3<f32>, 2f32)", 1.3, 1.0e-5),
@@ -226,6 +259,7 @@ fn completed_f32_math_lowerings_activate_for_scalars_and_matrices() -> MResult<(
     }
 
     for source in [
+        "+> math\nmath/atan2([1f32 1f32], [1f32 1f32])",
         "+> math\nmath/copysign([3f32 3f32], [2f32 2f32])",
         "+> math\nmath/fdim([5f32 5f32], [3f32 3f32])",
         "+> math\nmath/fmod([5.3<f32> 5.3<f32>], [2f32 2f32])",
@@ -244,6 +278,99 @@ fn completed_f32_math_lowerings_activate_for_scalars_and_matrices() -> MResult<(
 
     let (_, value) = run_compiled_source("+> math\nmath/copysign([3f32 4f32], [2f32 2f32])")?;
     assert_f32_matrix(&value, &[3.0, 4.0]);
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn declared_float_unary_surface_activates_through_shared_residents() -> MResult<()> {
+    for source in [
+        "+> math\nmath/acos(0.5)",
+        "+> math\nmath/acosh(2.0)",
+        "+> math\nmath/acot(2.0)",
+        "+> math\nmath/acsc(2.0)",
+        "+> math\nmath/asec(2.0)",
+        "+> math\nmath/asin(0.5)",
+        "+> math\nmath/asinh(1.0)",
+        "+> math\nmath/atan(1.0)",
+        "+> math\nmath/atanh(0.5)",
+        "+> math\nmath/bessel/j0(1.0)",
+        "+> math\nmath/bessel/j1(1.0)",
+        "+> math\nmath/bessel/y0(1.0)",
+        "+> math\nmath/bessel/y1(1.0)",
+        "+> math\nmath/cbrt(8.0)",
+        "+> math\nmath/ceil(1.2)",
+        "+> math\nmath/cos(1.0)",
+        "+> math\nmath/cosh(1.0)",
+        "+> math\nmath/cot(1.0)",
+        "+> math\nmath/csc(1.0)",
+        "+> math\nmath/erf(1.0)",
+        "+> math\nmath/erfc(1.0)",
+        "+> math\nmath/floor(1.8)",
+        "+> math\nmath/lgamma(2.0)",
+        "+> math\nmath/log(2.0)",
+        "+> math\nmath/log10(10.0)",
+        "+> math\nmath/log1p(1.0)",
+        "+> math\nmath/log2(2.0)",
+        "+> math\nmath/rint(1.2)",
+        "+> math\nmath/round(1.5)",
+        "+> math\nmath/roundeven(2.5)",
+        "+> math\nmath/sec(1.0)",
+        "+> math\nmath/sin(1.0)",
+        "+> math\nmath/sinh(1.0)",
+        "+> math\nmath/sqrt(4.0)",
+        "+> math\nmath/tan(1.0)",
+        "+> math\nmath/tanh(1.0)",
+        "+> math\nmath/tgamma(2.0)",
+        "+> math\nmath/trunc(1.8)",
+    ] {
+        let (parsed, value) = run_compiled_source(source)?;
+        assert!(
+            parsed
+                .instructions
+                .iter()
+                .any(|instruction| matches!(instruction, BytecodeInstruction::RuntimeUnary { .. })),
+            "{source} did not lower to a unary runtime instruction",
+        );
+        let ValueData::F64(actual) = value.data() else {
+            panic!("{source} did not produce a canonical f64 value");
+        };
+        assert!(actual.to_f64().is_finite(), "{source} produced {actual:?}");
+    }
+
+    let (_, value) = run_compiled_source("+> math\nmath/acos([0.5<f32> 0f32])")?;
+    let matrix = value.matrix_view().expect("f32 acos returns a matrix");
+    let SequenceView::F32(elements) = matrix.elements() else {
+        panic!("f32 acos returned the wrong matrix element kind");
+    };
+    assert_eq!(elements.len(), 2);
+    assert!(elements.iter().all(|element| element.to_f32().is_finite()));
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn declared_abs_family_activates_for_snapshot_numeric_representations() -> MResult<()> {
+    let (_, value) = run_compiled_source("+> math\nmath/abs([-2<i64> 3<i64>])")?;
+    let matrix = value.matrix_view().expect("integer abs returns a matrix");
+    let SequenceView::I64(elements) = matrix.elements() else {
+        panic!("integer abs returned the wrong matrix element kind");
+    };
+    assert_eq!(elements, &[2, 3]);
+
+    let (_, value) = run_compiled_source("+> math\nmath/abs(-3/2)")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Rational64(actual)
+            if actual.numerator() == 3 && actual.denominator() == 2
+    ));
+
+    let (_, value) = run_compiled_source("+> math\nmath/abs(3+4i)")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Complex64(actual)
+            if actual.real().to_f64() == 5.0 && actual.imaginary().to_f64() == 0.0
+    ));
     Ok(())
 }
 
@@ -511,6 +638,164 @@ fn scalar_constants_round_trip_through_source_compilation() -> MResult<()> {
 fn dynamic_f64_matrix_add_round_trips() -> MResult<()> {
     let (_, value) = run_compiled_source("[1 2; 3 4] + [5 6; 7 8]")?;
     assert_f64_matrix(&value, &[6.0, 8.0, 10.0, 12.0], 2, 2);
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn canonical_resident_capabilities_close_matrix_logic_comparison_and_indexing_paths() -> MResult<()>
+{
+    let (_, value) = run_compiled_source("x<u64> := 1\n[x x]")?;
+    assert_u64_matrix(&value, &[1, 1]);
+
+    let (_, value) = run_compiled_source(
+        "left<[u64]> := [1<u64> 2<u64>]\nright<[u64]> := [3<u64> 4<u64>]\n[left right]",
+    )?;
+    assert_u64_matrix(&value, &[1, 2, 3, 4]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>; 3<u64> 4<u64>]'")?;
+    assert_u64_matrix(&value, &[1, 3, 2, 4]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>] ** [3<u64>; 4<u64>]")?;
+    assert_u64_matrix(&value, &[11]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>] + [3<u64> 4<u64>]")?;
+    assert_u64_matrix(&value, &[4, 6]);
+
+    for (source, expected) in [
+        ("[9<u64> 8<u64>] - [2<u64> 3<u64>]", &[7, 5][..]),
+        ("[3<u64> 4<u64>] * [2<u64> 5<u64>]", &[6, 20][..]),
+        ("[8<u64> 9<u64>] / [2<u64> 3<u64>]", &[4, 3][..]),
+        ("[8<u64> 9<u64>] % [3<u64> 4<u64>]", &[2, 1][..]),
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        assert_u64_matrix(&value, expected);
+    }
+
+    let (_, value) = run_compiled_source("-1<i64>")?;
+    assert!(matches!(value.data(), ValueData::I64(-1)));
+
+    let (_, value) = run_compiled_source("[2<u32> 3<u32>] ^ [3<u32> 2<u32>]")?;
+    let matrix = value.matrix_view().expect("integer power returns a matrix");
+    let SequenceView::U32(actual) = matrix.elements() else {
+        panic!("integer power must preserve u32 elements");
+    };
+    assert_eq!(actual, &[8, 9]);
+
+    let (_, value) = run_compiled_source("[1f32 2f32] + 3f32")?;
+    assert_f32_matrix(&value, &[4.0, 5.0]);
+
+    let (_, value) = run_compiled_source("1/2 + 1/2")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Rational64(actual)
+            if actual.numerator() == 1 && actual.denominator() == 1
+    ));
+
+    let (_, value) = run_compiled_source("(3/2) ^ 2<i32>")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Rational64(actual)
+            if actual.numerator() == 9 && actual.denominator() == 4
+    ));
+
+    let (_, value) = run_compiled_source("(1+2i) * (3-4i)")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Complex64(actual)
+            if actual.real().to_f64() == 11.0 && actual.imaginary().to_f64() == 2.0
+    ));
+
+    let (_, value) = run_compiled_source("+> math\nmath/acos(0.5)")?;
+    let ValueData::F64(actual) = value.data() else {
+        panic!("acos must return f64");
+    };
+    assert!((actual.to_f64() - 0.5_f64.acos()).abs() < 1.0e-15);
+
+    let (_, value) = run_compiled_source("[true false] && [true true]")?;
+    assert_bool_matrix(&value, &[true, false]);
+
+    let (_, value) = run_compiled_source("true || [false true]")?;
+    assert_bool_matrix(&value, &[true, true]);
+
+    let (_, value) = run_compiled_source("[true false] ⊕ [false true]")?;
+    assert_bool_matrix(&value, &[true, true]);
+
+    let (_, value) = run_compiled_source("![true false]")?;
+    assert_bool_matrix(&value, &[false, true]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>] != [1<u64> 3<u64>]")?;
+    assert_bool_matrix(&value, &[false, true]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>] < [2<u64> 2<u64>]")?;
+    assert_bool_matrix(&value, &[true, false]);
+
+    // Records and maps have indexing/assignment capabilities, but equality is
+    // not part of their source-admitted v0.4 surface. Keep that boundary
+    // closed instead of relying on the resident aggregate-equality fallback.
+    assert!(compile_source("{number: 1<u64>} == {number: 1<u64>}").is_err());
+    assert!(compile_source("{\"key\": 1<u64>} != {\"key\": 2<u64>}").is_err());
+
+    let (_, value) = run_compiled_source(
+        "left := |number<u64>| 1 | 2 |\nright := |number<u64>| 1 | 2 |\nleft == right",
+    )?;
+    assert_bool(&value, true);
+
+    let (_, value) =
+        run_compiled_source("matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[2,1]")?;
+    assert_u64(&value, 3);
+
+    let (_, value) =
+        run_compiled_source("matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[2,:]")?;
+    assert_u64_matrix(&value, &[3, 4]);
+
+    let (_, value) =
+        run_compiled_source("matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[:,1]")?;
+    assert_u64_matrix(&value, &[1, 3]);
+
+    let (_, value) =
+        run_compiled_source("~matrix<[u64]> := [1<u64> 2<u64>]\nmatrix[2] = 9<u64>\nmatrix")?;
+    assert_u64_matrix(&value, &[1, 9]);
+
+    let (_, value) = run_compiled_source(
+        "~matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[2,:] = [9<u64> 10<u64>]\nmatrix",
+    )?;
+    assert_u64_matrix(&value, &[1, 2, 9, 10]);
+
+    let (_, value) = run_compiled_source(
+        "~matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[:,2] = [9<u64>; 10<u64>]\nmatrix",
+    )?;
+    assert_u64_matrix(&value, &[1, 9, 3, 10]);
+
+    let (_, value) = run_compiled_source(
+        "~matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[1,2] = 9<u64>\nmatrix",
+    )?;
+    assert_u64_matrix(&value, &[1, 9, 3, 4]);
+
+    let (_, value) = run_compiled_source("~matrix := [1 2; 3 4]\nmatrix[2,:] = [9 10]\nmatrix")?;
+    assert_f64_matrix(&value, &[1.0, 2.0, 9.0, 10.0], 2, 2);
+
+    let (_, value) = run_compiled_source("record := {number: 7<u64>}\nrecord.number")?;
+    assert_u64(&value, 7);
+
+    let (_, value) =
+        run_compiled_source("~record := {number: 1<u64>}\nrecord.number = 9<u64>\nrecord.number")?;
+    assert_u64(&value, 9);
+
+    let (_, value) = run_compiled_source("items := {\"key\": 11<u64>}\nitems[\"key\"]")?;
+    assert_u64(&value, 11);
+
+    let (_, value) =
+        run_compiled_source("~items := {-0.0: 1<u64>}\nitems[0.0] = 9<u64>\nitems[-0.0]")?;
+    assert_u64(&value, 9);
+
+    let (_, value) = run_compiled_source("data := |number<u64>| 5 | 6 |\ndata.number")?;
+    assert_u64_matrix(&value, &[5, 6]);
+
+    let (_, value) = run_compiled_source(
+        "~data := |number<u64>| 1 | 2 |\ndata.number = [7<u64>; 8<u64>]\ndata.number",
+    )?;
+    assert_u64_matrix(&value, &[7, 8]);
     Ok(())
 }
 

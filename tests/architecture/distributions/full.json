@@ -2,8 +2,8 @@
   "dependency_count": 404,
   "distribution": "full",
   "native_planning_owner_count": 6,
-  "runtime_factory_count": 12830,
-  "runtime_surface_digest": "5a50d1b3c1ed51b8286f46a95ef331be871b9abdfdc69c053b19aa2042bea286",
+  "runtime_factory_count": 12831,
+  "runtime_surface_digest": "981088f9f3507e4a034bd0d1dc0b9f8ae37c803eaf7184828b1eb5240ec23102",
   "runtime_surface_digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
   "schema": "mech.distribution-contract.v1",
   "selected_hosts": [
@@ -258,6 +258,6 @@
     "web_host"
   ],
   "source_specializer_count": 120,
-  "surface_digest": "b092ea386ea293f04f558f158ec4da74707c94bcef423b28fc2a237141241892",
+  "surface_digest": "17b559b29b6de8ff16514395b9c692eac221926533f0e874e147c4776342124d",
   "surface_digest_algorithm": "sha256-canonical-selected-cargo-surface-v1"
 }

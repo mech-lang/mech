@@ -36489,6 +36489,11 @@
       "owner": "mech-math"
     },
     {
+      "name": "PowRational<r64>",
+      "id_hex": "00afe1d94441068b",
+      "owner": "mech-math"
+    },
+    {
       "name": "PowSMD<f32>",
       "id_hex": "00f189a7b3b6f0ae",
       "owner": "mech-math"

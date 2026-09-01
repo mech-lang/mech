@@ -3,10 +3,12 @@ use super::string::{
     current_string_access_expression_live, string_access_argument_is_live,
     string_access_index_argument,
 };
-use super::{Environment, execute_access_function, subscript_formula_ix, subscript_range};
+use super::{
+    Environment, execute_access_function, subscript_formula, subscript_formula_ix, subscript_range,
+};
 use crate::{
-    FunctionValueRepresentation, InterpreterExecution, MResult, SpecializationInput, Subscript,
-    ValueCell,
+    FunctionValueRepresentation, InterpreterExecution, MResult, SchemaBody, SpecializationInput,
+    Subscript, ValueCell,
 };
 
 fn selector_is_scalar(selector: &SpecializationInput) -> MResult<bool> {
@@ -21,7 +23,7 @@ fn selector_is_scalar(selector: &SpecializationInput) -> MResult<bool> {
     }
     Ok(selector
         .matrix_descriptor()?
-        .is_some_and(|matrix| matrix.rows.saturating_mul(matrix.cols) == 1))
+        .is_some_and(|matrix| matrix.rows.checked_mul(matrix.cols) == Some(1)))
 }
 
 fn operation_for(selectors: &[SpecializationInput]) -> MResult<&'static str> {
@@ -44,11 +46,18 @@ pub(super) fn access(
     let Subscript::Bracket(subscripts) = subscript else {
         unreachable!()
     };
+    let map_key_selection = matches!(value.closed_schema_body()?, SchemaBody::Map { .. });
     let mut selectors = Vec::with_capacity(subscripts.len());
     for selector in subscripts {
         match selector {
             #[cfg(feature = "subscript_formula")]
             Subscript::Formula(_) => {
+                if map_key_selection {
+                    selectors.push(SpecializationInput::Cell(subscript_formula(
+                        selector, env, p,
+                    )?));
+                    continue;
+                }
                 let index = subscript_formula_ix(selector, env, p)?;
                 selectors.push(SpecializationInput::Cell(string_access_index_argument(
                     index, selector, env, p,

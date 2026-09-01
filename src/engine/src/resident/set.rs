@@ -800,11 +800,15 @@ fn set_cartesian_product(
     // product loop, even when one side is empty and the result has no pairs.
     let input_staging_bytes = checked_sum(&[left_payload_len, right_payload_len])?;
     let cloned_bytes = checked_sum(&[result_cloned_bytes, input_staging_bytes])?;
+    // Each Cartesian result contributes the outer tuple node plus two nested
+    // member nodes. Charge all three before constructing any pair so compact
+    // values cannot bypass the resident element budget.
+    let output_nodes = checked_product(&[output_len, 3])?;
     let container_bytes = checked_product(&[output_len, 2, std::mem::size_of::<usize>()])?;
     let output_bytes = checked_sum(&[result_cloned_bytes, container_bytes])?;
     KernelCostEstimate {
         compute_work: output_len,
-        output_elements: output_len,
+        output_elements: output_nodes,
         output_bytes,
         temporary_bytes: checked_sum(&[output_bytes, input_staging_bytes])?,
         cloned_bytes,
@@ -1647,8 +1651,10 @@ mod tests {
                 .with_snapshot_schemas(schemas.clone())
         };
 
-        let left = [Some(set(256, 128))];
-        let right = [Some(set(256, 128))];
+        // Compact members keep byte amplification below the cap, but 65,536
+        // pairs still materialize 196,608 tuple/member nodes.
+        let left = [Some(set(256, 0))];
+        let right = [Some(set(256, 0))];
         let cartesian_inputs = [
             ResidentValueRef::Snapshot(&left),
             ResidentValueRef::Snapshot(&right),

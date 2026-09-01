@@ -1480,6 +1480,21 @@ fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "pow", feature = "rational", feature = "i32"),
+    registration: register_pow_rational,
+    installer: install_pow_rational,
+    name: "PowRational<r64>",
+    factory_type: crate::ops::pow::PowRational,
+    contract: RuntimeFunctionContract::no_matrix(
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    ),
+    package: "mech-math",
+    crate_name: "mech_math",
+    installer_path: "mech_math::__mech_native::install_pow_rational",
+    extra_cargo_features: ["pow"],
+}
+
 mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
@@ -1561,6 +1576,9 @@ mech_core::declare_native_binop_runtime_factories! {
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
+    #[cfg(all(feature = "pow", feature = "rational", feature = "i32"))]
+    pub use super::install_pow_rational;
+
     #[cfg(feature = "add_assign")]
     export_native_op_assign_runtime_factories!(Add; "add_assign");
     #[cfg(feature = "div_assign")]
@@ -1741,6 +1759,8 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         ("f32", f32, "f32", f32),
         ("f64", f64, "f64", f64),
     )?;
+    #[cfg(all(feature = "pow", feature = "rational", feature = "i32"))]
+    register_pow_rational(builder)?;
     #[cfg(feature = "sub")]
     mech_core::install_native_binop_runtime_factories!(
         builder,

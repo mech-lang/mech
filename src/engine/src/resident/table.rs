@@ -229,12 +229,19 @@ fn validate_join_bounds(
         cloned_bytes,
         checked_product(&[output_cells, std::mem::size_of::<usize>()])?,
     ])?;
+    // Execution can retain four independent materializations of each input at
+    // the peak inside CanonicalTable::from_cell: the ValueCell snapshot, the
+    // canonical draft tree, the snapshot used to expose columns, and the
+    // canonical-column value tree. Include every copy even when the join
+    // output is empty.
+    let retained_input_bytes =
+        checked_product(&[checked_sum(&[left_payload_bytes, right_payload_bytes])?, 4])?;
     KernelCostEstimate {
         comparison_work,
         compute_work: checked_sum(&[comparison_work, output_cells])?,
         output_elements: output_cells,
         output_bytes,
-        temporary_bytes: checked_sum(&[left_payload_bytes, right_payload_bytes, output_bytes])?,
+        temporary_bytes: checked_sum(&[retained_input_bytes, output_bytes])?,
         cloned_bytes,
     }
     .admit()
@@ -343,6 +350,11 @@ mod tests {
         assert_eq!(
             validate_join_bounds(JoinMode::Inner, 256, 256, 1, 1, 1, 32_768, 32_768),
             Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(
+            validate_join_bounds(JoinMode::Inner, 1, 0, 1, 1, 1, 6 * 1024 * 1024, 0,),
+            Err(ResidentKernelError::InvalidShape),
+            "all retained snapshot, draft, and column copies coexist",
         );
     }
 }

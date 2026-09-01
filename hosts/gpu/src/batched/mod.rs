@@ -1599,7 +1599,10 @@ impl<'a> BatchCompiler<'a> {
                 continue;
             }
             let output = outputs[0];
-            let result = if operation == "access/scalar" || operation == "access/range" {
+            let result = if matches!(
+                operation.as_str(),
+                "access/scalar" | "access/range" | "access/rows" | "access/columns"
+            ) {
                 self.lower_access(output, &inputs)
             } else if operation == "matrix/horzcat" {
                 self.lower_concatenate(output, &inputs, true)

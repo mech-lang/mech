@@ -287,6 +287,12 @@ impl MechFunctionImpl for PowRational {
         Some(FunctionStatePort::from_ref(&self.out))
     }
 
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::ops::arithmetic_full_write_contract(
+            FunctionValueRepresentation::R64,
+        ))
+    }
+
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }

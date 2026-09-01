@@ -58,38 +58,67 @@ static PURE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclar
     });
 
 #[cfg(feature = "semantic-compiler")]
-static PURE_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| OperationContractDeclaration {
+fn indexed_state_register_contract(
+    input_count: usize,
+    regions: RegionPolicy,
+) -> OperationContractDeclaration {
+    OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
-            vec![
-                InputPortPolicy {
+            (0..input_count)
+                .map(|_| InputPortPolicy {
                     access: AccessMode::Read,
                     delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-            ]
-            .into_boxed_slice(),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
         ),
         outputs: vec![OutputPortPolicy {
             access: AccessMode::ReadWrite,
             delivery: DeliveryMode::Signal,
             construction: OutputConstruction::ReadModifyWrite {
                 base_input: 0,
-                regions: RegionPolicy::IndexedAxis { axis: 0 },
+                regions,
             },
             alias: AliasPolicy::MayAlias { input: 0 },
             change_detection: ChangeDetectionPolicy::KernelReported,
         }]
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+static PURE_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| {
+        indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 0 })
     });
+
+#[cfg(feature = "semantic-compiler")]
+static PURE_ROW_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| {
+        indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 0 })
+    });
+
+#[cfg(feature = "semantic-compiler")]
+static PURE_COLUMN_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| {
+    indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 1 })
+});
+
+#[cfg(feature = "semantic-compiler")]
+static PURE_RECTANGULAR_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| indexed_state_register_contract(4, RegionPolicy::RectangularRegion));
+
+#[cfg(feature = "semantic-compiler")]
+static PURE_COLLECTION_ENTRY_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| indexed_state_register_contract(3, RegionPolicy::CollectionEntry));
+
+#[cfg(feature = "semantic-compiler")]
+static PURE_SINGLE_ELEMENT_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| indexed_state_register_contract(3, RegionPolicy::SingleElement));
 
 #[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
 pub(crate) fn install_frozen_ekf_state_runtime(
@@ -443,6 +472,43 @@ struct AssignCanonicalSelection {
     sink: ValueCell,
     source: ValueCell,
     selectors: Vec<CanonicalAccessSelector>,
+    selection_kind: CanonicalAssignmentSelectionKind,
+}
+
+#[cfg(feature = "semantic-compiler")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CanonicalAssignmentSelectionKind {
+    Linear,
+    Rows,
+    Columns,
+    Rectangular,
+    CollectionEntry,
+    SingleElement,
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl CanonicalAssignmentSelectionKind {
+    fn contract(self) -> &'static OperationContractDeclaration {
+        match self {
+            Self::Linear => &PURE_INDEXED_STATE_REGISTER_CONTRACT,
+            Self::Rows => &PURE_ROW_INDEXED_STATE_REGISTER_CONTRACT,
+            Self::Columns => &PURE_COLUMN_INDEXED_STATE_REGISTER_CONTRACT,
+            Self::Rectangular => &PURE_RECTANGULAR_STATE_REGISTER_CONTRACT,
+            Self::CollectionEntry => &PURE_COLLECTION_ENTRY_STATE_REGISTER_CONTRACT,
+            Self::SingleElement => &PURE_SINGLE_ELEMENT_STATE_REGISTER_CONTRACT,
+        }
+    }
+
+    const fn operation(self) -> &'static str {
+        match self {
+            Self::Linear => "core/assign/indexed-axis",
+            Self::Rows => "core/assign/indexed-rows",
+            Self::Columns => "core/assign/indexed-columns",
+            Self::Rectangular => "core/assign/indexed-rectangle",
+            Self::CollectionEntry => "core/assign/collection-entry",
+            Self::SingleElement => "core/assign/single-element",
+        }
+    }
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -687,10 +753,28 @@ impl AssignCanonicalSelection {
         else {
             unreachable!("closed matrix schemas have constant dimensions")
         };
-        let rows = *rows as usize;
-        let columns = *columns as usize;
+        let dimension_error = |axis: &str| {
+            MechError::new(
+                GenericError {
+                    msg: format!("matrix {axis} extent exceeds the target index width"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        };
+        let rows = usize::try_from(*rows).map_err(|_| dimension_error("row"))?;
+        let columns = usize::try_from(*columns).map_err(|_| dimension_error("column"))?;
+        let element_count = rows.checked_mul(columns).ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "matrix element count exceeds the target index width".to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
         let positions = match self.selectors.as_slice() {
-            [selector] => canonical_indices(selector, rows.saturating_mul(columns))?
+            [selector] => canonical_indices(selector, element_count)?
                 .into_iter()
                 .map(|linear| {
                     let row = linear % rows;
@@ -701,14 +785,25 @@ impl AssignCanonicalSelection {
             [row, column] => {
                 let selected_rows = canonical_indices(row, rows)?;
                 let selected_columns = canonical_indices(column, columns)?;
-                selected_rows
-                    .iter()
-                    .flat_map(|row| {
-                        selected_columns
-                            .iter()
-                            .map(|column| *row * columns + *column)
-                    })
-                    .collect::<Vec<_>>()
+                let selection_count = selected_rows
+                    .len()
+                    .checked_mul(selected_columns.len())
+                    .ok_or_else(|| {
+                        MechError::new(
+                            GenericError {
+                                msg: "matrix assignment selection is too large".to_owned(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })?;
+                let mut positions = Vec::with_capacity(selection_count);
+                for row in selected_rows {
+                    for column in &selected_columns {
+                        positions.push(row * columns + *column);
+                    }
+                }
+                positions
             }
             _ => {
                 return Err(MechError::new(
@@ -817,11 +912,11 @@ impl MechFunctionImpl for AssignCanonicalSelection {
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        Some(&PURE_INDEXED_STATE_REGISTER_CONTRACT)
+        Some(self.selection_kind.contract())
     }
 
     fn semantic_operation_name(&self) -> Option<&str> {
-        Some("core/assign/indexed-axis")
+        Some(self.selection_kind.operation())
     }
 
     fn to_string(&self) -> String {
@@ -841,23 +936,37 @@ impl MechFunctionCompiler for AssignCanonicalSelection {
     }
 
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let [CanonicalAccessSelector::Cell(selector)] = self.selectors.as_slice() else {
+        let output = compile_value_cell_register(&self.sink, context)?;
+        let source = compile_value_cell_register(&self.source, context)?;
+        let selectors = self
+            .selectors
+            .iter()
+            .filter_map(|selector| match selector {
+                CanonicalAccessSelector::Cell(selector) => Some(selector),
+                CanonicalAccessSelector::All => None,
+            })
+            .map(|selector| compile_value_cell_register(selector, context))
+            .collect::<MResult<Vec<_>>>()?;
+        if selectors.len()
+            != match self.selection_kind {
+                CanonicalAssignmentSelectionKind::Rectangular => 2,
+                _ => 1,
+            }
+        {
             return Err(MechError::new(
                 GenericError {
-                    msg: "canonical bytecode assignment requires one concrete selector".to_owned(),
+                    msg: "canonical bytecode assignment selector metadata is inconsistent"
+                        .to_owned(),
                 },
                 None,
             )
             .with_compiler_loc());
-        };
-        let output = compile_value_cell_register(&self.sink, context)?;
-        let source = compile_value_cell_register(&self.source, context)?;
-        let selector = compile_value_cell_register(selector, context)?;
-        context.emit_varop(
-            hash_str("core/assign/indexed-axis"),
-            output,
-            vec![output, source, selector],
-        );
+        }
+        let mut arguments = Vec::with_capacity(2 + selectors.len());
+        arguments.push(output);
+        arguments.push(source);
+        arguments.extend(selectors);
+        context.emit_varop(hash_str(self.selection_kind.operation()), output, arguments);
         Ok(output)
     }
 }
@@ -880,6 +989,39 @@ fn canonical_indexed_assignment(
         .iter()
         .map(CanonicalAccessSelector::from_input)
         .collect::<MResult<Vec<_>>>()?;
+    let selection_kind = match sink.closed_schema_body()? {
+        SchemaBody::Map { .. } | SchemaBody::Table { .. } => {
+            CanonicalAssignmentSelectionKind::CollectionEntry
+        }
+        SchemaBody::Tuple(_) | SchemaBody::Record(_) => {
+            CanonicalAssignmentSelectionKind::SingleElement
+        }
+        SchemaBody::Matrix { .. } => match selectors.as_slice() {
+            [CanonicalAccessSelector::Cell(_)] => CanonicalAssignmentSelectionKind::Linear,
+            [
+                CanonicalAccessSelector::Cell(_),
+                CanonicalAccessSelector::All,
+            ] => CanonicalAssignmentSelectionKind::Rows,
+            [
+                CanonicalAccessSelector::All,
+                CanonicalAccessSelector::Cell(_),
+            ] => CanonicalAssignmentSelectionKind::Columns,
+            [
+                CanonicalAccessSelector::Cell(_),
+                CanonicalAccessSelector::Cell(_),
+            ] => CanonicalAssignmentSelectionKind::Rectangular,
+            _ => {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "canonical matrix assignment requires one or two selectors".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        },
+        _ => CanonicalAssignmentSelectionKind::Linear,
+    };
     let inputs = std::iter::once(sink.clone())
         .chain(std::iter::once(source.clone()))
         .chain(selectors.iter().filter_map(|selector| match selector {
@@ -892,6 +1034,7 @@ fn canonical_indexed_assignment(
         sink: sink.clone(),
         source,
         selectors,
+        selection_kind,
     };
     implementation.next_value()?;
     Ok(SpecializedFunction::new(FunctionInstance::new(
@@ -1170,6 +1313,7 @@ mod canonical_aggregate_assignment_tests {
                 )
                 .unwrap(),
             )],
+            selection_kind: CanonicalAssignmentSelectionKind::CollectionEntry,
         };
 
         assignment.solve_result().unwrap();

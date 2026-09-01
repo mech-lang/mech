@@ -8,7 +8,7 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_033;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_034;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_326;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
@@ -17,17 +17,17 @@ const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 64;
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
     "4cdec3ae41f29816d064635f13241b4fedea3e4d1a51d95bb2197cf65460924a";
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
-const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 12_778;
+const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 12_779;
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 const EXPECTED_FULL_SOURCE_RUNTIME_SURFACE_DIGEST: &str =
-    "452fe30375fb1f279d023ed514eca00b6448ba98f8eed560e7b717a0cc55c81b";
+    "7dfb1a997945bdf4ee09b967e648f2c5d8c8e9c4fbfad5f0b2d5927fdcbcd327";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 12_830;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 12_831;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "5a50d1b3c1ed51b8286f46a95ef331be871b9abdfdc69c053b19aa2042bea286";
+    "981088f9f3507e4a034bd0d1dc0b9f8ae37c803eaf7184828b1eb5240ec23102";
 #[cfg(feature = "full_runtime")]
-const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_019;
+const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_031;
 #[cfg(feature = "full_source")]
 const EXPECTED_NAMED_SPECIALIZERS: usize = 120;
 #[cfg(feature = "full_source")]
@@ -40,10 +40,10 @@ const EXPECTED_MODULE_EXPORTS: usize = 51;
 const EXPECTED_ALL_EXPORTS: usize = 121;
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
-    "031accdaa26458a494f5331b0e1db1b54b138a3ff2df4ac4c03351e5bf8eb306";
+    "a47820fe8ca2b4e7e2b24e1f73cfd98bab0ac6bc97025879b63559ec3eb92c5d";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
-    "4bf16c1523cdc584d4e0479c3210903f0000679ba180601804388e94938b9c07";
+    "cff8f46c08a43180908b3a4be9c885e5b8a2b5a8fbf984e0e923a0cf812e6a18";
 
 static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
 

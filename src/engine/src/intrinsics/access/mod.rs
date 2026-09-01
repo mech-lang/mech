@@ -233,7 +233,34 @@ fn canonical_matrix_dimensions(value: &ValueCell) -> MResult<(usize, usize)> {
     else {
         unreachable!("closed matrix schemas have constant dimensions")
     };
-    Ok((*rows as usize, *columns as usize))
+    let rows = usize::try_from(*rows).map_err(|_| {
+        MechError::new(
+            crate::GenericError {
+                msg: "matrix row extent exceeds the target index width".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    let columns = usize::try_from(*columns).map_err(|_| {
+        MechError::new(
+            crate::GenericError {
+                msg: "matrix column extent exceeds the target index width".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    rows.checked_mul(columns).ok_or_else(|| {
+        MechError::new(
+            crate::GenericError {
+                msg: "matrix element count exceeds the target index width".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    Ok((rows, columns))
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -295,15 +322,24 @@ impl CanonicalAccess {
     }
 
     fn semantic_name(&self) -> &'static str {
-        if self.selector_cells().is_empty() {
-            "core/assign"
-        } else if matches!(
-            self.output.representation(),
-            FunctionValueRepresentation::Matrix { .. }
-        ) {
-            "access/range"
-        } else {
-            "access/scalar"
+        match self.selectors.as_slice() {
+            [
+                CanonicalAccessSelector::Cell(_),
+                CanonicalAccessSelector::All,
+            ] => "access/rows",
+            [
+                CanonicalAccessSelector::All,
+                CanonicalAccessSelector::Cell(_),
+            ] => "access/columns",
+            _ if self.selector_cells().is_empty() => "core/assign",
+            _ if matches!(
+                self.output.representation(),
+                FunctionValueRepresentation::Matrix { .. }
+            ) =>
+            {
+                "access/range"
+            }
+            _ => "access/scalar",
         }
     }
 }
@@ -468,7 +504,16 @@ fn canonical_access_result(
                 .matrix_elements()?
                 .expect("matrix schema retains matrix values");
             if selectors.len() == 1 {
-                let selected = canonical_indices(&selectors[0], rows.saturating_mul(columns))?;
+                let element_count = rows.checked_mul(columns).ok_or_else(|| {
+                    MechError::new(
+                        crate::GenericError {
+                            msg: "matrix element count exceeds the target index width".to_owned(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+                let selected = canonical_indices(&selectors[0], element_count)?;
                 let values = selected
                     .iter()
                     .map(|linear| {

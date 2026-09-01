@@ -1,9 +1,11 @@
+use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     DimensionExpr, ExternalInteraction, FloatWidth, FunctionCatalogBuilder, MResult,
     OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
-    ResidentKernelInputs, ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, ShapeRule,
+    ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
+    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, ShapeRule,
+    ValueDataDraft, ValueDraft,
 };
 use std::sync::Arc;
 
@@ -34,14 +36,14 @@ fn resident_element_kind(element: &SchemaBody) -> Option<ResidentValueKind> {
         | SchemaBody::Table { .. }
         | SchemaBody::Set { .. }
         | SchemaBody::Map { .. }
-        | SchemaBody::ReifiedType => Some(ResidentValueKind::Snapshot),
-        SchemaBody::UnsignedInteger(_)
+        | SchemaBody::ReifiedType
+        | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
         | SchemaBody::FloatingPoint(FloatWidth::W32)
         | SchemaBody::Complex(_)
         | SchemaBody::Rational64
         | SchemaBody::Id
-        | SchemaBody::Matrix { .. } => None,
+        | SchemaBody::Matrix { .. } => Some(ResidentValueKind::Snapshot),
     }
 }
 
@@ -78,13 +80,17 @@ fn bind_matrix_literal(
     let columns_u32 =
         u32::try_from(columns).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let kind = resident_element_kind(element).ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_shape = if kind == ResidentValueKind::Snapshot {
+        ResidentShape::SCALAR
+    } else {
+        ResidentShape {
+            rows: rows_u32,
+            columns: columns_u32,
+        }
+    };
     if request.inputs.len() != count
         || request.output.kind != kind
-        || request.output.shape
-            != (ResidentShape {
-                rows: rows_u32,
-                columns: columns_u32,
-            })
+        || request.output.shape != output_shape
         || request.inputs.iter().any(|input| {
             input.kind != kind
                 || input.shape != ResidentShape::SCALAR
@@ -123,15 +129,26 @@ fn bind_matrix_literal(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(
-        BoundResidentKernel::new(matrix_literal, Box::new([])).with_retained_state(Arc::new(
-            MatrixLiteralPlan {
-                rows,
-                columns,
-                kind,
-            },
-        )),
-    )
+    let kernel = BoundResidentKernel::new(matrix_literal, Box::new([])).with_retained_state(
+        Arc::new(MatrixLiteralPlan {
+            rows,
+            columns,
+            kind,
+        }),
+    );
+    if kind == ResidentValueKind::Snapshot {
+        Ok(kernel
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: request.output.schema_id,
+                schema_key: request.output.schema_key,
+                shape: request.output.shape_instance.clone(),
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+            .with_snapshot_schemas(request.schemas.clone()))
+    } else {
+        Ok(kernel)
+    }
 }
 
 fn target_index(source: usize, rows: usize, columns: usize) -> usize {
@@ -152,10 +169,15 @@ fn matrix_literal(
         .rows
         .checked_mul(plan.columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    if inputs.len() != count || output.kind() != plan.kind || output.len() != count {
+    let output_len = if plan.kind == ResidentValueKind::Snapshot {
+        1
+    } else {
+        count
+    };
+    if inputs.len() != count || output.kind() != plan.kind || output.len() != output_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    if count == 0 {
+    if count == 0 && plan.kind != ResidentValueKind::Snapshot {
         return Ok(true);
     }
 
@@ -195,13 +217,67 @@ fn matrix_literal(
                 target[target_index(source, plan.rows, plan.columns)] = value.clone();
             }
         }
-        ResidentValueMut::Snapshot(target) if plan.kind == ResidentValueKind::Snapshot => {
+        ResidentValueMut::Snapshot([target]) if plan.kind == ResidentValueKind::Snapshot => {
+            let schemas = kernel
+                .snapshot_schemas()
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            let metadata = kernel
+                .snapshot_output()
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            let mut payload_bytes = 0usize;
             for source in 0..count {
                 let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
                     return Err(ResidentKernelError::InvalidInput);
                 };
-                target[target_index(source, plan.rows, plan.columns)] = Some(value.clone());
+                payload_bytes = payload_bytes
+                    .checked_add(
+                        value
+                            .canonical_payload_len(schemas)
+                            .map_err(|_| ResidentKernelError::InvalidInput)?,
+                    )
+                    .ok_or(ResidentKernelError::InvalidShape)?;
             }
+            let container_bytes = count
+                .checked_mul(core::mem::size_of::<ValueDataDraft>())
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            super::budget::KernelCostEstimate {
+                compute_work: count,
+                output_elements: count,
+                output_bytes: payload_bytes,
+                temporary_bytes: payload_bytes
+                    .checked_mul(2)
+                    .and_then(|bytes| bytes.checked_add(container_bytes))
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                cloned_bytes: payload_bytes,
+                ..super::budget::KernelCostEstimate::default()
+            }
+            .admit()?;
+            let mut elements = Vec::with_capacity(count);
+            for source in 0..count {
+                let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
+                    return Err(ResidentKernelError::InvalidInput);
+                };
+                elements.push(
+                    value
+                        .canonical_data_draft()
+                        .map_err(|_| ResidentKernelError::InvalidInput)?,
+                );
+            }
+            let next = ValueDraft {
+                schema: metadata.schema,
+                shape_values: metadata
+                    .shape
+                    .parameter_values()
+                    .to_vec()
+                    .into_boxed_slice(),
+                data: ValueDataDraft::Matrix(elements.into_boxed_slice()),
+            }
+            .finalize(&SnapshotValidationContext::new(schemas))
+            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            if next.schema_key() != metadata.schema_key {
+                return Err(ResidentKernelError::InvalidOutput);
+            }
+            *target = Some(next);
         }
         _ => return Err(ResidentKernelError::InvalidOutput),
     }
@@ -482,7 +558,7 @@ mod tests {
     }
 
     #[test]
-    fn binder_rejects_wrong_counts_schemas_shapes_and_nested_matrices() {
+    fn binder_rejects_wrong_counts_and_shapes_but_accepts_snapshot_elements() {
         let (schemas, scalar, matrix) = f64_schemas(1, 1);
         let scalar_layout = layout(
             &schemas,
@@ -546,7 +622,7 @@ mod tests {
                 .into_boxed_slice(),
         };
         let (schemas, scalar, matrix) = schemas_for(nested, 1, 1);
-        assert!(matches!(
+        assert!(
             bind_matrix_literal(&ResidentKernelBindRequest {
                 contract: &contract(scalar, matrix, 1),
                 schemas: &schemas,
@@ -560,14 +636,11 @@ mod tests {
                     &schemas,
                     matrix,
                     ResidentValueKind::Snapshot,
-                    ResidentShape {
-                        rows: 1,
-                        columns: 1,
-                    },
+                    ResidentShape::SCALAR,
                 ),
-            }),
-            Err(ResidentKernelBindError::UnsupportedLayout)
-        ));
+            })
+            .is_ok()
+        );
     }
 
     #[test]
@@ -641,10 +714,7 @@ mod tests {
                 &schemas,
                 matrix,
                 ResidentValueKind::Snapshot,
-                ResidentShape {
-                    rows: 1,
-                    columns: 1,
-                },
+                ResidentShape::SCALAR,
             ),
         })
         .unwrap();
@@ -658,7 +728,13 @@ mod tests {
                 )
                 .unwrap()
         );
-        assert_eq!(output[0].as_ref().unwrap().schema(), value.schema());
+        let materialized = output[0].as_ref().unwrap();
+        assert_eq!(materialized.schema(), matrix);
+        assert!(matches!(
+            materialized.data(),
+            mech_core::ValueData::Matrix(elements)
+                if elements.elements().len() == 1
+        ));
 
         let missing = [None];
         assert_eq!(
@@ -668,5 +744,69 @@ mod tests {
             ),
             Err(ResidentKernelError::InvalidInput)
         );
+    }
+
+    #[test]
+    fn live_u64_elements_build_one_canonical_snapshot_matrix() {
+        let (schemas, scalar, matrix) = schemas_for(
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+            1,
+            2,
+        );
+        let kernel = bind_matrix_literal(&ResidentKernelBindRequest {
+            contract: &contract(scalar, matrix, 2),
+            schemas: &schemas,
+            inputs: &[
+                layout(
+                    &schemas,
+                    scalar,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+                layout(
+                    &schemas,
+                    scalar,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+            ],
+            output: layout(
+                &schemas,
+                matrix,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let scalar_value = |value| {
+            ValueDraft {
+                schema: scalar,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::U64(value),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let first = [Some(scalar_value(2))];
+        let second = [Some(scalar_value(3))];
+        let mut output = [None];
+        kernel
+            .execute(
+                &Inputs(vec![
+                    ResidentValueRef::Snapshot(&first),
+                    ResidentValueRef::Snapshot(&second),
+                ]),
+                ResidentValueMut::Snapshot(&mut output),
+            )
+            .unwrap();
+        let value = output[0].as_ref().unwrap();
+        assert_eq!(value.schema(), matrix);
+        let mech_core::ValueData::Matrix(values) = value.data() else {
+            panic!("literal output must be a matrix")
+        };
+        assert!(matches!(
+            values.elements().to_values().as_slice(),
+            [mech_core::ValueData::U64(2), mech_core::ValueData::U64(3)]
+        ));
     }
 }
