@@ -3,9 +3,9 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::{mem, sync::Arc, thread};
 
 #[cfg(target_arch = "aarch64")]
-use core::arch::aarch64::{float32x4_t, vld1q_f32, vst1q_f32};
+use core::arch::aarch64::*;
 #[cfg(target_arch = "x86_64")]
-use core::arch::x86_64::{__m128, _mm_loadu_ps, _mm_storeu_ps};
+use core::arch::x86_64::__m128;
 
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, MemFlags, StackSlotData, StackSlotKind, Type, UserFuncName, Value,
@@ -16,7 +16,10 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 use mech_core::CellSlotId;
+#[cfg(not(target_arch = "aarch64"))]
 use wide::f32x4;
+#[cfg(not(target_arch = "aarch64"))]
+use wide::{CmpEq, CmpGe, CmpGt, i32x4};
 
 use super::{
     BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, BinaryOperation,
@@ -1996,14 +1999,42 @@ fn lower_sum_products(
     for (left, right) in terms {
         let value = match sum {
             None => {
+                let left_operand = *left;
+                let right_operand = *right;
                 let left = lower_numeric_operand(builder, *left, registers, constants)?;
                 let right = lower_numeric_operand(builder, *right, registers, constants)?;
-                builder.ins().fmul(left, right)
+                match (left_operand, right_operand) {
+                    (ScalarOperand::Constant(value), _) if value == 1.0 => right,
+                    (_, ScalarOperand::Constant(value)) if value == 1.0 => left,
+                    (ScalarOperand::Constant(value), _) if value == -1.0 => {
+                        builder.ins().fneg(right)
+                    }
+                    (_, ScalarOperand::Constant(value)) if value == -1.0 => {
+                        builder.ins().fneg(left)
+                    }
+                    _ => builder.ins().fmul(left, right),
+                }
             }
             Some(sum) => {
+                let left_operand = *left;
+                let right_operand = *right;
                 let left = lower_numeric_operand(builder, *left, registers, constants)?;
                 let right = lower_numeric_operand(builder, *right, registers, constants)?;
-                builder.ins().fma(left, right, sum)
+                match (left_operand, right_operand) {
+                    (ScalarOperand::Constant(value), _) if value == 1.0 => {
+                        builder.ins().fadd(sum, right)
+                    }
+                    (_, ScalarOperand::Constant(value)) if value == 1.0 => {
+                        builder.ins().fadd(sum, left)
+                    }
+                    (ScalarOperand::Constant(value), _) if value == -1.0 => {
+                        builder.ins().fsub(sum, right)
+                    }
+                    (_, ScalarOperand::Constant(value)) if value == -1.0 => {
+                        builder.ins().fsub(sum, left)
+                    }
+                    _ => builder.ins().fma(left, right, sum),
+                }
             }
         };
         sum = Some(value);
@@ -2118,14 +2149,42 @@ fn lower_simd_sum_products(
     for (left, right) in terms {
         let value = match sum {
             None => {
+                let left_operand = *left;
+                let right_operand = *right;
                 let left = lower_simd_numeric_operand(*left, registers, constants)?;
                 let right = lower_simd_numeric_operand(*right, registers, constants)?;
-                builder.ins().fmul(left, right)
+                match (left_operand, right_operand) {
+                    (ScalarOperand::Constant(value), _) if value == 1.0 => right,
+                    (_, ScalarOperand::Constant(value)) if value == 1.0 => left,
+                    (ScalarOperand::Constant(value), _) if value == -1.0 => {
+                        builder.ins().fneg(right)
+                    }
+                    (_, ScalarOperand::Constant(value)) if value == -1.0 => {
+                        builder.ins().fneg(left)
+                    }
+                    _ => builder.ins().fmul(left, right),
+                }
             }
             Some(sum) => {
+                let left_operand = *left;
+                let right_operand = *right;
                 let left = lower_simd_numeric_operand(*left, registers, constants)?;
                 let right = lower_simd_numeric_operand(*right, registers, constants)?;
-                builder.ins().fma(left, right, sum)
+                match (left_operand, right_operand) {
+                    (ScalarOperand::Constant(value), _) if value == 1.0 => {
+                        builder.ins().fadd(sum, right)
+                    }
+                    (_, ScalarOperand::Constant(value)) if value == 1.0 => {
+                        builder.ins().fadd(sum, left)
+                    }
+                    (ScalarOperand::Constant(value), _) if value == -1.0 => {
+                        builder.ins().fsub(sum, right)
+                    }
+                    (_, ScalarOperand::Constant(value)) if value == -1.0 => {
+                        builder.ins().fsub(sum, left)
+                    }
+                    _ => builder.ins().fma(left, right, sum),
+                }
             }
         };
         sum = Some(value);
@@ -2684,41 +2743,43 @@ extern "C" fn mech_jit_sincos_pack(value: f32) -> u64 {
 #[cfg(target_arch = "aarch64")]
 #[allow(improper_ctypes_definitions)]
 extern "C" fn mech_jit_sinf_f32x4(value: float32x4_t) -> float32x4_t {
-    let value = unsafe { wide_from_aarch64(value) };
-    unsafe { wide_to_aarch64(value.sin()) }
+    unsafe { neon_sin_cos(value).0 }
 }
 
 #[cfg(target_arch = "x86_64")]
 #[allow(improper_ctypes_definitions)]
 extern "C" fn mech_jit_sinf_f32x4(value: __m128) -> __m128 {
-    let value = unsafe { wide_from_x86(value) };
-    unsafe { wide_to_x86(value.sin()) }
+    let value: f32x4 = unsafe { mem::transmute(value) };
+    let (sin, _) = simd_sin_cos(value);
+    unsafe { mem::transmute(sin) }
 }
 
 #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
 extern "C" fn mech_jit_sinf_f32x4(input: *const f32, output: *mut f32) {
     let value = unsafe { f32x4::new(*(input as *const [f32; 4])) };
-    unsafe { *(output as *mut [f32; 4]) = value.sin().to_array() };
+    let (sin, _) = simd_sin_cos(value);
+    unsafe { *(output as *mut [f32; 4]) = sin.to_array() };
 }
 
 #[cfg(target_arch = "aarch64")]
 #[allow(improper_ctypes_definitions)]
 extern "C" fn mech_jit_cosf_f32x4(value: float32x4_t) -> float32x4_t {
-    let value = unsafe { wide_from_aarch64(value) };
-    unsafe { wide_to_aarch64(value.cos()) }
+    unsafe { neon_sin_cos(value).1 }
 }
 
 #[cfg(target_arch = "x86_64")]
 #[allow(improper_ctypes_definitions)]
 extern "C" fn mech_jit_cosf_f32x4(value: __m128) -> __m128 {
-    let value = unsafe { wide_from_x86(value) };
-    unsafe { wide_to_x86(value.cos()) }
+    let value: f32x4 = unsafe { mem::transmute(value) };
+    let (_, cos) = simd_sin_cos(value);
+    unsafe { mem::transmute(cos) }
 }
 
 #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
 extern "C" fn mech_jit_cosf_f32x4(input: *const f32, output: *mut f32) {
     let value = unsafe { f32x4::new(*(input as *const [f32; 4])) };
-    unsafe { *(output as *mut [f32; 4]) = value.cos().to_array() };
+    let (_, cos) = simd_sin_cos(value);
+    unsafe { *(output as *mut [f32; 4]) = cos.to_array() };
 }
 
 #[cfg(target_arch = "aarch64")]
@@ -2728,19 +2789,18 @@ extern "C" fn mech_jit_sincos_f32x4(
     sin_output: *mut f32,
     cos_output: *mut f32,
 ) {
-    let value = unsafe { wide_from_aarch64(value) };
-    let (sin, cos) = value.sin_cos();
+    let (sin, cos) = unsafe { neon_sin_cos(value) };
     unsafe {
-        *(sin_output as *mut [f32; 4]) = sin.to_array();
-        *(cos_output as *mut [f32; 4]) = cos.to_array();
+        vst1q_f32(sin_output, sin);
+        vst1q_f32(cos_output, cos);
     }
 }
 
 #[cfg(target_arch = "x86_64")]
 #[allow(improper_ctypes_definitions)]
 extern "C" fn mech_jit_sincos_f32x4(value: __m128, sin_output: *mut f32, cos_output: *mut f32) {
-    let value = unsafe { wide_from_x86(value) };
-    let (sin, cos) = value.sin_cos();
+    let value: f32x4 = unsafe { mem::transmute(value) };
+    let (sin, cos) = simd_sin_cos(value);
     unsafe {
         *(sin_output as *mut [f32; 4]) = sin.to_array();
         *(cos_output as *mut [f32; 4]) = cos.to_array();
@@ -2760,50 +2820,263 @@ extern "C" fn mech_jit_sincos_f32x4(input: *const f32, sin_output: *mut f32, cos
 #[cfg(target_arch = "aarch64")]
 #[allow(improper_ctypes_definitions)]
 extern "C" fn mech_jit_atan2_f32x4(y: float32x4_t, x: float32x4_t) -> float32x4_t {
-    let y = unsafe { wide_from_aarch64(y) };
-    let x = unsafe { wide_from_aarch64(x) };
-    unsafe { wide_to_aarch64(y.atan2(x)) }
+    unsafe { neon_atan2(y, x) }
 }
 
 #[cfg(target_arch = "x86_64")]
 #[allow(improper_ctypes_definitions)]
 extern "C" fn mech_jit_atan2_f32x4(y: __m128, x: __m128) -> __m128 {
-    let y = unsafe { wide_from_x86(y) };
-    let x = unsafe { wide_from_x86(x) };
-    unsafe { wide_to_x86(y.atan2(x)) }
+    let y: f32x4 = unsafe { mem::transmute(y) };
+    let x: f32x4 = unsafe { mem::transmute(x) };
+    unsafe { mem::transmute(simd_atan2(y, x)) }
 }
 
 #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
 extern "C" fn mech_jit_atan2_f32x4(y_input: *const f32, x_input: *const f32, output: *mut f32) {
     let y = unsafe { f32x4::new(*(y_input as *const [f32; 4])) };
     let x = unsafe { f32x4::new(*(x_input as *const [f32; 4])) };
-    unsafe { *(output as *mut [f32; 4]) = y.atan2(x).to_array() };
+    unsafe { *(output as *mut [f32; 4]) = simd_atan2(y, x).to_array() };
+}
+
+#[inline]
+#[cfg(not(target_arch = "aarch64"))]
+fn bitcast_f32x4_to_i32x4(value: f32x4) -> i32x4 {
+    // Both wide vector types are four 32-bit lanes with the same C layout.
+    // This is a representation cast, not a numeric conversion.
+    unsafe { mem::transmute(value) }
+}
+
+#[inline]
+#[cfg(not(target_arch = "aarch64"))]
+fn bitcast_i32x4_to_f32x4(value: i32x4) -> f32x4 {
+    // Both wide vector types are four 32-bit lanes with the same C layout.
+    // This is a representation cast, not a numeric conversion.
+    unsafe { mem::transmute(value) }
+}
+
+/// Vector sine/cosine matching `wide::f32x4::sin_cos`, evaluated directly in
+/// native NEON registers instead of converting through a temporary wide value.
+/// Keeping this algorithm identical preserves the existing SIMD numeric
+/// contract while avoiding the conversion and temporary-array overhead.
+#[cfg(target_arch = "aarch64")]
+#[inline(always)]
+#[allow(unsafe_op_in_unsafe_fn)]
+unsafe fn neon_sin_cos(value: float32x4_t) -> (float32x4_t, float32x4_t) {
+    let dp1 = vdupq_n_f32(0.78515625_f32 * 2.0);
+    let dp2 = vdupq_n_f32(2.4187564849853515625E-4_f32 * 2.0);
+    let dp3 = vdupq_n_f32(3.77489497744594108E-8_f32 * 2.0);
+    let p0sin = vdupq_n_f32(-1.6666654611E-1_f32);
+    let p1sin = vdupq_n_f32(8.3321608736E-3_f32);
+    let p2sin = vdupq_n_f32(-1.9515295891E-4_f32);
+    let p0cos = vdupq_n_f32(4.166664568298827E-2_f32);
+    let p1cos = vdupq_n_f32(-1.388731625493765E-3_f32);
+    let p2cos = vdupq_n_f32(2.443315711809948E-5_f32);
+    let two_over_pi = vdupq_n_f32((2.0 / core::f32::consts::PI) as f32);
+    let half = vdupq_n_f32(0.5);
+    let one = vdupq_n_f32(1.0);
+    let zero = vdupq_n_f32(0.0);
+
+    let xa = vabsq_f32(value);
+    let y = vrndnq_f32(vmulq_f32(xa, two_over_pi));
+    let q = vcvtnq_s32_f32(y);
+    let x = vsubq_f32(
+        vsubq_f32(vsubq_f32(xa, vmulq_f32(y, dp1)), vmulq_f32(y, dp2)),
+        vmulq_f32(y, dp3),
+    );
+    let x2 = vmulq_f32(x, x);
+    let x4 = vmulq_f32(x2, x2);
+    let s_poly = vaddq_f32(vmulq_f32(x4, p2sin), vaddq_f32(vmulq_f32(x2, p1sin), p0sin));
+    let s = vaddq_f32(vmulq_f32(s_poly, vmulq_f32(x, x2)), x);
+    let c_poly = vaddq_f32(vmulq_f32(x4, p2cos), vaddq_f32(vmulq_f32(x2, p1cos), p0cos));
+    let c = vaddq_f32(vmulq_f32(c_poly, x4), vsubq_f32(one, vmulq_f32(half, x2)));
+
+    let one_i = vdupq_n_s32(1);
+    let zero_i = vdupq_n_s32(0);
+    let swap = vmvnq_u32(vceqq_s32(vandq_s32(q, one_i), zero_i));
+    let finite = vandq_u32(vceqq_f32(xa, xa), vcleq_f32(xa, vdupq_n_f32(f32::MAX)));
+    let overflow = vandq_u32(vcgtq_s32(q, vdupq_n_s32(0x2000000)), finite);
+    let s = vbslq_f32(overflow, zero, s);
+    let c = vbslq_f32(overflow, one, c);
+    let mut sin = vbslq_f32(swap, c, s);
+    let sign_sin = veorq_s32(vshlq_n_s32(q, 30), vreinterpretq_s32_f32(value));
+    let sign_mask = vandq_s32(sign_sin, vreinterpretq_s32_f32(vdupq_n_f32(-0.0)));
+    sin = vreinterpretq_f32_s32(veorq_s32(vreinterpretq_s32_f32(sin), sign_mask));
+    let mut cos = vbslq_f32(swap, s, c);
+    let sign_cos = vshlq_n_s32(vandq_s32(vaddq_s32(q, one_i), vdupq_n_s32(2)), 30);
+    cos = vreinterpretq_f32_s32(veorq_s32(vreinterpretq_s32_f32(cos), sign_cos));
+    (sin, cos)
 }
 
 #[cfg(target_arch = "aarch64")]
-unsafe fn wide_from_aarch64(value: float32x4_t) -> f32x4 {
-    let mut lanes = [0.0; 4];
-    unsafe { vst1q_f32(lanes.as_mut_ptr(), value) };
-    f32x4::new(lanes)
+#[inline(always)]
+#[allow(unsafe_op_in_unsafe_fn)]
+unsafe fn neon_atan2(y: float32x4_t, x: float32x4_t) -> float32x4_t {
+    let p3 = vdupq_n_f32(8.05374449538E-2_f32);
+    let p2 = vdupq_n_f32(-1.38776856032E-1_f32);
+    let p1 = vdupq_n_f32(1.99777106478E-1_f32);
+    let p0 = vdupq_n_f32(-3.33329491539E-1_f32);
+    let one = vdupq_n_f32(1.0);
+    let zero = vdupq_n_f32(0.0);
+    let frac_pi_2 = vdupq_n_f32(core::f32::consts::FRAC_PI_2);
+    let frac_pi_4 = vdupq_n_f32(core::f32::consts::FRAC_PI_4);
+    let pi = vdupq_n_f32(core::f32::consts::PI);
+    let sqrt_2 = vdupq_n_f32(core::f32::consts::SQRT_2);
+
+    let x1 = vabsq_f32(x);
+    let y1 = vabsq_f32(y);
+    let swap = vcgtq_f32(y1, x1);
+    let mut x2 = vbslq_f32(swap, y1, x1);
+    let mut y2 = vbslq_f32(swap, x1, y1);
+    let infinity = vdupq_n_f32(f32::INFINITY);
+    let both_infinite = vandq_u32(vceqq_f32(x1, infinity), vceqq_f32(y1, infinity));
+    // Keep the wide implementation's special handling for +/-infinity. The
+    // sign of either infinite input is irrelevant to this magnitude step.
+    let magnitude_mask = vdupq_n_s32(0x7fff_ffff);
+    x2 = vbslq_f32(
+        both_infinite,
+        vreinterpretq_f32_s32(vandq_s32(vreinterpretq_s32_f32(x2), magnitude_mask)),
+        x2,
+    );
+    y2 = vbslq_f32(
+        both_infinite,
+        vreinterpretq_f32_s32(vandq_s32(vreinterpretq_s32_f32(y2), magnitude_mask)),
+        y2,
+    );
+    let t = vdivq_f32(y2, x2);
+    let not_small = vcgeq_f32(t, vsubq_f32(sqrt_2, one));
+    let a = vbslq_f32(not_small, vsubq_f32(t, one), t);
+    let b = vbslq_f32(not_small, vaddq_f32(t, one), one);
+    let s = vandq_u32(not_small, vreinterpretq_u32_f32(frac_pi_4));
+    let z = vdivq_f32(a, b);
+    let zz = vmulq_f32(z, z);
+    let zz2 = vmulq_f32(zz, zz);
+    let re_poly = vaddq_f32(vmulq_f32(zz, p3), p2);
+    let re_poly = vaddq_f32(vmulq_f32(re_poly, zz2), vaddq_f32(vmulq_f32(zz, p1), p0));
+    let re = vaddq_f32(
+        vaddq_f32(vmulq_f32(re_poly, vmulq_f32(zz, z)), z),
+        vreinterpretq_f32_u32(s),
+    );
+    let re = vbslq_f32(swap, vsubq_f32(frac_pi_2, re), re);
+    let xy = vreinterpretq_f32_u32(vorrq_u32(
+        vreinterpretq_u32_f32(x),
+        vreinterpretq_u32_f32(y),
+    ));
+    let zero_xy = vceqq_f32(xy, zero);
+    let re = vbslq_f32(zero_xy, zero, re);
+    let sign_mask = vdupq_n_u32(0x8000_0000);
+    let x_sign = vceqq_u32(vandq_u32(vreinterpretq_u32_f32(x), sign_mask), sign_mask);
+    let re = vbslq_f32(x_sign, vsubq_f32(pi, re), re);
+    let y_sign = vceqq_u32(vandq_u32(vreinterpretq_u32_f32(y), sign_mask), sign_mask);
+    vbslq_f32(y_sign, vnegq_f32(re), re)
 }
 
-#[cfg(target_arch = "aarch64")]
-unsafe fn wide_to_aarch64(value: f32x4) -> float32x4_t {
-    let lanes = value.to_array();
-    unsafe { vld1q_f32(lanes.as_ptr()) }
+#[inline]
+#[cfg(not(target_arch = "aarch64"))]
+fn simd_sin_cos(value: f32x4) -> (f32x4, f32x4) {
+    const DP1F: f32x4 = f32x4::new([0.78515625_f32 * 2.0; 4]);
+    const DP2F: f32x4 = f32x4::new([2.4187564849853515625E-4_f32 * 2.0; 4]);
+    const DP3F: f32x4 = f32x4::new([3.77489497744594108E-8_f32 * 2.0; 4]);
+    const P0SINF: f32x4 = f32x4::new([-1.6666654611E-1_f32; 4]);
+    const P1SINF: f32x4 = f32x4::new([8.3321608736E-3_f32; 4]);
+    const P2SINF: f32x4 = f32x4::new([-1.9515295891E-4_f32; 4]);
+    const P0COSF: f32x4 = f32x4::new([4.166664568298827E-2_f32; 4]);
+    const P1COSF: f32x4 = f32x4::new([-1.388731625493765E-3_f32; 4]);
+    const P2COSF: f32x4 = f32x4::new([2.443315711809948E-5_f32; 4]);
+    const TWO_OVER_PI: f32x4 = f32x4::new([(2.0 / core::f32::consts::PI) as f32; 4]);
+    const HALF: f32x4 = f32x4::new([0.5; 4]);
+    const ONE: f32x4 = f32x4::new([1.0; 4]);
+    const ZERO: f32x4 = f32x4::new([0.0; 4]);
+
+    let dp1f = DP1F;
+    let dp2f = DP2F;
+    let dp3f = DP3F;
+    let p0sinf = P0SINF;
+    let p1sinf = P1SINF;
+    let p2sinf = P2SINF;
+    let p0cosf = P0COSF;
+    let p1cosf = P1COSF;
+    let p2cosf = P2COSF;
+    let two_over_pi = TWO_OVER_PI;
+    let half = HALF;
+    let one = ONE;
+    let zero = ZERO;
+
+    let xa = value.abs();
+    let y = (xa * two_over_pi).round();
+    let q = y.round_int();
+    let x = y.mul_neg_add(dp3f, y.mul_neg_add(dp2f, y.mul_neg_add(dp1f, xa)));
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    let s_poly = x4.mul_add(p2sinf, x2.mul_add(p1sinf, p0sinf));
+    let s = s_poly * (x * x2) + x;
+    let c_poly = x4.mul_add(p2cosf, x2.mul_add(p1cosf, p0cosf));
+    let c = c_poly * x4 + half.mul_neg_add(x2, one);
+    let swap = !(q & i32x4::from(1)).cmp_eq(i32x4::from(0));
+    let mut overflow = bitcast_i32x4_to_f32x4(q.cmp_gt(i32x4::from(0x2000000)));
+    overflow &= xa.is_finite();
+    let s = overflow.blend(zero, s);
+    let c = overflow.blend(one, c);
+    let mut sin = bitcast_i32x4_to_f32x4(swap).blend(c, s);
+    let sign_sin = (q << 30) ^ bitcast_f32x4_to_i32x4(value);
+    sin = sin.flip_signs(bitcast_i32x4_to_f32x4(sign_sin));
+    let mut cos = bitcast_i32x4_to_f32x4(swap).blend(s, c);
+    let sign_cos = ((q + i32x4::from(1)) & i32x4::from(2)) << 30;
+    cos ^= bitcast_i32x4_to_f32x4(sign_cos);
+    (sin, cos)
 }
 
-#[cfg(target_arch = "x86_64")]
-unsafe fn wide_from_x86(value: __m128) -> f32x4 {
-    let mut lanes = [0.0; 4];
-    unsafe { _mm_storeu_ps(lanes.as_mut_ptr(), value) };
-    f32x4::new(lanes)
-}
+#[inline]
+#[cfg(not(target_arch = "aarch64"))]
+fn simd_atan2(y: f32x4, x: f32x4) -> f32x4 {
+    const P3ATANF: f32x4 = f32x4::new([8.05374449538E-2_f32; 4]);
+    const P2ATANF: f32x4 = f32x4::new([-1.38776856032E-1_f32; 4]);
+    const P1ATANF: f32x4 = f32x4::new([1.99777106478E-1_f32; 4]);
+    const P0ATANF: f32x4 = f32x4::new([-3.33329491539E-1_f32; 4]);
+    const ONE: f32x4 = f32x4::new([1.0; 4]);
+    const ZERO: f32x4 = f32x4::new([0.0; 4]);
+    const FRAC_PI_2: f32x4 = f32x4::new([core::f32::consts::FRAC_PI_2; 4]);
+    const FRAC_PI_4: f32x4 = f32x4::new([core::f32::consts::FRAC_PI_4; 4]);
+    const PI: f32x4 = f32x4::new([core::f32::consts::PI; 4]);
+    const SQRT_2: f32x4 = f32x4::new([core::f32::consts::SQRT_2; 4]);
 
-#[cfg(target_arch = "x86_64")]
-unsafe fn wide_to_x86(value: f32x4) -> __m128 {
-    let lanes = value.to_array();
-    unsafe { _mm_loadu_ps(lanes.as_ptr()) }
+    let p3atanf = P3ATANF;
+    let p2atanf = P2ATANF;
+    let p1atanf = P1ATANF;
+    let p0atanf = P0ATANF;
+    let one = ONE;
+    let zero = ZERO;
+    let frac_pi_2 = FRAC_PI_2;
+    let frac_pi_4 = FRAC_PI_4;
+    let pi = PI;
+    let sqrt_2 = SQRT_2;
+
+    let x1 = x.abs();
+    let y1 = y.abs();
+    let swapxy = y1.cmp_gt(x1);
+    let mut x2 = swapxy.blend(y1, x1);
+    let mut y2 = swapxy.blend(x1, y1);
+    let both_infinite = x.is_inf() & y.is_inf();
+    if both_infinite.any() {
+        let minus_one = -one;
+        x2 = both_infinite.blend(x2 & minus_one, x2);
+        y2 = both_infinite.blend(y2 & minus_one, y2);
+    }
+    let t = y2 / x2;
+    let not_small = t.cmp_ge(sqrt_2 - one);
+    let a = not_small.blend(t - one, t);
+    let b = not_small.blend(t + one, one);
+    let s = not_small & frac_pi_4;
+    let z = a / b;
+    let zz = z * z;
+    let zz2 = zz * zz;
+    let re = p3atanf
+        .mul_add(zz, p2atanf)
+        .mul_add(zz2, p1atanf.mul_add(zz, p0atanf));
+    let re = re.mul_add(zz * z, z) + s;
+    let re = swapxy.blend(frac_pi_2 - re, re);
+    let re = ((x | y).cmp_eq(zero)).blend(zero, re);
+    let re = (x.sign_bit()).blend(pi - re, re);
+    (y.sign_bit()).blend(-re, re)
 }
 
 extern "C" fn mech_jit_sqrtf(value: f32) -> f32 {
