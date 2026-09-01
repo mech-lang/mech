@@ -255,11 +255,29 @@ def load_rows(
             for row in taichi_optimized["rows"]
         )
     if minimal is not None:
-        for label, family in (
-            ("Halide checked", "Halide"),
-            ("Halide unchecked", "Halide"),
-            ("Futhark multicore 8 threads checked", "Futhark"),
-            ("Futhark multicore 8 threads unchecked", "Futhark"),
+        for label, family, display_label in (
+            ("Halide checked", "Halide", "Halide"),
+            ("Halide unchecked", "Halide", "Halide"),
+            (
+                "Futhark multicore 1 threads checked",
+                "Futhark",
+                "Futhark multicore, 1 worker (10k x 20)",
+            ),
+            (
+                "Futhark multicore 1 threads unchecked",
+                "Futhark",
+                "Futhark multicore, 1 worker (10k x 20)",
+            ),
+            (
+                "Futhark multicore 8 threads checked",
+                "Futhark",
+                "Futhark multicore, 8 workers (10k x 20)",
+            ),
+            (
+                "Futhark multicore 8 threads unchecked",
+                "Futhark",
+                "Futhark multicore, 8 workers (10k x 20)",
+            ),
         ):
             row = minimal.get("rows", {}).get(label)
             if row is not None and "throughput" in row:
@@ -267,7 +285,7 @@ def load_rows(
 
                 rows.append(
                     {
-                        "label": family + ", " + ("unchecked" if label.endswith("unchecked") else "checked"),
+                        "label": display_label,
                         "family": family,
                         "mode": "unchecked" if label.endswith("unchecked") else "checked",
                         "throughput": statistics.median(row["throughput"]) / 1_000_000,
@@ -516,6 +534,7 @@ def render(
 
     note = "Rows are ordered by throughput from slowest to fastest. Hatched bars are GPU lanes; solid bars are CPU lanes. Checked rows include candidate validation/publication; unchecked rows explicitly omit those guarantees. "
     note += "Native Metal rows are direct command submission; WGPU rows are retained as a portable transport control. "
+    note += "Futhark multicore rows show worker count explicitly; only the 1-worker row is a single-core comparison. "
     note += "Compilation, allocation, warmup, and final readback are excluded from the timed region."
     lines.append(f'<text x="52" y="{height - 55}" class="muted" font-size="12">{esc(note)}</text>')
     lines.append(svg_machine_specs(width, height, right=right, bottom=18))

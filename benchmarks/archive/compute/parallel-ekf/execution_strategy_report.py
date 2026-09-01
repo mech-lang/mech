@@ -50,6 +50,8 @@ STRATEGIES = {
         "title": "Single-core",
         "description": "One process and one host worker; explicit SIMD/JIT controls are used where the retained evidence provides them.",
         "workload": "10,000 filters x 20 turns where available",
+        "note": "The closest Futhark comparison is its one-worker row (19.614 checked / 19.635 unchecked). The 48.391 / 47.824 Futhark result uses eight workers and belongs to the multicore view.",
+        "chart_note": "Closest Futhark one-worker row: 19.614 / 19.635 M/s. The 48.391 / 47.824 row is eight-worker multicore, not a single-core comparison.",
     },
     "multicore": {
         "title": "Eight-worker multicore",
@@ -512,7 +514,8 @@ def svg(report: dict, strategy: str) -> str:
     else:
         tick_step = 10.0 * magnitude
     maximum = tick_step * math.ceil(maximum_value / tick_step)
-    width, left, right, top, row_height = 1500, 300, 100, 125, 55
+    width, left, right, row_height = 1500, 300, 100, 55
+    top = 145 if STRATEGIES[strategy].get("chart_note") else 125
     bottom = 90 + 18 * (1 + len(omitted))
     height = top + row_height * len(rows) + bottom
 
@@ -528,9 +531,16 @@ def svg(report: dict, strategy: str) -> str:
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}</style>',
         f'<text x="38" y="42" font-size="27" font-weight="700">Parallel EKF: {esc(STRATEGIES[strategy]["title"])} throughput</text>',
         f'<text x="38" y="69" class="muted" font-size="15">{esc(STRATEGIES[strategy]["description"])} Checked is solid; unchecked is lighter. Linear M/s axis.</text>',
-        '<rect x="38" y="87" width="18" height="12" fill="#dce5f2"/><text x="64" y="98" class="muted" font-size="13">checked</text>',
-        '<rect x="145" y="87" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="98" class="muted" font-size="13">unchecked</text>',
     ]
+    if STRATEGIES[strategy].get("chart_note"):
+        lines.append(f'<text x="38" y="91" class="muted" font-size="13">{esc(STRATEGIES[strategy]["chart_note"])}</text>')
+        legend_y = 108
+    else:
+        legend_y = 87
+    lines.extend([
+        f'<rect x="38" y="{legend_y}" width="18" height="12" fill="#dce5f2"/><text x="64" y="{legend_y + 11}" class="muted" font-size="13">checked</text>',
+        f'<rect x="145" y="{legend_y}" width="18" height="12" fill="#dce5f2" opacity="0.42"/><text x="171" y="{legend_y + 11}" class="muted" font-size="13">unchecked</text>',
+    ])
     tick = 0.0
     while tick <= maximum * 1.0001:
         tick_x = x(tick)
