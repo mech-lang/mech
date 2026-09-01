@@ -142,17 +142,17 @@
       "baseline_label": "compact per-filter scalar loop",
       "advanced_label": "compact batched fixed-shape vectorized operations",
       "note": "The baseline is a per-filter NumPy call from a Python loop; the advanced control uses fixed-shape batched arrays. The row is labeled NumPy because both variants use NumPy for the numeric work.",
-      "baseline_lines": 22,
-      "baseline_chars": 1913,
-      "advanced_lines": 37,
-      "advanced_chars": 3206,
+      "baseline_lines": 71,
+      "baseline_chars": 2164,
+      "advanced_lines": 116,
+      "advanced_chars": 3568,
       "baseline_code": {
-        "lines": 18,
-        "chars": 1813
+        "lines": 66,
+        "chars": 1819
       },
       "advanced_code": {
-        "lines": 31,
-        "chars": 3043
+        "lines": 108,
+        "chars": 2974
       },
       "factors": {
         "layout": "per-lane arrays -> batched SoA arrays",
@@ -171,22 +171,22 @@
       },
       "workload": "10,000 x 20 -> 10,000 x 20",
       "baseline_to_advanced": {
-        "changed_line_slots": 29,
-        "added_lines": 28,
-        "deleted_lines": 13,
-        "changed_chars": 3090
+        "changed_line_slots": 94,
+        "added_lines": 91,
+        "deleted_lines": 46,
+        "changed_chars": 3123
       },
       "baseline_to_base_mech": {
-        "changed_line_slots": 45,
-        "added_lines": 20,
+        "changed_line_slots": 72,
+        "added_lines": 69,
         "deleted_lines": 44,
-        "changed_chars": 2121
+        "changed_chars": 2365
       },
       "advanced_to_base_mech": {
-        "changed_line_slots": 45,
-        "added_lines": 35,
+        "changed_line_slots": 116,
+        "added_lines": 114,
         "deleted_lines": 44,
-        "changed_chars": 3417
+        "changed_chars": 3772
       },
       "throughput_millions": {
         "checked": 11.128708067,

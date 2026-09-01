@@ -8,7 +8,7 @@ This report measures source edits and runtime factors behind the parallel EKF va
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Mech | compact high-level `.mec` program | same compact `.mec`; native backend selected at build | 10,000 x 20 -> 500,000 x 40 | 42 / 1,513 | 42 / 1,513 | 0 / 0 | 0 / 0 | 0 / 0 | 0.919 | 1.029 | 246.151 | 241.028 |
 | Rust | compact fixed-shape scalar control | compact packed four-lane SIMD control | 10,000 x 20 -> 10,000 x 20 | 206 / 5,003 | 566 / 13,848 | 701 / 23,858 | 210 / 6,454 | 596 / 20,653 | -- | 16.907 | 25.650 | 18.627 |
-| NumPy | compact per-filter scalar loop | compact batched fixed-shape vectorized operations | 10,000 x 20 -> 10,000 x 20 | 18 / 1,813 | 31 / 3,043 | 29 / 3,090 | 45 / 2,121 | 45 / 3,417 | 0.040 | 0.053 | 11.129 | 12.558 |
+| NumPy | compact per-filter scalar loop | compact batched fixed-shape vectorized operations | 10,000 x 20 -> 10,000 x 20 | 66 / 1,819 | 108 / 2,974 | 94 / 3,123 | 72 / 2,365 | 116 / 3,772 | 0.040 | 0.053 | 11.129 | 12.558 |
 | Julia | compact generic scalar Julia | compact explicit four-lane SIMD.jl intrinsics | 10,000 x 20 -> 10,000 x 20 | 96 / 4,382 | 194 / 6,939 | 200 / 8,979 | 96 / 4,758 | 194 / 8,158 | 3.073 | 3.123 | 30.835 | 32.260 |
 | LuaJIT | compact generic matrix helper loop | compact flat fixed-shape scalarized state | 10,000 x 20 -> 10,000 x 20 | 43 / 3,288 | 153 / 7,031 | 150 / 7,719 | 46 / 3,369 | 153 / 7,444 | -- | 1.074 | 1.263 | 15.991 |
 | Lua | same compact flat source under PUC Lua | same compact flat source under PUC Lua | 10,000 x 20 -> 10,000 x 20 | 153 / 7,031 | 153 / 7,031 | 0 / 0 | 153 / 7,444 | 153 / 7,444 | 0.565 | 0.835 | 0.565 | 0.835 |
@@ -36,7 +36,7 @@ This report measures source edits and runtime factors behind the parallel EKF va
 
 - **Mech**: The compact source recurrence does not change. Native Metal specialization is backend support, not a second Mech program. Baseline -> advanced touches **0 lines / 0 characters**.
 - **Rust**: The compact controls preserve the checked-in Rust algorithms while removing narrative scaffolding; the advanced control still changes the value representation and execution loop. Baseline -> advanced touches **701 lines / 23858 characters**.
-- **NumPy**: The baseline is a per-filter NumPy call from a Python loop; the advanced control uses fixed-shape batched arrays. The row is labeled NumPy because both variants use NumPy for the numeric work. Baseline -> advanced touches **29 lines / 3090 characters**.
+- **NumPy**: The baseline is a per-filter NumPy call from a Python loop; the advanced control uses fixed-shape batched arrays. The row is labeled NumPy because both variants use NumPy for the numeric work. Baseline -> advanced touches **94 lines / 3123 characters**.
 - **Julia**: The compact controls preserve the Julia algorithms; the advanced source introduces an explicit packed value type and lane loop. Baseline -> advanced touches **200 lines / 8979 characters**.
 - **LuaJIT**: The compact controls preserve the Lua algorithms; the advanced source removes helper-level matrix temporaries and writes each component directly. Baseline -> advanced touches **150 lines / 7719 characters**.
 - **Lua**: The Lua comparison isolates the runtime: the source is identical to the LuaJIT flat control. Baseline -> advanced touches **0 lines / 0 characters**.

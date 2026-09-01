@@ -50,10 +50,10 @@
 <rect x="940.0" y="243" width="1.0" height="22" rx="3" fill="#e94f37" opacity="0.9"/>
 <text x="948.0" y="258" class="value">0</text>
 <text x="226" y="297" text-anchor="end" class="label">NumPy</text>
-<rect x="240" y="283" width="25.6" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="273.6" y="298" class="value">29</text>
-<rect x="940.0" y="283" width="80.3" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="1028.3" y="298" class="value">3,090</text>
+<rect x="240" y="283" width="83.1" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="331.1" y="298" class="value">94</text>
+<rect x="940.0" y="283" width="81.2" height="22" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="1029.2" y="298" class="value">3,123</text>
 <text x="226" y="337" text-anchor="end" class="label">LuaJIT</text>
 <rect x="240" y="323" width="132.7" height="22" rx="3" fill="#5ba37f" opacity="0.9"/>
 <text x="380.7" y="338" class="value">150</text>
