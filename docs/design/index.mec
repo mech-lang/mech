@@ -10,3 +10,4 @@ Design Documents
 - [Value-resident execution architecture](/design/value-resident-execution.html)
 - [Immutable value semantics and migration contract](/design/value-semantics-and-migration.html)
 - [Program artifact resident activation contract](/design/program-artifact-resident-activation.html)
+- [Type-memory boundary](/design/type-memory-boundary.html)
