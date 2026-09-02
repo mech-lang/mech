@@ -78,6 +78,7 @@ const F64_INPUT_ARENA: u32 = 1;
 const F64_SCRATCH_ARENA: u32 = 2;
 const F64_STATE_ARENA_BASE: u8 = 3;
 const F64_STATE_SLOT_BIT: u32 = 1 << 31;
+const MAX_STATIC_SELECTOR_SOURCE_STEPS: usize = 65_536;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct F64ReadTapeEntry {
@@ -1049,6 +1050,9 @@ pub enum ResidentActivationError {
     InvalidDependency {
         node: NodeId,
     },
+    StaticSelectorResolutionLimit {
+        slot: CellSlotId,
+    },
     UnknownOutput {
         output: usize,
     },
@@ -1126,6 +1130,7 @@ pub fn preflight_activation(
     let classification = classify_nodes(artifact, options.external)?;
     let layout = build_layout(artifact, facts, &classification)?;
     let facts_fingerprint = activation_facts_fingerprint(facts);
+    let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
     let (plan, _, _, _, _) = build_plan(
         artifact,
         catalog,
@@ -1133,10 +1138,11 @@ pub fn preflight_activation(
         layout,
         facts_fingerprint,
         options,
+        &mut static_selectors,
     )?;
     Ok(ResidentActivationPreflight {
         plan,
-        concrete_cases: resident_concrete_execution_cases(artifact)?,
+        concrete_cases: resident_concrete_execution_cases(artifact, &mut static_selectors)?,
     })
 }
 
@@ -1187,6 +1193,7 @@ fn resident_activation_error_node(error: &ResidentActivationError) -> Option<Nod
 
 fn resident_concrete_execution_cases(
     artifact: &ProgramArtifact,
+    static_selectors: &mut ArtifactStaticSelectorResolver,
 ) -> Result<Box<[ConcreteExecutionCase]>, ResidentActivationError> {
     artifact
         .nodes()
@@ -1213,10 +1220,10 @@ fn resident_concrete_execution_cases(
                             ResidentActivationError::InvalidDependency { node: node.node },
                         )?;
                         input_schemas.push(value.schema());
-                        input_resolved_selectors.push(artifact_static_selector(
-                            artifact,
-                            ArtifactSource::Constant(constant),
-                        ));
+                        input_resolved_selectors.push(
+                            static_selectors
+                                .resolve(artifact, ArtifactSource::Constant(constant))?,
+                        );
                     }
                     ArtifactSource::Slot(slot) => {
                         input_schemas.push(
@@ -1228,10 +1235,8 @@ fn resident_concrete_execution_cases(
                                     node: node.node,
                                 })?,
                         );
-                        input_resolved_selectors.push(artifact_static_selector(
-                            artifact,
-                            ArtifactSource::Slot(slot),
-                        ));
+                        input_resolved_selectors
+                            .push(static_selectors.resolve(artifact, ArtifactSource::Slot(slot))?);
                     }
                 }
             }
@@ -1287,6 +1292,7 @@ fn activate_internal(
     let classification = classify_nodes(artifact, options.external)?;
     let layout = build_layout(artifact, facts, &classification)?;
     let facts_fingerprint = activation_facts_fingerprint(facts);
+    let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
     let (plan, input_sizes, state_sizes, scratch_sizes, activation_sizes) = build_plan(
         artifact,
         catalog,
@@ -1294,6 +1300,7 @@ fn activate_internal(
         layout,
         facts_fingerprint,
         options,
+        &mut static_selectors,
     )?;
     let mut activation = TypedResidentArena::allocate(activation_sizes);
     for raw in 0..artifact.constants().len() {
@@ -1803,6 +1810,7 @@ fn build_plan(
     layout: LayoutBuild,
     activation_facts_fingerprint: [u8; 32],
     options: ResidentActivationOptions,
+    static_selectors: &mut ArtifactStaticSelectorResolver,
 ) -> Result<
     (
         ActivatedPlan,
@@ -1838,7 +1846,7 @@ fn build_plan(
                 .requirement
                 .ok_or(ResidentActivationError::InvalidExternalNode { node: node.node })?;
             let payload = resolve_read(&layout, *source)?;
-            let payload_layout = source_port_layout(artifact, &layout, *source)?;
+            let payload_layout = source_port_layout(artifact, &layout, *source, static_selectors)?;
             let payload_shape = match source {
                 ArtifactSource::Slot(slot) => layout.slots[slot.get() as usize].shape.clone(),
                 ArtifactSource::Constant(constant) => {
@@ -1899,7 +1907,7 @@ fn build_plan(
         }
         let input_layouts = input_sources
             .iter()
-            .map(|source| source_port_layout(artifact, &layout, *source))
+            .map(|source| source_port_layout(artifact, &layout, *source, static_selectors))
             .collect::<Result<Vec<_>, _>>()?;
         let output_layout = slot_port_layout(output);
         let bind_request = ResidentKernelBindRequest {
@@ -2050,7 +2058,8 @@ fn build_plan(
                 });
             }
             let predicate = resolve_read(&layout, constraint.inputs[0])?;
-            let layout = source_port_layout(artifact, &layout, constraint.inputs[0])?;
+            let layout =
+                source_port_layout(artifact, &layout, constraint.inputs[0], static_selectors)?;
             if layout.kind != ResidentValueKind::Bool || layout.shape != ResidentShape::SCALAR {
                 return Err(ResidentActivationError::InvalidConstraint {
                     constraint: constraint.constraint,
@@ -2634,6 +2643,7 @@ fn source_port_layout(
     artifact: &ProgramArtifact,
     layout: &LayoutBuild,
     source: ArtifactSource,
+    static_selectors: &mut ArtifactStaticSelectorResolver,
 ) -> Result<ResidentPortLayout, ResidentActivationError> {
     match source {
         ArtifactSource::Constant(constant) => {
@@ -2650,7 +2660,7 @@ fn source_port_layout(
         }
         ArtifactSource::Slot(slot) => {
             let mut port = slot_port_layout(&layout.slots[slot.get() as usize]);
-            port.resolved_selector = artifact_static_selector(artifact, source);
+            port.resolved_selector = static_selectors.resolve(artifact, source)?;
             Ok(port)
         }
     }
@@ -2681,46 +2691,96 @@ fn resident_resolved_selector(
 }
 
 /// Resolves immutable scalar selector conversions embedded in the artifact.
-/// This follows only the canonical `access/index` conversion node; arbitrary
-/// derived slots and mutable inputs/state never acquire a static identity.
-fn artifact_static_selector(
-    artifact: &ProgramArtifact,
-    source: ArtifactSource,
-) -> Option<mech_core::ResidentResolvedSelector> {
-    fn resolve(
-        artifact: &ProgramArtifact,
-        source: ArtifactSource,
-        visited: &mut BTreeSet<CellSlotId>,
-    ) -> Option<mech_core::ResidentResolvedSelector> {
-        match source {
-            ArtifactSource::Constant(constant) => artifact
-                .constants()
-                .get(constant)
-                .and_then(resident_resolved_selector),
-            ArtifactSource::Slot(slot) => {
-                if !visited.insert(slot) {
-                    return None;
-                }
-                let declaration = artifact.slots().get(slot.get() as usize)?;
-                let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
-                    return None;
-                };
-                let node = artifact.nodes().get(node.get() as usize)?;
-                if node.operation.module_path.as_ref() != ["access"]
-                    || node.operation.operation_name != "index"
-                {
-                    return None;
-                }
-                let inputs = node_inputs(artifact, node.node).ok()?;
-                let [input] = inputs.as_slice() else {
-                    return None;
-                };
-                resolve(artifact, *input, visited)
-            }
+/// Only canonical `access/index` conversion nodes are followed. Resolution is
+/// iterative, bounded across the complete activation plan, and path-cached so
+/// a long producer chain cannot consume quadratic work or the process stack.
+struct ArtifactStaticSelectorResolver {
+    slots: Vec<Option<Option<mech_core::ResidentResolvedSelector>>>,
+    remaining_steps: usize,
+}
+
+impl ArtifactStaticSelectorResolver {
+    fn new(artifact: &ProgramArtifact) -> Self {
+        Self {
+            slots: vec![None; artifact.slots().len()],
+            remaining_steps: MAX_STATIC_SELECTOR_SOURCE_STEPS,
         }
     }
 
-    resolve(artifact, source, &mut BTreeSet::new())
+    fn resolve(
+        &mut self,
+        artifact: &ProgramArtifact,
+        source: ArtifactSource,
+    ) -> Result<Option<mech_core::ResidentResolvedSelector>, ResidentActivationError> {
+        let mut source = source;
+        let mut path = Vec::new();
+        let mut visited = BTreeSet::new();
+        let resolved = loop {
+            match source {
+                ArtifactSource::Constant(constant) => {
+                    break artifact
+                        .constants()
+                        .get(constant)
+                        .and_then(resident_resolved_selector);
+                }
+                ArtifactSource::Slot(slot) => {
+                    let index = slot.get() as usize;
+                    let Some(cached) = self.slots.get(index) else {
+                        return Err(ResidentActivationError::InvalidDependency {
+                            node: NodeId::new(slot.get()),
+                        });
+                    };
+                    if let Some(cached) = cached {
+                        break *cached;
+                    }
+                    if !visited.insert(slot) {
+                        let node = artifact
+                            .slots()
+                            .get(index)
+                            .and_then(|slot| match slot.producer {
+                                ProducerReference::NodeOutput { node, .. } => Some(node),
+                                _ => None,
+                            })
+                            .unwrap_or_else(|| NodeId::new(slot.get()));
+                        return Err(ResidentActivationError::InvalidDependency { node });
+                    }
+                    let Some(remaining) = self.remaining_steps.checked_sub(1) else {
+                        return Err(ResidentActivationError::StaticSelectorResolutionLimit {
+                            slot,
+                        });
+                    };
+                    self.remaining_steps = remaining;
+                    path.push(slot);
+                    let declaration = artifact.slots().get(index).ok_or(
+                        ResidentActivationError::InvalidDependency {
+                            node: NodeId::new(slot.get()),
+                        },
+                    )?;
+                    let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                        break None;
+                    };
+                    let declaration = artifact
+                        .nodes()
+                        .get(node.get() as usize)
+                        .ok_or(ResidentActivationError::InvalidDependency { node })?;
+                    if declaration.operation.module_path.as_ref() != ["access"]
+                        || declaration.operation.operation_name != "index"
+                    {
+                        break None;
+                    }
+                    let inputs = node_inputs(artifact, declaration.node)?;
+                    let [input] = inputs.as_slice() else {
+                        return Err(ResidentActivationError::InvalidDependency { node });
+                    };
+                    source = *input;
+                }
+            }
+        };
+        for slot in path {
+            self.slots[slot.get() as usize] = Some(resolved);
+        }
+        Ok(resolved)
+    }
 }
 
 fn node_inputs(

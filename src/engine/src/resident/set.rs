@@ -1035,55 +1035,29 @@ type SetMerge = fn(
     &SnapshotCanonicalizationBudget,
 ) -> Result<Box<[ValueData]>, mech_core::snapshot::SnapshotValueError>;
 
-fn canonical_key_comparison_work_upper_bound(
-    schema: &SchemaBody,
-    data: &ValueData,
-) -> Result<u64, ResidentKernelError> {
-    let mut work = 0_u64;
-    mech_core::snapshot::visit_canonical_data_work(schema, data, |chunk| {
-        work = work
-            .checked_add(chunk.encoded_bytes.max(chunk.node_count).max(1))
-            .ok_or(ResidentKernelError::InvalidShape)?;
-        Ok(())
-    })
-    .map_err(|error| match error {
-        mech_core::snapshot::CanonicalDataWorkError::Visitor(error) => error,
-        mech_core::snapshot::CanonicalDataWorkError::ArithmeticOverflow => {
-            ResidentKernelError::InvalidShape
-        }
-        mech_core::snapshot::CanonicalDataWorkError::UnknownDynamicSchema
-        | mech_core::snapshot::CanonicalDataWorkError::InvalidValue => {
-            ResidentKernelError::InvalidInput
-        }
-    })?;
-    Ok(work)
-}
-
 /// Finalization receives these elements in canonical key order. Core's
 /// append-fast insertion therefore compares only adjacent keys and performs
-/// no shifts. Reserve a conservative bound for those comparisons before
-/// converting any canonical element into an owned draft.
+/// no shifts. Both the planning walks and the later finalizer work are charged
+/// incrementally before converting any canonical element into an owned draft.
 fn ordered_set_finalization_work_upper_bound(
+    meter: &mut ResidentBudgetMeter,
     schema: &SchemaBody,
     elements: &[ValueData],
 ) -> Result<u64, ResidentKernelError> {
     let mut previous: Option<u64> = None;
     let mut total = 0_u64;
     for element in elements {
-        let nested = mech_core::snapshot::canonical_key_draft_finalization_work(schema, element)
-            .map_err(|error| match error {
-                SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
-                    ResidentKernelError::InvalidShape
-                }
-                _ => ResidentKernelError::InvalidInput,
-            })?;
+        let nested = bounded_key_draft_finalization_work(meter, schema, element)?;
         total = total
             .checked_add(nested)
             .ok_or(ResidentKernelError::InvalidShape)?;
-        let current = canonical_key_comparison_work_upper_bound(schema, element)?;
+        let current =
+            super::budget::measure_canonical_data_comparison_work(meter, schema, element)?;
         if let Some(previous) = previous {
+            let adjacent = previous.max(current);
+            meter.charge_comparison_work(adjacent)?;
             total = total
-                .checked_add(previous.max(current))
+                .checked_add(adjacent)
                 .ok_or(ResidentKernelError::InvalidShape)?;
         }
         previous = Some(current);
@@ -1300,8 +1274,12 @@ fn merged_set_element_drafts(
     let remaining_work = canonicalization_work_limit
         .checked_sub(canonicalization_budget.consumed())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let finalization_work =
-        ordered_set_finalization_work_upper_bound(element_schema, elements.as_ref())?;
+    footprint_meter.charge_comparison_work(canonicalization_budget.consumed())?;
+    let finalization_work = ordered_set_finalization_work_upper_bound(
+        &mut footprint_meter,
+        element_schema,
+        elements.as_ref(),
+    )?;
     if finalization_work > remaining_work {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -2770,6 +2748,25 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(recursive_output[0].is_none());
+
+        // A one-element merge has no adjacent output-key comparison. Its
+        // second recursive key walk is still planning work and must share the
+        // allowance already consumed by measuring the borrowed input.
+        let planning_left = [Some(set(1, 40 * 1024))];
+        let planning_empty = [Some(set(0, 0))];
+        let planning_inputs = [
+            ResidentValueRef::Snapshot(&planning_left),
+            ResidentValueRef::Snapshot(&planning_empty),
+        ];
+        let mut planning_output = [None];
+        assert_eq!(
+            output_kernel(set_union, string_set_schema).execute(
+                &Inputs(&planning_inputs),
+                ResidentValueMut::Snapshot(&mut planning_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(planning_output[0].is_none());
 
         // An empty opposite side does not erase the cost of staging the input
         // element drafts that the implementation materializes unconditionally.

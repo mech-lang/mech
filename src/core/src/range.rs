@@ -258,6 +258,7 @@ fn visit_value_range_variant<E>(
     try_variant!(U16, u16, ValueData::U16);
     try_variant!(U32, u32, ValueData::U32);
     try_variant!(U64, u64, ValueData::U64);
+    try_variant!(Index, u64, ValueData::Index);
     try_variant!(U128, u128, ValueData::U128);
     try_variant!(I8, i8, ValueData::I8);
     try_variant!(I16, i16, ValueData::I16);
@@ -309,6 +310,7 @@ fn value_range_size_variant(
     try_variant!(U16);
     try_variant!(U32);
     try_variant!(U64);
+    try_variant!(Index);
     try_variant!(U128);
     try_variant!(I8);
     try_variant!(I16);
@@ -410,6 +412,27 @@ mod tests {
         assert!(matches!(
             values.as_slice(),
             [ValueData::F32(value)] if value.to_f32() == 1.9_f32
+        ));
+    }
+
+    #[test]
+    fn converted_index_range_remains_canonically_visitable() {
+        let inputs = [ValueData::Index(1), ValueData::Index(3)];
+        let mut values = Vec::new();
+        assert_eq!(
+            visit_canonical_value_range(&inputs, true, false, 3, |value| {
+                values.push(value);
+                Ok::<(), ()>(())
+            }),
+            Ok(3),
+        );
+        assert!(matches!(
+            values.as_slice(),
+            [
+                ValueData::Index(1),
+                ValueData::Index(2),
+                ValueData::Index(3)
+            ]
         ));
     }
 

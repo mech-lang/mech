@@ -414,13 +414,14 @@ fn measure_canonical_value_footprint_with(
     let schema = schemas
         .get(value.schema())
         .ok_or(ResidentKernelError::InvalidInput)?;
+    let shape_parameters = value.shape().parameter_values().len();
     let shape_bytes = checked_cost_product(&[
-        checked_u64(value.shape().parameter_values().len())?,
+        checked_u64(shape_parameters)?,
         checked_u64(core::mem::size_of::<u64>())?,
     ])?;
-    let wrapper_bytes = checked_u64(core::mem::size_of::<Value>())?
-        .checked_add(shape_bytes)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let wrapper_bytes =
+        projected_canonical_value_footprint(ValueFootprint::zero(), shape_parameters)?
+            .retained_bytes;
     meter.charge_comparison_work(shape_bytes.max(1))?;
     if let Some(charge_retained_bytes) = charge_retained_bytes {
         charge_retained_bytes(meter, wrapper_bytes)?;
@@ -432,8 +433,24 @@ fn measure_canonical_value_footprint_with(
         value.data(),
         charge_retained_bytes,
     )?;
-    mech_core::snapshot::ValueFootprint {
-        encoded_bytes: data.encoded_bytes,
+    projected_canonical_value_footprint(data, shape_parameters)
+}
+
+/// Extends a canonical data footprint with the immutable `Value` wrapper and
+/// owned shape-parameter storage that the published snapshot retains.
+pub(crate) fn projected_canonical_value_footprint(
+    data: ValueFootprint,
+    shape_parameters: usize,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    let shape_bytes = checked_cost_product(&[
+        checked_u64(shape_parameters)?,
+        checked_u64(core::mem::size_of::<u64>())?,
+    ])?;
+    let wrapper_bytes = checked_u64(core::mem::size_of::<Value>())?
+        .checked_add(shape_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    ValueFootprint {
+        encoded_bytes: 0,
         retained_bytes: wrapper_bytes,
         node_count: 1,
     }

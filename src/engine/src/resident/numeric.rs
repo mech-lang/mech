@@ -2311,6 +2311,8 @@ fn bind_transpose(
         && request.output.shape.rows == input.shape.columns
         && request.output.shape.columns == input.shape.rows
     {
+        admit_dense_transpose_layout(request.output.kind, request.output.shape)
+            .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
         return bound(
             transpose_dense,
             vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
@@ -2361,6 +2363,34 @@ fn bind_transpose(
         maximum_cardinality: None,
     })
     .with_snapshot_schemas(request.schemas.clone()))
+}
+
+fn admit_dense_transpose_layout(
+    kind: ResidentValueKind,
+    shape: ResidentShape,
+) -> Result<(), ResidentKernelError> {
+    let elements = shape.len().ok_or(ResidentKernelError::InvalidShape)?;
+    let element_bytes = match kind {
+        ResidentValueKind::Bool => core::mem::size_of::<u8>(),
+        ResidentValueKind::Index => core::mem::size_of::<u64>(),
+        ResidentValueKind::F64 => core::mem::size_of::<f64>(),
+        _ => return Err(ResidentKernelError::InvalidShape),
+    };
+    let output_bytes = elements
+        .checked_mul(element_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work: elements,
+            output_elements: elements,
+            output_bytes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
 }
 
 fn is_transpose_snapshot_schema(body: &SchemaBody) -> bool {
@@ -9493,49 +9523,17 @@ fn n_choose_k_snapshot(
         0,
     )?;
     let values = snapshot_numeric_elements(values)?;
-    let mut selected = vec![0usize; requested];
+    let mut selected = (0..requested).collect::<Vec<_>>();
     let mut next = vec![values[0].clone(); output_count];
-    let mut column = 0usize;
-    fn visit(
-        values: &[ValueDataDraft],
-        selected: &mut [usize],
-        depth: usize,
-        start: usize,
-        combinations: usize,
-        output: &mut [ValueDataDraft],
-        column: &mut usize,
-    ) {
-        if depth == selected.len() {
-            for (row, index) in selected.iter().copied().enumerate() {
-                output[row * combinations + *column] = values[index].clone();
-            }
-            *column += 1;
-            return;
+    for column in 0..combinations {
+        for (row, index) in selected.iter().copied().enumerate() {
+            next[row * combinations + column] = values[index].clone();
         }
-        let remaining = selected.len() - depth;
-        for index in start..=values.len() - remaining {
-            selected[depth] = index;
-            visit(
-                values,
-                selected,
-                depth + 1,
-                index + 1,
-                combinations,
-                output,
-                column,
-            );
+        if column + 1 < combinations && !advance_combination_indices(&mut selected, available) {
+            return Err(ResidentKernelError::IncompleteOutput);
         }
     }
-    visit(
-        &values,
-        &mut selected,
-        0,
-        0,
-        combinations,
-        &mut next,
-        &mut column,
-    );
-    if column != combinations || !is_n_choose_k_snapshot_element(element) {
+    if !is_n_choose_k_snapshot_element(element) {
         return Err(ResidentKernelError::IncompleteOutput);
     }
     write_snapshot_data_with_work_budget(
@@ -9544,6 +9542,20 @@ fn n_choose_k_snapshot(
         ValueDataDraft::Matrix(next.into_boxed_slice()),
         Some(0),
     )
+}
+
+fn advance_combination_indices(selected: &mut [usize], available: usize) -> bool {
+    let Some(pivot) = (0..selected.len())
+        .rev()
+        .find(|index| selected[*index] < available - selected.len() + *index)
+    else {
+        return false;
+    };
+    selected[pivot] += 1;
+    for index in pivot + 1..selected.len() {
+        selected[index] = selected[index - 1] + 1;
+    }
+    true
 }
 
 fn gather_1d(
@@ -11009,7 +11021,19 @@ fn snapshot_access(
         .finalization_work
         .checked_add(publication_equality_work)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_retained_bytes = output_cost.footprint.retained_bytes;
+    let published_output_footprint = if snapshot_output {
+        let shape_parameters = kernel
+            .snapshot_output()
+            .ok_or(ResidentKernelError::InvalidOutput)?
+            .shape
+            .parameter_values()
+            .len();
+        super::budget::projected_canonical_value_footprint(output_cost.footprint, shape_parameters)?
+    } else {
+        output_cost.footprint
+    };
+    let output_data_retained_bytes = output_cost.footprint.retained_bytes;
+    let output_retained_bytes = published_output_footprint.retained_bytes;
     let output_nodes = output_cost.footprint.node_count;
     let coordinate_bytes = output_cost
         .index_elements
@@ -11029,19 +11053,17 @@ fn snapshot_access(
         ResidentValueMut::String(_) => 1,
         _ => 0,
     };
-    let dense_string_publication_bytes = output_retained_bytes
+    let dense_string_publication_bytes = output_data_retained_bytes
         .checked_mul(dense_string_publication_copies)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let cloned_bytes = selector_cost
         .cloned_bytes
-        .checked_add(output_retained_bytes)
+        .checked_add(output_data_retained_bytes)
         .and_then(|bytes| bytes.checked_add(dense_string_publication_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let staged_value_nodes = output_nodes
-        .checked_add(1)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let staged_value_nodes = published_output_footprint.node_count;
     let final_output_nodes = if snapshot_output {
-        staged_value_nodes
+        published_output_footprint.node_count
     } else {
         super::budget::checked_u64(output_cost.count)?
     };
@@ -12715,6 +12737,60 @@ mod tests {
                 .unwrap(),
             resolved_selector: None,
         }
+    }
+
+    #[test]
+    fn dense_transpose_layout_is_admitted_before_arena_allocation() {
+        let maximum = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS as u32;
+        for kind in [
+            ResidentValueKind::Bool,
+            ResidentValueKind::Index,
+            ResidentValueKind::F64,
+        ] {
+            assert!(
+                admit_dense_transpose_layout(
+                    kind,
+                    ResidentShape {
+                        rows: 1,
+                        columns: maximum,
+                    },
+                )
+                .is_ok()
+            );
+            assert!(
+                admit_dense_transpose_layout(
+                    kind,
+                    ResidentShape {
+                        rows: 1,
+                        columns: maximum + 1,
+                    },
+                )
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn snapshot_combinations_advance_without_recursion() {
+        let mut selected = vec![0, 1];
+        let mut combinations = vec![selected.clone()];
+        while advance_combination_indices(&mut selected, 4) {
+            combinations.push(selected.clone());
+        }
+        assert_eq!(
+            combinations,
+            vec![
+                vec![0, 1],
+                vec![0, 2],
+                vec![0, 3],
+                vec![1, 2],
+                vec![1, 3],
+                vec![2, 3],
+            ]
+        );
+
+        let mut deep = (0..30_000).collect::<Vec<_>>();
+        assert!(!advance_combination_indices(&mut deep, 30_000));
     }
 
     fn test_contract(
@@ -16677,6 +16753,39 @@ mod tests {
                     retained_nodes: 30_001,
                 },
                 phases,
+                super::super::budget::KernelCostEstimate::default(),
+            )
+            .unwrap()
+            .admit()
+            .unwrap_err(),
+            ResidentKernelError::InvalidShape,
+        );
+    }
+
+    #[test]
+    fn snapshot_access_publication_includes_the_value_wrapper() {
+        let data = ValueFootprint {
+            encoded_bytes: 1,
+            retained_bytes: super::super::budget::MAX_RESIDENT_OUTPUT_BYTES
+                - core::mem::size_of::<mech_core::Value>() as u64
+                + 1,
+            node_count: 1,
+        };
+        let published = super::super::budget::projected_canonical_value_footprint(data, 0)
+            .expect("projected output footprint");
+        assert!(
+            published.retained_bytes > super::super::budget::MAX_RESIDENT_OUTPUT_BYTES,
+            "the complete published Value must exceed the limit even when its data alone fits",
+        );
+        assert_eq!(
+            super::super::budget::PreparedMutationPlan::new(
+                (),
+                super::super::budget::PublishedOutputFootprint {
+                    elements: 1,
+                    retained_bytes: published.retained_bytes,
+                    retained_nodes: published.node_count,
+                },
+                super::super::budget::MutationRetainedNodeFootprint::default(),
                 super::super::budget::KernelCostEstimate::default(),
             )
             .unwrap()

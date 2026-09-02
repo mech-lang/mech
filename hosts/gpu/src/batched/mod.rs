@@ -1,4 +1,5 @@
 use std::{
+    cell::{Cell, RefCell},
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
 };
@@ -1285,6 +1286,11 @@ struct BatchCompiler<'a> {
     states: BTreeMap<CellSlotId, PendingState>,
     concrete_cases: Vec<ConcreteGpuExecutionCase>,
     diagnostics: Vec<GpuDiagnostic>,
+    static_selector_cache:
+        RefCell<BTreeMap<(ArtifactSource, usize), Result<Option<Vec<u64>>, String>>>,
+    static_range_endpoint_cache:
+        RefCell<BTreeMap<ArtifactSource, Result<Option<ValueData>, String>>>,
+    static_selector_source_steps_remaining: Cell<usize>,
 }
 
 fn linear_access_components(
@@ -1352,6 +1358,9 @@ impl<'a> BatchCompiler<'a> {
             states: BTreeMap::new(),
             concrete_cases: Vec::new(),
             diagnostics: Vec::new(),
+            static_selector_cache: RefCell::new(BTreeMap::new()),
+            static_range_endpoint_cache: RefCell::new(BTreeMap::new()),
+            static_selector_source_steps_remaining: Cell::new(MAX_STATIC_SELECTOR_SOURCE_STEPS),
         }
     }
 
@@ -2336,7 +2345,38 @@ impl<'a> BatchCompiler<'a> {
         source: ArtifactSource,
         maximum_elements: usize,
     ) -> Result<Option<Vec<u64>>, String> {
-        self.static_numeric_source(source, maximum_elements)
+        let key = (source, maximum_elements);
+        if let Some(cached) = self.static_selector_cache.borrow().get(&key) {
+            return cached.clone();
+        }
+        let resolved = self.static_numeric_source(source, maximum_elements);
+        self.static_selector_cache
+            .borrow_mut()
+            .insert(key, resolved.clone());
+        resolved
+    }
+
+    fn charge_static_selector_source_step(&self, role: &str) -> Result<(), String> {
+        let remaining = self.static_selector_source_steps_remaining.get();
+        let Some(remaining) = remaining.checked_sub(1) else {
+            return Err(format!(
+                "static {role} traversal exceeds the compilation-wide planning limit {MAX_STATIC_SELECTOR_SOURCE_STEPS}"
+            ));
+        };
+        self.static_selector_source_steps_remaining.set(remaining);
+        Ok(())
+    }
+
+    fn cache_static_selector_sources(
+        &self,
+        sources: &[ArtifactSource],
+        maximum_elements: usize,
+        resolved: &Result<Option<Vec<u64>>, String>,
+    ) {
+        let mut cache = self.static_selector_cache.borrow_mut();
+        for source in sources {
+            cache.insert((*source, maximum_elements), resolved.clone());
+        }
     }
 
     fn static_numeric_source(
@@ -2345,8 +2385,17 @@ impl<'a> BatchCompiler<'a> {
         maximum_elements: usize,
     ) -> Result<Option<Vec<u64>>, String> {
         let mut source = source;
-        let mut source_steps = 0usize;
+        let mut traversed = Vec::new();
         loop {
+            let cached = self
+                .static_selector_cache
+                .borrow()
+                .get(&(source, maximum_elements))
+                .cloned();
+            if let Some(cached) = cached {
+                self.cache_static_selector_sources(&traversed, maximum_elements, &cached);
+                return cached;
+            }
             match source {
                 ArtifactSource::Constant(constant) => {
                     let value = self
@@ -2354,22 +2403,20 @@ impl<'a> BatchCompiler<'a> {
                         .constants()
                         .get(constant)
                         .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
-                    return static_numeric_indices(value.data(), maximum_elements).map(Some);
+                    let resolved = static_numeric_indices(value.data(), maximum_elements).map(Some);
+                    self.cache_static_selector_sources(&traversed, maximum_elements, &resolved);
+                    return resolved;
                 }
                 ArtifactSource::Slot(slot) => {
-                    source_steps = source_steps
-                        .checked_add(1)
-                        .ok_or_else(|| "static selector source traversal overflowed".to_owned())?;
-                    if source_steps > MAX_STATIC_SELECTOR_SOURCE_STEPS {
-                        return Err(format!(
-                            "static selector source traversal exceeds the planning limit {MAX_STATIC_SELECTOR_SOURCE_STEPS}"
-                        ));
-                    }
+                    self.charge_static_selector_source_step("selector source")?;
+                    traversed.push(source);
                     let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
                         return Err(format!("selector slot {} does not exist", slot.get()));
                     };
                     let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
-                        return Ok(None);
+                        let resolved = Ok(None);
+                        self.cache_static_selector_sources(&traversed, maximum_elements, &resolved);
+                        return resolved;
                     };
                     let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
                         return Err(format!(
@@ -2430,9 +2477,23 @@ impl<'a> BatchCompiler<'a> {
                                 },
                             )
                             .map_err(|error| format!("invalid static {operation}: {error:?}"))?;
-                            return Ok(Some(indices));
+                            let resolved = Ok(Some(indices));
+                            self.cache_static_selector_sources(
+                                &traversed,
+                                maximum_elements,
+                                &resolved,
+                            );
+                            return resolved;
                         }
-                        _ => return Ok(None),
+                        _ => {
+                            let resolved = Ok(None);
+                            self.cache_static_selector_sources(
+                                &traversed,
+                                maximum_elements,
+                                &resolved,
+                            );
+                            return resolved;
+                        }
                     }
                 }
             }
@@ -2440,10 +2501,44 @@ impl<'a> BatchCompiler<'a> {
     }
 
     fn static_range_endpoint(&self, source: ArtifactSource) -> Result<Option<ValueData>, String> {
+        if let Some(cached) = self.static_range_endpoint_cache.borrow().get(&source) {
+            return cached.clone();
+        }
+        let resolved = self.resolve_static_range_endpoint(source);
+        self.static_range_endpoint_cache
+            .borrow_mut()
+            .insert(source, resolved.clone());
+        resolved
+    }
+
+    fn resolve_static_range_endpoint(
+        &self,
+        source: ArtifactSource,
+    ) -> Result<Option<ValueData>, String> {
         let mut source = source;
         let mut converted_to_index = false;
-        let mut source_steps = 0usize;
+        let mut traversed = Vec::new();
         loop {
+            let cached = self
+                .static_range_endpoint_cache
+                .borrow()
+                .get(&source)
+                .cloned();
+            if let Some(cached) = cached {
+                let resolved = if converted_to_index {
+                    match cached? {
+                        Some(value) => canonical_static_range_endpoint(&value, true),
+                        None => Ok(None),
+                    }
+                } else {
+                    cached
+                };
+                let mut cache = self.static_range_endpoint_cache.borrow_mut();
+                for source in traversed {
+                    cache.insert(source, resolved.clone());
+                }
+                return resolved;
+            }
             match source {
                 ArtifactSource::Constant(constant) => {
                     let value = self
@@ -2451,17 +2546,17 @@ impl<'a> BatchCompiler<'a> {
                         .constants()
                         .get(constant)
                         .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
-                    return canonical_static_range_endpoint(value.data(), converted_to_index);
+                    let resolved =
+                        canonical_static_range_endpoint(value.data(), converted_to_index);
+                    let mut cache = self.static_range_endpoint_cache.borrow_mut();
+                    for source in traversed {
+                        cache.insert(source, resolved.clone());
+                    }
+                    return resolved;
                 }
                 ArtifactSource::Slot(slot) => {
-                    source_steps = source_steps
-                        .checked_add(1)
-                        .ok_or_else(|| "static range endpoint traversal overflowed".to_owned())?;
-                    if source_steps > MAX_STATIC_SELECTOR_SOURCE_STEPS {
-                        return Err(format!(
-                            "static range endpoint traversal exceeds the planning limit {MAX_STATIC_SELECTOR_SOURCE_STEPS}"
-                        ));
-                    }
+                    self.charge_static_selector_source_step("range endpoint")?;
+                    traversed.push(source);
                     let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
                         return Err(format!("range endpoint slot {} does not exist", slot.get()));
                     };
