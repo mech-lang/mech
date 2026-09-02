@@ -400,6 +400,7 @@ fn string_equal(
     let ResidentValueMut::Bool([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
+    admit_scalar_string_comparison(left, right)?;
     let next = u8::from(left == right);
     let changed = *target != next;
     *target = next;
@@ -420,10 +421,28 @@ fn string_not_equal(
     let ResidentValueMut::Bool([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
+    admit_scalar_string_comparison(left, right)?;
     let next = u8::from(left != right);
     let changed = *target != next;
     *target = next;
     Ok(changed)
+}
+
+fn admit_scalar_string_comparison(left: &str, right: &str) -> Result<(), ResidentKernelError> {
+    let comparison_work = left.len().max(right.len()).max(1);
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work,
+            compute_work: comparison_work,
+            output_elements: 1,
+            output_bytes: core::mem::size_of::<u8>(),
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
 }
 
 pub(super) fn bind_string_scalar_access(
@@ -1210,6 +1229,23 @@ mod tests {
             Ok(true),
         );
         assert_eq!(output, [1]);
+    }
+
+    #[test]
+    fn scalar_string_comparisons_meter_payloads_before_writing() {
+        let oversized = "x".repeat(
+            usize::try_from(super::super::budget::MAX_RESIDENT_COMPARISON_WORK).unwrap() + 1,
+        );
+        let inputs = Inputs([oversized.clone(), oversized]);
+        for executor in [string_equal, string_not_equal] {
+            let kernel = BoundResidentKernel::new(executor, Box::new([]));
+            let mut output = [9_u8];
+            assert_eq!(
+                kernel.execute(&inputs, ResidentValueMut::Bool(&mut output)),
+                Err(ResidentKernelError::InvalidShape),
+            );
+            assert_eq!(output, [9]);
+        }
     }
 
     struct NumericInput([f64; 4]);

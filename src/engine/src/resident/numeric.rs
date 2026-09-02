@@ -1485,6 +1485,23 @@ fn validate_semantic_comparison_contract(
     Ok(logical_output)
 }
 
+fn admit_dense_comparison_layout(output: ResidentShape) -> Result<(), ResidentKernelError> {
+    let output_elements = output.len().ok_or(ResidentKernelError::InvalidShape)?;
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work: output_elements,
+            compute_work: output_elements,
+            output_elements,
+            output_bytes: output_elements,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
 fn bind_dense_comparison(
     request: &ResidentKernelBindRequest<'_>,
     comparison: SemanticComparison,
@@ -1521,6 +1538,11 @@ fn bind_dense_comparison(
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let right_mode = binary_broadcast_mode(right_shape, output)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    // Dense resident arenas are allocated after binding but before the first
+    // executor call. Reject oversized declared outputs at this boundary; the
+    // String executor adds its data-dependent payload scan separately.
+    admit_dense_comparison_layout(output)
+        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     bound(
         dense_comparison,
         vec![
@@ -6451,17 +6473,14 @@ fn aggregate_assignment_data(
             Ok(ValueDataDraft::Tuple(values))
         }
         SchemaBody::Record(fields) => {
-            let ValueData::Id(field) = selector.data() else {
+            let ValueData::Id(_) = selector.data() else {
                 return Err(ResidentKernelError::InvalidInput);
             };
-            let selected = fields
-                .iter()
-                .position(|candidate| mech_core::hash_str(&candidate.name) == *field)
+            let selected = resolved_ordinal.ok_or(ResidentKernelError::InvalidInput)?;
+            let field = fields
+                .get(selected)
                 .ok_or(ResidentKernelError::InvalidInput)?;
-            if resolved_ordinal.is_some_and(|ordinal| ordinal != selected) {
-                return Err(ResidentKernelError::InvalidInput);
-            }
-            if source_schema.body() != &fields[selected].schema {
+            if source_schema.body() != &field.schema {
                 return Err(ResidentKernelError::InvalidInput);
             }
             let ValueDataDraft::Record(mut values) = current
@@ -6497,20 +6516,17 @@ fn aggregate_assignment_data(
             Ok(ValueDataDraft::Map(entries))
         }
         SchemaBody::Table { columns, .. } => {
-            let ValueData::Id(column) = selector.data() else {
+            let ValueData::Id(_) = selector.data() else {
                 return Err(ResidentKernelError::InvalidInput);
             };
-            let selected = columns
-                .iter()
-                .position(|candidate| mech_core::hash_str(&candidate.name) == *column)
+            let selected = resolved_ordinal.ok_or(ResidentKernelError::InvalidInput)?;
+            let column = columns
+                .get(selected)
                 .ok_or(ResidentKernelError::InvalidInput)?;
-            if resolved_ordinal.is_some_and(|ordinal| ordinal != selected) {
-                return Err(ResidentKernelError::InvalidInput);
-            }
             let SchemaBody::Matrix { element, .. } = source_schema.body() else {
                 return Err(ResidentKernelError::InvalidInput);
             };
-            if element.as_ref() != &columns[selected].schema {
+            if element.as_ref() != &column.schema {
                 return Err(ResidentKernelError::InvalidInput);
             }
             let ValueDataDraft::Matrix(source_values) = source
@@ -6582,6 +6598,34 @@ fn indexed_assign_snapshot_aggregate(
                 input(inputs, 1)?,
                 &mut footprint_meter,
             )?)
+        }
+        (SchemaBody::Record(fields), ValueData::Record(_)) => {
+            let selected = named_schema_ordinal_with_meter(
+                fields.iter().map(|candidate| candidate.name.as_str()),
+                selector_id(input(inputs, 1)?)?,
+                &mut footprint_meter,
+            )?;
+            if plan
+                .aggregate_ordinal
+                .is_some_and(|expected| expected != selected)
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Some(selected)
+        }
+        (SchemaBody::Table { columns, .. }, ValueData::Table(_)) => {
+            let selected = named_schema_ordinal_with_meter(
+                columns.iter().map(|candidate| candidate.name.as_str()),
+                selector_id(input(inputs, 1)?)?,
+                &mut footprint_meter,
+            )?;
+            if plan
+                .aggregate_ordinal
+                .is_some_and(|expected| expected != selected)
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Some(selected)
         }
         _ => plan.aggregate_ordinal,
     };
@@ -10337,8 +10381,22 @@ struct SnapshotAccessOutputCost {
     footprint: ValueFootprint,
     count: usize,
     index_elements: usize,
-    map_entry_ordinal: Option<usize>,
+    selected_ordinal: Option<usize>,
     finalization_work: u64,
+}
+
+fn named_schema_ordinal_with_meter<'a>(
+    names: impl IntoIterator<Item = &'a str>,
+    selected: u64,
+    meter: &mut super::budget::ResidentBudgetMeter,
+) -> Result<usize, ResidentKernelError> {
+    for (ordinal, name) in names.into_iter().enumerate() {
+        meter.charge_comparison_work(super::budget::checked_u64(name.len().max(1))?)?;
+        if mech_core::hash_str(name) == selected {
+            return Ok(ordinal);
+        }
+    }
+    Err(ResidentKernelError::InvalidInput)
 }
 
 fn snapshot_data_finalization_work(
@@ -10411,7 +10469,7 @@ fn snapshot_scalar_access_cost(
         footprint: super::budget::measure_canonical_data_footprint(meter, schema, data)?,
         count: 1,
         index_elements: 1,
-        map_entry_ordinal: None,
+        selected_ordinal: None,
         finalization_work: snapshot_data_finalization_work(meter, schema, data)?,
     })
 }
@@ -10435,32 +10493,37 @@ fn snapshot_access_output_cost(
             if index != live_ordinal {
                 return Err(ResidentKernelError::InvalidInput);
             }
-            snapshot_scalar_access_cost(
+            let mut cost = snapshot_scalar_access_cost(
                 meter,
                 elements
                     .get(index)
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 values.get(index).ok_or(ResidentKernelError::InvalidShape)?,
-            )
+            )?;
+            cost.selected_ordinal = Some(index);
+            Ok(cost)
         }
         (SchemaBody::Record(fields), ValueData::Record(record)) => {
             let field = selector_id(selector(0)?)?;
-            let live_ordinal = fields
-                .iter()
-                .position(|candidate| mech_core::hash_str(&candidate.name) == field)
-                .ok_or(ResidentKernelError::InvalidInput)?;
+            let live_ordinal = named_schema_ordinal_with_meter(
+                fields.iter().map(|candidate| candidate.name.as_str()),
+                field,
+                meter,
+            )?;
             let index = plan.aggregate_ordinal.unwrap_or(live_ordinal);
             if index != live_ordinal {
                 return Err(ResidentKernelError::InvalidInput);
             }
-            snapshot_scalar_access_cost(
+            let mut cost = snapshot_scalar_access_cost(
                 meter,
                 &fields[index].schema,
                 record
                     .fields()
                     .get(index)
                     .ok_or(ResidentKernelError::InvalidShape)?,
-            )
+            )?;
+            cost.selected_ordinal = Some(index);
+            Ok(cost)
         }
         (SchemaBody::Map { key, value, .. }, ValueData::Map(map)) => {
             let ordinal = map_access_entry_for_selector_with_meter(map, key, selector(0)?, meter)?;
@@ -10469,15 +10532,16 @@ fn snapshot_access_output_cost(
                 .get(ordinal)
                 .ok_or(ResidentKernelError::InvalidShape)?;
             let mut cost = snapshot_scalar_access_cost(meter, value, entry.value())?;
-            cost.map_entry_ordinal = Some(ordinal);
+            cost.selected_ordinal = Some(ordinal);
             Ok(cost)
         }
         (SchemaBody::Table { columns, .. }, ValueData::Table(table)) => {
             let column = selector_id(selector(0)?)?;
-            let live_ordinal = columns
-                .iter()
-                .position(|candidate| mech_core::hash_str(&candidate.name) == column)
-                .ok_or(ResidentKernelError::InvalidInput)?;
+            let live_ordinal = named_schema_ordinal_with_meter(
+                columns.iter().map(|candidate| candidate.name.as_str()),
+                column,
+                meter,
+            )?;
             let index = plan.aggregate_ordinal.unwrap_or(live_ordinal);
             if index != live_ordinal {
                 return Err(ResidentKernelError::InvalidInput);
@@ -10501,7 +10565,7 @@ fn snapshot_access_output_cost(
                 footprint,
                 count: values.len(),
                 index_elements: 0,
-                map_entry_ordinal: None,
+                selected_ordinal: Some(index),
                 finalization_work,
             })
         }
@@ -10641,7 +10705,7 @@ fn snapshot_access_output_cost(
                 footprint,
                 count,
                 index_elements,
-                map_entry_ordinal: None,
+                selected_ordinal: None,
                 finalization_work,
             })
         }
@@ -10659,20 +10723,9 @@ fn snapshot_access_data(
 ) -> Result<ValueDataDraft, ResidentKernelError> {
     match source_schema {
         SchemaBody::Tuple(elements) => {
-            let selected = access_indices(
-                &selectors[0],
-                match source.data() {
-                    ValueData::Tuple(values) => values.len(),
-                    _ => return Err(ResidentKernelError::InvalidInput),
-                },
-            )?;
-            let [live_ordinal] = selected.as_slice() else {
-                return Err(ResidentKernelError::InvalidShape);
-            };
-            let index = plan.aggregate_ordinal.unwrap_or(*live_ordinal);
-            if index != *live_ordinal {
-                return Err(ResidentKernelError::InvalidInput);
-            }
+            let index = output_cost
+                .selected_ordinal
+                .ok_or(ResidentKernelError::InvalidInput)?;
             let ValueData::Tuple(values) = source.data() else {
                 return Err(ResidentKernelError::InvalidInput);
             };
@@ -10685,17 +10738,9 @@ fn snapshot_access_data(
             .map_err(|_| ResidentKernelError::InvalidInput)
         }
         SchemaBody::Record(fields) => {
-            let ValueData::Id(field) = selectors[0].data() else {
-                return Err(ResidentKernelError::InvalidInput);
-            };
-            let live_ordinal = fields
-                .iter()
-                .position(|candidate| mech_core::hash_str(&candidate.name) == *field)
+            let index = output_cost
+                .selected_ordinal
                 .ok_or(ResidentKernelError::InvalidInput)?;
-            let index = plan.aggregate_ordinal.unwrap_or(live_ordinal);
-            if index != live_ordinal {
-                return Err(ResidentKernelError::InvalidInput);
-            }
             let ValueData::Record(values) = source.data() else {
                 return Err(ResidentKernelError::InvalidInput);
             };
@@ -10713,7 +10758,7 @@ fn snapshot_access_data(
                 return Err(ResidentKernelError::InvalidInput);
             };
             let ordinal = output_cost
-                .map_entry_ordinal
+                .selected_ordinal
                 .ok_or(ResidentKernelError::InvalidInput)?;
             let entry = map
                 .entries()
@@ -10723,17 +10768,9 @@ fn snapshot_access_data(
                 .map_err(|_| ResidentKernelError::InvalidInput)
         }
         SchemaBody::Table { columns, .. } => {
-            let ValueData::Id(column) = selectors[0].data() else {
-                return Err(ResidentKernelError::InvalidInput);
-            };
-            let live_ordinal = columns
-                .iter()
-                .position(|candidate| mech_core::hash_str(&candidate.name) == *column)
+            let index = output_cost
+                .selected_ordinal
                 .ok_or(ResidentKernelError::InvalidInput)?;
-            let index = plan.aggregate_ordinal.unwrap_or(live_ordinal);
-            if index != live_ordinal {
-                return Err(ResidentKernelError::InvalidInput);
-            }
             let ValueData::Table(table) = source.data() else {
                 return Err(ResidentKernelError::InvalidInput);
             };
@@ -12834,6 +12871,25 @@ mod tests {
                 .is_err()
             );
         }
+    }
+
+    #[test]
+    fn dense_comparison_layout_is_admitted_before_arena_allocation() {
+        let maximum = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS as u32;
+        assert!(
+            admit_dense_comparison_layout(ResidentShape {
+                rows: 1,
+                columns: maximum,
+            })
+            .is_ok()
+        );
+        assert!(
+            admit_dense_comparison_layout(ResidentShape {
+                rows: 1,
+                columns: maximum + 1,
+            })
+            .is_err()
+        );
     }
 
     #[test]
@@ -15926,6 +15982,94 @@ mod tests {
             .sum::<u64>()
             + (selector[0].len() as u64 + 8) * (map.entries().len() as u64 + 1);
         assert_eq!(comparison_work, expected_work);
+    }
+
+    #[test]
+    fn record_name_lookup_is_incrementally_metered_before_materialization() {
+        let field_name = "x".repeat(
+            usize::try_from(super::super::budget::MAX_RESIDENT_COMPARISON_WORK).unwrap() + 1,
+        );
+        let u64_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let record_body = SchemaBody::Record(
+            vec![mech_core::SchemaField {
+                name: field_name.clone(),
+                schema: u64_body.clone(),
+            }]
+            .into_boxed_slice(),
+        );
+        let (schemas, ids) = test_schema_table([u64_body, record_body, SchemaBody::Id]);
+        let [u64_schema, record_schema, id_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let contract = test_contract(
+            &[*record_schema, *id_schema],
+            *u64_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_snapshot_access(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                test_layout(
+                    &schemas,
+                    *record_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+                test_layout(
+                    &schemas,
+                    *id_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+            ],
+            output: test_layout(
+                &schemas,
+                *u64_schema,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let record = [Some(test_value(
+            &schemas,
+            *record_schema,
+            ValueDataDraft::Record(
+                vec![mech_core::snapshot::NamedValueDraft {
+                    name: field_name,
+                    value: ValueDataDraft::U64(7),
+                }]
+                .into_boxed_slice(),
+            ),
+        ))];
+        let selector = [Some(test_value(
+            &schemas,
+            *id_schema,
+            ValueDataDraft::Id(mech_core::hash_str("missing")),
+        ))];
+        let inputs = [
+            ResidentValueRef::Snapshot(&record),
+            ResidentValueRef::Snapshot(&selector),
+        ];
+        let previous = test_value(&schemas, *u64_schema, ValueDataDraft::U64(99));
+        let mut output = [Some(previous.clone())];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(
+            output[0]
+                .as_ref()
+                .unwrap()
+                .language_eq(&schemas, &previous, &schemas)
+                .unwrap()
+        );
     }
 
     #[test]
