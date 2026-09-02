@@ -37,7 +37,7 @@ use crate::{
     RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeModuleDependencyCycleError,
     RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
     RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    RuntimeResourceRegistry, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
     SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration, SourceImportKind,
     SourceIndex, SourceRequest, SourceResolver, import_may_resolve_source_dependency,
     import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
@@ -51,12 +51,6 @@ use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsu
 type ComputeRegionInterface = ();
 #[cfg(not(feature = "compute"))]
 type ComputeValue = ();
-
-#[derive(Clone, Copy)]
-enum ProgramBytecodeEncoding {
-    Semantic,
-    FrozenV1ImplementationIdentities,
-}
 
 #[derive(Clone, Copy)]
 enum RootOutputProjection {
@@ -141,13 +135,6 @@ impl ProgramCompiler {
 
     pub fn compile_source(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
         self.view().compile_source(source)
-    }
-
-    /// Reproduces the checked-in bytecode-v1 compatibility corpus. Runtime
-    /// products must otherwise use [`Self::compile_source`].
-    #[doc(hidden)]
-    pub fn compile_source_frozen_v1(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
-        self.view().compile_source_frozen_v1(source)
     }
 
     pub fn compile_tree(
@@ -407,48 +394,26 @@ impl<'a> ProgramCompilerView<'a> {
         source: &str,
     ) -> MResult<ProgramCompilationProduct> {
         let tree = mech_syntax::parser::parse(source.trim())?;
-        self.compile_tree_with_bytecode_encoding(
-            &tree,
-            ProgramBytecodeEncoding::Semantic,
-            RootOutputProjection::ObservableResultsAndSymbols,
-        )
-    }
-
-    fn compile_source_frozen_v1(&self, source: &str) -> MResult<ProgramCompilationProduct> {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.compile_tree_with_bytecode_encoding(
-            &tree,
-            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities,
-            RootOutputProjection::ObservableResults,
-        )
+        self.compile_tree_with_projection(&tree, RootOutputProjection::ObservableResultsAndSymbols)
     }
 
     pub(crate) fn compile_tree(
         &self,
         tree: &mech_core::Program,
     ) -> MResult<ProgramCompilationProduct> {
-        self.compile_tree_with_bytecode_encoding(
-            tree,
-            ProgramBytecodeEncoding::Semantic,
-            RootOutputProjection::ObservableResults,
-        )
+        self.compile_tree_with_projection(tree, RootOutputProjection::ObservableResults)
     }
 
     pub(crate) fn compile_interactive_tree(
         &self,
         tree: &mech_core::Program,
     ) -> MResult<ProgramCompilationProduct> {
-        self.compile_tree_with_bytecode_encoding(
-            tree,
-            ProgramBytecodeEncoding::Semantic,
-            RootOutputProjection::ObservableResultsAndSymbols,
-        )
+        self.compile_tree_with_projection(tree, RootOutputProjection::ObservableResultsAndSymbols)
     }
 
-    fn compile_tree_with_bytecode_encoding(
+    fn compile_tree_with_projection(
         &self,
         tree: &mech_core::Program,
-        bytecode_encoding: ProgramBytecodeEncoding,
         output_projection: RootOutputProjection,
     ) -> MResult<ProgramCompilationProduct> {
         let mut program = self.new_program();
@@ -480,7 +445,7 @@ impl<'a> ProgramCompilerView<'a> {
         ) {
             program.publish_compiler_root_symbols();
         }
-        self.finalize(program, &operations, bytecode_encoding)
+        self.finalize(program, &operations)
     }
 
     fn compile_tree_artifact_with_inputs(
@@ -946,7 +911,6 @@ impl<'a> ProgramCompilerView<'a> {
         self.finalize(
             root_program.expect("root compiler program is retained until finalization"),
             &operations,
-            ProgramBytecodeEncoding::Semantic,
         )
     }
 
@@ -1004,7 +968,6 @@ impl<'a> ProgramCompilerView<'a> {
         self.finalize(
             root_program.expect("root compiler program is retained until finalization"),
             &operations,
-            ProgramBytecodeEncoding::Semantic,
         )
     }
 
@@ -1019,18 +982,10 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         mut program: CompilerPlanningProgram,
         operations: &[CompiledResourceSendOperation],
-        bytecode_encoding: ProgramBytecodeEncoding,
     ) -> MResult<ProgramCompilationProduct> {
         let resolver = ResidentExternalContractResolver::new(self.resources);
-        let product = match bytecode_encoding {
-            ProgramBytecodeEncoding::Semantic => {
-                program.compile_program_product_with_resource_send_operations(&resolver, operations)
-            }
-            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities => program
-                .compile_frozen_v1_program_product_with_resource_send_operations(
-                    &resolver, operations,
-                ),
-        };
+        let product =
+            program.compile_program_product_with_resource_send_operations(&resolver, operations);
         product.map_err(|error| {
             route_failure(
                 ResidentRouteFailureClass::InvalidArtifact,
@@ -2189,7 +2144,7 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
             }
             return Ok(());
         }
-        self.providers.plan_write(RuntimeResourceWriteRequest {
+        self.providers.plan_write(RuntimeResourceWriteCommand {
             base_uri: key.base_uri,
             path: key.path,
             context_name: request.context_name.clone(),

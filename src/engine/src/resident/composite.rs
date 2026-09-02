@@ -14,8 +14,22 @@ use std::sync::Arc;
 struct CompositeChildPlan {
     matrix_dimensions: Option<Box<[DimensionExpr]>>,
     input_is_matrix: bool,
+    snapshot_backed_matrix: bool,
     shape: ResidentShape,
     dynamic: Option<DynamicChildPlan>,
+}
+
+fn resolved_matrix_shape(body: &SchemaBody, shape: &ShapeInstance) -> Option<ResidentShape> {
+    let SchemaBody::Matrix { dimensions, .. } = body else {
+        return None;
+    };
+    let [rows, columns] = dimensions.as_ref() else {
+        return None;
+    };
+    Some(ResidentShape {
+        rows: u32::try_from(shape.resolve_dimension(rows).ok()?).ok()?,
+        columns: u32::try_from(shape.resolve_dimension(columns).ok()?).ok()?,
+    })
 }
 
 #[derive(Clone, Debug)]
@@ -159,6 +173,13 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
             .zip(expected)
             .map(|(input, expected)| {
                 let input_schema = request.schemas.get(input.schema_id)?;
+                let input_is_matrix = matches!(input_schema.body(), SchemaBody::Matrix { .. });
+                let logical_matrix_shape = input_is_matrix
+                    .then(|| resolved_matrix_shape(input_schema.body(), &input.shape_instance))
+                    .flatten();
+                if input_is_matrix && logical_matrix_shape.is_none() {
+                    return None;
+                }
                 let matrix_dimensions = match expected {
                     SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => {
                         Some(dimensions.clone())
@@ -168,8 +189,10 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
                 };
                 Some(CompositeChildPlan {
                     matrix_dimensions,
-                    input_is_matrix: matches!(input_schema.body(), SchemaBody::Matrix { .. }),
-                    shape: input.shape,
+                    input_is_matrix,
+                    snapshot_backed_matrix: input_is_matrix
+                        && input.kind == ResidentValueKind::Snapshot,
+                    shape: logical_matrix_shape.unwrap_or(input.shape),
                     dynamic: matches!(expected, SchemaBody::Dynamic).then(|| DynamicChildPlan {
                         schema_id: input.schema_id,
                         schema_key: input.schema_key,
@@ -204,7 +227,15 @@ fn composite_child_layout_supported(
     );
     supported_kind
         && if matches!(schema.body(), SchemaBody::Matrix { .. }) {
-            input.shape.len().is_some()
+            let Some(logical_shape) = resolved_matrix_shape(schema.body(), &input.shape_instance)
+            else {
+                return false;
+            };
+            if input.kind == ResidentValueKind::Snapshot {
+                input.shape == ResidentShape::SCALAR
+            } else {
+                input.shape == logical_shape
+            }
         } else {
             input.shape == ResidentShape::SCALAR
         }
@@ -380,7 +411,15 @@ fn composite_child_data(
     input: ResidentValueRef<'_>,
     plan: &CompositeChildPlan,
 ) -> Option<ValueData> {
-    let data = if plan.input_is_matrix {
+    let data = if plan.snapshot_backed_matrix {
+        let ResidentValueRef::Snapshot([Some(value)]) = input else {
+            return None;
+        };
+        let ValueData::Matrix(matrix) = value.data() else {
+            return None;
+        };
+        ValueData::Matrix(matrix.clone())
+    } else if plan.input_is_matrix {
         let matrix = match input {
             ResidentValueRef::Bool(values) => MatrixValue::from_bool_elements(
                 canonical_matrix_elements(values, plan.shape, |value| match value {
@@ -402,11 +441,7 @@ fn composite_child_data(
                     Some(value.clone().into_boxed_str())
                 })?,
             ),
-            ResidentValueRef::Snapshot(values) => MatrixValue::from_value_elements(
-                canonical_matrix_elements(values, plan.shape, |value| {
-                    value.as_ref().map(|value| value.data().clone())
-                })?,
-            ),
+            ResidentValueRef::Snapshot(_) => return None,
         };
         ValueData::Matrix(matrix)
     } else {
@@ -434,11 +469,99 @@ fn composite_child_data(
     })
 }
 
+fn checked_cost_usize(value: u64) -> Result<usize, ResidentKernelError> {
+    usize::try_from(value).map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+fn resident_child_clone_cost(
+    meter: &mut super::budget::ResidentBudgetMeter,
+    input: ResidentValueRef<'_>,
+    plan: &CompositeChildPlan,
+) -> Result<(usize, usize), ResidentKernelError> {
+    let expected_len = if plan.input_is_matrix {
+        if plan.snapshot_backed_matrix {
+            1
+        } else {
+            plan.shape.len().ok_or(ResidentKernelError::InvalidShape)?
+        }
+    } else {
+        1
+    };
+    if input.len() != expected_len {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let container = expected_len
+        .checked_mul(core::mem::size_of::<ValueData>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let (payload, nodes) = match input {
+        ResidentValueRef::Bool(values) => {
+            if values.iter().any(|value| *value > 1) {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            (values.len(), values.len())
+        }
+        ResidentValueRef::Index(values) => (
+            values
+                .len()
+                .checked_mul(core::mem::size_of::<u64>())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            values.len(),
+        ),
+        ResidentValueRef::F64(values) => (
+            values
+                .len()
+                .checked_mul(core::mem::size_of::<f64>())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            values.len(),
+        ),
+        ResidentValueRef::String(values) => {
+            let payload = values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(value.len())
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
+            (payload, values.len())
+        }
+        ResidentValueRef::Snapshot(values) => {
+            let mut retained = 0usize;
+            let mut nodes = 0usize;
+            for value in values {
+                let value = value.as_ref().ok_or(ResidentKernelError::InvalidInput)?;
+                let schemas = value.schemas().ok_or(ResidentKernelError::InvalidInput)?;
+                let footprint =
+                    super::budget::measure_canonical_value_footprint(meter, value, &schemas)?;
+                retained = retained
+                    .checked_add(checked_cost_usize(footprint.retained_bytes)?)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                nodes = nodes
+                    .checked_add(checked_cost_usize(footprint.node_count)?)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+            }
+            (retained, nodes)
+        }
+    };
+    let dynamic_overhead = usize::from(plan.dynamic.is_some())
+        .checked_mul(core::mem::size_of::<ValueData>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok((
+        container
+            .checked_add(payload)
+            .and_then(|bytes| bytes.checked_add(dynamic_overhead))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        nodes
+            .checked_add(1 + usize::from(plan.dynamic.is_some()))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    ))
+}
+
 fn composite_pack(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
+    let ResidentValueMut::Snapshot([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
     let Some(ResidentValueRef::Snapshot([Some(template)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
@@ -450,16 +573,81 @@ fn composite_pack(
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let children = (1..inputs.len())
+    let template_schemas = template
+        .schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
+    let template_footprint = super::budget::measure_canonical_value_footprint(
+        &mut footprint_meter,
+        template,
+        &template_schemas,
+    )?;
+    let mut retained_bytes = checked_cost_usize(template_footprint.retained_bytes)?;
+    let mut staged_child_nodes = 0usize;
+    for (index, child) in plan.children.iter().enumerate() {
+        let (bytes, nodes) = resident_child_clone_cost(
+            &mut footprint_meter,
+            inputs
+                .get(index + 1)
+                .ok_or(ResidentKernelError::InvalidInput)?,
+            child,
+        )?;
+        retained_bytes = retained_bytes
+            .checked_add(bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        staged_child_nodes = staged_child_nodes
+            .checked_add(nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+    }
+    if let Some(previous) = target.as_ref() {
+        super::budget::measure_canonical_value_footprint(
+            &mut footprint_meter,
+            previous,
+            &template_schemas,
+        )?;
+    }
+    let child_containers = plan
+        .children
+        .len()
+        .checked_mul(core::mem::size_of::<ValueData>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let measured = footprint_meter.estimate();
+    let final_output_nodes = super::budget::checked_u64(staged_child_nodes)?
+        .checked_add(2)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let admitted_children = super::budget::PreparedKernel::new(
+        plan.children.len(),
+        super::budget::resident_cost! {
+            comparison_work: measured.comparison_work,
+            compute_work: measured.compute_work
+                .checked_add(
+                    super::budget::checked_u64(plan.children.len())?
+                        .checked_mul(2)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            output_elements: plan.children.len(),
+            output_bytes: retained_bytes,
+            temporary_bytes: retained_bytes
+                .checked_mul(3)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes: retained_bytes,
+            container_bytes: child_containers,
+            retained_nodes: measured.retained_nodes
+                .checked_add(final_output_nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    let children = (1..=admitted_children)
         .map(|index| composite_child_data(inputs.get(index)?, plan.children.get(index - 1)?))
         .collect::<Option<Vec<_>>>()
         .ok_or(ResidentKernelError::InvalidInput)?
         .into_boxed_slice();
     let next =
         rebuild_composite_snapshot(template, children).ok_or(ResidentKernelError::InvalidInput)?;
-    let ResidentValueMut::Snapshot([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
     *target = Some(next);
     Ok(true)
 }
@@ -467,6 +655,19 @@ fn composite_pack(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_core::ValueDataDraft;
+
+    struct Inputs<'a>(&'a [ResidentValueRef<'a>]);
+
+    impl ResidentKernelInputs for Inputs<'_> {
+        fn len(&self) -> usize {
+            self.0.len()
+        }
+
+        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+            self.0.get(index).copied()
+        }
+    }
 
     fn schema(body: SchemaBody) -> mech_core::Schema {
         mech_core::SchemaDraft {
@@ -501,6 +702,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            resolved_selector: None,
         }
     }
 
@@ -532,11 +734,11 @@ mod tests {
         let matrix = build.resolve(matrix).unwrap();
         let tuple = build.resolve(tuple).unwrap();
         let (schemas, _) = build.into_parts();
-        let contract =
-            ResolvedOperationContract::LegacyOpaque(mech_core::LegacyOpaqueOperationContract {
-                input_schemas: Box::new([]),
-                output_schemas: Box::new([]),
-            });
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: Box::new([]),
+            outputs: Box::new([]),
+            interaction: mech_core::ExternalInteraction::Pure,
+        });
         let output = layout(&schemas, tuple, ResidentValueKind::Snapshot);
 
         let good = [
@@ -627,11 +829,11 @@ mod tests {
         let matrix = build.resolve(matrix).unwrap();
         let tuple = build.resolve(tuple).unwrap();
         let (schemas, _) = build.into_parts();
-        let contract =
-            ResolvedOperationContract::LegacyOpaque(mech_core::LegacyOpaqueOperationContract {
-                input_schemas: Box::new([]),
-                output_schemas: Box::new([]),
-            });
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: Box::new([]),
+            outputs: Box::new([]),
+            interaction: mech_core::ExternalInteraction::Pure,
+        });
         let matrix_layout = layout_with_shape(
             &schemas,
             matrix,
@@ -657,6 +859,7 @@ mod tests {
                 vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into_boxed_slice(),
             ),
             input_is_matrix: true,
+            snapshot_backed_matrix: false,
             shape: ResidentShape {
                 rows: 2,
                 columns: 3,
@@ -678,6 +881,121 @@ mod tests {
                 .collect::<Vec<_>>(),
             [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
         );
+    }
+
+    #[test]
+    fn snapshot_backed_matrix_child_preserves_logical_shape_and_payload() {
+        let matrix_body = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+            dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let matrix = builder.insert(schema(matrix_body.clone())).unwrap();
+        let tuple = builder
+            .insert(schema(SchemaBody::Tuple(
+                vec![matrix_body].into_boxed_slice(),
+            )))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let tuple = build.resolve(tuple).unwrap();
+        let (schemas, _) = build.into_parts();
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: vec![
+                mech_core::ResolvedInputPort {
+                    schema: tuple,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                mech_core::ResolvedInputPort {
+                    schema: matrix,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+            outputs: vec![mech_core::ResolvedOutputPort {
+                schema: tuple,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        });
+        let inputs = [
+            layout(&schemas, tuple, ResidentValueKind::Snapshot),
+            layout(&schemas, matrix, ResidentValueKind::Snapshot),
+        ];
+        let kernel = bind_composite_pack(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &inputs,
+            output: layout(&schemas, tuple, ResidentValueKind::Snapshot),
+        })
+        .unwrap();
+        let matrix_draft = || {
+            ValueDataDraft::Matrix(
+                [1_u64, 2, 3, 4]
+                    .into_iter()
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            )
+        };
+        let template = [Some(
+            mech_core::ValueDraft {
+                schema: tuple,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Tuple(vec![matrix_draft()].into_boxed_slice()),
+            }
+            .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                &schemas,
+            ))
+            .unwrap(),
+        )];
+        let child = [Some(
+            mech_core::ValueDraft {
+                schema: matrix,
+                shape_values: Box::new([]),
+                data: matrix_draft(),
+            }
+            .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                &schemas,
+            ))
+            .unwrap(),
+        )];
+        let resident_inputs = [
+            ResidentValueRef::Snapshot(&template),
+            ResidentValueRef::Snapshot(&child),
+        ];
+        let mut output = [None];
+        kernel
+            .execute(
+                &Inputs(&resident_inputs),
+                ResidentValueMut::Snapshot(&mut output),
+            )
+            .unwrap();
+        let ValueData::Tuple(children) = output[0].as_ref().unwrap().data() else {
+            panic!("composite output must remain a tuple")
+        };
+        let ValueData::Matrix(matrix) = &children[0] else {
+            panic!("snapshot-backed matrix child was wrapped instead of retained")
+        };
+        assert!(matches!(
+            matrix.elements().to_values().as_slice(),
+            [
+                ValueData::U64(1),
+                ValueData::U64(2),
+                ValueData::U64(3),
+                ValueData::U64(4)
+            ]
+        ));
     }
 
     #[test]
@@ -719,6 +1037,7 @@ mod tests {
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions.clone()),
                 input_is_matrix: true,
+                snapshot_backed_matrix: false,
                 shape: ResidentShape {
                     rows: 1,
                     columns: 2,
@@ -737,6 +1056,7 @@ mod tests {
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions),
                 input_is_matrix: true,
+                snapshot_backed_matrix: false,
                 shape: ResidentShape {
                     rows: 1,
                     columns: 3,

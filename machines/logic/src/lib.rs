@@ -442,6 +442,19 @@ mod invocation_port_tests {
             *fixed_out.borrow(),
             Matrix2::new(true, false, false, false)
         );
+        let fixed_not_input = Ref::new(Matrix2::new(true, false, false, true));
+        let fixed_not_output = Ref::new(Matrix2::from_element(false));
+        crate::not::NotV::<bool, Matrix2<bool>>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact_matrix_ref(fixed_not_output.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(fixed_not_input, 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(
+            *fixed_not_output.borrow(),
+            Matrix2::new(false, true, true, false)
+        );
 
         let dynamic_lhs = Ref::new(DMatrix::from_row_slice(
             2,
@@ -472,6 +485,23 @@ mod invocation_port_tests {
         assert_eq!(
             *dynamic_out.borrow(),
             DMatrix::from_row_slice(2, 2, &[true, false, false, false])
+        );
+        let dynamic_not_input = Ref::new(DMatrix::from_row_slice(
+            2,
+            2,
+            &[true, false, false, true],
+        ));
+        let dynamic_not_output = Ref::new(DMatrix::from_element(2, 2, false));
+        crate::not::NotV::<bool, DMatrix<bool>>::new_invocation(FunctionInvocation::unary(
+            ValueCell::from_exact_matrix_ref(dynamic_not_output.clone(), 2, 2).unwrap(),
+            ValueCell::from_exact_matrix_ref(dynamic_not_input, 2, 2).unwrap(),
+        ))
+        .unwrap()
+        .solve_result()
+        .unwrap();
+        assert_eq!(
+            *dynamic_not_output.borrow(),
+            DMatrix::from_row_slice(2, 2, &[false, true, true, false])
         );
     }
 

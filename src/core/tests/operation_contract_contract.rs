@@ -1,14 +1,14 @@
 use mech_core::{
     AccessMode, AliasPolicy, ChangeDetectionPolicy, DeclaredOperationContract, DeliveryMode,
     DimensionExpr, EffectContract, EffectDeliveryPolicy, EnumVariantSchema, ExternalInteraction,
-    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyOpaqueOperationContract,
-    NominalKey, ObservationContract, ObservationReplayPolicy, OperationContractDeclaration,
-    OperationContractError, OperationContractId, OperationContractTable,
-    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, PortDirection,
-    RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaBody,
-    SchemaDraft, SchemaField, SchemaId, SchemaTableBuilder, ShapeContractReference, ShapeRule,
-    TransactionalEffectProtocol, TransactionalExternalContract, validate_contract_schemas,
-    validate_declaration, validate_resolved_contract, validate_signal_bindings,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, NominalKey, ObservationContract,
+    ObservationReplayPolicy, OperationContractDeclaration, OperationContractError,
+    OperationContractId, OperationContractTable, OperationContractTableBuilder, OutputConstruction,
+    OutputPortPolicy, PortDirection, RegionPolicy, ResolvedInputPort, ResolvedOperationContract,
+    ResolvedOutputPort, SchemaBody, SchemaDraft, SchemaField, SchemaId, SchemaTableBuilder,
+    ShapeContractReference, ShapeRule, TransactionalEffectProtocol, TransactionalExternalContract,
+    validate_contract_schemas, validate_declaration, validate_resolved_contract,
+    validate_signal_bindings,
 };
 
 fn declared(change_detection: ChangeDetectionPolicy) -> ResolvedOperationContract {
@@ -158,20 +158,30 @@ fn duplicate_contracts_deduplicate_and_distinct_contracts_do_not() {
 
 #[test]
 fn canonical_bytes_round_trip_every_contract_family() {
-    let contracts = [
-        declared(ChangeDetectionPolicy::SemanticHash),
-        ResolvedOperationContract::LegacyOpaque(LegacyOpaqueOperationContract {
-            input_schemas: vec![SchemaId::new(0), SchemaId::new(2)].into_boxed_slice(),
-            output_schemas: vec![SchemaId::new(1)].into_boxed_slice(),
-        }),
-    ];
+    let contracts = [declared(ChangeDetectionPolicy::SemanticHash)];
     for contract in contracts {
         let bytes = contract.canonical_bytes().unwrap();
+        assert_eq!(bytes[0], 1, "bytecode-v1 contracts retain encoding v1");
         assert_eq!(
             ResolvedOperationContract::from_canonical_bytes(&bytes).unwrap(),
             contract,
         );
     }
+}
+
+#[test]
+fn pre_r1_schema_only_contract_tag_is_rejected() {
+    let experimental = vec![
+        1, 1, // bytecode-v1 contract version and unsupported experimental tag
+        1, 0, 0, 0, 3, 0, 0, 0, // one input schema: 3
+        1, 0, 0, 0, 4, 0, 0, 0, // one output schema: 4
+    ];
+    assert!(matches!(
+        ResolvedOperationContract::from_canonical_bytes(&experimental),
+        Err(OperationContractError::InvalidCanonicalEncoding {
+            reason: "unknown operation-contract tag"
+        })
+    ));
 }
 
 #[test]
@@ -218,17 +228,6 @@ fn canonical_decoder_rejects_nested_counts_before_allocating() {
     output_count[18..22].copy_from_slice(&u32::MAX.to_le_bytes());
     assert!(matches!(
         ResolvedOperationContract::from_canonical_bytes(&output_count),
-        Err(OperationContractError::InvalidCanonicalEncoding { .. })
-    ));
-
-    let legacy = ResolvedOperationContract::LegacyOpaque(LegacyOpaqueOperationContract {
-        input_schemas: vec![SchemaId::new(0)].into_boxed_slice(),
-        output_schemas: vec![SchemaId::new(1)].into_boxed_slice(),
-    });
-    let mut legacy_bytes = legacy.canonical_bytes().unwrap().into_vec();
-    legacy_bytes[2..6].copy_from_slice(&u32::MAX.to_le_bytes());
-    assert!(matches!(
-        ResolvedOperationContract::from_canonical_bytes(&legacy_bytes),
         Err(OperationContractError::InvalidCanonicalEncoding { .. })
     ));
 

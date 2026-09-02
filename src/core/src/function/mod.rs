@@ -19,10 +19,18 @@ use crate::nodes::*;
 use crate::types::*;
 use crate::*;
 
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::{collections::BTreeSet, rc::Rc};
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use hashbrown::HashSet as HashBrownSet;
 #[cfg(feature = "functions")]
 use indexmap::map::IndexMap;
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+type HashSet<T> = HashBrownSet<T, core::hash::BuildHasherDefault<fxhash::FxHasher>>;
+use core::fmt;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::collections::{BTreeSet, HashMap, HashSet};
-use std::fmt;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::rc::Rc;
 #[cfg(feature = "pretty_print")]
 use tabled::{
@@ -617,6 +625,8 @@ mod canonical_function_instance_tests {
 
     struct OutputOnlyFunction;
 
+    struct ExplicitSemanticFunction;
+
     impl MechFunctionImpl for OutputOnlyFunction {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
@@ -624,6 +634,20 @@ mod canonical_function_instance_tests {
 
         fn to_string(&self) -> String {
             "OutputOnlyFunction".into()
+        }
+    }
+
+    impl MechFunctionImpl for ExplicitSemanticFunction {
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
+
+        fn semantic_operation_name(&self) -> Option<&str> {
+            Some("test/specialized")
+        }
+
+        fn to_string(&self) -> String {
+            "ExplicitSemanticFunction".into()
         }
     }
 
@@ -679,6 +703,13 @@ mod canonical_function_instance_tests {
     }
 
     #[cfg(feature = "semantic-compiler")]
+    impl MechFunctionCompiler for ExplicitSemanticFunction {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            unreachable!("test function is never compiled")
+        }
+    }
+
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for RepeatedOutputFunction {
         fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             unreachable!("test function is never compiled")
@@ -708,6 +739,19 @@ mod canonical_function_instance_tests {
         let mut journal = FunctionCheckpoint::new();
         repeated.capture_state(&mut journal).unwrap();
         assert_eq!(journal.cell_count(), 1);
+    }
+
+    #[test]
+    fn semantic_wrappers_preserve_explicit_specialized_operation_identity() {
+        let fallback = with_semantic_operation("test/source", Box::new(OutputOnlyFunction));
+        assert_eq!(fallback.semantic_operation_name(), Some("test/source"));
+
+        let specialized =
+            with_semantic_operation("test/source", Box::new(ExplicitSemanticFunction));
+        assert_eq!(
+            specialized.semantic_operation_name(),
+            Some("test/specialized")
+        );
     }
 
     #[test]
@@ -770,7 +814,9 @@ mod canonical_function_instance_tests {
 ///
 /// Specialization is allowed to choose implementation-specific factory names,
 /// but semantic artifacts and compute backends must continue to see the
-/// source-level operation that was selected.
+/// source-level operation that was selected. An implementation may declare a
+/// more specific portable operation identity; the attached identity is its
+/// fallback when it does not.
 pub fn with_semantic_operation(
     operation: impl Into<Box<str>>,
     function: Box<dyn MechFunction>,
@@ -864,7 +910,9 @@ impl MechFunctionImpl for SemanticMechFunction {
     }
 
     fn semantic_operation_name(&self) -> Option<&str> {
-        Some(&self.operation)
+        self.function
+            .semantic_operation_name()
+            .or(Some(&self.operation))
     }
 
     fn to_string(&self) -> String {
@@ -1640,8 +1688,10 @@ impl ReactivePlan {
             }
         }
 
-        let mut reactive_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> = HashMap::new();
-        let mut sampled_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> = HashMap::new();
+        let mut reactive_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> =
+            HashMap::default();
+        let mut sampled_consumers: HashMap<CanonicalCellId, Vec<ReactiveNodeId>> =
+            HashMap::default();
         for node in &self.nodes {
             for dependency in &node.inputs {
                 let consumers = match dependency.kind {
@@ -1794,8 +1844,8 @@ impl ReactivePlan {
     pub fn new() -> Self {
         Self {
             nodes: Vec::new(),
-            reactive_consumers: HashMap::new(),
-            sampled_consumers: HashMap::new(),
+            reactive_consumers: HashMap::default(),
+            sampled_consumers: HashMap::default(),
             pattern_activation_registrations: Vec::new(),
             activation_sampled_cells: Vec::new(),
         }
@@ -2215,7 +2265,7 @@ impl ReactivePlan {
         pending_nodes: &[ReactiveNodeId],
         mut journal: Option<&mut CanonicalTurnJournal>,
     ) -> MResult<ReactiveRegisterCommitOutcome> {
-        let mut unique = HashSet::new();
+        let mut unique: HashSet<ReactiveNodeId> = HashSet::default();
         let mut ordered = BTreeSet::new();
         for node_id in pending_nodes.iter().copied() {
             if !unique.insert(node_id) {
@@ -2236,7 +2286,7 @@ impl ReactivePlan {
             ordered.insert((node.plan_index, node.id));
         }
 
-        let mut owners = HashMap::new();
+        let mut owners: HashMap<CanonicalCellId, ReactiveNodeId> = HashMap::default();
         for (_, node_id) in &ordered {
             let node = &self.nodes[*node_id];
             for cell in &node.outputs {
@@ -2317,7 +2367,7 @@ impl ReactivePlan {
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveTurnOutcome> {
         let before_commit = self.solve_dirty_cells_with_services(dirty_cells, services)?;
-        let mut pending_register_nodes = std::mem::take(&mut state.pending_register_nodes);
+        let mut pending_register_nodes = core::mem::take(&mut state.pending_register_nodes);
         pending_register_nodes.extend(before_commit.pending_register_nodes.iter().copied());
         let register_commit = match self.commit_pending_registers(&pending_register_nodes) {
             Ok(outcome) => outcome,
@@ -2354,7 +2404,7 @@ impl ReactivePlan {
     ) -> MResult<ReactiveTurnOutcome> {
         let before_commit =
             self.solve_dirty_cells_with_journal_and_services(dirty_cells, journal, services)?;
-        let mut pending_register_nodes = std::mem::take(&mut state.pending_register_nodes);
+        let mut pending_register_nodes = core::mem::take(&mut state.pending_register_nodes);
         pending_register_nodes.extend(before_commit.pending_register_nodes.iter().copied());
         let register_commit =
             match self.commit_pending_registers_with_journal(&pending_register_nodes, journal) {
@@ -2534,11 +2584,11 @@ impl Plan {
         Self(Ref::new(ReactivePlan::new()), Ref::new(Vec::new()))
     }
 
-    pub fn borrow(&self) -> std::cell::Ref<'_, ReactivePlan> {
+    pub fn borrow(&self) -> core::cell::Ref<'_, ReactivePlan> {
         self.0.borrow()
     }
 
-    pub fn borrow_mut(&self) -> std::cell::RefMut<'_, ReactivePlan> {
+    pub fn borrow_mut(&self) -> core::cell::RefMut<'_, ReactivePlan> {
         self.0.borrow_mut()
     }
 
@@ -2657,14 +2707,14 @@ impl Plan {
             )
     }
 
-    pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {
+    pub fn get_functions(&self) -> core::cell::Ref<'_, ReactivePlan> {
         self.0.borrow()
     }
 
     pub fn pattern_activation_registrations(
         &self,
-    ) -> std::cell::Ref<'_, Vec<PatternActivationRegistration>> {
-        std::cell::Ref::map(self.0.borrow(), |plan| {
+    ) -> core::cell::Ref<'_, Vec<PatternActivationRegistration>> {
+        core::cell::Ref::map(self.0.borrow(), |plan| {
             &plan.pattern_activation_registrations
         })
     }

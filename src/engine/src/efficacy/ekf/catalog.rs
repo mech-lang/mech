@@ -418,6 +418,7 @@ macro_rules! register {
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
                 $validator,
             ),
+            mech_core::OperationId::from_name(spec.canonical_name),
             semantic_contract(spec.operation),
         )?;
     }};

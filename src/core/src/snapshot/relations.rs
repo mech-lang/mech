@@ -1,7 +1,7 @@
 use super::sequence::SequenceStorage;
 use super::{
-    CanonicalKeyValue, MapEntryValue, ReifiedType, SnapshotPath, SnapshotValueError, Value,
-    ValueData,
+    CanonicalKeyValue, MapEntryValue, ReifiedType, SnapshotCanonicalizationBudget, SnapshotPath,
+    SnapshotValueError, Value, ValueData,
 };
 use crate::{FloatWidth, SchemaBody, SchemaTable};
 use core::cmp::Ordering;
@@ -29,16 +29,12 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<bool, SnapshotValueError> {
-        let self_schema = self.validate_against(self_schemas)?;
-        let other_schema = other.validate_against(other_schemas)?;
+        let (self_schema, self_schema_bytes) = validated_schema_definition(self, self_schemas)?;
+        let (other_schema, other_schema_bytes) = validated_schema_definition(other, other_schemas)?;
         if self.schema_key() != other.schema_key() {
             return Ok(false);
         }
-        ensure_same_schema_definition(
-            self.schema_key(),
-            &self_schema.canonical_bytes(),
-            &other_schema.canonical_bytes(),
-        )?;
+        ensure_same_schema_definition(self.schema_key(), self_schema_bytes, other_schema_bytes)?;
         if self.shape() != other.shape() {
             return Ok(false);
         }
@@ -54,16 +50,13 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<bool, SnapshotValueError> {
-        let self_schema = self.validate_against(self_schemas)?;
-        let other_schema = other.validate_against(other_schemas)?;
+        let (self_schema, self_schema_bytes) = validated_schema_definition(self, self_schemas)?;
+        let (_other_schema, other_schema_bytes) =
+            validated_schema_definition(other, other_schemas)?;
         if self.schema_key() != other.schema_key() {
             return Ok(false);
         }
-        ensure_same_schema_definition(
-            self.schema_key(),
-            &self_schema.canonical_bytes(),
-            &other_schema.canonical_bytes(),
-        )?;
+        ensure_same_schema_definition(self.schema_key(), self_schema_bytes, other_schema_bytes)?;
         if self.shape() != other.shape() {
             return Ok(false);
         }
@@ -80,8 +73,8 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<Ordering, SnapshotValueError> {
-        let self_schema = self.validate_against(self_schemas)?;
-        let other_schema = other.validate_against(other_schemas)?;
+        let (self_schema, self_schema_bytes) = validated_schema_definition(self, self_schemas)?;
+        let (other_schema, other_schema_bytes) = validated_schema_definition(other, other_schemas)?;
         if !self_schema.is_keyable() || !other_schema.is_keyable() {
             return Err(SnapshotValueError::SchemaNotKeyableV1);
         }
@@ -93,11 +86,7 @@ impl Value {
                 key: self.schema_key(),
             });
         }
-        ensure_same_schema_definition(
-            self.schema_key(),
-            &self_schema.canonical_bytes(),
-            &other_schema.canonical_bytes(),
-        )?;
+        ensure_same_schema_definition(self.schema_key(), self_schema_bytes, other_schema_bytes)?;
         let shape_order = self
             .shape()
             .canonical_bytes()
@@ -118,12 +107,7 @@ impl Value {
     ) -> Result<bool, SnapshotValueError> {
         let (element, elements, candidate) =
             self.validated_set_candidate(self_schemas, candidate, candidate_schemas)?;
-        for existing in elements {
-            if compare_key_data(element, existing.data(), &candidate)? == Ordering::Equal {
-                return Ok(true);
-            }
-        }
-        Ok(false)
+        Ok(set_key_search(element, elements, &candidate)?.is_ok())
     }
 
     pub fn set_elements_after_insert(
@@ -138,15 +122,8 @@ impl Value {
             .iter()
             .map(|value| value.data().clone())
             .collect::<Vec<_>>();
-        let mut contains = false;
-        for existing in elements {
-            if compare_key_data(element, existing.data(), &candidate)? == Ordering::Equal {
-                contains = true;
-                break;
-            }
-        }
-        if !contains {
-            next.push(candidate);
+        if let Err(position) = set_key_search(element, elements, &candidate)? {
+            next.insert(position, candidate);
         }
         Ok(next.into_boxed_slice())
     }
@@ -159,10 +136,12 @@ impl Value {
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
         let (element, elements, candidate) =
             self.validated_set_candidate(self_schemas, candidate, candidate_schemas)?;
-        let mut next = Vec::with_capacity(elements.len());
-        for existing in elements {
-            if compare_key_data(element, existing.data(), &candidate)? != Ordering::Equal {
-                next.push(existing.data().clone());
+        let found = set_key_search(element, elements, &candidate)?.ok();
+        let mut next =
+            Vec::with_capacity(elements.len().saturating_sub(usize::from(found.is_some())));
+        for (index, existing) in elements.iter().enumerate() {
+            if Some(index) != found {
+                next.push(existing.data().clone())
             }
         }
         Ok(next.into_boxed_slice())
@@ -174,7 +153,23 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
-        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Union)
+        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Union, None)
+    }
+
+    pub fn set_union_elements_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Union,
+            Some(budget),
+        )
     }
 
     pub fn set_intersection_elements(
@@ -183,7 +178,29 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
-        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Intersection)
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Intersection,
+            None,
+        )
+    }
+
+    pub fn set_intersection_elements_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Intersection,
+            Some(budget),
+        )
     }
 
     pub fn set_difference_elements(
@@ -192,7 +209,29 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
-        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Difference)
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Difference,
+            None,
+        )
+    }
+
+    pub fn set_difference_elements_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Difference,
+            Some(budget),
+        )
     }
 
     pub fn set_symmetric_difference_elements(
@@ -206,6 +245,23 @@ impl Value {
             other,
             other_schemas,
             SetMerge::SymmetricDifference,
+            None,
+        )
+    }
+
+    pub fn set_symmetric_difference_elements_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::SymmetricDifference,
+            Some(budget),
         )
     }
 
@@ -216,18 +272,54 @@ impl Value {
         other_schemas: &SchemaTable,
         relation: SetValueRelation,
     ) -> Result<bool, SnapshotValueError> {
+        self.set_relation_with_optional_budget(self_schemas, other, other_schemas, relation, None)
+    }
+
+    /// Evaluates a set relation while charging every recursive ordered-key
+    /// comparison against one caller-owned canonicalization allowance.
+    pub fn set_relation_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        relation: SetValueRelation,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<bool, SnapshotValueError> {
+        self.set_relation_with_optional_budget(
+            self_schemas,
+            other,
+            other_schemas,
+            relation,
+            Some(budget),
+        )
+    }
+
+    fn set_relation_with_optional_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        relation: SetValueRelation,
+        budget: Option<&SnapshotCanonicalizationBudget>,
+    ) -> Result<bool, SnapshotValueError> {
         let (element, left, right) = self.validated_set_pair(self_schemas, other, other_schemas)?;
-        let subset = set_is_subset(element, left, right)?;
-        let superset = set_is_subset(element, right, left)?;
-        Ok(match relation {
-            SetValueRelation::Disjoint => set_is_disjoint(element, left, right)?,
-            SetValueRelation::Equal => subset && superset,
-            SetValueRelation::NotEqual => !(subset && superset),
-            SetValueRelation::ProperSubset => subset && left.len() < right.len(),
-            SetValueRelation::ProperSuperset => superset && left.len() > right.len(),
-            SetValueRelation::Subset => subset,
-            SetValueRelation::Superset => superset,
-        })
+        match relation {
+            SetValueRelation::Disjoint => set_is_disjoint(element, left, right, budget),
+            SetValueRelation::Equal => {
+                Ok(left.len() == right.len() && set_is_subset(element, left, right, budget)?)
+            }
+            SetValueRelation::NotEqual => {
+                Ok(left.len() != right.len() || !set_is_subset(element, left, right, budget)?)
+            }
+            SetValueRelation::ProperSubset => {
+                Ok(left.len() < right.len() && set_is_subset(element, left, right, budget)?)
+            }
+            SetValueRelation::ProperSuperset => {
+                Ok(left.len() > right.len() && set_is_subset(element, right, left, budget)?)
+            }
+            SetValueRelation::Subset => set_is_subset(element, left, right, budget),
+            SetValueRelation::Superset => set_is_subset(element, right, left, budget),
+        }
     }
 
     fn merge_set_elements(
@@ -236,12 +328,18 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
         merge: SetMerge,
+        budget: Option<&SnapshotCanonicalizationBudget>,
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
         let (element, left, right) = self.validated_set_pair(self_schemas, other, other_schemas)?;
         let mut next = Vec::with_capacity(left.len().saturating_add(right.len()));
         let (mut left_index, mut right_index) = (0, 0);
         while left_index < left.len() && right_index < right.len() {
-            match compare_key_data(element, left[left_index].data(), right[right_index].data())? {
+            match compare_key_data_with_budget(
+                element,
+                left[left_index].data(),
+                right[right_index].data(),
+                budget,
+            )? {
                 Ordering::Less => {
                     if matches!(
                         merge,
@@ -366,36 +464,66 @@ enum SetMerge {
     SymmetricDifference,
 }
 
+fn set_key_search(
+    element: &SchemaBody,
+    elements: &[CanonicalKeyValue],
+    candidate: &ValueData,
+) -> Result<core::result::Result<usize, usize>, SnapshotValueError> {
+    let mut lower = 0usize;
+    let mut upper = elements.len();
+    while lower < upper {
+        let middle = lower + (upper - lower) / 2;
+        match compare_key_data(element, elements[middle].data(), candidate)? {
+            Ordering::Less => lower = middle + 1,
+            Ordering::Greater => upper = middle,
+            Ordering::Equal => return Ok(Ok(middle)),
+        }
+    }
+    Ok(Err(lower))
+}
+
 fn set_is_subset(
     element: &SchemaBody,
     left: &[CanonicalKeyValue],
     right: &[CanonicalKeyValue],
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<bool, SnapshotValueError> {
-    for candidate in left {
-        let mut present = false;
-        for value in right {
-            if compare_key_data(element, candidate.data(), value.data())? == Ordering::Equal {
-                present = true;
-                break;
+    let (mut left_index, mut right_index) = (0, 0);
+    while left_index < left.len() && right_index < right.len() {
+        match compare_key_data_with_budget(
+            element,
+            left[left_index].data(),
+            right[right_index].data(),
+            budget,
+        )? {
+            Ordering::Less => return Ok(false),
+            Ordering::Equal => {
+                left_index += 1;
+                right_index += 1;
             }
-        }
-        if !present {
-            return Ok(false);
+            Ordering::Greater => right_index += 1,
         }
     }
-    Ok(true)
+    Ok(left_index == left.len())
 }
 
 fn set_is_disjoint(
     element: &SchemaBody,
     left: &[CanonicalKeyValue],
     right: &[CanonicalKeyValue],
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<bool, SnapshotValueError> {
-    for candidate in left {
-        for value in right {
-            if compare_key_data(element, candidate.data(), value.data())? == Ordering::Equal {
-                return Ok(false);
-            }
+    let (mut left_index, mut right_index) = (0, 0);
+    while left_index < left.len() && right_index < right.len() {
+        match compare_key_data_with_budget(
+            element,
+            left[left_index].data(),
+            right[right_index].data(),
+            budget,
+        )? {
+            Ordering::Less => left_index += 1,
+            Ordering::Equal => return Ok(false),
+            Ordering::Greater => right_index += 1,
         }
     }
     Ok(true)
@@ -403,6 +531,20 @@ fn set_is_disjoint(
 
 fn is_nominal_schema(body: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Atom(_) | SchemaBody::Enum { .. })
+}
+
+fn validated_schema_definition<'a>(
+    value: &Value,
+    schemas: &'a SchemaTable,
+) -> Result<(&'a crate::Schema, &'a [u8]), SnapshotValueError> {
+    let schema = value.validate_against(schemas)?;
+    let canonical = schemas
+        .entry(value.schema())
+        .ok_or(SnapshotValueError::UnknownSnapshotSchema {
+            schema: value.schema(),
+        })?
+        .canonical_bytes();
+    Ok((schema, canonical))
 }
 
 fn ensure_same_schema_definition(
@@ -485,13 +627,26 @@ pub(super) fn insert_set_key(
     elements: &mut Vec<CanonicalKeyValue>,
     data: ValueData,
     path: &SnapshotPath,
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<(), SnapshotValueError> {
     let key = CanonicalKeyValue {
         data: normalized_key_data(schema, data)?,
     };
+    if let Some(last) = elements.last() {
+        match compare_key_data_with_budget(schema, last.data(), key.data(), budget)? {
+            Ordering::Less => {
+                elements.push(key);
+                return Ok(());
+            }
+            Ordering::Equal => {
+                return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
+            }
+            Ordering::Greater => {}
+        }
+    }
     let mut insertion = elements.len();
     for (index, existing) in elements.iter().enumerate() {
-        match compare_key_data(schema, existing.data(), key.data())? {
+        match compare_key_data_with_budget(schema, existing.data(), key.data(), budget)? {
             Ordering::Less => {}
             Ordering::Equal => {
                 return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
@@ -501,6 +656,9 @@ pub(super) fn insert_set_key(
                 break;
             }
         }
+    }
+    if let Some(budget) = budget {
+        budget.charge(u64::try_from(elements.len() - insertion).unwrap_or(u64::MAX))?;
     }
     elements.insert(insertion, key);
     Ok(())
@@ -512,13 +670,26 @@ pub(super) fn insert_map_entry(
     key: ValueData,
     value: ValueData,
     path: &SnapshotPath,
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<(), SnapshotValueError> {
     let key = CanonicalKeyValue {
         data: normalized_key_data(schema, key)?,
     };
+    if let Some(last) = entries.last() {
+        match compare_key_data_with_budget(schema, last.key().data(), key.data(), budget)? {
+            Ordering::Less => {
+                entries.push(MapEntryValue { key, value });
+                return Ok(());
+            }
+            Ordering::Equal => {
+                return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
+            }
+            Ordering::Greater => {}
+        }
+    }
     let mut insertion = entries.len();
     for (index, existing) in entries.iter().enumerate() {
-        match compare_key_data(schema, existing.key().data(), key.data())? {
+        match compare_key_data_with_budget(schema, existing.key().data(), key.data(), budget)? {
             Ordering::Less => {}
             Ordering::Equal => {
                 return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
@@ -529,17 +700,199 @@ pub(super) fn insert_map_entry(
             }
         }
     }
+    if let Some(budget) = budget {
+        budget.charge(u64::try_from(entries.len() - insertion).unwrap_or(u64::MAX))?;
+    }
     entries.insert(insertion, MapEntryValue { key, value });
     Ok(())
 }
 
-pub(super) fn compare_key_data(
+pub fn compare_key_data(
     schema: &SchemaBody,
     left: &ValueData,
     right: &ValueData,
 ) -> Result<Ordering, SnapshotValueError> {
+    compare_key_data_with_budget(schema, left, right, None)
+}
+
+/// Returns the comparison work needed to round-trip already-canonical key
+/// data through [`ValueDataDraft`](super::ValueDataDraft) finalization.
+///
+/// Nested Sets are rebuilt recursively, so their own ordered insertions are
+/// included even when the containing key has no adjacent peer. The input must
+/// already have been validated against `schema`.
+pub fn canonical_key_draft_finalization_work(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<u64, SnapshotValueError> {
     if !schema_is_keyable(schema) {
         return Err(SnapshotValueError::SchemaNotKeyableV1);
+    }
+    canonical_data_draft_finalization_work(schema, data)
+}
+
+/// Bounded variant of [`canonical_key_draft_finalization_work`]. The shared
+/// budget is charged during each simulated canonical-key comparison, so an
+/// admission preflight cannot itself perform an unbounded key traversal.
+pub fn canonical_key_draft_finalization_work_with_budget(
+    schema: &SchemaBody,
+    data: &ValueData,
+    budget: &SnapshotCanonicalizationBudget,
+) -> Result<u64, SnapshotValueError> {
+    if !schema_is_keyable(schema) {
+        return Err(SnapshotValueError::SchemaNotKeyableV1);
+    }
+    canonical_data_draft_finalization_work_with_budget(schema, data, budget)
+}
+
+/// Returns the comparison work needed to round-trip already-canonical data
+/// through [`ValueDataDraft`](super::ValueDataDraft) finalization.
+///
+/// This includes every recursively nested Set and Map insertion. The input
+/// must already have been validated against `schema`.
+pub fn canonical_data_draft_finalization_work(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<u64, SnapshotValueError> {
+    let budget = SnapshotCanonicalizationBudget::new(u64::MAX);
+    canonical_data_draft_finalization_work_with_budget(schema, data, &budget)
+}
+
+/// Bounded variant of [`canonical_data_draft_finalization_work`].
+pub fn canonical_data_draft_finalization_work_with_budget(
+    schema: &SchemaBody,
+    data: &ValueData,
+    budget: &SnapshotCanonicalizationBudget,
+) -> Result<u64, SnapshotValueError> {
+    fn visit(
+        schema: &SchemaBody,
+        data: &ValueData,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<(), SnapshotValueError> {
+        match (schema, data) {
+            (SchemaBody::Option(element), ValueData::Option(value)) => {
+                if let Some(value) = value.as_deref() {
+                    visit(element, value, budget)?;
+                }
+            }
+            (SchemaBody::Enum { variants, .. }, ValueData::Enum(value)) => {
+                if let (Some(payload_schema), Some(payload)) = (
+                    variants[value.ordinal() as usize].payload.as_ref(),
+                    value.payload(),
+                ) {
+                    visit(payload_schema, payload, budget)?;
+                }
+            }
+            (SchemaBody::Tuple(elements), ValueData::Tuple(values)) => {
+                for (element, value) in elements.iter().zip(values) {
+                    visit(element, value, budget)?;
+                }
+            }
+            (SchemaBody::Record(fields), ValueData::Record(value)) => {
+                for (field, value) in fields.iter().zip(value.fields()) {
+                    visit(&field.schema, value, budget)?;
+                }
+            }
+            (SchemaBody::Matrix { element, .. }, ValueData::Matrix(value)) => {
+                if let super::SequenceView::Values(values) = value.elements() {
+                    for value in values {
+                        visit(element, value, budget)?;
+                    }
+                }
+            }
+            (SchemaBody::Table { columns, .. }, ValueData::Table(value)) => {
+                for (index, column) in columns.iter().enumerate() {
+                    let values = value
+                        .column(index)
+                        .ok_or(SnapshotValueError::SchemaNotKeyableV1)?;
+                    if let super::SequenceView::Values(values) = values {
+                        for value in values {
+                            visit(&column.schema, value, budget)?;
+                        }
+                    }
+                }
+            }
+            (SchemaBody::Set { element, .. }, ValueData::Set(value)) => {
+                let mut previous = None;
+                for key in value.elements() {
+                    visit(element, key.data(), budget)?;
+                    if let Some(previous) = previous {
+                        compare_key_data_with_budget(element, previous, key.data(), Some(budget))?;
+                    }
+                    previous = Some(key.data());
+                }
+            }
+            (SchemaBody::Map { key, value, .. }, ValueData::Map(map)) => {
+                let mut previous = None;
+                for entry in map.entries() {
+                    visit(key, entry.key().data(), budget)?;
+                    visit(value, entry.value(), budget)?;
+                    if let Some(previous) = previous {
+                        compare_key_data_with_budget(
+                            key,
+                            previous,
+                            entry.key().data(),
+                            Some(budget),
+                        )?;
+                    }
+                    previous = Some(entry.key().data());
+                }
+            }
+            (SchemaBody::Dynamic, ValueData::Dynamic(dynamic)) => {
+                if let Some(value) = dynamic.value() {
+                    let schemas =
+                        value
+                            .schemas()
+                            .ok_or(SnapshotValueError::UnknownSnapshotSchema {
+                                schema: value.schema(),
+                            })?;
+                    let schema = value.validate_against(&schemas)?;
+                    visit(schema.body(), value.data(), budget)?;
+                }
+            }
+            (
+                SchemaBody::Bool
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Complex(_)
+                | SchemaBody::Rational64
+                | SchemaBody::String
+                | SchemaBody::Id
+                | SchemaBody::Index
+                | SchemaBody::Atom(_)
+                | SchemaBody::ReifiedType,
+                _,
+            ) => {}
+            _ => return Err(SnapshotValueError::SchemaNotKeyableV1),
+        }
+        Ok(())
+    }
+    let before = budget.consumed();
+    visit(schema, data, budget)?;
+    budget
+        .consumed()
+        .checked_sub(before)
+        .ok_or(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: u64::MAX })
+}
+
+fn compare_key_data_with_budget(
+    schema: &SchemaBody,
+    left: &ValueData,
+    right: &ValueData,
+    budget: Option<&SnapshotCanonicalizationBudget>,
+) -> Result<Ordering, SnapshotValueError> {
+    if !schema_is_keyable(schema) {
+        return Err(SnapshotValueError::SchemaNotKeyableV1);
+    }
+    if let Some(budget) = budget {
+        let work = match (schema, left, right) {
+            (SchemaBody::String, ValueData::String(left), ValueData::String(right)) => {
+                u64::try_from(left.len().max(right.len()).max(1)).unwrap_or(u64::MAX)
+            }
+            _ => 1,
+        };
+        budget.charge(work)?;
     }
     let order = match (schema, left, right) {
         (SchemaBody::Bool, ValueData::Bool(left), ValueData::Bool(right)) => left.cmp(right),
@@ -570,34 +923,45 @@ pub(super) fn compare_key_data(
                 (None, None) => Ordering::Equal,
                 (None, Some(_)) => Ordering::Less,
                 (Some(_), None) => Ordering::Greater,
-                (Some(left), Some(right)) => compare_key_data(element, left, right)?,
+                (Some(left), Some(right)) => {
+                    compare_key_data_with_budget(element, left, right, budget)?
+                }
             }
         }
         (SchemaBody::Enum { variants, .. }, ValueData::Enum(left), ValueData::Enum(right)) => {
-            left.ordinal.cmp(&right.ordinal).then_with(|| {
+            let ordinal = left.ordinal.cmp(&right.ordinal);
+            if ordinal != Ordering::Equal {
+                ordinal
+            } else {
                 match (
                     variants[left.ordinal as usize].payload.as_ref(),
                     left.payload.as_deref(),
                     right.payload.as_deref(),
                 ) {
                     (Some(schema), Some(left), Some(right)) => {
-                        compare_key_data(schema, left, right).expect("validated key payload")
+                        compare_key_data_with_budget(schema, left, right, budget)?
                     }
                     _ => Ordering::Equal,
                 }
-            })
+            }
         }
         (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => {
-            lexicographic(elements, left, right)?
+            lexicographic(elements, left, right, budget)?
         }
         (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => {
-            let schemas = fields.iter().map(|field| &field.schema).collect::<Vec<_>>();
-            lexicographic_refs(&schemas, left.fields(), right.fields())?
+            let mut order = Ordering::Equal;
+            for ((field, left), right) in fields.iter().zip(left.fields()).zip(right.fields()) {
+                order = compare_key_data_with_budget(&field.schema, left, right, budget)?;
+                if order != Ordering::Equal {
+                    break;
+                }
+            }
+            order
         }
         (SchemaBody::Set { element, .. }, ValueData::Set(left), ValueData::Set(right)) => {
             let mut order = Ordering::Equal;
             for (left, right) in left.elements.iter().zip(right.elements.iter()) {
-                order = compare_key_data(element, left.data(), right.data())?;
+                order = compare_key_data_with_budget(element, left.data(), right.data(), budget)?;
                 if order != Ordering::Equal {
                     break;
                 }
@@ -639,23 +1003,85 @@ fn lexicographic(
     schemas: &[SchemaBody],
     left: &[ValueData],
     right: &[ValueData],
-) -> Result<Ordering, SnapshotValueError> {
-    let refs = schemas.iter().collect::<Vec<_>>();
-    lexicographic_refs(&refs, left, right)
-}
-
-fn lexicographic_refs(
-    schemas: &[&SchemaBody],
-    left: &[ValueData],
-    right: &[ValueData],
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<Ordering, SnapshotValueError> {
     for ((schema, left), right) in schemas.iter().zip(left).zip(right) {
-        let order = compare_key_data(schema, left, right)?;
+        let order = compare_key_data_with_budget(schema, left, right, budget)?;
         if order != Ordering::Equal {
             return Ok(order);
         }
     }
     Ok(Ordering::Equal)
+}
+
+/// Applies the canonical language equality rules to two already-validated
+/// payloads under one shared schema.
+pub fn schema_data_language_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
+    language_data_eq(schema, left, right)
+}
+
+/// Applies the source language's scalar numeric ordering to two already
+/// validated payloads under one shared schema. `None` represents an unordered
+/// floating-point comparison (for example, one involving NaN).
+pub fn schema_data_partial_cmp(
+    schema: &SchemaBody,
+    left: &ValueData,
+    right: &ValueData,
+) -> Option<Ordering> {
+    macro_rules! ordinary {
+        ($variant:ident) => {
+            if let (ValueData::$variant(left), ValueData::$variant(right)) = (left, right) {
+                return left.partial_cmp(right);
+            }
+        };
+    }
+    match (schema, left, right) {
+        (SchemaBody::UnsignedInteger(_), _, _) | (SchemaBody::SignedInteger(_), _, _) => {
+            ordinary!(U8);
+            ordinary!(U16);
+            ordinary!(U32);
+            ordinary!(U64);
+            ordinary!(U128);
+            ordinary!(I8);
+            ordinary!(I16);
+            ordinary!(I32);
+            ordinary!(I64);
+            ordinary!(I128);
+            None
+        }
+        (
+            SchemaBody::FloatingPoint(FloatWidth::W32),
+            ValueData::F32(left),
+            ValueData::F32(right),
+        ) => left.to_f32().partial_cmp(&right.to_f32()),
+        (
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueData::F64(left),
+            ValueData::F64(right),
+        ) => left.to_f64().partial_cmp(&right.to_f64()),
+        (
+            SchemaBody::Complex(FloatWidth::W32),
+            ValueData::Complex32(left),
+            ValueData::Complex32(right),
+        ) => left
+            .real()
+            .to_f32()
+            .hypot(left.imaginary().to_f32())
+            .partial_cmp(&right.real().to_f32().hypot(right.imaginary().to_f32())),
+        (
+            SchemaBody::Complex(FloatWidth::W64),
+            ValueData::Complex64(left),
+            ValueData::Complex64(right),
+        ) => left
+            .real()
+            .to_f64()
+            .hypot(left.imaginary().to_f64())
+            .partial_cmp(&right.real().to_f64().hypot(right.imaginary().to_f64())),
+        (SchemaBody::Rational64, ValueData::Rational64(left), ValueData::Rational64(right)) => {
+            Some(rational_cmp(left, right))
+        }
+        _ => None,
+    }
 }
 
 fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {

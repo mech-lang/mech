@@ -13,9 +13,9 @@ use std::sync::Arc;
 
 use crate::{
     PreparedRuntimeEffect, ResidentDurabilityPolicy, RuntimeCapabilityOperation,
-    RuntimeEffectFailure, RuntimeEffectId, RuntimeEffectProtocol,
-    RuntimeResidentResourceWriteRequest, RuntimeResourceReadRequest, RuntimeResourceRegistry,
-    RuntimeResourceWriteIntent, TransactionId,
+    RuntimeEffectFailure, RuntimeEffectId, RuntimeEffectProtocol, RuntimeResourceReadRequest,
+    RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    TransactionId,
     ledger::{LedgerPermit, PreparedLedgerAppend, RecordEstimate, RetainedTurnLedger, TurnLedger},
     outbox::{
         OutboxDeliveryPolicy, OutboxEffectId, OutboxPermit, OwnedEffectIntent, PreparedOutboxBatch,
@@ -1278,7 +1278,7 @@ impl ResidentExternalCoordinator {
                 let provider_binding = effect.bound.provider_binding.as_ref().ok_or_else(|| {
                     invalid_value("live effect has no provider binding".to_owned())
                 })?;
-                provider_binding.prepare_write(RuntimeResidentResourceWriteRequest {
+                provider_binding.prepare_write(RuntimeResourceWriteRequest {
                     base_uri: effect.bound.request.base_uri.clone(),
                     path: effect.bound.request.path.clone(),
                     context_name: effect.bound.request.context_name.clone(),
@@ -1479,7 +1479,7 @@ impl ResidentExternalCoordinator {
             let provider_binding = bound.provider_binding.as_ref().ok_or_else(|| {
                 invalid_value("live retained effect has no provider binding".to_owned())
             })?;
-            provider_binding.prepare_write(RuntimeResidentResourceWriteRequest {
+            provider_binding.prepare_write(RuntimeResourceWriteRequest {
                 base_uri: bound.request.base_uri.clone(),
                 path: bound.request.path.clone(),
                 context_name: bound.request.context_name.clone(),

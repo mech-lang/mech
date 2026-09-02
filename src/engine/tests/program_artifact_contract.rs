@@ -9,8 +9,8 @@ use mech_core::{
     DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, EffectContract,
     EffectDeliveryPolicy, EncodedConstant, ExecutionResourceRequest, ExternalInteraction,
     FloatWidth, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr,
-    LegacyOpaqueOperationContract, NominalKey, NominalKind, ObservationContract,
-    ObservationReplayPolicy, OperationContractDeclaration, OperationContractId,
+    NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
+    OperationContractDeclaration, OperationContractError, OperationContractId,
     OperationContractTable, OperationContractTableBuilder, OutputConstruction, OutputPortPolicy,
     RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort,
     ResourceDelivery, ResourceIntent, RuntimeType, SchemaBody, SchemaDraft, SchemaField,
@@ -457,7 +457,7 @@ fn ekf(data: &FixtureData) -> SourceProgram {
 
 fn build_both(data: &FixtureData, graph: SourceProgram) -> (ProgramArtifact, ProgramArtifact) {
     let mut source_context = ArtifactBuildContext::new(&data.schemas, &data.constants);
-    let source = compile_source_program(&graph, &mut source_context).unwrap();
+    let source = compile_with_pure_contracts(&graph, &mut source_context).unwrap();
     let bytes = encode_program_artifact_bytecode_v1(&source).unwrap();
     let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
     assert!(!parsed.artifact.is_empty());
@@ -600,6 +600,19 @@ fn pure_full_write_contract(
     }
 }
 
+fn compile_with_pure_contracts(
+    graph: &SourceProgram,
+    context: &mut ArtifactBuildContext<'_>,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
+    let declarations = graph
+        .nodes
+        .iter()
+        .map(|node| pure_full_write_contract(node.inputs.len(), node.outputs.len()))
+        .collect::<Vec<_>>();
+    let declaration_refs = declarations.iter().collect::<Vec<_>>();
+    compile_source_program_with_contracts(graph, context, &declaration_refs)
+}
+
 fn pure_state_rmw_contract(base_input: u16) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
@@ -630,7 +643,7 @@ fn pure_state_rmw_contract(base_input: u16) -> OperationContractDeclaration {
 fn build_both_with_contracts(
     data: &FixtureData,
     graph: SourceProgram,
-    declarations: &[Option<&OperationContractDeclaration>],
+    declarations: &[&OperationContractDeclaration],
 ) -> (ProgramArtifact, ProgramArtifact) {
     let mut source_context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     let source =
@@ -696,7 +709,7 @@ fn synthetic_ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids
         .iter()
         .map(|node| pure_full_write_contract(node.inputs.len(), node.outputs.len()))
         .collect::<Vec<_>>();
-    let declaration_refs = declarations.iter().map(Some).collect::<Vec<_>>();
+    let declaration_refs = declarations.iter().collect::<Vec<_>>();
     let (source, bytecode) = build_both_with_contracts(&data, graph, &declaration_refs);
 
     assert!(
@@ -704,14 +717,6 @@ fn synthetic_ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids
             .contracts()
             .iter()
             .all(|contract| matches!(contract, ResolvedOperationContract::Declared(_)))
-    );
-    assert_eq!(
-        source
-            .contracts()
-            .iter()
-            .filter(|contract| matches!(contract, ResolvedOperationContract::LegacyOpaque(_)))
-            .count(),
-        0
     );
     assert_eq!(source.revision(), bytecode.revision());
     assert_eq!(source.contracts(), bytecode.contracts());
@@ -819,7 +824,7 @@ fn combinational_cycles_are_rejected_but_state_feedback_is_valid() {
     };
     let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     assert!(matches!(
-        compile_source_program(&graph, &mut context),
+        compile_with_pure_contracts(&graph, &mut context),
         Err(ArtifactBuildError::CombinationalCycle)
     ));
     assert!(build_both(&data, stateful_register(&data)).0.nodes().len() == 1);
@@ -863,7 +868,7 @@ fn state_reads_depend_on_the_latest_preceding_writer() {
     let read = pure_full_write_contract(1, 1);
     let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     assert!(matches!(
-        compile_source_program_with_contracts(&graph, &mut context, &[Some(&write), Some(&read)],),
+        compile_source_program_with_contracts(&graph, &mut context, &[&write, &read]),
         Err(ArtifactBuildError::CombinationalCycle)
     ));
 }
@@ -1531,7 +1536,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         ..SourceProgram::default()
     };
     assert!(matches!(
-        compile_source_program(
+        compile_with_pure_contracts(
             &mismatched_initializer,
             &mut ArtifactBuildContext::new(&data.schemas, &data.constants)
         ),
@@ -1540,10 +1545,11 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
 
     let mut contract_builder = OperationContractTableBuilder::new();
     contract_builder
-        .insert(ResolvedOperationContract::LegacyOpaque(
-            LegacyOpaqueOperationContract {
-                input_schemas: Box::new([]),
-                output_schemas: Box::new([]),
+        .insert(ResolvedOperationContract::Declared(
+            mech_core::DeclaredOperationContract {
+                inputs: Box::new([]),
+                outputs: Box::new([]),
+                interaction: ExternalInteraction::Pure,
             },
         ))
         .unwrap();
@@ -1599,7 +1605,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         ..SourceProgram::default()
     };
     assert!(matches!(
-        compile_source_program(
+        compile_with_pure_contracts(
             &empty_module,
             &mut ArtifactBuildContext::new(&data.schemas, &data.constants)
         ),
@@ -1618,7 +1624,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         ..SourceProgram::default()
     };
     assert!(matches!(
-        compile_source_program(
+        compile_with_pure_contracts(
             &too_many_ports,
             &mut ArtifactBuildContext::new(&data.schemas, &data.constants)
         ),
@@ -1662,6 +1668,52 @@ fn one_entry_operation_contract_table(contract: &[u8]) -> Vec<u8> {
     table.extend_from_slice(&u32::try_from(contract.len()).unwrap().to_le_bytes());
     table.extend_from_slice(contract);
     table
+}
+
+#[test]
+fn bytecode_v1_rejects_pre_r1_experimental_schema_only_contracts() {
+    let data = fixture_data();
+    let artifact = build_both(&data, scalar_add(&data)).0;
+    let node = &artifact.nodes()[0];
+    let ResolvedOperationContract::Declared(contract) = artifact
+        .contracts()
+        .get(node.contract)
+        .expect("scalar-add contract")
+    else {
+        unreachable!()
+    };
+    let input_schemas = contract
+        .inputs
+        .iter()
+        .map(|input| input.schema)
+        .collect::<Vec<_>>();
+    let output_schemas = contract
+        .outputs
+        .iter()
+        .map(|output| output.schema)
+        .collect::<Vec<_>>();
+    let mut experimental = vec![1, 1];
+    experimental.extend_from_slice(&(input_schemas.len() as u32).to_le_bytes());
+    for schema in &input_schemas {
+        experimental.extend_from_slice(&schema.get().to_le_bytes());
+    }
+    experimental.extend_from_slice(&(output_schemas.len() as u32).to_le_bytes());
+    for schema in &output_schemas {
+        experimental.extend_from_slice(&schema.get().to_le_bytes());
+    }
+    let mut sections = encode_program_artifact_sections(&artifact).unwrap();
+    sections.operation_contracts = one_entry_operation_contract_table(&experimental);
+
+    assert!(matches!(
+        decode_program_artifact_sections(&sections),
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::OperationContract(
+                OperationContractError::InvalidCanonicalEncoding {
+                    reason: "unknown operation-contract tag"
+                }
+            )
+        ))
+    ));
 }
 
 fn decode_with_mutated_operation_contract(
@@ -1764,7 +1816,7 @@ fn artifact_bytecode_rejects_malformed_operation_contract_semantics_first() {
 fn decoded_artifact_sections_revalidate_structure_and_limits() {
     let data = fixture_data();
     let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
-    let artifact = compile_source_program(&stateful_register(&data), &mut context).unwrap();
+    let artifact = compile_with_pure_contracts(&stateful_register(&data), &mut context).unwrap();
     let sections = encode_program_artifact_sections(&artifact).unwrap();
 
     let mut missing_binding = sections.clone();
@@ -2065,7 +2117,7 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
     let artifact = compile_source_program_with_contracts(
         &graph,
         &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
-        &[Some(observation), Some(effect)],
+        &[&*observation, &*effect],
     )
     .unwrap();
     assert_eq!(artifact.requirements(), &graph.requirements);
@@ -2154,7 +2206,7 @@ fn artifact_with_declaration(
     compile_source_program_with_contracts(
         &graph,
         &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
-        &[Some(declaration)],
+        &[&*declaration],
     )
     .unwrap()
 }
@@ -2249,7 +2301,7 @@ fn program_revision_commits_to_every_operation_contract_semantic() {
     let provider_defined = compile_source_program_with_contracts(
         &effect_source,
         &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
-        &[Some(provider_defined)],
+        &[&*provider_defined],
     )
     .unwrap()
     .revision();
@@ -2257,7 +2309,7 @@ fn program_revision_commits_to_every_operation_contract_semantic() {
     let at_most_once = compile_source_program_with_contracts(
         &effect_source,
         &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
-        &[Some(at_most_once)],
+        &[&*at_most_once],
     )
     .unwrap()
     .revision();

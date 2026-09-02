@@ -1,36 +1,7 @@
-use crate::canonical::{ArbitraryInput, SetInput, SetOutput};
 #[cfg(feature = "source")]
 use crate::canonical::specialize_dynamic_set;
+use crate::canonical::{ArbitraryInput, SetInput, SetOutput};
 use crate::*;
-use std::sync::LazyLock;
-
-static PURE_SET_INSERT_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-            ]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    });
 
 #[derive(Debug)]
 pub(crate) struct SetInsertFxn {
@@ -73,7 +44,7 @@ impl MechFunctionImpl for SetInsertFxn {
         )
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        Some(&PURE_SET_INSERT_CONTRACT)
+        Some(&PURE_SET_UPDATE_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)

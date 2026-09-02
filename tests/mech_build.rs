@@ -3,7 +3,8 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-use mech_core::ParsedProgram;
+use mech_core::{ParsedProgram, ResolvedOperationContract};
+use mech_engine::decode_program_artifact_sections;
 
 fn temp_root(label: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
@@ -84,6 +85,19 @@ fn assert_success(output: Output, label: &str) {
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr),
     );
+}
+
+fn assert_bytecode_artifact_is_fully_declared(bytecode: &Path) {
+    let bytes = std::fs::read(bytecode).unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
+    let artifact = decode_program_artifact_sections(&parsed.artifact).unwrap();
+    assert!(!artifact.nodes().is_empty());
+    for node in artifact.nodes() {
+        assert!(matches!(
+            artifact.contracts().get(node.contract),
+            Some(ResolvedOperationContract::Declared(_))
+        ));
+    }
 }
 
 fn plan_digest(path: &Path) -> String {
@@ -244,6 +258,7 @@ fn distribution_source_bytecode_native_canary() {
         run_build(&root, &source, "bytecode", &bytecode, false),
         "distribution canary source to bytecode",
     );
+    assert_bytecode_artifact_is_fully_declared(&bytecode);
     assert_success(
         run_build(&root, &bytecode, "native", &native, false),
         "distribution canary bytecode to native",

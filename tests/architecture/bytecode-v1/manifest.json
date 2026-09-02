@@ -1603,8 +1603,8 @@
       "expected_output": 3.0,
       "file": "scalar-add-f64.mecb",
       "header": {
-        "checksum_offset": 1729,
-        "file_len": 1733,
+        "checksum_offset": 1721,
+        "file_len": 1725,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -1798,7 +1798,7 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 59,
+          "length": 49,
           "offset": 1624,
           "reserved": 0
         },
@@ -1808,11 +1808,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 41,
-          "offset": 1688,
+          "offset": 1680,
           "reserved": 0
         }
       ],
-      "sha256": "777b179d5a262e7360a99e9918b38b7cb71dc802c4de11455c69a31dd16b79e4",
+      "sha256": "0ca719d6cbfeddf431b4e0e5a82408a5f63780f0d4d4b68a4d9eecf7405e824c",
       "source": "1.0 + 2.0",
       "source_file": "scalar-add.mec"
     },
@@ -1831,8 +1831,8 @@
       ],
       "file": "fixed-matrix-add-f64.mecb",
       "header": {
-        "checksum_offset": 3025,
-        "file_len": 3029,
+        "checksum_offset": 3017,
+        "file_len": 3021,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 23,
@@ -2062,7 +2062,7 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 61,
+          "length": 49,
           "offset": 2920,
           "reserved": 0
         },
@@ -2072,11 +2072,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 41,
-          "offset": 2984,
+          "offset": 2976,
           "reserved": 0
         }
       ],
-      "sha256": "06b708616f9f301c4ccba54a9e699abe72cb271f0fbab280ceeeb46f7a581487",
+      "sha256": "33b5835f5eea5610c82403d0b23c66343af6f8ec52c48f7ffbb8ff9cd82014bd",
       "source": "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]",
       "source_file": "fixed-matrix-add-f64.mec"
     },
@@ -2122,8 +2122,8 @@
       ],
       "file": "dynamic-matrix-add-f64.mecb",
       "header": {
-        "checksum_offset": 6505,
-        "file_len": 6509,
+        "checksum_offset": 6497,
+        "file_len": 6501,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 77,
@@ -2353,7 +2353,7 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 61,
+          "length": 49,
           "offset": 6400,
           "reserved": 0
         },
@@ -2363,11 +2363,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 41,
-          "offset": 6464,
+          "offset": 6456,
           "reserved": 0
         }
       ],
-      "sha256": "b522a4fa6dee550c42533447760bb893a1e359a23e37a3d9008e8533f4944c35",
+      "sha256": "933ebf002c66f089b51df1c172aeedcc03075c8312979029cd1dd2adf0a080a8",
       "source": "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; 11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; 21.0 22.0 23.0 24.0 25.0] + [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; 15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; 5.0 4.0 3.0 2.0 1.0]",
       "source_file": "dynamic-matrix-add-f64.mec"
     },
@@ -3069,8 +3069,8 @@
       ],
       "file": "ternary.mecb",
       "header": {
-        "checksum_offset": 2081,
-        "file_len": 2085,
+        "checksum_offset": 2057,
+        "file_len": 2061,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 6,
@@ -3277,7 +3277,7 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 93,
+          "length": 66,
           "offset": 1896,
           "reserved": 0
         },
@@ -3287,11 +3287,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 89,
-          "offset": 1992,
+          "offset": 1968,
           "reserved": 0
         }
       ],
-      "sha256": "0719664782a79e8a7ecf1a8316ac94189b88a338c2abf4e233c00d4c3a5bfb0e",
+      "sha256": "8dac09395077426c174253a14b3170a8aba906dc56eb461181d9a2cd7f0cff40",
       "source": "1.0..1.0..=4.0",
       "source_file": "ternary.mec"
     },
@@ -3597,8 +3597,8 @@
       "expected_output": 0.0,
       "file": "named-module-operation.mecb",
       "header": {
-        "checksum_offset": 1493,
-        "file_len": 1497,
+        "checksum_offset": 1485,
+        "file_len": 1489,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 4,
@@ -3792,7 +3792,7 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 60,
+          "length": 49,
           "offset": 1392,
           "reserved": 0
         },
@@ -3802,11 +3802,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 37,
-          "offset": 1456,
+          "offset": 1448,
           "reserved": 0
         }
       ],
-      "sha256": "173567a7d874b3b2225d3a8f79e0ddf474c94a4de721d0edbacfa97c90ff83d0",
+      "sha256": "994a63985c5f0f36626603f55d8dc6b7a5e6b1f5a42a115ee9f48ae68a94fe6e",
       "source": "+> math\nmath/sin(0.0)",
       "source_file": "named-module-operation.mec"
     },
@@ -5301,8 +5301,8 @@
       ],
       "file": "synthetic-live-read.mecb",
       "header": {
-        "checksum_offset": 5177,
-        "file_len": 5181,
+        "checksum_offset": 5169,
+        "file_len": 5173,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 22,
@@ -5557,7 +5557,7 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 239,
+          "length": 229,
           "offset": 4744,
           "reserved": 0
         },
@@ -5567,11 +5567,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 193,
-          "offset": 4984,
+          "offset": 4976,
           "reserved": 0
         }
       ],
-      "sha256": "17dedc0d3c0ad11a115066f75e0a48dd3d647c1ed067e1eeaeb8713eb1b48a51",
+      "sha256": "5a91a7cf32e83297a4e2c119e6cf46d93b692c82c08cc24f77fe0c4153793139",
       "source": "+> @clock := test-live/clock\n\n+> @out := test-live/output\n\nvalue := @clock/value\ndoubled := value + value\n\npayload := (value, doubled)\nframe := {rotation: value}\n@out/tuple <- payload\n@out/frame <- frame\n\npayload",
       "source_file": "synthetic-live-read.mec"
     }

@@ -1,4 +1,4 @@
-math/yn
+math/bessel/yn
 ===============================================================================
 
 %% Bessel function of the second kind
@@ -7,14 +7,15 @@ math/yn
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-Y := math/yn(N, X)
+Y := math/bessel/yn(N, X)
 ```
 
 2. Description
 -------------------------------------------------------------------------------
 
-Computes the Bessel function of the second kind of integer order `N` for each element of `X`.  
-The input `N` must be an integer (or array of integers), and `X` must be real-valued.  
+Computes the Bessel function of the second kind for each element of `X`. `N`
+uses the same floating-point representation and shape as `X`; each value is
+converted to an `i32` order before evaluation. `X` must be real-valued.
 The result `Y` has the same shape as the inputs.
 
 3. Input
@@ -22,7 +23,7 @@ The result `Y` has the same shape as the inputs.
 
 | Argument | Kind                     | Description                           |
 |----------|--------------------------|---------------------------------------|
-| `N`      | `int`, `[int]`           | Order of the Bessel function. Must be an integer or array of integers. |
+| `N`      | `float`, `[float]`       | Order values, converted to `i32` before evaluation. |
 | `X`      | `float`, `[float]`       | Input values (real). Typically non-negative, though the function is defined for real arguments. |
 
 4. Output
@@ -38,30 +39,30 @@ The result `Y` has the same shape as the inputs.
 (a) Compute `Y_0(x)` at a point
 
 ```mech:ex1
-y := math/yn(0, 1.0)
+y := math/bessel/yn(0.0, 1.0)
 ```
 
 (b) Compute `Y_1(x)` at a vector of points
 
 ```mech:ex2
 x := [0.5, 1.0, 2.0]
-y := math/yn(1, x)
+y := math/bessel/yn(1.0, x)
 ```
 
 (c) Compute `Y_n(x)` for multiple orders with a single argument
 
 ```mech:ex3
-n := [0, 1, 2]
+n := [0.0, 1.0, 2.0]
 x := [1.0, 1.0, 1.0]
-y := math/yn(n, x)
+y := math/bessel/yn(n, x)
 ```
 
 (d) Compute for a matrix of values
 
 ```mech:ex4
-n := [0, 1; 2, 3]
+n := [0.0, 1.0; 2.0, 3.0]
 x := [1.0, 2.0; 3.0, 4.0]
-y := math/yn(n, x)
+y := math/bessel/yn(n, x)
 ```
 
 6. Details

@@ -440,7 +440,6 @@ macro_rules! impl_canonical_math_float_unop_specializer {
         feature = "fmod",
         feature = "nextafter",
         feature = "remainder",
-        feature = "hypot",
         feature = "atan2",
         feature = "jn",
         feature = "yn"

@@ -22,8 +22,8 @@ use mech_runtime::{
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
     RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputUpdate,
     RuntimeHostInputValue, RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
-    RuntimeResourceWriteRequest, materialize_host_manifest,
+    RuntimeResourceReadRequest, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
 };
 
 /// Installs one already-lowered compute program behind the ordinary resident
@@ -827,7 +827,7 @@ impl RuntimeResourceProvider for ComputeResourceProvider {
         Ok(())
     }
 
-    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri,
             path: request.path.clone(),
@@ -1691,7 +1691,7 @@ mod tests {
     use mech_core::{CellSlotId, SchemaId};
     use mech_runtime::{
         HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder, RuntimeCapabilityOperation,
-        RuntimeResourceReadRequest,
+        RuntimeEffectId, RuntimeResourceReadRequest, TransactionId,
     };
 
     #[derive(Clone, Debug, PartialEq)]
@@ -1946,8 +1946,8 @@ mod tests {
             .unwrap()
     }
 
-    fn input_write(values: Vec<f32>) -> RuntimeResourceWriteRequest {
-        RuntimeResourceWriteRequest {
+    fn input_write(values: Vec<f32>) -> RuntimeResourceWriteCommand {
+        RuntimeResourceWriteCommand {
             base_uri: "compute://particles/kernel".to_owned(),
             path: "input/matrix".to_owned(),
             context_name: "particles".to_owned(),
@@ -1963,16 +1963,16 @@ mod tests {
         }
     }
 
-    fn turn_write() -> RuntimeResourceWriteRequest {
+    fn turn_write() -> RuntimeResourceWriteCommand {
         turn_write_with(1.0)
     }
 
-    fn turn_write_with(value: f32) -> RuntimeResourceWriteRequest {
+    fn turn_write_with(value: f32) -> RuntimeResourceWriteCommand {
         turn_write_value(RuntimeHostInputValue::F32(value))
     }
 
-    fn turn_write_value(value: RuntimeHostInputValue) -> RuntimeResourceWriteRequest {
-        RuntimeResourceWriteRequest {
+    fn turn_write_value(value: RuntimeHostInputValue) -> RuntimeResourceWriteCommand {
+        RuntimeResourceWriteCommand {
             base_uri: "compute://particles/kernel".to_owned(),
             path: "turn".to_owned(),
             context_name: "particles".to_owned(),
@@ -1980,6 +1980,16 @@ mod tests {
             value: value.into_value().unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
         }
+    }
+
+    fn provider_write(request: RuntimeResourceWriteCommand) -> RuntimeResourceWriteRequest {
+        request.bind_effect(
+            RuntimeEffectId {
+                transaction: TransactionId::new(1),
+                sequence: 0,
+            },
+            "compute-test:0".to_owned(),
+        )
     }
 
     fn provider_state(
@@ -2571,7 +2581,9 @@ mod tests {
             Arc::clone(&calls),
         );
         let provider = provider_for_state(Arc::clone(&state));
-        let prepared = provider.prepare_write(input_write(vec![0.0; 6])).unwrap();
+        let prepared = provider
+            .prepare_write(provider_write(input_write(vec![0.0; 6])))
+            .unwrap();
 
         state.lock().unwrap().phase = ComputeHostPhase::InFlight {
             turn: ComputeTurnToken(1),
@@ -2595,7 +2607,11 @@ mod tests {
                 .is_err()
         );
         assert!(provider.plan_write(turn_write()).is_err());
-        assert!(provider.prepare_write(turn_write()).is_err());
+        assert!(
+            provider
+                .prepare_write(provider_write(turn_write()))
+                .is_err()
+        );
         let PreparedRuntimeEffect::AfterCommit(mut effect) = prepared else {
             panic!("compute input must remain an after-commit effect")
         };
@@ -2606,7 +2622,11 @@ mod tests {
         assert!(provider.plan_read(read.clone()).is_err());
         assert!(provider.read(read).is_err());
         assert!(provider.plan_write(turn_write()).is_err());
-        assert!(provider.prepare_write(turn_write()).is_err());
+        assert!(
+            provider
+                .prepare_write(provider_write(turn_write()))
+                .is_err()
+        );
         assert!(calls.lock().unwrap().is_empty());
     }
 

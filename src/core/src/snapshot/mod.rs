@@ -20,15 +20,25 @@ pub use self::draft::{
     EnumDraft, MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, TableColumnDraft,
     ValueDataDraft, ValueDraft,
 };
+pub use self::encoding::{
+    CanonicalDataWork, CanonicalDataWorkError, ValueFootprint, ValueFootprintError,
+    canonical_data_payload_len, canonical_data_retained_footprint,
+    canonical_sequence_element_retained_footprint, visit_canonical_data_work,
+};
 pub use self::error::{
     SchemaDataKind, SnapshotPath, SnapshotPathSegment, SnapshotValueError, ValueDataKind,
 };
-pub use self::relations::SetValueRelation;
+pub use self::relations::{
+    SetValueRelation, canonical_data_draft_finalization_work,
+    canonical_data_draft_finalization_work_with_budget, canonical_key_draft_finalization_work,
+    canonical_key_draft_finalization_work_with_budget, compare_key_data, schema_data_language_eq,
+    schema_data_partial_cmp,
+};
 pub use self::sequence::SequenceView;
 pub use self::validation::{
-    SnapshotValidationContext, Value, build_f64_set_snapshot, build_f64_set_snapshot_after_remove,
-    f64_set_snapshot_contains, rebuild_composite_snapshot, rebuild_f64_set_snapshot,
-    wrap_resident_dynamic_data,
+    SnapshotCanonicalizationBudget, SnapshotValidationContext, Value, build_f64_set_snapshot,
+    build_f64_set_snapshot_after_remove, canonical_snapshot_data_draft, f64_set_snapshot_contains,
+    rebuild_composite_snapshot, rebuild_f64_set_snapshot, wrap_resident_dynamic_data,
 };
 pub use self::views::{EnumView, MapView, MatrixView, RecordView, SetView, TableView, TupleView};
 pub use crate::{ConstantId, KeyHash, ValueHash};

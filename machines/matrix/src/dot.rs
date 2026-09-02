@@ -39,11 +39,18 @@ macro_rules! checked_dot_op {
 #[cfg(feature = "matrix")]
 macro_rules! impl_dot {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-        impl_checked_matrix_binop!($name, $type1, $type2, $out_type, checked_dot_op);
+        impl_checked_matrix_binop!(
+            $name,
+            $type1,
+            $type2,
+            $out_type,
+            checked_dot_op,
+            product_contract
+        );
     };
 }
 
-impl_checked_matrix_binop!(DotScalar, T, T, T, checked_mul_op);
+impl_checked_matrix_binop!(DotScalar, T, T, T, checked_mul_op, product_contract);
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
 impl_dot!(DotR2R2, RowVector2<T>, RowVector2<T>, T);
 #[cfg(all(feature = "vector2", feature = "vector2"))]

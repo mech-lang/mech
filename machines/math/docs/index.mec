@@ -127,7 +127,6 @@ Logarithmic functions for multiple numeric datatypes.
 | [`log10`](log/log10.html)       | Computes the base-10 logarithm.            |
 | [`log2`](log/log2.html)         | Computes the base-2 logarithm.             |
 | [`log1p`](log/log1p.html)       | Computes the natural logarithm of (1 + x). |
-| [`ilogb`](log/ilogb.html)       | Computes the integer base-2 logarithm.     |
 
 (2.7) exponential
 

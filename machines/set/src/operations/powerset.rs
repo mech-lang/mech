@@ -1,6 +1,6 @@
-use crate::canonical::{SetInput, SetOutput};
 #[cfg(feature = "source")]
 use crate::canonical::specialize_dynamic_set;
+use crate::canonical::{SetInput, SetOutput};
 use crate::*;
 
 const MAX_POWERSET_INPUT_CARDINALITY: usize = 16;
@@ -108,6 +108,9 @@ impl MechFunctionImpl for SetPowersetFxn {
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
         )
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_UNARY_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)

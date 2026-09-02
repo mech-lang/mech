@@ -126,8 +126,9 @@ where
         FunctionOutputSchemaRule::Declared => {
             return Err(MechError::new(
                 GenericError {
-                    msg: "dynamic set specialization requires an operation-owned output schema rule"
-                        .into(),
+                    msg:
+                        "dynamic set specialization requires an operation-owned output schema rule"
+                            .into(),
                 },
                 None,
             )
@@ -252,9 +253,7 @@ macro_rules! define_set_relation {
                 FunctionValueRepresentation::Set,
                 FunctionValueRepresentation::Set,
             );
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
                 Ok(Box::new(Self {
                     lhs: SetInput::canonical(lhs)?,
@@ -268,14 +267,15 @@ macro_rules! define_set_relation {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
-            fn transaction_state_ports(
-                &self,
-            ) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn solve_result(&self) -> MResult<()> {
                 *self.out.borrow_mut() = self.lhs.relation(&self.rhs, SetRelation::$relation)?;
                 Ok(())
+            }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_SET_PREDICATE_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
@@ -331,9 +331,7 @@ macro_rules! define_set_membership {
                 FunctionValueRepresentation::AnyValue,
                 FunctionValueRepresentation::Set,
             );
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, element, set) = invocation.expect_binary()?;
                 Ok(Box::new(Self {
                     elem: ArbitraryInput::canonical(element),
@@ -347,9 +345,7 @@ macro_rules! define_set_membership {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
-            fn transaction_state_ports(
-                &self,
-            ) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
             fn solve_result(&self) -> MResult<()> {
@@ -360,10 +356,8 @@ macro_rules! define_set_membership {
                 *self.out.borrow_mut() = if $negated { !contains } else { contains };
                 Ok(())
             }
-            fn semantic_operation_contract(
-                &self,
-            ) -> Option<&'static OperationContractDeclaration> {
-                Some(&PURE_SET_MEMBERSHIP_CONTRACT)
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_SET_PREDICATE_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)

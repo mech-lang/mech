@@ -47,6 +47,43 @@ mod port_tests;
 
 use mech_core::MechErrorKind;
 
+#[cfg(feature = "range")]
+pub(crate) fn canonical_range_drafts<T>(
+    from: T,
+    step: Option<T>,
+    to: T,
+    inclusive: bool,
+) -> mech_core::MResult<Box<[mech_core::ValueDataDraft]>>
+where
+    T: mech_core::CanonicalMatrixElementBacking + mech_core::CanonicalRangeScalar,
+{
+    let output_len = mech_core::canonical_range_size(from, step, to, inclusive).map_err(|error| {
+        mech_core::function_shape_contract_violation(
+            "range_construction",
+            format!("canonical typed range cardinality failed: {error:?}"),
+        )
+    })?;
+    let mut elements = Vec::with_capacity(output_len);
+    mech_core::visit_canonical_range(
+        from,
+        step,
+        to,
+        inclusive,
+        output_len,
+        |value| {
+            elements.push(value.data_draft());
+            Ok::<(), core::convert::Infallible>(())
+        },
+    )
+    .map_err(|error| {
+        mech_core::function_shape_contract_violation(
+            "range_construction",
+            format!("canonical typed range evaluation failed: {error:?}"),
+        )
+    })?;
+    Ok(elements.into_boxed_slice())
+}
+
 // ----------------------------------------------------------------------------
 // Range Library
 // ----------------------------------------------------------------------------

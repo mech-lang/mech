@@ -9,6 +9,7 @@ use crate::{
     FloatWidth, IntegerWidth, NamedKindPathResolver, Schema, SchemaBody, SchemaId, SchemaKey,
     SchemaTable, ShapeInstance,
 };
+use core::cell::Cell;
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, string::String, sync::Arc, vec::Vec};
@@ -18,6 +19,43 @@ use std::{boxed::Box, string::String, sync::Arc, vec::Vec};
 pub struct SnapshotValidationContext<'a> {
     schemas: &'a SchemaTable,
     named_kinds: Option<&'a dyn NamedKindPathResolver>,
+    canonicalization_budget: Option<&'a SnapshotCanonicalizationBudget>,
+}
+
+/// An incremental fail-closed limit for ordered set/map normalization during
+/// snapshot finalization. The budget is shared by recursive finalization, so
+/// nested collections cannot each restart the same allowance.
+#[derive(Debug)]
+pub struct SnapshotCanonicalizationBudget {
+    limit: u64,
+    consumed: Cell<u64>,
+}
+
+impl SnapshotCanonicalizationBudget {
+    pub const fn new(limit: u64) -> Self {
+        Self {
+            limit,
+            consumed: Cell::new(0),
+        }
+    }
+
+    pub fn consumed(&self) -> u64 {
+        self.consumed.get()
+    }
+
+    pub(crate) fn charge(&self, amount: u64) -> Result<(), SnapshotValueError> {
+        let consumed =
+            self.consumed.get().checked_add(amount).ok_or(
+                SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: self.limit },
+            )?;
+        if consumed > self.limit {
+            return Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 {
+                limit: self.limit,
+            });
+        }
+        self.consumed.set(consumed);
+        Ok(())
+    }
 }
 
 impl<'a> SnapshotValidationContext<'a> {
@@ -25,6 +63,7 @@ impl<'a> SnapshotValidationContext<'a> {
         Self {
             schemas,
             named_kinds: None,
+            canonicalization_budget: None,
         }
     }
 
@@ -35,7 +74,16 @@ impl<'a> SnapshotValidationContext<'a> {
         Self {
             schemas,
             named_kinds: Some(named_kinds),
+            canonicalization_budget: None,
         }
+    }
+
+    pub const fn with_canonicalization_budget(
+        mut self,
+        budget: &'a SnapshotCanonicalizationBudget,
+    ) -> Self {
+        self.canonicalization_budget = Some(budget);
+        self
     }
 
     pub const fn schemas(&self) -> &'a SchemaTable {
@@ -265,6 +313,35 @@ impl Value {
                 canonical_data_to_draft(
                     element,
                     value.data(),
+                    &SnapshotPath::root().child(SnapshotPathSegment::SetElement(index as u64)),
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .map(Vec::into_boxed_slice)
+    }
+
+    /// Converts canonical set element data back into drafts using this set's
+    /// declared element schema without imposing this set's container
+    /// cardinality on a derived result.
+    pub fn set_element_data_drafts(
+        &self,
+        schemas: &SchemaTable,
+        elements: &[ValueData],
+    ) -> Result<Box<[ValueDataDraft]>, SnapshotValueError> {
+        let schema = self.validate_against(schemas)?;
+        let SchemaBody::Set { element, .. } = schema.body() else {
+            return Err(rebuild_kind_mismatch(
+                schema.body(),
+                super::ValueDataKind::Set,
+            ));
+        };
+        elements
+            .iter()
+            .enumerate()
+            .map(|(index, value)| {
+                canonical_data_to_draft(
+                    element,
+                    value,
                     &SnapshotPath::root().child(SnapshotPathSegment::SetElement(index as u64)),
                 )
             })
@@ -844,6 +921,15 @@ fn canonical_data_to_draft(
     path: &SnapshotPath,
 ) -> Result<ValueDataDraft, SnapshotValueError> {
     canonical_data_to_draft_with_target(schema, data, path, None)
+}
+
+/// Materializes a canonical draft for schema-directed data that has already
+/// been validated as part of a finalized snapshot value.
+pub fn canonical_snapshot_data_draft(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueDataDraft, SnapshotValueError> {
+    canonical_data_to_draft(schema, data, &SnapshotPath::root())
 }
 
 fn canonical_data_to_rebound_draft(
@@ -1537,6 +1623,7 @@ pub fn build_f64_set_snapshot(
                 &mut elements,
                 data,
                 &SnapshotPath::root().child(SnapshotPathSegment::SetElement(index as u64)),
+                None,
             )
             .ok()?;
         }
@@ -1889,7 +1976,13 @@ pub(super) fn finalize_data(
             for (index, draft) in values.into_vec().into_iter().enumerate() {
                 let element_path = path.child(SnapshotPathSegment::SetElement(index as u64));
                 let data = finalize_data(element, draft, shape, context, &element_path)?;
-                super::relations::insert_set_key(element, &mut finalized, data, &element_path)?;
+                super::relations::insert_set_key(
+                    element,
+                    &mut finalized,
+                    data,
+                    &element_path,
+                    context.canonicalization_budget,
+                )?;
             }
             Ok(ValueData::Set(SetValue {
                 elements: finalized.into_boxed_slice(),
@@ -1933,6 +2026,7 @@ pub(super) fn finalize_data(
                     key_data,
                     value_data,
                     &path.child(SnapshotPathSegment::MapKey(index as u64)),
+                    context.canonicalization_budget,
                 )?;
             }
             Ok(ValueData::Map(MapValue {
@@ -2185,6 +2279,128 @@ mod tests {
         ));
         assert!(draft(1).finalize(&context).is_ok());
         assert!(draft(u64::MAX).finalize(&context).is_ok());
+    }
+
+    #[test]
+    fn snapshot_finalization_shares_one_fail_closed_canonicalization_budget() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Set {
+                element: Box::new(SchemaBody::Bool),
+                cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let draft = || ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                vec![ValueDataDraft::Bool(false), ValueDataDraft::Bool(true)].into_boxed_slice(),
+            ),
+        };
+
+        assert!(
+            draft()
+                .finalize(&SnapshotValidationContext::new(&schemas))
+                .is_ok()
+        );
+        let budget = SnapshotCanonicalizationBudget::new(0);
+        assert!(matches!(
+            draft().finalize(
+                &SnapshotValidationContext::new(&schemas).with_canonicalization_budget(&budget),
+            ),
+            Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: 0 })
+        ));
+        assert_eq!(budget.consumed(), 0);
+    }
+
+    #[test]
+    fn snapshot_finalization_charges_ordered_insertion_shifts() {
+        let integer = SchemaBody::UnsignedInteger(crate::IntegerWidth::W64);
+        let set = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Set {
+                element: Box::new(integer.clone()),
+                cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+        }
+        .finalize()
+        .unwrap();
+        let map = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Map {
+                key: Box::new(integer.clone()),
+                value: Box::new(integer),
+                cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let set_handle = builder.insert(set).unwrap();
+        let map_handle = builder.insert(map).unwrap();
+        let build = builder.finish().unwrap();
+        let set_schema = build.resolve(set_handle).unwrap();
+        let map_schema = build.resolve(map_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let set_draft = |values: &[u64]| ValueDraft {
+            schema: set_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                values
+                    .iter()
+                    .copied()
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        };
+        let map_draft = |values: &[u64]| ValueDraft {
+            schema: map_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Map(
+                values
+                    .iter()
+                    .copied()
+                    .map(|value| super::super::MapEntryDraft {
+                        items: vec![ValueDataDraft::U64(value), ValueDataDraft::U64(value)]
+                            .into_boxed_slice(),
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        };
+
+        for draft in [set_draft(&[4, 3, 2, 1, 0]), map_draft(&[4, 3, 2, 1, 0])] {
+            let budget = SnapshotCanonicalizationBudget::new(10);
+            assert!(matches!(
+                draft.finalize(
+                    &SnapshotValidationContext::new(&schemas).with_canonicalization_budget(&budget),
+                ),
+                Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: 10 })
+            ));
+            // The failed shift charge is rejected atomically and therefore
+            // does not advance the shared meter past its last admitted value.
+            assert_eq!(budget.consumed(), 9);
+        }
+        for draft in [set_draft(&[0, 1, 2, 3, 4]), map_draft(&[0, 1, 2, 3, 4])] {
+            let budget = SnapshotCanonicalizationBudget::new(4);
+            assert!(
+                draft
+                    .finalize(
+                        &SnapshotValidationContext::new(&schemas)
+                            .with_canonicalization_budget(&budget),
+                    )
+                    .is_ok()
+            );
+            assert_eq!(budget.consumed(), 4);
+        }
     }
 
     #[test]

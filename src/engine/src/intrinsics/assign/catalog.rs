@@ -23,25 +23,149 @@ fn canonical_matrix_dimensions(cell: &ValueCell) -> MResult<Option<(usize, usize
 }
 
 #[cfg(feature = "matrix")]
-fn validate_assign_matrix_sizes(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+fn matrix_element_count(cell: &ValueCell) -> MResult<Option<usize>> {
+    Ok(canonical_matrix_dimensions(cell)?.map(|(rows, columns)| rows.saturating_mul(columns)))
+}
+
+#[cfg(feature = "matrix")]
+fn assign_selector_cardinality(inputs: &[ValueCell], input_index: usize) -> MResult<usize> {
     let contract = "assign_slice";
-    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
-        function_shape_contract_violation(contract, "output must be matrix-backed")
+    let selector = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(contract, format!("missing selector input {input_index}"))
     })?;
-    let output_len = rows.saturating_mul(columns);
-    for (index, input) in inputs.iter().enumerate() {
-        if let Some((input_rows, input_columns)) = canonical_matrix_dimensions(input)?
-            && input_rows.saturating_mul(input_columns) > output_len
-        {
-            return Err(function_shape_contract_violation(
-                contract,
-                format!(
-                    "matrix input {index} has {} elements, output has {}",
-                    input_rows.saturating_mul(input_columns),
-                    output_len,
-                ),
-            ));
-        }
+    Ok(matrix_element_count(selector)?.unwrap_or(1))
+}
+
+#[cfg(feature = "matrix")]
+fn assign_selector_is_matrix(inputs: &[ValueCell], input_index: usize) -> MResult<bool> {
+    let selector = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(
+            "assign_slice",
+            format!("missing selector input {input_index}"),
+        )
+    })?;
+    Ok(canonical_matrix_dimensions(selector)?.is_some())
+}
+
+#[cfg(feature = "matrix")]
+fn assign_logical_selected_offsets(
+    inputs: &[ValueCell],
+    input_index: usize,
+) -> MResult<Vec<usize>> {
+    let selector = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(
+            "assign_slice",
+            format!("missing logical selector input {input_index}"),
+        )
+    })?;
+    match selector.snapshot()?.data() {
+        ValueData::Bool(selected) => Ok(if *selected { vec![0] } else { Vec::new() }),
+        ValueData::Matrix(_) => selector
+            .matrix_elements()?
+            .unwrap_or_default()
+            .into_iter()
+            .enumerate()
+            .filter_map(|(offset, value)| match value.snapshot() {
+                Ok(snapshot) if matches!(snapshot.data(), ValueData::Bool(true)) => {
+                    Some(Ok(offset))
+                }
+                Ok(_) => None,
+                Err(error) => Some(Err(error)),
+            })
+            .collect(),
+        _ => Ok(Vec::new()),
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn assign_index_selected_offsets(inputs: &[ValueCell], input_index: usize) -> MResult<Vec<usize>> {
+    let selector = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(
+            "assign_slice",
+            format!("missing index selector input {input_index}"),
+        )
+    })?;
+    match selector.snapshot()?.data() {
+        ValueData::Index(index) => Ok(vec![(*index as usize).saturating_sub(1)]),
+        ValueData::Matrix(_) => selector
+            .matrix_elements()?
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|value| match value.snapshot() {
+                Ok(snapshot) => match snapshot.data() {
+                    ValueData::Index(index) => Some(Ok((*index as usize).saturating_sub(1))),
+                    _ => None,
+                },
+                Err(error) => Some(Err(error)),
+            })
+            .collect(),
+        _ => Ok(Vec::new()),
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn selected_extent(offsets: &[usize]) -> usize {
+    offsets
+        .iter()
+        .copied()
+        .max()
+        .map_or(0, |offset| offset.saturating_add(1))
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_source_matrix_layout(
+    inputs: &[ValueCell],
+    required_rows: usize,
+    required_columns: usize,
+    broadcast_rows: bool,
+    broadcast_columns: bool,
+) -> MResult<()> {
+    let source = inputs.first().ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "missing assignment source input 0")
+    })?;
+    let Some((rows, columns)) = canonical_matrix_dimensions(source)? else {
+        return Ok(());
+    };
+    let rows_valid = rows >= required_rows || (broadcast_rows && rows == 1);
+    let columns_valid = columns >= required_columns || (broadcast_columns && columns == 1);
+    if !rows_valid || !columns_valid {
+        return Err(function_shape_contract_violation(
+            "assign_slice",
+            format!(
+                "matrix assignment source layout is {rows}x{columns}, selected layout requires at least {required_rows}x{required_columns}{}{}",
+                if broadcast_rows {
+                    " or one broadcast row"
+                } else {
+                    ""
+                },
+                if broadcast_columns {
+                    " or one broadcast column"
+                } else {
+                    ""
+                },
+            ),
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_source_cardinality(inputs: &[ValueCell], required: usize) -> MResult<()> {
+    let contract = "assign_slice";
+    let source = inputs.first().ok_or_else(|| {
+        function_shape_contract_violation(contract, "missing assignment source input 0")
+    })?;
+    let Some(actual) = matrix_element_count(source)? else {
+        // Scalar sources broadcast across the selected cells.
+        return Ok(());
+    };
+    if actual < required {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "matrix assignment source has {actual} elements, selected layout requires at least {required}"
+            ),
+        ));
     }
     Ok(())
 }
@@ -49,6 +173,7 @@ fn validate_assign_matrix_sizes(output: &ValueCell, inputs: &[ValueCell]) -> MRe
 #[cfg(feature = "matrix")]
 #[derive(Clone, Copy)]
 enum AssignIndexAxis {
+    Linear,
     Row,
     Column,
 }
@@ -65,16 +190,21 @@ fn validate_assign_index(
         function_shape_contract_violation(contract, "output must be matrix-backed")
     })?;
     let bound = match axis {
+        AssignIndexAxis::Linear => rows.saturating_mul(columns),
         AssignIndexAxis::Row => rows,
         AssignIndexAxis::Column => columns,
     };
     let axis_name = match axis {
+        AssignIndexAxis::Linear => "linear",
         AssignIndexAxis::Row => "row",
         AssignIndexAxis::Column => "column",
     };
-    let input = inputs
-        .get(input_index)
-        .expect("assignment index input is fixed by its runtime factory");
+    let input = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(
+            contract,
+            format!("missing {axis_name} index input {input_index}"),
+        )
+    })?;
     let invalid = |index: usize| {
         function_shape_contract_violation(
             contract,
@@ -106,10 +236,271 @@ fn validate_assign_index(
 }
 
 #[cfg(feature = "matrix")]
-fn validate_assign_row_and_column_indices(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
-    validate_assign_matrix_sizes(output, inputs)?;
+fn validate_assign_logical_mask(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+    input_index: usize,
+    axis: AssignIndexAxis,
+) -> MResult<()> {
+    let contract = "assign_slice";
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation(contract, "output must be matrix-backed")
+    })?;
+    let (bound, axis_name) = match axis {
+        AssignIndexAxis::Linear => (rows.saturating_mul(columns), "linear"),
+        AssignIndexAxis::Row => (rows, "row"),
+        AssignIndexAxis::Column => (columns, "column"),
+    };
+    let input = inputs.get(input_index).ok_or_else(|| {
+        function_shape_contract_violation(
+            contract,
+            format!("missing {axis_name} logical-mask input {input_index}"),
+        )
+    })?;
+    match input.closed_schema_body()? {
+        SchemaBody::Bool => Ok(()),
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } if *element == SchemaBody::Bool => {
+            let actual = dimensions.iter().try_fold(1_usize, |len, dimension| {
+                let DimensionExpr::Constant(dimension) = dimension else {
+                    unreachable!("closed canonical matrix dimensions are constant")
+                };
+                Ok::<_, mech_core::MechError>(len.saturating_mul(*dimension as usize))
+            })?;
+            if actual != bound {
+                return Err(function_shape_contract_violation(
+                    contract,
+                    format!(
+                        "input {input_index} {axis_name} logical mask has {actual} elements, expected {bound}"
+                    ),
+                ));
+            }
+            Ok(())
+        }
+        found => Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "input {input_index} must be a bool or bool matrix {axis_name} logical mask, found {found:?}"
+            ),
+        )),
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_whole(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    let (rows, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_cardinality(inputs, rows.saturating_mul(columns))
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_linear(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_assign_index(output, inputs, 1, AssignIndexAxis::Linear)?;
+    validate_assign_source_cardinality(inputs, assign_selector_cardinality(inputs, 1)?)
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_logical_linear(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Linear)?;
+    let required = if assign_selector_is_matrix(inputs, 1)? {
+        selected_extent(&assign_logical_selected_offsets(inputs, 1)?)
+    } else {
+        // The scalar-bool vector kernel copies only the shared source/sink
+        // prefix, so it cannot index beyond a shorter source.
+        0
+    };
+    validate_assign_source_cardinality(inputs, required)
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_row_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     validate_assign_index(output, inputs, 1, AssignIndexAxis::Row)?;
-    validate_assign_index(output, inputs, 2, AssignIndexAxis::Column)
+    validate_assign_index(output, inputs, 2, AssignIndexAxis::Column)?;
+    let required = assign_selector_cardinality(inputs, 1)?
+        .saturating_mul(assign_selector_cardinality(inputs, 2)?);
+    validate_assign_source_cardinality(inputs, required)
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_row(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_assign_index(output, inputs, 1, AssignIndexAxis::Row)?;
+    let (_, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    if assign_selector_is_matrix(inputs, 1)? {
+        validate_assign_source_matrix_layout(
+            inputs,
+            assign_selector_cardinality(inputs, 1)?,
+            columns,
+            true,
+            false,
+        )
+    } else {
+        validate_assign_source_cardinality(inputs, columns)
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_assign_index(output, inputs, 1, AssignIndexAxis::Column)?;
+    let (rows, _) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    if assign_selector_is_matrix(inputs, 1)? {
+        validate_assign_source_matrix_layout(
+            inputs,
+            rows,
+            assign_selector_cardinality(inputs, 1)?,
+            false,
+            true,
+        )
+    } else {
+        validate_assign_source_cardinality(inputs, rows)
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_logical_row(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)?;
+    let (_, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_matrix_layout(
+        inputs,
+        selected_extent(&assign_logical_selected_offsets(inputs, 1)?),
+        columns,
+        false,
+        false,
+    )
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_logical_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Column)?;
+    let (rows, _) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    validate_assign_source_matrix_layout(
+        inputs,
+        rows,
+        assign_logical_selected_offsets(inputs, 1)?.len(),
+        false,
+        true,
+    )
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_logical_row_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)?;
+    validate_assign_index(output, inputs, 2, AssignIndexAxis::Column)?;
+    let (rows, _) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    let selected_rows = assign_logical_selected_offsets(inputs, 1)?;
+    let required = if assign_selector_is_matrix(inputs, 2)? {
+        let selected_columns = assign_index_selected_offsets(inputs, 2)?;
+        selected_rows
+            .iter()
+            .flat_map(|row| {
+                selected_columns
+                    .iter()
+                    .map(move |column| column.saturating_mul(rows).saturating_add(*row))
+            })
+            .max()
+            .map_or(0, |offset| offset.saturating_add(1))
+    } else {
+        selected_extent(&selected_rows)
+    };
+    validate_assign_source_cardinality(inputs, required)
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_row_logical_column(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    validate_assign_index(output, inputs, 1, AssignIndexAxis::Row)?;
+    validate_assign_logical_mask(output, inputs, 2, AssignIndexAxis::Column)?;
+    let (rows, _) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    let selected_columns = assign_logical_selected_offsets(inputs, 2)?;
+    let required = if assign_selector_is_matrix(inputs, 1)? {
+        let selected_rows = assign_index_selected_offsets(inputs, 1)?;
+        selected_rows
+            .iter()
+            .flat_map(|row| {
+                selected_columns
+                    .iter()
+                    .map(move |column| column.saturating_mul(rows).saturating_add(*row))
+            })
+            .max()
+            .map_or(0, |offset| offset.saturating_add(1))
+    } else {
+        selected_extent(&selected_columns)
+    };
+    validate_assign_source_cardinality(inputs, required)
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_logical_row_logical_column(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    validate_assign_logical_mask(output, inputs, 1, AssignIndexAxis::Row)?;
+    validate_assign_logical_mask(output, inputs, 2, AssignIndexAxis::Column)?;
+    let (_, columns) = canonical_matrix_dimensions(output)?.ok_or_else(|| {
+        function_shape_contract_violation("assign_slice", "output must be matrix-backed")
+    })?;
+    let selected_rows = assign_logical_selected_offsets(inputs, 1)?;
+    let selected_columns = assign_logical_selected_offsets(inputs, 2)?;
+    let required = selected_rows
+        .iter()
+        .flat_map(|row| {
+            selected_columns
+                .iter()
+                .map(move |column| row.saturating_mul(columns).saturating_add(*column))
+        })
+        .max()
+        .map_or(0, |offset| offset.saturating_add(1));
+    validate_assign_source_cardinality(inputs, required)
+}
+
+#[cfg(feature = "matrix")]
+macro_rules! assign_layout_validator {
+    (Whole) => {
+        validate_assign_whole
+    };
+    (Linear) => {
+        validate_assign_linear
+    };
+    (LogicalLinear) => {
+        validate_assign_logical_linear
+    };
+    (Row) => {
+        validate_assign_row
+    };
+    (LogicalRow) => {
+        validate_assign_logical_row
+    };
+    (Column) => {
+        validate_assign_column
+    };
+    (LogicalColumn) => {
+        validate_assign_logical_column
+    };
+    (RowColumn) => {
+        validate_assign_row_column
+    };
+    (LogicalRowColumn) => {
+        validate_assign_logical_row_column
+    };
+    (RowLogicalColumn) => {
+        validate_assign_row_logical_column
+    };
+    (LogicalRowLogicalColumn) => {
+        validate_assign_logical_row_logical_column
+    };
 }
 
 // Assignment's scalar factories deliberately keep the Rust type, emitted
@@ -313,43 +704,6 @@ macro_rules! export_assign_scalar_factory {
     };
 }
 
-// These legacy `Set*` kernels mutate only the output register. Their encoded
-// inputs are the source value and indices, so unlike the `Assign*` register
-// families they do not need a general output/input alias exception.
-#[cfg(feature = "matrix")]
-macro_rules! assign_output_alias_policy {
-    (Set1DAS) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DARB) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DARS) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DARV) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DARVB) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DRAB) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DRAS) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DRAV) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    (Set2DRAVB) => {
-        RuntimeOutputAliasPolicy::DisallowInputAlias
-    };
-    ($_assign:ident) => {
-        RuntimeOutputAliasPolicy::AllowInputAlias
-    };
-}
-
 // All three consumers below are fed by the same concrete-factory traversal:
 // declarations for native plans, direct runtime registrations, and hidden
 // generated-application exports.  This deliberately replaces the historic
@@ -358,7 +712,7 @@ macro_rules! assign_output_alias_policy {
 #[cfg(feature = "matrix")]
 macro_rules! declare_matrix_assign_factory {
     (
-        $_context:tt;
+        ($_context:tt, $output_alias:expr, $layout:ident);
         $fxn_name:ident, $scalar:ident, $scalar_name:literal, $scalar_feature:literal,
         [$($shape:ident),+], [$($extra_feature:literal),*], $factory:ty
     ) => {
@@ -371,8 +725,8 @@ macro_rules! declare_matrix_assign_factory {
                 factory_type: $factory,
                 contract: RuntimeFunctionContract::canonical_custom(
                     "assign_slice",
-                    assign_output_alias_policy!($fxn_name),
-                    validate_assign_row_and_column_indices,
+                    $output_alias,
+                    assign_layout_validator!($layout),
                 ),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!(
@@ -389,7 +743,7 @@ macro_rules! declare_matrix_assign_factory {
 #[cfg(feature = "matrix")]
 macro_rules! export_matrix_assign_factory {
     (
-        $_context:tt;
+        ($_context:tt, $_output_alias:expr, $_layout:ident);
         $fxn_name:ident, $scalar:ident, $scalar_name:literal, $scalar_feature:literal,
         [$($shape:ident),+], [$($extra_feature:literal),*], $factory:expr
     ) => {
@@ -402,7 +756,7 @@ macro_rules! export_matrix_assign_factory {
 #[cfg(feature = "matrix")]
 macro_rules! register_matrix_assign_factory {
     (
-        $builder:ident;
+        ($builder:ident, $_output_alias:expr, $_layout:ident);
         $fxn_name:ident, $scalar:ident, $scalar_name:literal, $scalar_feature:literal,
         [$($shape:ident),+], [$($extra_feature:literal),*], $factory:expr
     ) => {
@@ -1744,105 +2098,161 @@ macro_rules! for_each_matrix_assignment_factory {
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                Linear
+            ),
             install_legacy_impl_assign_scalar_arms,
             Assign1D
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                LogicalLinear
+            ),
             install_legacy_impl_assign_scalar_arms_b,
             Assign1D
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                Linear
+            ),
             install_legacy_impl_set_range_arms,
             Assign1DR
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                LogicalLinear
+            ),
             install_legacy_impl_set_range_arms_b,
             Assign1DR
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                Whole
+            ),
             install_legacy_impl_assign_all_arms,
             Set1DA
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                RowColumn
+            ),
             install_legacy_impl_assign_scalar_scalar_arms,
             Assign2DSS
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                Column
+            ),
             install_legacy_impl_assign_all_scalar_arms,
             Assign2DAS
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_assign_scalar_all_arms,
             Assign2DSA
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                RowColumn
+            ),
             install_legacy_impl_assign_range_scalar_arms,
             Assign2DRS
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                LogicalRowColumn
+            ),
             install_legacy_impl_assign_range_scalar_arms_b,
             Assign2DRS
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                RowColumn
+            ),
             install_legacy_impl_assign_scalar_range_arms,
             Assign2DSR
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                RowLogicalColumn
+            ),
             install_legacy_impl_assign_scalar_range_arms_b,
             Assign2DSR
         );
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                RowColumn
+            ),
             install_legacy_impl_assign_range_range_arms,
             Assign2DRR
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                LogicalRowLogicalColumn
+            ),
             install_legacy_impl_assign_range_range_arms_b,
             Assign2DRR
         );
         #[cfg(feature = "f64")]
         $direct!(
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                LogicalRowColumn
+            ),
             install_legacy_impl_assign_range_range_arms_bu,
             Assign2DRR,
             f64,
@@ -1851,7 +2261,11 @@ macro_rules! for_each_matrix_assignment_factory {
         #[cfg(feature = "f64")]
         $direct!(
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                RowLogicalColumn
+            ),
             install_legacy_impl_assign_range_range_arms_ub,
             Assign2DRR,
             f64,
@@ -1860,14 +2274,22 @@ macro_rules! for_each_matrix_assignment_factory {
         $all_types!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                Column
+            ),
             install_legacy_impl_assign_all_range_arms,
             Set2DAR
         );
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                LogicalColumn
+            ),
             install_legacy_impl_set_all_range_arms_b,
             Set2DAR
         );
@@ -1876,7 +2298,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u8,
@@ -1885,7 +2307,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u16,
@@ -1894,7 +2316,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u32,
@@ -1903,7 +2325,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u64,
@@ -1912,7 +2334,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             u128,
@@ -1921,7 +2343,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             i8,
@@ -1930,7 +2352,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             i16,
@@ -1939,7 +2361,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             i32,
@@ -1948,7 +2370,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             i64,
@@ -1957,7 +2379,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             f32,
@@ -1966,7 +2388,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             f64,
@@ -1975,7 +2397,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             R64,
@@ -1984,7 +2406,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             C64,
@@ -1993,7 +2415,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             bool,
@@ -2002,7 +2424,7 @@ macro_rules! for_each_matrix_assignment_factory {
         $one_type!(
             install_legacy_for_sink_shapes,
             $emit,
-            $context,
+            ($context, RuntimeOutputAliasPolicy::DisallowInputAlias, Row),
             install_legacy_impl_set_range_all_arms,
             Set2DRA,
             String,
@@ -2011,7 +2433,11 @@ macro_rules! for_each_matrix_assignment_factory {
         $all_types!(
             install_legacy_direct,
             $emit,
-            $context,
+            (
+                $context,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                LogicalRow
+            ),
             install_legacy_impl_set_range_all_arms_b,
             Set2DRA
         );
@@ -2024,7 +2450,7 @@ macro_rules! install_legacy_for_type_runtime {
     (
         $driver:ident,
         $emit:ident,
-        $builder:ident,
+        ($builder:ident, $output_alias:expr, $layout:ident),
         $arm:ident,
         $fxn_name:ident,
         $value_kind:ident,
@@ -2034,7 +2460,14 @@ macro_rules! install_legacy_for_type_runtime {
         {
             #[inline(never)]
             fn install_type(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-                $driver!($emit, builder, $arm, $fxn_name, $value_kind, $value_string);
+                $driver!(
+                    $emit,
+                    (builder, $output_alias, $layout),
+                    $arm,
+                    $fxn_name,
+                    $value_kind,
+                    $value_string
+                );
                 Ok(())
             }
 
@@ -2045,36 +2478,166 @@ macro_rules! install_legacy_for_type_runtime {
 
 #[cfg(feature = "matrix")]
 macro_rules! install_legacy_for_all_types_runtime {
-    ($driver:ident, $emit:ident, $builder:ident, $arm:ident, $fxn_name:ident) => {
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u8, "u8");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u16, "u16");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u32, "u32");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u64, "u64");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, u128, "u128");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i8, "i8");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i16, "i16");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i32, "i32");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i64, "i64");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, i128, "i128");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, f32, "f32");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, f64, "f64");
+    ($driver:ident, $emit:ident, ($builder:ident, $output_alias:expr, $layout:ident), $arm:ident, $fxn_name:ident) => {
         install_legacy_for_type_runtime!(
-            $driver, $emit, $builder, $arm, $fxn_name, R64, "rational"
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            u8,
+            "u8"
         );
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, C64, "complex");
-        install_legacy_for_type_runtime!($driver, $emit, $builder, $arm, $fxn_name, bool, "bool");
         install_legacy_for_type_runtime!(
-            $driver, $emit, $builder, $arm, $fxn_name, String, "string"
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            u16,
+            "u16"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            u32,
+            "u32"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            u64,
+            "u64"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            u128,
+            "u128"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            i8,
+            "i8"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            i16,
+            "i16"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            i32,
+            "i32"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            i64,
+            "i64"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            i128,
+            "i128"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            f32,
+            "f32"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            f64,
+            "f64"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            R64,
+            "rational"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            C64,
+            "complex"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            bool,
+            "bool"
+        );
+        install_legacy_for_type_runtime!(
+            $driver,
+            $emit,
+            ($builder, $output_alias, $layout),
+            $arm,
+            $fxn_name,
+            String,
+            "string"
         );
     };
 }
 
 #[cfg(all(feature = "matrix", feature = "f64"))]
 macro_rules! install_legacy_direct_runtime {
-    ($emit:ident, $builder:ident, $arm:ident, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {{
+    ($emit:ident, ($builder:ident, $output_alias:expr, $layout:ident), $arm:ident, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {{
         #[inline(never)]
         fn install_type(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-            $arm!($emit, builder, $fxn_name, $value_kind, $value_string);
+            $arm!(
+                $emit,
+                (builder, $output_alias, $layout),
+                $fxn_name,
+                $value_kind,
+                $value_string
+            );
             Ok(())
         }
 
@@ -2178,10 +2741,17 @@ pub mod __mech_native {
     );
 }
 
-#[cfg(all(test, feature = "matrix", feature = "u8"))]
+#[cfg(all(
+    test,
+    feature = "matrix",
+    feature = "matrixd",
+    feature = "vectord",
+    feature = "logical_indexing",
+    feature = "u8"
+))]
 mod tests {
     use super::*;
-    use mech_core::Ref;
+    use mech_core::{FunctionInvocation, Ref, RuntimeFunctionId};
     use nalgebra::{DMatrix, DVector};
 
     fn output() -> ValueCell {
@@ -2190,6 +2760,24 @@ mod tests {
 
     fn source() -> ValueCell {
         ValueCell::from_exact(7_u8).unwrap()
+    }
+
+    fn vector_source(values: &[u8]) -> ValueCell {
+        ValueCell::from_exact_matrix_ref(
+            Ref::new(DVector::from_column_slice(values)),
+            values.len(),
+            1,
+        )
+        .unwrap()
+    }
+
+    fn matrix_source(rows: usize, columns: usize, values: &[u8]) -> ValueCell {
+        ValueCell::from_exact_matrix_ref(
+            Ref::new(DMatrix::from_row_slice(rows, columns, values)),
+            rows,
+            columns,
+        )
+        .unwrap()
     }
 
     fn indices(values: &[usize]) -> ValueCell {
@@ -2205,19 +2793,310 @@ mod tests {
         ValueCell::from_exact(value).unwrap()
     }
 
+    fn logical_mask(values: &[bool]) -> ValueCell {
+        ValueCell::from_exact_matrix_ref(
+            Ref::new(DVector::from_column_slice(values)),
+            values.len(),
+            1,
+        )
+        .unwrap()
+    }
+
     #[test]
     fn two_dimensional_assignment_indices_use_their_exact_axes() {
-        validate_assign_row_and_column_indices(&output(), &[source(), indices(&[1, 2]), index(3)])
-            .unwrap();
+        validate_assign_row_column(&output(), &[source(), indices(&[1, 2]), index(3)]).unwrap();
 
-        let row_error =
-            validate_assign_row_and_column_indices(&output(), &[source(), indices(&[3]), index(1)])
-                .unwrap_err();
+        let row_error = validate_assign_row_column(&output(), &[source(), indices(&[3]), index(1)])
+            .unwrap_err();
         assert!(row_error.kind_message().contains("row index 3"));
 
         let column_error =
-            validate_assign_row_and_column_indices(&output(), &[source(), index(1), index(4)])
-                .unwrap_err();
+            validate_assign_row_column(&output(), &[source(), index(1), index(4)]).unwrap_err();
         assert!(column_error.kind_message().contains("column index 4"));
+    }
+
+    #[test]
+    fn logical_masks_are_validated_against_their_declared_layout() {
+        validate_assign_logical_linear(
+            &output(),
+            &[
+                source(),
+                logical_mask(&[true, false, true, false, true, false]),
+            ],
+        )
+        .unwrap();
+        let error =
+            validate_assign_logical_row(&output(), &[source(), logical_mask(&[true, false, true])])
+                .unwrap_err();
+        assert!(
+            error
+                .kind_message()
+                .contains("row logical mask has 3 elements, expected 2")
+        );
+    }
+
+    #[test]
+    fn missing_declared_selector_is_a_structured_contract_error() {
+        let error = validate_assign_row(&output(), &[source()]).unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        assert!(error.kind_message().contains("missing row index input 1"));
+    }
+
+    #[test]
+    fn assignment_source_cardinality_tracks_selected_cells_only() {
+        let selected = indices(&[1, 2, 3]);
+        let error =
+            validate_assign_linear(&output(), &[vector_source(&[10, 20]), selected.clone()])
+                .unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        assert!(
+            error
+                .kind_message()
+                .contains("source has 2 elements, selected layout requires at least 3")
+        );
+
+        validate_assign_linear(&output(), &[vector_source(&[10, 20, 30]), selected]).unwrap();
+
+        // Scalar sources broadcast, so selector cardinality is not bounded by the
+        // sink cardinality when every selected index is valid.
+        validate_assign_linear(&output(), &[source(), indices(&[1, 1, 2, 2, 3, 3, 6, 6])]).unwrap();
+
+        validate_assign_logical_linear(
+            &output(),
+            &[
+                vector_source(&[9]),
+                logical_mask(&[true, false, false, false, false, false]),
+            ],
+        )
+        .unwrap();
+        let error = validate_assign_logical_linear(
+            &output(),
+            &[
+                vector_source(&[9]),
+                logical_mask(&[false, true, false, false, false, false]),
+            ],
+        )
+        .unwrap_err();
+        assert!(error.kind_message().contains("requires at least 2"));
+    }
+
+    #[test]
+    fn row_selection_requires_complete_source_rows_or_one_broadcast_row() {
+        let selected_rows = indices(&[1, 2]);
+        let error = validate_assign_row(
+            &output(),
+            &[matrix_source(2, 2, &[1, 2, 3, 4]), selected_rows.clone()],
+        )
+        .unwrap_err();
+        assert!(error.kind_message().contains("requires at least 2x3"));
+
+        validate_assign_row(
+            &output(),
+            &[
+                matrix_source(2, 3, &[1, 2, 3, 4, 5, 6]),
+                selected_rows.clone(),
+            ],
+        )
+        .unwrap();
+        validate_assign_row(&output(), &[matrix_source(1, 3, &[1, 2, 3]), selected_rows]).unwrap();
+    }
+
+    #[test]
+    fn installed_factories_enforce_every_assignment_index_layout() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+
+        let entry = |name: &str| {
+            catalog
+                .runtime_entry(RuntimeFunctionId::from_name(name))
+                .unwrap_or_else(|| panic!("installed assignment factory {name}"))
+        };
+
+        let aliased_vector = vector_source(&[1, 2, 3]);
+        let error = entry("Assign1DRV<u8DVectorDVectorDVector>")
+            .validate_invocation(&FunctionInvocation::binary(
+                aliased_vector.clone(),
+                aliased_vector,
+                indices(&[1, 2, 3]),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("alias"));
+
+        entry("Set1DAS<u8DMatrix>")
+            .validate_invocation(&FunctionInvocation::unary(output(), source()))
+            .unwrap();
+
+        let linear = entry("Assign1DS<u8DMatrix>");
+        linear
+            .validate_invocation(&FunctionInvocation::binary(output(), source(), index(6)))
+            .unwrap();
+        let error = linear
+            .validate_invocation(&FunctionInvocation::binary(output(), source(), index(7)))
+            .unwrap_err();
+        assert!(error.kind_message().contains("linear index 7"));
+
+        let logical_linear = entry("Assign1DRB<u8DMatrixDVector>");
+        logical_linear
+            .validate_invocation(&FunctionInvocation::binary(
+                output(),
+                source(),
+                logical_mask(&[true, false, true, false, true, false]),
+            ))
+            .unwrap();
+        let error = logical_linear
+            .validate_invocation(&FunctionInvocation::binary(
+                output(),
+                source(),
+                logical_mask(&[true, false, true, false, true]),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("expected 6"));
+
+        let logical_row = entry("Set2DRAB<u8DMatrixDVector>");
+        logical_row
+            .validate_invocation(&FunctionInvocation::binary(
+                output(),
+                source(),
+                logical_mask(&[true, false]),
+            ))
+            .unwrap();
+        let error = logical_row
+            .validate_invocation(&FunctionInvocation::binary(
+                output(),
+                source(),
+                logical_mask(&[true, false, true]),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("expected 2"));
+
+        let logical_column = entry("Set2DARB<u8DMatrixDVector>");
+        logical_column
+            .validate_invocation(&FunctionInvocation::binary(
+                output(),
+                source(),
+                logical_mask(&[true, false, true]),
+            ))
+            .unwrap();
+        let error = logical_column
+            .validate_invocation(&FunctionInvocation::binary(
+                output(),
+                source(),
+                logical_mask(&[true, false]),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("expected 3"));
+
+        let row = entry("Assign2DSAS<u8DMatrix>");
+        row.validate_invocation(&FunctionInvocation::binary(output(), source(), index(2)))
+            .unwrap();
+        let error = row
+            .validate_invocation(&FunctionInvocation::binary(output(), source(), index(3)))
+            .unwrap_err();
+        assert!(error.kind_message().contains("row index 3"));
+
+        let column = entry("Assign2DASS<u8DMatrix>");
+        column
+            .validate_invocation(&FunctionInvocation::binary(output(), source(), index(3)))
+            .unwrap();
+        let error = column
+            .validate_invocation(&FunctionInvocation::binary(output(), source(), index(4)))
+            .unwrap_err();
+        assert!(error.kind_message().contains("column index 4"));
+
+        let logical_row_column = entry("Assign2DRSB<u8DMatrixDVector>");
+        logical_row_column
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                logical_mask(&[true, false]),
+                index(3),
+            ))
+            .unwrap();
+        let error = logical_row_column
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                logical_mask(&[true, false, true]),
+                index(3),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("expected 2"));
+
+        let row_logical_column = entry("Assign2DSRB<u8DMatrixDVector>");
+        row_logical_column
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                index(2),
+                logical_mask(&[true, false, true]),
+            ))
+            .unwrap();
+        let error = row_logical_column
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                index(2),
+                logical_mask(&[true, false]),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("expected 3"));
+
+        let logical_row_logical_column = entry("Assign2DRRBB<u8DMatrixDVectorDVector>");
+        logical_row_logical_column
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                logical_mask(&[true, false]),
+                logical_mask(&[true, false, true]),
+            ))
+            .unwrap();
+        let error = logical_row_logical_column
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                logical_mask(&[true, false]),
+                logical_mask(&[true, false]),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("expected 3"));
+
+        let row_column = entry("Assign2DSSS<u8DMatrix>");
+        row_column
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                index(2),
+                index(3),
+            ))
+            .unwrap();
+        let error = row_column
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                index(2),
+                index(4),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("column index 4"));
+
+        let range = entry("Assign2DRSS<u8DMatrixDVector>");
+        range
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                indices(&[1, 2]),
+                index(3),
+            ))
+            .unwrap();
+        let error = range
+            .validate_invocation(&FunctionInvocation::ternary(
+                output(),
+                source(),
+                indices(&[1, 3]),
+                index(3),
+            ))
+            .unwrap_err();
+        assert!(error.kind_message().contains("row index 3"));
     }
 }

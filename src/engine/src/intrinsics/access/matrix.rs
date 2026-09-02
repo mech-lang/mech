@@ -15,9 +15,6 @@ macro_rules! optional_operation_contract {
 }
 use std::sync::LazyLock;
 
-#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
-use crate::portable_index::ToPortableIndex;
-
 fn matrix_selection_contract(
     input_count: usize,
     _postcondition_name: &'static str,
@@ -2622,35 +2619,7 @@ impl MechFunctionCompiler for CanonicalScalarIndex {
 #[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
 fn canonical_portable_index(value: &ValueCell) -> MResult<usize> {
     let snapshot = value.snapshot()?;
-    let value = match snapshot.data() {
-        ValueData::Index(value) => value.to_portable_index(),
-        #[cfg(feature = "u8")]
-        ValueData::U8(value) => value.to_portable_index(),
-        #[cfg(feature = "u16")]
-        ValueData::U16(value) => value.to_portable_index(),
-        #[cfg(feature = "u32")]
-        ValueData::U32(value) => value.to_portable_index(),
-        #[cfg(feature = "u64")]
-        ValueData::U64(value) => value.to_portable_index(),
-        #[cfg(feature = "u128")]
-        ValueData::U128(value) => value.to_portable_index(),
-        #[cfg(feature = "i8")]
-        ValueData::I8(value) => value.to_portable_index(),
-        #[cfg(feature = "i16")]
-        ValueData::I16(value) => value.to_portable_index(),
-        #[cfg(feature = "i32")]
-        ValueData::I32(value) => value.to_portable_index(),
-        #[cfg(feature = "i64")]
-        ValueData::I64(value) => value.to_portable_index(),
-        #[cfg(feature = "i128")]
-        ValueData::I128(value) => value.to_portable_index(),
-        #[cfg(feature = "f32")]
-        ValueData::F32(value) => value.to_f32().to_portable_index(),
-        #[cfg(feature = "f64")]
-        ValueData::F64(value) => value.to_f64().to_portable_index(),
-        _ => None,
-    }
-    .ok_or_else(|| {
+    let value = mech_core::canonical_positional_ordinal(snapshot.data()).map_err(|_| {
         MechError::new(
             CannotConvertToTypeError {
                 target_type: "portable index",

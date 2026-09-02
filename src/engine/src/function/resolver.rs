@@ -2,11 +2,15 @@ use crate::function::environment::{FunctionBinding, FunctionEnvironment};
 use crate::function::extensions::{
     ExtensionFunctionId, FunctionExtensionEntry, FunctionExtensionUnavailable, FunctionExtensions,
 };
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::string::String;
 use mech_core::{
     FunctionCatalog, FunctionDefinition, FunctionOperationUnavailable, FunctionSpecializerEntry,
     MResult, MechError, OperationId, SpecializationInvocation, SpecializedFunction,
     UserFunctionTable, hash_str,
 };
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::string::String;
 
 /// A named source function could not be resolved in the current environment.
 #[derive(Debug, Clone)]

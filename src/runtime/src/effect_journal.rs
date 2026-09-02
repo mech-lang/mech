@@ -80,6 +80,11 @@ impl RuntimeEffectJournal {
         self.entries.is_empty()
     }
 
+    #[cfg(all(test, feature = "source"))]
+    pub(in crate::runtime) fn next_sequence(&self) -> u64 {
+        self.next_sequence
+    }
+
     pub(in crate::runtime) fn records(&self) -> MResult<Vec<RuntimeEffectRecord>> {
         self.entries
             .iter()
@@ -203,9 +208,11 @@ impl RuntimeEffectJournal {
         self.entries.len()
     }
 
-    #[cfg(all(test, feature = "source"))]
-    pub(in crate::runtime) fn next_sequence(&self) -> u64 {
-        self.next_sequence
+    pub(in crate::runtime) fn next_id(&self, transaction: TransactionId) -> RuntimeEffectId {
+        RuntimeEffectId {
+            transaction,
+            sequence: self.next_sequence,
+        }
     }
 
     pub(in crate::runtime) fn stage(

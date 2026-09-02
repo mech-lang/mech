@@ -135,6 +135,9 @@ impl MechFunctionImpl for AtomNeq {
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_ref(&self.out))
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_COMPARE_SCALAR_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -187,6 +190,9 @@ impl MechFunctionImpl for TableNeq {
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_ref(&self.out))
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_COMPARE_SCALAR_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)

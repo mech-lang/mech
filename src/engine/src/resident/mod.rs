@@ -2,6 +2,8 @@ mod activation;
 mod arena;
 mod artifact;
 pub(crate) mod bench;
+#[cfg(feature = "resident-artifact")]
+mod budget;
 mod candidate;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod composite;
@@ -15,6 +17,8 @@ pub(crate) mod matrix_literal;
 pub(crate) mod numeric;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod set;
+#[cfg(all(feature = "resident-artifact", feature = "table"))]
+pub(crate) mod table;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod text;
 mod workspace;
@@ -33,11 +37,12 @@ pub(crate) use workspace::*;
 
 #[cfg(feature = "resident-artifact")]
 pub use general::{
-    ActivationFacts, CapturedSignalInput, CapturedValueInput, PreparedResidentTurn,
-    ReactiveInstance, ResidentActivationError, ResidentActivationOptions, ResidentExecutionError,
-    ResidentExternalAdmission, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
-    ResidentTurnSummary, ResidentValueBorrow, StateMigrationMapping, activate,
-    activate_with_options,
+    ActivationFacts, CapturedSignalInput, CapturedValueInput, ConcreteExecutionCase,
+    OperationUnavailableForTarget, PreparedResidentTurn, ReactiveInstance, ResidentActivationError,
+    ResidentActivationOptions, ResidentExecutionError, ResidentExternalAdmission,
+    ResidentExternalPublicationAuthority, ResidentIntegrityMode, ResidentTurnSummary,
+    ResidentValueBorrow, StateMigrationMapping, activate, activate_with_options,
+    preflight_resident_target,
 };
 
 #[cfg(feature = "resident-artifact")]

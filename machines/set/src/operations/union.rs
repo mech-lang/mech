@@ -1,6 +1,6 @@
-use crate::canonical::{SetInput, SetOutput};
 #[cfg(feature = "source")]
 use crate::canonical::specialize_dynamic_set;
+use crate::canonical::{SetInput, SetOutput};
 use crate::*;
 
 #[derive(Debug)]
@@ -46,7 +46,6 @@ impl MechFunctionImpl for SetUnionFxn {
         )
     }
 
-
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_SET_BINARY_CONTRACT)
     }
@@ -54,7 +53,6 @@ impl MechFunctionImpl for SetUnionFxn {
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
-
 }
 
 #[cfg(feature = "semantic-compiler")]

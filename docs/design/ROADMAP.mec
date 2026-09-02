@@ -16,6 +16,7 @@ Started: December 2022
 Current package: `v0.3.6`
 Current development target: `v0.4.0`
 Canonical value-system cutover: complete
+Canonical contract and compatibility closure: complete
 
 - `v0.1` proof of concept `Concluded 2023`
 - `v0.2` data specification    `Concluded 2025`
@@ -123,10 +124,9 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 
 (2.3) System specification (v0.4)
 
-The canonical value-system cutover is complete. The remaining v0.4 endgame is
-organized into bounded phases:
+The canonical value-system cutover and R1 contract closure are complete. The
+remaining v0.4 endgame is organized into bounded phases:
 
-- R1 Canonical contract and compatibility closure
 - R2 Type–memory boundary
 - R3 Type inference, classes, and conversions
 - R4 Type-system cutover

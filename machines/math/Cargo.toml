@@ -58,7 +58,7 @@ ops_assign_default = ["add_assign", "sub_assign", "mul_assign", "div_assign"]
 root_default = ["cbrt", "sqrt"]
 rounding_default = ["ceil", "floor", "rint", "round", "roundeven", "trunc"]
 stat_error_default = ["erf", "erfc"]
-trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "hypot", "sec", "sin", "sinh", "tan", "tanh"]
+trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "sec", "sin", "sinh", "tan", "tanh"]
 
 math_default = ["arithmetic_default", "bessel_default", "exponential_default",
                 "gamma_default", "logarithm_default", "ops_default", "ops_assign_default",
@@ -143,7 +143,6 @@ cos = ["runtime", "trig"]
 cosh = ["runtime", "trig"]
 cot = ["runtime", "trig"]
 csc = ["runtime", "trig"]
-hypot = ["runtime", "trig"]
 sec = ["runtime", "trig"]
 sin = ["runtime", "trig"]
 sinh = ["runtime", "trig"]

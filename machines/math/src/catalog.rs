@@ -310,6 +310,7 @@ macro_rules! install_canonical_prelude {
         feature = "csc",
         feature = "erf",
         feature = "erfc",
+        feature = "fdim",
         feature = "floor",
         feature = "fmod",
         feature = "lgamma",
@@ -345,12 +346,11 @@ macro_rules! install_math_module {
     };
 }
 
-/// Installs the frozen source-specializer surface owned by `mech-math`.
+/// Installs the supported source-specializer surface owned by `mech-math`.
 ///
 /// Each entry follows the feature gate of its concrete implementation. The
 /// source surface intentionally excludes legacy descriptors that were not in
-/// the compatibility baseline (`exp`, `exp2`, `exp10`, `expm1`, `fdim`,
-/// `hypot`, `ilogb`, and `sincos`).
+/// the compatibility baseline (`exp`, `exp2`, `exp10`, and `expm1`).
 #[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "abs")]
@@ -437,6 +437,8 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_math_module!(builder, "math/erf", "erf", crate::MathErf {});
     #[cfg(feature = "erfc")]
     install_math_module!(builder, "math/erfc", "erfc", crate::MathErfc {});
+    #[cfg(feature = "fdim")]
+    install_math_module!(builder, "math/fdim", "fdim", crate::MathFdim {});
     #[cfg(feature = "floor")]
     install_math_module!(builder, "math/floor", "floor", crate::MathFloor {});
     #[cfg(feature = "fmod")]
@@ -1478,6 +1480,21 @@ fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "pow", feature = "rational", feature = "i32"),
+    registration: register_pow_rational,
+    installer: install_pow_rational,
+    name: "PowRational<r64>",
+    factory_type: crate::ops::pow::PowRational,
+    contract: RuntimeFunctionContract::no_matrix(
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    ),
+    package: "mech-math",
+    crate_name: "mech_math",
+    installer_path: "mech_math::__mech_native::install_pow_rational",
+    extra_cargo_features: ["pow"],
+}
+
 mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
@@ -1559,6 +1576,9 @@ mech_core::declare_native_binop_runtime_factories! {
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
+    #[cfg(all(feature = "pow", feature = "rational", feature = "i32"))]
+    pub use super::install_pow_rational;
+
     #[cfg(feature = "add_assign")]
     export_native_op_assign_runtime_factories!(Add; "add_assign");
     #[cfg(feature = "div_assign")]
@@ -1739,6 +1759,8 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         ("f32", f32, "f32", f32),
         ("f64", f64, "f64", f64),
     )?;
+    #[cfg(all(feature = "pow", feature = "rational", feature = "i32"))]
+    register_pow_rational(builder)?;
     #[cfg(feature = "sub")]
     mech_core::install_native_binop_runtime_factories!(
         builder,
@@ -1899,7 +1921,7 @@ mod tests {
     }
 
     #[cfg(all(feature = "source", feature = "math_default"))]
-    const FROZEN_NAMES: [&str; 64] = [
+    const EXPECTED_NAMES: [&str; 65] = [
         "math/abs",
         "math/acos",
         "math/acosh",
@@ -1934,6 +1956,7 @@ mod tests {
         "math/div-assign/range-all",
         "math/erf",
         "math/erfc",
+        "math/fdim",
         "math/floor",
         "math/fmod",
         "math/lgamma",
@@ -1997,26 +2020,22 @@ mod tests {
 
     #[cfg(all(feature = "source", feature = "math_default"))]
     #[test]
-    fn source_catalog_matches_the_frozen_math_surface() {
+    fn source_catalog_matches_the_supported_math_surface() {
         let catalog = catalog();
         let actual = catalog
             .specializer_entries()
             .map(|entry| entry.canonical_name.as_str())
             .collect::<BTreeSet<_>>();
-        let expected = FROZEN_NAMES.into_iter().collect::<BTreeSet<_>>();
+        let expected = EXPECTED_NAMES.into_iter().collect::<BTreeSet<_>>();
 
         assert_eq!(actual, expected);
-        assert_eq!(catalog.specializer_count(), 64);
+        assert_eq!(catalog.specializer_count(), 65);
 
         for excluded in [
             "math/exp",
             "math/exp2",
             "math/exp10",
             "math/expm1",
-            "math/fdim",
-            "math/hypot",
-            "math/ilogb",
-            "math/sincos",
             "math/mul-assign",
         ] {
             assert!(
@@ -2038,7 +2057,7 @@ mod tests {
         let catalog = catalog();
         let prelude = PRELUDE_NAMES.into_iter().collect::<BTreeSet<_>>();
 
-        for name in FROZEN_NAMES {
+        for name in EXPECTED_NAMES {
             let operation = OperationId::from_name(name);
             let exports = catalog.exports_for_operation(operation);
             assert_eq!(exports.len(), 1, "unexpected export count for {name}");

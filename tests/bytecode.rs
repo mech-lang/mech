@@ -9,7 +9,21 @@ use mech_core::{
     BytecodeInstruction, MResult, ParsedProgram, RuntimeType, SchemaBody, Value, ValueData,
     hash_str, snapshot::SequenceView,
 };
+#[cfg(feature = "distribution-full")]
+use mech_core::{
+    ExecutionTarget, ResolvedRangeMode, ResolvedReductionMode, ResolvedSelectionMode,
+    RuntimeOperationBinding,
+};
 use mech_engine::decode_program_artifact_bytecode_v1;
+#[cfg(feature = "distribution-full")]
+use mech_engine::resident::{
+    ActivationFacts, ResidentActivationOptions, preflight_resident_target,
+};
+#[cfg(feature = "distribution-full")]
+use mech_engine::{
+    ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft,
+    encode_program_artifact_bytecode_v1,
+};
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder, RuntimeProgramRoute};
 
 fn compile_source(source: &str) -> MResult<Vec<u8>> {
@@ -18,6 +32,57 @@ fn compile_source(source: &str) -> MResult<Vec<u8>> {
         .build_compiler()?
         .compile_source(source)
         .map(|product| product.into_parts().1)
+}
+
+#[cfg(feature = "distribution-full")]
+fn expected_artifact_selector(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+) -> Option<mech_core::ResidentResolvedSelector> {
+    fn resolve(
+        artifact: &ProgramArtifact,
+        source: ArtifactSource,
+        visited: &mut std::collections::BTreeSet<mech_core::CellSlotId>,
+    ) -> Option<mech_core::ResidentResolvedSelector> {
+        match source {
+            ArtifactSource::Constant(constant) => {
+                artifact
+                    .constants()
+                    .get(constant)
+                    .and_then(|value| match value.data() {
+                        ValueData::Id(id) => Some(mech_core::ResidentResolvedSelector::Id(*id)),
+                        data => mech_core::canonical_positional_ordinal(data)
+                            .ok()
+                            .and_then(|one_based| one_based.checked_sub(1))
+                            .and_then(|ordinal| usize::try_from(ordinal).ok())
+                            .map(mech_core::ResidentResolvedSelector::Ordinal),
+                    })
+            }
+            ArtifactSource::Slot(slot) => {
+                if !visited.insert(slot) {
+                    return None;
+                }
+                let declaration = artifact.slots().get(slot.get() as usize)?;
+                let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                    return None;
+                };
+                let node = artifact.nodes().get(node.get() as usize)?;
+                if node.operation.module_path.as_ref() != ["access"]
+                    || node.operation.operation_name != "index"
+                {
+                    return None;
+                }
+                let bindings = &artifact.bindings()
+                    [node.input_bindings.start as usize..node.input_bindings.end as usize];
+                let [BindingDeclaration::Input { source, .. }] = bindings else {
+                    return None;
+                };
+                resolve(artifact, *source, visited)
+            }
+        }
+    }
+
+    resolve(artifact, source, &mut std::collections::BTreeSet::new())
 }
 
 fn run_compiled_source(source: &str) -> MResult<(ParsedProgram, Value)> {
@@ -30,6 +95,351 @@ fn run_compiled_source(source: &str) -> MResult<(ParsedProgram, Value)> {
     Ok((parsed, loaded.initial_value.into_value()))
 }
 
+#[cfg(feature = "distribution-full")]
+fn assert_source_and_bytecode_resident_parity(source: &str) -> MResult<()> {
+    let catalog = mech::stdlib::source_catalog();
+    let mut source_runtime = RuntimeBuilder::new()
+        .function_catalog(catalog.clone())
+        .build()?;
+    let source_loaded = source_runtime
+        .load_source_program(source, ResidentDurabilityPolicy::Volatile)
+        .unwrap_or_else(|error| panic!("source activation failed for {source:?}: {error:?}"));
+    assert_eq!(
+        source_loaded.route,
+        RuntimeProgramRoute::ResidentPure,
+        "{source}"
+    );
+
+    let bytecode = compile_source(source)?;
+    let artifact = decode_program_artifact_bytecode_v1(&bytecode)
+        .unwrap_or_else(|error| panic!("bytecode decode failed for {source:?}: {error:?}"));
+    let canonical = encode_program_artifact_bytecode_v1(&artifact)
+        .unwrap_or_else(|error| panic!("bytecode encode failed for {source:?}: {error:?}"));
+    let decoded = decode_program_artifact_bytecode_v1(&canonical)
+        .unwrap_or_else(|error| panic!("canonical decode failed for {source:?}: {error:?}"));
+    let preflight = preflight_resident_target(
+        &decoded,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions::default(),
+    )
+    .unwrap_or_else(|error| panic!("resident preflight failed for {source:?}: {error:?}"));
+    assert_eq!(
+        preflight.concrete_cases.len(),
+        decoded.nodes().len(),
+        "every node needs an exact resident capability witness: {source}",
+    );
+    for case in &preflight.concrete_cases {
+        let node = &decoded.nodes()[case.node.get() as usize];
+        let bindings = &decoded.bindings()
+            [node.input_bindings.start as usize..node.input_bindings.end as usize];
+        assert_eq!(
+            case.input_resolved_selectors.len(),
+            bindings.len(),
+            "{source}"
+        );
+        for (binding, actual) in bindings.iter().zip(&case.input_resolved_selectors) {
+            let BindingDeclaration::Input {
+                source: artifact_source,
+                ..
+            } = binding
+            else {
+                panic!("node input range contained an output binding: {source}");
+            };
+            let expected = expected_artifact_selector(&decoded, *artifact_source);
+            assert_eq!(
+                *actual, expected,
+                "resident/native static selector planning diverged for {source}: {:?}",
+                case.operation,
+            );
+        }
+        let selector_count = bindings.len().saturating_sub(1);
+        if (case.operation.module_path.as_ref() == ["access"]
+            || (case.operation.module_path.as_ref() == ["core"]
+                && case.operation.operation_name.starts_with("assign")))
+            && case.operation.resolved_selection_mode(selector_count)
+                != Some(ResolvedSelectionMode::LinearGather)
+        {
+            assert!(
+                case.input_resolved_selectors
+                    .iter()
+                    .skip(1)
+                    .all(Option::is_some),
+                "resident/native planning did not retain every static selector for {source}: {:?}",
+                case.operation,
+            );
+        }
+    }
+
+    let mut bytecode_runtime = RuntimeBuilder::new().function_catalog(catalog).build()?;
+    let bytecode_loaded = bytecode_runtime
+        .load_bytecode_program(&bytecode, ResidentDurabilityPolicy::Volatile)
+        .unwrap_or_else(|error| panic!("bytecode activation failed for {source:?}: {error:?}"));
+    assert_eq!(
+        bytecode_loaded.route,
+        RuntimeProgramRoute::ResidentPure,
+        "{source}",
+    );
+    assert_eq!(
+        source_loaded.initial_value, bytecode_loaded.initial_value,
+        "source and bytecode execution diverged for {source}",
+    );
+    Ok(())
+}
+
+#[cfg(feature = "distribution-full")]
+fn typed_number(kind: &str, value: u8) -> String {
+    match kind {
+        "f32" => format!("{value}f32"),
+        "f64" => format!("{value}.0"),
+        "r64" => format!("{value}/1"),
+        "c64" => format!("{value}+0i"),
+        _ => format!("{value}<{kind}>"),
+    }
+}
+
+#[cfg(feature = "distribution-full")]
+fn typed_selector(kind: &str, value: u8) -> String {
+    match kind {
+        "f32" => format!("{value}.9<f32>"),
+        "f64" => format!("{value}.9"),
+        _ => format!("{value}<{kind}>"),
+    }
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn generated_resident_capability_matrix_survives_bytecode_and_exact_binding() -> MResult<()> {
+    let catalog = mech::stdlib::source_catalog();
+    let runtime_capabilities = catalog.runtime_execution_capabilities().collect::<Vec<_>>();
+    assert!(!runtime_capabilities.is_empty());
+    for capability in &runtime_capabilities {
+        assert!(
+            capability.targets.contains(ExecutionTarget::DirectRuntime),
+            "every preserved runtime factory must retain its direct baseline: {capability:?}",
+        );
+        assert!(
+            !capability.targets.contains(ExecutionTarget::ResidentCpu)
+                && !capability.targets.contains(ExecutionTarget::GpuBatch),
+            "runtime-factory availability must not infer artifact target support: {capability:?}",
+        );
+        match capability.operation_binding {
+            RuntimeOperationBinding::CompilerResolved | RuntimeOperationBinding::Fixed(_) => {}
+        }
+    }
+    let mut witnessed_modes = [false; 7];
+    for source in [
+        "[1<u64> 2<u64>] + [3<u64> 4<u64>]",
+        "[1f32 2f32] < [2f32 2f32]",
+        "[true false] && [true true]",
+        "matrix := [1 2; 3 4]\nmatrix[2,:]",
+        "matrix := [1 2; 3 4]\nmatrix[:,2]",
+        "matrix := [1 2; 3 4]\nmatrix[2,1]",
+        "matrix := [1 2; 3 4]\nmatrix[2]",
+        "matrix := [1 2; 3 4]\nselectors := [4 1 4]\nmatrix[selectors]",
+        "matrix := [1 2; 3 4]\nselectors := [4<u64> 1<u64> 4<u64>]\nmatrix[selectors]",
+        "matrix := [1 2; 3 4]\nselectors := [4.9<f32> 1.2<f32> 4.1<f32>]\nmatrix[selectors]",
+        "~matrix := [1 2; 3 4]\nmatrix[:,2] = [9; 10]\nmatrix",
+        "1<u64>..=4<u64>",
+        "+> stats\nstats/sum/row([1<u64> 2<u64>; 3<u64> 4<u64>])",
+        "+> combinatorics\ncombinatorics/n-choose-k([1<u64> 2<u64> 3<u64>], 2<u64>)",
+        "record := {number: 7<u64>}\nrecord.number",
+        "items := {\"key\": 11<u64>}\nitems[\"key\"]",
+        "data := |number<u64>| 5 | 6 |\ndata.number",
+    ] {
+        let bytecode = compile_source(source)?;
+        let artifact = decode_program_artifact_bytecode_v1(&bytecode)
+            .unwrap_or_else(|error| panic!("{source} did not decode: {error:?}"));
+        let canonical_bytes = encode_program_artifact_bytecode_v1(&artifact)
+            .unwrap_or_else(|error| panic!("{source} did not re-encode: {error:?}"));
+        let canonical = decode_program_artifact_bytecode_v1(&canonical_bytes)
+            .unwrap_or_else(|error| panic!("{source} canonical bytes did not decode: {error:?}"));
+        assert_eq!(
+            encode_program_artifact_bytecode_v1(&canonical).unwrap(),
+            canonical_bytes,
+            "{source} canonical artifact encoding must be deterministic",
+        );
+        for (before, after) in artifact.nodes().iter().zip(canonical.nodes()) {
+            let input_count =
+                usize::try_from(before.input_bindings.end - before.input_bindings.start).unwrap();
+            let selector_count = if before.operation.module_path.as_ref() == ["access"] {
+                if before.operation.operation_name == "index" {
+                    0
+                } else {
+                    input_count.saturating_sub(1)
+                }
+            } else {
+                0
+            };
+            let selection = before.operation.resolved_selection_mode(selector_count);
+            assert_eq!(
+                selection,
+                after.operation.resolved_selection_mode(selector_count),
+                "{source} changed its resolved selection mode across bytecode",
+            );
+            match selection {
+                Some(ResolvedSelectionMode::LinearScalar) => witnessed_modes[0] = true,
+                Some(ResolvedSelectionMode::LinearGather) => witnessed_modes[1] = true,
+                Some(ResolvedSelectionMode::Rows) => witnessed_modes[2] = true,
+                Some(ResolvedSelectionMode::Columns) => witnessed_modes[3] = true,
+                Some(ResolvedSelectionMode::Rectangle) => witnessed_modes[4] = true,
+                _ => {}
+            }
+            let range = before.operation.resolved_range_mode();
+            assert_eq!(range, after.operation.resolved_range_mode(), "{source}");
+            if range == Some(ResolvedRangeMode::Inclusive) {
+                witnessed_modes[5] = true;
+            }
+            let reduction = before.operation.resolved_reduction_mode();
+            assert_eq!(
+                reduction,
+                after.operation.resolved_reduction_mode(),
+                "{source}",
+            );
+            if reduction == Some(ResolvedReductionMode::Rows) {
+                witnessed_modes[6] = true;
+            }
+        }
+
+        let preflight = preflight_resident_target(
+            &canonical,
+            &catalog,
+            &ActivationFacts::default(),
+            ResidentActivationOptions::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source} was unavailable for resident CPU: {error:?}"));
+        assert_eq!(
+            preflight.concrete_cases.len(),
+            canonical.nodes().len(),
+            "{source} must witness every bound pure kernel",
+        );
+        assert!(!preflight.concrete_cases.is_empty(), "{source}");
+        for case in &preflight.concrete_cases {
+            assert_eq!(
+                case.targets.iter().collect::<Vec<_>>(),
+                vec![ExecutionTarget::ResidentCpu],
+                "{source}: {:?}",
+                case.operation,
+            );
+            let node = &canonical.nodes()[case.node.get() as usize];
+            assert_eq!(case.operation, node.operation, "{source}");
+        }
+
+        let mut runtime = RuntimeBuilder::new()
+            .function_catalog(catalog.clone())
+            .build()?;
+        let loaded =
+            runtime.load_bytecode_program(&bytecode, ResidentDurabilityPolicy::Volatile)?;
+        assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure, "{source}");
+    }
+    assert_eq!(witnessed_modes, [true; 7]);
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn canonical_selector_family_survives_every_access_and_assignment_mode() -> MResult<()> {
+    for kind in [
+        "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64",
+    ] {
+        let first = typed_selector(kind, 1);
+        let second = typed_selector(kind, 2);
+        let fourth = typed_selector(kind, 4);
+        let gather = format!("[{fourth} {first} {fourth}]");
+        let sources = [
+            format!("matrix := [1 2; 3 4]\nselector := {first}\nmatrix[selector]"),
+            format!("matrix := [1 2; 3 4]\nselectors := {gather}\nmatrix[selectors]"),
+            format!("matrix := [1 2; 3 4]\nselector := {second}\nmatrix[selector,:]"),
+            format!("matrix := [1 2; 3 4]\nselector := {second}\nmatrix[:,selector]"),
+            format!("matrix := [1 2; 3 4]\nrow := {second}\ncolumn := {first}\nmatrix[row,column]"),
+            format!("~matrix := [1 2; 3 4]\nselector := {first}\nmatrix[selector] = 9\nmatrix"),
+            format!(
+                "~matrix := [1 2; 3 4]\nselector := {second}\nmatrix[selector,:] = [9 10]\nmatrix"
+            ),
+            format!(
+                "~matrix := [1 2; 3 4]\nselector := {second}\nmatrix[:,selector] = [9; 10]\nmatrix"
+            ),
+            format!(
+                "~matrix := [1 2; 3 4]\nrow := {second}\ncolumn := {first}\nmatrix[row,column] = 9\nmatrix"
+            ),
+        ];
+        for source in sources {
+            assert_source_and_bytecode_resident_parity(&source).unwrap_or_else(|error| {
+                panic!("selector family {kind} failed for {source:?}: {error:?}")
+            });
+        }
+    }
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn unsupported_resident_target_is_structured_before_instance_emission() -> MResult<()> {
+    let source = "[1<u64> 2<u64>] + [3<u64> 4<u64>]";
+    let bytecode = compile_source(source)?;
+    let artifact = decode_program_artifact_bytecode_v1(&bytecode).unwrap();
+    let mut nodes = artifact.nodes().to_vec();
+    nodes[0].operation.operation_name = "deliberately-unavailable".to_owned();
+    let unavailable = ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().to_vec().into_boxed_slice(),
+        slots: artifact.slots().to_vec().into_boxed_slice(),
+        nodes: nodes.into_boxed_slice(),
+        bindings: artifact.bindings().to_vec().into_boxed_slice(),
+        outputs: artifact.outputs().to_vec().into_boxed_slice(),
+        constraints: artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let error = preflight_resident_target(
+        &unavailable,
+        &mech::stdlib::source_catalog(),
+        &ActivationFacts::default(),
+        ResidentActivationOptions::default(),
+    )
+    .unwrap_err();
+    assert_eq!(error.target, ExecutionTarget::ResidentCpu);
+    assert_eq!(error.node, Some(unavailable.nodes()[0].node));
+    assert_eq!(
+        error.operation,
+        Some(unavailable.nodes()[0].operation.clone())
+    );
+    assert!(error.reason.contains("MissingResidentFactory"));
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn reactive_range_shape_is_unavailable_before_resident_instance_emission() -> MResult<()> {
+    for (expression, expected_operation) in [
+        ("1<u64>..to", "exclusive"),
+        ("1<u64>..=to", "inclusive"),
+        ("1<u64>..1<u64>..to", "exclusive-increment"),
+        ("1<u64>..1<u64>..=to", "inclusive-increment"),
+    ] {
+        let bytecode = compile_source(&format!("~to := 3<u64>\nvalues := {expression}\nvalues"))?;
+        let artifact = decode_program_artifact_bytecode_v1(&bytecode).unwrap();
+        let error = preflight_resident_target(
+            &artifact,
+            &mech::stdlib::source_catalog(),
+            &ActivationFacts::default(),
+            ResidentActivationOptions::default(),
+        )
+        .unwrap_err();
+        assert_eq!(error.target, ExecutionTarget::ResidentCpu);
+        let operation = error.operation.as_ref().unwrap();
+        assert_eq!(operation.module_path.len(), 1);
+        assert_eq!(operation.module_path[0], "range");
+        assert_eq!(operation.operation_name, expected_operation);
+        assert!(error.reason.contains("UnsupportedLayout"));
+    }
+    Ok(())
+}
+
 fn assert_f64(value: &Value, expected: f64) {
     assert!(
         matches!(value.data(), ValueData::F64(actual) if actual.to_f64() == expected),
@@ -38,8 +448,43 @@ fn assert_f64(value: &Value, expected: f64) {
     );
 }
 
+#[cfg(feature = "distribution-full")]
+fn assert_f32(value: &Value, expected: f32, tolerance: f32) {
+    let ValueData::F32(actual) = value.data() else {
+        panic!("expected canonical f32, got {:?}", value.data());
+    };
+    assert!(
+        (actual.to_f32() - expected).abs() <= tolerance,
+        "expected canonical f32 {expected}, got {}",
+        actual.to_f32(),
+    );
+}
+
 fn assert_bool(value: &Value, expected: bool) {
     assert!(matches!(value.data(), ValueData::Bool(actual) if *actual == expected));
+}
+
+#[cfg(feature = "distribution-full")]
+fn assert_u64(value: &Value, expected: u64) {
+    assert!(matches!(value.data(), ValueData::U64(actual) if *actual == expected));
+}
+
+#[cfg(feature = "distribution-full")]
+fn assert_bool_matrix(value: &Value, expected: &[bool]) {
+    let matrix = value.matrix_view().expect("expected canonical matrix");
+    let SequenceView::Bool(actual) = matrix.elements() else {
+        panic!("expected canonical bool matrix");
+    };
+    assert_eq!(actual, expected);
+}
+
+#[cfg(feature = "distribution-full")]
+fn assert_u64_matrix(value: &Value, expected: &[u64]) {
+    let matrix = value.matrix_view().expect("expected canonical matrix");
+    let SequenceView::U64(actual) = matrix.elements() else {
+        panic!("expected canonical u64 matrix");
+    };
+    assert_eq!(actual, expected);
 }
 
 fn assert_f64_matrix(value: &Value, expected: &[f64], rows: u64, columns: u64) {
@@ -74,6 +519,21 @@ fn assert_f64_matrix(value: &Value, expected: &[f64], rows: u64, columns: u64) {
         actual
             .iter()
             .map(|element| element.to_f64())
+            .collect::<Vec<_>>(),
+        expected,
+    );
+}
+
+#[cfg(feature = "distribution-full")]
+fn assert_f32_matrix(value: &Value, expected: &[f32]) {
+    let matrix = value.matrix_view().expect("expected canonical matrix");
+    let SequenceView::F32(actual) = matrix.elements() else {
+        panic!("expected canonical f32 matrix");
+    };
+    assert_eq!(
+        actual
+            .iter()
+            .map(|element| element.to_f32())
             .collect::<Vec<_>>(),
         expected,
     );
@@ -131,6 +591,300 @@ fn scalar_add_returns_the_final_function_register() -> MResult<()> {
         parsed.instructions.last(),
         Some(BytecodeInstruction::Return { .. })
     ));
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn completed_math_lowerings_activate_and_execute_through_bytecode_v1() -> MResult<()> {
+    for (source, expected, tolerance) in [
+        (
+            "+> math\nmath/atan2(1.0, 1.0)",
+            core::f64::consts::FRAC_PI_4,
+            1.0e-12,
+        ),
+        ("+> math\nmath/copysign(3.0, -2.0)", -3.0, 0.0),
+        ("+> math\nmath/fdim(5.0, 3.0)", 2.0, 0.0),
+        ("+> math\nmath/fmod(5.3, 2.0)", 1.3, 1.0e-12),
+        (
+            "+> math\nmath/nextafter(1.0, 2.0)",
+            f64::from_bits(1.0f64.to_bits() + 1),
+            0.0,
+        ),
+        ("+> math\nmath/remainder(5.3, 2.0)", -0.7, 1.0e-12),
+        (
+            "+> math\nmath/bessel/jn(2.0, 1.0)",
+            0.114_903_484_931_900_5,
+            1.0e-12,
+        ),
+        (
+            "+> math\nmath/bessel/yn(2.0, 1.0)",
+            -1.650_682_606_816_254_3,
+            1.0e-12,
+        ),
+    ] {
+        let (parsed, value) = run_compiled_source(source)?;
+        assert!(
+            parsed.instructions.iter().any(|instruction| matches!(
+                instruction,
+                BytecodeInstruction::RuntimeBinary { .. }
+            )),
+            "{source} did not lower to a binary runtime instruction",
+        );
+        let ValueData::F64(actual) = value.data() else {
+            panic!("{source} did not produce a canonical f64 value");
+        };
+        let actual = actual.to_f64();
+        assert!(
+            (actual - expected).abs() <= tolerance,
+            "{source} produced {actual}, expected {expected}",
+        );
+    }
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn completed_f32_math_lowerings_activate_for_scalars_and_matrices() -> MResult<()> {
+    for (source, expected, tolerance) in [
+        (
+            "+> math\nmath/atan2(1f32, 1f32)",
+            core::f32::consts::FRAC_PI_4,
+            1.0e-5,
+        ),
+        ("+> math\nmath/copysign(3f32, 2f32)", 3.0, 0.0),
+        ("+> math\nmath/fdim(5f32, 3f32)", 2.0, 0.0),
+        ("+> math\nmath/fmod(5.3<f32>, 2f32)", 1.3, 1.0e-5),
+        (
+            "+> math\nmath/nextafter(1f32, 2f32)",
+            f32::from_bits(1.0f32.to_bits() + 1),
+            0.0,
+        ),
+        ("+> math\nmath/remainder(5.3<f32>, 2f32)", -0.7, 1.0e-5),
+        ("+> math\nmath/bessel/jn(2f32, 1f32)", 0.114_903_49, 1.0e-5),
+        ("+> math\nmath/bessel/yn(2f32, 1f32)", -1.650_682_6, 1.0e-5),
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        assert_f32(&value, expected, tolerance);
+    }
+
+    for source in [
+        "+> math\nmath/atan2([1f32 1f32], [1f32 1f32])",
+        "+> math\nmath/copysign([3f32 3f32], [2f32 2f32])",
+        "+> math\nmath/fdim([5f32 5f32], [3f32 3f32])",
+        "+> math\nmath/fmod([5.3<f32> 5.3<f32>], [2f32 2f32])",
+        "+> math\nmath/nextafter([1f32 1f32], [2f32 2f32])",
+        "+> math\nmath/remainder([5.3<f32> 5.3<f32>], [2f32 2f32])",
+        "+> math\nmath/bessel/jn([2f32 2f32], [1f32 1f32])",
+        "+> math\nmath/bessel/yn([2f32 2f32], [1f32 1f32])",
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        let matrix = value.matrix_view().expect("f32 lowering returns a matrix");
+        let SequenceView::F32(elements) = matrix.elements() else {
+            panic!("f32 lowering returned the wrong matrix element kind");
+        };
+        assert_eq!(elements.len(), 2, "{source}");
+    }
+
+    let (_, value) = run_compiled_source("+> math\nmath/copysign([3f32 4f32], [2f32 2f32])")?;
+    assert_f32_matrix(&value, &[3.0, 4.0]);
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn declared_float_unary_surface_activates_through_shared_residents() -> MResult<()> {
+    for source in [
+        "+> math\nmath/acos(0.5)",
+        "+> math\nmath/acosh(2.0)",
+        "+> math\nmath/acot(2.0)",
+        "+> math\nmath/acsc(2.0)",
+        "+> math\nmath/asec(2.0)",
+        "+> math\nmath/asin(0.5)",
+        "+> math\nmath/asinh(1.0)",
+        "+> math\nmath/atan(1.0)",
+        "+> math\nmath/atanh(0.5)",
+        "+> math\nmath/bessel/j0(1.0)",
+        "+> math\nmath/bessel/j1(1.0)",
+        "+> math\nmath/bessel/y0(1.0)",
+        "+> math\nmath/bessel/y1(1.0)",
+        "+> math\nmath/cbrt(8.0)",
+        "+> math\nmath/ceil(1.2)",
+        "+> math\nmath/cos(1.0)",
+        "+> math\nmath/cosh(1.0)",
+        "+> math\nmath/cot(1.0)",
+        "+> math\nmath/csc(1.0)",
+        "+> math\nmath/erf(1.0)",
+        "+> math\nmath/erfc(1.0)",
+        "+> math\nmath/floor(1.8)",
+        "+> math\nmath/lgamma(2.0)",
+        "+> math\nmath/log(2.0)",
+        "+> math\nmath/log10(10.0)",
+        "+> math\nmath/log1p(1.0)",
+        "+> math\nmath/log2(2.0)",
+        "+> math\nmath/rint(1.2)",
+        "+> math\nmath/round(1.5)",
+        "+> math\nmath/roundeven(2.5)",
+        "+> math\nmath/sec(1.0)",
+        "+> math\nmath/sin(1.0)",
+        "+> math\nmath/sinh(1.0)",
+        "+> math\nmath/sqrt(4.0)",
+        "+> math\nmath/tan(1.0)",
+        "+> math\nmath/tanh(1.0)",
+        "+> math\nmath/tgamma(2.0)",
+        "+> math\nmath/trunc(1.8)",
+    ] {
+        let (parsed, value) = run_compiled_source(source)?;
+        assert!(
+            parsed
+                .instructions
+                .iter()
+                .any(|instruction| matches!(instruction, BytecodeInstruction::RuntimeUnary { .. })),
+            "{source} did not lower to a unary runtime instruction",
+        );
+        let ValueData::F64(actual) = value.data() else {
+            panic!("{source} did not produce a canonical f64 value");
+        };
+        assert!(actual.to_f64().is_finite(), "{source} produced {actual:?}");
+    }
+
+    let (_, value) = run_compiled_source("+> math\nmath/acos([0.5<f32> 0f32])")?;
+    let matrix = value.matrix_view().expect("f32 acos returns a matrix");
+    let SequenceView::F32(elements) = matrix.elements() else {
+        panic!("f32 acos returned the wrong matrix element kind");
+    };
+    assert_eq!(elements.len(), 2);
+    assert!(elements.iter().all(|element| element.to_f32().is_finite()));
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn declared_abs_family_activates_for_snapshot_numeric_representations() -> MResult<()> {
+    let (_, value) = run_compiled_source("+> math\nmath/abs([-2<i64> 3<i64>])")?;
+    let matrix = value.matrix_view().expect("integer abs returns a matrix");
+    let SequenceView::I64(elements) = matrix.elements() else {
+        panic!("integer abs returned the wrong matrix element kind");
+    };
+    assert_eq!(elements, &[2, 3]);
+
+    let (_, value) = run_compiled_source("+> math\nmath/abs(-3/2)")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Rational64(actual)
+            if actual.numerator() == 3 && actual.denominator() == 2
+    ));
+
+    let (_, value) = run_compiled_source("+> math\nmath/abs(3+4i)")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Complex64(actual)
+            if actual.real().to_f64() == 5.0 && actual.imaginary().to_f64() == 0.0
+    ));
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn typed_range_stats_and_combinatorics_contracts_execute_residently() -> MResult<()> {
+    let (_, range) = run_compiled_source("1<u64>..=4<u64>")?;
+    assert_u64_matrix(&range, &[1, 2, 3, 4]);
+    let (_, range) = run_compiled_source("1f32..=3f32")?;
+    assert_f32_matrix(&range, &[1.0, 2.0, 3.0]);
+
+    let (_, columns) =
+        run_compiled_source("+> stats\nstats/sum/column([1<u64> 2<u64>; 3<u64> 4<u64>])")?;
+    assert_u64_matrix(&columns, &[3, 7]);
+
+    let (_, rows) = run_compiled_source("+> stats\nstats/sum/row([1<u64> 2<u64>; 3<u64> 4<u64>])")?;
+    assert_u64_matrix(&rows, &[4, 6]);
+    let (_, scalar) =
+        run_compiled_source("+> combinatorics\ncombinatorics/n-choose-k(5<u64>, 2<u64>)")?;
+    assert_u64(&scalar, 10);
+    let (_, scalar) = run_compiled_source("+> combinatorics\ncombinatorics/n-choose-k(5/1, 2/1)")?;
+    assert!(matches!(
+        scalar.data(),
+        ValueData::Rational64(value)
+            if value.numerator() == 10 && value.denominator() == 1
+    ));
+    let (_, scalar) =
+        run_compiled_source("+> combinatorics\ncombinatorics/n-choose-k(5+0i, 2+0i)")?;
+    assert!(matches!(
+        scalar.data(),
+        ValueData::Complex64(value)
+            if value.real().to_f64() == 10.0 && value.imaginary().to_f64() == 0.0
+    ));
+
+    let (_, matrix) = run_compiled_source(
+        "+> combinatorics\ncombinatorics/n-choose-k([1<u64> 2<u64> 3<u64>], 2<u64>)",
+    )?;
+    assert_u64_matrix(&matrix, &[1, 1, 2, 2, 3, 3]);
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn generated_catalog_numeric_families_have_exact_resident_capabilities() -> MResult<()> {
+    const RANGE_KINDS: [&str; 12] = [
+        "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64",
+    ];
+    const ARITHMETIC_KINDS: [&str; 14] = [
+        "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64", "r64",
+        "c64",
+    ];
+
+    for kind in RANGE_KINDS {
+        let one = typed_number(kind, 1);
+        let two = typed_number(kind, 2);
+        let three = typed_number(kind, 3);
+        for source in [
+            format!("{one}..{three}"),
+            format!("{one}..={three}"),
+            format!("{one}..{two}..{three}"),
+            format!("{one}..{two}..={three}"),
+        ] {
+            assert_source_and_bytecode_resident_parity(&source)?;
+        }
+    }
+
+    for kind in ARITHMETIC_KINDS {
+        let one = typed_number(kind, 1);
+        let two = typed_number(kind, 2);
+        let three = typed_number(kind, 3);
+        let four = typed_number(kind, 4);
+        let five = typed_number(kind, 5);
+        let matrix = format!("[{one} {two}; {three} {four}]");
+        for operation in ["column", "row"] {
+            assert_source_and_bytecode_resident_parity(&format!(
+                "+> stats\nvalues<[{kind}]> := {matrix}\nstats/sum/{operation}(values)"
+            ))?;
+        }
+        assert_source_and_bytecode_resident_parity(&format!(
+            "+> combinatorics\ncombinatorics/n-choose-k({five}, {two})"
+        ))?;
+        assert_source_and_bytecode_resident_parity(&format!(
+            "+> combinatorics\nvalues<[{kind}]> := [{one} {two} {three}]\ncombinatorics/n-choose-k(values, {two})"
+        ))?;
+    }
+
+    // Matrix dot and multiplication advertise integer and floating-point
+    // families only. Rational and complex programs therefore fail at source
+    // specialization instead of emitting an artifact that ResidentCpu cannot
+    // activate.
+    for kind in ["r64", "c64"] {
+        let one = typed_number(kind, 1);
+        let two = typed_number(kind, 2);
+        let three = typed_number(kind, 3);
+        let four = typed_number(kind, 4);
+        assert!(
+            compile_source(&format!("[{one} {two}] · [{three} {four}]")).is_err(),
+            "matrix/dot unexpectedly advertised {kind}",
+        );
+        assert!(
+            compile_source(&format!("[{one} {two}] ** [{three}; {four}]")).is_err(),
+            "matrix/multiply unexpectedly advertised {kind}",
+        );
+    }
     Ok(())
 }
 
@@ -202,6 +956,124 @@ fn ordinary_set_elements_round_trip_through_bytecode() -> MResult<()> {
     assert_bool(&member, true);
     let (_, not_member) = run_compiled_source("4 ∉ {1, 2, 3}")?;
     assert_bool(&not_member, true);
+    Ok(())
+}
+
+#[test]
+fn snapshot_backed_set_elements_round_trip_through_bytecode() -> MResult<()> {
+    let (_, inserted) = run_compiled_source("set/insert({1<u8>, 2<u8>}, 3<u8>)")?;
+    let inserted = inserted
+        .set_view()
+        .expect("u8 set/insert must return a canonical set");
+    assert!(
+        inserted
+            .elements()
+            .iter()
+            .any(|element| matches!(element.data(), ValueData::U8(3)))
+    );
+
+    let (_, removed) = run_compiled_source("set/remove({1<u8>, 2<u8>}, 1<u8>)")?;
+    let removed = removed
+        .set_view()
+        .expect("u8 set/remove must return a canonical set");
+    assert_eq!(removed.elements().len(), 1);
+    assert!(matches!(removed.elements()[0].data(), ValueData::U8(2)));
+
+    let (_, member) = run_compiled_source("2<u8> ∈ {1<u8>, 2<u8>}")?;
+    assert_bool(&member, true);
+    let (_, not_member) = run_compiled_source("3<u8> ∉ {1<u8>, 2<u8>}")?;
+    assert_bool(&not_member, true);
+
+    let (_, signed_zero_member) = run_compiled_source("-0.0 ∈ {0.0}")?;
+    assert_bool(&signed_zero_member, true);
+    let (_, signed_zero_inserted) = run_compiled_source("set/insert({0.0}, -0.0)")?;
+    assert_eq!(
+        signed_zero_inserted
+            .set_view()
+            .expect("canonical float set")
+            .elements()
+            .len(),
+        1
+    );
+    let (_, signed_zero_removed) = run_compiled_source("set/remove({0.0}, -0.0)")?;
+    assert!(
+        signed_zero_removed
+            .set_view()
+            .expect("canonical float set")
+            .elements()
+            .is_empty()
+    );
+    Ok(())
+}
+
+#[test]
+fn matrix_dot_and_solve_activate_through_declared_residents() -> MResult<()> {
+    let (_, dot) = run_compiled_source("[1 2 3] · [4 5 6]")?;
+    assert_f64(&dot, 32.0);
+
+    let (_, solution) = run_compiled_source("[4 1; 2 3] \\ [9; 8]")?;
+    assert_f64_matrix(&solution, &[1.9, 1.4], 2, 1);
+
+    #[cfg(feature = "distribution-full")]
+    {
+        let (_, dot) = run_compiled_source("[1f32 2f32] · [3f32 4f32]")?;
+        assert_f32(&dot, 11.0, 1.0e-5);
+
+        let (_, solution) = run_compiled_source("[4f32 1f32; 2f32 3f32] \\ [9f32; 8f32]")?;
+        let matrix = solution
+            .matrix_view()
+            .expect("f32 matrix solve returns a matrix");
+        let SequenceView::F32(values) = matrix.elements() else {
+            panic!("f32 matrix solve must preserve f32 elements");
+        };
+        assert!(
+            (values[0].to_f32() - 1.9).abs() < 1.0e-5,
+            "unexpected f32 solution: {values:?}"
+        );
+        assert!(
+            (values[1].to_f32() - 1.4).abs() < 1.0e-5,
+            "unexpected f32 solution: {values:?}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn complete_set_surface_activates_through_bytecode_v1() -> MResult<()> {
+    for (source, cardinality) in [
+        ("set/union({1, 2}, {2, 3})", 3),
+        ("set/intersection({1, 2}, {2, 3})", 1),
+        ("set/difference({1, 2}, {2, 3})", 1),
+        ("{1, 2} Δ {2, 3}", 2),
+        ("set/powerset({1, 2})", 4),
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        assert_eq!(
+            value
+                .set_view()
+                .unwrap_or_else(|| panic!("{source} did not return a set"))
+                .elements()
+                .len(),
+            cardinality,
+            "{source}",
+        );
+    }
+
+    for (source, expected) in [
+        ("set/disjoint({1}, {2})", true),
+        ("set/equals({1, 2}, {2, 1})", true),
+        ("{1} ⊊ {1, 2}", true),
+        ("{1, 2} ⊋ {1}", true),
+        ("{1} ⊂ {1, 2}", true),
+        ("{1, 2} ⊃ {1}", true),
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        assert_bool(&value, expected);
+    }
+
+    let (_, value) = run_compiled_source("set/size({1, 2, 3})")?;
+    assert!(matches!(value.data(), ValueData::U64(3)));
     Ok(())
 }
 
@@ -284,6 +1156,182 @@ fn dynamic_f64_matrix_add_round_trips() -> MResult<()> {
 }
 
 #[test]
+#[cfg(feature = "distribution-full")]
+fn canonical_resident_capabilities_close_matrix_logic_comparison_and_indexing_paths() -> MResult<()>
+{
+    let (_, value) = run_compiled_source("x<u64> := 1\n[x x]")?;
+    assert_u64_matrix(&value, &[1, 1]);
+
+    let (_, value) = run_compiled_source(
+        "left<[u64]> := [1<u64> 2<u64>]\nright<[u64]> := [3<u64> 4<u64>]\n[left right]",
+    )?;
+    assert_u64_matrix(&value, &[1, 2, 3, 4]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>; 3<u64> 4<u64>]'")?;
+    assert_u64_matrix(&value, &[1, 3, 2, 4]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>] ** [3<u64>; 4<u64>]")?;
+    assert_u64_matrix(&value, &[11]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>] + [3<u64> 4<u64>]")?;
+    assert_u64_matrix(&value, &[4, 6]);
+
+    for (source, expected) in [
+        ("[9<u64> 8<u64>] - [2<u64> 3<u64>]", &[7, 5][..]),
+        ("[3<u64> 4<u64>] * [2<u64> 5<u64>]", &[6, 20][..]),
+        ("[8<u64> 9<u64>] / [2<u64> 3<u64>]", &[4, 3][..]),
+        ("[8<u64> 9<u64>] % [3<u64> 4<u64>]", &[2, 1][..]),
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        assert_u64_matrix(&value, expected);
+    }
+
+    let (_, value) = run_compiled_source("-1<i64>")?;
+    assert!(matches!(value.data(), ValueData::I64(-1)));
+
+    let (_, value) = run_compiled_source("[2<u32> 3<u32>] ^ [3<u32> 2<u32>]")?;
+    let matrix = value.matrix_view().expect("integer power returns a matrix");
+    let SequenceView::U32(actual) = matrix.elements() else {
+        panic!("integer power must preserve u32 elements");
+    };
+    assert_eq!(actual, &[8, 9]);
+
+    let (_, value) = run_compiled_source("[1f32 2f32] + 3f32")?;
+    assert_f32_matrix(&value, &[4.0, 5.0]);
+
+    let (_, value) = run_compiled_source("1/2 + 1/2")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Rational64(actual)
+            if actual.numerator() == 1 && actual.denominator() == 1
+    ));
+
+    let (_, value) = run_compiled_source("(3/2) ^ 2<i32>")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Rational64(actual)
+            if actual.numerator() == 9 && actual.denominator() == 4
+    ));
+
+    let (_, value) = run_compiled_source("(1+2i) * (3-4i)")?;
+    assert!(matches!(
+        value.data(),
+        ValueData::Complex64(actual)
+            if actual.real().to_f64() == 11.0 && actual.imaginary().to_f64() == 2.0
+    ));
+
+    let (_, value) = run_compiled_source("+> math\nmath/acos(0.5)")?;
+    let ValueData::F64(actual) = value.data() else {
+        panic!("acos must return f64");
+    };
+    assert!((actual.to_f64() - 0.5_f64.acos()).abs() < 1.0e-15);
+
+    let (_, value) = run_compiled_source("[true false] && [true true]")?;
+    assert_bool_matrix(&value, &[true, false]);
+
+    let (_, value) = run_compiled_source("true || [false true]")?;
+    assert_bool_matrix(&value, &[true, true]);
+
+    let (_, value) = run_compiled_source("[true false] ⊕ [false true]")?;
+    assert_bool_matrix(&value, &[true, true]);
+
+    let (_, value) = run_compiled_source("![true false]")?;
+    assert_bool_matrix(&value, &[false, true]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>] != [1<u64> 3<u64>]")?;
+    assert_bool_matrix(&value, &[false, true]);
+
+    let (_, value) = run_compiled_source("[1<u64> 2<u64>] < [2<u64> 2<u64>]")?;
+    assert_bool_matrix(&value, &[true, false]);
+
+    // Records and maps have indexing/assignment capabilities, but equality is
+    // not part of their source-admitted v0.4 surface. Keep that boundary
+    // closed instead of relying on the resident aggregate-equality fallback.
+    assert!(compile_source("{number: 1<u64>} == {number: 1<u64>}").is_err());
+    assert!(compile_source("{\"key\": 1<u64>} != {\"key\": 2<u64>}").is_err());
+
+    let (_, value) = run_compiled_source(
+        "left := |number<u64>| 1 | 2 |\nright := |number<u64>| 1 | 2 |\nleft == right",
+    )?;
+    assert_bool(&value, true);
+
+    let (_, value) =
+        run_compiled_source("matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[2,1]")?;
+    assert_u64(&value, 3);
+
+    let (_, value) = run_compiled_source(
+        "matrix<[u64]> := [1<u64> 2<u64> 3<u64>; 4<u64> 5<u64> 6<u64>]\nmatrix[5]",
+    )?;
+    assert_u64(&value, 3);
+
+    let (_, value) = run_compiled_source(
+        "matrix<[u64]> := [1<u64> 2<u64> 3<u64>; 4<u64> 5<u64> 6<u64>]\nselectors := [6 1 6]\nmatrix[selectors]",
+    )?;
+    assert_u64_matrix(&value, &[6, 1, 6]);
+
+    let (_, value) =
+        run_compiled_source("matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[2,:]")?;
+    assert_u64_matrix(&value, &[3, 4]);
+
+    let (_, value) =
+        run_compiled_source("matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[:,1]")?;
+    assert_u64_matrix(&value, &[1, 3]);
+
+    let (_, value) =
+        run_compiled_source("~matrix<[u64]> := [1<u64> 2<u64>]\nmatrix[2] = 9<u64>\nmatrix")?;
+    assert_u64_matrix(&value, &[1, 9]);
+
+    let (_, value) = run_compiled_source(
+        "~matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[2,:] = [9<u64> 10<u64>]\nmatrix",
+    )?;
+    assert_u64_matrix(&value, &[1, 2, 9, 10]);
+
+    let (_, value) = run_compiled_source(
+        "~matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[:,2] = [9<u64>; 10<u64>]\nmatrix",
+    )?;
+    assert_u64_matrix(&value, &[1, 9, 3, 10]);
+
+    let (_, value) = run_compiled_source(
+        "~matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[1,2] = 9<u64>\nmatrix",
+    )?;
+    assert_u64_matrix(&value, &[1, 9, 3, 4]);
+
+    let (_, value) = run_compiled_source("~matrix := [1 2; 3 4]\nmatrix[2,:] = [9 10]\nmatrix")?;
+    assert_f64_matrix(&value, &[1.0, 2.0, 9.0, 10.0], 2, 2);
+
+    let (_, value) = run_compiled_source(
+        "~matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[:,:] = 9<u64>\nmatrix",
+    )?;
+    assert_u64_matrix(&value, &[9, 9, 9, 9]);
+
+    let (_, value) = run_compiled_source("~matrix := [1 2; 3 4]\nmatrix[:] = [5 6; 7 8]\nmatrix")?;
+    assert_f64_matrix(&value, &[5.0, 6.0, 7.0, 8.0], 2, 2);
+
+    let (_, value) = run_compiled_source("record := {number: 7<u64>}\nrecord.number")?;
+    assert_u64(&value, 7);
+
+    let (_, value) =
+        run_compiled_source("~record := {number: 1<u64>}\nrecord.number = 9<u64>\nrecord.number")?;
+    assert_u64(&value, 9);
+
+    let (_, value) = run_compiled_source("items := {\"key\": 11<u64>}\nitems[\"key\"]")?;
+    assert_u64(&value, 11);
+
+    let (_, value) =
+        run_compiled_source("~items := {-0.0: 1<u64>}\nitems[0.0] = 9<u64>\nitems[-0.0]")?;
+    assert_u64(&value, 9);
+
+    let (_, value) = run_compiled_source("data := |number<u64>| 5 | 6 |\ndata.number")?;
+    assert_u64_matrix(&value, &[5, 6]);
+
+    let (_, value) = run_compiled_source(
+        "~data := |number<u64>| 1 | 2 |\ndata.number = [7<u64>; 8<u64>]\ndata.number",
+    )?;
+    assert_u64_matrix(&value, &[7, 8]);
+    Ok(())
+}
+
+#[test]
 fn variadic_f64_matrix_construction_round_trips() -> MResult<()> {
     let (parsed, value) = run_compiled_source("[1 2 3]")?;
     assert_f64_matrix(&value, &[1.0, 2.0, 3.0], 1, 3);
@@ -293,6 +1341,47 @@ fn variadic_f64_matrix_construction_round_trips() -> MResult<()> {
             .iter()
             .any(|instruction| matches!(instruction, BytecodeInstruction::RuntimeVariadic { .. }))
     );
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn snapshot_linear_scalar_and_gather_keep_distinct_modes() -> MResult<()> {
+    let scalar = "matrix<[u64]> := [1<u64> 2<u64> 3<u64>; 4<u64> 5<u64> 6<u64>]\nmatrix[5]";
+    let (_, value) = run_compiled_source(scalar)
+        .unwrap_or_else(|error| panic!("snapshot scalar linear access failed: {error:?}"));
+    assert_u64(&value, 3);
+
+    let gather = "matrix<[u64]> := [1<u64> 2<u64> 3<u64>; 4<u64> 5<u64> 6<u64>]\nselectors := [6 1 6]\nmatrix[selectors]";
+    let (_, value) = run_compiled_source(gather)
+        .unwrap_or_else(|error| panic!("snapshot linear gather failed: {error:?}"));
+    assert_u64_matrix(&value, &[6, 1, 6]);
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "distribution-full")]
+fn snapshot_axis_and_rectangle_access_keep_distinct_modes() -> MResult<()> {
+    for (label, source, expected) in [
+        (
+            "row",
+            "matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[2,:]",
+            &[3, 4][..],
+        ),
+        (
+            "column",
+            "matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[:,1]",
+            &[1, 3][..],
+        ),
+    ] {
+        let (_, value) = run_compiled_source(source)
+            .unwrap_or_else(|error| panic!("snapshot {label} access failed: {error:?}"));
+        assert_u64_matrix(&value, expected);
+    }
+    let rectangle = "matrix<[u64]> := [1<u64> 2<u64>; 3<u64> 4<u64>]\nmatrix[2,1]";
+    let (_, value) = run_compiled_source(rectangle)
+        .unwrap_or_else(|error| panic!("snapshot rectangle access failed: {error:?}"));
+    assert_u64(&value, 3);
     Ok(())
 }
 
@@ -322,23 +1411,40 @@ fn tuple_source_constant_is_encoded_by_bytecode_v1() -> MResult<()> {
 }
 
 #[test]
-fn outer_join_option_columns_compile_through_bytecode_v1() -> MResult<()> {
-    let source = r#"
-a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
-b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
-x := a ⟗ b
-x
-"#;
-
-    let bytecode = compile_source(source)?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-
-    parsed.decode_constants()?;
-    assert!(parsed.types.iter().any(|runtime_type| {
-        matches!(
-            runtime_type,
-            RuntimeType::Option(inner) if **inner == RuntimeType::U8
+#[cfg(feature = "distribution-full")]
+fn table_joins_remain_bytecode_v1_but_are_resident_target_gated() -> MResult<()> {
+    for (operator, expected_operation) in [
+        ("⋈", "join"),
+        ("⟕", "left-outer-join"),
+        ("⟖", "right-outer-join"),
+        ("⟗", "full-outer-join"),
+        ("⋉", "left-semi-join"),
+        ("▷", "left-anti-join"),
+    ] {
+        let source = format!(
+            "a := |id<u64> x<u8>| 1 10 | 2 20 |\nb := |id<u64> y<u8>| 2 30 | 3 40 |\na {operator} b"
+        );
+        let bytecode = compile_source(&source)?;
+        let parsed = ParsedProgram::from_bytes(&bytecode)?;
+        parsed.decode_constants()?;
+        let artifact = decode_program_artifact_bytecode_v1(&bytecode).unwrap();
+        let canonical = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let artifact = decode_program_artifact_bytecode_v1(&canonical).unwrap();
+        let error = preflight_resident_target(
+            &artifact,
+            &mech::stdlib::source_catalog(),
+            &ActivationFacts::default(),
+            ResidentActivationOptions::default(),
         )
-    }));
+        .unwrap_err();
+        assert_eq!(error.target, ExecutionTarget::ResidentCpu);
+        let operation = error.operation.as_ref().unwrap();
+        assert_eq!(operation.module_path.as_ref(), ["table"]);
+        assert_eq!(operation.operation_name, expected_operation);
+        assert!(
+            error.reason.contains("MissingResidentFactory"),
+            "unexpected table join preflight failure for {operator}: {error:?}",
+        );
+    }
     Ok(())
 }

@@ -1,6 +1,6 @@
-use crate::canonical::{SetInput, SetOutput};
 #[cfg(feature = "source")]
 use crate::canonical::specialize_dynamic_set;
+use crate::canonical::{SetInput, SetOutput};
 use crate::*;
 
 const MAX_CARTESIAN_PRODUCT_OUTPUT_CARDINALITY: usize = 65_536;
@@ -97,6 +97,9 @@ impl MechFunctionImpl for SetCartesianProductFxn {
         self.out
             .canonical_value()
             .replace_set_drafts(next.into_boxed_slice())
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_BINARY_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)

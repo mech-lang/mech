@@ -43,6 +43,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  r1-artifact-closure:
+    name: R1 artifact closure (${{ matrix.representative }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        representative:
+          - standard-native
+          - nbody
+          - particles
+          - ekf
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - name: Checkout exact validation head
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+      - name: Fetch locked artifact dependencies
+        run: cargo fetch --locked
+      - name: Build and inspect representative artifacts
+        run: python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}
+
   architecture-contracts:
     name: Architecture contract qualification
     runs-on: ubuntu-latest
@@ -70,6 +99,7 @@ jobs:
           python3 scripts/check-no-retired-value-system.py
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
+          python3 scripts/check-r1-compatibility-closure.py
           python3 scripts/check-resident-activation-contract.py
           python3 scripts/check-compiler-planning-quarantine.py
           python3 scripts/generate-d1-contract.py --check
@@ -83,6 +113,7 @@ jobs:
             tests/ci/test_ci_full_contract.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_no_retired_value_system.py \
+            scripts/tests/test_check_r1_compatibility_closure.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \
@@ -820,6 +851,9 @@ jobs:
 
       - name: Check reduced core feature boundaries
         run: |
+          cargo check --locked \
+            --no-default-features \
+            --features no_std
           cargo check -p mech-core \
             --no-default-features \
             --features no_std

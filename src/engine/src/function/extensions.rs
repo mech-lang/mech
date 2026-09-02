@@ -1,5 +1,11 @@
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::{collections::BTreeMap, string::String, sync::Arc};
 use mech_core::{CanonicalFunctionSpecializer, MResult, MechError, MechErrorKind, hash_str};
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::collections::BTreeMap;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::string::String;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::sync::Arc;
 
 #[repr(transparent)]

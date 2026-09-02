@@ -12,7 +12,8 @@ use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectCost, RuntimeEffectMetadata,
     RuntimeEffectSource, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest,
 };
 
 static BROWSER_DOM_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -270,7 +271,7 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
         )))
     }
 
-    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri,
             path: request.path,

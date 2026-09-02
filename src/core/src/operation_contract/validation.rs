@@ -132,7 +132,6 @@ pub fn validate_resolved_contract(
     contract: &ResolvedOperationContract,
 ) -> Result<(), OperationContractError> {
     match contract {
-        ResolvedOperationContract::LegacyOpaque(_) => Ok(()),
         ResolvedOperationContract::Declared(contract) => validate_declared(contract),
     }
 }
@@ -189,37 +188,28 @@ pub fn validate_contract_schemas(
     schemas: &SchemaTable,
 ) -> Result<(), OperationContractError> {
     validate_resolved_contract(contract)?;
-    let (inputs, outputs) = match contract {
-        ResolvedOperationContract::Declared(contract) => (
-            contract
-                .inputs
-                .iter()
-                .map(|port| port.schema)
-                .collect::<Vec<_>>(),
-            contract
-                .outputs
-                .iter()
-                .map(|port| port.schema)
-                .collect::<Vec<_>>(),
-        ),
-        ResolvedOperationContract::LegacyOpaque(contract) => (
-            contract.input_schemas.to_vec(),
-            contract.output_schemas.to_vec(),
-        ),
-    };
+    let ResolvedOperationContract::Declared(contract) = contract;
+    let inputs = contract
+        .inputs
+        .iter()
+        .map(|port| port.schema)
+        .collect::<Vec<_>>();
+    let outputs = contract
+        .outputs
+        .iter()
+        .map(|port| port.schema)
+        .collect::<Vec<_>>();
     for schema in inputs.iter().chain(outputs.iter()).copied() {
         if schemas.get(schema).is_none() {
             return Err(OperationContractError::UnknownSchema { schema });
         }
     }
-    if let ResolvedOperationContract::Declared(contract) = contract {
-        for (output_ordinal, output) in contract.outputs.iter().enumerate() {
-            match output.construction {
-                OutputConstruction::FullWrite { shape } | OutputConstruction::Replace { shape } => {
-                    validate_shape_rule(shape, output_ordinal as u32, contract, schemas)?
-                }
-                OutputConstruction::ReadModifyWrite { .. } | OutputConstruction::Build { .. } => {}
+    for (output_ordinal, output) in contract.outputs.iter().enumerate() {
+        match output.construction {
+            OutputConstruction::FullWrite { shape } | OutputConstruction::Replace { shape } => {
+                validate_shape_rule(shape, output_ordinal as u32, contract, schemas)?
             }
+            OutputConstruction::ReadModifyWrite { .. } | OutputConstruction::Build { .. } => {}
         }
     }
     Ok(())
@@ -228,24 +218,23 @@ pub fn validate_contract_schemas(
 pub fn validate_signal_bindings(
     contract: &ResolvedOperationContract,
 ) -> Result<(), OperationContractError> {
-    if let ResolvedOperationContract::Declared(contract) = contract {
-        for (ordinal, input) in contract.inputs.iter().enumerate() {
-            if input.delivery != DeliveryMode::Signal {
-                return Err(OperationContractError::UnsupportedSignalBinding {
-                    direction: PortDirection::Input,
-                    ordinal: ordinal as u32,
-                    delivery: input.delivery,
-                });
-            }
+    let ResolvedOperationContract::Declared(contract) = contract;
+    for (ordinal, input) in contract.inputs.iter().enumerate() {
+        if input.delivery != DeliveryMode::Signal {
+            return Err(OperationContractError::UnsupportedSignalBinding {
+                direction: PortDirection::Input,
+                ordinal: ordinal as u32,
+                delivery: input.delivery,
+            });
         }
-        for (ordinal, output) in contract.outputs.iter().enumerate() {
-            if output.delivery != DeliveryMode::Signal {
-                return Err(OperationContractError::UnsupportedSignalBinding {
-                    direction: PortDirection::Output,
-                    ordinal: ordinal as u32,
-                    delivery: output.delivery,
-                });
-            }
+    }
+    for (ordinal, output) in contract.outputs.iter().enumerate() {
+        if output.delivery != DeliveryMode::Signal {
+            return Err(OperationContractError::UnsupportedSignalBinding {
+                direction: PortDirection::Output,
+                ordinal: ordinal as u32,
+                delivery: output.delivery,
+            });
         }
     }
     Ok(())

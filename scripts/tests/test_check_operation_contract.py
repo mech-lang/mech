@@ -128,9 +128,9 @@ pub struct DeclaredOperationContract { storage: StorageStrategy }
         self.assertTrue(any("operation-contract" in failure for failure in failures))
 
     def test_synthetic_fully_declared_assertion_is_required(self) -> None:
-        validation = "IntegrityConstraintContractInvalid ResolvedOperationContract::LegacyOpaque ExternalInteraction::Pure"
+        compiler = "MissingOperationContract declaration.as_ref()"
         fixture = "fn ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids() {}"
-        failures = CHECKER.validate_opaque_policy(validation, fixture)
+        failures = CHECKER.validate_canonical_contract_policy(compiler, fixture)
         self.assertTrue(any("synthetic fully-declared artifact" in failure for failure in failures))
 
 

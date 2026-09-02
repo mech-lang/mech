@@ -80,6 +80,11 @@ macro_rules! impl_two_arg_fxn {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(crate::ops::arithmetic_full_write_contract(
+                    <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -91,8 +96,9 @@ macro_rules! impl_two_arg_fxn {
         }
         #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $struct_name {
-            fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                todo!();
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = stringify!($struct_name);
+                compile_binop!(name, self.out, self.arg1, self.arg2, ctx);
             }
         }
     };

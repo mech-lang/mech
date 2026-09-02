@@ -1,5 +1,8 @@
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::sync::Arc;
 use mech_core::MResult;
 use mech_core::{FunctionCatalog, FunctionCatalogBuilder};
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::sync::Arc;
 
 /// Installs the concrete factories owned by the engine's intrinsic fragment.
@@ -24,6 +27,8 @@ pub fn install_intrinsic_resident(
     crate::resident::numeric::install(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::set::install(builder)?;
+    #[cfg(all(feature = "resident-artifact", feature = "table"))]
+    crate::resident::table::install(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::text::install(builder)?;
     Ok(())
