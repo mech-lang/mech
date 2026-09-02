@@ -2384,14 +2384,90 @@ impl<'a> BatchCompiler<'a> {
                         };
                         self.static_numeric_source(*input, maximum_elements)
                     }
-                    // Range evaluation belongs to the typed source runtime.
-                    // Reconstructing it here would duplicate its numeric and
-                    // overflow semantics, while evaluating it first could
-                    // allocate an unbounded selector. Range-produced GPU
-                    // selectors are therefore unavailable in R1.
-                    "range/inclusive" => Ok(None),
+                    "range/inclusive" => {
+                        let [from, to] = inputs.as_slice() else {
+                            return Err("static inclusive range must have two inputs".to_owned());
+                        };
+                        let Some(from) = self.static_range_endpoint(*from)? else {
+                            return Ok(None);
+                        };
+                        let Some(to) = self.static_range_endpoint(*to)? else {
+                            return Ok(None);
+                        };
+                        let mut indices = Vec::new();
+                        mech_core::visit_canonical_value_range(
+                            &[from, to],
+                            true,
+                            false,
+                            maximum_elements.min(MAX_STATIC_SELECTOR_ELEMENTS),
+                            |value| {
+                                indices.push(mech_core::canonical_positional_ordinal(&value)?);
+                                Ok::<(), mech_core::CanonicalSelectorError>(())
+                            },
+                        )
+                        .map_err(|error| format!("invalid static inclusive range: {error:?}"))?;
+                        Ok(Some(indices))
+                    }
                     _ => Ok(None),
                 }
+            }
+        }
+    }
+
+    fn static_range_endpoint(&self, source: ArtifactSource) -> Result<Option<ValueData>, String> {
+        match source {
+            ArtifactSource::Constant(constant) => {
+                let value = self
+                    .artifact
+                    .constants()
+                    .get(constant)
+                    .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
+                match value.data() {
+                    value @ (ValueData::U8(_)
+                    | ValueData::U16(_)
+                    | ValueData::U32(_)
+                    | ValueData::U64(_)
+                    | ValueData::U128(_)
+                    | ValueData::I8(_)
+                    | ValueData::I16(_)
+                    | ValueData::I32(_)
+                    | ValueData::I64(_)
+                    | ValueData::I128(_)
+                    | ValueData::F32(_)
+                    | ValueData::F64(_)) => Ok(Some(value.clone())),
+                    _ => Ok(None),
+                }
+            }
+            ArtifactSource::Slot(slot) => {
+                let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
+                    return Err(format!("range endpoint slot {} does not exist", slot.get()));
+                };
+                let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                    return Ok(None);
+                };
+                let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
+                    return Err(format!(
+                        "range endpoint producer node {} does not exist",
+                        node.get()
+                    ));
+                };
+                if display_operation(&node.operation) != "access/index" {
+                    return Ok(None);
+                }
+                let inputs = node
+                    .input_bindings
+                    .clone()
+                    .filter_map(
+                        |binding| match self.artifact.bindings().get(binding as usize) {
+                            Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                            _ => None,
+                        },
+                    )
+                    .collect::<Vec<_>>();
+                let [input] = inputs.as_slice() else {
+                    return Err("static index conversion must have exactly one input".to_owned());
+                };
+                self.static_range_endpoint(*input)
             }
         }
     }
@@ -2951,7 +3027,7 @@ mod axis_tests {
     }
 
     #[test]
-    fn range_produced_gpu_selectors_are_target_gated_before_lowering() {
+    fn range_produced_gpu_selectors_use_bounded_source_typed_semantics() {
         let mut compiler = mech_runtime::RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_native_plan_catalog())
             .build_compiler()
@@ -2961,19 +3037,7 @@ mod axis_tests {
             .compile_source_artifact(source)
             .unwrap()
             .into_artifact();
-        let error = crate::ComputeLowerer
-            .compile_batched(&artifact, 1)
-            .unwrap_err();
-        assert!(
-            error
-                .diagnostics()
-                .iter()
-                .all(|diagnostic| { diagnostic.code == GpuDiagnosticCode::OperationUnsupported })
-        );
-        assert!(error.diagnostics().iter().any(|diagnostic| {
-            diagnostic.operation.as_deref() == Some("access/scalar")
-                || diagnostic.operation.as_deref() == Some("access/range")
-        }));
+        crate::ComputeLowerer.compile_batched(&artifact, 1).unwrap();
     }
 
     #[test]

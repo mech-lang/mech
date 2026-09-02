@@ -1,6 +1,6 @@
 use mech_core::{
     ExtentEvolution, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
-    RuntimeOutputAliasPolicy, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
+    RuntimeOutputAliasPolicy, SchemaBody, ValueCell, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
 use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
@@ -73,201 +73,6 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-#[derive(Clone, Copy, Debug)]
-enum RangeContractNumber {
-    #[cfg(any(
-        feature = "u8",
-        feature = "u16",
-        feature = "u32",
-        feature = "u64",
-        feature = "u128"
-    ))]
-    Unsigned(u128),
-    #[cfg(any(
-        feature = "i8",
-        feature = "i16",
-        feature = "i32",
-        feature = "i64",
-        feature = "i128"
-    ))]
-    Signed(i128),
-    #[cfg(any(feature = "f32", feature = "f64"))]
-    Float(f64),
-}
-
-fn range_numeric_cell(value: &ValueCell) -> MResult<Option<RangeContractNumber>> {
-    Ok(match value.snapshot()?.data() {
-        #[cfg(feature = "u8")]
-        ValueData::U8(value) => Some(RangeContractNumber::Unsigned(*value as u128)),
-        #[cfg(feature = "u16")]
-        ValueData::U16(value) => Some(RangeContractNumber::Unsigned(*value as u128)),
-        #[cfg(feature = "u32")]
-        ValueData::U32(value) => Some(RangeContractNumber::Unsigned(*value as u128)),
-        #[cfg(feature = "u64")]
-        ValueData::U64(value) => Some(RangeContractNumber::Unsigned(*value as u128)),
-        #[cfg(feature = "u128")]
-        ValueData::U128(value) => Some(RangeContractNumber::Unsigned(*value)),
-        #[cfg(feature = "i8")]
-        ValueData::I8(value) => Some(RangeContractNumber::Signed(*value as i128)),
-        #[cfg(feature = "i16")]
-        ValueData::I16(value) => Some(RangeContractNumber::Signed(*value as i128)),
-        #[cfg(feature = "i32")]
-        ValueData::I32(value) => Some(RangeContractNumber::Signed(*value as i128)),
-        #[cfg(feature = "i64")]
-        ValueData::I64(value) => Some(RangeContractNumber::Signed(*value as i128)),
-        #[cfg(feature = "i128")]
-        ValueData::I128(value) => Some(RangeContractNumber::Signed(*value)),
-        #[cfg(feature = "f32")]
-        ValueData::F32(value) => Some(RangeContractNumber::Float(value.to_f32() as f64)),
-        #[cfg(feature = "f64")]
-        ValueData::F64(value) => Some(RangeContractNumber::Float(value.to_f64())),
-        _ => None,
-    })
-}
-
-#[cfg(any(
-    feature = "u8",
-    feature = "u16",
-    feature = "u32",
-    feature = "u64",
-    feature = "u128",
-    feature = "i8",
-    feature = "i16",
-    feature = "i32",
-    feature = "i64",
-    feature = "i128"
-))]
-fn integer_range_size(magnitude: u128, step: u128, inclusive: bool) -> Option<usize> {
-    let size = if inclusive {
-        magnitude.checked_div(step)?.checked_add(1)?
-    } else {
-        let quotient = magnitude.checked_div(step)?;
-        quotient.checked_add(u128::from(magnitude % step != 0))?
-    };
-    usize::try_from(size).ok()
-}
-
-#[cfg(any(feature = "f32", feature = "f64"))]
-fn float_range_size(from: f64, step: f64, to: f64, inclusive: bool) -> Option<usize> {
-    if !from.is_finite() || !step.is_finite() || !to.is_finite() || step == 0.0 {
-        return None;
-    }
-    let diff = to - from;
-    let size = if diff == 0.0 {
-        if inclusive { 1.0 } else { 0.0 }
-    } else if (diff > 0.0 && step > 0.0) || (diff < 0.0 && step < 0.0) {
-        let quotient = diff / step;
-        if inclusive {
-            quotient.floor() + 1.0
-        } else {
-            quotient.ceil()
-        }
-    } else {
-        0.0
-    };
-    if !size.is_finite() || size < 0.0 || size >= usize::MAX as f64 {
-        return None;
-    }
-    Some(size as usize)
-}
-
-fn range_contract_size(
-    values: &[RangeContractNumber],
-    inclusive: bool,
-    incremented: bool,
-) -> Option<usize> {
-    match (values, incremented) {
-        #[cfg(any(
-            feature = "u8",
-            feature = "u16",
-            feature = "u32",
-            feature = "u64",
-            feature = "u128"
-        ))]
-        ([RangeContractNumber::Unsigned(from), RangeContractNumber::Unsigned(to)], false) => {
-            let magnitude = to.checked_sub(*from)?;
-            integer_range_size(magnitude, 1, inclusive)
-        }
-        #[cfg(any(
-            feature = "i8",
-            feature = "i16",
-            feature = "i32",
-            feature = "i64",
-            feature = "i128"
-        ))]
-        ([RangeContractNumber::Signed(from), RangeContractNumber::Signed(to)], false) => {
-            if to < from {
-                Some(0)
-            } else {
-                integer_range_size(to.abs_diff(*from), 1, inclusive)
-            }
-        }
-        #[cfg(any(feature = "f32", feature = "f64"))]
-        ([RangeContractNumber::Float(from), RangeContractNumber::Float(to)], false) => {
-            float_range_size(*from, 1.0, *to, inclusive)
-        }
-        #[cfg(any(
-            feature = "u8",
-            feature = "u16",
-            feature = "u32",
-            feature = "u64",
-            feature = "u128"
-        ))]
-        (
-            [
-                RangeContractNumber::Unsigned(from),
-                RangeContractNumber::Unsigned(step),
-                RangeContractNumber::Unsigned(to),
-            ],
-            true,
-        ) => {
-            if *step == 0 {
-                None
-            } else if to < from {
-                Some(0)
-            } else {
-                integer_range_size(to - from, *step, inclusive)
-            }
-        }
-        #[cfg(any(
-            feature = "i8",
-            feature = "i16",
-            feature = "i32",
-            feature = "i64",
-            feature = "i128"
-        ))]
-        (
-            [
-                RangeContractNumber::Signed(from),
-                RangeContractNumber::Signed(step),
-                RangeContractNumber::Signed(to),
-            ],
-            true,
-        ) => {
-            if *step == 0 {
-                return None;
-            }
-            if from == to {
-                return Some(usize::from(inclusive));
-            }
-            if (to > from && *step < 0) || (to < from && *step > 0) {
-                return Some(0);
-            }
-            integer_range_size(to.abs_diff(*from), step.unsigned_abs(), inclusive)
-        }
-        #[cfg(any(feature = "f32", feature = "f64"))]
-        (
-            [
-                RangeContractNumber::Float(from),
-                RangeContractNumber::Float(step),
-                RangeContractNumber::Float(to),
-            ],
-            true,
-        ) => float_range_size(*from, *step, *to, inclusive),
-        _ => None,
-    }
-}
-
 pub(crate) fn canonical_range_size(
     inputs: &[ValueCell],
     inclusive: bool,
@@ -283,29 +88,18 @@ pub(crate) fn canonical_range_size(
     }
     let values = inputs
         .iter()
-        .enumerate()
-        .map(|(index, input)| {
-            range_numeric_cell(input)?.ok_or_else(|| {
-                function_shape_contract_violation(
-                    contract,
-                    format!("input {index} must be a numeric scalar"),
-                )
-            })
-        })
+        .map(ValueCell::snapshot)
         .collect::<MResult<Vec<_>>>()?;
-    let size = range_contract_size(&values, inclusive, incremented).ok_or_else(|| {
+    let data = values
+        .iter()
+        .map(|value| value.data().clone())
+        .collect::<Vec<_>>();
+    mech_core::canonical_value_range_size(&data, inclusive, incremented).map_err(|_| {
         function_shape_contract_violation(
             contract,
-            "range values must have one numeric representation, finite endpoints, a nonzero step, and a representable element count",
+            "range values must have one numeric representation, finite endpoints, a nonzero step, a nonempty direction, and a representable element count",
         )
-    })?;
-    if size == 0 {
-        return Err(function_shape_contract_violation(
-            contract,
-            "range output must contain at least one element",
-        ));
-    }
-    Ok(size)
+    })
 }
 
 fn validate_canonical_range_contract(

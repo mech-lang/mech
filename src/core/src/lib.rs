@@ -119,6 +119,8 @@ mod function_signature;
 pub mod mika;
 pub mod nodes;
 pub mod program;
+#[cfg(feature = "range")]
+pub mod range;
 #[cfg(feature = "functions")]
 pub mod reactive_transaction;
 pub mod read_source;
@@ -144,6 +146,8 @@ pub use self::function_signature::*;
 pub use self::mika::*;
 pub use self::nodes::*;
 pub use self::program::*;
+#[cfg(feature = "range")]
+pub use self::range::*;
 #[cfg(feature = "functions")]
 pub use self::reactive_transaction::*;
 pub use self::read_source::ReadSource;

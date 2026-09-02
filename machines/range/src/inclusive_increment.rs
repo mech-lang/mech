@@ -50,9 +50,6 @@ pub struct RangeIncrementInclusiveScalar<T, MatA> {
     pub step: Ref<T>,
     pub to: Ref<T>,
     pub out: Ref<MatA>,
-    from_value: FunctionValueInput,
-    step_value: FunctionValueInput,
-    to_value: FunctionValueInput,
     output_value: FunctionValueOutput,
     phantom: PhantomData<T>,
 }
@@ -69,7 +66,8 @@ where
         + PartialOrd
         + 'static
         + One
-        + Add<Output = T>,
+        + Add<Output = T>
+        + mech_core::CanonicalRangeScalar,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     naMatrix<T, R1, C1, S1>: FunctionStateBacking,
@@ -89,9 +87,6 @@ where
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, from, step, to) = invocation.expect_ternary()?;
-        let from_value = from.value();
-        let step_value = step.value();
-        let to_value = to.value();
         let output_value = out.value();
         let from: Ref<T> = from.try_ref()?;
         let step: Ref<T> = step.try_ref()?;
@@ -102,9 +97,6 @@ where
             step,
             to,
             out,
-            from_value,
-            step_value,
-            to_value,
             output_value,
             phantom: PhantomData::default(),
         }))
@@ -125,6 +117,7 @@ where
         + PartialOrd
         + One
         + Add<Output = T>
+        + mech_core::CanonicalRangeScalar
         + 'static,
     R1: Dim,
     C1: Dim,
@@ -137,27 +130,16 @@ where
         Ok(Some(vec![self.output_value.state_port()]))
     }
     fn solve_result(&self) -> MResult<()> {
-        let output_len = crate::catalog::canonical_range_size(
-            &[
-                self.from_value.cell().clone(),
-                self.step_value.cell().clone(),
-                self.to_value.cell().clone(),
-            ],
-            true,
+        let elements = crate::canonical_range_drafts(
+            *self.from.borrow(),
+            Some(*self.step.borrow()),
+            *self.to.borrow(),
             true,
         )?;
-        let mut current = *self.from.borrow();
-        let step = *self.step.borrow();
-        let mut elements = Vec::with_capacity(output_len);
-        for index in 0..output_len {
-            elements.push(current.data_draft());
-            if index + 1 < output_len {
-                current = current + step;
-            }
-        }
+        let output_len = elements.len();
         self.output_value.replace_matrix_drafts(
             vec![1, output_len as u64].into_boxed_slice(),
-            elements.into_boxed_slice(),
+            elements,
         )
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
