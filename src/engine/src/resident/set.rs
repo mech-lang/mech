@@ -817,6 +817,7 @@ fn admit_set_candidate_operation(
 fn admit_set_materialization(
     output_elements: usize,
     comparison_work: u64,
+    operation_compute_work: u64,
     output_payload_bytes: u64,
     borrowed_nodes: u64,
     staged_output_nodes: u64,
@@ -835,9 +836,11 @@ fn admit_set_materialization(
         .ok_or(ResidentKernelError::InvalidShape)?;
     let cost = super::budget::resident_cost! {
         comparison_work,
-        compute_work: comparison_work
-            .checked_add(checked_u64(output_elements)?)
-            .ok_or(ResidentKernelError::InvalidShape)?,
+        compute_work: checked_cost_sum(&[
+            comparison_work,
+            operation_compute_work,
+            checked_u64(output_elements)?,
+        ])?,
         output_elements,
         output_bytes,
         temporary_bytes: checked_cost_sum(&[output_bytes, output_bytes])?,
@@ -948,14 +951,13 @@ fn merged_set_element_drafts(
     let (left_bytes, left_nodes) = value_retained_cost(&mut footprint_meter, kernel, left)?;
     let (right_bytes, right_nodes) = value_retained_cost(&mut footprint_meter, kernel, right)?;
     let measurement_work = footprint_meter.estimate().comparison_work;
-    let comparison_work = measurement_work
-        .checked_add(checked_u64(checked_sum(&[left_count, right_count])?)?)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let merge_compute_work = checked_u64(checked_sum(&[left_count, right_count])?)?;
     let borrowed_nodes = checked_cost_sum(&[left_nodes, right_nodes])?;
     let staged_output_nodes = borrowed_nodes;
     let canonicalization_work_limit = admit_set_materialization(
         maximum_output_elements,
-        comparison_work,
+        measurement_work,
+        merge_compute_work,
         checked_cost_sum(&[left_bytes, right_bytes])?,
         borrowed_nodes,
         staged_output_nodes,
@@ -1173,12 +1175,33 @@ fn set_powerset(
     let mut footprint_meter = ResidentBudgetMeter::default();
     let footprint =
         super::budget::measure_canonical_value_footprint(&mut footprint_meter, input, schemas)?;
-    let retained_bytes = footprint
+    let value_wrapper_bytes = checked_cost_sum(&[
+        checked_u64(core::mem::size_of::<Value>())?,
+        checked_cost_product(&[
+            checked_u64(input.shape().parameter_values().len())?,
+            checked_u64(core::mem::size_of::<u64>())?,
+        ])?,
+    ])?;
+    let set_wrapper_bytes = checked_cost_sum(&[
+        checked_u64(core::mem::size_of::<ValueData>())?,
+        checked_cost_product(&[
+            checked_u64(element_count)?,
+            checked_u64(core::mem::size_of::<mech_core::snapshot::CanonicalKeyValue>())?,
+        ])?,
+    ])?;
+    let element_population_bytes = footprint
         .retained_bytes
+        .checked_sub(value_wrapper_bytes)
+        .and_then(|bytes| bytes.checked_sub(set_wrapper_bytes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let retained_bytes = element_population_bytes
         .checked_mul(checked_u64(copies_per_element)?)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let cloned_nodes = footprint
+    let element_population_nodes = footprint
         .node_count
+        .checked_sub(2)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let cloned_nodes = element_population_nodes
         .checked_mul(checked_u64(copies_per_element)?)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_nodes = checked_cost_sum(&[cloned_nodes, checked_u64(subset_count)?, 1])?;
@@ -1190,8 +1213,15 @@ fn set_powerset(
     // The borrowed input remains live while `set_element_drafts` creates one
     // complete recursive draft population. Both coexist with the subset tree
     // assembled from clones of that draft population.
-    let input_staging_bytes = footprint.retained_bytes;
-    let input_staging_nodes = footprint.node_count;
+    let input_staging_bytes = element_population_bytes;
+    let input_staging_nodes = element_population_nodes;
+    // The resident `Value` wrapper is not a recursively materialized payload
+    // node. Keep the borrowed set/data population separate from the element
+    // population cloned by `set_element_drafts`.
+    let borrowed_input_nodes = footprint
+        .node_count
+        .checked_sub(1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
         comparison_work: footprint_work.comparison_work,
@@ -1208,7 +1238,8 @@ fn set_powerset(
             .checked_add(input_staging_bytes)
             .ok_or(ResidentKernelError::InvalidShape)?,
         retained_nodes: output_nodes
-            .checked_add(input_staging_nodes.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?)
+            .checked_add(input_staging_nodes)
+            .and_then(|nodes| nodes.checked_add(borrowed_input_nodes))
             .ok_or(ResidentKernelError::InvalidShape)?,
         ..KernelCostEstimate::default()
     };
@@ -2182,45 +2213,114 @@ mod tests {
 
     #[test]
     fn powerset_admission_includes_borrowed_and_staged_input_tree() {
-        let element_body = SchemaBody::Tuple(vec![SchemaBody::Bool; 22_000].into_boxed_slice());
-        let input_body = SchemaBody::Set {
-            element: Box::new(element_body.clone()),
-            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+        let execute = |width: usize| {
+            let element_body = SchemaBody::Tuple(vec![SchemaBody::Bool; width].into_boxed_slice());
+            let input_body = SchemaBody::Set {
+                element: Box::new(element_body.clone()),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            };
+            let output_body = SchemaBody::Set {
+                element: Box::new(input_body.clone()),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            };
+            let mut builder = mech_core::SchemaTableBuilder::new();
+            let input_handle = builder.insert(schema(input_body)).unwrap();
+            let output_handle = builder.insert(schema(output_body)).unwrap();
+            let build = builder.finish().unwrap();
+            let input_schema = build.resolve(input_handle).unwrap();
+            let output_schema = build.resolve(output_handle).unwrap();
+            let (schemas, _) = build.into_parts();
+            let input = ValueDraft {
+                schema: input_schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Set(
+                    vec![ValueDataDraft::Tuple(
+                        vec![ValueDataDraft::Bool(false); width].into_boxed_slice(),
+                    )]
+                    .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+            let input = [Some(input)];
+            let inputs = [ResidentValueRef::Snapshot(&input)];
+            let shape = schemas
+                .get(output_schema)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap();
+            let kernel = BoundResidentKernel::new(set_powerset, Box::new([]))
+                .with_snapshot_output(ResidentSnapshotOutput {
+                    schema: output_schema,
+                    schema_key: schemas.entry(output_schema).unwrap().key(),
+                    shape,
+                    exact_cardinality: None,
+                    maximum_cardinality: None,
+                })
+                .with_snapshot_schemas(schemas);
+            let mut output = [None];
+            let result = kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output));
+            (result, output)
         };
-        let output_body = SchemaBody::Set {
-            element: Box::new(input_body.clone()),
+
+        let (result, output) = execute(22_000);
+        assert_eq!(result, Err(ResidentKernelError::InvalidShape),);
+        assert!(output[0].is_none());
+
+        let (result, output) = execute(21_843);
+        assert_eq!(result, Ok(true));
+        assert!(output[0].is_some());
+    }
+
+    #[test]
+    fn set_merge_admission_includes_borrowed_intermediate_draft_and_final_trees() {
+        // Both borrowed inputs fit alone. The selected canonical data, its
+        // draft conversion, and the finalized output are separate live tree
+        // populations and must be summed rather than replaced by a maximum.
+        assert_eq!(
+            admit_set_materialization(2_000, 0, 4_000, 1_024, 48_000, 24_000).unwrap_err(),
+            ResidentKernelError::InvalidShape,
+        );
+    }
+
+    #[test]
+    fn set_merge_does_not_pre_spend_actual_comparison_allowance() {
+        let set_body = SchemaBody::Set {
+            element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
             cardinality: CardinalitySpec::Dynamic { upper_bound: None },
         };
         let mut builder = mech_core::SchemaTableBuilder::new();
-        let input_handle = builder.insert(schema(input_body)).unwrap();
-        let output_handle = builder.insert(schema(output_body)).unwrap();
+        let handle = builder.insert(schema(set_body)).unwrap();
         let build = builder.finish().unwrap();
-        let input_schema = build.resolve(input_handle).unwrap();
-        let output_schema = build.resolve(output_handle).unwrap();
+        let set_schema = build.resolve(handle).unwrap();
         let (schemas, _) = build.into_parts();
-        let input = ValueDraft {
-            schema: input_schema,
+        let value = ValueDraft {
+            schema: set_schema,
             shape_values: Box::new([]),
             data: ValueDataDraft::Set(
-                vec![ValueDataDraft::Tuple(
-                    vec![ValueDataDraft::Bool(false); 22_000].into_boxed_slice(),
-                )]
-                .into_boxed_slice(),
+                (0_u64..345)
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
             ),
         }
         .finalize(&SnapshotValidationContext::new(&schemas))
         .unwrap();
-        let input = [Some(input)];
-        let inputs = [ResidentValueRef::Snapshot(&input)];
+        let left = [Some(value.clone())];
+        let right = [Some(value)];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
         let shape = schemas
-            .get(output_schema)
+            .get(set_schema)
             .unwrap()
             .instantiate_shape(Box::new([]))
             .unwrap();
-        let kernel = BoundResidentKernel::new(set_powerset, Box::new([]))
+        let kernel = BoundResidentKernel::new(set_union, Box::new([]))
             .with_snapshot_output(ResidentSnapshotOutput {
-                schema: output_schema,
-                schema_key: schemas.entry(output_schema).unwrap().key(),
+                schema: set_schema,
+                schema_key: schemas.entry(set_schema).unwrap().key(),
                 shape,
                 exact_cardinality: None,
                 maximum_cardinality: None,
@@ -2230,20 +2330,12 @@ mod tests {
 
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Ok(true),
         );
-        assert!(output[0].is_none());
-    }
-
-    #[test]
-    fn set_merge_admission_includes_borrowed_intermediate_draft_and_final_trees() {
-        // Both borrowed inputs fit alone. The selected canonical data, its
-        // draft conversion, and the finalized output are separate live tree
-        // populations and must be summed rather than replaced by a maximum.
-        assert_eq!(
-            admit_set_materialization(2_000, 0, 1_024, 48_000, 24_000).unwrap_err(),
-            ResidentKernelError::InvalidShape,
-        );
+        let ValueData::Set(output) = output[0].as_ref().unwrap().data() else {
+            unreachable!()
+        };
+        assert_eq!(output.elements().len(), 345);
     }
 
     #[test]
