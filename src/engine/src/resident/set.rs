@@ -1,7 +1,7 @@
 use super::budget::{
-    KernelCostEstimate, PreparedKernel, PreparedMutationPlan, PublishedOutputFootprint,
-    ResidentBudgetMeter, checked_cost_product, checked_cost_sum, checked_product, checked_sum,
-    checked_u64,
+    KernelCostEstimate, MAX_RESIDENT_OUTPUT_ELEMENTS, PreparedKernel, PreparedMutationPlan,
+    PublishedOutputFootprint, ResidentBudgetMeter, checked_cost_product, checked_cost_sum,
+    checked_product, checked_sum, checked_u64,
 };
 use mech_core::snapshot::{
     F64Bits, SnapshotCanonicalizationBudget, SnapshotValidationContext, SnapshotValueError, Value,
@@ -20,6 +20,41 @@ use std::cmp::Ordering;
 use std::sync::Arc;
 
 const MAX_POWERSET_INPUT_CARDINALITY: usize = 16;
+
+fn visit_canonical_subset_indices(
+    element_count: usize,
+    mut visit: impl FnMut(&[usize]) -> Result<(), ResidentKernelError>,
+) -> Result<(), ResidentKernelError> {
+    let mut indices = [0_usize; MAX_POWERSET_INPUT_CARDINALITY];
+    let mut len = 0_usize;
+    loop {
+        visit(&indices[..len])?;
+        if len == 0 {
+            if element_count == 0 {
+                return Ok(());
+            }
+            indices[0] = 0;
+            len = 1;
+            continue;
+        }
+        let last = indices[len - 1];
+        if last + 1 < element_count {
+            indices[len] = last + 1;
+            len += 1;
+            continue;
+        }
+        loop {
+            len -= 1;
+            if len == 0 {
+                return Ok(());
+            }
+            if indices[len - 1] + 1 < element_count {
+                indices[len - 1] += 1;
+                break;
+            }
+        }
+    }
+}
 
 fn cardinality_bounds(
     cardinality: &CardinalitySpec,
@@ -935,6 +970,104 @@ type SetMerge = fn(
     &SnapshotCanonicalizationBudget,
 ) -> Result<Box<[ValueData]>, mech_core::snapshot::SnapshotValueError>;
 
+fn canonical_key_comparison_work_upper_bound(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<u64, ResidentKernelError> {
+    let mut work = 0_u64;
+    mech_core::snapshot::visit_canonical_data_work(schema, data, |chunk| {
+        work = work
+            .checked_add(chunk.encoded_bytes.max(chunk.node_count).max(1))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
+    })
+    .map_err(|error| match error {
+        mech_core::snapshot::CanonicalDataWorkError::Visitor(error) => error,
+        mech_core::snapshot::CanonicalDataWorkError::ArithmeticOverflow => {
+            ResidentKernelError::InvalidShape
+        }
+        mech_core::snapshot::CanonicalDataWorkError::UnknownDynamicSchema
+        | mech_core::snapshot::CanonicalDataWorkError::InvalidValue => {
+            ResidentKernelError::InvalidInput
+        }
+    })?;
+    Ok(work)
+}
+
+/// Finalization receives these elements in canonical key order. Core's
+/// append-fast insertion therefore compares only adjacent keys and performs
+/// no shifts. Reserve a conservative bound for those comparisons before
+/// converting any canonical element into an owned draft.
+fn ordered_set_finalization_work_upper_bound(
+    schema: &SchemaBody,
+    elements: &[ValueData],
+) -> Result<u64, ResidentKernelError> {
+    let mut previous: Option<u64> = None;
+    let mut total = 0_u64;
+    for element in elements {
+        let current = canonical_key_comparison_work_upper_bound(schema, element)?;
+        if let Some(previous) = previous {
+            total = total
+                .checked_add(previous.max(current))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        previous = Some(current);
+    }
+    Ok(total)
+}
+
+fn subset_key_comparison_work_upper_bound(
+    left: &[usize],
+    right: &[usize],
+    element_work: &[u64],
+) -> Result<u64, ResidentKernelError> {
+    // Comparing two Set keys first visits the Set node, then their members
+    // lexicographically until the first unequal member or exhausted prefix.
+    let mut total = 1_u64;
+    for (&left, &right) in left.iter().zip(right) {
+        total = total
+            .checked_add(element_work[left].max(element_work[right]))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if left != right {
+            break;
+        }
+    }
+    Ok(total)
+}
+
+fn powerset_finalization_work_upper_bound(
+    element_count: usize,
+    element_work: &[u64],
+) -> Result<u64, ResidentKernelError> {
+    let mut previous = [0_usize; MAX_POWERSET_INPUT_CARDINALITY];
+    let mut previous_len = 0_usize;
+    let mut has_previous = false;
+    let mut total = 0_u64;
+    visit_canonical_subset_indices(element_count, |subset| {
+        // Each subset is itself finalized as a Set before insertion into the
+        // outer Set. Its members are already in canonical order.
+        for pair in subset.windows(2) {
+            total = total
+                .checked_add(element_work[pair[0]].max(element_work[pair[1]]))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        if has_previous {
+            total = total
+                .checked_add(subset_key_comparison_work_upper_bound(
+                    &previous[..previous_len],
+                    subset,
+                    element_work,
+                )?)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        previous[..subset.len()].copy_from_slice(subset);
+        previous_len = subset.len();
+        has_previous = true;
+        Ok(())
+    })?;
+    Ok(total)
+}
+
 fn merged_set_element_drafts(
     kernel: &BoundResidentKernel,
     left: &Value,
@@ -945,6 +1078,14 @@ fn merged_set_element_drafts(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    let element_schema = match schemas
+        .get(left.schema())
+        .ok_or(ResidentKernelError::InvalidInput)?
+        .body()
+    {
+        SchemaBody::Set { element, .. } => element.as_ref(),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
     let left_count = set_cardinality(left)?;
     let right_count = set_cardinality(right)?;
     let mut footprint_meter = ResidentBudgetMeter::default();
@@ -973,13 +1114,18 @@ fn merged_set_element_drafts(
             _ => ResidentKernelError::InvalidInput,
         },
     )?;
-    let canonicalization_work_limit = canonicalization_work_limit
+    let remaining_work = canonicalization_work_limit
         .checked_sub(canonicalization_budget.consumed())
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let finalization_work =
+        ordered_set_finalization_work_upper_bound(element_schema, elements.as_ref())?;
+    if finalization_work > remaining_work {
+        return Err(ResidentKernelError::InvalidShape);
+    }
     let drafts = left
         .set_element_data_drafts(schemas, &elements)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
-    Ok((drafts, canonicalization_work_limit))
+    Ok((drafts, finalization_work))
 }
 
 fn set_union(
@@ -1172,9 +1318,45 @@ fn set_powerset(
     };
     let member_copies = checked_product(&[element_count, copies_per_element])?;
     let output_elements = checked_sum(&[subset_count, member_copies])?;
+    if checked_u64(output_elements)? > MAX_RESIDENT_OUTPUT_ELEMENTS {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    // Bound the complete borrowed tree incrementally before any second
+    // traversal derives per-key comparison weights.
     let mut footprint_meter = ResidentBudgetMeter::default();
     let footprint =
         super::budget::measure_canonical_value_footprint(&mut footprint_meter, input, schemas)?;
+    let input_schema = schemas
+        .get(input.schema())
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let SchemaBody::Set {
+        element: element_schema,
+        ..
+    } = input_schema.body()
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ValueData::Set(input_set) = input.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let mut element_work = [0_u64; MAX_POWERSET_INPUT_CARDINALITY];
+    for (index, element) in input_set.elements().iter().enumerate() {
+        element_work[index] =
+            canonical_key_comparison_work_upper_bound(element_schema, element.data())?;
+    }
+    // Simulate the bounded, allocation-free canonical subset order before
+    // cloning any element. This reserves all inner-Set and outer-Set
+    // finalization comparisons up front, including long recursive keys.
+    let finalization_work =
+        powerset_finalization_work_upper_bound(element_count, &element_work[..element_count])?;
+    let comparison_plan_work =
+        element_work[..element_count]
+            .iter()
+            .try_fold(0_u64, |total, work| {
+                total
+                    .checked_add(*work)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
     let value_wrapper_bytes = checked_cost_sum(&[
         checked_u64(core::mem::size_of::<Value>())?,
         checked_cost_product(&[
@@ -1205,15 +1387,39 @@ fn set_powerset(
         .checked_mul(checked_u64(copies_per_element)?)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_nodes = checked_cost_sum(&[cloned_nodes, checked_u64(subset_count)?, 1])?;
-    let subset_headers = checked_cost_product(&[
-        checked_u64(subset_count)?,
-        checked_u64(std::mem::size_of::<usize>())?,
+    let value_data_bytes = checked_u64(core::mem::size_of::<ValueData>())?;
+    let value_data_draft_bytes = checked_u64(core::mem::size_of::<ValueDataDraft>())?;
+    let canonical_key_bytes =
+        checked_u64(core::mem::size_of::<mech_core::snapshot::CanonicalKeyValue>())?;
+    let draft_inline_delta = value_data_draft_bytes.saturating_sub(value_data_bytes);
+    let canonical_key_inline_delta = canonical_key_bytes.saturating_sub(value_data_bytes);
+    let input_staging_bytes = checked_cost_sum(&[
+        element_population_bytes,
+        checked_cost_product(&[checked_u64(element_count)?, draft_inline_delta])?,
     ])?;
-    let output_bytes = checked_cost_sum(&[retained_bytes, subset_headers])?;
-    // The borrowed input remains live while `set_element_drafts` creates one
-    // complete recursive draft population. Both coexist with the subset tree
-    // assembled from clones of that draft population.
-    let input_staging_bytes = element_population_bytes;
+    let member_draft_bytes = checked_cost_sum(&[
+        retained_bytes,
+        checked_cost_product(&[checked_u64(member_copies)?, draft_inline_delta])?,
+    ])?;
+    // The direct construction stores one Set draft per subset and one member
+    // draft per selected element. There is no intermediate Vec<Vec<_>> and no
+    // second outer collect whose overlapping capacity could escape admission.
+    let subset_draft_wrappers =
+        checked_cost_product(&[checked_u64(subset_count)?, value_data_draft_bytes])?;
+    let subset_staging_bytes = checked_cost_sum(&[member_draft_bytes, subset_draft_wrappers])?;
+    // Complete retained post-state: Value wrapper and shape, outer Set data,
+    // one canonical key wrapper per subset, every recursively retained member,
+    // and any canonical-key inline overhead around each member.
+    let output_bytes = checked_cost_sum(&[
+        value_wrapper_bytes,
+        value_data_bytes,
+        checked_cost_product(&[checked_u64(subset_count)?, canonical_key_bytes])?,
+        retained_bytes,
+        checked_cost_product(&[checked_u64(member_copies)?, canonical_key_inline_delta])?,
+    ])?;
+    let published_wrapper_bytes = output_bytes
+        .checked_sub(retained_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let input_staging_nodes = element_population_nodes;
     // The resident `Value` wrapper is not a recursively materialized payload
     // node. Keep the borrowed set/data population separate from the element
@@ -1224,49 +1430,48 @@ fn set_powerset(
         .ok_or(ResidentKernelError::InvalidShape)?;
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
-        comparison_work: footprint_work.comparison_work,
+        comparison_work: checked_cost_sum(&[
+            footprint_work.comparison_work,
+            finalization_work,
+        ])?,
         compute_work: checked_cost_sum(&[
             footprint_work.compute_work,
-            checked_u64(member_copies)?,
+            checked_u64(output_elements)?,
+            comparison_plan_work,
+            finalization_work,
         ])?,
         output_elements,
         output_bytes,
-        temporary_bytes: output_bytes
-            .checked_add(input_staging_bytes)
+        // Deep String/aggregate payloads move from drafts into the finalized
+        // value; they are not duplicated. The subset draft population coexists
+        // first with the input draft, then with the published wrapper arrays.
+        temporary_bytes: subset_staging_bytes
+            .checked_add(input_staging_bytes.max(published_wrapper_bytes))
             .ok_or(ResidentKernelError::InvalidShape)?,
-        cloned_bytes: retained_bytes
-            .checked_add(input_staging_bytes)
-            .ok_or(ResidentKernelError::InvalidShape)?,
+        cloned_bytes: checked_cost_sum(&[input_staging_bytes, member_draft_bytes])?,
         retained_nodes: output_nodes
             .checked_add(input_staging_nodes)
             .and_then(|nodes| nodes.checked_add(borrowed_input_nodes))
             .ok_or(ResidentKernelError::InvalidShape)?,
         ..KernelCostEstimate::default()
     };
-    let canonicalization_work_limit = PreparedKernel::new(cost.remaining_incremental_work()?, cost)
+    let canonicalization_work_limit = PreparedKernel::new(finalization_work, cost)
         .admit()?
         .into_plan();
     let elements = set_element_drafts(input)?;
-    let mut subsets = vec![Vec::new()];
-    for element in elements {
-        let with_element = subsets
+    let mut subsets = Vec::with_capacity(subset_count);
+    visit_canonical_subset_indices(element_count, |indices| {
+        let members = indices
             .iter()
-            .map(|subset| {
-                let mut next = subset.clone();
-                next.push(element.clone());
-                next
-            })
+            .map(|&index| elements[index].clone())
             .collect::<Vec<_>>();
-        subsets.extend(with_element);
-    }
-    subsets.sort_by_key(Vec::len);
-    let elements = subsets
-        .into_iter()
-        .map(|subset| ValueDataDraft::Set(subset.into_boxed_slice()))
-        .collect::<Vec<_>>();
+        subsets.push(ValueDataDraft::Set(members.into_boxed_slice()));
+        Ok(())
+    })?;
+    drop(elements);
     let next = finalize_snapshot_with_work_budget(
         kernel,
-        ValueDataDraft::Set(elements.into_boxed_slice()),
+        ValueDataDraft::Set(subsets.into_boxed_slice()),
         Some(canonicalization_work_limit),
     )?;
     write_full_snapshot(output, next)
@@ -1295,10 +1500,16 @@ fn set_relation(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    admit_set_relation(left, right, schemas)?;
+    let comparison_work_limit = admit_set_relation(left, right, schemas)?;
+    let budget = SnapshotCanonicalizationBudget::new(comparison_work_limit);
     let next = left
-        .set_relation(schemas, right, schemas, relation)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
+        .set_relation_with_budget(schemas, right, schemas, relation, &budget)
+        .map_err(|error| match error {
+            SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
+                ResidentKernelError::InvalidShape
+            }
+            _ => ResidentKernelError::InvalidInput,
+        })?;
     let ResidentValueMut::Bool([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
@@ -1312,7 +1523,7 @@ fn admit_set_relation(
     left: &Value,
     right: &Value,
     schemas: &mech_core::SchemaTable,
-) -> Result<(), ResidentKernelError> {
+) -> Result<u64, ResidentKernelError> {
     // Canonical set relations use recursive ordered-key comparison. Visit
     // both borrowed trees through the incremental meter before entering that
     // comparison so a single recursively large key cannot hide behind an
@@ -1322,11 +1533,15 @@ fn admit_set_relation(
         super::budget::measure_canonical_value_footprint(&mut meter, left, schemas)?;
     let right_footprint =
         super::budget::measure_canonical_value_footprint(&mut meter, right, schemas)?;
-    meter.charge_comparison_work(checked_u64(checked_sum(&[
+    let relation_compute_work = checked_u64(checked_sum(&[
         set_cardinality(left)?,
         set_cardinality(right)?,
-    ])?)?)?;
+    ])?)?;
     let mut cost = meter.estimate();
+    cost.compute_work = cost
+        .compute_work
+        .checked_add(relation_compute_work)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     cost.output_elements = 1;
     cost.output_bytes = checked_u64(core::mem::size_of::<u8>())?;
     cost.retained_nodes = left_footprint
@@ -1334,8 +1549,9 @@ fn admit_set_relation(
         .checked_add(right_footprint.node_count)
         .and_then(|nodes| nodes.checked_add(1))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    PreparedKernel::new((), cost).admit()?.into_plan();
-    Ok(())
+    PreparedKernel::new(cost.remaining_incremental_work()?, cost)
+        .admit()
+        .map(|admitted| admitted.into_plan())
 }
 
 fn set_size(
@@ -1652,6 +1868,29 @@ mod tests {
         let production = include_str!("set.rs").split("#[cfg(test)]").next().unwrap();
         assert!(!production.contains(".contains("));
         assert!(!production.contains("ValueDataDraft::contains"));
+    }
+
+    #[test]
+    fn powerset_plan_visits_subsets_in_canonical_lexicographic_order() {
+        let mut subsets = Vec::new();
+        visit_canonical_subset_indices(3, |indices| {
+            subsets.push(indices.to_vec());
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            subsets,
+            vec![
+                vec![],
+                vec![0],
+                vec![0, 1],
+                vec![0, 1, 2],
+                vec![0, 2],
+                vec![1],
+                vec![1, 2],
+                vec![2],
+            ]
+        );
     }
 
     #[test]
@@ -2196,6 +2435,36 @@ mod tests {
         );
         assert!(empty_node_product_output[0].is_none());
 
+        // Nine distinct long keys fit the input traversal budget. The
+        // allocation-free subset plan must nevertheless reserve every inner
+        // and outer canonical comparison before cloning 2,304 members.
+        let long_keys = [Some(set(9, 6 * 1024))];
+        let long_key_inputs = [ResidentValueRef::Snapshot(&long_keys)];
+        let mut long_key_output = [None];
+        assert_eq!(
+            output_kernel(set_powerset, powerset_schema).execute(
+                &Inputs(&long_key_inputs),
+                ResidentValueMut::Snapshot(&mut long_key_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(long_key_output[0].is_none());
+
+        // The recursively cloned String payload remains just below the byte
+        // ceiling, while the subset/member draft slots and published
+        // canonical wrappers take the complete staging peak over it.
+        let wrapper_heavy = [Some(set(9, 7_210))];
+        let wrapper_inputs = [ResidentValueRef::Snapshot(&wrapper_heavy)];
+        let mut wrapper_output = [None];
+        assert_eq!(
+            output_kernel(set_powerset, powerset_schema).execute(
+                &Inputs(&wrapper_inputs),
+                ResidentValueMut::Snapshot(&mut wrapper_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(wrapper_output[0].is_none());
+
         // Sixteen short elements stay below the byte budget, but their
         // powerset contains 65,536 subsets plus 524,288 nested member copies.
         let input = [Some(set(16, 1))];
@@ -2284,7 +2553,7 @@ mod tests {
     }
 
     #[test]
-    fn set_merge_does_not_pre_spend_actual_comparison_allowance() {
+    fn set_merge_preflights_append_finalization_before_cloning_drafts() {
         let set_body = SchemaBody::Set {
             element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
             cardinality: CardinalitySpec::Dynamic { upper_bound: None },
@@ -2298,7 +2567,7 @@ mod tests {
             schema: set_schema,
             shape_values: Box::new([]),
             data: ValueDataDraft::Set(
-                (0_u64..345)
+                (0_u64..346)
                     .map(ValueDataDraft::U64)
                     .collect::<Vec<_>>()
                     .into_boxed_slice(),
@@ -2335,7 +2604,10 @@ mod tests {
         let ValueData::Set(output) = output[0].as_ref().unwrap().data() else {
             unreachable!()
         };
-        assert_eq!(output.elements().len(), 345);
+        // Canonical merge output takes the append-fast finalization path, so
+        // the old quadratic 346-element late failure is gone. Its adjacent-key
+        // upper bound was admitted before `set_element_data_drafts` cloned it.
+        assert_eq!(output.elements().len(), 346);
     }
 
     #[test]
@@ -2611,5 +2883,48 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert_eq!(output, [1]);
+    }
+
+    #[test]
+    fn set_relation_spends_remaining_budget_on_the_actual_recursive_comparison() {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let set_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(SchemaBody::String),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let set_schema = build.resolve(set_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let set = || {
+            ValueDraft {
+                schema: set_schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Set(
+                    vec![ValueDataDraft::String("x".repeat(25 * 1024))].into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let left = [Some(set())];
+        let right = [Some(set())];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
+        let kernel = BoundResidentKernel::new(
+            set_relation,
+            vec![SetValueRelation::Subset as u64].into_boxed_slice(),
+        )
+        .with_snapshot_schemas(schemas);
+        let mut output = [0_u8];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(output, [0]);
     }
 }

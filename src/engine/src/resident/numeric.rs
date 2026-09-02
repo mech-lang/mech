@@ -14641,7 +14641,7 @@ mod tests {
     }
 
     #[test]
-    fn map_aggregate_assignment_meters_canonical_finalization_before_publication() {
+    fn map_aggregate_assignment_uses_admitted_append_fast_finalization() {
         let u64_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
         let map_body = SchemaBody::Map {
             key: Box::new(u64_body.clone()),
@@ -14725,15 +14725,13 @@ mod tests {
 
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Ok(true),
         );
-        assert!(
-            output[0]
-                .as_ref()
-                .unwrap()
-                .language_eq(&schemas, &current, &schemas)
-                .unwrap()
-        );
+        let ValueData::Map(output) = output[0].as_ref().unwrap().data() else {
+            unreachable!()
+        };
+        assert_eq!(output.entries().len(), 400);
+        assert!(matches!(output.entries()[399].value(), ValueData::U64(9)));
     }
 
     #[test]

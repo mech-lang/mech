@@ -283,23 +283,53 @@ impl Value {
         other_schemas: &SchemaTable,
         relation: SetValueRelation,
     ) -> Result<bool, SnapshotValueError> {
+        self.set_relation_with_optional_budget(self_schemas, other, other_schemas, relation, None)
+    }
+
+    /// Evaluates a set relation while charging every recursive ordered-key
+    /// comparison against one caller-owned canonicalization allowance.
+    pub fn set_relation_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        relation: SetValueRelation,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<bool, SnapshotValueError> {
+        self.set_relation_with_optional_budget(
+            self_schemas,
+            other,
+            other_schemas,
+            relation,
+            Some(budget),
+        )
+    }
+
+    fn set_relation_with_optional_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        relation: SetValueRelation,
+        budget: Option<&SnapshotCanonicalizationBudget>,
+    ) -> Result<bool, SnapshotValueError> {
         let (element, left, right) = self.validated_set_pair(self_schemas, other, other_schemas)?;
         match relation {
-            SetValueRelation::Disjoint => set_is_disjoint(element, left, right),
+            SetValueRelation::Disjoint => set_is_disjoint(element, left, right, budget),
             SetValueRelation::Equal => {
-                Ok(left.len() == right.len() && set_is_subset(element, left, right)?)
+                Ok(left.len() == right.len() && set_is_subset(element, left, right, budget)?)
             }
             SetValueRelation::NotEqual => {
-                Ok(left.len() != right.len() || !set_is_subset(element, left, right)?)
+                Ok(left.len() != right.len() || !set_is_subset(element, left, right, budget)?)
             }
             SetValueRelation::ProperSubset => {
-                Ok(left.len() < right.len() && set_is_subset(element, left, right)?)
+                Ok(left.len() < right.len() && set_is_subset(element, left, right, budget)?)
             }
             SetValueRelation::ProperSuperset => {
-                Ok(left.len() > right.len() && set_is_subset(element, right, left)?)
+                Ok(left.len() > right.len() && set_is_subset(element, right, left, budget)?)
             }
-            SetValueRelation::Subset => set_is_subset(element, left, right),
-            SetValueRelation::Superset => set_is_subset(element, right, left),
+            SetValueRelation::Subset => set_is_subset(element, left, right, budget),
+            SetValueRelation::Superset => set_is_subset(element, right, left, budget),
         }
     }
 
@@ -467,10 +497,16 @@ fn set_is_subset(
     element: &SchemaBody,
     left: &[CanonicalKeyValue],
     right: &[CanonicalKeyValue],
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<bool, SnapshotValueError> {
     let (mut left_index, mut right_index) = (0, 0);
     while left_index < left.len() && right_index < right.len() {
-        match compare_key_data(element, left[left_index].data(), right[right_index].data())? {
+        match compare_key_data_with_budget(
+            element,
+            left[left_index].data(),
+            right[right_index].data(),
+            budget,
+        )? {
             Ordering::Less => return Ok(false),
             Ordering::Equal => {
                 left_index += 1;
@@ -486,10 +522,16 @@ fn set_is_disjoint(
     element: &SchemaBody,
     left: &[CanonicalKeyValue],
     right: &[CanonicalKeyValue],
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<bool, SnapshotValueError> {
     let (mut left_index, mut right_index) = (0, 0);
     while left_index < left.len() && right_index < right.len() {
-        match compare_key_data(element, left[left_index].data(), right[right_index].data())? {
+        match compare_key_data_with_budget(
+            element,
+            left[left_index].data(),
+            right[right_index].data(),
+            budget,
+        )? {
             Ordering::Less => left_index += 1,
             Ordering::Equal => return Ok(false),
             Ordering::Greater => right_index += 1,
@@ -587,6 +629,18 @@ pub(super) fn insert_set_key(
     let key = CanonicalKeyValue {
         data: normalized_key_data(schema, data)?,
     };
+    if let Some(last) = elements.last() {
+        match compare_key_data_with_budget(schema, last.data(), key.data(), budget)? {
+            Ordering::Less => {
+                elements.push(key);
+                return Ok(());
+            }
+            Ordering::Equal => {
+                return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
+            }
+            Ordering::Greater => {}
+        }
+    }
     let mut insertion = elements.len();
     for (index, existing) in elements.iter().enumerate() {
         match compare_key_data_with_budget(schema, existing.data(), key.data(), budget)? {
@@ -618,6 +672,18 @@ pub(super) fn insert_map_entry(
     let key = CanonicalKeyValue {
         data: normalized_key_data(schema, key)?,
     };
+    if let Some(last) = entries.last() {
+        match compare_key_data_with_budget(schema, last.key().data(), key.data(), budget)? {
+            Ordering::Less => {
+                entries.push(MapEntryValue { key, value });
+                return Ok(());
+            }
+            Ordering::Equal => {
+                return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
+            }
+            Ordering::Greater => {}
+        }
+    }
     let mut insertion = entries.len();
     for (index, existing) in entries.iter().enumerate() {
         match compare_key_data_with_budget(schema, existing.key().data(), key.data(), budget)? {

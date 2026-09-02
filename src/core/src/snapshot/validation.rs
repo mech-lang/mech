@@ -2385,10 +2385,12 @@ mod tests {
                 ),
                 Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: 10 })
             ));
-            assert_eq!(budget.consumed(), 10);
+            // The failed shift charge is rejected atomically and therefore
+            // does not advance the shared meter past its last admitted value.
+            assert_eq!(budget.consumed(), 9);
         }
         for draft in [set_draft(&[0, 1, 2, 3, 4]), map_draft(&[0, 1, 2, 3, 4])] {
-            let budget = SnapshotCanonicalizationBudget::new(10);
+            let budget = SnapshotCanonicalizationBudget::new(4);
             assert!(
                 draft
                     .finalize(
@@ -2397,7 +2399,7 @@ mod tests {
                     )
                     .is_ok()
             );
-            assert_eq!(budget.consumed(), 10);
+            assert_eq!(budget.consumed(), 4);
         }
     }
 
