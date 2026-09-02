@@ -316,6 +316,7 @@ fn matrix_literal(
                 .ok_or(ResidentKernelError::InvalidOutput)?;
             let mut retained_bytes = 0usize;
             let mut input_nodes = 0u64;
+            let mut finalization_work = 0u64;
             let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
             for source in 0..count {
                 let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
@@ -331,6 +332,16 @@ fn matrix_literal(
                     .ok_or(ResidentKernelError::InvalidShape)?;
                 input_nodes = input_nodes
                     .checked_add(footprint.node_count)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                let schema = value
+                    .validate_against(schemas)
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                finalization_work = finalization_work
+                    .checked_add(super::budget::preflight_canonical_data_finalization(
+                        &mut footprint_meter,
+                        schema.body(),
+                        value.data(),
+                    )?)
                     .ok_or(ResidentKernelError::InvalidShape)?;
             }
             if let Some(previous) = target.as_ref() {
@@ -378,9 +389,8 @@ fn matrix_literal(
                 ])?,
                 ..super::budget::KernelCostEstimate::default()
             };
-            let canonicalization_work_limit = cost.remaining_incremental_work()?;
             let (count, canonicalization_work_limit) =
-                super::budget::PreparedKernel::new((count, canonicalization_work_limit), cost)
+                super::budget::PreparedKernel::new((count, finalization_work), cost)
                     .admit()?
                     .into_plan();
             let mut elements = Vec::with_capacity(count);
@@ -767,6 +777,55 @@ mod tests {
             Err(ResidentKernelError::InvalidShape)
         );
         assert_eq!(output, ["unchanged"]);
+    }
+
+    #[test]
+    fn snapshot_literal_preflights_nested_set_finalization_before_cloning() {
+        let set_body = SchemaBody::Set {
+            element: Box::new(SchemaBody::String),
+            cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let (schemas, scalar, matrix) = schemas_for(set_body, 1, 1);
+        let kernel = bind_matrix_literal(&ResidentKernelBindRequest {
+            contract: &contract(scalar, matrix, 1),
+            schemas: &schemas,
+            inputs: &[layout(
+                &schemas,
+                scalar,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            )],
+            output: layout(
+                &schemas,
+                matrix,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let element = ValueDraft {
+            schema: scalar,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                (0..48)
+                    .map(|index| ValueDataDraft::String(format!("{}-{index:04}", "x".repeat(500))))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let source = [Some(element)];
+        let mut output = [None];
+
+        assert_eq!(
+            kernel.execute(
+                &Inputs(vec![ResidentValueRef::Snapshot(&source)]),
+                ResidentValueMut::Snapshot(&mut output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(output[0].is_none());
     }
 
     #[test]

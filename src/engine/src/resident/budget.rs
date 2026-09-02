@@ -1,4 +1,5 @@
-use mech_core::{ResidentKernelError, SchemaBody, SchemaTable, Value, ValueData};
+use mech_core::snapshot::{SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint};
+use mech_core::{ResidentKernelError, SchemaBody, SchemaId, SchemaTable, Value, ValueData};
 
 macro_rules! resident_cost {
     (@value $field:ident, $value:expr) => {
@@ -297,6 +298,109 @@ pub(crate) fn measure_canonical_data_footprint(
     data: &ValueData,
 ) -> Result<mech_core::snapshot::ValueFootprint, ResidentKernelError> {
     charge_canonical_data_footprint_with(meter, schema, data, None)
+}
+
+fn map_snapshot_work_error(error: SnapshotValueError) -> ResidentKernelError {
+    match error {
+        SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
+            ResidentKernelError::InvalidShape
+        }
+        _ => ResidentKernelError::InvalidInput,
+    }
+}
+
+/// Measures recursive comparison material without treating the borrowed tree
+/// as another live allocation. Each visited chunk is charged before descent
+/// continues so planning cannot hide an oversized second traversal.
+pub(crate) fn measure_canonical_data_comparison_work(
+    meter: &mut ResidentBudgetMeter,
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<u64, ResidentKernelError> {
+    let mut total = 0_u64;
+    mech_core::snapshot::visit_canonical_data_work(schema, data, |chunk| {
+        let work = chunk.encoded_bytes.max(chunk.node_count).max(1);
+        meter.charge_comparison_work(work)?;
+        total = total
+            .checked_add(work)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
+    })
+    .map_err(|error| match error {
+        mech_core::snapshot::CanonicalDataWorkError::Visitor(error) => error,
+        mech_core::snapshot::CanonicalDataWorkError::ArithmeticOverflow => {
+            ResidentKernelError::InvalidShape
+        }
+        mech_core::snapshot::CanonicalDataWorkError::UnknownDynamicSchema
+        | mech_core::snapshot::CanonicalDataWorkError::InvalidValue => {
+            ResidentKernelError::InvalidInput
+        }
+    })?;
+    Ok(total)
+}
+
+/// Proves that recursively rebuilding already-canonical data fits before a
+/// caller creates its first owned draft. The planning walk is itself charged
+/// incrementally; the returned allowance is the exact work reserved for the
+/// later finalizer, not whatever budget happened to remain.
+pub(crate) fn preflight_canonical_data_finalization(
+    meter: &mut ResidentBudgetMeter,
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<u64, ResidentKernelError> {
+    measure_canonical_data_comparison_work(meter, schema, data)?;
+    let remaining = meter.estimate().remaining_incremental_work()?;
+    let budget = SnapshotCanonicalizationBudget::new(remaining);
+    let work = mech_core::snapshot::canonical_data_draft_finalization_work_with_budget(
+        schema, data, &budget,
+    )
+    .map_err(map_snapshot_work_error)?;
+    meter.charge_comparison_work(work)?;
+    Ok(work)
+}
+
+/// Conservative work for the recursive `Value::language_eq` performed before
+/// publication. Both payloads have already been measured under the same
+/// meter, so this helper adds the cached schema, shape, and complete payload
+/// scans without another unbounded planning traversal.
+pub(crate) fn projected_language_equality_work(
+    schemas: &SchemaTable,
+    current: &Value,
+    current_footprint: ValueFootprint,
+    next_schema: SchemaId,
+    next_shape_parameters: usize,
+    next_footprint: ValueFootprint,
+) -> Result<u64, ResidentKernelError> {
+    let current_entry = schemas
+        .entry(current.schema())
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let next_entry = schemas
+        .entry(next_schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schema_work = if current_entry.key() == next_entry.key() {
+        checked_u64(
+            current_entry
+                .canonical_bytes()
+                .len()
+                .max(next_entry.canonical_bytes().len()),
+        )?
+    } else {
+        0
+    };
+    checked_cost_sum(&[
+        schema_work,
+        checked_u64(
+            current
+                .shape()
+                .parameter_values()
+                .len()
+                .max(next_shape_parameters),
+        )?,
+        current_footprint
+            .encoded_bytes
+            .max(current_footprint.node_count),
+        next_footprint.encoded_bytes.max(next_footprint.node_count),
+    ])
 }
 
 fn measure_canonical_value_footprint_with(

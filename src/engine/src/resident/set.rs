@@ -723,6 +723,7 @@ fn admit_set_candidate_operation(
     inputs: &dyn ResidentKernelInputs,
     candidate_index: usize,
     set: &Value,
+    prior_output: Option<&Value>,
     output_elements: Option<usize>,
     candidate_retained_in_output: bool,
 ) -> Result<SetCandidateOperationPlan, ResidentKernelError> {
@@ -744,29 +745,57 @@ fn admit_set_candidate_operation(
     let ValueData::Set(set_value) = set.data() else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let cardinality = set_value.elements().len();
     let mut meter = ResidentBudgetMeter::default();
     let candidate = scalar_element_retained_cost(kernel, inputs, candidate_index, &mut meter)?;
-    let set_container_bytes = checked_cost_sum(&[
-        checked_u64(core::mem::size_of::<Value>())?,
-        checked_cost_product(&[
-            checked_u64(cardinality)?,
-            checked_u64(core::mem::size_of::<mech_core::snapshot::CanonicalKeyValue>())?,
-        ])?,
-    ])?;
-    meter.charge_selector_bytes(set_container_bytes)?;
-    meter.charge_retained_nodes(1)?;
+    let set_footprint = super::budget::measure_canonical_value_footprint(&mut meter, set, schemas)?;
+    let prior_output_footprint = match prior_output {
+        Some(value) => Some(super::budget::measure_canonical_value_footprint(
+            &mut meter, value, schemas,
+        )?),
+        None => None,
+    };
+    let mut maximum_key_work = 0u64;
     for key in set_value.elements() {
-        super::budget::charge_canonical_key_footprint(&mut meter, element, key.data())?;
+        let key_work =
+            super::budget::measure_canonical_data_comparison_work(&mut meter, element, key.data())?;
+        maximum_key_work = maximum_key_work.max(key_work);
         // Each ordered-key comparison also inspects the borrowed candidate.
         meter.charge_comparison_work(candidate.comparison_work)?;
     }
+    let mut finalization_work = 0u64;
+    if output_elements.is_some() {
+        finalization_work = super::budget::preflight_canonical_data_finalization(
+            &mut meter,
+            set_schema.body(),
+            set.data(),
+        )?;
+    }
+    if output_elements.is_some() && candidate_retained_in_output {
+        if let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(candidate_index) {
+            let candidate_schema = value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            finalization_work = finalization_work
+                .checked_add(super::budget::preflight_canonical_data_finalization(
+                    &mut meter,
+                    candidate_schema.body(),
+                    value.data(),
+                )?)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        let candidate_insert_work = candidate
+            .comparison_work
+            .max(maximum_key_work)
+            .checked_mul(2)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        meter.charge_comparison_work(candidate_insert_work)?;
+        finalization_work = finalization_work
+            .checked_add(candidate_insert_work)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+    }
     let mut cost = meter.estimate();
-    let set_bytes = cost.selector_bytes;
-    let set_nodes = cost
-        .retained_nodes
-        .checked_sub(candidate.retained_nodes)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let set_bytes = set_footprint.retained_bytes;
+    let set_nodes = set_footprint.node_count;
     let current_persistent_nodes = cost.retained_nodes;
     cost.retained_nodes = 0;
     let Some(output_elements) = output_elements else {
@@ -823,7 +852,43 @@ fn admit_set_candidate_operation(
         .container_bytes
         .checked_add(container_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    operation.canonicalization_work_limit = Some(cost.remaining_incremental_work()?);
+    let output_footprint = mech_core::snapshot::ValueFootprint {
+        encoded_bytes: set_footprint
+            .encoded_bytes
+            .checked_add(if candidate_retained_in_output {
+                candidate.comparison_work
+            } else {
+                0
+            })
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_bytes: checked_cost_sum(&[output_clone_bytes, container_bytes])?,
+        node_count: output_nodes,
+    };
+    let publication_work = match (prior_output, prior_output_footprint) {
+        (Some(previous), Some(previous_footprint)) => {
+            let metadata = kernel
+                .snapshot_output()
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            super::budget::projected_language_equality_work(
+                schemas,
+                previous,
+                previous_footprint,
+                metadata.schema,
+                metadata.shape.parameter_values().len(),
+                output_footprint,
+            )?
+        }
+        _ => 0,
+    };
+    cost.comparison_work = cost
+        .comparison_work
+        .checked_add(publication_work)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    cost.compute_work = cost
+        .compute_work
+        .checked_add(publication_work)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    operation.canonicalization_work_limit = Some(finalization_work);
     // The cloned `ValueData` population and the canonical draft tree coexist
     // while the immutable current set remains borrowed. The mutation plan
     // adds the final published population separately.
@@ -831,7 +896,7 @@ fn admit_set_candidate_operation(
         operation,
         PublishedOutputFootprint {
             elements: checked_u64(output_elements)?,
-            retained_bytes: checked_cost_sum(&[output_clone_bytes, container_bytes])?,
+            retained_bytes: output_footprint.retained_bytes,
             retained_nodes: output_nodes,
         },
         super::budget::MutationRetainedNodeFootprint {
@@ -1125,8 +1190,11 @@ fn cartesian_product_finalization_work_upper_bound(
     let mut left_adjacent = 0_u64;
     let mut previous_left: Option<u64> = None;
     for element in left {
-        let comparison = canonical_key_comparison_work_upper_bound(left_schema, element.data())?;
-        meter.charge_comparison_work(comparison)?;
+        let comparison = super::budget::measure_canonical_data_comparison_work(
+            meter,
+            left_schema,
+            element.data(),
+        )?;
         let finalization = bounded_key_draft_finalization_work(meter, left_schema, element.data())?;
         left_comparison = left_comparison
             .checked_add(comparison)
@@ -1146,8 +1214,11 @@ fn cartesian_product_finalization_work_upper_bound(
     let mut right_adjacent = 0_u64;
     let mut previous_right: Option<u64> = None;
     for element in right {
-        let comparison = canonical_key_comparison_work_upper_bound(right_schema, element.data())?;
-        meter.charge_comparison_work(comparison)?;
+        let comparison = super::budget::measure_canonical_data_comparison_work(
+            meter,
+            right_schema,
+            element.data(),
+        )?;
         let finalization =
             bounded_key_draft_finalization_work(meter, right_schema, element.data())?;
         right_finalization = right_finalization
@@ -1487,19 +1558,16 @@ fn set_powerset(
     let mut element_work = [0_u64; MAX_POWERSET_INPUT_CARDINALITY];
     let mut element_finalization_work = [0_u64; MAX_POWERSET_INPUT_CARDINALITY];
     for (index, element) in input_set.elements().iter().enumerate() {
-        element_work[index] =
-            canonical_key_comparison_work_upper_bound(element_schema, element.data())?;
-        element_finalization_work[index] =
-            mech_core::snapshot::canonical_key_draft_finalization_work(
-                element_schema,
-                element.data(),
-            )
-            .map_err(|error| match error {
-                SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
-                    ResidentKernelError::InvalidShape
-                }
-                _ => ResidentKernelError::InvalidInput,
-            })?;
+        element_work[index] = super::budget::measure_canonical_data_comparison_work(
+            &mut footprint_meter,
+            element_schema,
+            element.data(),
+        )?;
+        element_finalization_work[index] = bounded_key_draft_finalization_work(
+            &mut footprint_meter,
+            element_schema,
+            element.data(),
+        )?;
     }
     // Simulate the bounded, allocation-free canonical subset order before
     // cloning any element. This reserves all inner-Set and outer-Set
@@ -1509,14 +1577,6 @@ fn set_powerset(
         &element_work[..element_count],
         &element_finalization_work[..element_count],
     )?;
-    let comparison_plan_work =
-        element_work[..element_count]
-            .iter()
-            .try_fold(0_u64, |total, work| {
-                total
-                    .checked_add(*work)
-                    .ok_or(ResidentKernelError::InvalidShape)
-            })?;
     let value_wrapper_bytes = checked_cost_sum(&[
         checked_u64(core::mem::size_of::<Value>())?,
         checked_cost_product(&[
@@ -1597,7 +1657,6 @@ fn set_powerset(
         compute_work: checked_cost_sum(&[
             footprint_work.compute_work,
             checked_u64(output_elements)?,
-            comparison_plan_work,
             finalization_work,
         ])?,
         output_elements,
@@ -1875,7 +1934,7 @@ fn element_of(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    let plan = admit_set_candidate_operation(kernel, inputs, 0, set, None, false)?;
+    let plan = admit_set_candidate_operation(kernel, inputs, 0, set, None, None, false)?;
     let element = set_candidate_value(kernel, inputs, plan.candidate_index)?;
     let next = set
         .set_contains(schemas, element.value(), element.schemas(schemas))
@@ -1913,7 +1972,7 @@ fn not_element_of(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    let plan = admit_set_candidate_operation(kernel, inputs, 0, set, None, false)?;
+    let plan = admit_set_candidate_operation(kernel, inputs, 0, set, None, None, false)?;
     let element = set_candidate_value(kernel, inputs, plan.candidate_index)?;
     let next = set
         .set_contains(schemas, element.value(), element.schemas(schemas))
@@ -1948,11 +2007,21 @@ fn insert(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    let ResidentValueMut::Snapshot([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
     let maximum_output_elements = set_cardinality(set)?
         .checked_add(1)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let plan =
-        admit_set_candidate_operation(kernel, inputs, 1, set, Some(maximum_output_elements), true)?;
+    let plan = admit_set_candidate_operation(
+        kernel,
+        inputs,
+        1,
+        set,
+        target.as_ref(),
+        Some(maximum_output_elements),
+        true,
+    )?;
     debug_assert_eq!(plan.maximum_output_elements, Some(maximum_output_elements));
     debug_assert!(plan.candidate_retained_in_output);
     let element = set_candidate_value(kernel, inputs, plan.candidate_index)?;
@@ -1965,7 +2034,11 @@ fn insert(
         ValueDataDraft::Set(elements),
         plan.canonicalization_work_limit,
     )?;
-    write_changed_snapshot(kernel, output, next)
+    write_changed_snapshot(
+        kernel,
+        ResidentValueMut::Snapshot(core::slice::from_mut(target)),
+        next,
+    )
 }
 
 fn remove(
@@ -1976,8 +2049,19 @@ fn remove(
     let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
+    let ResidentValueMut::Snapshot([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
     let output_elements = set_cardinality(set)?;
-    let plan = admit_set_candidate_operation(kernel, inputs, 1, set, Some(output_elements), false)?;
+    let plan = admit_set_candidate_operation(
+        kernel,
+        inputs,
+        1,
+        set,
+        target.as_ref(),
+        Some(output_elements),
+        false,
+    )?;
     debug_assert_eq!(plan.maximum_output_elements, Some(output_elements));
     debug_assert!(!plan.candidate_retained_in_output);
     let element = set_candidate_value(kernel, inputs, plan.candidate_index)?;
@@ -1993,7 +2077,11 @@ fn remove(
         ValueDataDraft::Set(elements),
         plan.canonicalization_work_limit,
     )?;
-    write_changed_snapshot(kernel, output, next)
+    write_changed_snapshot(
+        kernel,
+        ResidentValueMut::Snapshot(core::slice::from_mut(target)),
+        next,
+    )
 }
 
 #[cfg(test)]
@@ -3115,6 +3203,83 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert_eq!(output, [1]);
+    }
+
+    #[test]
+    fn set_mutation_preflights_publication_before_materialization() {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let element_handle = builder.insert(schema(SchemaBody::String)).unwrap();
+        let set_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(SchemaBody::String),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let element_schema = build.resolve(element_handle).unwrap();
+        let set_schema = build.resolve(set_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let metadata = SetElementMetadata {
+            schema: element_schema,
+            schema_key: schemas.entry(element_schema).unwrap().key(),
+            shape: schemas
+                .get(element_schema)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+        };
+        let set = ValueDraft {
+            schema: set_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                (0..32)
+                    .map(|index| ValueDataDraft::String(format!("{}-{index:04}", "x".repeat(500))))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let candidate = ValueDraft {
+            schema: element_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::String(format!("{}-9999", "x".repeat(500))),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let set_slot = [Some(set.clone())];
+        let candidate_slot = [Some(candidate)];
+        let inputs = [
+            ResidentValueRef::Snapshot(&set_slot),
+            ResidentValueRef::Snapshot(&candidate_slot),
+        ];
+        let kernel = BoundResidentKernel::new(insert, Box::new([]))
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: set_schema,
+                schema_key: schemas.entry(set_schema).unwrap().key(),
+                shape: schemas
+                    .get(set_schema)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+            .with_snapshot_schemas(schemas.clone())
+            .with_retained_state(Arc::new(metadata));
+        let mut output = [Some(set.clone())];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(
+            output[0]
+                .as_ref()
+                .unwrap()
+                .language_eq(&schemas, &set, &schemas)
+                .unwrap()
+        );
     }
 
     #[test]
