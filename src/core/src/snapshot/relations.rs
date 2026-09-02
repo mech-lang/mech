@@ -164,7 +164,23 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
-        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Union)
+        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Union, None)
+    }
+
+    pub fn set_union_elements_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Union,
+            Some(budget),
+        )
     }
 
     pub fn set_intersection_elements(
@@ -173,7 +189,29 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
-        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Intersection)
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Intersection,
+            None,
+        )
+    }
+
+    pub fn set_intersection_elements_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Intersection,
+            Some(budget),
+        )
     }
 
     pub fn set_difference_elements(
@@ -182,7 +220,29 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
-        self.merge_set_elements(self_schemas, other, other_schemas, SetMerge::Difference)
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Difference,
+            None,
+        )
+    }
+
+    pub fn set_difference_elements_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::Difference,
+            Some(budget),
+        )
     }
 
     pub fn set_symmetric_difference_elements(
@@ -196,6 +256,23 @@ impl Value {
             other,
             other_schemas,
             SetMerge::SymmetricDifference,
+            None,
+        )
+    }
+
+    pub fn set_symmetric_difference_elements_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        other: &Value,
+        other_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<Box<[ValueData]>, SnapshotValueError> {
+        self.merge_set_elements(
+            self_schemas,
+            other,
+            other_schemas,
+            SetMerge::SymmetricDifference,
+            Some(budget),
         )
     }
 
@@ -232,12 +309,18 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
         merge: SetMerge,
+        budget: Option<&SnapshotCanonicalizationBudget>,
     ) -> Result<Box<[ValueData]>, SnapshotValueError> {
         let (element, left, right) = self.validated_set_pair(self_schemas, other, other_schemas)?;
         let mut next = Vec::with_capacity(left.len().saturating_add(right.len()));
         let (mut left_index, mut right_index) = (0, 0);
         while left_index < left.len() && right_index < right.len() {
-            match compare_key_data(element, left[left_index].data(), right[right_index].data())? {
+            match compare_key_data_with_budget(
+                element,
+                left[left_index].data(),
+                right[right_index].data(),
+                budget,
+            )? {
                 Ordering::Less => {
                     if matches!(
                         merge,
@@ -517,6 +600,9 @@ pub(super) fn insert_set_key(
             }
         }
     }
+    if let Some(budget) = budget {
+        budget.charge(u64::try_from(elements.len() - insertion).unwrap_or(u64::MAX))?;
+    }
     elements.insert(insertion, key);
     Ok(())
 }
@@ -544,6 +630,9 @@ pub(super) fn insert_map_entry(
                 break;
             }
         }
+    }
+    if let Some(budget) = budget {
+        budget.charge(u64::try_from(entries.len() - insertion).unwrap_or(u64::MAX))?;
     }
     entries.insert(insertion, MapEntryValue { key, value });
     Ok(())

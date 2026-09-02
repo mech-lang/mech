@@ -929,6 +929,7 @@ type SetMerge = fn(
     &mech_core::SchemaTable,
     &Value,
     &mech_core::SchemaTable,
+    &SnapshotCanonicalizationBudget,
 ) -> Result<Box<[ValueData]>, mech_core::snapshot::SnapshotValueError>;
 
 fn merged_set_element_drafts(
@@ -961,8 +962,18 @@ fn merged_set_element_drafts(
     )?
     .admit()?
     .into_plan();
-    let elements =
-        merge(left, schemas, right, schemas).map_err(|_| ResidentKernelError::InvalidInput)?;
+    let canonicalization_budget = SnapshotCanonicalizationBudget::new(canonicalization_work_limit);
+    let elements = merge(left, schemas, right, schemas, &canonicalization_budget).map_err(
+        |error| match error {
+            SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
+                ResidentKernelError::InvalidShape
+            }
+            _ => ResidentKernelError::InvalidInput,
+        },
+    )?;
+    let canonicalization_work_limit = canonicalization_work_limit
+        .checked_sub(canonicalization_budget.consumed())
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let drafts = left
         .set_element_data_drafts(schemas, &elements)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -976,8 +987,13 @@ fn set_union(
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
     let maximum = checked_sum(&[set_cardinality(left)?, set_cardinality(right)?])?;
-    let (elements, canonicalization_work_limit) =
-        merged_set_element_drafts(kernel, left, right, maximum, Value::set_union_elements)?;
+    let (elements, canonicalization_work_limit) = merged_set_element_drafts(
+        kernel,
+        left,
+        right,
+        maximum,
+        Value::set_union_elements_with_budget,
+    )?;
     let next = finalize_snapshot_with_work_budget(
         kernel,
         ValueDataDraft::Set(elements),
@@ -998,7 +1014,7 @@ fn set_intersection(
         left,
         right,
         maximum,
-        Value::set_intersection_elements,
+        Value::set_intersection_elements_with_budget,
     )?;
     let next = finalize_snapshot_with_work_budget(
         kernel,
@@ -1019,7 +1035,7 @@ fn set_difference(
         left,
         right,
         set_cardinality(left)?,
-        Value::set_difference_elements,
+        Value::set_difference_elements_with_budget,
     )?;
     let next = finalize_snapshot_with_work_budget(
         kernel,
@@ -1041,7 +1057,7 @@ fn set_symmetric_difference(
         left,
         right,
         maximum,
-        Value::set_symmetric_difference_elements,
+        Value::set_symmetric_difference_elements_with_budget,
     )?;
     let next = finalize_snapshot_with_work_budget(
         kernel,
@@ -1171,6 +1187,11 @@ fn set_powerset(
         checked_u64(std::mem::size_of::<usize>())?,
     ])?;
     let output_bytes = checked_cost_sum(&[retained_bytes, subset_headers])?;
+    // The borrowed input remains live while `set_element_drafts` creates one
+    // complete recursive draft population. Both coexist with the subset tree
+    // assembled from clones of that draft population.
+    let input_staging_bytes = footprint.retained_bytes;
+    let input_staging_nodes = footprint.node_count;
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
         comparison_work: footprint_work.comparison_work,
@@ -1180,9 +1201,15 @@ fn set_powerset(
         ])?,
         output_elements,
         output_bytes,
-        temporary_bytes: output_bytes,
-        cloned_bytes: retained_bytes,
-        retained_nodes: output_nodes,
+        temporary_bytes: output_bytes
+            .checked_add(input_staging_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        cloned_bytes: retained_bytes
+            .checked_add(input_staging_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_nodes: output_nodes
+            .checked_add(input_staging_nodes.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?)
+            .ok_or(ResidentKernelError::InvalidShape)?,
         ..KernelCostEstimate::default()
     };
     let canonicalization_work_limit = PreparedKernel::new(cost.remaining_incremental_work()?, cost)
@@ -2083,6 +2110,25 @@ mod tests {
         );
         assert!(normalization_output[0].is_none());
 
+        // Input footprint traversal alone fits the comparison budget, but a
+        // merge of equal long String keys must charge the recursive key
+        // comparison before cloning or publishing the result.
+        let recursive_left = [Some(set(1, 25 * 1024))];
+        let recursive_right = [Some(set(1, 25 * 1024))];
+        let recursive_inputs = [
+            ResidentValueRef::Snapshot(&recursive_left),
+            ResidentValueRef::Snapshot(&recursive_right),
+        ];
+        let mut recursive_output = [None];
+        assert_eq!(
+            output_kernel(set_union, string_set_schema).execute(
+                &Inputs(&recursive_inputs),
+                ResidentValueMut::Snapshot(&mut recursive_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(recursive_output[0].is_none());
+
         // An empty opposite side does not erase the cost of staging the input
         // element drafts that the implementation materializes unconditionally.
         let large = [Some(set(1, 16 * 1024 * 1024))];
@@ -2132,6 +2178,61 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(powerset_output[0].is_none());
+    }
+
+    #[test]
+    fn powerset_admission_includes_borrowed_and_staged_input_tree() {
+        let element_body = SchemaBody::Tuple(vec![SchemaBody::Bool; 22_000].into_boxed_slice());
+        let input_body = SchemaBody::Set {
+            element: Box::new(element_body.clone()),
+            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let output_body = SchemaBody::Set {
+            element: Box::new(input_body.clone()),
+            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let input_handle = builder.insert(schema(input_body)).unwrap();
+        let output_handle = builder.insert(schema(output_body)).unwrap();
+        let build = builder.finish().unwrap();
+        let input_schema = build.resolve(input_handle).unwrap();
+        let output_schema = build.resolve(output_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let input = ValueDraft {
+            schema: input_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                vec![ValueDataDraft::Tuple(
+                    vec![ValueDataDraft::Bool(false); 22_000].into_boxed_slice(),
+                )]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let input = [Some(input)];
+        let inputs = [ResidentValueRef::Snapshot(&input)];
+        let shape = schemas
+            .get(output_schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let kernel = BoundResidentKernel::new(set_powerset, Box::new([]))
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: output_schema,
+                schema_key: schemas.entry(output_schema).unwrap().key(),
+                shape,
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+            .with_snapshot_schemas(schemas);
+        let mut output = [None];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(output[0].is_none());
     }
 
     #[test]

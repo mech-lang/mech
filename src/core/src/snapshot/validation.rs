@@ -2321,6 +2321,87 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_finalization_charges_ordered_insertion_shifts() {
+        let integer = SchemaBody::UnsignedInteger(crate::IntegerWidth::W64);
+        let set = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Set {
+                element: Box::new(integer.clone()),
+                cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+        }
+        .finalize()
+        .unwrap();
+        let map = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Map {
+                key: Box::new(integer.clone()),
+                value: Box::new(integer),
+                cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let set_handle = builder.insert(set).unwrap();
+        let map_handle = builder.insert(map).unwrap();
+        let build = builder.finish().unwrap();
+        let set_schema = build.resolve(set_handle).unwrap();
+        let map_schema = build.resolve(map_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let set_draft = |values: &[u64]| ValueDraft {
+            schema: set_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                values
+                    .iter()
+                    .copied()
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        };
+        let map_draft = |values: &[u64]| ValueDraft {
+            schema: map_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Map(
+                values
+                    .iter()
+                    .copied()
+                    .map(|value| super::super::MapEntryDraft {
+                        items: vec![ValueDataDraft::U64(value), ValueDataDraft::U64(value)]
+                            .into_boxed_slice(),
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        };
+
+        for draft in [set_draft(&[4, 3, 2, 1, 0]), map_draft(&[4, 3, 2, 1, 0])] {
+            let budget = SnapshotCanonicalizationBudget::new(10);
+            assert!(matches!(
+                draft.finalize(
+                    &SnapshotValidationContext::new(&schemas).with_canonicalization_budget(&budget),
+                ),
+                Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: 10 })
+            ));
+            assert_eq!(budget.consumed(), 10);
+        }
+        for draft in [set_draft(&[0, 1, 2, 3, 4]), map_draft(&[0, 1, 2, 3, 4])] {
+            let budget = SnapshotCanonicalizationBudget::new(10);
+            assert!(
+                draft
+                    .finalize(
+                        &SnapshotValidationContext::new(&schemas)
+                            .with_canonicalization_budget(&budget),
+                    )
+                    .is_ok()
+            );
+            assert_eq!(budget.consumed(), 10);
+        }
+    }
+
+    #[test]
     fn composite_rebuild_preserves_table_columns_and_storage() {
         let schema = SchemaDraft {
             dimension_parameters: Box::new([]),
