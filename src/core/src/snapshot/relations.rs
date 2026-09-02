@@ -712,6 +712,96 @@ pub fn compare_key_data(
     compare_key_data_with_budget(schema, left, right, None)
 }
 
+/// Returns the comparison work needed to round-trip already-canonical key
+/// data through [`ValueDataDraft`](super::ValueDataDraft) finalization.
+///
+/// Nested Sets are rebuilt recursively, so their own ordered insertions are
+/// included even when the containing key has no adjacent peer. The input must
+/// already have been validated against `schema`.
+pub fn canonical_key_draft_finalization_work(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<u64, SnapshotValueError> {
+    if !schema_is_keyable(schema) {
+        return Err(SnapshotValueError::SchemaNotKeyableV1);
+    }
+    fn checked_add(total: &mut u64, amount: u64) -> Result<(), SnapshotValueError> {
+        *total = total
+            .checked_add(amount)
+            .ok_or(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: u64::MAX })?;
+        Ok(())
+    }
+    fn comparison_work(
+        schema: &SchemaBody,
+        left: &ValueData,
+        right: &ValueData,
+    ) -> Result<u64, SnapshotValueError> {
+        let budget = SnapshotCanonicalizationBudget::new(u64::MAX);
+        compare_key_data_with_budget(schema, left, right, Some(&budget))?;
+        Ok(budget.consumed())
+    }
+    fn visit(schema: &SchemaBody, data: &ValueData) -> Result<u64, SnapshotValueError> {
+        let mut total = 0_u64;
+        match (schema, data) {
+            (SchemaBody::Option(element), ValueData::Option(value)) => {
+                if let Some(value) = value.as_deref() {
+                    checked_add(&mut total, visit(element, value)?)?;
+                }
+            }
+            (SchemaBody::Enum { variants, .. }, ValueData::Enum(value)) => {
+                if let (Some(payload_schema), Some(payload)) = (
+                    variants[value.ordinal() as usize].payload.as_ref(),
+                    value.payload(),
+                ) {
+                    checked_add(&mut total, visit(payload_schema, payload)?)?;
+                }
+            }
+            (SchemaBody::Tuple(elements), ValueData::Tuple(values)) => {
+                for (element, value) in elements.iter().zip(values) {
+                    checked_add(&mut total, visit(element, value)?)?;
+                }
+            }
+            (SchemaBody::Record(fields), ValueData::Record(value)) => {
+                for (field, value) in fields.iter().zip(value.fields()) {
+                    checked_add(&mut total, visit(&field.schema, value)?)?;
+                }
+            }
+            (SchemaBody::Matrix { element, .. }, ValueData::Matrix(value)) => {
+                if let super::SequenceView::Values(values) = value.elements() {
+                    for value in values {
+                        checked_add(&mut total, visit(element, value)?)?;
+                    }
+                }
+            }
+            (SchemaBody::Set { element, .. }, ValueData::Set(value)) => {
+                let mut previous = None;
+                for key in value.elements() {
+                    checked_add(&mut total, visit(element, key.data())?)?;
+                    if let Some(previous) = previous {
+                        checked_add(&mut total, comparison_work(element, previous, key.data())?)?;
+                    }
+                    previous = Some(key.data());
+                }
+            }
+            (
+                SchemaBody::Bool
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Rational64
+                | SchemaBody::String
+                | SchemaBody::Id
+                | SchemaBody::Index
+                | SchemaBody::Atom(_),
+                _,
+            ) => {}
+            _ => return Err(SnapshotValueError::SchemaNotKeyableV1),
+        }
+        Ok(total)
+    }
+    visit(schema, data)
+}
+
 fn compare_key_data_with_budget(
     schema: &SchemaBody,
     left: &ValueData,

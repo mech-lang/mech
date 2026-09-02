@@ -1005,6 +1005,16 @@ fn ordered_set_finalization_work_upper_bound(
     let mut previous: Option<u64> = None;
     let mut total = 0_u64;
     for element in elements {
+        let nested = mech_core::snapshot::canonical_key_draft_finalization_work(schema, element)
+            .map_err(|error| match error {
+                SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
+                    ResidentKernelError::InvalidShape
+                }
+                _ => ResidentKernelError::InvalidInput,
+            })?;
+        total = total
+            .checked_add(nested)
+            .ok_or(ResidentKernelError::InvalidShape)?;
         let current = canonical_key_comparison_work_upper_bound(schema, element)?;
         if let Some(previous) = previous {
             total = total
@@ -1038,12 +1048,20 @@ fn subset_key_comparison_work_upper_bound(
 fn powerset_finalization_work_upper_bound(
     element_count: usize,
     element_work: &[u64],
+    element_finalization_work: &[u64],
 ) -> Result<u64, ResidentKernelError> {
     let mut previous = [0_usize; MAX_POWERSET_INPUT_CARDINALITY];
     let mut previous_len = 0_usize;
     let mut has_previous = false;
     let mut total = 0_u64;
     visit_canonical_subset_indices(element_count, |subset| {
+        // Each occurrence is cloned into its subset and therefore re-finalizes
+        // any recursively nested Set within that element draft.
+        for &index in subset {
+            total = total
+                .checked_add(element_finalization_work[index])
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
         // Each subset is itself finalized as a Set before insertion into the
         // outer Set. Its members are already in canonical order.
         for pair in subset.windows(2) {
@@ -1340,15 +1358,30 @@ fn set_powerset(
         return Err(ResidentKernelError::InvalidInput);
     };
     let mut element_work = [0_u64; MAX_POWERSET_INPUT_CARDINALITY];
+    let mut element_finalization_work = [0_u64; MAX_POWERSET_INPUT_CARDINALITY];
     for (index, element) in input_set.elements().iter().enumerate() {
         element_work[index] =
             canonical_key_comparison_work_upper_bound(element_schema, element.data())?;
+        element_finalization_work[index] =
+            mech_core::snapshot::canonical_key_draft_finalization_work(
+                element_schema,
+                element.data(),
+            )
+            .map_err(|error| match error {
+                SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
+                    ResidentKernelError::InvalidShape
+                }
+                _ => ResidentKernelError::InvalidInput,
+            })?;
     }
     // Simulate the bounded, allocation-free canonical subset order before
     // cloning any element. This reserves all inner-Set and outer-Set
     // finalization comparisons up front, including long recursive keys.
-    let finalization_work =
-        powerset_finalization_work_upper_bound(element_count, &element_work[..element_count])?;
+    let finalization_work = powerset_finalization_work_upper_bound(
+        element_count,
+        &element_work[..element_count],
+        &element_finalization_work[..element_count],
+    )?;
     let comparison_plan_work =
         element_work[..element_count]
             .iter()
@@ -1891,6 +1924,92 @@ mod tests {
                 vec![2],
             ]
         );
+    }
+
+    #[test]
+    fn nested_set_finalization_is_reserved_for_merge_and_powerset() {
+        let dynamic = CardinalitySpec::Dynamic { upper_bound: None };
+        let inner = SchemaBody::Set {
+            element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+            cardinality: dynamic.clone(),
+        };
+        let outer = SchemaBody::Set {
+            element: Box::new(inner),
+            cardinality: dynamic.clone(),
+        };
+        let powerset = SchemaBody::Set {
+            element: Box::new(outer.clone()),
+            cardinality: dynamic,
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let outer_handle = builder.insert(schema(outer)).unwrap();
+        let powerset_handle = builder.insert(schema(powerset)).unwrap();
+        let build = builder.finish().unwrap();
+        let outer_schema = build.resolve(outer_handle).unwrap();
+        let powerset_schema = build.resolve(powerset_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let input = ValueDraft {
+            schema: outer_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                vec![ValueDataDraft::Set(
+                    vec![ValueDataDraft::U64(1), ValueDataDraft::U64(2)].into_boxed_slice(),
+                )]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let output_kernel = |executor, output_schema| {
+            let shape = schemas
+                .get(output_schema)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap();
+            BoundResidentKernel::new(executor, Box::new([]))
+                .with_snapshot_output(ResidentSnapshotOutput {
+                    schema: output_schema,
+                    schema_key: schemas.entry(output_schema).unwrap().key(),
+                    shape,
+                    exact_cardinality: None,
+                    maximum_cardinality: None,
+                })
+                .with_snapshot_schemas(schemas.clone())
+        };
+
+        let left = [Some(input.clone())];
+        let right = [Some(input.clone())];
+        let merge_inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
+        let mut merged = [None];
+        assert_eq!(
+            output_kernel(set_union, outer_schema).execute(
+                &Inputs(&merge_inputs),
+                ResidentValueMut::Snapshot(&mut merged),
+            ),
+            Ok(true),
+        );
+        let ValueData::Set(merged) = merged[0].as_ref().unwrap().data() else {
+            unreachable!()
+        };
+        assert_eq!(merged.elements().len(), 1);
+
+        let input = [Some(input)];
+        let powerset_inputs = [ResidentValueRef::Snapshot(&input)];
+        let mut expanded = [None];
+        assert_eq!(
+            output_kernel(set_powerset, powerset_schema).execute(
+                &Inputs(&powerset_inputs),
+                ResidentValueMut::Snapshot(&mut expanded),
+            ),
+            Ok(true),
+        );
+        let ValueData::Set(expanded) = expanded[0].as_ref().unwrap().data() else {
+            unreachable!()
+        };
+        assert_eq!(expanded.elements().len(), 2);
     }
 
     #[test]
