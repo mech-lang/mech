@@ -3400,6 +3400,15 @@ fn require_f64_scalar_range_layout(
     if !inputs_are_scalars || !output_is_matrix || request.output.shape.rows != 1 {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
+    let output_len = request
+        .output
+        .shape
+        .len()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    // Dense activation allocates its output arena before the executor runs.
+    // Reuse the execution admission here so oversized declared ranges fail at
+    // target preflight instead of after that allocation.
+    admit_dense_range(output_len).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     Ok(())
 }
 
@@ -12402,11 +12411,16 @@ mod tests {
         let scalar_handle = builder.insert(schema(f64_body.clone())).unwrap();
         let matrix_one_handle = builder.insert(schema(matrix(1, 1))).unwrap();
         let row_handle = builder.insert(schema(matrix(1, 4))).unwrap();
+        let oversized_columns = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS + 1;
+        let oversized_handle = builder
+            .insert(schema(matrix(1, oversized_columns)))
+            .unwrap();
         let non_row_handle = builder.insert(schema(matrix(2, 2))).unwrap();
         let build = builder.finish().unwrap();
         let scalar = build.resolve(scalar_handle).unwrap();
         let matrix_one = build.resolve(matrix_one_handle).unwrap();
         let row = build.resolve(row_handle).unwrap();
+        let oversized = build.resolve(oversized_handle).unwrap();
         let non_row = build.resolve(non_row_handle).unwrap();
         let (schemas, _) = build.into_parts();
         let port = |schema_id, shape| mech_core::ResidentPortLayout {
@@ -12428,6 +12442,10 @@ mod tests {
         let non_row_shape = ResidentShape {
             rows: 2,
             columns: 2,
+        };
+        let oversized_shape = ResidentShape {
+            rows: 1,
+            columns: u32::try_from(oversized_columns).unwrap(),
         };
 
         let families: [(mech_core::ResidentKernelFactory, usize, &str); 4] = [
@@ -12499,6 +12517,20 @@ mod tests {
                     Err(ResidentKernelBindError::UnsupportedLayout)
                 ),
                 "a non-row matrix was accepted as a range output"
+            );
+
+            let oversized_contract = contract(&vec![scalar; arity], oversized, postcondition);
+            assert!(
+                matches!(
+                    binder(&ResidentKernelBindRequest {
+                        contract: &oversized_contract,
+                        schemas: &schemas,
+                        inputs: &valid_inputs,
+                        output: port(oversized, oversized_shape),
+                    }),
+                    Err(ResidentKernelBindError::UnsupportedLayout)
+                ),
+                "an oversized {postcondition} output was admitted before dense activation"
             );
         }
     }

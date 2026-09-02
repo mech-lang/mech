@@ -1020,7 +1020,11 @@ fn set_cartesian_product(
         checked_cost_product(&[left_retained_nodes, checked_u64(right_count)?])?,
         checked_cost_product(&[right_retained_nodes, checked_u64(left_count)?])?,
     ])?;
-    let input_staging_nodes = checked_cost_sum(&[left_retained_nodes, right_retained_nodes])?;
+    let input_persistent_nodes = checked_cost_sum(&[left_retained_nodes, right_retained_nodes])?;
+    // The resident inputs remain alive while `set_element_drafts` clones both
+    // canonical element arrays. Keep the persistent and staged populations
+    // separate so an empty opposite side cannot erase clone-phase liveness.
+    let input_staging_nodes = input_persistent_nodes;
     // Every result adds its tuple node around recursively cloned member trees.
     let output_nodes = checked_cost_sum(&[result_cloned_nodes, checked_u64(output_len)?, 1])?;
     let container_bytes = checked_cost_product(&[
@@ -1037,7 +1041,11 @@ fn set_cartesian_product(
             output_bytes,
             temporary_bytes: checked_cost_sum(&[output_bytes, input_staging_bytes])?,
             cloned_bytes,
-            retained_nodes: checked_cost_sum(&[output_nodes, input_staging_nodes])?,
+            retained_nodes: checked_cost_sum(&[
+                output_nodes,
+                input_persistent_nodes,
+                input_staging_nodes,
+            ])?,
             ..KernelCostEstimate::default()
         },
     )
@@ -1993,6 +2001,24 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(empty_product_output[0].is_none());
+
+        // The original node-heavy set remains resident while its complete
+        // canonical draft is staged, even though an empty peer produces no
+        // result pairs. Both populations must be admitted before cloning.
+        let node_heavy = [Some(set(40_000, 0))];
+        let empty_node_product_inputs = [
+            ResidentValueRef::Snapshot(&node_heavy),
+            ResidentValueRef::Snapshot(&empty),
+        ];
+        let mut empty_node_product_output = [None];
+        assert_eq!(
+            output_kernel(set_cartesian_product, pair_set_schema).execute(
+                &Inputs(&empty_node_product_inputs),
+                ResidentValueMut::Snapshot(&mut empty_node_product_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(empty_node_product_output[0].is_none());
 
         // Sixteen short elements stay below the byte budget, but their
         // powerset contains 65,536 subsets plus 524,288 nested member copies.
