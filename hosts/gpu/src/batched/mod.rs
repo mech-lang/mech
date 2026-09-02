@@ -1285,12 +1285,30 @@ struct BatchCompiler<'a> {
     inputs: Vec<(CellSlotId, String, FixedShape)>,
     states: BTreeMap<CellSlotId, PendingState>,
     concrete_cases: Vec<ConcreteGpuExecutionCase>,
+    internal_constraints: Vec<BatchedConstraint>,
+    next_internal_constraint_id: Option<u32>,
     diagnostics: Vec<GpuDiagnostic>,
     static_selector_cache:
-        RefCell<BTreeMap<(ArtifactSource, usize), Result<Option<Vec<u64>>, String>>>,
+        RefCell<BTreeMap<(ArtifactSource, usize), Result<Option<Arc<[u64]>>, String>>>,
     static_range_endpoint_cache:
         RefCell<BTreeMap<ArtifactSource, Result<Option<ValueData>, String>>>,
     static_selector_source_steps_remaining: Cell<usize>,
+}
+
+fn matrix_solve_validity_predicate(
+    denominator: ScalarOperand,
+    finite_results: impl IntoIterator<Item = ScalarOperand>,
+) -> ScalarPredicate {
+    let finite_results = finite_results.into_iter();
+    let mut predicates = Vec::with_capacity(finite_results.size_hint().0 + 2);
+    predicates.push(ScalarPredicate::IsFinite(denominator));
+    predicates.push(ScalarPredicate::Compare {
+        operation: ComparisonOperation::NotEqual,
+        left: denominator,
+        right: ScalarOperand::Constant(0.0),
+    });
+    predicates.extend(finite_results.map(ScalarPredicate::IsFinite));
+    ScalarPredicate::All(predicates)
 }
 
 fn linear_access_components(
@@ -1357,6 +1375,13 @@ impl<'a> BatchCompiler<'a> {
             inputs: Vec::new(),
             states: BTreeMap::new(),
             concrete_cases: Vec::new(),
+            internal_constraints: Vec::new(),
+            next_internal_constraint_id: artifact
+                .constraints()
+                .iter()
+                .map(|constraint| constraint.constraint.get())
+                .max()
+                .map_or(Some(0), |id| id.checked_add(1)),
             diagnostics: Vec::new(),
             static_selector_cache: RefCell::new(BTreeMap::new()),
             static_range_endpoint_cache: RefCell::new(BTreeMap::new()),
@@ -1422,17 +1447,21 @@ impl<'a> BatchCompiler<'a> {
             .collect::<Result<Vec<_>, String>>();
         drop(predicate_producers);
         let constraints = match constraints {
-            Ok(constraints) if constraints.len() < 256 => constraints,
-            Ok(constraints) => {
-                self.reject(
-                    None,
-                    None,
-                    format!(
-                        "checked batch kernels support at most 255 integrity constraints, found {}",
-                        constraints.len()
-                    ),
-                );
-                Vec::new()
+            Ok(mut constraints) => {
+                constraints.append(&mut self.internal_constraints);
+                if constraints.len() < 256 {
+                    constraints
+                } else {
+                    self.reject(
+                        None,
+                        None,
+                        format!(
+                            "checked batch kernels support at most 255 integrity constraints, found {}",
+                            constraints.len()
+                        ),
+                    );
+                    Vec::new()
+                }
             }
             Err(detail) => {
                 self.reject(None, None, detail);
@@ -2118,6 +2147,7 @@ impl<'a> BatchCompiler<'a> {
         match coefficients.rows {
             1 => {
                 let denominator = self.operand(inputs[0], 0)?;
+                let mut finite_results = Vec::with_capacity(rhs.elements());
                 for component in 0..rhs.elements() {
                     let numerator = self.operand(inputs[1], component)?;
                     self.emit(
@@ -2128,7 +2158,11 @@ impl<'a> BatchCompiler<'a> {
                             inputs: vec![numerator, denominator],
                         },
                     );
+                    finite_results.push(ScalarOperand::Register(
+                        self.register_offsets[&output] + component,
+                    ));
                 }
+                self.emit_solve_constraint(denominator, finite_results)?;
             }
             2 => {
                 // A fixed 2x2 solve is scalarized once at compile time. The
@@ -2143,6 +2177,7 @@ impl<'a> BatchCompiler<'a> {
                 let off_diagonal = self.emit_temporary_binary(BinaryOperation::Multiply, a01, a10);
                 let determinant =
                     self.emit_temporary_binary(BinaryOperation::Subtract, diagonal, off_diagonal);
+                let mut finite_results = Vec::with_capacity(rhs.elements());
 
                 for column in 0..rhs.columns {
                     let b0 = self.operand(inputs[1], rhs.index(0, column))?;
@@ -2173,6 +2208,9 @@ impl<'a> BatchCompiler<'a> {
                             inputs: vec![numerator0, determinant],
                         },
                     );
+                    finite_results.push(ScalarOperand::Register(
+                        self.register_offsets[&output] + result.index(0, column),
+                    ));
                     self.emit(
                         output,
                         result.index(1, column),
@@ -2181,7 +2219,11 @@ impl<'a> BatchCompiler<'a> {
                             inputs: vec![numerator1, determinant],
                         },
                     );
+                    finite_results.push(ScalarOperand::Register(
+                        self.register_offsets[&output] + result.index(1, column),
+                    ));
                 }
+                self.emit_solve_constraint(determinant, finite_results)?;
             }
             rows => {
                 return Err(format!(
@@ -2189,6 +2231,23 @@ impl<'a> BatchCompiler<'a> {
                 ));
             }
         }
+        Ok(())
+    }
+
+    fn emit_solve_constraint(
+        &mut self,
+        denominator: ScalarOperand,
+        finite_results: Vec<ScalarOperand>,
+    ) -> Result<(), String> {
+        let id = self
+            .next_internal_constraint_id
+            .ok_or_else(|| "GPU integrity-constraint identifiers are exhausted".to_owned())?;
+        self.next_internal_constraint_id = id.checked_add(1);
+        self.internal_constraints.push(BatchedConstraint {
+            id: IntegrityConstraintId::new(id),
+            name: "matrix solve requires a finite nonsingular coefficient matrix".into(),
+            predicate: matrix_solve_validity_predicate(denominator, finite_results),
+        });
         Ok(())
     }
 
@@ -2322,7 +2381,8 @@ impl<'a> BatchCompiler<'a> {
             ));
         };
         one_based
-            .into_iter()
+            .iter()
+            .copied()
             .map(|index| {
                 let zero_based = index
                     .checked_sub(1)
@@ -2344,7 +2404,7 @@ impl<'a> BatchCompiler<'a> {
         &self,
         source: ArtifactSource,
         maximum_elements: usize,
-    ) -> Result<Option<Vec<u64>>, String> {
+    ) -> Result<Option<Arc<[u64]>>, String> {
         let key = (source, maximum_elements);
         if let Some(cached) = self.static_selector_cache.borrow().get(&key) {
             return cached.clone();
@@ -2371,7 +2431,7 @@ impl<'a> BatchCompiler<'a> {
         &self,
         sources: &[ArtifactSource],
         maximum_elements: usize,
-        resolved: &Result<Option<Vec<u64>>, String>,
+        resolved: &Result<Option<Arc<[u64]>>, String>,
     ) {
         let mut cache = self.static_selector_cache.borrow_mut();
         for source in sources {
@@ -2383,7 +2443,7 @@ impl<'a> BatchCompiler<'a> {
         &self,
         source: ArtifactSource,
         maximum_elements: usize,
-    ) -> Result<Option<Vec<u64>>, String> {
+    ) -> Result<Option<Arc<[u64]>>, String> {
         let mut source = source;
         let mut traversed = Vec::new();
         loop {
@@ -2403,7 +2463,8 @@ impl<'a> BatchCompiler<'a> {
                         .constants()
                         .get(constant)
                         .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
-                    let resolved = static_numeric_indices(value.data(), maximum_elements).map(Some);
+                    let resolved = static_numeric_indices(value.data(), maximum_elements)
+                        .map(|indices| Some(Arc::from(indices)));
                     self.cache_static_selector_sources(&traversed, maximum_elements, &resolved);
                     return resolved;
                 }
@@ -2477,7 +2538,7 @@ impl<'a> BatchCompiler<'a> {
                                 },
                             )
                             .map_err(|error| format!("invalid static {operation}: {error:?}"))?;
-                            let resolved = Ok(Some(indices));
+                            let resolved = Ok(Some(Arc::from(indices)));
                             self.cache_static_selector_sources(
                                 &traversed,
                                 maximum_elements,
@@ -3373,6 +3434,85 @@ mod axis_tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn gpu_matrix_solve_rejects_singular_inputs_without_publishing() {
+        let source = "portable singular solve @compute\n\
+                      -------------------------------------------------------------------------------\n\
+                      coefficients := source-coefficients\n\
+                      rhs := source-rhs\n\
+                      ~result := [7f32; 8f32]\n\
+                      result = coefficients \\ rhs\n\
+                      result\n";
+        let tree = mech_syntax::parse(source).unwrap();
+        let planning_inputs = BTreeMap::from([
+            (
+                "source-coefficients".to_owned(),
+                mech_runtime::RuntimeHostInputValue::F32Matrix {
+                    rows: 2,
+                    columns: 2,
+                    values: vec![4.0, 2.0, 1.0, 3.0],
+                },
+            ),
+            (
+                "source-rhs".to_owned(),
+                mech_runtime::RuntimeHostInputValue::F32Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![1.0, 2.0],
+                },
+            ),
+        ]);
+        let artifact = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_tree_artifact_with_inputs(
+                &tree,
+                &planning_inputs,
+                &BTreeSet::from(["coefficients".to_owned(), "rhs".to_owned()]),
+            )
+            .unwrap()
+            .into_artifact();
+        let activation_inputs = BTreeMap::from([
+            ("coefficients".to_owned(), vec![1.0, 2.0, 2.0, 4.0]),
+            ("rhs".to_owned(), vec![1.0, 2.0]),
+        ]);
+        let kernel = crate::ComputeLowerer
+            .compile_broadcast(&artifact, &activation_inputs)
+            .unwrap();
+        let mut session = kernel.prepare_cpu(&activation_inputs).unwrap();
+        let before = session.state().clone();
+        let error = session.dispatch_turns(1).unwrap_err();
+        assert!(
+            matches!(error, BatchedExecutionError::Integrity(_)),
+            "singular solve returned {error:?}"
+        );
+        assert_eq!(session.state(), &before);
+        assert!(
+            session
+                .last_fault()
+                .is_some_and(|fault| fault.constraint_name.contains("nonsingular"))
+        );
+        assert!(before.values().any(|values| values == &[7.0, 8.0]));
+    }
+
+    #[test]
+    fn gpu_matrix_solve_guard_rejects_zero_and_nonfinite_results() {
+        let valid = |denominator, result| {
+            matrix_solve_validity_predicate(
+                ScalarOperand::Constant(denominator),
+                [ScalarOperand::Constant(result)],
+            )
+            .evaluate(&[])
+        };
+        assert!(valid(2.0, 3.0));
+        assert!(!valid(0.0, 3.0));
+        assert!(!valid(f32::NAN, 3.0));
+        assert!(!valid(f32::INFINITY, 3.0));
+        assert!(!valid(2.0, f32::INFINITY));
+        assert!(!valid(2.0, f32::NAN));
     }
 }
 

@@ -4402,6 +4402,16 @@ fn bind_matrix_solve(
     let parameters = vec![rows as u64, right_columns as u64].into_boxed_slice();
     match (coefficients.kind, right.kind, request.output.kind) {
         (ResidentValueKind::F64, ResidentValueKind::F64, ResidentValueKind::F64) => {
+            admit_matrix_solve(
+                rows,
+                right_columns,
+                core::mem::size_of::<f64>(),
+                1,
+                1,
+                0,
+                super::budget::KernelCostEstimate::default(),
+            )
+            .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
             bound(matrix_solve_f64, parameters)
         }
         (ResidentValueKind::Snapshot, ResidentValueKind::Snapshot, ResidentValueKind::Snapshot)
@@ -4409,6 +4419,20 @@ fn bind_matrix_solve(
                 && right.shape == ResidentShape::SCALAR
                 && request.output.shape == ResidentShape::SCALAR =>
         {
+            let output_container_bytes = rows
+                .checked_mul(right_columns)
+                .and_then(|count| count.checked_mul(core::mem::size_of::<ValueDataDraft>()))
+                .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+            admit_matrix_solve(
+                rows,
+                right_columns,
+                core::mem::size_of::<f32>(),
+                2,
+                3,
+                output_container_bytes,
+                super::budget::KernelCostEstimate::default(),
+            )
+            .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
             Ok(bound(matrix_solve_f32_snapshot, parameters)?
                 .with_snapshot_output(ResidentSnapshotOutput {
                     schema: request.output.schema_id,
@@ -4905,6 +4929,47 @@ fn dense_comparison_slices<T: PartialEq + PartialOrd>(
     Ok(changed)
 }
 
+fn admit_dense_string_comparison(
+    kernel: &BoundResidentKernel,
+    left: &[String],
+    right: &[String],
+    output_len: usize,
+) -> Result<(), ResidentKernelError> {
+    let [rows, columns, left_mode, right_mode, _comparison] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let expected = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if output_len != expected {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    validate_binary_broadcast_len(left.len(), *left_mode, rows, columns)?;
+    validate_binary_broadcast_len(right.len(), *right_mode, rows, columns)?;
+
+    // Reserve the complete byte-scan cost before the first comparison writes
+    // an output lane. The incremental meter bounds this planning traversal
+    // itself, while broadcast multiplicity charges scalar and row/column
+    // values once for every comparison they participate in.
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    for index in 0..output_len {
+        let left = &left[binary_broadcast_index(*left_mode, index, rows)];
+        let right = &right[binary_broadcast_index(*right_mode, index, rows)];
+        meter.charge_comparison_work(super::budget::checked_u64(
+            left.len().max(right.len()).max(1),
+        )?)?;
+    }
+    let mut cost = meter.estimate();
+    cost.output_elements = super::budget::checked_u64(output_len)?;
+    cost.output_bytes = super::budget::checked_u64(output_len)?;
+    super::budget::PreparedKernel::new((), cost)
+        .admit()?
+        .into_plan();
+    Ok(())
+}
+
 fn binary_broadcast_index(mode: u64, index: usize, rows: usize) -> usize {
     match mode {
         BINARY_BROADCAST_SCALAR => 0,
@@ -4934,6 +4999,7 @@ fn dense_comparison(
             dense_comparison_slices(kernel, left, right, output)
         }
         (Some(ResidentValueRef::String(left)), Some(ResidentValueRef::String(right))) => {
+            admit_dense_string_comparison(kernel, left, right, output.len())?;
             dense_comparison_slices(kernel, left, right, output)
         }
         _ => Err(ResidentKernelError::InvalidInput),
@@ -12771,6 +12837,66 @@ mod tests {
     }
 
     #[test]
+    fn dense_matrix_solve_layout_is_rejected_during_binding() {
+        let columns = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS + 1;
+        let coefficient_body = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(1),
+            ]
+            .into_boxed_slice(),
+        };
+        let right_body = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([coefficient_body, right_body]);
+        let [coefficient_schema, right_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let contract = test_contract(
+            &[*coefficient_schema, *right_schema],
+            *right_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 1 },
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let coefficient = test_layout(
+            &schemas,
+            *coefficient_schema,
+            ResidentValueKind::F64,
+            ResidentShape::SCALAR,
+        );
+        let right = test_layout(
+            &schemas,
+            *right_schema,
+            ResidentValueKind::F64,
+            ResidentShape {
+                rows: 1,
+                columns: u32::try_from(columns).unwrap(),
+            },
+        );
+
+        assert!(matches!(
+            bind_matrix_solve(&ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &[coefficient, right.clone()],
+                output: right,
+            }),
+            Err(ResidentKernelBindError::UnsupportedLayout),
+        ));
+    }
+
+    #[test]
     fn snapshot_combinations_advance_without_recursion() {
         let mut selected = vec![0, 1];
         let mut combinations = vec![selected.clone()];
@@ -17548,6 +17674,34 @@ mod tests {
             .into_boxed_slice(),
         )
         .with_snapshot_schemas(schemas);
+        let mut output = vec![9_u8; 10_000];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(output.iter().all(|value| *value == 9));
+    }
+
+    #[test]
+    fn dense_string_broadcast_comparison_charges_every_pair_before_writing() {
+        let left = ["x".repeat(1_024)];
+        let right = ["x".repeat(1_024)];
+        let inputs = [
+            ResidentValueRef::String(&left),
+            ResidentValueRef::String(&right),
+        ];
+        let kernel = BoundResidentKernel::new(
+            dense_comparison,
+            vec![
+                100,
+                100,
+                BINARY_BROADCAST_SCALAR,
+                BINARY_BROADCAST_SCALAR,
+                SemanticComparison::Equal as u64,
+            ]
+            .into_boxed_slice(),
+        );
         let mut output = vec![9_u8; 10_000];
 
         assert_eq!(
