@@ -32,6 +32,7 @@ pub use jit::*;
 const SIMD_LANES: usize = 4;
 const FIXED_SHAPE_INTEGRITY_WORDS: usize = 2;
 const MAX_STATIC_SELECTOR_ELEMENTS: usize = 65_536;
+const MAX_STATIC_SELECTOR_SOURCE_STEPS: usize = 65_536;
 
 fn evaluate_operand_simd(operand: ScalarOperand, registers: &[f32x4]) -> f32x4 {
     match operand {
@@ -2343,142 +2344,157 @@ impl<'a> BatchCompiler<'a> {
         source: ArtifactSource,
         maximum_elements: usize,
     ) -> Result<Option<Vec<u64>>, String> {
-        match source {
-            ArtifactSource::Constant(constant) => {
-                let value = self
-                    .artifact
-                    .constants()
-                    .get(constant)
-                    .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
-                static_numeric_indices(value.data(), maximum_elements).map(Some)
-            }
-            ArtifactSource::Slot(slot) => {
-                let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
-                    return Err(format!("selector slot {} does not exist", slot.get()));
-                };
-                let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
-                    return Ok(None);
-                };
-                let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
-                    return Err(format!(
-                        "selector producer node {} does not exist",
-                        node.get()
-                    ));
-                };
-                let inputs = node
-                    .input_bindings
-                    .clone()
-                    .filter_map(
-                        |binding| match self.artifact.bindings().get(binding as usize) {
-                            Some(BindingDeclaration::Input { source, .. }) => Some(*source),
-                            _ => None,
-                        },
-                    )
-                    .collect::<Vec<_>>();
-                match display_operation(&node.operation).as_str() {
-                    "access/index" => {
-                        let [input] = inputs.as_slice() else {
-                            return Err(
-                                "static index conversion must have exactly one input".to_owned()
-                            );
-                        };
-                        self.static_numeric_source(*input, maximum_elements)
+        let mut source = source;
+        let mut source_steps = 0usize;
+        loop {
+            match source {
+                ArtifactSource::Constant(constant) => {
+                    let value = self
+                        .artifact
+                        .constants()
+                        .get(constant)
+                        .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
+                    return static_numeric_indices(value.data(), maximum_elements).map(Some);
+                }
+                ArtifactSource::Slot(slot) => {
+                    source_steps = source_steps
+                        .checked_add(1)
+                        .ok_or_else(|| "static selector source traversal overflowed".to_owned())?;
+                    if source_steps > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+                        return Err(format!(
+                            "static selector source traversal exceeds the planning limit {MAX_STATIC_SELECTOR_SOURCE_STEPS}"
+                        ));
                     }
-                    operation @ ("range/exclusive"
-                    | "range/exclusive-increment"
-                    | "range/inclusive"
-                    | "range/inclusive-increment") => {
-                        let (inclusive, incremented, expected) = match operation {
-                            "range/exclusive" => (false, false, 2),
-                            "range/exclusive-increment" => (false, true, 3),
-                            "range/inclusive" => (true, false, 2),
-                            "range/inclusive-increment" => (true, true, 3),
-                            _ => unreachable!(),
-                        };
-                        if inputs.len() != expected {
-                            return Err(format!("static {operation} must have {expected} inputs"));
-                        }
-                        let mut endpoints = Vec::with_capacity(expected);
-                        for source in inputs {
-                            let Some(endpoint) = self.static_range_endpoint(source)? else {
-                                return Ok(None);
+                    let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
+                        return Err(format!("selector slot {} does not exist", slot.get()));
+                    };
+                    let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                        return Ok(None);
+                    };
+                    let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
+                        return Err(format!(
+                            "selector producer node {} does not exist",
+                            node.get()
+                        ));
+                    };
+                    let inputs = node
+                        .input_bindings
+                        .clone()
+                        .filter_map(|binding| {
+                            match self.artifact.bindings().get(binding as usize) {
+                                Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                                _ => None,
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    match display_operation(&node.operation).as_str() {
+                        "access/index" => {
+                            let [input] = inputs.as_slice() else {
+                                return Err("static index conversion must have exactly one input"
+                                    .to_owned());
                             };
-                            endpoints.push(endpoint);
+                            source = *input;
                         }
-                        let mut indices = Vec::new();
-                        mech_core::visit_canonical_value_range(
-                            &endpoints,
-                            inclusive,
-                            incremented,
-                            maximum_elements.min(MAX_STATIC_SELECTOR_ELEMENTS),
-                            |value| {
-                                indices.push(mech_core::canonical_positional_ordinal(&value)?);
-                                Ok::<(), mech_core::CanonicalSelectorError>(())
-                            },
-                        )
-                        .map_err(|error| format!("invalid static {operation}: {error:?}"))?;
-                        Ok(Some(indices))
+                        operation @ ("range/exclusive"
+                        | "range/exclusive-increment"
+                        | "range/inclusive"
+                        | "range/inclusive-increment") => {
+                            let (inclusive, incremented, expected) = match operation {
+                                "range/exclusive" => (false, false, 2),
+                                "range/exclusive-increment" => (false, true, 3),
+                                "range/inclusive" => (true, false, 2),
+                                "range/inclusive-increment" => (true, true, 3),
+                                _ => unreachable!(),
+                            };
+                            if inputs.len() != expected {
+                                return Err(format!(
+                                    "static {operation} must have {expected} inputs"
+                                ));
+                            }
+                            let mut endpoints = Vec::with_capacity(expected);
+                            for source in inputs {
+                                let Some(endpoint) = self.static_range_endpoint(source)? else {
+                                    return Ok(None);
+                                };
+                                endpoints.push(endpoint);
+                            }
+                            let mut indices = Vec::new();
+                            mech_core::visit_canonical_value_range(
+                                &endpoints,
+                                inclusive,
+                                incremented,
+                                maximum_elements.min(MAX_STATIC_SELECTOR_ELEMENTS),
+                                |value| {
+                                    indices.push(mech_core::canonical_positional_ordinal(&value)?);
+                                    Ok::<(), mech_core::CanonicalSelectorError>(())
+                                },
+                            )
+                            .map_err(|error| format!("invalid static {operation}: {error:?}"))?;
+                            return Ok(Some(indices));
+                        }
+                        _ => return Ok(None),
                     }
-                    _ => Ok(None),
                 }
             }
         }
     }
 
     fn static_range_endpoint(&self, source: ArtifactSource) -> Result<Option<ValueData>, String> {
-        match source {
-            ArtifactSource::Constant(constant) => {
-                let value = self
-                    .artifact
-                    .constants()
-                    .get(constant)
-                    .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
-                match value.data() {
-                    value @ (ValueData::U8(_)
-                    | ValueData::U16(_)
-                    | ValueData::U32(_)
-                    | ValueData::U64(_)
-                    | ValueData::U128(_)
-                    | ValueData::I8(_)
-                    | ValueData::I16(_)
-                    | ValueData::I32(_)
-                    | ValueData::I64(_)
-                    | ValueData::I128(_)
-                    | ValueData::F32(_)
-                    | ValueData::F64(_)) => Ok(Some(value.clone())),
-                    _ => Ok(None),
+        let mut source = source;
+        let mut converted_to_index = false;
+        let mut source_steps = 0usize;
+        loop {
+            match source {
+                ArtifactSource::Constant(constant) => {
+                    let value = self
+                        .artifact
+                        .constants()
+                        .get(constant)
+                        .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
+                    return canonical_static_range_endpoint(value.data(), converted_to_index);
                 }
-            }
-            ArtifactSource::Slot(slot) => {
-                let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
-                    return Err(format!("range endpoint slot {} does not exist", slot.get()));
-                };
-                let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
-                    return Ok(None);
-                };
-                let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
-                    return Err(format!(
-                        "range endpoint producer node {} does not exist",
-                        node.get()
-                    ));
-                };
-                if display_operation(&node.operation) != "access/index" {
-                    return Ok(None);
+                ArtifactSource::Slot(slot) => {
+                    source_steps = source_steps
+                        .checked_add(1)
+                        .ok_or_else(|| "static range endpoint traversal overflowed".to_owned())?;
+                    if source_steps > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+                        return Err(format!(
+                            "static range endpoint traversal exceeds the planning limit {MAX_STATIC_SELECTOR_SOURCE_STEPS}"
+                        ));
+                    }
+                    let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
+                        return Err(format!("range endpoint slot {} does not exist", slot.get()));
+                    };
+                    let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                        return Ok(None);
+                    };
+                    let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
+                        return Err(format!(
+                            "range endpoint producer node {} does not exist",
+                            node.get()
+                        ));
+                    };
+                    if display_operation(&node.operation) != "access/index" {
+                        return Ok(None);
+                    }
+                    let inputs = node
+                        .input_bindings
+                        .clone()
+                        .filter_map(|binding| {
+                            match self.artifact.bindings().get(binding as usize) {
+                                Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                                _ => None,
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    let [input] = inputs.as_slice() else {
+                        return Err(
+                            "static index conversion must have exactly one input".to_owned()
+                        );
+                    };
+                    converted_to_index = true;
+                    source = *input;
                 }
-                let inputs = node
-                    .input_bindings
-                    .clone()
-                    .filter_map(
-                        |binding| match self.artifact.bindings().get(binding as usize) {
-                            Some(BindingDeclaration::Input { source, .. }) => Some(*source),
-                            _ => None,
-                        },
-                    )
-                    .collect::<Vec<_>>();
-                let [input] = inputs.as_slice() else {
-                    return Err("static index conversion must have exactly one input".to_owned());
-                };
-                self.static_range_endpoint(*input)
             }
         }
     }
@@ -2679,6 +2695,34 @@ fn static_numeric_indices(data: &ValueData, maximum_elements: usize) -> Result<V
                 .map_err(|error| format!("invalid static selector: {error:?}"))
         }
     }
+}
+
+fn canonical_static_range_endpoint(
+    value: &ValueData,
+    converted_to_index: bool,
+) -> Result<Option<ValueData>, String> {
+    let value = match value {
+        value @ (ValueData::Index(_)
+        | ValueData::U8(_)
+        | ValueData::U16(_)
+        | ValueData::U32(_)
+        | ValueData::U64(_)
+        | ValueData::U128(_)
+        | ValueData::I8(_)
+        | ValueData::I16(_)
+        | ValueData::I32(_)
+        | ValueData::I64(_)
+        | ValueData::I128(_)
+        | ValueData::F32(_)
+        | ValueData::F64(_)) => value,
+        _ => return Ok(None),
+    };
+    if converted_to_index {
+        let ordinal = mech_core::canonical_positional_ordinal(value)
+            .map_err(|error| format!("invalid static access/index conversion: {error:?}"))?;
+        return Ok(Some(ValueData::Index(ordinal)));
+    }
+    Ok(Some(value.clone()))
 }
 
 fn artifact_constant_values(
@@ -3032,6 +3076,26 @@ mod axis_tests {
                     f64::from(u32::MAX) + 1.0,
                 )),
                 MAX_STATIC_SELECTOR_ELEMENTS
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn static_range_endpoints_preserve_declared_index_conversion() {
+        let fractional = ValueData::F64(mech_core::snapshot::F64Bits::from_f64(1.9));
+        let raw = canonical_static_range_endpoint(&fractional, false)
+            .unwrap()
+            .unwrap();
+        assert!(matches!(raw, ValueData::F64(value) if value.to_f64() == 1.9));
+        let converted = canonical_static_range_endpoint(&fractional, true)
+            .unwrap()
+            .unwrap();
+        assert!(matches!(converted, ValueData::Index(1)));
+        assert!(
+            canonical_static_range_endpoint(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(-1.0)),
+                true,
             )
             .is_err()
         );
