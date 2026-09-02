@@ -153,6 +153,7 @@ impl KernelCostEstimate {
         Ok(cost)
     }
 
+    #[cfg(test)]
     pub(crate) fn admit(self) -> Result<(), ResidentKernelError> {
         self.checked().map(drop)
     }

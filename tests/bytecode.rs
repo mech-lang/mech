@@ -412,6 +412,34 @@ fn unsupported_resident_target_is_structured_before_instance_emission() -> MResu
     Ok(())
 }
 
+#[test]
+#[cfg(feature = "distribution-full")]
+fn reactive_range_shape_is_unavailable_before_resident_instance_emission() -> MResult<()> {
+    for (expression, expected_operation) in [
+        ("1<u64>..to", "exclusive"),
+        ("1<u64>..=to", "inclusive"),
+        ("1<u64>..1<u64>..to", "exclusive-increment"),
+        ("1<u64>..1<u64>..=to", "inclusive-increment"),
+    ] {
+        let bytecode = compile_source(&format!("~to := 3<u64>\nvalues := {expression}\nvalues"))?;
+        let artifact = decode_program_artifact_bytecode_v1(&bytecode).unwrap();
+        let error = preflight_resident_target(
+            &artifact,
+            &mech::stdlib::source_catalog(),
+            &ActivationFacts::default(),
+            ResidentActivationOptions::default(),
+        )
+        .unwrap_err();
+        assert_eq!(error.target, ExecutionTarget::ResidentCpu);
+        let operation = error.operation.as_ref().unwrap();
+        assert_eq!(operation.module_path.len(), 1);
+        assert_eq!(operation.module_path[0], "range");
+        assert_eq!(operation.operation_name, expected_operation);
+        assert!(error.reason.contains("UnsupportedLayout"));
+    }
+    Ok(())
+}
+
 fn assert_f64(value: &Value, expected: f64) {
     assert!(
         matches!(value.data(), ValueData::F64(actual) if actual.to_f64() == expected),
@@ -1383,33 +1411,39 @@ fn tuple_source_constant_is_encoded_by_bytecode_v1() -> MResult<()> {
 }
 
 #[test]
-fn all_table_joins_activate_through_bytecode_v1() -> MResult<()> {
-    let source = r#"
-a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
-b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
-x := a ⟗ b
-x
-"#;
-
-    let (parsed, value) = run_compiled_source(source)?;
-
-    parsed.decode_constants()?;
-    assert!(parsed.types.iter().any(|runtime_type| {
-        matches!(
-            runtime_type,
-            RuntimeType::Option(inner) if **inner == RuntimeType::U8
-        )
-    }));
-    assert!(value.table_view().is_some());
-
-    for operator in ["⋈", "⟕", "⟖", "⟗", "⋉", "▷"] {
+#[cfg(feature = "distribution-full")]
+fn table_joins_remain_bytecode_v1_but_are_resident_target_gated() -> MResult<()> {
+    for (operator, expected_operation) in [
+        ("⋈", "join"),
+        ("⟕", "left-outer-join"),
+        ("⟖", "right-outer-join"),
+        ("⟗", "full-outer-join"),
+        ("⋉", "left-semi-join"),
+        ("▷", "left-anti-join"),
+    ] {
         let source = format!(
             "a := |id<u64> x<u8>| 1 10 | 2 20 |\nb := |id<u64> y<u8>| 2 30 | 3 40 |\na {operator} b"
         );
-        let (_, value) = run_compiled_source(&source)?;
+        let bytecode = compile_source(&source)?;
+        let parsed = ParsedProgram::from_bytes(&bytecode)?;
+        parsed.decode_constants()?;
+        let artifact = decode_program_artifact_bytecode_v1(&bytecode).unwrap();
+        let canonical = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let artifact = decode_program_artifact_bytecode_v1(&canonical).unwrap();
+        let error = preflight_resident_target(
+            &artifact,
+            &mech::stdlib::source_catalog(),
+            &ActivationFacts::default(),
+            ResidentActivationOptions::default(),
+        )
+        .unwrap_err();
+        assert_eq!(error.target, ExecutionTarget::ResidentCpu);
+        let operation = error.operation.as_ref().unwrap();
+        assert_eq!(operation.module_path.as_ref(), ["table"]);
+        assert_eq!(operation.operation_name, expected_operation);
         assert!(
-            value.table_view().is_some(),
-            "table join {operator} did not return a canonical table",
+            error.reason.contains("MissingResidentFactory"),
+            "unexpected table join preflight failure for {operator}: {error:?}",
         );
     }
     Ok(())

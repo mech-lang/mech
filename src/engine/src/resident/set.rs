@@ -811,15 +811,6 @@ fn admit_set_candidate_operation(
     Ok(admitted)
 }
 
-fn admit_set_read(comparison_work: usize) -> Result<(), ResidentKernelError> {
-    super::budget::resident_cost! {
-        comparison_work,
-        compute_work: comparison_work,
-        ..KernelCostEstimate::default()
-    }
-    .admit()
-}
-
 fn admit_set_materialization(
     output_elements: usize,
     comparison_work: usize,
@@ -1167,10 +1158,7 @@ fn set_relation(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    admit_set_read(checked_sum(&[
-        set_cardinality(left)?,
-        set_cardinality(right)?,
-    ])?)?;
+    admit_set_relation(left, right, schemas)?;
     let next = left
         .set_relation(schemas, right, schemas, relation)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -1181,6 +1169,36 @@ fn set_relation(
     let changed = *target != next;
     *target = next;
     Ok(changed)
+}
+
+fn admit_set_relation(
+    left: &Value,
+    right: &Value,
+    schemas: &mech_core::SchemaTable,
+) -> Result<(), ResidentKernelError> {
+    // Canonical set relations use recursive ordered-key comparison. Visit
+    // both borrowed trees through the incremental meter before entering that
+    // comparison so a single recursively large key cannot hide behind an
+    // outer cardinality of one.
+    let mut meter = ResidentBudgetMeter::default();
+    let left_footprint =
+        super::budget::measure_canonical_value_footprint(&mut meter, left, schemas)?;
+    let right_footprint =
+        super::budget::measure_canonical_value_footprint(&mut meter, right, schemas)?;
+    meter.charge_comparison_work(checked_u64(checked_sum(&[
+        set_cardinality(left)?,
+        set_cardinality(right)?,
+    ])?)?)?;
+    let mut cost = meter.estimate();
+    cost.output_elements = 1;
+    cost.output_bytes = checked_u64(core::mem::size_of::<u8>())?;
+    cost.retained_nodes = left_footprint
+        .node_count
+        .checked_add(right_footprint.node_count)
+        .and_then(|nodes| nodes.checked_add(1))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    PreparedKernel::new((), cost).admit()?.into_plan();
+    Ok(())
 }
 
 fn set_size(
@@ -2146,6 +2164,58 @@ mod tests {
         let kernel = BoundResidentKernel::new(element_of, Box::new([]))
             .with_snapshot_schemas(schemas)
             .with_retained_state(Arc::new(metadata));
+        let mut output = [1_u8];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(output, [1]);
+    }
+
+    #[test]
+    fn one_element_set_relation_meters_the_recursive_key_before_comparison() {
+        let width = super::super::budget::MAX_RESIDENT_RETAINED_NODES as usize + 1;
+        let element_body = SchemaBody::Tuple(vec![SchemaBody::Bool; width].into_boxed_slice());
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let set_handle = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(element_body),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let set_schema = build.resolve(set_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let set = || {
+            ValueDraft {
+                schema: set_schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Set(
+                    vec![ValueDataDraft::Tuple(
+                        (0..width)
+                            .map(|_| ValueDataDraft::Bool(false))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    )]
+                    .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let left = set();
+        let right = set();
+        let left_slot = [Some(left)];
+        let right_slot = [Some(right)];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left_slot),
+            ResidentValueRef::Snapshot(&right_slot),
+        ];
+        let kernel = BoundResidentKernel::new(
+            set_relation,
+            vec![SetValueRelation::Subset as u64].into_boxed_slice(),
+        )
+        .with_snapshot_schemas(schemas);
         let mut output = [1_u8];
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),

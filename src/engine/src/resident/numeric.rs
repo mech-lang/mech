@@ -6291,24 +6291,33 @@ fn indexed_assign_snapshot_aggregate(
     let output_bytes = current_bytes
         .checked_add(source_cost.retained_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let retained_nodes = current_nodes
-        .checked_add(source_cost.retained_nodes)
-        .and_then(|nodes| nodes.checked_add(selector_cost.retained_nodes))
+    let (final_output_nodes, node_phases) = snapshot_aggregate_assignment_node_phases(
+        current_nodes,
+        source_cost.retained_nodes,
+        selector_cost.retained_nodes,
+    )?;
+    let measured_nodes = node_phases
+        .current_persistent
+        .checked_add(node_phases.normalized_plan)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let draft_bytes = retained_nodes
+    let draft_bytes = final_output_nodes
         .checked_mul(super::budget::checked_u64(core::mem::size_of::<
             ValueDataDraft,
         >())?)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    super::budget::PreparedKernel::new(
-        (),
+    let execution_ordinal = super::budget::PreparedMutationPlan::new(
+        execution_ordinal,
+        super::budget::PublishedOutputFootprint {
+            elements: 1,
+            retained_bytes: output_bytes,
+            retained_nodes: final_output_nodes,
+        },
+        node_phases,
         super::budget::resident_cost! {
             comparison_work: footprint_work.comparison_work,
-            compute_work: retained_nodes
+            compute_work: measured_nodes
                 .checked_add(footprint_work.compute_work)
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            output_elements: 1,
-            output_bytes,
             temporary_bytes: current_bytes
                 .checked_add(materialized_bytes)
                 .ok_or(ResidentKernelError::InvalidShape)?,
@@ -6316,10 +6325,9 @@ fn indexed_assign_snapshot_aggregate(
                 .checked_add(selector_cost.cloned_bytes)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             container_bytes: draft_bytes,
-            retained_nodes,
             ..super::budget::KernelCostEstimate::default()
         },
-    )
+    )?
     .admit()?
     .into_plan();
     let source = selector_value(schemas, &plan.source, input(inputs, 0)?)?;
@@ -6338,6 +6346,36 @@ fn indexed_assign_snapshot_aggregate(
         .map_err(|_| ResidentKernelError::InvalidOutput)?;
     *target = Some(next);
     Ok(changed)
+}
+
+fn snapshot_aggregate_assignment_node_phases(
+    current_nodes: u64,
+    source_nodes: u64,
+    selector_nodes: u64,
+) -> Result<(u64, super::budget::MutationRetainedNodeFootprint), ResidentKernelError> {
+    let normalized_plan = source_nodes
+        .checked_add(selector_nodes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // Without materializing the replacement, the complete resulting tree is
+    // conservatively bounded by the current tree plus the source tree. The
+    // canonical aggregate draft and finalized value are separate admitted
+    // populations while the borrowed current/source/selector values remain
+    // live.
+    let final_output_nodes = current_nodes
+        .checked_add(source_nodes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let current_persistent = current_nodes
+        .checked_add(source_nodes)
+        .and_then(|nodes| nodes.checked_add(selector_nodes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok((
+        final_output_nodes,
+        super::budget::MutationRetainedNodeFootprint {
+            current_persistent,
+            normalized_plan,
+            temporary_draft: final_output_nodes,
+        },
+    ))
 }
 
 fn ekf_trig(
@@ -10440,6 +10478,28 @@ fn snapshot_access(
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
+    let source_footprint =
+        super::budget::measure_canonical_value_footprint(&mut footprint_meter, source, schemas)?;
+    let snapshot_output = matches!(&output, ResidentValueMut::Snapshot(_));
+    let prior_output_nodes = match &output {
+        ResidentValueMut::Snapshot(values) => {
+            let mut nodes = 0u64;
+            for value in values.iter().filter_map(Option::as_ref) {
+                nodes = nodes
+                    .checked_add(
+                        super::budget::measure_canonical_value_footprint(
+                            &mut footprint_meter,
+                            value,
+                            schemas,
+                        )?
+                        .node_count,
+                    )
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+            }
+            nodes
+        }
+        output => super::budget::checked_u64(output.len())?,
+    };
     let mut selector_cost = SelectorMaterializationCost::default();
     for index in 0..plan.selectors.len() {
         let selector = inputs
@@ -10482,20 +10542,35 @@ fn snapshot_access(
         .cloned_bytes
         .checked_add(output_retained_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let retained_nodes = selector_cost
-        .retained_nodes
-        .checked_add(output_nodes)
+    let staged_value_nodes = output_nodes
+        .checked_add(1)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    super::budget::PreparedKernel::new(
-        (),
+    let final_output_nodes = if snapshot_output {
+        staged_value_nodes
+    } else {
+        super::budget::checked_u64(output_cost.count)?
+    };
+    let node_phases = snapshot_access_node_phases(
+        source_footprint.node_count,
+        prior_output_nodes,
+        selector_cost.retained_nodes,
+        output_nodes,
+        staged_value_nodes,
+    )?;
+    let output_cost = super::budget::PreparedMutationPlan::new(
+        output_cost,
+        super::budget::PublishedOutputFootprint {
+            elements: super::budget::checked_u64(output_cost.count)?,
+            retained_bytes: output_retained_bytes,
+            retained_nodes: final_output_nodes,
+        },
+        node_phases,
         super::budget::resident_cost! {
             comparison_work: footprint_work.comparison_work,
             compute_work: super::budget::checked_u64(selector_cost.elements)?
                 .checked_add(super::budget::checked_u64(output_cost.count)?)
                 .and_then(|work| work.checked_add(footprint_work.compute_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            output_elements: output_cost.count,
-            output_bytes: output_retained_bytes,
             temporary_bytes: output_retained_bytes
                 .checked_mul(2)
                 .ok_or(ResidentKernelError::InvalidShape)?,
@@ -10508,10 +10583,9 @@ fn snapshot_access(
                 .checked_add(footprint_work.selector_bytes)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             index_bytes: coordinate_bytes,
-            retained_nodes,
             ..super::budget::KernelCostEstimate::default()
         },
-    )
+    )?
     .admit()?
     .into_plan();
     let selectors = plan
@@ -10537,6 +10611,25 @@ fn snapshot_access(
         schemas,
     )?;
     write_access_output(kernel, plan, data, output)
+}
+
+fn snapshot_access_node_phases(
+    source_nodes: u64,
+    prior_output_nodes: u64,
+    selector_nodes: u64,
+    output_draft_nodes: u64,
+    staged_value_nodes: u64,
+) -> Result<super::budget::MutationRetainedNodeFootprint, ResidentKernelError> {
+    Ok(super::budget::MutationRetainedNodeFootprint {
+        current_persistent: source_nodes
+            .checked_add(prior_output_nodes)
+            .and_then(|nodes| nodes.checked_add(selector_nodes))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        normalized_plan: selector_nodes,
+        temporary_draft: output_draft_nodes
+            .checked_add(staged_value_nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    })
 }
 
 fn matrix_multiply(
@@ -15649,6 +15742,56 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(output[0].is_none());
+    }
+
+    #[test]
+    fn snapshot_aggregate_assignment_admits_draft_and_final_node_populations() {
+        let (final_nodes, phases) =
+            snapshot_aggregate_assignment_node_phases(40_000, 1, 1).unwrap();
+        assert_eq!(final_nodes, 40_001);
+        assert_eq!(phases.current_persistent, 40_002);
+        assert_eq!(phases.normalized_plan, 2);
+        assert_eq!(phases.temporary_draft, 40_001);
+        assert_eq!(
+            super::super::budget::PreparedMutationPlan::new(
+                (),
+                super::super::budget::PublishedOutputFootprint {
+                    elements: 1,
+                    retained_bytes: 0,
+                    retained_nodes: final_nodes,
+                },
+                phases,
+                super::super::budget::KernelCostEstimate::default(),
+            )
+            .unwrap()
+            .admit()
+            .unwrap_err(),
+            ResidentKernelError::InvalidShape,
+        );
+    }
+
+    #[test]
+    fn snapshot_access_admits_source_prior_output_and_both_staged_populations() {
+        let phases = snapshot_access_node_phases(40_000, 30_000, 1, 30_000, 30_001).unwrap();
+        assert_eq!(phases.current_persistent, 70_001);
+        assert_eq!(phases.normalized_plan, 1);
+        assert_eq!(phases.temporary_draft, 60_001);
+        assert_eq!(
+            super::super::budget::PreparedMutationPlan::new(
+                (),
+                super::super::budget::PublishedOutputFootprint {
+                    elements: 1,
+                    retained_bytes: 0,
+                    retained_nodes: 30_001,
+                },
+                phases,
+                super::super::budget::KernelCostEstimate::default(),
+            )
+            .unwrap()
+            .admit()
+            .unwrap_err(),
+            ResidentKernelError::InvalidShape,
+        );
     }
 
     #[test]

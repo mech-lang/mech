@@ -1562,6 +1562,14 @@ fn classify_nodes(
     Ok(classes.into_boxed_slice())
 }
 
+fn operation_requires_activation_fixed_range_shape(operation: &OperationReference) -> bool {
+    operation.module_path.as_ref() == ["range"]
+        && matches!(
+            operation.operation_name.as_str(),
+            "exclusive" | "exclusive-increment" | "inclusive" | "inclusive-increment"
+        )
+}
+
 struct LayoutBuild {
     slots: Box<[ResolvedSlot]>,
     constant_regions: Box<[ResidentRegion]>,
@@ -1876,6 +1884,19 @@ fn build_plan(
             OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
             _ => None,
         };
+        // Resident storage has a fixed physical extent for the lifetime of an
+        // activated plan. A range whose endpoints depend on turn inputs or
+        // mutable state can legitimately change cardinality in the source
+        // runtime, so reject that target capability before a bytecode-backed
+        // instance is emitted instead of failing on a later execution turn.
+        if class != NodeClass::Activation
+            && operation_requires_activation_fixed_range_shape(&node.operation)
+        {
+            return Err(ResidentActivationError::KernelBind {
+                node: node.node,
+                error: ResidentKernelBindError::UnsupportedLayout,
+            });
+        }
         let input_layouts = input_sources
             .iter()
             .map(|source| source_port_layout(artifact, &layout, *source))

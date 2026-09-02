@@ -31,6 +31,7 @@ pub use jit::*;
 
 const SIMD_LANES: usize = 4;
 const FIXED_SHAPE_INTEGRITY_WORDS: usize = 2;
+const MAX_STATIC_SELECTOR_ELEMENTS: usize = 65_536;
 
 fn evaluate_operand_simd(operand: ScalarOperand, registers: &[f32x4]) -> f32x4 {
     match operand {
@@ -2301,7 +2302,11 @@ impl<'a> BatchCompiler<'a> {
         upper: usize,
         role: &str,
     ) -> Result<Vec<usize>, String> {
-        let Some(one_based) = self.static_selector_indices(source)? else {
+        // Selector cardinality is independent of the indexed axis: repeated
+        // positions can legitimately produce more outputs than `upper`.
+        // Bound planning by the target-wide static-selector limit instead.
+        let Some(one_based) = self.static_selector_indices(source, MAX_STATIC_SELECTOR_ELEMENTS)?
+        else {
             return Err(format!(
                 "matrix {role} selector must be compile-time constant"
             ));
@@ -2325,11 +2330,19 @@ impl<'a> BatchCompiler<'a> {
             .collect()
     }
 
-    fn static_selector_indices(&self, source: ArtifactSource) -> Result<Option<Vec<u64>>, String> {
-        self.static_numeric_source(source)
+    fn static_selector_indices(
+        &self,
+        source: ArtifactSource,
+        maximum_elements: usize,
+    ) -> Result<Option<Vec<u64>>, String> {
+        self.static_numeric_source(source, maximum_elements)
     }
 
-    fn static_numeric_source(&self, source: ArtifactSource) -> Result<Option<Vec<u64>>, String> {
+    fn static_numeric_source(
+        &self,
+        source: ArtifactSource,
+        maximum_elements: usize,
+    ) -> Result<Option<Vec<u64>>, String> {
         match source {
             ArtifactSource::Constant(constant) => {
                 let value = self
@@ -2337,7 +2350,7 @@ impl<'a> BatchCompiler<'a> {
                     .constants()
                     .get(constant)
                     .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
-                static_numeric_indices(value.data()).map(Some)
+                static_numeric_indices(value.data(), maximum_elements).map(Some)
             }
             ArtifactSource::Slot(slot) => {
                 let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
@@ -2369,32 +2382,14 @@ impl<'a> BatchCompiler<'a> {
                                 "static index conversion must have exactly one input".to_owned()
                             );
                         };
-                        self.static_numeric_source(*input)
+                        self.static_numeric_source(*input, maximum_elements)
                     }
-                    "range/inclusive" => {
-                        let [from, to] = inputs.as_slice() else {
-                            return Err("static inclusive range must have two inputs".to_owned());
-                        };
-                        let Some(from) = self.static_numeric_source(*from)? else {
-                            return Ok(None);
-                        };
-                        let Some(to) = self.static_numeric_source(*to)? else {
-                            return Ok(None);
-                        };
-                        let ([from], [to]) = (from.as_slice(), to.as_slice()) else {
-                            return Err("static inclusive range bounds must be scalar".to_owned());
-                        };
-                        if from > to {
-                            return Ok(Some(Vec::new()));
-                        }
-                        let count = to
-                            .checked_sub(*from)
-                            .and_then(|difference| difference.checked_add(1))
-                            .ok_or_else(|| "static inclusive range is too large".to_owned())?;
-                        let count = usize::try_from(count)
-                            .map_err(|_| "static inclusive range is too large".to_owned())?;
-                        Ok(Some((*from..=*to).take(count).collect()))
-                    }
+                    // Range evaluation belongs to the typed source runtime.
+                    // Reconstructing it here would duplicate its numeric and
+                    // overflow semantics, while evaluating it first could
+                    // allocate an unbounded selector. Range-produced GPU
+                    // selectors are therefore unavailable in R1.
+                    "range/inclusive" => Ok(None),
                     _ => Ok(None),
                 }
             }
@@ -2403,7 +2398,7 @@ impl<'a> BatchCompiler<'a> {
 
     fn static_selector_slot(&self, slot: CellSlotId) -> bool {
         if !self
-            .static_selector_indices(ArtifactSource::Slot(slot))
+            .static_selector_indices(ArtifactSource::Slot(slot), MAX_STATIC_SELECTOR_ELEMENTS)
             .is_ok_and(|indices| indices.is_some())
         {
             return false;
@@ -2569,10 +2564,17 @@ fn fixed_shape(
     }
 }
 
-fn static_numeric_indices(data: &ValueData) -> Result<Vec<u64>, String> {
+fn static_numeric_indices(data: &ValueData, maximum_elements: usize) -> Result<Vec<u64>, String> {
     match data {
         ValueData::Matrix(matrix) => {
             let elements = matrix.elements();
+            if elements.len() > maximum_elements || elements.len() > MAX_STATIC_SELECTOR_ELEMENTS {
+                return Err(format!(
+                    "static selector cardinality {} exceeds the GPU planning limit {}",
+                    elements.len(),
+                    maximum_elements.min(MAX_STATIC_SELECTOR_ELEMENTS),
+                ));
+            }
             let mut indices = Vec::with_capacity(elements.len());
             mech_core::visit_canonical_positional_sequence(elements, u32::MAX as usize, |index| {
                 indices.push(index as u64 + 1);
@@ -2581,9 +2583,14 @@ fn static_numeric_indices(data: &ValueData) -> Result<Vec<u64>, String> {
             .map_err(|error| format!("invalid static selector: {error:?}"))?;
             Ok(indices)
         }
-        value => mech_core::canonical_positional_ordinal(value)
-            .map(|value| vec![value])
-            .map_err(|error| format!("invalid static selector: {error:?}")),
+        value => {
+            if maximum_elements == 0 {
+                return Err("static selector cardinality exceeds the GPU planning limit".to_owned());
+            }
+            mech_core::canonical_positional_ordinal(value)
+                .map(|value| vec![value])
+                .map_err(|error| format!("invalid static selector: {error:?}"))
+        }
     }
 }
 
@@ -2891,44 +2898,82 @@ mod axis_tests {
             ValueData::I64(1),
             ValueData::I128(1),
         ] {
-            assert_eq!(static_numeric_indices(&value), Ok(vec![1]), "{value:?}");
+            assert_eq!(
+                static_numeric_indices(&value, MAX_STATIC_SELECTOR_ELEMENTS),
+                Ok(vec![1]),
+                "{value:?}",
+            );
         }
         assert_eq!(
-            static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
-                2.75,
-            ))),
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(2.75,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            ),
             Ok(vec![2]),
         );
         assert_eq!(
-            static_numeric_indices(&ValueData::F32(mech_core::snapshot::F32Bits::from_f32(
-                1.99,
-            ))),
+            static_numeric_indices(
+                &ValueData::F32(mech_core::snapshot::F32Bits::from_f32(1.99,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            ),
             Ok(vec![1]),
         );
         assert!(
-            static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
-                f64::INFINITY,
-            )))
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(f64::INFINITY,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            )
             .is_err()
         );
         assert!(
-            static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
-                -1.0,
-            )))
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(-1.0,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            )
             .is_err()
         );
         assert!(
-            static_numeric_indices(&ValueData::F64(
-                mech_core::snapshot::F64Bits::from_f64(0.5,)
-            ))
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(0.5,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            )
             .is_err()
         );
         assert!(
-            static_numeric_indices(&ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
-                f64::from(u32::MAX) + 1.0,
-            )))
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
+                    f64::from(u32::MAX) + 1.0,
+                )),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            )
             .is_err()
         );
+    }
+
+    #[test]
+    fn range_produced_gpu_selectors_are_target_gated_before_lowering() {
+        let mut compiler = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap();
+        let source = "~result := [0f32]\nmatrix := [7f32 9f32]\nselector := 1.9..=2.1\nresult = matrix[selector]\nresult";
+        let artifact = compiler
+            .compile_source_artifact(source)
+            .unwrap()
+            .into_artifact();
+        let error = crate::ComputeLowerer
+            .compile_batched(&artifact, 1)
+            .unwrap_err();
+        assert!(
+            error
+                .diagnostics()
+                .iter()
+                .all(|diagnostic| { diagnostic.code == GpuDiagnosticCode::OperationUnsupported })
+        );
+        assert!(error.diagnostics().iter().any(|diagnostic| {
+            diagnostic.operation.as_deref() == Some("access/scalar")
+                || diagnostic.operation.as_deref() == Some("access/range")
+        }));
     }
 
     #[test]
