@@ -2757,6 +2757,11 @@ fn is_access_positional_selector_schema(body: &SchemaBody) -> bool {
     }
 }
 
+fn is_logical_selector_schema(body: &SchemaBody) -> bool {
+    matches!(body, SchemaBody::Bool)
+        || matches!(body, SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool)
+}
+
 fn access_selector_layout_matches_schema(
     layout: &mech_core::ResidentPortLayout,
     body: &SchemaBody,
@@ -2825,6 +2830,16 @@ pub(super) fn declared_selector_cardinality(
             .len()
             .ok_or(ResidentKernelBindError::UnsupportedLayout),
     }
+}
+
+fn resident_shape_from_dimensions(
+    rows: usize,
+    columns: usize,
+) -> Result<ResidentShape, ResidentKernelBindError> {
+    Ok(ResidentShape {
+        rows: u32::try_from(rows).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?,
+        columns: u32::try_from(columns).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?,
+    })
 }
 
 fn bind_indexed_assign_with_region(
@@ -3722,12 +3737,15 @@ fn bind_gather_1d(
         ShapeRule::Declared,
         ChangeDetectionPolicy::KernelReported,
     )?;
-    if request.inputs.len() != 2
-        || request.inputs[0].kind != ResidentValueKind::F64
-        || !numeric_positional_selector_layout(request, &request.inputs[1])
+    let [source, selector] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let selected = declared_selector_cardinality(request, selector)?;
+    let expected_output = resident_shape_from_dimensions(selected, 1)?;
+    if source.kind != ResidentValueKind::F64
+        || !numeric_positional_selector_layout(request, selector)
         || request.output.kind != ResidentValueKind::F64
-        || request.output.shape.len()
-            != Some(declared_selector_cardinality(request, &request.inputs[1])?)
+        || request.output.shape != expected_output
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -3898,6 +3916,14 @@ fn bind_snapshot_access_mode(
                 .ok_or(ResidentKernelBindError::UnsupportedLayout)
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let selector_cardinalities = request.inputs[1..]
+        .iter()
+        .map(|selector| declared_selector_cardinality(request, selector))
+        .collect::<Result<Vec<_>, _>>()?;
+    let logical_selectors = selector_schemas
+        .iter()
+        .map(|schema| is_logical_selector_schema(schema.body()))
+        .collect::<Vec<_>>();
     let selector_layouts_valid = request.inputs[1..]
         .iter()
         .zip(&selector_schemas)
@@ -3984,7 +4010,7 @@ fn bind_snapshot_access_mode(
                 None,
                 value.as_ref() == output_schema.body(),
             ),
-            SchemaBody::Table { columns, .. } if selector_count == 1 => {
+            SchemaBody::Table { columns, rows } if selector_count == 1 => {
                 let output_element = match output_schema.body() {
                     SchemaBody::Matrix { element, .. } => Some(element.as_ref()),
                     _ => None,
@@ -4002,19 +4028,38 @@ fn bind_snapshot_access_mode(
                     .and_then(|ordinal| columns.get(ordinal))
                     .zip(output_element)
                     .is_some_and(|(column, output)| &column.schema == output);
+                let output_dimensions = declared_matrix_dimensions(request, &request.output).ok();
+                let exact_source_rows = match rows {
+                    mech_core::CardinalitySpec::Exact(rows) => Some(
+                        source
+                            .shape_instance
+                            .resolve_dimension(rows)
+                            .ok()
+                            .and_then(|value| usize::try_from(value).ok())
+                            .ok_or(ResidentKernelBindError::UnsupportedLayout)?,
+                    ),
+                    mech_core::CardinalitySpec::Dynamic { .. } => None,
+                };
+                let column_shape_supported =
+                    output_dimensions.is_some_and(|(output_rows, output_columns)| {
+                        output_columns == 1
+                            && exact_source_rows
+                                .is_none_or(|source_rows| output_rows == source_rows)
+                    });
                 (
                     None,
                     None,
-                    declared_matrix_dimensions(request, &request.output).ok(),
+                    output_dimensions,
                     (!homogeneous).then_some(ordinal).flatten(),
-                    if homogeneous {
-                        columns
-                            .first()
-                            .zip(output_element)
-                            .is_some_and(|(column, output)| &column.schema == output)
-                    } else {
-                        selected_matches
-                    },
+                    column_shape_supported
+                        && if homogeneous {
+                            columns
+                                .first()
+                                .zip(output_element)
+                                .is_some_and(|(column, output)| &column.schema == output)
+                        } else {
+                            selected_matches
+                        },
                 )
             }
             SchemaBody::Matrix { element, .. } if (1..=2).contains(&selector_count) => {
@@ -4051,6 +4096,49 @@ fn bind_snapshot_access_mode(
                         || request.inputs[1].shape != ResidentShape::SCALAR))
                     || (mode == ResolvedSelectionMode::LinearGather && output_dimensions.is_none())
                 {
+                    return Err(ResidentKernelBindError::UnsupportedLayout);
+                }
+                let shape_supported = match (mode, output_dimensions) {
+                    (ResolvedSelectionMode::LinearScalar, None) => selector_cardinalities[0] == 1,
+                    (ResolvedSelectionMode::LinearGather, Some(output)) => {
+                        output.1 == 1
+                            && if logical_selectors[0] {
+                                output.0 <= selector_cardinalities[0]
+                            } else {
+                                output.0 == selector_cardinalities[0]
+                            }
+                    }
+                    (ResolvedSelectionMode::Rows, Some(output)) => {
+                        output.1 == source_dimensions.1
+                            && if logical_selectors[0] {
+                                output.0 <= selector_cardinalities[0]
+                            } else {
+                                output.0 == selector_cardinalities[0]
+                            }
+                    }
+                    (ResolvedSelectionMode::Columns, Some(output)) => {
+                        output.0 == source_dimensions.0
+                            && if logical_selectors[0] {
+                                output.1 <= selector_cardinalities[0]
+                            } else {
+                                output.1 == selector_cardinalities[0]
+                            }
+                    }
+                    (ResolvedSelectionMode::Rectangle, None) => selector_cardinalities == [1, 1],
+                    (ResolvedSelectionMode::Rectangle, Some(output)) => {
+                        (if logical_selectors[0] {
+                            output.0 <= selector_cardinalities[0]
+                        } else {
+                            output.0 == selector_cardinalities[0]
+                        }) && (if logical_selectors[1] {
+                            output.1 <= selector_cardinalities[1]
+                        } else {
+                            output.1 == selector_cardinalities[1]
+                        })
+                    }
+                    _ => false,
+                };
+                if !shape_supported {
                     return Err(ResidentKernelBindError::UnsupportedLayout);
                 }
                 (
@@ -4477,7 +4565,8 @@ fn bind_all_rows_columns(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
     let selected = declared_selector_cardinality(request, &request.inputs[1])?;
-    if request.output.shape.len() != Some(source.shape.rows as usize * selected) {
+    let expected = resident_shape_from_dimensions(source.shape.rows as usize, selected)?;
+    if request.output.shape != expected {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     bound(
@@ -4513,8 +4602,9 @@ fn bind_row_all_columns(
     let [source, _] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    let expected = resident_shape_from_dimensions(1, source.shape.columns as usize)?;
     if declared_selector_cardinality(request, &request.inputs[1])? != 1
-        || request.output.shape.len() != Some(source.shape.columns as usize)
+        || request.output.shape != expected
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -4532,7 +4622,8 @@ fn bind_rows_all_columns(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
     let selected = declared_selector_cardinality(request, &request.inputs[1])?;
-    if request.output.shape.len() != Some(selected * source.shape.columns as usize) {
+    let expected = resident_shape_from_dimensions(selected, source.shape.columns as usize)?;
+    if request.output.shape != expected {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     bound(
@@ -16088,7 +16179,7 @@ mod tests {
         let (schemas, ids) = test_schema_table([
             f64_body.clone(),
             matrix(f64_body.clone(), 1, 3),
-            matrix(f64_body.clone(), 1, 2),
+            matrix(f64_body.clone(), 2, 1),
             matrix(u64_body, 1, 2),
             matrix(f32_body, 1, 2),
             matrix(f64_body.clone(), 2, 3),
@@ -16120,8 +16211,8 @@ mod tests {
             *output_schema,
             ResidentValueKind::F64,
             ResidentShape {
-                rows: 1,
-                columns: 2,
+                rows: 2,
+                columns: 1,
             },
         );
         let gather_contract = test_contract(
@@ -16402,6 +16493,245 @@ mod tests {
             .execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output))
             .unwrap();
         assert_eq!(output, [9.0, 9.0, 3.0, 4.0, 9.0, 9.0]);
+    }
+
+    #[test]
+    fn access_binders_reject_same_cardinality_wrong_output_dimensions() {
+        let matrix = |element, rows, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(rows),
+                mech_core::DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let f64_body = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+        let u64_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let table_body = SchemaBody::Table {
+            columns: vec![mech_core::SchemaField {
+                name: "number".to_owned(),
+                schema: u64_body.clone(),
+            }]
+            .into_boxed_slice(),
+            rows: mech_core::CardinalitySpec::Exact(mech_core::DimensionExpr::Constant(2)),
+        };
+        let (schemas, ids) = test_schema_table([
+            u64_body.clone(),
+            SchemaBody::Id,
+            matrix(u64_body.clone(), 2, 1),
+            matrix(f64_body.clone(), 1, 3),
+            matrix(f64_body.clone(), 2, 1),
+            matrix(f64_body.clone(), 2, 3),
+            matrix(f64_body.clone(), 2, 2),
+            matrix(u64_body.clone(), 2, 3),
+            matrix(u64_body.clone(), 3, 2),
+            matrix(u64_body.clone(), 2, 2),
+            matrix(u64_body.clone(), 1, 4),
+            matrix(u64_body.clone(), 1, 2),
+            matrix(u64_body.clone(), 3, 1),
+            table_body,
+        ]);
+        let [
+            u64_schema,
+            id_schema,
+            selector_2x1,
+            dense_1x3,
+            dense_2x1,
+            dense_2x3,
+            dense_2x2,
+            snapshot_2x3,
+            snapshot_3x2,
+            snapshot_2x2,
+            snapshot_1x4,
+            snapshot_1x2,
+            snapshot_3x1,
+            table,
+        ] = ids.as_slice()
+        else {
+            unreachable!()
+        };
+        let contract = |source, selectors: &[mech_core::SchemaId], output| {
+            let mut inputs = vec![source];
+            inputs.extend_from_slice(selectors);
+            test_contract(
+                &inputs,
+                output,
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::KernelReported,
+            )
+        };
+        let dense_layout = |schema, rows, columns| {
+            test_layout(
+                &schemas,
+                schema,
+                ResidentValueKind::F64,
+                ResidentShape { rows, columns },
+            )
+        };
+        let snapshot_layout = |schema| {
+            test_layout(
+                &schemas,
+                schema,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            )
+        };
+        let selector_layout = snapshot_layout(*selector_2x1);
+
+        let gather_contract = contract(*dense_1x3, &[*selector_2x1], *dense_2x1);
+        assert!(
+            bind_gather_1d(&ResidentKernelBindRequest {
+                contract: &gather_contract,
+                schemas: &schemas,
+                inputs: &[dense_layout(*dense_1x3, 1, 3), selector_layout.clone()],
+                output: dense_layout(*dense_2x1, 2, 1),
+            })
+            .is_ok()
+        );
+        assert!(matches!(
+            bind_gather_1d(&ResidentKernelBindRequest {
+                contract: &gather_contract,
+                schemas: &schemas,
+                inputs: &[dense_layout(*dense_1x3, 1, 3), selector_layout.clone()],
+                output: dense_layout(*dense_2x1, 1, 2),
+            }),
+            Err(ResidentKernelBindError::UnsupportedLayout)
+        ));
+
+        let row_contract = contract(*dense_2x3, &[*selector_2x1], *dense_2x3);
+        assert!(
+            bind_rows_all_columns(&ResidentKernelBindRequest {
+                contract: &row_contract,
+                schemas: &schemas,
+                inputs: &[dense_layout(*dense_2x3, 2, 3), selector_layout.clone()],
+                output: dense_layout(*dense_2x3, 2, 3),
+            })
+            .is_ok()
+        );
+        assert!(matches!(
+            bind_rows_all_columns(&ResidentKernelBindRequest {
+                contract: &row_contract,
+                schemas: &schemas,
+                inputs: &[dense_layout(*dense_2x3, 2, 3), selector_layout.clone()],
+                output: dense_layout(*dense_2x3, 3, 2),
+            }),
+            Err(ResidentKernelBindError::UnsupportedLayout)
+        ));
+
+        let column_contract = contract(*dense_2x3, &[*selector_2x1], *dense_2x2);
+        assert!(
+            bind_all_rows_columns(&ResidentKernelBindRequest {
+                contract: &column_contract,
+                schemas: &schemas,
+                inputs: &[dense_layout(*dense_2x3, 2, 3), selector_layout.clone()],
+                output: dense_layout(*dense_2x2, 2, 2),
+            })
+            .is_ok()
+        );
+        assert!(matches!(
+            bind_all_rows_columns(&ResidentKernelBindRequest {
+                contract: &column_contract,
+                schemas: &schemas,
+                inputs: &[dense_layout(*dense_2x3, 2, 3), selector_layout.clone()],
+                output: dense_layout(*dense_2x2, 1, 4),
+            }),
+            Err(ResidentKernelBindError::UnsupportedLayout)
+        ));
+
+        let scalar_row_contract = contract(*dense_2x3, &[*u64_schema], *dense_1x3);
+        assert!(matches!(
+            bind_row_all_columns(&ResidentKernelBindRequest {
+                contract: &scalar_row_contract,
+                schemas: &schemas,
+                inputs: &[dense_layout(*dense_2x3, 2, 3), snapshot_layout(*u64_schema),],
+                output: dense_layout(*dense_1x3, 3, 1),
+            }),
+            Err(ResidentKernelBindError::UnsupportedLayout)
+        ));
+
+        let snapshot_cases = [
+            (
+                ResolvedSelectionMode::LinearGather,
+                vec![*selector_2x1],
+                *selector_2x1,
+                *snapshot_1x2,
+            ),
+            (
+                ResolvedSelectionMode::Rows,
+                vec![*selector_2x1],
+                *snapshot_2x3,
+                *snapshot_3x2,
+            ),
+            (
+                ResolvedSelectionMode::Columns,
+                vec![*selector_2x1],
+                *snapshot_2x2,
+                *snapshot_1x4,
+            ),
+            (
+                ResolvedSelectionMode::Rectangle,
+                vec![*selector_2x1, *selector_2x1],
+                *snapshot_2x2,
+                *snapshot_1x4,
+            ),
+        ];
+        for (mode, selectors, valid_output, invalid_output) in snapshot_cases {
+            let mut inputs = vec![snapshot_layout(*snapshot_2x3)];
+            inputs.extend(selectors.iter().map(|schema| snapshot_layout(*schema)));
+            let valid_contract = contract(*snapshot_2x3, &selectors, valid_output);
+            assert!(
+                bind_snapshot_access_mode(
+                    &ResidentKernelBindRequest {
+                        contract: &valid_contract,
+                        schemas: &schemas,
+                        inputs: &inputs,
+                        output: snapshot_layout(valid_output),
+                    },
+                    Some(mode),
+                )
+                .is_ok()
+            );
+            let invalid_contract = contract(*snapshot_2x3, &selectors, invalid_output);
+            assert!(matches!(
+                bind_snapshot_access_mode(
+                    &ResidentKernelBindRequest {
+                        contract: &invalid_contract,
+                        schemas: &schemas,
+                        inputs: &inputs,
+                        output: snapshot_layout(invalid_output),
+                    },
+                    Some(mode),
+                ),
+                Err(ResidentKernelBindError::UnsupportedLayout)
+            ));
+        }
+
+        let valid_table_contract = contract(*table, &[*id_schema], *selector_2x1);
+        assert!(
+            bind_snapshot_access(&ResidentKernelBindRequest {
+                contract: &valid_table_contract,
+                schemas: &schemas,
+                inputs: &[snapshot_layout(*table), snapshot_layout(*id_schema)],
+                output: snapshot_layout(*selector_2x1),
+            })
+            .is_ok()
+        );
+        for invalid_output in [*snapshot_1x2, *snapshot_3x1] {
+            let table_contract = contract(*table, &[*id_schema], invalid_output);
+            assert!(matches!(
+                bind_snapshot_access(&ResidentKernelBindRequest {
+                    contract: &table_contract,
+                    schemas: &schemas,
+                    inputs: &[snapshot_layout(*table), snapshot_layout(*id_schema)],
+                    output: snapshot_layout(invalid_output),
+                }),
+                Err(ResidentKernelBindError::UnsupportedLayout)
+            ));
+        }
     }
 
     #[test]
