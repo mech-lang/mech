@@ -197,6 +197,9 @@ pub enum SnapshotValueError {
     DuplicateCanonicalKeyV1 {
         path: SnapshotPath,
     },
+    CanonicalizationWorkLimitExceededV1 {
+        limit: u64,
+    },
     SchemaNotKeyableV1,
     NonCanonicalRationalV1,
     MissingNamedKindResolver,

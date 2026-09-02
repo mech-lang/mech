@@ -1,7 +1,7 @@
 use super::sequence::SequenceStorage;
 use super::{
-    CanonicalKeyValue, MapEntryValue, ReifiedType, SnapshotPath, SnapshotValueError, Value,
-    ValueData,
+    CanonicalKeyValue, MapEntryValue, ReifiedType, SnapshotCanonicalizationBudget, SnapshotPath,
+    SnapshotValueError, Value, ValueData,
 };
 use crate::{FloatWidth, SchemaBody, SchemaTable};
 use core::cmp::Ordering;
@@ -499,13 +499,14 @@ pub(super) fn insert_set_key(
     elements: &mut Vec<CanonicalKeyValue>,
     data: ValueData,
     path: &SnapshotPath,
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<(), SnapshotValueError> {
     let key = CanonicalKeyValue {
         data: normalized_key_data(schema, data)?,
     };
     let mut insertion = elements.len();
     for (index, existing) in elements.iter().enumerate() {
-        match compare_key_data(schema, existing.data(), key.data())? {
+        match compare_key_data_with_budget(schema, existing.data(), key.data(), budget)? {
             Ordering::Less => {}
             Ordering::Equal => {
                 return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
@@ -526,13 +527,14 @@ pub(super) fn insert_map_entry(
     key: ValueData,
     value: ValueData,
     path: &SnapshotPath,
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<(), SnapshotValueError> {
     let key = CanonicalKeyValue {
         data: normalized_key_data(schema, key)?,
     };
     let mut insertion = entries.len();
     for (index, existing) in entries.iter().enumerate() {
-        match compare_key_data(schema, existing.key().data(), key.data())? {
+        match compare_key_data_with_budget(schema, existing.key().data(), key.data(), budget)? {
             Ordering::Less => {}
             Ordering::Equal => {
                 return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
@@ -552,8 +554,26 @@ pub fn compare_key_data(
     left: &ValueData,
     right: &ValueData,
 ) -> Result<Ordering, SnapshotValueError> {
+    compare_key_data_with_budget(schema, left, right, None)
+}
+
+fn compare_key_data_with_budget(
+    schema: &SchemaBody,
+    left: &ValueData,
+    right: &ValueData,
+    budget: Option<&SnapshotCanonicalizationBudget>,
+) -> Result<Ordering, SnapshotValueError> {
     if !schema_is_keyable(schema) {
         return Err(SnapshotValueError::SchemaNotKeyableV1);
+    }
+    if let Some(budget) = budget {
+        let work = match (schema, left, right) {
+            (SchemaBody::String, ValueData::String(left), ValueData::String(right)) => {
+                u64::try_from(left.len().max(right.len()).max(1)).unwrap_or(u64::MAX)
+            }
+            _ => 1,
+        };
+        budget.charge(work)?;
     }
     let order = match (schema, left, right) {
         (SchemaBody::Bool, ValueData::Bool(left), ValueData::Bool(right)) => left.cmp(right),
@@ -584,34 +604,45 @@ pub fn compare_key_data(
                 (None, None) => Ordering::Equal,
                 (None, Some(_)) => Ordering::Less,
                 (Some(_), None) => Ordering::Greater,
-                (Some(left), Some(right)) => compare_key_data(element, left, right)?,
+                (Some(left), Some(right)) => {
+                    compare_key_data_with_budget(element, left, right, budget)?
+                }
             }
         }
         (SchemaBody::Enum { variants, .. }, ValueData::Enum(left), ValueData::Enum(right)) => {
-            left.ordinal.cmp(&right.ordinal).then_with(|| {
+            let ordinal = left.ordinal.cmp(&right.ordinal);
+            if ordinal != Ordering::Equal {
+                ordinal
+            } else {
                 match (
                     variants[left.ordinal as usize].payload.as_ref(),
                     left.payload.as_deref(),
                     right.payload.as_deref(),
                 ) {
                     (Some(schema), Some(left), Some(right)) => {
-                        compare_key_data(schema, left, right).expect("validated key payload")
+                        compare_key_data_with_budget(schema, left, right, budget)?
                     }
                     _ => Ordering::Equal,
                 }
-            })
+            }
         }
         (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => {
-            lexicographic(elements, left, right)?
+            lexicographic(elements, left, right, budget)?
         }
         (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => {
-            let schemas = fields.iter().map(|field| &field.schema).collect::<Vec<_>>();
-            lexicographic_refs(&schemas, left.fields(), right.fields())?
+            let mut order = Ordering::Equal;
+            for ((field, left), right) in fields.iter().zip(left.fields()).zip(right.fields()) {
+                order = compare_key_data_with_budget(&field.schema, left, right, budget)?;
+                if order != Ordering::Equal {
+                    break;
+                }
+            }
+            order
         }
         (SchemaBody::Set { element, .. }, ValueData::Set(left), ValueData::Set(right)) => {
             let mut order = Ordering::Equal;
             for (left, right) in left.elements.iter().zip(right.elements.iter()) {
-                order = compare_key_data(element, left.data(), right.data())?;
+                order = compare_key_data_with_budget(element, left.data(), right.data(), budget)?;
                 if order != Ordering::Equal {
                     break;
                 }
@@ -653,18 +684,10 @@ fn lexicographic(
     schemas: &[SchemaBody],
     left: &[ValueData],
     right: &[ValueData],
-) -> Result<Ordering, SnapshotValueError> {
-    let refs = schemas.iter().collect::<Vec<_>>();
-    lexicographic_refs(&refs, left, right)
-}
-
-fn lexicographic_refs(
-    schemas: &[&SchemaBody],
-    left: &[ValueData],
-    right: &[ValueData],
+    budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<Ordering, SnapshotValueError> {
     for ((schema, left), right) in schemas.iter().zip(left).zip(right) {
-        let order = compare_key_data(schema, left, right)?;
+        let order = compare_key_data_with_budget(schema, left, right, budget)?;
         if order != Ordering::Equal {
             return Ok(order);
         }

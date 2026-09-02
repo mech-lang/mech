@@ -4,8 +4,8 @@ use super::budget::{
     checked_u64,
 };
 use mech_core::snapshot::{
-    F64Bits, SnapshotValidationContext, Value, ValueDataDraft, ValueDraft,
-    canonical_snapshot_data_draft,
+    F64Bits, SnapshotCanonicalizationBudget, SnapshotValidationContext, SnapshotValueError, Value,
+    ValueDataDraft, ValueDraft, canonical_snapshot_data_draft,
 };
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
@@ -622,6 +622,7 @@ struct SetCandidateOperationPlan {
     candidate_index: usize,
     maximum_output_elements: Option<usize>,
     candidate_retained_in_output: bool,
+    canonicalization_work_limit: Option<u64>,
 }
 
 fn scalar_element_retained_cost(
@@ -690,10 +691,11 @@ fn admit_set_candidate_operation(
     output_elements: Option<usize>,
     candidate_retained_in_output: bool,
 ) -> Result<SetCandidateOperationPlan, ResidentKernelError> {
-    let operation = SetCandidateOperationPlan {
+    let mut operation = SetCandidateOperationPlan {
         candidate_index,
         maximum_output_elements: output_elements,
         candidate_retained_in_output,
+        canonicalization_work_limit: None,
     };
     let schemas = kernel
         .snapshot_schemas()
@@ -786,6 +788,7 @@ fn admit_set_candidate_operation(
         .container_bytes
         .checked_add(container_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    operation.canonicalization_work_limit = Some(cost.remaining_incremental_work()?);
     // The cloned `ValueData` population and the canonical draft tree coexist
     // while the immutable current set remains borrowed. The mutation plan
     // adds the final published population separately.
@@ -813,33 +816,52 @@ fn admit_set_candidate_operation(
 
 fn admit_set_materialization(
     output_elements: usize,
-    comparison_work: usize,
-    cloned_bytes: u64,
-    retained_nodes: u64,
-) -> Result<PreparedKernel<()>, ResidentKernelError> {
+    comparison_work: u64,
+    output_payload_bytes: u64,
+    borrowed_nodes: u64,
+    staged_output_nodes: u64,
+) -> Result<PreparedKernel<u64>, ResidentKernelError> {
     let container_bytes = checked_cost_product(&[
         checked_u64(output_elements)?,
         checked_u64(std::mem::size_of::<usize>())?,
     ])?;
-    let output_bytes = checked_cost_sum(&[cloned_bytes, container_bytes])?;
-    Ok(PreparedKernel::new(
-        (),
-        super::budget::resident_cost! {
-            comparison_work,
-            compute_work: checked_sum(&[comparison_work, output_elements])?,
-            output_elements,
-            output_bytes,
-            temporary_bytes: checked_cost_sum(&[output_bytes, output_bytes])?,
-            cloned_bytes,
-            retained_nodes,
-            ..KernelCostEstimate::default()
-        },
-    ))
+    let output_bytes = checked_cost_sum(&[output_payload_bytes, container_bytes])?;
+    let retained_nodes = borrowed_nodes
+        .checked_add(
+            staged_output_nodes
+                .checked_mul(3)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let cost = super::budget::resident_cost! {
+        comparison_work,
+        compute_work: comparison_work
+            .checked_add(checked_u64(output_elements)?)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        output_elements,
+        output_bytes,
+        temporary_bytes: checked_cost_sum(&[output_bytes, output_bytes])?,
+        cloned_bytes: output_payload_bytes
+            .checked_mul(2)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_nodes,
+        ..KernelCostEstimate::default()
+    };
+    let canonicalization_work_limit = cost.remaining_incremental_work()?;
+    Ok(PreparedKernel::new(canonicalization_work_limit, cost))
 }
 
 fn finalize_snapshot(
     kernel: &BoundResidentKernel,
     data: ValueDataDraft,
+) -> Result<mech_core::snapshot::Value, ResidentKernelError> {
+    finalize_snapshot_with_work_budget(kernel, data, None)
+}
+
+fn finalize_snapshot_with_work_budget(
+    kernel: &BoundResidentKernel,
+    data: ValueDataDraft,
+    canonicalization_work_limit: Option<u64>,
 ) -> Result<mech_core::snapshot::Value, ResidentKernelError> {
     let metadata = kernel
         .snapshot_output()
@@ -847,6 +869,11 @@ fn finalize_snapshot(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
+    let budget = canonicalization_work_limit.map(SnapshotCanonicalizationBudget::new);
+    let mut context = SnapshotValidationContext::new(schemas);
+    if let Some(budget) = budget.as_ref() {
+        context = context.with_canonicalization_budget(budget);
+    }
     ValueDraft {
         schema: metadata.schema,
         shape_values: metadata
@@ -856,8 +883,13 @@ fn finalize_snapshot(
             .into_boxed_slice(),
         data,
     }
-    .finalize(&SnapshotValidationContext::new(schemas))
-    .map_err(|_| ResidentKernelError::InvalidOutput)
+    .finalize(&context)
+    .map_err(|error| match error {
+        SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
+            ResidentKernelError::InvalidShape
+        }
+        _ => ResidentKernelError::InvalidOutput,
+    })
 }
 
 fn write_full_snapshot(
@@ -905,7 +937,7 @@ fn merged_set_element_drafts(
     right: &Value,
     maximum_output_elements: usize,
     merge: SetMerge,
-) -> Result<Box<[ValueDataDraft]>, ResidentKernelError> {
+) -> Result<(Box<[ValueDataDraft]>, u64), ResidentKernelError> {
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
@@ -914,18 +946,27 @@ fn merged_set_element_drafts(
     let mut footprint_meter = ResidentBudgetMeter::default();
     let (left_bytes, left_nodes) = value_retained_cost(&mut footprint_meter, kernel, left)?;
     let (right_bytes, right_nodes) = value_retained_cost(&mut footprint_meter, kernel, right)?;
-    admit_set_materialization(
+    let measurement_work = footprint_meter.estimate().comparison_work;
+    let comparison_work = measurement_work
+        .checked_add(checked_u64(checked_sum(&[left_count, right_count])?)?)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let borrowed_nodes = checked_cost_sum(&[left_nodes, right_nodes])?;
+    let staged_output_nodes = borrowed_nodes;
+    let canonicalization_work_limit = admit_set_materialization(
         maximum_output_elements,
-        checked_sum(&[left_count, right_count])?,
+        comparison_work,
         checked_cost_sum(&[left_bytes, right_bytes])?,
-        checked_cost_sum(&[left_nodes, right_nodes])?,
+        borrowed_nodes,
+        staged_output_nodes,
     )?
     .admit()?
     .into_plan();
     let elements =
         merge(left, schemas, right, schemas).map_err(|_| ResidentKernelError::InvalidInput)?;
-    left.set_element_data_drafts(schemas, &elements)
-        .map_err(|_| ResidentKernelError::InvalidInput)
+    let drafts = left
+        .set_element_data_drafts(schemas, &elements)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    Ok((drafts, canonicalization_work_limit))
 }
 
 fn set_union(
@@ -935,9 +976,13 @@ fn set_union(
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
     let maximum = checked_sum(&[set_cardinality(left)?, set_cardinality(right)?])?;
-    let elements =
+    let (elements, canonicalization_work_limit) =
         merged_set_element_drafts(kernel, left, right, maximum, Value::set_union_elements)?;
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
+    let next = finalize_snapshot_with_work_budget(
+        kernel,
+        ValueDataDraft::Set(elements),
+        Some(canonicalization_work_limit),
+    )?;
     write_full_snapshot(output, next)
 }
 
@@ -948,14 +993,18 @@ fn set_intersection(
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
     let maximum = set_cardinality(left)?.min(set_cardinality(right)?);
-    let elements = merged_set_element_drafts(
+    let (elements, canonicalization_work_limit) = merged_set_element_drafts(
         kernel,
         left,
         right,
         maximum,
         Value::set_intersection_elements,
     )?;
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
+    let next = finalize_snapshot_with_work_budget(
+        kernel,
+        ValueDataDraft::Set(elements),
+        Some(canonicalization_work_limit),
+    )?;
     write_full_snapshot(output, next)
 }
 
@@ -965,14 +1014,18 @@ fn set_difference(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
-    let elements = merged_set_element_drafts(
+    let (elements, canonicalization_work_limit) = merged_set_element_drafts(
         kernel,
         left,
         right,
         set_cardinality(left)?,
         Value::set_difference_elements,
     )?;
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
+    let next = finalize_snapshot_with_work_budget(
+        kernel,
+        ValueDataDraft::Set(elements),
+        Some(canonicalization_work_limit),
+    )?;
     write_full_snapshot(output, next)
 }
 
@@ -983,14 +1036,18 @@ fn set_symmetric_difference(
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
     let maximum = checked_sum(&[set_cardinality(left)?, set_cardinality(right)?])?;
-    let elements = merged_set_element_drafts(
+    let (elements, canonicalization_work_limit) = merged_set_element_drafts(
         kernel,
         left,
         right,
         maximum,
         Value::set_symmetric_difference_elements,
     )?;
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
+    let next = finalize_snapshot_with_work_budget(
+        kernel,
+        ValueDataDraft::Set(elements),
+        Some(canonicalization_work_limit),
+    )?;
     write_full_snapshot(output, next)
 }
 
@@ -1033,24 +1090,27 @@ fn set_cartesian_product(
         checked_u64(std::mem::size_of::<usize>())?,
     ])?;
     let output_bytes = checked_cost_sum(&[result_cloned_bytes, container_bytes])?;
-    PreparedKernel::new(
-        (),
-        super::budget::resident_cost! {
-            compute_work: output_len,
-            output_elements: output_len,
-            output_bytes,
-            temporary_bytes: checked_cost_sum(&[output_bytes, input_staging_bytes])?,
-            cloned_bytes,
-            retained_nodes: checked_cost_sum(&[
-                output_nodes,
-                input_persistent_nodes,
-                input_staging_nodes,
-            ])?,
-            ..KernelCostEstimate::default()
-        },
-    )
-    .admit()?
-    .into_plan();
+    let footprint_work = footprint_meter.estimate();
+    let cost = super::budget::resident_cost! {
+        comparison_work: footprint_work.comparison_work,
+        compute_work: checked_cost_sum(&[
+            footprint_work.compute_work,
+            checked_u64(output_len)?,
+        ])?,
+        output_elements: output_len,
+        output_bytes,
+        temporary_bytes: checked_cost_sum(&[output_bytes, input_staging_bytes])?,
+        cloned_bytes,
+        retained_nodes: checked_cost_sum(&[
+            output_nodes,
+            input_persistent_nodes,
+            input_staging_nodes,
+        ])?,
+        ..KernelCostEstimate::default()
+    };
+    let canonicalization_work_limit = PreparedKernel::new(cost.remaining_incremental_work()?, cost)
+        .admit()?
+        .into_plan();
     let left = set_element_drafts(left)?;
     let right = set_element_drafts(right)?;
     let mut elements = Vec::with_capacity(output_len);
@@ -1061,7 +1121,11 @@ fn set_cartesian_product(
             ));
         }
     }
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
+    let next = finalize_snapshot_with_work_budget(
+        kernel,
+        ValueDataDraft::Set(elements.into_boxed_slice()),
+        Some(canonicalization_work_limit),
+    )?;
     write_full_snapshot(output, next)
 }
 
@@ -1107,20 +1171,23 @@ fn set_powerset(
         checked_u64(std::mem::size_of::<usize>())?,
     ])?;
     let output_bytes = checked_cost_sum(&[retained_bytes, subset_headers])?;
-    PreparedKernel::new(
-        (),
-        super::budget::resident_cost! {
-            compute_work: member_copies,
-            output_elements,
-            output_bytes,
-            temporary_bytes: output_bytes,
-            cloned_bytes: retained_bytes,
-            retained_nodes: output_nodes,
-            ..KernelCostEstimate::default()
-        },
-    )
-    .admit()?
-    .into_plan();
+    let footprint_work = footprint_meter.estimate();
+    let cost = super::budget::resident_cost! {
+        comparison_work: footprint_work.comparison_work,
+        compute_work: checked_cost_sum(&[
+            footprint_work.compute_work,
+            checked_u64(member_copies)?,
+        ])?,
+        output_elements,
+        output_bytes,
+        temporary_bytes: output_bytes,
+        cloned_bytes: retained_bytes,
+        retained_nodes: output_nodes,
+        ..KernelCostEstimate::default()
+    };
+    let canonicalization_work_limit = PreparedKernel::new(cost.remaining_incremental_work()?, cost)
+        .admit()?
+        .into_plan();
     let elements = set_element_drafts(input)?;
     let mut subsets = vec![Vec::new()];
     for element in elements {
@@ -1139,7 +1206,11 @@ fn set_powerset(
         .into_iter()
         .map(|subset| ValueDataDraft::Set(subset.into_boxed_slice()))
         .collect::<Vec<_>>();
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements.into_boxed_slice()))?;
+    let next = finalize_snapshot_with_work_budget(
+        kernel,
+        ValueDataDraft::Set(elements.into_boxed_slice()),
+        Some(canonicalization_work_limit),
+    )?;
     write_full_snapshot(output, next)
 }
 
@@ -1455,7 +1526,11 @@ fn insert(
         .set_elements_after_insert(schemas, element.value(), element.schemas(schemas))
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let elements = canonical_set_element_drafts(kernel, set, elements)?;
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
+    let next = finalize_snapshot_with_work_budget(
+        kernel,
+        ValueDataDraft::Set(elements),
+        plan.canonicalization_work_limit,
+    )?;
     write_changed_snapshot(kernel, output, next)
 }
 
@@ -1479,7 +1554,11 @@ fn remove(
         .set_elements_after_remove(schemas, element.value(), element.schemas(schemas))
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let elements = canonical_set_element_drafts(kernel, set, elements)?;
-    let next = finalize_snapshot(kernel, ValueDataDraft::Set(elements))?;
+    let next = finalize_snapshot_with_work_budget(
+        kernel,
+        ValueDataDraft::Set(elements),
+        plan.canonicalization_work_limit,
+    )?;
     write_changed_snapshot(kernel, output, next)
 }
 
@@ -1984,6 +2063,26 @@ mod tests {
         );
         assert!(cartesian_output[0].is_none());
 
+        // A 127x127 compact product fits the element, byte, and node limits,
+        // but insertion-based canonical finalization would rescan more than
+        // 130 million prior tuple keys. The shared incremental budget must
+        // stop finalization before publication.
+        let normalization_left = [Some(set(127, 0))];
+        let normalization_right = [Some(set(127, 0))];
+        let normalization_inputs = [
+            ResidentValueRef::Snapshot(&normalization_left),
+            ResidentValueRef::Snapshot(&normalization_right),
+        ];
+        let mut normalization_output = [None];
+        assert_eq!(
+            output_kernel(set_cartesian_product, pair_set_schema).execute(
+                &Inputs(&normalization_inputs),
+                ResidentValueMut::Snapshot(&mut normalization_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(normalization_output[0].is_none());
+
         // An empty opposite side does not erase the cost of staging the input
         // element drafts that the implementation materializes unconditionally.
         let large = [Some(set(1, 16 * 1024 * 1024))];
@@ -2033,6 +2132,77 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(powerset_output[0].is_none());
+    }
+
+    #[test]
+    fn set_merge_admission_includes_borrowed_intermediate_draft_and_final_trees() {
+        // Both borrowed inputs fit alone. The selected canonical data, its
+        // draft conversion, and the finalized output are separate live tree
+        // populations and must be summed rather than replaced by a maximum.
+        assert_eq!(
+            admit_set_materialization(2_000, 0, 1_024, 48_000, 24_000).unwrap_err(),
+            ResidentKernelError::InvalidShape,
+        );
+    }
+
+    #[test]
+    fn set_merge_rejects_recursive_staged_tree_peak_before_cloning() {
+        let tuple_body = SchemaBody::Tuple(vec![SchemaBody::Bool; 11].into_boxed_slice());
+        let set_body = SchemaBody::Set {
+            element: Box::new(tuple_body),
+            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let handle = builder.insert(schema(set_body)).unwrap();
+        let build = builder.finish().unwrap();
+        let set_schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: set_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                (0_u16..1_400)
+                    .map(|index| {
+                        ValueDataDraft::Tuple(
+                            (0..11)
+                                .map(|bit| ValueDataDraft::Bool(index & (1_u16 << (10 - bit)) != 0))
+                                .collect::<Vec<_>>()
+                                .into_boxed_slice(),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let left = [Some(value.clone())];
+        let right = [Some(value)];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
+        let shape = schemas
+            .get(set_schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let kernel = BoundResidentKernel::new(set_intersection, Box::new([]))
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: set_schema,
+                schema_key: schemas.entry(set_schema).unwrap().key(),
+                shape,
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+            .with_snapshot_schemas(schemas);
+        let mut output = [None];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(output[0].is_none());
     }
 
     #[test]

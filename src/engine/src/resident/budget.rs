@@ -163,6 +163,22 @@ impl KernelCostEstimate {
             _cost: self.checked()?,
         })
     }
+
+    /// Returns the single allowance left for data-dependent work that must be
+    /// metered while an already-admitted plan is materialized. Comparison
+    /// work also consumes compute work, so the smaller remaining limit is the
+    /// only sound authority to pass into recursive canonicalization.
+    pub(crate) fn remaining_incremental_work(&self) -> Result<u64, ResidentKernelError> {
+        self.checked()?;
+        Ok(MAX_RESIDENT_COMPARISON_WORK
+            .checked_sub(self.comparison_work)
+            .ok_or(ResidentKernelError::InvalidShape)?
+            .min(
+                MAX_RESIDENT_COMPUTE_WORK
+                    .checked_sub(self.compute_work)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            ))
+    }
 }
 
 impl<P> PreparedKernel<P> {
@@ -559,6 +575,29 @@ mod tests {
         assert_eq!(
             meter.estimate().comparison_work,
             MAX_RESIDENT_COMPARISON_WORK,
+        );
+    }
+
+    #[test]
+    fn incremental_allowance_respects_comparison_and_compute_remainders() {
+        assert_eq!(
+            KernelCostEstimate {
+                comparison_work: MAX_RESIDENT_COMPARISON_WORK - 7,
+                compute_work: MAX_RESIDENT_COMPUTE_WORK - 9,
+                ..KernelCostEstimate::default()
+            }
+            .remaining_incremental_work()
+            .unwrap(),
+            7,
+        );
+        assert_eq!(
+            KernelCostEstimate {
+                compute_work: MAX_RESIDENT_COMPUTE_WORK - 3,
+                ..KernelCostEstimate::default()
+            }
+            .remaining_incremental_work()
+            .unwrap(),
+            3,
         );
     }
 
