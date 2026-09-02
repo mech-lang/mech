@@ -2384,28 +2384,39 @@ impl<'a> BatchCompiler<'a> {
                         };
                         self.static_numeric_source(*input, maximum_elements)
                     }
-                    "range/inclusive" => {
-                        let [from, to] = inputs.as_slice() else {
-                            return Err("static inclusive range must have two inputs".to_owned());
+                    operation @ ("range/exclusive"
+                    | "range/exclusive-increment"
+                    | "range/inclusive"
+                    | "range/inclusive-increment") => {
+                        let (inclusive, incremented, expected) = match operation {
+                            "range/exclusive" => (false, false, 2),
+                            "range/exclusive-increment" => (false, true, 3),
+                            "range/inclusive" => (true, false, 2),
+                            "range/inclusive-increment" => (true, true, 3),
+                            _ => unreachable!(),
                         };
-                        let Some(from) = self.static_range_endpoint(*from)? else {
-                            return Ok(None);
-                        };
-                        let Some(to) = self.static_range_endpoint(*to)? else {
-                            return Ok(None);
-                        };
+                        if inputs.len() != expected {
+                            return Err(format!("static {operation} must have {expected} inputs"));
+                        }
+                        let mut endpoints = Vec::with_capacity(expected);
+                        for source in inputs {
+                            let Some(endpoint) = self.static_range_endpoint(source)? else {
+                                return Ok(None);
+                            };
+                            endpoints.push(endpoint);
+                        }
                         let mut indices = Vec::new();
                         mech_core::visit_canonical_value_range(
-                            &[from, to],
-                            true,
-                            false,
+                            &endpoints,
+                            inclusive,
+                            incremented,
                             maximum_elements.min(MAX_STATIC_SELECTOR_ELEMENTS),
                             |value| {
                                 indices.push(mech_core::canonical_positional_ordinal(&value)?);
                                 Ok::<(), mech_core::CanonicalSelectorError>(())
                             },
                         )
-                        .map_err(|error| format!("invalid static inclusive range: {error:?}"))?;
+                        .map_err(|error| format!("invalid static {operation}: {error:?}"))?;
                         Ok(Some(indices))
                     }
                     _ => Ok(None),
@@ -3032,9 +3043,40 @@ mod axis_tests {
             .function_catalog(mech_stdlib::source_native_plan_catalog())
             .build_compiler()
             .unwrap();
-        let source = "~result := [0f32]\nmatrix := [7f32 9f32]\nselector := 1.9..=2.1\nresult = matrix[selector]\nresult";
+        for selector in [
+            "1<u64>..3<u64>",
+            "1<u64>..1<u64>..3<u64>",
+            "1<u64>..=2<u64>",
+            "1<u64>..1<u64>..=2<u64>",
+        ] {
+            let source = format!(
+                "~result := [0f32; 0f32]\nmatrix := [7f32 9f32]\nselector := {selector}\nresult = matrix[selector]\nresult"
+            );
+            let artifact = compiler
+                .compile_source_artifact(&source)
+                .unwrap_or_else(|error| panic!("{selector} did not compile: {error:?}"))
+                .into_artifact();
+            let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact)
+                .unwrap_or_else(|error| panic!("{selector} did not encode: {error:?}"));
+            let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes)
+                .unwrap_or_else(|error| panic!("{selector} did not decode: {error:?}"));
+            let kernel = crate::ComputeLowerer
+                .compile_batched(&artifact, 1)
+                .unwrap_or_else(|error| panic!("{selector} did not lower: {error:?}"));
+            let mut session = kernel.prepare_cpu(&BTreeMap::new()).unwrap();
+            session.dispatch_turns(1).unwrap();
+            assert!(
+                session
+                    .state()
+                    .values()
+                    .any(|values| values.as_slice() == [7.0, 9.0]),
+                "{selector} did not preserve the canonical selector values"
+            );
+        }
+
+        let fractional = "~result := [0f32]\nmatrix := [7f32 9f32]\nselector := 1.9..=2.1\nresult = matrix[selector]\nresult";
         let artifact = compiler
-            .compile_source_artifact(source)
+            .compile_source_artifact(fractional)
             .unwrap()
             .into_artifact();
         crate::ComputeLowerer.compile_batched(&artifact, 1).unwrap();

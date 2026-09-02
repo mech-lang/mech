@@ -315,7 +315,7 @@ fn matrix_literal(
                 .snapshot_output()
                 .ok_or(ResidentKernelError::InvalidOutput)?;
             let mut retained_bytes = 0usize;
-            let mut retained_nodes = 0usize;
+            let mut input_nodes = 0u64;
             let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
             for source in 0..count {
                 let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
@@ -329,9 +329,16 @@ fn matrix_literal(
                 retained_bytes = retained_bytes
                     .checked_add(checked_cost_usize(footprint.retained_bytes)?)
                     .ok_or(ResidentKernelError::InvalidShape)?;
-                retained_nodes = retained_nodes
-                    .checked_add(checked_cost_usize(footprint.node_count)?)
+                input_nodes = input_nodes
+                    .checked_add(footprint.node_count)
                     .ok_or(ResidentKernelError::InvalidShape)?;
+            }
+            if let Some(previous) = target.as_ref() {
+                super::budget::measure_canonical_value_footprint(
+                    &mut footprint_meter,
+                    previous,
+                    schemas,
+                )?;
             }
             let container_bytes = count
                 .checked_mul(core::mem::size_of::<ValueDataDraft>())
@@ -339,16 +346,43 @@ fn matrix_literal(
             let output_bytes = retained_bytes
                 .checked_add(container_bytes)
                 .ok_or(ResidentKernelError::InvalidShape)?;
-            let count = admit_literal_stage(
-                count,
+            let count_u64 = super::budget::checked_u64(count)?;
+            let child_data_nodes = input_nodes
+                .checked_sub(count_u64)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let draft_nodes = child_data_nodes
+                .checked_add(1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let final_nodes = draft_nodes
+                .checked_add(1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let measured = footprint_meter.estimate();
+            let cost = super::budget::resident_cost! {
+                comparison_work: measured.comparison_work,
+                compute_work: measured.compute_work
+                    .checked_add(count_u64.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                output_elements: count,
                 output_bytes,
-                retained_bytes
+                temporary_bytes: retained_bytes
+                    .checked_mul(2)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                cloned_bytes: retained_bytes
                     .checked_mul(2)
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 container_bytes,
-                retained_bytes,
-                retained_nodes,
-            )?;
+                retained_nodes: super::budget::checked_cost_sum(&[
+                    measured.retained_nodes,
+                    draft_nodes,
+                    final_nodes,
+                ])?,
+                ..super::budget::KernelCostEstimate::default()
+            };
+            let canonicalization_work_limit = cost.remaining_incremental_work()?;
+            let (count, canonicalization_work_limit) =
+                super::budget::PreparedKernel::new((count, canonicalization_work_limit), cost)
+                    .admit()?
+                    .into_plan();
             let mut elements = Vec::with_capacity(count);
             for source in 0..count {
                 let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
@@ -360,6 +394,9 @@ fn matrix_literal(
                         .map_err(|_| ResidentKernelError::InvalidInput)?,
                 );
             }
+            let budget = mech_core::snapshot::SnapshotCanonicalizationBudget::new(
+                canonicalization_work_limit,
+            );
             let next = ValueDraft {
                 schema: metadata.schema,
                 shape_values: metadata
@@ -369,7 +406,9 @@ fn matrix_literal(
                     .into_boxed_slice(),
                 data: ValueDataDraft::Matrix(elements.into_boxed_slice()),
             }
-            .finalize(&SnapshotValidationContext::new(schemas))
+            .finalize(
+                &SnapshotValidationContext::new(schemas).with_canonicalization_budget(&budget),
+            )
             .map_err(|_| ResidentKernelError::InvalidOutput)?;
             if next.schema_key() != metadata.schema_key {
                 return Err(ResidentKernelError::InvalidOutput);
@@ -916,6 +955,73 @@ mod tests {
                 ResidentValueMut::Snapshot(&mut output),
             ),
             Err(ResidentKernelError::InvalidInput)
+        );
+    }
+
+    #[test]
+    fn recursive_snapshot_literal_admits_every_live_node_population() {
+        const TUPLE_ELEMENTS: usize = 22_000;
+        let tuple_body = SchemaBody::Tuple(
+            std::iter::repeat_n(SchemaBody::Bool, TUPLE_ELEMENTS)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        let (schemas, element, matrix) = schemas_for(tuple_body, 1, 1);
+        let kernel = bind_matrix_literal(&ResidentKernelBindRequest {
+            contract: &contract(element, matrix, 1),
+            schemas: &schemas,
+            inputs: &[layout(
+                &schemas,
+                element,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            )],
+            output: layout(
+                &schemas,
+                matrix,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let tuple = || {
+            ValueDataDraft::Tuple(
+                std::iter::repeat_n(ValueDataDraft::Bool(true), TUPLE_ELEMENTS)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            )
+        };
+        let source = [Some(
+            ValueDraft {
+                schema: element,
+                shape_values: Box::new([]),
+                data: tuple(),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap(),
+        )];
+        let previous = ValueDraft {
+            schema: matrix,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(vec![tuple()].into_boxed_slice()),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut output = [Some(previous.clone())];
+
+        assert_eq!(
+            kernel.execute(
+                &Inputs(vec![ResidentValueRef::Snapshot(&source)]),
+                ResidentValueMut::Snapshot(&mut output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(
+            output[0]
+                .as_ref()
+                .unwrap()
+                .language_eq(&schemas, &previous, &schemas)
+                .unwrap()
         );
     }
 
