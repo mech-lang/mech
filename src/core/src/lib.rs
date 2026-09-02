@@ -115,6 +115,7 @@ pub mod execution;
 pub mod function;
 #[path = "function/signature.rs"]
 mod function_signature;
+pub mod memory_contract;
 #[cfg(feature = "mika")]
 pub mod mika;
 pub mod nodes;
@@ -142,6 +143,7 @@ pub use self::execution::*;
 pub use self::function::*;
 #[cfg(not(feature = "functions"))]
 pub use self::function_signature::*;
+pub use self::memory_contract::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::nodes::*;

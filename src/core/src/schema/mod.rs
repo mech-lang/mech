@@ -57,6 +57,25 @@ impl SchemaDraft {
     }
 }
 
+impl Schema {
+    pub fn type_memory_contract(&self) -> Result<crate::TypeMemoryContract, SemanticModelError> {
+        crate::memory_contract::derive_type_memory_contract(&self.body, &self.dimension_parameters)
+    }
+
+    pub fn resolved_type_memory_contract(
+        &self,
+        shape: &crate::ShapeInstance,
+    ) -> Result<crate::ResolvedTypeMemoryContract, SemanticModelError> {
+        let validated_shape =
+            self.instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())?;
+        crate::memory_contract::resolve_type_memory_contract(
+            self.type_memory_contract()?,
+            &self.dimension_parameters,
+            &validated_shape,
+        )
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SchemaBody {
