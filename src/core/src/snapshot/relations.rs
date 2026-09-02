@@ -29,16 +29,12 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<bool, SnapshotValueError> {
-        let self_schema = self.validate_against(self_schemas)?;
-        let other_schema = other.validate_against(other_schemas)?;
+        let (self_schema, self_schema_bytes) = validated_schema_definition(self, self_schemas)?;
+        let (other_schema, other_schema_bytes) = validated_schema_definition(other, other_schemas)?;
         if self.schema_key() != other.schema_key() {
             return Ok(false);
         }
-        ensure_same_schema_definition(
-            self.schema_key(),
-            &self_schema.canonical_bytes(),
-            &other_schema.canonical_bytes(),
-        )?;
+        ensure_same_schema_definition(self.schema_key(), self_schema_bytes, other_schema_bytes)?;
         if self.shape() != other.shape() {
             return Ok(false);
         }
@@ -54,16 +50,13 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<bool, SnapshotValueError> {
-        let self_schema = self.validate_against(self_schemas)?;
-        let other_schema = other.validate_against(other_schemas)?;
+        let (self_schema, self_schema_bytes) = validated_schema_definition(self, self_schemas)?;
+        let (_other_schema, other_schema_bytes) =
+            validated_schema_definition(other, other_schemas)?;
         if self.schema_key() != other.schema_key() {
             return Ok(false);
         }
-        ensure_same_schema_definition(
-            self.schema_key(),
-            &self_schema.canonical_bytes(),
-            &other_schema.canonical_bytes(),
-        )?;
+        ensure_same_schema_definition(self.schema_key(), self_schema_bytes, other_schema_bytes)?;
         if self.shape() != other.shape() {
             return Ok(false);
         }
@@ -80,8 +73,8 @@ impl Value {
         other: &Value,
         other_schemas: &SchemaTable,
     ) -> Result<Ordering, SnapshotValueError> {
-        let self_schema = self.validate_against(self_schemas)?;
-        let other_schema = other.validate_against(other_schemas)?;
+        let (self_schema, self_schema_bytes) = validated_schema_definition(self, self_schemas)?;
+        let (other_schema, other_schema_bytes) = validated_schema_definition(other, other_schemas)?;
         if !self_schema.is_keyable() || !other_schema.is_keyable() {
             return Err(SnapshotValueError::SchemaNotKeyableV1);
         }
@@ -93,11 +86,7 @@ impl Value {
                 key: self.schema_key(),
             });
         }
-        ensure_same_schema_definition(
-            self.schema_key(),
-            &self_schema.canonical_bytes(),
-            &other_schema.canonical_bytes(),
-        )?;
+        ensure_same_schema_definition(self.schema_key(), self_schema_bytes, other_schema_bytes)?;
         let shape_order = self
             .shape()
             .canonical_bytes()
@@ -544,6 +533,20 @@ fn is_nominal_schema(body: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Atom(_) | SchemaBody::Enum { .. })
 }
 
+fn validated_schema_definition<'a>(
+    value: &Value,
+    schemas: &'a SchemaTable,
+) -> Result<(&'a crate::Schema, &'a [u8]), SnapshotValueError> {
+    let schema = value.validate_against(schemas)?;
+    let canonical = schemas
+        .entry(value.schema())
+        .ok_or(SnapshotValueError::UnknownSnapshotSchema {
+            schema: value.schema(),
+        })?
+        .canonical_bytes();
+    Ok((schema, canonical))
+}
+
 fn ensure_same_schema_definition(
     key: crate::SchemaKey,
     left: &[u8],
@@ -725,27 +728,51 @@ pub fn canonical_key_draft_finalization_work(
     if !schema_is_keyable(schema) {
         return Err(SnapshotValueError::SchemaNotKeyableV1);
     }
-    fn checked_add(total: &mut u64, amount: u64) -> Result<(), SnapshotValueError> {
-        *total = total
-            .checked_add(amount)
-            .ok_or(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: u64::MAX })?;
-        Ok(())
+    canonical_data_draft_finalization_work(schema, data)
+}
+
+/// Bounded variant of [`canonical_key_draft_finalization_work`]. The shared
+/// budget is charged during each simulated canonical-key comparison, so an
+/// admission preflight cannot itself perform an unbounded key traversal.
+pub fn canonical_key_draft_finalization_work_with_budget(
+    schema: &SchemaBody,
+    data: &ValueData,
+    budget: &SnapshotCanonicalizationBudget,
+) -> Result<u64, SnapshotValueError> {
+    if !schema_is_keyable(schema) {
+        return Err(SnapshotValueError::SchemaNotKeyableV1);
     }
-    fn comparison_work(
+    canonical_data_draft_finalization_work_with_budget(schema, data, budget)
+}
+
+/// Returns the comparison work needed to round-trip already-canonical data
+/// through [`ValueDataDraft`](super::ValueDataDraft) finalization.
+///
+/// This includes every recursively nested Set and Map insertion. The input
+/// must already have been validated against `schema`.
+pub fn canonical_data_draft_finalization_work(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<u64, SnapshotValueError> {
+    let budget = SnapshotCanonicalizationBudget::new(u64::MAX);
+    canonical_data_draft_finalization_work_with_budget(schema, data, &budget)
+}
+
+/// Bounded variant of [`canonical_data_draft_finalization_work`].
+pub fn canonical_data_draft_finalization_work_with_budget(
+    schema: &SchemaBody,
+    data: &ValueData,
+    budget: &SnapshotCanonicalizationBudget,
+) -> Result<u64, SnapshotValueError> {
+    fn visit(
         schema: &SchemaBody,
-        left: &ValueData,
-        right: &ValueData,
-    ) -> Result<u64, SnapshotValueError> {
-        let budget = SnapshotCanonicalizationBudget::new(u64::MAX);
-        compare_key_data_with_budget(schema, left, right, Some(&budget))?;
-        Ok(budget.consumed())
-    }
-    fn visit(schema: &SchemaBody, data: &ValueData) -> Result<u64, SnapshotValueError> {
-        let mut total = 0_u64;
+        data: &ValueData,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<(), SnapshotValueError> {
         match (schema, data) {
             (SchemaBody::Option(element), ValueData::Option(value)) => {
                 if let Some(value) = value.as_deref() {
-                    checked_add(&mut total, visit(element, value)?)?;
+                    visit(element, value, budget)?;
                 }
             }
             (SchemaBody::Enum { variants, .. }, ValueData::Enum(value)) => {
@@ -753,34 +780,74 @@ pub fn canonical_key_draft_finalization_work(
                     variants[value.ordinal() as usize].payload.as_ref(),
                     value.payload(),
                 ) {
-                    checked_add(&mut total, visit(payload_schema, payload)?)?;
+                    visit(payload_schema, payload, budget)?;
                 }
             }
             (SchemaBody::Tuple(elements), ValueData::Tuple(values)) => {
                 for (element, value) in elements.iter().zip(values) {
-                    checked_add(&mut total, visit(element, value)?)?;
+                    visit(element, value, budget)?;
                 }
             }
             (SchemaBody::Record(fields), ValueData::Record(value)) => {
                 for (field, value) in fields.iter().zip(value.fields()) {
-                    checked_add(&mut total, visit(&field.schema, value)?)?;
+                    visit(&field.schema, value, budget)?;
                 }
             }
             (SchemaBody::Matrix { element, .. }, ValueData::Matrix(value)) => {
                 if let super::SequenceView::Values(values) = value.elements() {
                     for value in values {
-                        checked_add(&mut total, visit(element, value)?)?;
+                        visit(element, value, budget)?;
+                    }
+                }
+            }
+            (SchemaBody::Table { columns, .. }, ValueData::Table(value)) => {
+                for (index, column) in columns.iter().enumerate() {
+                    let values = value
+                        .column(index)
+                        .ok_or(SnapshotValueError::SchemaNotKeyableV1)?;
+                    if let super::SequenceView::Values(values) = values {
+                        for value in values {
+                            visit(&column.schema, value, budget)?;
+                        }
                     }
                 }
             }
             (SchemaBody::Set { element, .. }, ValueData::Set(value)) => {
                 let mut previous = None;
                 for key in value.elements() {
-                    checked_add(&mut total, visit(element, key.data())?)?;
+                    visit(element, key.data(), budget)?;
                     if let Some(previous) = previous {
-                        checked_add(&mut total, comparison_work(element, previous, key.data())?)?;
+                        compare_key_data_with_budget(element, previous, key.data(), Some(budget))?;
                     }
                     previous = Some(key.data());
+                }
+            }
+            (SchemaBody::Map { key, value, .. }, ValueData::Map(map)) => {
+                let mut previous = None;
+                for entry in map.entries() {
+                    visit(key, entry.key().data(), budget)?;
+                    visit(value, entry.value(), budget)?;
+                    if let Some(previous) = previous {
+                        compare_key_data_with_budget(
+                            key,
+                            previous,
+                            entry.key().data(),
+                            Some(budget),
+                        )?;
+                    }
+                    previous = Some(entry.key().data());
+                }
+            }
+            (SchemaBody::Dynamic, ValueData::Dynamic(dynamic)) => {
+                if let Some(value) = dynamic.value() {
+                    let schemas =
+                        value
+                            .schemas()
+                            .ok_or(SnapshotValueError::UnknownSnapshotSchema {
+                                schema: value.schema(),
+                            })?;
+                    let schema = value.validate_against(&schemas)?;
+                    visit(schema.body(), value.data(), budget)?;
                 }
             }
             (
@@ -788,18 +855,25 @@ pub fn canonical_key_draft_finalization_work(
                 | SchemaBody::UnsignedInteger(_)
                 | SchemaBody::SignedInteger(_)
                 | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Complex(_)
                 | SchemaBody::Rational64
                 | SchemaBody::String
                 | SchemaBody::Id
                 | SchemaBody::Index
-                | SchemaBody::Atom(_),
+                | SchemaBody::Atom(_)
+                | SchemaBody::ReifiedType,
                 _,
             ) => {}
             _ => return Err(SnapshotValueError::SchemaNotKeyableV1),
         }
-        Ok(total)
+        Ok(())
     }
-    visit(schema, data)
+    let before = budget.consumed();
+    visit(schema, data, budget)?;
+    budget
+        .consumed()
+        .checked_sub(before)
+        .ok_or(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: u64::MAX })
 }
 
 fn compare_key_data_with_budget(

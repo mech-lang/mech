@@ -1086,6 +1086,100 @@ fn powerset_finalization_work_upper_bound(
     Ok(total)
 }
 
+fn bounded_key_draft_finalization_work(
+    meter: &mut ResidentBudgetMeter,
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<u64, ResidentKernelError> {
+    let remaining = meter.estimate().remaining_incremental_work()?;
+    let budget = SnapshotCanonicalizationBudget::new(remaining);
+    let work = mech_core::snapshot::canonical_key_draft_finalization_work_with_budget(
+        schema, data, &budget,
+    )
+    .map_err(|error| match error {
+        SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
+            ResidentKernelError::InvalidShape
+        }
+        _ => ResidentKernelError::InvalidInput,
+    })?;
+    meter.charge_comparison_work(work)?;
+    Ok(work)
+}
+
+/// The product loop emits tuples in canonical lexicographic order because
+/// both source Sets are already ordered. Reserve every recursively nested
+/// member finalization and every adjacent outer-Set comparison before either
+/// source is converted into owned drafts.
+fn cartesian_product_finalization_work_upper_bound(
+    meter: &mut ResidentBudgetMeter,
+    left_schema: &SchemaBody,
+    left: &[mech_core::snapshot::CanonicalKeyValue],
+    right_schema: &SchemaBody,
+    right: &[mech_core::snapshot::CanonicalKeyValue],
+) -> Result<u64, ResidentKernelError> {
+    if left.is_empty() || right.is_empty() {
+        return Ok(0);
+    }
+    let mut left_finalization = 0_u64;
+    let mut left_comparison = 0_u64;
+    let mut left_adjacent = 0_u64;
+    let mut previous_left: Option<u64> = None;
+    for element in left {
+        let comparison = canonical_key_comparison_work_upper_bound(left_schema, element.data())?;
+        meter.charge_comparison_work(comparison)?;
+        let finalization = bounded_key_draft_finalization_work(meter, left_schema, element.data())?;
+        left_comparison = left_comparison
+            .checked_add(comparison)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        left_finalization = left_finalization
+            .checked_add(finalization)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if let Some(previous) = previous_left {
+            left_adjacent = left_adjacent
+                .checked_add(previous.max(comparison))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        previous_left = Some(comparison);
+    }
+
+    let mut right_finalization = 0_u64;
+    let mut right_adjacent = 0_u64;
+    let mut previous_right: Option<u64> = None;
+    for element in right {
+        let comparison = canonical_key_comparison_work_upper_bound(right_schema, element.data())?;
+        meter.charge_comparison_work(comparison)?;
+        let finalization =
+            bounded_key_draft_finalization_work(meter, right_schema, element.data())?;
+        right_finalization = right_finalization
+            .checked_add(finalization)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if let Some(previous) = previous_right {
+            right_adjacent = right_adjacent
+                .checked_add(previous.max(comparison))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        previous_right = Some(comparison);
+    }
+
+    let left_count = checked_u64(left.len())?;
+    let right_count = checked_u64(right.len())?;
+    let within_right_count = right_count
+        .checked_sub(1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let between_left_count = left_count
+        .checked_sub(1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    checked_cost_sum(&[
+        checked_cost_product(&[left_finalization, right_count])?,
+        checked_cost_product(&[right_finalization, left_count])?,
+        checked_cost_product(&[left_count, within_right_count])?,
+        checked_cost_product(&[left_comparison, within_right_count])?,
+        checked_cost_product(&[right_adjacent, left_count])?,
+        between_left_count,
+        left_adjacent,
+    ])
+}
+
 fn merged_set_element_drafts(
     kernel: &BoundResidentKernel,
     left: &Value,
@@ -1239,6 +1333,28 @@ fn set_cartesian_product(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let (left, right) = snapshot_set_inputs(inputs)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let left_element_schema = match schemas
+        .get(left.schema())
+        .ok_or(ResidentKernelError::InvalidInput)?
+        .body()
+    {
+        SchemaBody::Set { element, .. } => element.as_ref(),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let right_element_schema = match schemas
+        .get(right.schema())
+        .ok_or(ResidentKernelError::InvalidInput)?
+        .body()
+    {
+        SchemaBody::Set { element, .. } => element.as_ref(),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let (ValueData::Set(left_set), ValueData::Set(right_set)) = (left.data(), right.data()) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
     let mut footprint_meter = ResidentBudgetMeter::default();
     let (left_retained_bytes, left_retained_nodes) =
         value_retained_cost(&mut footprint_meter, kernel, left)?;
@@ -1247,6 +1363,13 @@ fn set_cartesian_product(
     let left_count = set_cardinality(left)?;
     let right_count = set_cardinality(right)?;
     let output_len = checked_product(&[left_count, right_count])?;
+    let finalization_work = cartesian_product_finalization_work_upper_bound(
+        &mut footprint_meter,
+        left_element_schema,
+        left_set.elements(),
+        right_element_schema,
+        right_set.elements(),
+    )?;
     let result_cloned_bytes = checked_cost_sum(&[
         checked_cost_product(&[left_retained_bytes, checked_u64(right_count)?])?,
         checked_cost_product(&[right_retained_bytes, checked_u64(left_count)?])?,
@@ -1274,10 +1397,14 @@ fn set_cartesian_product(
     let output_bytes = checked_cost_sum(&[result_cloned_bytes, container_bytes])?;
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
-        comparison_work: footprint_work.comparison_work,
+        comparison_work: footprint_work
+            .comparison_work
+            .checked_add(finalization_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: checked_cost_sum(&[
             footprint_work.compute_work,
             checked_u64(output_len)?,
+            finalization_work,
         ])?,
         output_elements: output_len,
         output_bytes,
@@ -1290,7 +1417,7 @@ fn set_cartesian_product(
         ])?,
         ..KernelCostEstimate::default()
     };
-    let canonicalization_work_limit = PreparedKernel::new(cost.remaining_incremental_work()?, cost)
+    let canonicalization_work_limit = PreparedKernel::new(finalization_work, cost)
         .admit()?
         .into_plan();
     let left = set_element_drafts(left)?;
@@ -2461,6 +2588,25 @@ mod tests {
                 .with_snapshot_schemas(schemas.clone())
         };
 
+        let small_left = [Some(set(2, 0))];
+        let small_right = [Some(set(2, 0))];
+        let small_inputs = [
+            ResidentValueRef::Snapshot(&small_left),
+            ResidentValueRef::Snapshot(&small_right),
+        ];
+        let mut small_output = [None];
+        assert_eq!(
+            output_kernel(set_cartesian_product, pair_set_schema).execute(
+                &Inputs(&small_inputs),
+                ResidentValueMut::Snapshot(&mut small_output),
+            ),
+            Ok(true),
+        );
+        let ValueData::Set(small_output) = small_output[0].as_ref().unwrap().data() else {
+            unreachable!()
+        };
+        assert_eq!(small_output.elements().len(), 4);
+
         // Compact members keep byte amplification below the cap, but 65,536
         // pairs still materialize 196,608 tuple/member nodes.
         let left = [Some(set(256, 0))];
@@ -2498,6 +2644,25 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(normalization_output[0].is_none());
+
+        // The complete product fits byte and node limits, but adjacent tuple
+        // comparisons of long common-prefix keys cannot fit the remaining
+        // finalization budget. Reject before either input Set is drafted.
+        let long_product_left = [Some(set(12, 500))];
+        let long_product_right = [Some(set(12, 500))];
+        let long_product_inputs = [
+            ResidentValueRef::Snapshot(&long_product_left),
+            ResidentValueRef::Snapshot(&long_product_right),
+        ];
+        let mut long_product_output = [None];
+        assert_eq!(
+            output_kernel(set_cartesian_product, pair_set_schema).execute(
+                &Inputs(&long_product_inputs),
+                ResidentValueMut::Snapshot(&mut long_product_output),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(long_product_output[0].is_none());
 
         // Input footprint traversal alone fits the comparison budget, but a
         // merge of equal long String keys must charge the recursive key

@@ -29,8 +29,10 @@ pub use self::error::{
     SchemaDataKind, SnapshotPath, SnapshotPathSegment, SnapshotValueError, ValueDataKind,
 };
 pub use self::relations::{
-    SetValueRelation, canonical_key_draft_finalization_work, compare_key_data,
-    schema_data_language_eq, schema_data_partial_cmp,
+    SetValueRelation, canonical_data_draft_finalization_work,
+    canonical_data_draft_finalization_work_with_budget, canonical_key_draft_finalization_work,
+    canonical_key_draft_finalization_work_with_budget, compare_key_data, schema_data_language_eq,
+    schema_data_partial_cmp,
 };
 pub use self::sequence::SequenceView;
 pub use self::validation::{
