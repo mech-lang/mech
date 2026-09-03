@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    FunctionValueRepresentation, MechFunctionImpl, SchemaBody, SpecializationContext,
+    FunctionValueRepresentation, KindExpr, MechFunctionImpl, SchemaBody, SpecializationContext,
     SpecializationInvocation, SpecializedFunction, ValueCell,
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
@@ -74,6 +74,19 @@ impl CanonicalFunctionSpecializer for TestSpecializer {
 
 fn specializer() -> Arc<dyn CanonicalFunctionSpecializer> {
     Arc::new(TestSpecializer)
+}
+
+fn type_declaration() -> FunctionTypeDeclaration {
+    FunctionTypeDeclaration::from_schemes(vec![
+        KindScheme::new(
+            Box::new([]),
+            Box::new([]),
+            InputKindScheme::Fixed(Box::new([])),
+            vec![KindExpr::Index].into_boxed_slice(),
+            Box::new([]),
+        )
+        .unwrap(),
+    ])
 }
 
 fn contract(alias: RuntimeOutputAliasPolicy) -> RuntimeFunctionContract {
@@ -186,6 +199,7 @@ fn operation_ids_reject_colliding_and_duplicate_specializers() {
         .insert_specializer_entry(FunctionSpecializerEntry {
             operation,
             canonical_name: "first/op".into(),
+            type_authority: SourceTypeAuthority::Schemes(type_declaration()),
             specializer: specializer(),
         })
         .unwrap();
@@ -194,6 +208,7 @@ fn operation_ids_reject_colliding_and_duplicate_specializers() {
         .insert_specializer_entry(FunctionSpecializerEntry {
             operation,
             canonical_name: "second/op".into(),
+            type_authority: SourceTypeAuthority::Schemes(type_declaration()),
             specializer: specializer(),
         })
         .unwrap_err();
@@ -201,10 +216,10 @@ fn operation_ids_reject_colliding_and_duplicate_specializers() {
 
     let mut builder = FunctionCatalogBuilder::new();
     builder
-        .insert_canonical_specializer("core/test", specializer())
+        .insert_canonical_specializer("core/test", type_declaration(), specializer())
         .unwrap();
     let duplicate = builder
-        .insert_canonical_specializer("core/test", specializer())
+        .insert_canonical_specializer("core/test", type_declaration(), specializer())
         .unwrap_err();
     assert_eq!(duplicate.kind_name(), "FunctionCatalogDuplicateSpecializer");
 }
@@ -213,7 +228,11 @@ fn operation_ids_reject_colliding_and_duplicate_specializers() {
 fn exports_are_validated_and_indexed_by_exact_module_item() {
     let mut builder = FunctionCatalogBuilder::new();
     builder
-        .insert_canonical_specializer("math/add", specializer())
+        .insert_canonical_specializer(
+            "math/add",
+            maintained_source_type_declaration("math/add").unwrap(),
+            specializer(),
+        )
         .unwrap();
     builder
         .insert_export(export("math/add", "math", "add"))

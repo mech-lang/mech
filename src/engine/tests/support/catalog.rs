@@ -923,7 +923,11 @@ mod tests {
     fn supplied_custom_catalog_executes_math_add() {
         let mut builder = FunctionCatalogBuilder::new();
         let operation = builder
-            .insert_canonical_specializer("math/add", Arc::new(TestAddSpecializer))
+            .insert_canonical_specializer(
+                "math/add",
+                mech_core::maintained_source_type_declaration("math/add").unwrap(),
+                Arc::new(TestAddSpecializer),
+            )
             .unwrap();
         builder
             .insert_export(FunctionExport {

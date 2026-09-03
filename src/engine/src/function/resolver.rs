@@ -223,7 +223,11 @@ mod tests {
     fn test_catalog() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
         let operation = builder
-            .insert_canonical_specializer("math/add", Arc::new(TestSpecializer("catalog")))
+            .insert_canonical_specializer(
+                "math/add",
+                mech_core::maintained_source_type_declaration("math/add").unwrap(),
+                Arc::new(TestSpecializer("catalog")),
+            )
             .unwrap();
         builder
             .insert_export(FunctionExport {
@@ -342,7 +346,14 @@ mod tests {
     fn disabled_catalog_operations_fail_before_specialization() {
         let mut builder = FunctionCatalogBuilder::new();
         let operation = builder
-            .insert_canonical_specializer("stats/mean", Arc::new(TestSpecializer("catalog")))
+            .insert_canonical_specializer(
+                "stats/mean",
+                mech_core::FunctionTypeDeclaration::from_schemes(vec![
+                    mech_core::exact_unary(mech_core::KindExpr::Index, mech_core::KindExpr::Index)
+                        .unwrap(),
+                ]),
+                Arc::new(TestSpecializer("catalog")),
+            )
             .unwrap();
         builder
             .insert_export(FunctionExport {

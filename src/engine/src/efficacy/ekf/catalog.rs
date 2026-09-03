@@ -4,17 +4,18 @@ use std::sync::{Arc, LazyLock};
 
 use mech_core::snapshot::F64Bits;
 use mech_core::{
-    AccessMode, AliasPolicy, BytecodeCompilerContext, CanonicalFunctionSpecializer,
-    ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExternalInteraction, FunctionCatalog,
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionInstance, FunctionInvocation,
-    FunctionRuntimeType, FunctionStatePort, GuardFunctionSafety, InputPortLayout, InputPortPolicy,
-    MResult, MechError, MechErrorKind, MechFunction, MechFunctionCompiler, MechFunctionFactory,
-    MechFunctionImpl, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
-    ReactiveNodeKind, Ref, Register, RuntimeFunctionContract, RuntimeFunctionSignature,
-    RuntimeOutputAliasPolicy, SchemaBody, ShapeRule, SpecializationContext,
-    SpecializationInvocation, SpecializedFunction, ValueCell, ValueData, ValueDataDraft,
-    compile_runtime_produced_value_cell_register_with_seed, compile_value_cell_register,
-    function_shape_contract_violation,
+    AccessMode, AliasPolicy, BuiltinScalarKind, BytecodeCompilerContext,
+    CanonicalFunctionSpecializer, ChangeDetectionPolicy, DeliveryMode, DimensionExpr,
+    ExternalInteraction, FunctionCatalog, FunctionCatalogBuilder, FunctionExport, FunctionExposure,
+    FunctionInstance, FunctionInvocation, FunctionRuntimeType, FunctionStatePort,
+    FunctionTypeDeclaration, GuardFunctionSafety, InputKindScheme, InputPortLayout,
+    InputPortPolicy, KindExpr, KindScheme, MResult, MechError, MechErrorKind, MechFunction,
+    MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl, OperationContractDeclaration,
+    OutputConstruction, OutputPortPolicy, ReactiveNodeKind, Ref, Register, RuntimeFunctionContract,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaBody, ShapeRule,
+    SpecializationContext, SpecializationInvocation, SpecializedFunction, ValueCell, ValueData,
+    ValueDataDraft, compile_runtime_produced_value_cell_register_with_seed,
+    compile_value_cell_register, function_shape_contract_violation,
 };
 use nalgebra::{DMatrix, DVector};
 
@@ -463,8 +464,23 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 
 pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     for spec in FROZEN_EKF_OPERATIONS {
+        let scheme = KindScheme::new(
+            Box::new([]),
+            Box::new([]),
+            InputKindScheme::Fixed(
+                spec.inputs
+                    .iter()
+                    .copied()
+                    .map(frozen_ekf_kind)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+            vec![frozen_ekf_kind(spec.output)].into_boxed_slice(),
+            Box::new([]),
+        )?;
         let operation = builder.insert_canonical_specializer(
             spec.canonical_name,
+            FunctionTypeDeclaration::from_schemes(vec![scheme]),
             Arc::new(FrozenEkfSpecializer {
                 operation: spec.operation,
             }),
@@ -477,8 +493,11 @@ pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()
             exposure: FunctionExposure::ModuleOnly,
         })?;
     }
-    let negate =
-        builder.insert_canonical_specializer("math/neg", Arc::new(FrozenF64NegateSpecializer))?;
+    let negate = builder.insert_canonical_specializer(
+        "math/neg",
+        mech_core::maintained_source_type_declaration("math/neg")?,
+        Arc::new(FrozenF64NegateSpecializer),
+    )?;
     builder.insert_export(FunctionExport {
         operation: negate,
         canonical_name: "math/neg".to_owned(),
@@ -487,6 +506,30 @@ pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()
         exposure: FunctionExposure::Prelude,
     })?;
     Ok(())
+}
+
+fn frozen_ekf_kind(shape: FrozenEkfValueShape) -> KindExpr {
+    let f64_kind = BuiltinScalarKind::F64.kind_expr();
+    match shape {
+        FrozenEkfValueShape::F64 => f64_kind,
+        FrozenEkfValueShape::Bool => BuiltinScalarKind::Bool.kind_expr(),
+        FrozenEkfValueShape::Vector(rows) => KindExpr::Matrix {
+            element: Box::new(f64_kind),
+            dimensions: vec![
+                DimensionExpr::Constant(rows as u64),
+                DimensionExpr::Constant(1),
+            ]
+            .into_boxed_slice(),
+        },
+        FrozenEkfValueShape::Matrix { rows, columns } => KindExpr::Matrix {
+            element: Box::new(f64_kind),
+            dimensions: vec![
+                DimensionExpr::Constant(rows as u64),
+                DimensionExpr::Constant(columns as u64),
+            ]
+            .into_boxed_slice(),
+        },
+    }
 }
 
 struct FrozenF64NegateSpecializer;

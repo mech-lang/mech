@@ -293,8 +293,18 @@ mod tests {
             .insert_canonical_intrinsic_specializer("assign", Arc::new(TestSpecializer))
             .unwrap();
         for name in ["syntax/internal", "math/add", "stats/mean"] {
+            let declaration =
+                mech_core::maintained_source_type_declaration(name).unwrap_or_else(|_| {
+                    mech_core::FunctionTypeDeclaration::from_schemes(vec![
+                        mech_core::exact_unary(
+                            mech_core::KindExpr::Index,
+                            mech_core::KindExpr::Index,
+                        )
+                        .unwrap(),
+                    ])
+                });
             builder
-                .insert_canonical_specializer(name, Arc::new(TestSpecializer))
+                .insert_canonical_specializer(name, declaration, Arc::new(TestSpecializer))
                 .unwrap();
         }
         builder

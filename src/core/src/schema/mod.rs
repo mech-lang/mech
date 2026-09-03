@@ -8,6 +8,8 @@ mod validation;
 pub use self::shape::*;
 pub use self::table::*;
 
+pub(crate) use self::validation::is_body_keyable as is_schema_body_keyable;
+
 use crate::{
     DimensionExpr, DimensionParameter, DimensionParameterDeclaration, NominalKey,
     SemanticModelError,

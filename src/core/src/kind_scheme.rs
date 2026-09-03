@@ -83,6 +83,16 @@ pub enum TableJoinMode {
     LeftAnti,
 }
 
+/// Closed arity-aware source templates whose result dimensions or cardinality
+/// depend on the concrete source argument list. Templates instantiate an
+/// ordinary `KindScheme` before constraint solving; they are not extensible.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SourceSchemeTemplate {
+    HorizontalConcatenation,
+    VerticalConcatenation,
+    SetDefinition,
+}
+
 impl KindScheme {
     pub fn new(
         kind_parameters: Box<[KindParameter]>,
