@@ -1643,6 +1643,52 @@ fn computed_scalar_output_is_materialized_during_activation() {
 }
 
 #[test]
+fn compiled_conversion_executes_after_bytecode_round_trip() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    for source_text in [
+        "value := 3.9\nanswer := value<i32>\nanswer",
+        "value := 3<i32>\nanswer := value<f64>\nanswer",
+        "value := true\nanswer := value<string>\nanswer",
+        "value := 42<u64>\nanswer := value<string>\nanswer",
+        "value := [3.9 4.1]\nanswer := value<[i32]>\nanswer",
+        "value<[i32]> := [3<i32> 4<i32>]\nanswer := value<[f64]>\nanswer",
+    ] {
+        let product = compiler.compile_source(source_text).unwrap();
+        assert!(
+            product.artifact().nodes().iter().any(|node| {
+                node.operation.module_path.as_ref() == ["convert"]
+                    && node.operation.operation_name == "kind"
+            }),
+            "conversion instruction was not retained for {source_text}: {:?}",
+            product.artifact().nodes(),
+        );
+
+        let mut source_runtime = runtime();
+        let source = source_runtime
+            .load_source_program(source_text, crate::ResidentDurabilityPolicy::Volatile)
+            .unwrap_or_else(|error| {
+                panic!("source conversion failed for {source_text}: {error:?}")
+            });
+        let mut bytecode_runtime = runtime();
+        let bytecode = bytecode_runtime
+            .load_bytecode_program(
+                product.bytecode(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .unwrap_or_else(|error| {
+                panic!("bytecode conversion failed for {source_text}: {error:?}")
+            });
+        assert_eq!(
+            source.initial_value, bytecode.initial_value,
+            "source and bytecode conversions diverged for {source_text}",
+        );
+    }
+}
+
+#[test]
 fn integrity_constraints_match_across_source_and_bytecode_resident_admission() {
     const PASSING: &str = "x := 1.0\nsafe! := x <= 2.0";
     const FAILING: &str = "x := 3.0\nsafe! := x <= 2.0";

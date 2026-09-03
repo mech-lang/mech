@@ -1,6 +1,6 @@
 use mech_core::{
-    BuiltinScalarKind, BuiltinTypeClass, FloatWidth, KindExpr, SchemaBody,
-    builtin_scalar_named_kind,
+    BuiltinKindPredicate, BuiltinScalarKind, CardinalitySpec, FloatWidth, KindExpr, ResolvedType,
+    SchemaBody, builtin_scalar_named_kind,
 };
 
 #[test]
@@ -53,14 +53,14 @@ fn schema_scalar_round_trip_uses_one_registry() {
 }
 
 #[test]
-fn scalar_class_membership_matches_the_closed_table() {
-    assert!(BuiltinScalarKind::U64.satisfies(BuiltinTypeClass::Number));
-    assert!(BuiltinScalarKind::F64.satisfies(BuiltinTypeClass::Number));
-    assert!(!BuiltinScalarKind::Bool.satisfies(BuiltinTypeClass::Number));
-    assert!(!BuiltinScalarKind::String.satisfies(BuiltinTypeClass::Number));
-    assert!(!BuiltinScalarKind::C64.satisfies(BuiltinTypeClass::Ordered));
-    assert!(!BuiltinScalarKind::U64.satisfies(BuiltinTypeClass::Negatable));
-    assert!(BuiltinScalarKind::I64.satisfies(BuiltinTypeClass::Negatable));
+fn scalar_predicate_membership_matches_the_closed_table() {
+    assert!(BuiltinScalarKind::U64.satisfies(BuiltinKindPredicate::Number));
+    assert!(BuiltinScalarKind::F64.satisfies(BuiltinKindPredicate::Number));
+    assert!(!BuiltinScalarKind::Bool.satisfies(BuiltinKindPredicate::Number));
+    assert!(!BuiltinScalarKind::String.satisfies(BuiltinKindPredicate::Number));
+    assert!(!BuiltinScalarKind::C64.satisfies(BuiltinKindPredicate::Ordered));
+    assert!(!BuiltinScalarKind::U64.satisfies(BuiltinKindPredicate::Negatable));
+    assert!(BuiltinScalarKind::I64.satisfies(BuiltinKindPredicate::Negatable));
 }
 
 #[test]
@@ -69,4 +69,125 @@ fn builtin_kind_expression_is_named_by_the_registry() {
         BuiltinScalarKind::F32.kind_expr(),
         KindExpr::Named(BuiltinScalarKind::F32.kind_id())
     );
+}
+
+#[test]
+fn number_contains_every_numeric_scalar() {
+    for kind in BuiltinScalarKind::ALL {
+        assert_eq!(
+            kind.satisfies(BuiltinKindPredicate::Number),
+            !matches!(kind, BuiltinScalarKind::String | BuiltinScalarKind::Bool),
+            "{kind:?}",
+        );
+    }
+}
+
+#[test]
+fn number_rejects_bool_and_string() {
+    assert!(!BuiltinScalarKind::Bool.satisfies(BuiltinKindPredicate::Number));
+    assert!(!BuiltinScalarKind::String.satisfies(BuiltinKindPredicate::Number));
+}
+
+#[test]
+fn ordered_rejects_complex() {
+    assert!(!BuiltinScalarKind::C32.satisfies(BuiltinKindPredicate::Ordered));
+    assert!(!BuiltinScalarKind::C64.satisfies(BuiltinKindPredicate::Ordered));
+}
+
+#[test]
+fn negatable_rejects_unsigned() {
+    for kind in [
+        BuiltinScalarKind::U8,
+        BuiltinScalarKind::U16,
+        BuiltinScalarKind::U32,
+        BuiltinScalarKind::U64,
+        BuiltinScalarKind::U128,
+    ] {
+        assert!(!kind.satisfies(BuiltinKindPredicate::Negatable));
+    }
+}
+
+#[test]
+fn range_endpoint_accepts_index_integer_and_float() {
+    assert!(mech_core::intrinsic_kind_satisfies_predicate(
+        &KindExpr::Index,
+        BuiltinKindPredicate::RangeEndpoint,
+    ));
+    for kind in [
+        BuiltinScalarKind::U8,
+        BuiltinScalarKind::U64,
+        BuiltinScalarKind::I32,
+        BuiltinScalarKind::F32,
+        BuiltinScalarKind::F64,
+    ] {
+        assert!(kind.satisfies(BuiltinKindPredicate::RangeEndpoint));
+    }
+}
+
+#[test]
+fn nested_schema_keyability_becomes_predicate_evidence() {
+    let kind = ResolvedType::from_schema_body(
+        &SchemaBody::Tuple(
+            vec![
+                SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W32),
+                SchemaBody::Option(Box::new(SchemaBody::Set {
+                    element: Box::new(SchemaBody::String),
+                    cardinality: CardinalitySpec::Exact(mech_core::DimensionExpr::Constant(2)),
+                })),
+            ]
+            .into_boxed_slice(),
+        ),
+        &[],
+    )
+    .unwrap();
+    assert!(kind.is_keyable());
+}
+
+#[test]
+fn equal_types_intersect_conflicting_predicate_evidence() {
+    let left = ResolvedType::from_schema_body(&SchemaBody::String, &[]).unwrap();
+    let right = ResolvedType::new(BuiltinScalarKind::String.kind_expr(), Box::new([])).unwrap();
+    assert_eq!(left, right);
+    for predicate in BuiltinKindPredicate::ALL {
+        assert_eq!(
+            left.satisfies(predicate),
+            right.satisfies(predicate),
+            "{predicate:?}"
+        );
+    }
+}
+
+#[test]
+fn schema_and_direct_kind_predicates_agree_for_structural_products() {
+    let cases = [
+        (
+            KindExpr::Tuple(Box::new([])),
+            SchemaBody::Tuple(Box::new([])),
+        ),
+        (
+            KindExpr::Record(Box::new([])),
+            SchemaBody::Record(Box::new([])),
+        ),
+        (
+            KindExpr::Tuple(
+                vec![BuiltinScalarKind::String.kind_expr(), KindExpr::Index].into_boxed_slice(),
+            ),
+            SchemaBody::Tuple(vec![SchemaBody::String, SchemaBody::Index].into_boxed_slice()),
+        ),
+    ];
+    for (kind, schema) in cases {
+        let direct = ResolvedType::new(kind, Box::new([])).unwrap();
+        let derived = ResolvedType::from_schema_body(&schema, &[]).unwrap();
+        assert_eq!(direct, derived);
+        for predicate in BuiltinKindPredicate::ALL {
+            assert_eq!(
+                direct.satisfies(predicate),
+                derived.satisfies(predicate),
+                "{} {predicate:?}",
+                direct.semantic_name(),
+            );
+        }
+        assert!(direct.satisfies(BuiltinKindPredicate::Equatable));
+        assert!(direct.satisfies(BuiltinKindPredicate::Keyable));
+    }
 }

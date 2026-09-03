@@ -913,12 +913,34 @@ fn dynamic_strict_inequality_round_trips_through_bytecode() -> MResult<()> {
 }
 
 #[test]
-fn strict_comparison_preserves_scalar_and_matrix_shape_identity() -> MResult<()> {
-    let (_, equal) = run_compiled_source("1.0 === [1.0]")?;
-    assert_bool(&equal, false);
-    let (_, not_equal) = run_compiled_source("1.0 !== [1.0]")?;
-    assert_bool(&not_equal, true);
+#[cfg(feature = "distribution-full")]
+fn r3_conversions_and_promoted_matrix_round_trip_through_bytecode() -> MResult<()> {
+    let source = "scalar := 1<u8> + 2<u16>\ncast := scalar<f64>\n[1<f32> 2<f32>] + [3<f64> 4<f64>]";
+    let bytecode = compile_source(source)?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    assert!(
+        parsed.instructions.iter().any(|instruction| {
+            instruction.runtime_function() == Some(hash_str("convert/kind"))
+        })
+    );
+    assert!(
+        parsed
+            .instructions
+            .iter()
+            .any(|instruction| matches!(instruction, BytecodeInstruction::RuntimeBinary { .. })),
+    );
     Ok(())
+}
+
+#[test]
+fn strict_comparison_rejects_different_semantic_shapes() {
+    for source in ["1.0 === [1.0]", "1.0 !== [1.0]"] {
+        let error = compile_source(source).expect_err("strict comparison requires exact types");
+        assert!(
+            error.display_message().contains("compare/"),
+            "diagnostic omitted the semantic operation: {error:?}",
+        );
+    }
 }
 
 #[test]

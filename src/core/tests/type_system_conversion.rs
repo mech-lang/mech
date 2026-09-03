@@ -13,11 +13,88 @@ fn promoted(left: BuiltinScalarKind, right: BuiltinScalarKind) -> Option<Builtin
         })
 }
 
+fn integer_description(kind: BuiltinScalarKind) -> Option<(bool, u16)> {
+    use BuiltinScalarKind as K;
+    match kind {
+        K::U8 => Some((false, 8)),
+        K::U16 => Some((false, 16)),
+        K::U32 => Some((false, 32)),
+        K::U64 => Some((false, 64)),
+        K::U128 => Some((false, 128)),
+        K::I8 => Some((true, 8)),
+        K::I16 => Some((true, 16)),
+        K::I32 => Some((true, 32)),
+        K::I64 => Some((true, 64)),
+        K::I128 => Some((true, 128)),
+        _ => None,
+    }
+}
+
+fn expected_implicit_scalar(source: BuiltinScalarKind, target: BuiltinScalarKind) -> bool {
+    use BuiltinScalarKind as K;
+    if source == target {
+        return true;
+    }
+    if let (Some((source_signed, source_width)), Some((target_signed, target_width))) =
+        (integer_description(source), integer_description(target))
+    {
+        return source_signed == target_signed && source_width < target_width
+            || !source_signed && target_signed && source_width < target_width;
+    }
+    match (source, target) {
+        (K::F32, K::F64) | (K::C32, K::C64) => true,
+        (K::U8 | K::U16 | K::I8 | K::I16, K::F32) => true,
+        (K::U8 | K::U16 | K::U32 | K::I8 | K::I16 | K::I32, K::F64) => true,
+        (K::U8 | K::U16 | K::U32 | K::I8 | K::I16 | K::I32 | K::I64, K::R64) => true,
+        (K::F32, K::C32 | K::C64) | (K::F64, K::C64) => true,
+        (integer, K::C32) => expected_implicit_scalar(integer, K::F32),
+        (integer, K::C64) => expected_implicit_scalar(integer, K::F64),
+        _ => false,
+    }
+}
+
+fn expected_promotion(
+    left: BuiltinScalarKind,
+    right: BuiltinScalarKind,
+) -> Option<BuiltinScalarKind> {
+    use BuiltinScalarKind as K;
+    if left == right {
+        return Some(left);
+    }
+    let mut candidates = Vec::new();
+    if integer_description(left).is_some() && integer_description(right).is_some() {
+        candidates.extend([
+            K::U8,
+            K::I8,
+            K::U16,
+            K::I16,
+            K::U32,
+            K::I32,
+            K::U64,
+            K::I64,
+            K::U128,
+            K::I128,
+        ]);
+    }
+    if left == K::R64 || right == K::R64 {
+        candidates.push(K::R64);
+    }
+    if matches!(left, K::F32 | K::F64) || matches!(right, K::F32 | K::F64) {
+        candidates.extend([K::F32, K::F64]);
+    }
+    if matches!(left, K::C32 | K::C64) || matches!(right, K::C32 | K::C64) {
+        candidates.extend([K::C32, K::C64]);
+    }
+    candidates.into_iter().find(|candidate| {
+        expected_implicit_scalar(left, *candidate) && expected_implicit_scalar(right, *candidate)
+    })
+}
+
 #[test]
 fn complete_numeric_promotion_matrix_is_symmetric_and_deterministic() {
     let numeric = BuiltinScalarKind::ALL
         .into_iter()
-        .filter(|kind| kind.satisfies(BuiltinTypeClass::Number))
+        .filter(|kind| kind.satisfies(BuiltinKindPredicate::Number))
         .collect::<Vec<_>>();
     for left in numeric.iter().copied() {
         for right in numeric.iter().copied() {
@@ -28,7 +105,19 @@ fn complete_numeric_promotion_matrix_is_symmetric_and_deterministic() {
                 reverse.as_ref().map(|plan| plan.result.clone()),
                 "promotion differs for {left:?}, {right:?}"
             );
+            assert_eq!(
+                forward.as_ref().map(|plan| match plan.result.kind() {
+                    KindExpr::Named(id) => BuiltinScalarKind::from_kind_id(*id).unwrap(),
+                    other => panic!("unexpected promoted kind {other:?}"),
+                }),
+                expected_promotion(left, right),
+                "unexpected promotion for {left:?}, {right:?}",
+            );
             if let (Some(forward), Some(reverse)) = (forward, reverse) {
+                assert_eq!(forward.left.source, resolved(left));
+                assert_eq!(forward.right.source, resolved(right));
+                assert_eq!(forward.left.target, forward.result);
+                assert_eq!(forward.right.target, forward.result);
                 assert_eq!(forward.left.cost, reverse.right.cost);
                 assert_eq!(forward.right.cost, reverse.left.cost);
             }
@@ -64,6 +153,16 @@ fn numeric_promotion_examples_match_type_system_v1() {
 #[test]
 fn implicit_conversion_is_exactly_the_lossless_table() {
     use BuiltinScalarKind as K;
+    for source in BuiltinScalarKind::ALL {
+        for target in BuiltinScalarKind::ALL {
+            assert_eq!(
+                plan_implicit_conversion(&resolved(source), &resolved(target)).is_ok(),
+                expected_implicit_scalar(source, target),
+                "implicit conversion policy differs for {source:?} -> {target:?}",
+            );
+        }
+    }
+
     assert!(plan_implicit_conversion(&resolved(K::U8), &resolved(K::U16)).is_ok());
     assert!(plan_implicit_conversion(&resolved(K::U8), &resolved(K::I16)).is_ok());
     assert!(plan_implicit_conversion(&resolved(K::U16), &resolved(K::F32)).is_ok());
