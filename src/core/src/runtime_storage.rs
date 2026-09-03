@@ -267,3 +267,36 @@ pub(crate) fn actual_backing_capabilities(
         | MutableValueCell => opaque(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn universal_and_abstract_representations_are_classified_by_actual_backing() {
+        assert_eq!(
+            actual_backing_capabilities(FunctionValueRepresentation::AnyValue).topology,
+            StorageTopology::CanonicalValue
+        );
+        for representation in [
+            FunctionValueRepresentation::Empty,
+            FunctionValueRepresentation::Enum,
+            FunctionValueRepresentation::Record,
+            FunctionValueRepresentation::Map,
+            FunctionValueRepresentation::Set,
+            FunctionValueRepresentation::Table,
+            FunctionValueRepresentation::Tuple,
+            FunctionValueRepresentation::Kind,
+            FunctionValueRepresentation::MutableValueCell,
+            FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::F64,
+                storage: FunctionMatrixStoragePattern::AnyStorage,
+            },
+        ] {
+            assert_eq!(
+                actual_backing_capabilities(representation).topology,
+                StorageTopology::Opaque
+            );
+        }
+    }
+}

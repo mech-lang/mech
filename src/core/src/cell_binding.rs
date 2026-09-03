@@ -3261,10 +3261,101 @@ mod tests {
         let separate =
             ValueCell::from_ref(Ref::new(7.0_f64), schema.id, schema.shape, schema.schemas)
                 .unwrap();
+        let detached = first.detached_clone().unwrap();
 
+        assert!(first.same_logical_cell(&clone));
+        assert!(first.same_storage(&clone));
         assert!(first.same_cell(&clone));
+        assert!(!first.same_logical_cell(&separate));
+        assert!(!first.same_storage(&separate));
         assert!(!first.same_cell(&separate));
         assert!(first.snapshot_eq(&separate).unwrap());
+        assert!(!first.same_logical_cell(&detached));
+        assert!(!first.same_storage(&detached));
+        assert!(first.snapshot_eq(&detached).unwrap());
+
+        let same_identity_detached_storage = ValueCell {
+            binding: CellBinding {
+                identity: first.binding.identity,
+                ..detached.binding.clone()
+            },
+        };
+        assert!(first.same_logical_cell(&same_identity_detached_storage));
+        assert!(!first.same_storage(&same_identity_detached_storage));
+
+        let different_identity_shared_storage = ValueCell {
+            binding: CellBinding {
+                identity: detached.binding.identity,
+                ..first.binding.clone()
+            },
+        };
+        assert!(!first.same_logical_cell(&different_identity_shared_storage));
+        assert!(first.same_storage(&different_identity_shared_storage));
+
+        for other in [
+            &clone,
+            &separate,
+            &detached,
+            &same_identity_detached_storage,
+            &different_identity_shared_storage,
+        ] {
+            assert_eq!(first.same_cell(other), first.same_storage(other));
+        }
+    }
+
+    fn assert_replace_borrow_conflict_preserves_value<T>(reference: Ref<T>, schema: TestSchema)
+    where
+        T: CanonicalCellBacking,
+    {
+        let cell = ValueCell::from_ref(
+            reference.clone(),
+            schema.id,
+            schema.shape.clone(),
+            schema.schemas.clone(),
+        )
+        .unwrap();
+        let before = cell.detached_clone().unwrap();
+        let replacement = before.snapshot().unwrap();
+        let held = reference.borrow_mut();
+        assert!(cell.replace(&replacement).is_err());
+        drop(held);
+        assert!(cell.snapshot_eq(&before).unwrap());
+        assert!(
+            cell.storage_capabilities()
+                .publication
+                .preserves_previous_on_failure
+        );
+    }
+
+    #[test]
+    fn declared_atomic_publication_preserves_representative_backings_on_borrow_conflict() {
+        #[cfg(feature = "f64")]
+        {
+            let scalar_schema = f64_schema();
+            assert_replace_borrow_conflict_preserves_value(Ref::new(1.25_f64), scalar_schema);
+
+            let canonical_schema = f64_schema();
+            let canonical = f64_value(&canonical_schema, 1.25);
+            assert_replace_borrow_conflict_preserves_value(Ref::new(canonical), canonical_schema);
+        }
+
+        #[cfg(feature = "string")]
+        assert_replace_borrow_conflict_preserves_value(
+            Ref::new("before".to_owned()),
+            test_schema(SchemaBody::String, Box::new([]), &[]),
+        );
+
+        #[cfg(all(feature = "f64", feature = "matrixd"))]
+        assert_replace_borrow_conflict_preserves_value(
+            Ref::new(crate::DMatrix::<f64>::zeros(2, 3)),
+            matrix_schema(2, 3),
+        );
+
+        #[cfg(all(feature = "f64", feature = "matrix2"))]
+        assert_replace_borrow_conflict_preserves_value(
+            Ref::new(crate::Matrix2::<f64>::zeros()),
+            matrix_schema(2, 2),
+        );
     }
 
     #[cfg(feature = "f64")]
