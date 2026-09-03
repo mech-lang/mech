@@ -101,10 +101,14 @@ pub(crate) trait ErasedCellStorage {
     fn replace(&self, value: &Value) -> MResult<()>;
     fn preflight_replace(&self) -> MResult<()>;
     fn capabilities(&self) -> crate::StorageCapabilityDescriptor;
-    fn detached_clone(&self) -> MResult<Rc<dyn ErasedCellStorage>>;
+    fn detached_clone(&self) -> MResult<DetachedCellStorage>;
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool;
     fn borrow_state(&self) -> CellBorrowState;
-    fn logical_cell_id(&self) -> CanonicalCellId;
+}
+
+pub(crate) struct DetachedCellStorage {
+    pub identity: CanonicalCellId,
+    pub storage: Rc<dyn ErasedCellStorage>,
 }
 
 struct ExactCellStorage<T> {
@@ -156,15 +160,18 @@ impl<T: CanonicalCellBacking> ErasedCellStorage for ExactCellStorage<T> {
         crate::runtime_storage::actual_backing_capabilities(T::REPRESENTATION)
     }
 
-    fn detached_clone(&self) -> MResult<Rc<dyn ErasedCellStorage>> {
+    fn detached_clone(&self) -> MResult<DetachedCellStorage> {
         let value = self
             .reference
             .try_borrow()
             .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
             .clone();
-        Ok(Rc::new(Self {
-            reference: Ref::new(value),
-        }))
+        let reference = Ref::new(value);
+        let identity = reference.reactive_cell_id();
+        Ok(DetachedCellStorage {
+            identity,
+            storage: Rc::new(Self { reference }),
+        })
     }
 
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool {
@@ -180,10 +187,6 @@ impl<T: CanonicalCellBacking> ErasedCellStorage for ExactCellStorage<T> {
         } else {
             CellBorrowState::Borrowed
         }
-    }
-
-    fn logical_cell_id(&self) -> CanonicalCellId {
-        self.reference.reactive_cell_id()
     }
 }
 
@@ -1062,7 +1065,7 @@ impl ValueCell {
     /// cell identity is deliberately fresh. Source specialization uses this
     /// for full-write outputs whose representation mirrors an input.
     pub fn detached_clone(&self) -> MResult<Self> {
-        let storage = self.binding.storage.detached_clone()?;
+        let detached = self.binding.storage.detached_clone()?;
         let shape = self
             .binding
             .shape
@@ -1071,12 +1074,12 @@ impl ValueCell {
             .clone();
         Ok(Self {
             binding: CellBinding {
-                identity: storage.logical_cell_id(),
+                identity: detached.identity,
                 schema: self.binding.schema,
                 schema_key: self.binding.schema_key,
                 shape: Rc::new(cell::RefCell::new(shape)),
                 schemas: self.binding.schemas.clone(),
-                storage,
+                storage: detached.storage,
                 compiler_children: None,
             },
         })
@@ -1135,10 +1138,22 @@ impl ValueCell {
         self.binding.storage.preflight_replace()
     }
 
-    pub fn same_cell(&self, other: &Self) -> bool {
+    pub fn same_logical_cell(&self, other: &Self) -> bool {
+        self.binding.identity == other.binding.identity
+    }
+
+    pub fn same_storage(&self, other: &Self) -> bool {
         self.binding
             .storage
             .same_storage(other.binding.storage.as_ref())
+    }
+
+    /// Compatibility spelling for physical storage identity.
+    ///
+    /// New code should choose `same_logical_cell` or `same_storage`
+    /// explicitly. This method retains its existing physical-storage meaning.
+    pub fn same_cell(&self, other: &Self) -> bool {
+        self.same_storage(other)
     }
 
     pub fn reactive_cell_id(&self) -> CanonicalCellId {
