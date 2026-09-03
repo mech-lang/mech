@@ -736,35 +736,25 @@ fn logical_value_cell_and_storage_identity_are_distinct() {
 }
 
 #[test]
-fn inferred_vector_fixed_axis_mismatches_remain_owned_by_r4() {
+fn inferred_vector_fixed_axes_are_authoritative_after_r4() {
     for (name, cell) in [
         (
-            "RowDVector overstates its fixed first axis; R4 owns correction",
+            "RowDVector fixes its first axis",
             ValueCell::from_exact(RowDVector::<f64>::zeros(3)).unwrap(),
         ),
         (
-            "DVector overstates its fixed second axis; R4 owns correction",
+            "DVector fixes its second axis",
             ValueCell::from_exact(DVector::<f64>::zeros(3)).unwrap(),
         ),
     ] {
-        let reason = cell
-            .validate_storage_contract()
-            .unwrap_err()
-            .kind_as::<ValueCellStorageContractViolation>()
-            .unwrap()
-            .reason;
-        assert_eq!(
-            reason,
-            StorageCompatibilityError::DynamicAxisUnsupported,
-            "{name}",
-        );
+        assert!(cell.validate_storage_contract().is_ok(), "{name}");
     }
     assert!(
         ValueCell::from_exact(DMatrix::<f64>::zeros(2, 3))
             .unwrap()
             .validate_storage_contract()
             .is_ok(),
-        "DMatrix remains valid while R4 owns inferred vector-axis correction",
+        "DMatrix retains two dynamically resizable axes",
     );
 }
 

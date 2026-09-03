@@ -311,20 +311,32 @@ fn every_exact_matrix_class_reports_fixed_or_resizable_axes() {
 }
 
 #[test]
-fn inferred_vector_schemas_overstate_fixed_axes_until_r4_cutover() {
-    for cell in [
-        ValueCell::from_exact(RowDVector::<f64>::zeros(3)).unwrap(),
-        ValueCell::from_exact(DVector::<f64>::zeros(3)).unwrap(),
-    ] {
-        let error = cell.validate_storage_contract().unwrap_err();
-        let violation = error
-            .kind_as::<ValueCellStorageContractViolation>()
-            .expect("shadow validation must report a storage-contract violation");
-        assert_eq!(
-            violation.reason,
-            StorageCompatibilityError::DynamicAxisUnsupported
-        );
+fn inferred_vector_schemas_preserve_their_invariant_axes() {
+    let row = ValueCell::from_exact(RowDVector::<f64>::zeros(3)).unwrap();
+    let column = ValueCell::from_exact(DVector::<f64>::zeros(3)).unwrap();
+    for cell in [&row, &column] {
+        cell.validate_storage_contract().unwrap();
     }
+    let row_descriptor = row.resolved_descriptor().unwrap();
+    let column_descriptor = column.resolved_descriptor().unwrap();
+    let SchemaBody::Matrix {
+        dimensions: row_dimensions,
+        ..
+    } = row_descriptor.schema().body()
+    else {
+        panic!("row vector must retain a matrix schema")
+    };
+    let SchemaBody::Matrix {
+        dimensions: column_dimensions,
+        ..
+    } = column_descriptor.schema().body()
+    else {
+        panic!("column vector must retain a matrix schema")
+    };
+    assert_eq!(row_dimensions[0], DimensionExpr::Constant(1));
+    assert!(matches!(row_dimensions[1], DimensionExpr::Parameter(_)));
+    assert!(matches!(column_dimensions[0], DimensionExpr::Parameter(_)));
+    assert_eq!(column_dimensions[1], DimensionExpr::Constant(1));
 }
 
 #[test]
