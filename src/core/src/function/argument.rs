@@ -18,9 +18,10 @@ use crate::{BytecodeCompilerContext, Register};
 use crate::{
     CanonicalCellId, FunctionArgumentRole, FunctionMatrixRepresentation, FunctionRuntimeType,
     FunctionSignatureViolation, FunctionValueRepresentation, IncorrectNumberOfArguments, MResult,
-    MechError, MechErrorKind, Ref, RuntimeFunctionContract, RuntimeFunctionInputs,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaBody, SchemaId, ShapeInstance, Value,
-    ValueCell, ValueData, ValueDataDraft,
+    MechError, MechErrorKind, OperationContractDeclaration, OperationContractError,
+    PortMemoryRequirement, PortStorageCompatibilityError, Ref, RuntimeFunctionContract,
+    RuntimeFunctionInputs, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaBody,
+    SchemaId, ShapeInstance, StorageTopology, Value, ValueCell, ValueData, ValueDataDraft,
 };
 
 mod function_port_backing {
@@ -428,6 +429,119 @@ impl FunctionInvocation {
         Ok(())
     }
 
+    /// Performs the opt-in operation-memory check without changing production validation.
+    pub fn check_operation_memory_contract(
+        &self,
+        declaration: &OperationContractDeclaration,
+    ) -> MResult<()> {
+        let requirements = declaration
+            .memory_requirements(self.input_count())
+            .map_err(|error| {
+                function_memory_contract_error(
+                    FunctionMemoryContractViolationReason::OperationContractDerivation { error },
+                )
+            })?;
+
+        for (index, (cell, requirement)) in self
+            .inputs
+            .iter()
+            .zip(requirements.inputs.iter())
+            .enumerate()
+        {
+            check_invocation_cell_requirement(cell, requirement).map_err(|error| {
+                function_memory_contract_error(FunctionMemoryContractViolationReason::InputPort {
+                    index,
+                    error,
+                })
+            })?;
+        }
+
+        match requirements.outputs.as_ref() {
+            [] => {
+                let schemas = self.output.schema_table();
+                let schema = schemas
+                    .get(self.output.schema())
+                    .expect("function output schema remains present");
+                let is_unit = matches!(schema.body(), SchemaBody::Tuple(elements) if elements.is_empty())
+                    && self.output.storage_capabilities().topology
+                        == StorageTopology::CanonicalValue;
+                if !is_unit {
+                    return Err(function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::ZeroOutputBridgeIsNotUnit,
+                    ));
+                }
+            }
+            [requirement] => {
+                check_invocation_cell_requirement(&self.output, requirement).map_err(|error| {
+                    function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::OutputPort { error },
+                    )
+                })?;
+                self.check_operation_output_alias(requirement)?;
+            }
+            outputs => {
+                return Err(function_memory_contract_error(
+                    FunctionMemoryContractViolationReason::MultipleSemanticOutputsUnsupported {
+                        outputs: outputs.len(),
+                    },
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    fn declared_alias_input(&self, input: u16) -> MResult<&ValueCell> {
+        self.inputs.get(input as usize).ok_or_else(|| {
+            function_memory_contract_error(
+                FunctionMemoryContractViolationReason::InvalidDeclaredAliasInput {
+                    input,
+                    inputs: self.input_count(),
+                },
+            )
+        })
+    }
+
+    fn check_operation_output_alias(&self, requirement: &PortMemoryRequirement) -> MResult<()> {
+        let Some(alias) = requirement.alias else {
+            return Ok(());
+        };
+        match alias {
+            crate::AliasPolicy::NoAlias => {
+                for (index, input) in self.inputs.iter().enumerate() {
+                    if self.output.same_storage(input) {
+                        return Err(function_memory_contract_error(
+                            FunctionMemoryContractViolationReason::NoAliasViolation {
+                                input: index,
+                            },
+                        ));
+                    }
+                }
+            }
+            crate::AliasPolicy::MayAlias { input } => {
+                let designated = self.declared_alias_input(input)?;
+                for (index, candidate) in self.inputs.iter().enumerate() {
+                    if self.output.same_storage(candidate) && !designated.same_storage(candidate) {
+                        return Err(function_memory_contract_error(
+                            FunctionMemoryContractViolationReason::MayAliasViolation {
+                                declared_input: input,
+                                unrelated_input: index,
+                            },
+                        ));
+                    }
+                }
+            }
+            crate::AliasPolicy::InPlaceRequired { input } => {
+                let designated = self.declared_alias_input(input)?;
+                if !self.output.same_storage(designated) {
+                    return Err(function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::InPlaceRequiredViolation { input },
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn output_cell(&self) -> &ValueCell {
         &self.output
     }
@@ -435,6 +549,27 @@ impl FunctionInvocation {
     pub fn input_cells(&self) -> &[ValueCell] {
         &self.inputs
     }
+}
+
+fn check_invocation_cell_requirement(
+    cell: &ValueCell,
+    requirement: &PortMemoryRequirement,
+) -> Result<(), PortStorageCompatibilityError> {
+    let schemas = cell.schema_table();
+    let schema = schemas
+        .get(cell.schema())
+        .expect("function invocation schema remains present");
+    let shape = cell.shape().clone();
+    crate::check_port_storage_compatibility(
+        schema,
+        &shape,
+        requirement,
+        &cell.storage_capabilities(),
+    )
+}
+
+fn function_memory_contract_error(reason: FunctionMemoryContractViolationReason) -> MechError {
+    MechError::new(FunctionMemoryContractViolation { reason }, None).with_compiler_loc()
 }
 
 pub(crate) fn canonical_matrix_descriptor(
@@ -992,6 +1127,88 @@ pub struct FunctionArgumentAliasViolation {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FunctionCellAliasViolation {
     pub input: usize,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FunctionMemoryContractViolation {
+    pub reason: FunctionMemoryContractViolationReason,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum FunctionMemoryContractViolationReason {
+    OperationContractDerivation {
+        error: OperationContractError,
+    },
+    InputPort {
+        index: usize,
+        error: PortStorageCompatibilityError,
+    },
+    OutputPort {
+        error: PortStorageCompatibilityError,
+    },
+    ZeroOutputBridgeIsNotUnit,
+    MultipleSemanticOutputsUnsupported {
+        outputs: usize,
+    },
+    InvalidDeclaredAliasInput {
+        input: u16,
+        inputs: usize,
+    },
+    NoAliasViolation {
+        input: usize,
+    },
+    MayAliasViolation {
+        declared_input: u16,
+        unrelated_input: usize,
+    },
+    InPlaceRequiredViolation {
+        input: u16,
+    },
+}
+
+impl MechErrorKind for FunctionMemoryContractViolation {
+    fn name(&self) -> &str {
+        "FunctionMemoryContractViolation"
+    }
+
+    fn message(&self) -> String {
+        match &self.reason {
+            FunctionMemoryContractViolationReason::OperationContractDerivation { error } => {
+                format!("operation memory requirement derivation failed: {error:?}")
+            }
+            FunctionMemoryContractViolationReason::InputPort { index, error } => {
+                format!("input port {index} does not satisfy its memory requirement: {error}")
+            }
+            FunctionMemoryContractViolationReason::OutputPort { error } => {
+                format!("output port does not satisfy its memory requirement: {error}")
+            }
+            FunctionMemoryContractViolationReason::ZeroOutputBridgeIsNotUnit => {
+                "zero-output operation requires a canonical unit compatibility output".to_string()
+            }
+            FunctionMemoryContractViolationReason::MultipleSemanticOutputsUnsupported {
+                outputs,
+            } => {
+                format!("the current invocation bridge cannot represent {outputs} semantic outputs")
+            }
+            FunctionMemoryContractViolationReason::InvalidDeclaredAliasInput { input, inputs } => {
+                format!(
+                    "declared alias input {input} is outside the invocation input count {inputs}"
+                )
+            }
+            FunctionMemoryContractViolationReason::NoAliasViolation { input } => {
+                format!("output shares physical storage with forbidden input {input}")
+            }
+            FunctionMemoryContractViolationReason::MayAliasViolation {
+                declared_input,
+                unrelated_input,
+            } => format!(
+                "output may alias input {declared_input}, but shares unrelated input {unrelated_input} storage"
+            ),
+            FunctionMemoryContractViolationReason::InPlaceRequiredViolation { input } => {
+                format!("output does not share the physical storage required by input {input}")
+            }
+        }
+    }
 }
 
 impl MechErrorKind for FunctionCellAliasViolation {
