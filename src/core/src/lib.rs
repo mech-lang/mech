@@ -128,6 +128,7 @@ pub mod read_source;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub mod resident_execution;
+pub(crate) mod runtime_storage;
 pub mod selector;
 pub mod snapshot;
 pub mod state_journal;

@@ -100,6 +100,7 @@ pub(crate) trait ErasedCellStorage {
     ) -> MResult<Value>;
     fn replace(&self, value: &Value) -> MResult<()>;
     fn preflight_replace(&self) -> MResult<()>;
+    fn capabilities(&self) -> crate::StorageCapabilityDescriptor;
     fn detached_clone(&self) -> MResult<Rc<dyn ErasedCellStorage>>;
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool;
     fn borrow_state(&self) -> CellBorrowState;
@@ -149,6 +150,10 @@ impl<T: CanonicalCellBacking> ErasedCellStorage for ExactCellStorage<T> {
             .try_borrow_mut()
             .map(|_| ())
             .map_err(|_| borrow_conflict(CellAccess::Replace))
+    }
+
+    fn capabilities(&self) -> crate::StorageCapabilityDescriptor {
+        crate::runtime_storage::actual_backing_capabilities(T::REPRESENTATION)
     }
 
     fn detached_clone(&self) -> MResult<Rc<dyn ErasedCellStorage>> {
@@ -961,6 +966,77 @@ impl ValueCell {
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
         self.binding.storage.representation(schema.body())
+    }
+
+    pub fn type_memory_contract(&self) -> MResult<crate::TypeMemoryContract> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        Ok(schema.type_memory_contract()?)
+    }
+
+    pub fn resolved_type_memory_contract(&self) -> MResult<crate::ResolvedTypeMemoryContract> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        let shape = self
+            .binding
+            .shape
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
+            .clone();
+        Ok(schema.resolved_type_memory_contract(&shape)?)
+    }
+
+    pub fn storage_capabilities(&self) -> crate::StorageCapabilityDescriptor {
+        self.binding.storage.capabilities()
+    }
+
+    /// Performs the opt-in shadow check without changing construction or execution.
+    pub fn validate_storage_contract(&self) -> MResult<()> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        let shape = self
+            .binding
+            .shape
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
+            .clone();
+        crate::check_schema_storage_compatibility(
+            schema,
+            &shape,
+            &self.binding.storage.capabilities(),
+        )
+        .map_err(|error| match error {
+            crate::SchemaStorageCompatibilityError::Semantic(error) => error.into(),
+            crate::SchemaStorageCompatibilityError::Storage(reason) => MechError::new(
+                ValueCellStorageContractViolation {
+                    schema: self.binding.schema_key,
+                    reason,
+                },
+                None,
+            )
+            .with_compiler_loc(),
+        })
     }
 
     /// Describes whether this cell's schema permits its resolved extents to
@@ -1987,6 +2063,25 @@ impl MechErrorKind for ValueCellBackingMismatch {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ValueCellSnapshotFailure {
     pub error: SnapshotValueError,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ValueCellStorageContractViolation {
+    pub schema: SchemaKey,
+    pub reason: crate::StorageCompatibilityError,
+}
+
+impl MechErrorKind for ValueCellStorageContractViolation {
+    fn name(&self) -> &str {
+        "ValueCellStorageContractViolation"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "value-cell storage does not satisfy schema {:?}: {}",
+            self.schema, self.reason
+        )
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
