@@ -1250,3 +1250,93 @@ impl MechErrorKind for FunctionArgumentTypeMismatch {
         )
     }
 }
+
+#[cfg(all(test, feature = "f64"))]
+mod operation_memory_tests {
+    use super::*;
+    use crate::{
+        AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction, InputPortLayout,
+        InputPortPolicy, OutputConstruction, OutputPortPolicy, ShapeRule,
+    };
+
+    fn declaration(alias: AliasPolicy) -> OperationContractDeclaration {
+        OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![InputPortPolicy {
+                    access: crate::AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                }]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: crate::AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        }
+    }
+
+    fn reason(error: MechError) -> FunctionMemoryContractViolationReason {
+        error
+            .kind_as::<FunctionMemoryContractViolation>()
+            .expect("operation memory check returns its structured error")
+            .reason
+            .clone()
+    }
+
+    #[test]
+    fn operation_aliases_follow_storage_when_logical_identity_disagrees() {
+        let first = ValueCell::from_exact(1_f64).unwrap();
+        let detached = first.detached_clone().unwrap();
+        let same_logical_different_storage = ValueCell {
+            binding: crate::cell_binding::CellBinding {
+                identity: first.binding.identity,
+                ..detached.binding.clone()
+            },
+        };
+        let different_logical_same_storage = ValueCell {
+            binding: crate::cell_binding::CellBinding {
+                identity: detached.binding.identity,
+                ..first.binding.clone()
+            },
+        };
+
+        assert!(first.same_logical_cell(&same_logical_different_storage));
+        assert!(!first.same_storage(&same_logical_different_storage));
+        FunctionInvocation::unary(same_logical_different_storage.clone(), first.clone())
+            .check_operation_memory_contract(&declaration(AliasPolicy::NoAlias))
+            .unwrap();
+        assert_eq!(
+            reason(
+                FunctionInvocation::unary(same_logical_different_storage, first.clone())
+                    .check_operation_memory_contract(&declaration(AliasPolicy::InPlaceRequired {
+                        input: 0
+                    },))
+                    .unwrap_err(),
+            ),
+            FunctionMemoryContractViolationReason::InPlaceRequiredViolation { input: 0 }
+        );
+
+        assert!(!first.same_logical_cell(&different_logical_same_storage));
+        assert!(first.same_storage(&different_logical_same_storage));
+        assert_eq!(
+            reason(
+                FunctionInvocation::unary(different_logical_same_storage.clone(), first.clone())
+                    .check_operation_memory_contract(&declaration(AliasPolicy::NoAlias))
+                    .unwrap_err(),
+            ),
+            FunctionMemoryContractViolationReason::NoAliasViolation { input: 0 }
+        );
+        FunctionInvocation::unary(different_logical_same_storage, first)
+            .check_operation_memory_contract(&declaration(AliasPolicy::InPlaceRequired {
+                input: 0,
+            }))
+            .unwrap();
+    }
+}
