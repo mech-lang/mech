@@ -88,6 +88,27 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertNotIn("generate-value-system-inventory.py", block)
             self.assertNotIn("continue-on-error", block)
 
+    def test_r2_type_memory_boundary_is_unwaived(self):
+        r1 = "python3 scripts/check-r1-compatibility-closure.py"
+        r2 = "python3 scripts/check-r2-type-memory-boundary.py"
+        unit = "scripts/tests/test_check_r2_type_memory_boundary.py"
+        for block in (
+            job_block(CI, "static-contracts"),
+            job_block(FULL, "architecture-contracts"),
+        ):
+            self.assertIn(r1, block)
+            self.assertIn(r2, block)
+            self.assertLess(block.index(r1), block.index(r2))
+            self.assertIn(unit, block)
+            self.assertNotIn("continue-on-error", block)
+        full = job_block(FULL, "architecture-contracts")
+        for token in (
+            "cargo +nightly-2026-03-03 test",
+            "--all-features",
+            "--test type_memory_boundary",
+        ):
+            self.assertIn(token, full)
+
     def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):
         block = job_block(FULL, "architecture-contracts")
         fetch = "cargo +nightly-2026-03-03 fetch --locked"
