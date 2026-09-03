@@ -180,12 +180,14 @@ pub mod operation_contract;
 pub mod schema;
 pub mod semantic_error;
 pub mod semantic_identity;
+pub mod type_system;
 
 pub use self::dimension::*;
 pub use self::kind_expr::*;
 pub use self::kind_scheme::*;
 pub use self::nominal::*;
 pub use self::operation_contract::*;
+pub use self::type_system::*;
 
 // Mech Source Code
 // ---------------------------------------------------------------------------

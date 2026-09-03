@@ -3,8 +3,8 @@
 use crate::dimension::{canonicalize_dimension_environment, normalize_dimension};
 use crate::kind_expr::{validate_kind_structure, visit_kind_dimensions, visit_kind_parameters};
 use crate::{
-    DimensionExpr, DimensionParameterDeclaration, DimensionParameterId, KindExpr, KindParameterId,
-    SemanticModelError,
+    BuiltinKindPredicate, DimensionExpr, DimensionParameterDeclaration, DimensionParameterId,
+    KindExpr, KindParameterId, SemanticModelError,
 };
 
 #[cfg(feature = "no_std")]
@@ -46,6 +46,15 @@ pub enum KindConstraint {
     Equal(KindExpr, KindExpr),
     Convertible(KindExpr, KindExpr),
     Keyable(KindExpr),
+    Satisfies {
+        kind: KindExpr,
+        predicate: BuiltinKindPredicate,
+    },
+    Promotes {
+        left: KindExpr,
+        right: KindExpr,
+        output: KindExpr,
+    },
     DimensionEqual(DimensionExpr, DimensionExpr),
     DimensionLessEqual(DimensionExpr, DimensionExpr),
 }
@@ -179,7 +188,18 @@ fn validate_constraint(
             validate_kind(left, kind_count, dimension_count, None)?;
             validate_kind(right, kind_count, dimension_count, None)
         }
-        KindConstraint::Keyable(kind) => validate_kind(kind, kind_count, dimension_count, None),
+        KindConstraint::Keyable(kind) | KindConstraint::Satisfies { kind, .. } => {
+            validate_kind(kind, kind_count, dimension_count, None)
+        }
+        KindConstraint::Promotes {
+            left,
+            right,
+            output,
+        } => {
+            validate_kind(left, kind_count, dimension_count, None)?;
+            validate_kind(right, kind_count, dimension_count, None)?;
+            validate_kind(output, kind_count, dimension_count, None)
+        }
         KindConstraint::DimensionEqual(left, right)
         | KindConstraint::DimensionLessEqual(left, right) => {
             normalize_dimension(left, dimension_count)?;
