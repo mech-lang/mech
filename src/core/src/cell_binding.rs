@@ -7,9 +7,9 @@
 use crate::{
     CardinalitySpec, DimensionExpr, FloatWidth, FunctionMatrixElement,
     FunctionMatrixRepresentation, FunctionMatrixStoragePattern, FunctionRuntimeType,
-    FunctionValueRepresentation, IntegerWidth, MResult, MechError, MechErrorKind, Ref, SchemaBody,
-    SchemaId, SchemaKey, SchemaTable, ShapeInstance, SnapshotValueError, Value, ValueData,
-    ValueDataDraft, ValueDraft,
+    FunctionValueRepresentation, IntegerWidth, MResult, MechError, MechErrorKind, Ref,
+    ResolvedType, SchemaBody, SchemaId, SchemaKey, SchemaTable, ShapeInstance, SnapshotValueError,
+    TypeConstraintFailure, TypeResolutionError, Value, ValueData, ValueDataDraft, ValueDraft,
 };
 use core::{any::Any, any::type_name, cell, fmt};
 
@@ -207,6 +207,24 @@ pub struct ValueCell {
 }
 
 impl ValueCell {
+    /// Resolves this cell through its own canonical schema and current shape.
+    /// The pure type system never imports physical cell or storage types.
+    pub fn resolved_type(&self) -> MResult<ResolvedType> {
+        let schemas = self.schema_table();
+        let schema = schemas
+            .find_by_key(self.schema_key())
+            .and_then(|id| schemas.get(id))
+            .ok_or_else(|| {
+                MechError::from(TypeResolutionError::incompatible(
+                    "source expression",
+                    TypeConstraintFailure::InvalidScheme {
+                        reason: "the cell schema is absent from its canonical schema table".into(),
+                    },
+                ))
+            })?;
+        ResolvedType::from_schema(schema, &self.shape()).map_err(MechError::from)
+    }
+
     /// Constructs the canonical empty-tuple value used as the output of an
     /// effect that does not otherwise return a value.
     pub fn unit() -> Self {
@@ -957,7 +975,6 @@ impl ValueCell {
         self.binding.shape.borrow()
     }
 
-    #[cfg(feature = "functions")]
     pub(crate) fn schema_table(&self) -> Rc<SchemaTable> {
         self.binding.schemas.clone()
     }

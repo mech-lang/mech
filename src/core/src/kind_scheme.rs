@@ -55,8 +55,32 @@ pub enum KindConstraint {
         right: KindExpr,
         output: KindExpr,
     },
+    TableJoin {
+        left: KindExpr,
+        right: KindExpr,
+        output: KindExpr,
+        rows: DimensionExpr,
+        mode: TableJoinMode,
+    },
     DimensionEqual(DimensionExpr, DimensionExpr),
+    /// Requires equal live extents. Fixed incompatibility is rejected during
+    /// resolution; turn-varying extents retain the relation for the existing
+    /// runtime shape contract.
+    DimensionCompatible(DimensionExpr, DimensionExpr),
     DimensionLessEqual(DimensionExpr, DimensionExpr),
+}
+
+/// Closed structural result rules for the maintained table-join operators.
+/// This is semantic compiler metadata only; it is not part of bytecode-v1.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TableJoinMode {
+    Inner,
+    LeftOuter,
+    RightOuter,
+    FullOuter,
+    LeftSemi,
+    LeftAnti,
 }
 
 impl KindScheme {
@@ -200,7 +224,21 @@ fn validate_constraint(
             validate_kind(right, kind_count, dimension_count, None)?;
             validate_kind(output, kind_count, dimension_count, None)
         }
+        KindConstraint::TableJoin {
+            left,
+            right,
+            output,
+            rows,
+            ..
+        } => {
+            validate_kind(left, kind_count, dimension_count, None)?;
+            validate_kind(right, kind_count, dimension_count, None)?;
+            validate_kind(output, kind_count, dimension_count, None)?;
+            normalize_dimension(rows, dimension_count)?;
+            Ok(())
+        }
         KindConstraint::DimensionEqual(left, right)
+        | KindConstraint::DimensionCompatible(left, right)
         | KindConstraint::DimensionLessEqual(left, right) => {
             normalize_dimension(left, dimension_count)?;
             normalize_dimension(right, dimension_count)?;
