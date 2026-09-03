@@ -1,17 +1,17 @@
 # Type-memory boundary
 
-## 1. Status and R2A/R2B/R2C scope
+## 1. Status: R2 complete
 
-R2A is complete. It defines a read-only semantic projection from a finalized `Schema`, and from
-that schema plus a validated `ShapeInstance`, into memory-facing contracts.
-R2B defines descriptive capabilities of current value-cell backings and pure
-compatibility and identity relations. Both phases change no runtime binding,
-storage, target, or execution behavior.
+R2A derives type-memory contracts from finalized schemas and validated shapes.
+R2B describes the capabilities of actual backings and separates logical-cell
+identity from physical-storage identity. R2C derives operation-port memory
+requirements from R1 declarations and performs opt-in shadow checks. R2D
+installs stack-wide conformance, permanent architecture enforcement, and CI
+ownership for the complete boundary.
 
-R2C derives memory-facing port requirements from the existing R1 operation
-contract and checks them against R2A and R2B metadata. Its invocation check is
-explicitly opt-in and shadow-only: production signature validation, factory
-selection, target behavior, and execution remain unchanged.
+The boundary remains descriptive and shadow-only. It changes no runtime
+binding, storage, target, or execution behavior. R4 makes the compatibility
+boundary authoritative during the binding cutover.
 
 The projection has one direction:
 
@@ -31,6 +31,19 @@ nominal identity, field and variant names, equality, `SchemaKey`, and canonical
 encoding. `ShapeInstance` supplies dimension-parameter values only after the
 target schema validates them. Consumers that need children or names continue
 to traverse `SchemaBody`.
+
+| Question | Authority |
+| --- | --- |
+| What is the semantic type? | `Schema` |
+| What is the current validated shape? | `ShapeInstance` |
+| What memory-facing structure does a type require? | `ResolvedTypeMemoryContract` |
+| What can an existing backing provide? | `StorageCapabilityDescriptor` |
+| What does an operation port require? | `PortMemoryRequirement` derived from `OperationContractDeclaration` |
+| Can the combination coexist? | R2 compatibility checks |
+| What concrete runtime factory/backing is selected today? | transitional runtime machinery |
+| When does R2 compatibility become binding authority? | R4 |
+| What physical byte layout is chosen? | R5 |
+| How is memory allocated, reused, and reclaimed? | R6 |
 
 ## 3. One-way boundary
 
@@ -144,8 +157,8 @@ placement.
 
 ## 12. Serialization prohibition
 
-The R2A and R2C contract types deliberately implement no serialization traits
-and have no wire format. Canonical schema and operation-contract bytes remain
+R2 contract types deliberately implement no serialization traits and have no
+wire format. Canonical schema and operation-contract bytes remain
 unchanged and authoritative. Derived contracts must be recomputed from their
 semantic authorities rather than persisted as another compatibility surface.
 
@@ -202,42 +215,68 @@ signature checks, factories, source specialization, Resident or GPU
 activation, or native planning. R2C does not make these requirements
 authoritative and does not mark R2 complete.
 
-## 15. R2D closure
+## 15. R2 closure
 
-R2D owns shadow conformance, architecture enforcement, CI integration, and R2
-roadmap closure. R2A alone does not mark R2 complete.
+R2 is complete when the conformance matrix, architecture checker, normal CI,
+and exact-head Full CI are green. Completion does not mean the checker controls
+production binding: the compatibility boundary remains shadow-only until R4.
 
 ## 16. R3 handoff
 
-R3 may use the boundary while tightening inference and conversion semantics.
-It must treat schema as the type authority and the memory contract as derived
-metadata.
+R3 may consume `Schema`, scalar and container `MemoryTopology`,
+`ExtentEvolution`, semantic `AddressingContract`, and declared operation
+requirements. It must not use `StorageCapabilityDescriptor`,
+`FunctionValueRepresentation`, exact Rust matrix backing classes,
+`CanonicalCellId`, `same_storage`, or pointer or allocator identity as
+inference inputs.
 
 ## 17. R4 handoff
 
-R4 owns retirement of transitional runtime representations and makes the new
-boundary authoritative during the binding cutover. R2A, R2B, and R2C neither
-change nor endorse a runtime representation.
+R4 consumes the complete R2 compatibility boundary. It owns the production
+binding cutover, removal of representation-based semantic decisions, and
+correction of the `RowDVector`/`DVector` invariant-axis inference mismatch.
 
 ## 18. R5/R6 handoff
 
-R5 owns deterministic physical layout and resource planning, including sizes,
-alignment, strides, placement, and allocation plans. R6 owns allocators,
-backing, reuse, reclamation, and resource enforcement. R2A contains none of
-those mechanisms.
+R5 owns deterministic physical layouts; sizes, alignment, strides, offsets,
+and placement; lifetimes and alias plans; and allocation and resource plans.
+R6 owns allocators, backing cutover, pooling and reuse, copy-on-write,
+reclamation, and runtime enforcement. R2 contains none of those mechanisms.
 
 ## 19. Non-goals
 
-R2C does not add another operation declaration surface, interaction-provider
+R2 does not add another operation declaration surface, interaction-provider
 requirements, physical layout, allocation, inference, conversion, target
 availability, function binding, production rejection, `ValueCell` mutation,
 Resident or GPU behavior, bytecode, canonical encoding, ABI changes, or
 package-version changes.
 
-## 20. R2A acceptance criteria
+## 20. R2 completion criteria
 
-R2A is complete when every current `SchemaBody` variant derives a total
-contract, extent evolution propagates recursively, supplied shapes are
-revalidated against the target schema, checked resolution rejects invalid
-dimensions, schema identity and canonical bytes are invariant, the new public
-types are not deserializable, and no runtime or wire-format behavior changes.
+R2 is complete when:
+
+1. Every finalized `SchemaBody` derives deterministic `TypeMemoryContract` data.
+2. Every resolved contract revalidates its `ShapeInstance` against the schema.
+3. Existing `ValueCell` backings advertise truthful declarative capabilities.
+4. Canonical `Value` storage is mechanically universal.
+5. Canonical `Value` storage cannot override semantic addressing eligibility.
+6. Exact scalar storage preserves scalar kind.
+7. Exact matrix storage preserves element kind and physical extent constraints.
+8. Operation memory requirements derive only from `OperationContractDeclaration`.
+9. Fixed and variadic inputs use `InputPortLayout::resolve`.
+10. Delivery modes remain descriptive rather than generic storage rejections.
+11. Semantic addressing and backing addressing are separate checks.
+12. Logical value identity, logical cell identity, and physical storage identity are distinct.
+13. Operation alias policy uses physical `same_storage`.
+14. The current zero-output unit bridge is checked explicitly.
+15. Multiple semantic outputs fail honestly in the current invocation bridge.
+16. R2 analysis is deterministic and non-mutating.
+17. R2 metadata is not serialized.
+18. R2 contains no physical layout, allocation, or reclamation policy.
+19. The known `RowDVector`/`DVector` inferred-axis mismatch remains explicit and assigned to R4.
+20. R2 checks remain shadow-only.
+21. Normal CI runs the architecture checker.
+22. Full CI runs the architecture checker.
+23. Checker changes themselves trigger Full CI.
+24. README, ROADMAP, type-memory design, and v0.4 endgame agree that R2 is complete and R3 is next.
+25. Package version remains `0.3.6`.
