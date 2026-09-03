@@ -100,10 +100,15 @@ pub(crate) trait ErasedCellStorage {
     ) -> MResult<Value>;
     fn replace(&self, value: &Value) -> MResult<()>;
     fn preflight_replace(&self) -> MResult<()>;
-    fn detached_clone(&self) -> MResult<Rc<dyn ErasedCellStorage>>;
+    fn capabilities(&self) -> crate::StorageCapabilityDescriptor;
+    fn detached_clone(&self) -> MResult<DetachedCellStorage>;
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool;
     fn borrow_state(&self) -> CellBorrowState;
-    fn logical_cell_id(&self) -> CanonicalCellId;
+}
+
+pub(crate) struct DetachedCellStorage {
+    pub identity: CanonicalCellId,
+    pub storage: Rc<dyn ErasedCellStorage>,
 }
 
 struct ExactCellStorage<T> {
@@ -151,15 +156,22 @@ impl<T: CanonicalCellBacking> ErasedCellStorage for ExactCellStorage<T> {
             .map_err(|_| borrow_conflict(CellAccess::Replace))
     }
 
-    fn detached_clone(&self) -> MResult<Rc<dyn ErasedCellStorage>> {
+    fn capabilities(&self) -> crate::StorageCapabilityDescriptor {
+        crate::runtime_storage::actual_backing_capabilities(T::REPRESENTATION)
+    }
+
+    fn detached_clone(&self) -> MResult<DetachedCellStorage> {
         let value = self
             .reference
             .try_borrow()
             .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
             .clone();
-        Ok(Rc::new(Self {
-            reference: Ref::new(value),
-        }))
+        let reference = Ref::new(value);
+        let identity = reference.reactive_cell_id();
+        Ok(DetachedCellStorage {
+            identity,
+            storage: Rc::new(Self { reference }),
+        })
     }
 
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool {
@@ -175,10 +187,6 @@ impl<T: CanonicalCellBacking> ErasedCellStorage for ExactCellStorage<T> {
         } else {
             CellBorrowState::Borrowed
         }
-    }
-
-    fn logical_cell_id(&self) -> CanonicalCellId {
-        self.reference.reactive_cell_id()
     }
 }
 
@@ -963,6 +971,77 @@ impl ValueCell {
         self.binding.storage.representation(schema.body())
     }
 
+    pub fn type_memory_contract(&self) -> MResult<crate::TypeMemoryContract> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        Ok(schema.type_memory_contract()?)
+    }
+
+    pub fn resolved_type_memory_contract(&self) -> MResult<crate::ResolvedTypeMemoryContract> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        let shape = self
+            .binding
+            .shape
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
+            .clone();
+        Ok(schema.resolved_type_memory_contract(&shape)?)
+    }
+
+    pub fn storage_capabilities(&self) -> crate::StorageCapabilityDescriptor {
+        self.binding.storage.capabilities()
+    }
+
+    /// Performs the opt-in shadow check without changing construction or execution.
+    pub fn validate_storage_contract(&self) -> MResult<()> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        let shape = self
+            .binding
+            .shape
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
+            .clone();
+        crate::check_schema_storage_compatibility(
+            schema,
+            &shape,
+            &self.binding.storage.capabilities(),
+        )
+        .map_err(|error| match error {
+            crate::SchemaStorageCompatibilityError::Semantic(error) => error.into(),
+            crate::SchemaStorageCompatibilityError::Storage(reason) => MechError::new(
+                ValueCellStorageContractViolation {
+                    schema: self.binding.schema_key,
+                    reason,
+                },
+                None,
+            )
+            .with_compiler_loc(),
+        })
+    }
+
     /// Describes whether this cell's schema permits its resolved extents to
     /// change while the cell identity remains stable.
     pub fn extent_evolution(&self) -> crate::ExtentEvolution {
@@ -986,7 +1065,7 @@ impl ValueCell {
     /// cell identity is deliberately fresh. Source specialization uses this
     /// for full-write outputs whose representation mirrors an input.
     pub fn detached_clone(&self) -> MResult<Self> {
-        let storage = self.binding.storage.detached_clone()?;
+        let detached = self.binding.storage.detached_clone()?;
         let shape = self
             .binding
             .shape
@@ -995,12 +1074,12 @@ impl ValueCell {
             .clone();
         Ok(Self {
             binding: CellBinding {
-                identity: storage.logical_cell_id(),
+                identity: detached.identity,
                 schema: self.binding.schema,
                 schema_key: self.binding.schema_key,
                 shape: Rc::new(cell::RefCell::new(shape)),
                 schemas: self.binding.schemas.clone(),
-                storage,
+                storage: detached.storage,
                 compiler_children: None,
             },
         })
@@ -1059,10 +1138,22 @@ impl ValueCell {
         self.binding.storage.preflight_replace()
     }
 
-    pub fn same_cell(&self, other: &Self) -> bool {
+    pub fn same_logical_cell(&self, other: &Self) -> bool {
+        self.binding.identity == other.binding.identity
+    }
+
+    pub fn same_storage(&self, other: &Self) -> bool {
         self.binding
             .storage
             .same_storage(other.binding.storage.as_ref())
+    }
+
+    /// Compatibility spelling for physical storage identity.
+    ///
+    /// New code should choose `same_logical_cell` or `same_storage`
+    /// explicitly. This method retains its existing physical-storage meaning.
+    pub fn same_cell(&self, other: &Self) -> bool {
+        self.same_storage(other)
     }
 
     pub fn reactive_cell_id(&self) -> CanonicalCellId {
@@ -1987,6 +2078,25 @@ impl MechErrorKind for ValueCellBackingMismatch {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ValueCellSnapshotFailure {
     pub error: SnapshotValueError,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ValueCellStorageContractViolation {
+    pub schema: SchemaKey,
+    pub reason: crate::StorageCompatibilityError,
+}
+
+impl MechErrorKind for ValueCellStorageContractViolation {
+    fn name(&self) -> &str {
+        "ValueCellStorageContractViolation"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "value-cell storage does not satisfy schema {:?}: {}",
+            self.schema, self.reason
+        )
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -3151,10 +3261,101 @@ mod tests {
         let separate =
             ValueCell::from_ref(Ref::new(7.0_f64), schema.id, schema.shape, schema.schemas)
                 .unwrap();
+        let detached = first.detached_clone().unwrap();
 
+        assert!(first.same_logical_cell(&clone));
+        assert!(first.same_storage(&clone));
         assert!(first.same_cell(&clone));
+        assert!(!first.same_logical_cell(&separate));
+        assert!(!first.same_storage(&separate));
         assert!(!first.same_cell(&separate));
         assert!(first.snapshot_eq(&separate).unwrap());
+        assert!(!first.same_logical_cell(&detached));
+        assert!(!first.same_storage(&detached));
+        assert!(first.snapshot_eq(&detached).unwrap());
+
+        let same_identity_detached_storage = ValueCell {
+            binding: CellBinding {
+                identity: first.binding.identity,
+                ..detached.binding.clone()
+            },
+        };
+        assert!(first.same_logical_cell(&same_identity_detached_storage));
+        assert!(!first.same_storage(&same_identity_detached_storage));
+
+        let different_identity_shared_storage = ValueCell {
+            binding: CellBinding {
+                identity: detached.binding.identity,
+                ..first.binding.clone()
+            },
+        };
+        assert!(!first.same_logical_cell(&different_identity_shared_storage));
+        assert!(first.same_storage(&different_identity_shared_storage));
+
+        for other in [
+            &clone,
+            &separate,
+            &detached,
+            &same_identity_detached_storage,
+            &different_identity_shared_storage,
+        ] {
+            assert_eq!(first.same_cell(other), first.same_storage(other));
+        }
+    }
+
+    fn assert_replace_borrow_conflict_preserves_value<T>(reference: Ref<T>, schema: TestSchema)
+    where
+        T: CanonicalCellBacking,
+    {
+        let cell = ValueCell::from_ref(
+            reference.clone(),
+            schema.id,
+            schema.shape.clone(),
+            schema.schemas.clone(),
+        )
+        .unwrap();
+        let before = cell.detached_clone().unwrap();
+        let replacement = before.snapshot().unwrap();
+        let held = reference.borrow_mut();
+        assert!(cell.replace(&replacement).is_err());
+        drop(held);
+        assert!(cell.snapshot_eq(&before).unwrap());
+        assert!(
+            cell.storage_capabilities()
+                .publication
+                .preserves_previous_on_failure
+        );
+    }
+
+    #[test]
+    fn declared_atomic_publication_preserves_representative_backings_on_borrow_conflict() {
+        #[cfg(feature = "f64")]
+        {
+            let scalar_schema = f64_schema();
+            assert_replace_borrow_conflict_preserves_value(Ref::new(1.25_f64), scalar_schema);
+
+            let canonical_schema = f64_schema();
+            let canonical = f64_value(&canonical_schema, 1.25);
+            assert_replace_borrow_conflict_preserves_value(Ref::new(canonical), canonical_schema);
+        }
+
+        #[cfg(feature = "string")]
+        assert_replace_borrow_conflict_preserves_value(
+            Ref::new("before".to_owned()),
+            test_schema(SchemaBody::String, Box::new([]), &[]),
+        );
+
+        #[cfg(all(feature = "f64", feature = "matrixd"))]
+        assert_replace_borrow_conflict_preserves_value(
+            Ref::new(crate::DMatrix::<f64>::zeros(2, 3)),
+            matrix_schema(2, 3),
+        );
+
+        #[cfg(all(feature = "f64", feature = "matrix2"))]
+        assert_replace_borrow_conflict_preserves_value(
+            Ref::new(crate::Matrix2::<f64>::zeros()),
+            matrix_schema(2, 2),
+        );
     }
 
     #[cfg(feature = "f64")]

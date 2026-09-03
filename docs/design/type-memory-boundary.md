@@ -1,10 +1,12 @@
 # Type-memory boundary
 
-## 1. Status and R2A scope
+## 1. Status and R2A/R2B scope
 
-R2A defines a read-only semantic projection from a finalized `Schema`, and from
+R2A is complete. It defines a read-only semantic projection from a finalized `Schema`, and from
 that schema plus a validated `ShapeInstance`, into memory-facing contracts.
-It changes no runtime binding, storage, target, or execution behavior.
+R2B defines descriptive capabilities of current value-cell backings and pure
+compatibility and identity relations. Both phases change no runtime binding,
+storage, target, or execution behavior.
 
 The projection has one direction:
 
@@ -142,15 +144,36 @@ no wire format. Canonical schema bytes remain unchanged and authoritative.
 Derived contracts must be recomputed from the schema rather than persisted as
 another compatibility surface.
 
-## 13. R2B handoff
+## 13. R2B storage capabilities and identity
 
-R2B may describe existing storage capabilities and separate logical identity
-from physical storage identity. It must consume this semantic projection
-without moving schema authority into runtime representations.
+R2B describes existing storage capabilities and separates logical cell identity
+from physical storage identity. `StorageCapabilityDescriptor` is derived from
+the actual backing. The public compatibility boundary accepts a finalized
+`Schema` and validated `ShapeInstance`, rederives the R2A contract internally,
+and then checks the backing. Callers cannot pair a schema with a contract
+derived from another schema. The checker remains opt-in and shadow-only.
+
+`same_cell` remains a compatibility alias for physical storage identity. New
+code chooses `same_logical_cell` or `same_storage` explicitly. No public
+physical storage identifier exists, and neither pointers nor runtime
+representations can become logical identity.
+
+### Known transitional mismatch
+
+Current `RowDVector` inference marks both dimensions as turn-varying even
+though its first physical axis is fixed at one. Current `DVector` inference
+likewise marks both dimensions as turn-varying even though its second physical
+axis is fixed at one. R2B deliberately reports both as
+`DynamicAxisUnsupported` during shadow validation; weakening the truthful
+storage descriptors would conceal the mismatch.
+
+R4 must infer each physically invariant vector axis as `Constant(1)` before the
+compatibility boundary becomes authoritative. R2C and R2D must not interpret
+these expected shadow failures as valid storage-incompatibility policy.
 
 ## 14. R2C handoff
 
-R2C may derive memory requirements for operation ports and compare those
+R2C will derive memory requirements for operation ports and compare those
 requirements with storage capabilities. It must not reinterpret schema
 identity or mutate the R2A contract.
 
@@ -167,8 +190,9 @@ metadata.
 
 ## 17. R4 handoff
 
-R4 owns retirement of transitional runtime representations and any binding
-cutover. R2A neither changes nor endorses a runtime representation.
+R4 owns retirement of transitional runtime representations and makes the new
+boundary authoritative during the binding cutover. R2A and R2B neither change
+nor endorse a runtime representation.
 
 ## 18. R5/R6 handoff
 
