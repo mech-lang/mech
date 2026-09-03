@@ -7,8 +7,8 @@ use mech_core::{
     DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
     DimensionParameterOrigin, FunctionCatalogBuilder, FunctionTypeDeclaration,
     FunctionTypeOverload, InputKindScheme, KindConstraint, KindExpr, KindScheme, MResult,
-    ResolvedType, SourceInputKind, SourceSchemeTemplate, SourceTypeAuthority,
-    SpecializationContext, SpecializationInvocation, SpecializedFunction,
+    ResolvedOutputSchemaRule, ResolvedType, SourceInputKind, SourceSchemeTemplate,
+    SourceTypeAuthority, SpecializationContext, SpecializationInvocation, SpecializedFunction,
     TypeConstraintEnvironment, TypeConstraintOrigin, instantiate_source_scheme_template,
     maintained_source_type_declaration,
 };
@@ -77,6 +77,8 @@ fn malformed_and_duplicate_overloads_are_rejected() {
             id: 1,
             input_layout: vec![SourceInputKind::Value].into_boxed_slice(),
             scheme: nullary_scheme(),
+            output_schema_rules: vec![ResolvedOutputSchemaRule::FromResolvedType]
+                .into_boxed_slice(),
         }]
         .into_boxed_slice(),
         template: None,
@@ -91,6 +93,7 @@ fn malformed_and_duplicate_overloads_are_rejected() {
         id: 7,
         input_layout: Box::new([]),
         scheme: nullary_scheme(),
+        output_schema_rules: vec![ResolvedOutputSchemaRule::FromResolvedType].into_boxed_slice(),
     };
     let duplicate = FunctionTypeDeclaration {
         overloads: vec![overload.clone(), overload].into_boxed_slice(),

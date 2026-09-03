@@ -317,6 +317,18 @@ fn resolve_declared_call(
             },
         ))
     })?;
+    let output_schema_rules = matching
+        .iter()
+        .find(|overload| overload.id == overload_id)
+        .map(|overload| overload.output_schema_rules.clone())
+        .ok_or_else(|| {
+            MechError::from(TypeResolutionError::incompatible(
+                entry.canonical_name.clone(),
+                TypeConstraintFailure::InvalidScheme {
+                    reason: "the selected overload has no declared output schema rules".into(),
+                },
+            ))
+        })?;
     let conversions = resolved.conversions.into_vec();
     if conversions.len() != originals.len() {
         return Err(MechError::from(TypeResolutionError::incompatible(
@@ -333,11 +345,13 @@ fn resolve_declared_call(
         .collect::<Vec<_>>()
         .into_boxed_slice();
     Ok(ResolvedCall {
+        operation: entry.operation,
         overload_id,
         original_inputs: originals.into_boxed_slice(),
         converted_inputs,
         input_conversions: conversions.into_boxed_slice(),
         outputs: resolved.outputs,
+        output_schema_rules,
     })
 }
 

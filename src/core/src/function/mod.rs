@@ -189,6 +189,13 @@ pub trait MechFunctionFactory {
     const SIGNATURE: RuntimeFunctionSignature;
     const OUTPUT_SCHEMA_RULE: FunctionOutputSchemaRule = FunctionOutputSchemaRule::Declared;
 
+    /// Semantic memory contract declared by a statically registered runtime
+    /// implementation. Fixed operation bindings must provide this authority
+    /// before their constructor can be called.
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        None
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>>
     where
         Self: Sized,

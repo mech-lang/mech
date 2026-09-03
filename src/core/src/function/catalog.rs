@@ -21,7 +21,7 @@ use crate::{
     MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
     OperationContractDeclaration, ResidentKernelFactory, ResidentKernelFactoryEntry,
     ResidentOperationKey, RuntimeFunctionContract, RuntimeFunctionSignature,
-    RuntimeOutputAliasPolicy, SourceSchemeTemplate, SpecializationContext,
+    RuntimeOutputAliasPolicy, SchemaBody, SourceSchemeTemplate, SpecializationContext,
     SpecializationInvocation, SpecializedFunction, hash_str,
 };
 
@@ -344,6 +344,18 @@ pub struct FunctionTypeOverload {
     pub id: u32,
     pub input_layout: Box<[SourceInputKind]>,
     pub scheme: KindScheme,
+    pub output_schema_rules: Box<[ResolvedOutputSchemaRule]>,
+}
+
+/// Semantic authority for constructing one resolved output schema. These
+/// rules are selected with the source overload and never by a runtime factory.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ResolvedOutputSchemaRule {
+    FromResolvedType,
+    FromInput(usize),
+    Declared(SchemaBody),
+    DynamicSetCartesianProduct,
+    DynamicSetPowerset,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -365,6 +377,11 @@ impl FunctionTypeDeclaration {
                 FunctionTypeOverload {
                     id: index as u32,
                     input_layout: vec![SourceInputKind::Value; value_count].into_boxed_slice(),
+                    output_schema_rules: vec![
+                        ResolvedOutputSchemaRule::FromResolvedType;
+                        scheme.outputs().len()
+                    ]
+                    .into_boxed_slice(),
                     scheme,
                 }
             })
@@ -389,6 +406,30 @@ impl FunctionTypeDeclaration {
         }
         self
     }
+
+    pub fn with_output_schema_rules(
+        mut self,
+        rules: Box<[ResolvedOutputSchemaRule]>,
+    ) -> MResult<Self> {
+        for overload in &mut self.overloads {
+            if overload.scheme.outputs().len() != rules.len() {
+                return Err(MechError::new(
+                    FunctionCatalogInvalidTypeDeclaration {
+                        canonical_name: String::from("resolved output schema rules"),
+                        reason: format!(
+                            "{} semantic outputs have {} schema rules",
+                            overload.scheme.outputs().len(),
+                            rules.len(),
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            overload.output_schema_rules = rules.clone();
+        }
+        Ok(self)
+    }
 }
 
 pub fn maintained_source_type_declaration(
@@ -407,7 +448,21 @@ pub fn maintained_source_type_declaration(
         )
         .with_compiler_loc());
     };
-    let declaration = FunctionTypeDeclaration::from_schemes(schemes);
+    let mut declaration = FunctionTypeDeclaration::from_schemes(schemes);
+    let output_rule = match canonical_name {
+        "set/cartesian-product" => Some(ResolvedOutputSchemaRule::DynamicSetCartesianProduct),
+        "set/powerset" => Some(ResolvedOutputSchemaRule::DynamicSetPowerset),
+        "set/difference"
+        | "set/insert"
+        | "set/intersection"
+        | "set/remove"
+        | "set/symmetric-difference"
+        | "set/union" => Some(ResolvedOutputSchemaRule::FromInput(0)),
+        _ => None,
+    };
+    if let Some(rule) = output_rule {
+        declaration = declaration.with_output_schema_rules(vec![rule].into_boxed_slice())?;
+    }
     if canonical_name.ends_with("/range-all") {
         Ok(declaration.with_layout(
             vec![
@@ -1403,6 +1458,17 @@ fn validate_type_declaration(
                 format!(
                     "overload {} has {value_slots} Value slots but its scheme has {expected_values} inputs",
                     overload.id,
+                ),
+            ));
+        }
+        if overload.output_schema_rules.len() != overload.scheme.outputs().len() {
+            return Err(invalid_type_declaration(
+                canonical_name,
+                format!(
+                    "overload {} has {} outputs but {} output schema rules",
+                    overload.id,
+                    overload.scheme.outputs().len(),
+                    overload.output_schema_rules.len(),
                 ),
             ));
         }
