@@ -1,12 +1,17 @@
 # Type-memory boundary
 
-## 1. Status and R2A/R2B scope
+## 1. Status and R2A/R2B/R2C scope
 
 R2A is complete. It defines a read-only semantic projection from a finalized `Schema`, and from
 that schema plus a validated `ShapeInstance`, into memory-facing contracts.
 R2B defines descriptive capabilities of current value-cell backings and pure
 compatibility and identity relations. Both phases change no runtime binding,
 storage, target, or execution behavior.
+
+R2C derives memory-facing port requirements from the existing R1 operation
+contract and checks them against R2A and R2B metadata. Its invocation check is
+explicitly opt-in and shadow-only: production signature validation, factory
+selection, target behavior, and execution remain unchanged.
 
 The projection has one direction:
 
@@ -139,10 +144,10 @@ placement.
 
 ## 12. Serialization prohibition
 
-The R2A contract types deliberately implement no serialization traits and have
-no wire format. Canonical schema bytes remain unchanged and authoritative.
-Derived contracts must be recomputed from the schema rather than persisted as
-another compatibility surface.
+The R2A and R2C contract types deliberately implement no serialization traits
+and have no wire format. Canonical schema and operation-contract bytes remain
+unchanged and authoritative. Derived contracts must be recomputed from their
+semantic authorities rather than persisted as another compatibility surface.
 
 ## 13. R2B storage capabilities and identity
 
@@ -171,11 +176,31 @@ R4 must infer each physically invariant vector axis as `Constant(1)` before the
 compatibility boundary becomes authoritative. R2C and R2D must not interpret
 these expected shadow failures as valid storage-incompatibility policy.
 
-## 14. R2C handoff
+## 14. R2C operation memory requirements
 
-R2C will derive memory requirements for operation ports and compare those
-requirements with storage capabilities. It must not reinterpret schema
-identity or mutate the R2A contract.
+R2C derives `OperationMemoryRequirements` from
+`OperationContractDeclaration`. Fixed and variadic inputs use the declaration's
+existing resolution path. Each port preserves access and delivery, while
+ownership, addressing, publication, construction, aliasing, and change
+detection are projected from the existing policy fields. External interaction
+is deliberately excluded because provider protocols are not cell-storage
+requirements.
+
+The public port checker accepts `Schema`, `ShapeInstance`, a derived port
+requirement, and `StorageCapabilityDescriptor`. It resolves the type-memory
+contract once and checks the complete compatibility triangle: semantic type to
+storage, operation-port addressing to semantic addressing, and operation-port
+requirements to storage capabilities. Canonical `Value` storage is mechanically
+universal but cannot authorize positional, collection-entry, or regional access
+that the semantic type does not expose. Stream and Future delivery remain
+visible metadata and are not rejected by this generic storage boundary.
+
+`FunctionInvocation::check_operation_memory_contract` is a separate opt-in
+shadow check. It validates the current single-output compatibility bridge and
+uses `same_storage` for operation alias policy. It is not called from runtime
+signature checks, factories, source specialization, Resident or GPU
+activation, or native planning. R2C does not make these requirements
+authoritative and does not mark R2 complete.
 
 ## 15. R2D closure
 
@@ -191,8 +216,8 @@ metadata.
 ## 17. R4 handoff
 
 R4 owns retirement of transitional runtime representations and makes the new
-boundary authoritative during the binding cutover. R2A and R2B neither change
-nor endorse a runtime representation.
+boundary authoritative during the binding cutover. R2A, R2B, and R2C neither
+change nor endorse a runtime representation.
 
 ## 18. R5/R6 handoff
 
@@ -203,9 +228,9 @@ those mechanisms.
 
 ## 19. Non-goals
 
-R2A does not add storage capability descriptors, operation-port memory
-requirements, compatibility checking, physical layout, allocation, inference,
-conversion, target availability, function binding, `ValueCell` behavior,
+R2C does not add another operation declaration surface, interaction-provider
+requirements, physical layout, allocation, inference, conversion, target
+availability, function binding, production rejection, `ValueCell` mutation,
 Resident or GPU behavior, bytecode, canonical encoding, ABI changes, or
 package-version changes.
 
