@@ -13,6 +13,32 @@ fn promoted(left: BuiltinScalarKind, right: BuiltinScalarKind) -> Option<Builtin
         })
 }
 
+#[test]
+fn numeric_promotion_rejects_equal_non_numeric_types() {
+    for kind in [BuiltinScalarKind::Bool, BuiltinScalarKind::String] {
+        assert!(
+            plan_numeric_promotion(&resolved(kind), &resolved(kind))
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    let strings = ResolvedType::new(
+        KindExpr::Matrix {
+            element: Box::new(BuiltinScalarKind::String.kind_expr()),
+            dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        },
+        Box::new([]),
+    )
+    .unwrap();
+    assert!(
+        plan_numeric_promotion(&strings, &strings)
+            .unwrap()
+            .is_none()
+    );
+}
+
 fn integer_description(kind: BuiltinScalarKind) -> Option<(bool, u16)> {
     use BuiltinScalarKind as K;
     match kind {
@@ -94,7 +120,7 @@ fn expected_promotion(
 fn complete_numeric_promotion_matrix_is_symmetric_and_deterministic() {
     let numeric = BuiltinScalarKind::ALL
         .into_iter()
-        .filter(|kind| kind.satisfies(BuiltinKindPredicate::Number))
+        .filter(|kind| resolved(*kind).satisfies(BuiltinKindPredicate::Number))
         .collect::<Vec<_>>();
     for left in numeric.iter().copied() {
         for right in numeric.iter().copied() {

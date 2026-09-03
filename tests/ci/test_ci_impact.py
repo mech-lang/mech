@@ -112,6 +112,8 @@ class ImpactClassifierTests(unittest.TestCase):
             "scripts/check-operation-contract.py",
             "scripts/check-r2-type-memory-boundary.py",
             "scripts/tests/test_check_r2_type_memory_boundary.py",
+            "scripts/check-r3-type-system.py",
+            "scripts/tests/test_check_r3_type_system.py",
             "tests/architecture/program-artifact/v1.json",
         ):
             with self.subTest(path=path):
@@ -123,6 +125,7 @@ class ImpactClassifierTests(unittest.TestCase):
         for path in (
             "README.md",
             "docs/design/type-memory-boundary.md",
+            "docs/design/type-system-v1.md",
             "docs/design/ROADMAP.mec",
             "docs/design/v0.4-endgame.md",
         ):

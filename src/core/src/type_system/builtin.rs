@@ -162,7 +162,7 @@ impl BuiltinScalarKind {
         KindExpr::Named(self.kind_id())
     }
 
-    pub const fn satisfies(self, predicate: BuiltinKindPredicate) -> bool {
+    pub(crate) const fn satisfies(self, predicate: BuiltinKindPredicate) -> bool {
         use BuiltinKindPredicate as C;
         use BuiltinScalarKind as K;
         match predicate {
@@ -237,39 +237,23 @@ impl BuiltinKindPredicate {
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct BuiltinKindPredicateSet(u16);
+pub(crate) struct BuiltinKindPredicateSet(u16);
 
 impl BuiltinKindPredicateSet {
-    pub const fn empty() -> Self {
+    pub(crate) const fn empty() -> Self {
         Self(0)
     }
 
-    pub fn for_scalar(kind: BuiltinScalarKind) -> Self {
-        let mut result = Self::empty();
-        for predicate in BuiltinKindPredicate::ALL {
-            if kind.satisfies(predicate) {
-                result.insert(predicate);
-            }
-        }
-        result
-    }
-
-    pub fn insert(&mut self, predicate: BuiltinKindPredicate) {
+    pub(crate) fn insert(&mut self, predicate: BuiltinKindPredicate) {
         self.0 |= predicate.bit();
     }
 
-    pub const fn contains(self, predicate: BuiltinKindPredicate) -> bool {
+    pub(crate) const fn contains(self, predicate: BuiltinKindPredicate) -> bool {
         self.0 & predicate.bit() != 0
     }
 
-    pub const fn intersection(self, other: Self) -> Self {
+    pub(crate) const fn intersection(self, other: Self) -> Self {
         Self(self.0 & other.0)
-    }
-
-    pub fn iter(self) -> impl Iterator<Item = BuiltinKindPredicate> {
-        BuiltinKindPredicate::ALL
-            .into_iter()
-            .filter(move |predicate| self.contains(*predicate))
     }
 }
 
@@ -292,7 +276,7 @@ pub fn builtin_scalar_schema_name(body: &SchemaBody) -> Option<String> {
     BuiltinScalarKind::from_schema_body(body).map(|kind| kind.canonical_name().into())
 }
 
-pub fn intrinsic_kind_satisfies_predicate(
+pub(crate) fn intrinsic_kind_satisfies_predicate(
     kind: &KindExpr,
     predicate: BuiltinKindPredicate,
 ) -> bool {

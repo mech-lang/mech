@@ -885,11 +885,14 @@ fn table_join_schemes_close_structural_outputs_without_wildcards() {
         ],
         3,
     );
-    let declaration = maintained_source_type_declaration("table/full-outer-join").unwrap();
-    let scheme = &declaration.overloads[0].scheme;
+    let template = maintained_source_scheme_template("table/full-outer-join")
+        .expect("table joins must instantiate an operation-specific source template");
+    let scheme = instantiate_source_scheme_template(template, &[left.clone(), right.clone()])
+        .unwrap()
+        .remove(0);
     let result =
         TypeConstraintEnvironment::new(TypeConstraintOrigin::new("table/full-outer-join", None))
-            .solve_scheme(scheme, &[left, right], None)
+            .solve_scheme(&scheme, &[left, right], None)
             .unwrap();
     let KindExpr::Table { columns, .. } = result.outputs[0].kind() else {
         panic!("table join must have one closed structural table output")
@@ -901,16 +904,15 @@ fn table_join_schemes_close_structural_outputs_without_wildcards() {
 
     let incompatible = table_type(&[("id", BuiltinScalarKind::String)], 1);
     let left = table_type(&[("id", BuiltinScalarKind::U64)], 1);
+    let template = maintained_source_scheme_template("table/join")
+        .expect("table joins must instantiate an operation-specific source template");
+    let scheme =
+        instantiate_source_scheme_template(template, &[left.clone(), incompatible.clone()])
+            .unwrap()
+            .remove(0);
     assert!(
         TypeConstraintEnvironment::new(TypeConstraintOrigin::new("table/join", None))
-            .solve_scheme(
-                &maintained_source_type_declaration("table/join")
-                    .unwrap()
-                    .overloads[0]
-                    .scheme,
-                &[left, incompatible],
-                None,
-            )
+            .solve_scheme(&scheme, &[left, incompatible], None)
             .is_err()
     );
 }

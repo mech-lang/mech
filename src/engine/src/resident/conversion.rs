@@ -7,10 +7,8 @@ use mech_core::{
     ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
     ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
     ResolvedOperationContract, ResolvedType, SchemaBody, ShapeRule, ValueDataDraft, ValueDraft,
-    plan_explicit_cast,
+    execute_conversion_draft, plan_explicit_cast,
 };
-
-use crate::literals::execute_conversion_draft;
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     builder.insert_resident_factory(["convert"], "kind", bind_kind_conversion)

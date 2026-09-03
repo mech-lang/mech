@@ -86,10 +86,6 @@ pub enum TypeConstraintFailure {
     InvalidScheme {
         reason: String,
     },
-    #[doc(hidden)]
-    NotKeyable {
-        kind: String,
-    },
 }
 
 impl Display for TypeConstraintFailure {
@@ -158,7 +154,6 @@ impl Display for TypeConstraintFailure {
                 write!(formatter, "resolved output {expected}, produced {actual}")
             }
             Self::InvalidScheme { reason } => write!(formatter, "invalid type scheme: {reason}"),
-            Self::NotKeyable { kind } => write!(formatter, "{kind} is not Keyable"),
         }
     }
 }

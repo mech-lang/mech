@@ -22,7 +22,7 @@ use alloc::{boxed::Box, string::String, vec::Vec};
 use std::{boxed::Box, string::String, vec::Vec};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct KindPredicateEvidence {
+pub(crate) struct KindPredicateEvidence {
     kind: KindExpr,
     predicates: BuiltinKindPredicateSet,
 }
@@ -32,11 +32,11 @@ impl KindPredicateEvidence {
         Self { kind, predicates }
     }
 
-    pub const fn kind(&self) -> &KindExpr {
+    pub(crate) const fn kind(&self) -> &KindExpr {
         &self.kind
     }
 
-    pub const fn predicates(&self) -> BuiltinKindPredicateSet {
+    pub(crate) const fn predicates(&self) -> BuiltinKindPredicateSet {
         self.predicates
     }
 }
@@ -198,11 +198,7 @@ impl ResolvedType {
         self.predicates_for(&self.kind).contains(predicate)
     }
 
-    pub fn is_keyable(&self) -> bool {
-        self.satisfies(BuiltinKindPredicate::Keyable)
-    }
-
-    pub fn predicates_for(&self, kind: &KindExpr) -> BuiltinKindPredicateSet {
+    pub(crate) fn predicates_for(&self, kind: &KindExpr) -> BuiltinKindPredicateSet {
         self.predicate_evidence
             .iter()
             .find_map(|item| (item.kind == *kind).then_some(item.predicates))

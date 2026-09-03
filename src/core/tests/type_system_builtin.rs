@@ -3,6 +3,12 @@ use mech_core::{
     SchemaBody, builtin_scalar_named_kind,
 };
 
+fn scalar_satisfies(kind: BuiltinScalarKind, predicate: BuiltinKindPredicate) -> bool {
+    ResolvedType::new(kind.kind_expr(), Box::new([]))
+        .unwrap()
+        .satisfies(predicate)
+}
+
 #[test]
 fn existing_builtin_ordinals_are_unchanged() {
     let expected = [
@@ -54,13 +60,34 @@ fn schema_scalar_round_trip_uses_one_registry() {
 
 #[test]
 fn scalar_predicate_membership_matches_the_closed_table() {
-    assert!(BuiltinScalarKind::U64.satisfies(BuiltinKindPredicate::Number));
-    assert!(BuiltinScalarKind::F64.satisfies(BuiltinKindPredicate::Number));
-    assert!(!BuiltinScalarKind::Bool.satisfies(BuiltinKindPredicate::Number));
-    assert!(!BuiltinScalarKind::String.satisfies(BuiltinKindPredicate::Number));
-    assert!(!BuiltinScalarKind::C64.satisfies(BuiltinKindPredicate::Ordered));
-    assert!(!BuiltinScalarKind::U64.satisfies(BuiltinKindPredicate::Negatable));
-    assert!(BuiltinScalarKind::I64.satisfies(BuiltinKindPredicate::Negatable));
+    assert!(scalar_satisfies(
+        BuiltinScalarKind::U64,
+        BuiltinKindPredicate::Number
+    ));
+    assert!(scalar_satisfies(
+        BuiltinScalarKind::F64,
+        BuiltinKindPredicate::Number
+    ));
+    assert!(!scalar_satisfies(
+        BuiltinScalarKind::Bool,
+        BuiltinKindPredicate::Number
+    ));
+    assert!(!scalar_satisfies(
+        BuiltinScalarKind::String,
+        BuiltinKindPredicate::Number
+    ));
+    assert!(!scalar_satisfies(
+        BuiltinScalarKind::C64,
+        BuiltinKindPredicate::Ordered
+    ));
+    assert!(!scalar_satisfies(
+        BuiltinScalarKind::U64,
+        BuiltinKindPredicate::Negatable
+    ));
+    assert!(scalar_satisfies(
+        BuiltinScalarKind::I64,
+        BuiltinKindPredicate::Negatable
+    ));
 }
 
 #[test]
@@ -75,7 +102,7 @@ fn builtin_kind_expression_is_named_by_the_registry() {
 fn number_contains_every_numeric_scalar() {
     for kind in BuiltinScalarKind::ALL {
         assert_eq!(
-            kind.satisfies(BuiltinKindPredicate::Number),
+            scalar_satisfies(kind, BuiltinKindPredicate::Number),
             !matches!(kind, BuiltinScalarKind::String | BuiltinScalarKind::Bool),
             "{kind:?}",
         );
@@ -84,14 +111,26 @@ fn number_contains_every_numeric_scalar() {
 
 #[test]
 fn number_rejects_bool_and_string() {
-    assert!(!BuiltinScalarKind::Bool.satisfies(BuiltinKindPredicate::Number));
-    assert!(!BuiltinScalarKind::String.satisfies(BuiltinKindPredicate::Number));
+    assert!(!scalar_satisfies(
+        BuiltinScalarKind::Bool,
+        BuiltinKindPredicate::Number
+    ));
+    assert!(!scalar_satisfies(
+        BuiltinScalarKind::String,
+        BuiltinKindPredicate::Number
+    ));
 }
 
 #[test]
 fn ordered_rejects_complex() {
-    assert!(!BuiltinScalarKind::C32.satisfies(BuiltinKindPredicate::Ordered));
-    assert!(!BuiltinScalarKind::C64.satisfies(BuiltinKindPredicate::Ordered));
+    assert!(!scalar_satisfies(
+        BuiltinScalarKind::C32,
+        BuiltinKindPredicate::Ordered
+    ));
+    assert!(!scalar_satisfies(
+        BuiltinScalarKind::C64,
+        BuiltinKindPredicate::Ordered
+    ));
 }
 
 #[test]
@@ -103,16 +142,17 @@ fn negatable_rejects_unsigned() {
         BuiltinScalarKind::U64,
         BuiltinScalarKind::U128,
     ] {
-        assert!(!kind.satisfies(BuiltinKindPredicate::Negatable));
+        assert!(!scalar_satisfies(kind, BuiltinKindPredicate::Negatable));
     }
 }
 
 #[test]
 fn range_endpoint_accepts_index_integer_and_float() {
-    assert!(mech_core::intrinsic_kind_satisfies_predicate(
-        &KindExpr::Index,
-        BuiltinKindPredicate::RangeEndpoint,
-    ));
+    assert!(
+        ResolvedType::new(KindExpr::Index, Box::new([]))
+            .unwrap()
+            .satisfies(BuiltinKindPredicate::RangeEndpoint)
+    );
     for kind in [
         BuiltinScalarKind::U8,
         BuiltinScalarKind::U64,
@@ -120,7 +160,7 @@ fn range_endpoint_accepts_index_integer_and_float() {
         BuiltinScalarKind::F32,
         BuiltinScalarKind::F64,
     ] {
-        assert!(kind.satisfies(BuiltinKindPredicate::RangeEndpoint));
+        assert!(scalar_satisfies(kind, BuiltinKindPredicate::RangeEndpoint));
     }
 }
 
@@ -140,7 +180,7 @@ fn nested_schema_keyability_becomes_predicate_evidence() {
         &[],
     )
     .unwrap();
-    assert!(kind.is_keyable());
+    assert!(kind.satisfies(BuiltinKindPredicate::Keyable));
 }
 
 #[test]

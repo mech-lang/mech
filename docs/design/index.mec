@@ -11,3 +11,4 @@ Design Documents
 - [Immutable value semantics and migration contract](/design/value-semantics-and-migration.html)
 - [Program artifact resident activation contract](/design/program-artifact-resident-activation.html)
 - [Type-memory boundary](/design/type-memory-boundary.html)
+- [Type System v1](/design/type-system-v1.html)

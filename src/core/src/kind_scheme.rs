@@ -45,7 +45,6 @@ pub enum InputKindScheme {
 pub enum KindConstraint {
     Equal(KindExpr, KindExpr),
     Convertible(KindExpr, KindExpr),
-    Keyable(KindExpr),
     Satisfies {
         kind: KindExpr,
         predicate: BuiltinKindPredicate,
@@ -54,13 +53,6 @@ pub enum KindConstraint {
         left: KindExpr,
         right: KindExpr,
         output: KindExpr,
-    },
-    TableJoin {
-        left: KindExpr,
-        right: KindExpr,
-        output: KindExpr,
-        rows: DimensionExpr,
-        mode: TableJoinMode,
     },
     DimensionEqual(DimensionExpr, DimensionExpr),
     /// Requires equal live extents. Fixed incompatibility is rejected during
@@ -91,6 +83,7 @@ pub enum SourceSchemeTemplate {
     HorizontalConcatenation,
     VerticalConcatenation,
     SetDefinition,
+    TableJoin(TableJoinMode),
 }
 
 impl KindScheme {
@@ -222,7 +215,7 @@ fn validate_constraint(
             validate_kind(left, kind_count, dimension_count, None)?;
             validate_kind(right, kind_count, dimension_count, None)
         }
-        KindConstraint::Keyable(kind) | KindConstraint::Satisfies { kind, .. } => {
+        KindConstraint::Satisfies { kind, .. } => {
             validate_kind(kind, kind_count, dimension_count, None)
         }
         KindConstraint::Promotes {
@@ -233,19 +226,6 @@ fn validate_constraint(
             validate_kind(left, kind_count, dimension_count, None)?;
             validate_kind(right, kind_count, dimension_count, None)?;
             validate_kind(output, kind_count, dimension_count, None)
-        }
-        KindConstraint::TableJoin {
-            left,
-            right,
-            output,
-            rows,
-            ..
-        } => {
-            validate_kind(left, kind_count, dimension_count, None)?;
-            validate_kind(right, kind_count, dimension_count, None)?;
-            validate_kind(output, kind_count, dimension_count, None)?;
-            normalize_dimension(rows, dimension_count)?;
-            Ok(())
         }
         KindConstraint::DimensionEqual(left, right)
         | KindConstraint::DimensionCompatible(left, right)

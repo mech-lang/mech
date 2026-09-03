@@ -2,11 +2,11 @@
 
 ## 1. Status and scope
 
-**Status: R3 in progress.**
+**Status: R3 complete.**
 
 Type System v1 is the semantic authority for the language Mech already
 exposes. R3 covers first-order, expression-local inference; built-in semantic
-classes; overload resolution; lossless implicit conversions; numeric
+predicates; overload resolution; lossless implicit conversions; numeric
 promotion; checked explicit casts; and structured diagnostics. It adds no new
 language syntax.
 
@@ -20,7 +20,7 @@ resolution.
 The compiler resolves calls in this order:
 
 1. `Schema` and a validated `ShapeInstance` define actual input types.
-2. `KindScheme` and built-in class and promotion constraints define operation
+2. `KindScheme` and built-in predicate and promotion constraints define operation
    semantics.
 3. `TypeConstraintEnvironment` resolves a semantic overload.
 4. `ConversionPlan` records every selected input conversion or explicit cast.
@@ -52,23 +52,21 @@ The placement of `c32` preserves all previously assigned ordinals. `c32` and
 `c64` are distinct semantic types even when only `c64` has a physical runtime
 representation.
 
-## 4. Built-in class table
+## 4. Built-in predicate table
 
-The fixed compiler-provided classes are `Number`, `Real`, `Integer`,
-`SignedInteger`, `UnsignedInteger`, `FloatingPoint`, `ComplexNumber`,
-`RationalNumber`, `Ordered`, `Negatable`, `RangeEndpoint`, `Equatable`, and
-`Keyable`.
+R3 provides a small closed set of compiler-defined type predicates. They
+classify semantic kinds but provide no methods, instances, inheritance,
+declaration syntax, or runtime dispatch.
 
-| Class | Members |
+The fixed predicates are `Number`, `Real`, `Integer`, `FloatingPoint`,
+`Ordered`, `Negatable`, `RangeEndpoint`, `Equatable`, and `Keyable`.
+
+| Predicate | Members |
 | --- | --- |
 | Number | all integers, `f32`, `f64`, `c32`, `c64`, `r64` |
 | Real | Number except complex |
 | Integer | signed and unsigned integers |
-| SignedInteger | `i8` through `i128` |
-| UnsignedInteger | `u8` through `u128` |
 | FloatingPoint | `f32`, `f64` |
-| ComplexNumber | `c32`, `c64` |
-| RationalNumber | `r64` |
 | Negatable | signed integers, floats, complex, rational |
 | Ordered | integers, floats, rational, String, Index |
 | RangeEndpoint | Index, integers, floats |
@@ -77,12 +75,12 @@ The fixed compiler-provided classes are `Number`, `Real`, `Integer`,
 
 Complex numbers, Bool, Id, Atom, Enum, containers, and Dynamic are not
 implicitly Ordered. Dynamic and Reference are not automatically Equatable.
-There is no user-facing class or instance declaration syntax in Type System v1.
+There is no user-facing predicate or instance declaration syntax in Type System v1.
 
 ## 5. ResolvedType
 
 `ResolvedType` contains a normalized closed `KindExpr`, canonical declarations
-for reachable dimensions, and normalized schema-derived class evidence.
+for reachable dimensions, and normalized schema-derived predicate evidence.
 Equality uses semantic kind and canonical dimension environment; evidence is
 not a new identity component. Evidence imported from equal types is
 intersected, never unioned.
@@ -121,7 +119,7 @@ not used for solving or ranking.
 
 One environment validates source-control layout, imports actual and expected
 types into rigid namespaces, instantiates scheme variables, unifies exact input
-and expected-output structure, solves equality to a fixed point, solves class
+and expected-output structure, solves equality to a fixed point, solves predicate
 constraints, promotions, and conversions, checks dimension inequalities and
 bounds, closes every output, and rejects every remaining variable or hole.
 Kind and dimension bindings use occurs checks.
@@ -129,9 +127,9 @@ Kind and dimension bindings use occurs checks.
 ## 9. Overload scoring
 
 Overloads are ordered lexicographically by conversion cost, wildcard matches,
-unconstrained kind bindings, unconstrained dimension bindings, and class
+unconstrained kind bindings, unconstrained dimension bindings, and predicate
 generality. Exact matches beat conversions, concrete types beat wildcards, and
-narrow class constraints beat broader or unconstrained variables.
+narrow predicate constraints beat broader or unconstrained variables.
 
 Registration order, factory identifiers, and storage preference never resolve
 semantic ambiguity. Equal-scoring candidates may coexist only when their
@@ -211,13 +209,13 @@ scheme-authoritative.
 
 Ambiguity and incompatibility are structured and source-located. Failures name
 the semantic operation, expected and actual semantic types, and the relevant
-class, conversion, promotion, nominal, structural, or dimension relation.
+predicate, conversion, promotion, nominal, structural, or dimension relation.
 Human-readable output never exposes physical representation enums, Rust
 factory names, pointers, or storage identities.
 
 ## 18. Serialization and artifact policy
 
-Schemes, class evidence, resolved calls, and conversion plans are derived
+Schemes, predicate evidence, resolved calls, and conversion plans are derived
 in-memory compiler data. R3 does not change bytecode-v1, canonical schema or
 operation-contract encoding, `ProgramArtifact`, stable operation IDs, native
 linkage names, dynamic-module ABI v1, or package version 0.3.6. Selected
@@ -235,12 +233,13 @@ RowDVector/DVector invariant-axis schema mismatch.
 
 R3 does not implement higher-order types, generalized dependent types,
 let-polymorphism, polymorphic recursion, higher-rank types, new function or
-pattern syntax, user-defined classes or instances, traits, effects,
+pattern syntax, user-defined predicates or instances, traits, effects,
 refinements, coeffects, ownership syntax, or a new bytecode format.
 
 ## 21. R3 completion criteria
 
-R3 completes only when all builtins and classes use one registry; resolved
+R3 completes only when builtin scalar identities have one canonical definition
+and predicate membership uses one closed compiler-defined classifier; resolved
 types and dimensions are closed and sound; exact equality, implicit
 conversion, promotion, and explicit casting are separate planned relations;
 every named source operation has explicit schemes; semantic resolution occurs

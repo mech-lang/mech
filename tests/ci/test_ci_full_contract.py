@@ -109,6 +109,29 @@ class FullWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(token, full)
 
+    def test_r3_type_system_is_unwaived_and_full_conformance_is_owned(self):
+        r2 = "python3 scripts/check-r2-type-memory-boundary.py"
+        r3 = "python3 scripts/check-r3-type-system.py"
+        unit = "scripts/tests/test_check_r3_type_system.py"
+        for block in (
+            job_block(CI, "static-contracts"),
+            job_block(FULL, "architecture-contracts"),
+        ):
+            self.assertIn(r2, block)
+            self.assertIn(r3, block)
+            self.assertLess(block.index(r2), block.index(r3))
+            self.assertIn(unit, block)
+            self.assertNotIn("continue-on-error", block)
+        full = job_block(FULL, "architecture-contracts")
+        for target in (
+            "type_system_builtin",
+            "type_system_solver",
+            "type_system_conversion",
+            "type_system_catalog",
+            "type_system_source",
+        ):
+            self.assertIn(target, full)
+
     def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):
         block = job_block(FULL, "architecture-contracts")
         fetch = "cargo +nightly-2026-03-03 fetch --locked"

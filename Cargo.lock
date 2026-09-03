@@ -2706,8 +2706,8 @@ dependencies = [
  "byteorder",
  "grapheme",
  "indexmap",
- "libm",
  "libloading 0.8.9",
+ "libm",
  "mech-abi",
  "mech-bytecode",
  "mech-core",
@@ -2718,6 +2718,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "tinyvec",
  "web-time",
 ]
 

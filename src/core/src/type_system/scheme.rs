@@ -458,11 +458,21 @@ pub fn matrix_product() -> Result<KindScheme, SemanticModelError> {
             matrix(kind(1), dim(1), dim(2)),
         ],
         vec![matrix(kind(2), dim(0), dim(2))],
-        vec![KindConstraint::Promotes {
-            left: kind(0),
-            right: kind(1),
-            output: kind(2),
-        }],
+        vec![
+            KindConstraint::Satisfies {
+                kind: kind(0),
+                predicate: BuiltinKindPredicate::Number,
+            },
+            KindConstraint::Satisfies {
+                kind: kind(1),
+                predicate: BuiltinKindPredicate::Number,
+            },
+            KindConstraint::Promotes {
+                left: kind(0),
+                right: kind(1),
+                output: kind(2),
+            },
+        ],
     )
 }
 
@@ -476,6 +486,14 @@ fn dynamic_matrix_product() -> Result<KindScheme, SemanticModelError> {
         ],
         vec![matrix(kind(2), dim(0), dim(3))],
         vec![
+            KindConstraint::Satisfies {
+                kind: kind(0),
+                predicate: BuiltinKindPredicate::Number,
+            },
+            KindConstraint::Satisfies {
+                kind: kind(1),
+                predicate: BuiltinKindPredicate::Number,
+            },
             KindConstraint::Promotes {
                 left: kind(0),
                 right: kind(1),
@@ -495,11 +513,21 @@ pub fn matrix_dot() -> Result<KindScheme, SemanticModelError> {
             matrix(kind(1), dim(0), dim(1)),
         ],
         vec![kind(2)],
-        vec![KindConstraint::Promotes {
-            left: kind(0),
-            right: kind(1),
-            output: kind(2),
-        }],
+        vec![
+            KindConstraint::Satisfies {
+                kind: kind(0),
+                predicate: BuiltinKindPredicate::Number,
+            },
+            KindConstraint::Satisfies {
+                kind: kind(1),
+                predicate: BuiltinKindPredicate::Number,
+            },
+            KindConstraint::Promotes {
+                left: kind(0),
+                right: kind(1),
+                output: kind(2),
+            },
+        ],
     )
 }
 
@@ -512,11 +540,23 @@ fn dynamic_matrix_dot() -> Result<KindScheme, SemanticModelError> {
             matrix(kind(1), dim(2), dim(3)),
         ],
         vec![kind(2)],
-        vec![KindConstraint::Promotes {
-            left: kind(0),
-            right: kind(1),
-            output: kind(2),
-        }],
+        vec![
+            KindConstraint::Satisfies {
+                kind: kind(0),
+                predicate: BuiltinKindPredicate::Number,
+            },
+            KindConstraint::Satisfies {
+                kind: kind(1),
+                predicate: BuiltinKindPredicate::Number,
+            },
+            KindConstraint::Promotes {
+                left: kind(0),
+                right: kind(1),
+                output: kind(2),
+            },
+            KindConstraint::DimensionCompatible(dim(0), dim(2)),
+            KindConstraint::DimensionCompatible(dim(1), dim(3)),
+        ],
     )
 }
 
@@ -539,16 +579,20 @@ pub fn matrix_solve() -> Result<KindScheme, SemanticModelError> {
 fn dynamic_matrix_solve() -> Result<KindScheme, SemanticModelError> {
     make(
         1,
-        6,
+        4,
         vec![
             matrix(kind(0), dim(0), dim(1)),
             matrix(kind(0), dim(2), dim(3)),
         ],
-        vec![matrix(kind(0), dim(4), dim(5))],
-        vec![KindConstraint::Satisfies {
-            kind: kind(0),
-            predicate: BuiltinKindPredicate::FloatingPoint,
-        }],
+        vec![matrix(kind(0), dim(2), dim(3))],
+        vec![
+            KindConstraint::Satisfies {
+                kind: kind(0),
+                predicate: BuiltinKindPredicate::FloatingPoint,
+            },
+            KindConstraint::DimensionCompatible(dim(0), dim(1)),
+            KindConstraint::DimensionCompatible(dim(0), dim(2)),
+        ],
     )
 }
 
@@ -616,12 +660,12 @@ fn instantiate_concatenation_scheme(
 
 pub fn set_membership() -> Result<KindScheme, SemanticModelError> {
     make(
+        2,
         1,
-        1,
-        vec![kind(0), set(kind(0), dim(0))],
+        vec![kind(0), set(kind(1), dim(0))],
         vec![BuiltinScalarKind::Bool.kind_expr()],
         vec![KindConstraint::Satisfies {
-            kind: kind(0),
+            kind: kind(1),
             predicate: BuiltinKindPredicate::Keyable,
         }],
     )
@@ -916,19 +960,119 @@ pub fn exact_assignment(arity: usize) -> Result<Vec<KindScheme>, SemanticModelEr
     ])
 }
 
-fn table_join(mode: TableJoinMode) -> Result<KindScheme, SemanticModelError> {
+fn instantiate_table_join_scheme(
+    inputs: &[ResolvedType],
+    mode: TableJoinMode,
+) -> Result<KindScheme, SemanticModelError> {
+    let [left, right] = inputs else {
+        return Err(SemanticModelError::InvalidVariadicKindScheme);
+    };
+    let (
+        KindExpr::Table {
+            columns: left_columns,
+            ..
+        },
+        KindExpr::Table {
+            columns: right_columns,
+            ..
+        },
+    ) = (left.kind(), right.kind())
+    else {
+        return Err(SemanticModelError::InvalidVariadicKindScheme);
+    };
+
+    let mut left_fields = Vec::with_capacity(left_columns.len());
+    for (index, field) in left_columns.iter().enumerate() {
+        let parameter =
+            u32::try_from(index).map_err(|_| SemanticModelError::DimensionOverflowV1)?;
+        left_fields.push(crate::KindField {
+            name: field.name.clone(),
+            kind: kind(parameter),
+        });
+    }
+
+    let mut right_fields = Vec::with_capacity(right_columns.len());
+    let mut next_kind = left_fields.len();
+    for field in right_columns {
+        let field_kind = if let Some(index) = left_columns
+            .iter()
+            .position(|candidate| candidate.name == field.name)
+        {
+            left_fields[index].kind.clone()
+        } else {
+            let parameter =
+                u32::try_from(next_kind).map_err(|_| SemanticModelError::DimensionOverflowV1)?;
+            next_kind = next_kind
+                .checked_add(1)
+                .ok_or(SemanticModelError::DimensionOverflowV1)?;
+            kind(parameter)
+        };
+        right_fields.push(crate::KindField {
+            name: field.name.clone(),
+            kind: field_kind,
+        });
+    }
+
+    let optional = |kind: &KindExpr| match kind {
+        KindExpr::Option(_) => kind.clone(),
+        _ => KindExpr::Option(Box::new(kind.clone())),
+    };
+    let left_outer = matches!(mode, TableJoinMode::RightOuter | TableJoinMode::FullOuter);
+    let right_outer = matches!(mode, TableJoinMode::LeftOuter | TableJoinMode::FullOuter);
+    let left_only = matches!(mode, TableJoinMode::LeftSemi | TableJoinMode::LeftAnti);
+    let mut output_fields = left_fields
+        .iter()
+        .map(|field| crate::KindField {
+            name: field.name.clone(),
+            kind: if left_outer
+                && !right_fields
+                    .iter()
+                    .any(|candidate| candidate.name == field.name)
+            {
+                optional(&field.kind)
+            } else {
+                field.kind.clone()
+            },
+        })
+        .collect::<Vec<_>>();
+    if !left_only {
+        output_fields.extend(
+            right_fields
+                .iter()
+                .filter(|field| {
+                    !left_fields
+                        .iter()
+                        .any(|candidate| candidate.name == field.name)
+                })
+                .map(|field| crate::KindField {
+                    name: field.name.clone(),
+                    kind: if right_outer {
+                        optional(&field.kind)
+                    } else {
+                        field.kind.clone()
+                    },
+                }),
+        );
+    }
+
     make(
+        u32::try_from(next_kind).map_err(|_| SemanticModelError::DimensionOverflowV1)?,
         3,
-        1,
-        vec![kind(0), kind(1)],
-        vec![kind(2)],
-        vec![KindConstraint::TableJoin {
-            left: kind(0),
-            right: kind(1),
-            output: kind(2),
-            rows: dim(0),
-            mode,
+        vec![
+            KindExpr::Table {
+                columns: left_fields.into_boxed_slice(),
+                rows: dim(0),
+            },
+            KindExpr::Table {
+                columns: right_fields.into_boxed_slice(),
+                rows: dim(1),
+            },
+        ],
+        vec![KindExpr::Table {
+            columns: output_fields.into_boxed_slice(),
+            rows: dim(2),
         }],
+        Vec::new(),
     )
 }
 
@@ -965,6 +1109,14 @@ pub fn maintained_source_scheme_template(name: &str) -> Option<SourceSchemeTempl
         "matrix/horzcat" => Some(SourceSchemeTemplate::HorizontalConcatenation),
         "matrix/vertcat" => Some(SourceSchemeTemplate::VerticalConcatenation),
         "set/define" => Some(SourceSchemeTemplate::SetDefinition),
+        "table/join" => Some(SourceSchemeTemplate::TableJoin(TableJoinMode::Inner)),
+        "table/left-outer-join" => Some(SourceSchemeTemplate::TableJoin(TableJoinMode::LeftOuter)),
+        "table/right-outer-join" => {
+            Some(SourceSchemeTemplate::TableJoin(TableJoinMode::RightOuter))
+        }
+        "table/full-outer-join" => Some(SourceSchemeTemplate::TableJoin(TableJoinMode::FullOuter)),
+        "table/left-semi-join" => Some(SourceSchemeTemplate::TableJoin(TableJoinMode::LeftSemi)),
+        "table/left-anti-join" => Some(SourceSchemeTemplate::TableJoin(TableJoinMode::LeftAnti)),
         _ => None,
     }
 }
@@ -995,6 +1147,7 @@ pub fn instantiate_source_scheme_template(
                 }],
             )?
         }
+        SourceSchemeTemplate::TableJoin(mode) => instantiate_table_join_scheme(inputs, mode)?,
     };
     Ok(vec![scheme])
 }
@@ -1064,12 +1217,6 @@ pub fn maintained_source_schemes(
             Vec::new(),
         )?],
         "set/comprehension" => set_comprehension_schemes()?,
-        "table/join" => vec![table_join(TableJoinMode::Inner)?],
-        "table/left-outer-join" => vec![table_join(TableJoinMode::LeftOuter)?],
-        "table/right-outer-join" => vec![table_join(TableJoinMode::RightOuter)?],
-        "table/full-outer-join" => vec![table_join(TableJoinMode::FullOuter)?],
-        "table/left-semi-join" => vec![table_join(TableJoinMode::LeftSemi)?],
-        "table/left-anti-join" => vec![table_join(TableJoinMode::LeftAnti)?],
         "set/element-of" | "set/not-element-of" => vec![set_membership()?],
         "set/insert" => vec![set_insert()?],
         "set/remove" => vec![set_remove()?],

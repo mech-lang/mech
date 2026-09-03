@@ -312,7 +312,10 @@ fn conversion_and_keyability_constraints_are_enforced_by_the_environment() {
         vec![],
         vec![KindExpr::Parameter(parameter)],
         vec![KindExpr::Parameter(parameter)],
-        vec![KindConstraint::Keyable(KindExpr::Parameter(parameter))],
+        vec![KindConstraint::Satisfies {
+            kind: KindExpr::Parameter(parameter),
+            predicate: BuiltinKindPredicate::Keyable,
+        }],
     );
     assert!(solve("map/key", &keyable, &[closed(named(0))]).is_ok());
     let error = solve("map/key", &keyable, &[closed(named(12))]).unwrap_err();
@@ -321,7 +324,10 @@ fn conversion_and_keyability_constraints_are_enforced_by_the_environment() {
         TypeResolutionError::Incompatible { ref failures, .. }
             if failures.iter().any(|failure| matches!(
                 failure,
-                TypeConstraintFailure::NotKeyable { .. }
+                TypeConstraintFailure::PredicateNotSatisfied {
+                    predicate: BuiltinKindPredicate::Keyable,
+                    ..
+                }
             ))
     ));
     assert!(solve("map/key", &keyable, &[closed(named(99))]).is_err());
@@ -338,7 +344,10 @@ fn schema_keyability_survives_nested_kind_variable_unification() {
         vec![],
         vec![KindExpr::Option(Box::new(KindExpr::Parameter(parameter)))],
         vec![KindExpr::Parameter(parameter)],
-        vec![KindConstraint::Keyable(KindExpr::Parameter(parameter))],
+        vec![KindConstraint::Satisfies {
+            kind: KindExpr::Parameter(parameter),
+            predicate: BuiltinKindPredicate::Keyable,
+        }],
     );
     let enum_key = NominalKey::from_bytes([31; 32]);
     let schema = SchemaDraft {
@@ -368,7 +377,7 @@ fn schema_keyability_survives_nested_kind_variable_unification() {
         resolution.outputs.as_ref(),
         &[closed(KindExpr::Enum(enum_key))]
     );
-    assert!(resolution.outputs[0].is_keyable());
+    assert!(resolution.outputs[0].satisfies(BuiltinKindPredicate::Keyable));
 
     let parameter = KindParameterId::new(0);
     let key_identity = scheme(
@@ -379,7 +388,10 @@ fn schema_keyability_survives_nested_kind_variable_unification() {
         vec![],
         vec![KindExpr::Parameter(parameter)],
         vec![KindExpr::Parameter(parameter)],
-        vec![KindConstraint::Keyable(KindExpr::Parameter(parameter))],
+        vec![KindConstraint::Satisfies {
+            kind: KindExpr::Parameter(parameter),
+            predicate: BuiltinKindPredicate::Keyable,
+        }],
     );
     assert!(solve("map/reuse-key", &key_identity, &resolution.outputs).is_ok());
 }

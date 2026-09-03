@@ -261,16 +261,82 @@ fn matrix_product_preserves_outer_axes_and_rejects_fixed_inner_mismatch() {
     }));
 
     let fallback = &declaration.overloads[1].scheme;
-    assert!(matches!(
-        &fallback.constraints()[1],
-        KindConstraint::DimensionCompatible(_, _)
-    ));
+    assert!(
+        fallback
+            .constraints()
+            .iter()
+            .any(|constraint| matches!(constraint, KindConstraint::DimensionCompatible(_, _)))
+    );
     assert!(matches!(
         &fallback.outputs()[0],
         KindExpr::Matrix { dimensions, .. }
             if dimensions[0] == DimensionExpr::Parameter(mech_core::DimensionParameterId::new(0))
                 && dimensions[1] == DimensionExpr::Parameter(mech_core::DimensionParameterId::new(3))
     ));
+}
+
+#[test]
+fn matrix_numeric_operations_reject_string_elements_semantically() {
+    let strings = [
+        fixed_matrix(BuiltinScalarKind::String, 2, 2),
+        fixed_matrix(BuiltinScalarKind::String, 2, 2),
+    ];
+    for operation in ["matrix/matmul", "matrix/dot"] {
+        let declaration = maintained_source_type_declaration(operation).unwrap();
+        assert!(declaration.overloads.iter().all(|overload| {
+            TypeConstraintEnvironment::new(TypeConstraintOrigin::new(operation, None))
+                .solve_scheme(&overload.scheme, &strings, None)
+                .is_err()
+        }));
+    }
+}
+
+#[test]
+fn dynamic_dot_and_solve_schemes_enforce_and_preserve_dimensions() {
+    let dot = maintained_source_type_declaration("matrix/dot").unwrap();
+    let dot_fallback = &dot.overloads[1].scheme;
+    assert!(
+        TypeConstraintEnvironment::new(TypeConstraintOrigin::new("matrix/dot", None))
+            .solve_scheme(
+                dot_fallback,
+                &[
+                    fixed_matrix(BuiltinScalarKind::F64, 2, 3),
+                    fixed_matrix(BuiltinScalarKind::F64, 2, 4),
+                ],
+                None,
+            )
+            .is_err()
+    );
+
+    let solve = maintained_source_type_declaration("matrix/solve").unwrap();
+    let solve_fallback = &solve.overloads[1].scheme;
+    let solved = TypeConstraintEnvironment::new(TypeConstraintOrigin::new("matrix/solve", None))
+        .solve_scheme(
+            solve_fallback,
+            &[
+                fixed_matrix(BuiltinScalarKind::F64, 2, 2),
+                fixed_matrix(BuiltinScalarKind::F64, 2, 3),
+            ],
+            None,
+        )
+        .unwrap();
+    assert!(matches!(
+        solved.outputs[0].kind(),
+        KindExpr::Matrix { dimensions, .. }
+            if dimensions.as_ref() == [DimensionExpr::Constant(2), DimensionExpr::Constant(3)]
+    ));
+    assert!(
+        TypeConstraintEnvironment::new(TypeConstraintOrigin::new("matrix/solve", None))
+            .solve_scheme(
+                solve_fallback,
+                &[
+                    fixed_matrix(BuiltinScalarKind::F64, 2, 3),
+                    fixed_matrix(BuiltinScalarKind::F64, 2, 1),
+                ],
+                None,
+            )
+            .is_err()
+    );
 }
 
 #[test]
@@ -347,4 +413,35 @@ fn set_definition_cardinality_and_keyability_are_semantic() {
             )
         })
     }));
+}
+
+#[test]
+fn set_membership_keeps_the_candidate_schema_independent() {
+    let set = ResolvedType::new(
+        KindExpr::Set {
+            element: Box::new(BuiltinScalarKind::F64.kind_expr()),
+            cardinality: DimensionExpr::Constant(3),
+        },
+        Box::new([]),
+    )
+    .unwrap();
+    let declaration = maintained_source_type_declaration("set/element-of").unwrap();
+    let solved = declaration
+        .overloads
+        .iter()
+        .find_map(|overload| {
+            TypeConstraintEnvironment::new(TypeConstraintOrigin::new("set/element-of", None))
+                .solve_scheme(
+                    &overload.scheme,
+                    &[fixed_matrix(BuiltinScalarKind::F64, 1, 1), set.clone()],
+                    None,
+                )
+                .ok()
+        })
+        .expect("a candidate with a different schema is a valid non-member");
+    assert_eq!(solved.outputs.len(), 1);
+    assert_eq!(
+        solved.outputs[0].kind(),
+        &BuiltinScalarKind::Bool.kind_expr()
+    );
 }

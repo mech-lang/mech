@@ -16,7 +16,6 @@ use crate::kind_expr::{
 use crate::{
     DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
     InputKindScheme, KindConstraint, KindExpr, KindField, KindParameterId, KindScheme,
-    TableJoinMode,
 };
 
 #[cfg(feature = "no_std")]
@@ -322,7 +321,7 @@ impl TypeConstraintEnvironment {
         let scheme = self.import_scheme(scheme)?;
         for constraint in scheme.constraints.iter() {
             match constraint {
-                KindConstraint::Satisfies { kind, .. } | KindConstraint::Keyable(kind) => {
+                KindConstraint::Satisfies { kind, .. } => {
                     collect_kind_parameter_ids(kind, &mut self.predicate_constrained_kinds);
                 }
                 _ => {}
@@ -376,20 +375,7 @@ impl TypeConstraintEnvironment {
             }
         }
         for constraint in &scheme.constraints {
-            if let KindConstraint::TableJoin {
-                left,
-                right,
-                output,
-                rows,
-                mode,
-            } = constraint
-            {
-                self.require_table_join(left, right, output, rows, *mode)?;
-            }
-        }
-        for constraint in &scheme.constraints {
             match constraint {
-                KindConstraint::Keyable(kind) => self.require_keyable(kind)?,
                 KindConstraint::Satisfies { kind, predicate } => {
                     let kind = self.substitute_kind(kind)?;
                     if !self.known_predicates(&kind).contains(*predicate) {
@@ -573,23 +559,13 @@ impl TypeConstraintEnvironment {
                     collect_kind_dimension_references(left, &mut bindable);
                     collect_kind_dimension_references(right, &mut bindable);
                 }
-                KindConstraint::Keyable(kind) | KindConstraint::Satisfies { kind, .. } => {
+                KindConstraint::Satisfies { kind, .. } => {
                     collect_kind_dimension_references(kind, &mut bindable);
                 }
                 KindConstraint::Promotes {
                     left,
                     right,
                     output,
-                } => {
-                    collect_kind_dimension_references(left, &mut bindable);
-                    collect_kind_dimension_references(right, &mut bindable);
-                    collect_kind_dimension_references(output, &mut bindable);
-                }
-                KindConstraint::TableJoin {
-                    left,
-                    right,
-                    output,
-                    ..
                 } => {
                     collect_kind_dimension_references(left, &mut bindable);
                     collect_kind_dimension_references(right, &mut bindable);
@@ -1091,111 +1067,6 @@ impl TypeConstraintEnvironment {
                     })
                 })?;
         Ok(())
-    }
-
-    fn require_keyable(&self, kind: &KindExpr) -> Result<(), TypeResolutionError> {
-        let kind = self.substitute_kind(kind)?;
-        let keyable = self
-            .known_predicates(&kind)
-            .contains(BuiltinKindPredicate::Keyable);
-        if keyable {
-            Ok(())
-        } else {
-            self.fail(TypeConstraintFailure::NotKeyable {
-                kind: semantic_kind_name(&kind),
-            })
-        }
-    }
-
-    fn require_table_join(
-        &mut self,
-        left: &KindExpr,
-        right: &KindExpr,
-        output: &KindExpr,
-        rows: &DimensionExpr,
-        mode: TableJoinMode,
-    ) -> Result<(), TypeResolutionError> {
-        let left = self.substitute_kind(left)?;
-        let right = self.substitute_kind(right)?;
-        let (
-            KindExpr::Table {
-                columns: left_columns,
-                ..
-            },
-            KindExpr::Table {
-                columns: right_columns,
-                ..
-            },
-        ) = (&left, &right)
-        else {
-            return self.fail(TypeConstraintFailure::ExactTypeMismatch {
-                expected: "Table and Table".into(),
-                actual: format!(
-                    "{} and {}",
-                    semantic_kind_name(&left),
-                    semantic_kind_name(&right)
-                ),
-            });
-        };
-
-        let mut common_right = BTreeSet::new();
-        for left_field in left_columns.iter() {
-            if let Some((index, right_field)) = right_columns
-                .iter()
-                .enumerate()
-                .find(|(_, field)| field.name == left_field.name)
-            {
-                self.unify_kind(&left_field.kind, &right_field.kind, None)?;
-                common_right.insert(index);
-            }
-        }
-
-        let optional = |kind: &KindExpr| match kind {
-            KindExpr::Option(_) => kind.clone(),
-            _ => KindExpr::Option(Box::new(kind.clone())),
-        };
-        let left_outer = matches!(mode, TableJoinMode::RightOuter | TableJoinMode::FullOuter);
-        let right_outer = matches!(mode, TableJoinMode::LeftOuter | TableJoinMode::FullOuter);
-        let left_only = matches!(mode, TableJoinMode::LeftSemi | TableJoinMode::LeftAnti);
-        let mut columns = left_columns
-            .iter()
-            .map(|field| KindField {
-                name: field.name.clone(),
-                kind: if left_outer
-                    && !right_columns
-                        .iter()
-                        .any(|candidate| candidate.name == field.name)
-                {
-                    optional(&field.kind)
-                } else {
-                    field.kind.clone()
-                },
-            })
-            .collect::<Vec<_>>();
-        if !left_only {
-            columns.extend(
-                right_columns
-                    .iter()
-                    .enumerate()
-                    .filter(|(index, _)| !common_right.contains(index))
-                    .map(|(_, field)| KindField {
-                        name: field.name.clone(),
-                        kind: if right_outer {
-                            optional(&field.kind)
-                        } else {
-                            field.kind.clone()
-                        },
-                    }),
-            );
-        }
-        self.unify_kind(
-            output,
-            &KindExpr::Table {
-                columns: columns.into_boxed_slice(),
-                rows: rows.clone(),
-            },
-            None,
-        )
     }
 
     fn known_predicates(&self, kind: &KindExpr) -> BuiltinKindPredicateSet {
@@ -1789,7 +1660,6 @@ fn rewrite_constraint(
         KindConstraint::Convertible(left, right) => {
             KindConstraint::Convertible(rewrite_kind(left)?, rewrite_kind(right)?)
         }
-        KindConstraint::Keyable(kind) => KindConstraint::Keyable(rewrite_kind(kind)?),
         KindConstraint::Satisfies { kind, predicate } => KindConstraint::Satisfies {
             kind: rewrite_kind(kind)?,
             predicate: *predicate,
@@ -1802,19 +1672,6 @@ fn rewrite_constraint(
             left: rewrite_kind(left)?,
             right: rewrite_kind(right)?,
             output: rewrite_kind(output)?,
-        },
-        KindConstraint::TableJoin {
-            left,
-            right,
-            output,
-            rows,
-            mode,
-        } => KindConstraint::TableJoin {
-            left: rewrite_kind(left)?,
-            right: rewrite_kind(right)?,
-            output: rewrite_kind(output)?,
-            rows: rewrite_dimension(rows)?,
-            mode: *mode,
         },
         KindConstraint::DimensionEqual(left, right) => {
             KindConstraint::DimensionEqual(rewrite_dimension(left)?, rewrite_dimension(right)?)
