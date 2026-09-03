@@ -95,10 +95,10 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 ## Project Roadmap
 
 The current published package is `v0.3.6`; the active development target is
-`v0.4.0`. The canonical value-system cutover and R1 contract closure are
-complete. The remaining v0.4 work is organized into these endgame phases:
+`v0.4.0`. The canonical value-system cutover, R1 contract closure, and R2 type-memory
+boundary are complete. The next v0.4 phase is R3: type inference, classes, and
+conversions. The remaining work is organized into these endgame phases:
 
-- R2 Type–memory boundary
 - R3 Type inference, classes, and conversions
 - R4 Type-system cutover
 - R5 Memory planner

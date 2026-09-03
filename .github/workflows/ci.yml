@@ -75,11 +75,13 @@ jobs:
           python3 scripts/check-value-system-contract.py
           python3 scripts/check-no-retired-value-system.py
           python3 scripts/check-r1-compatibility-closure.py
+          python3 scripts/check-r2-type-memory-boundary.py
           python3 -B -m unittest \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_check_r1_compatibility_closure.py \
+            scripts/tests/test_check_r2_type_memory_boundary.py \
             scripts/tests/test_check_value_execution_boundary.py \
             scripts/tests/test_warning_policy.py
           python3 scripts/check-bytecode-v1-format.py

@@ -21,7 +21,7 @@ class ImpactClassifierTests(unittest.TestCase):
         return CI_IMPACT.classify(paths, labels, OWNERS)
 
     def test_documentation_only_changes_compile_nothing(self):
-        result = self.classify(["README.md", "docs/distributions.md"])
+        result = self.classify(["docs/distributions.md", "LICENSE"])
         self.assertTrue(result["docs_only"])
         self.assertFalse(result["standard_canaries_required"])
         self.assertFalse(result["windows_canary_required"])
@@ -110,6 +110,8 @@ class ImpactClassifierTests(unittest.TestCase):
         for path in (
             ".github/workflows/ci-full.yml",
             "scripts/check-operation-contract.py",
+            "scripts/check-r2-type-memory-boundary.py",
+            "scripts/tests/test_check_r2_type_memory_boundary.py",
             "tests/architecture/program-artifact/v1.json",
         ):
             with self.subTest(path=path):
@@ -118,9 +120,19 @@ class ImpactClassifierTests(unittest.TestCase):
                 self.assertTrue(result["full_validation_required"])
                 self.assertTrue(result["cross_cutting_standard_suite_required"])
                 self.assertTrue(result["browser_canary_required"])
+        for path in (
+            "README.md",
+            "docs/design/type-memory-boundary.md",
+            "docs/design/ROADMAP.mec",
+            "docs/design/v0.4-endgame.md",
+        ):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertIn("architecture-contracts", result["matched_owners"])
+                self.assertTrue(result["full_validation_required"])
 
     def test_docs_only_change_can_still_request_full_validation(self):
-        result = self.classify(["README.md"], ["ci:full"])
+        result = self.classify(["docs/distributions.md"], ["ci:full"])
         self.assertTrue(result["docs_only"])
         self.assertTrue(result["full_validation_required"])
         self.assertFalse(result["static_contracts_required"])
