@@ -138,22 +138,43 @@ impl ResolvedType {
         schema
             .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
             .map_err(TypeResolutionError::semantic)?;
+        let declarations = schema
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(index, parameter)| DimensionParameterDeclaration {
+                id: DimensionParameterId::new(index as u32),
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: parameter.lifetime(),
+                lower_bound: parameter.lower_bound().clone(),
+                upper_bound: parameter.upper_bound().cloned(),
+            })
+            .collect::<Vec<_>>();
+        Self::from_schema_body(schema.body(), &declarations)
+    }
+
+    /// Resolves a semantic schema body with an already validated dimension
+    /// environment. Boundary code uses this to plan a target before creating
+    /// its physical cell.
+    pub fn from_schema_body(
+        body: &SchemaBody,
+        dimension_parameters: &[DimensionParameterDeclaration],
+    ) -> Result<Self, TypeResolutionError> {
         let mut builder = SchemaKindBuilder {
-            dimensions: schema
-                .dimension_parameters()
+            dimensions: dimension_parameters
                 .iter()
                 .enumerate()
                 .map(|(index, parameter)| DimensionParameterDeclaration {
                     id: DimensionParameterId::new(index as u32),
                     origin: DimensionParameterOrigin::Inferred,
-                    lifetime: parameter.lifetime(),
-                    lower_bound: parameter.lower_bound().clone(),
-                    upper_bound: parameter.upper_bound().cloned(),
+                    lifetime: parameter.lifetime,
+                    lower_bound: parameter.lower_bound.clone(),
+                    upper_bound: parameter.upper_bound.clone(),
                 })
                 .collect(),
             evidence: Vec::new(),
         };
-        let kind = builder.kind(schema.body())?;
+        let kind = builder.kind(body)?;
         Self::new_with_evidence(
             kind,
             builder.dimensions.into_boxed_slice(),

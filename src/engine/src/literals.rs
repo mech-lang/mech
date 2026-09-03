@@ -1,4 +1,6 @@
 use crate::*;
+#[cfg(feature = "convert")]
+use mech_core::snapshot::{Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft};
 #[cfg(feature = "kind_annotation")]
 use mech_core::snapshot::{ReifiedKind, ReifiedType, ReifiedTypeDraft};
 #[cfg(any(feature = "kind_annotation", feature = "convert"))]
@@ -216,148 +218,518 @@ pub fn typed_literal(
 ) -> MResult<ValueCell> {
     let value = literal(ltrl, p)?.cell().cloned()?;
     let target = crate::structures::schema_body_from_kind(&knd_attn.kind, p)?;
-    convert_literal_cell(value, &target)
+    convert_literal_cell(value, &target).map_err(|error| error.with_tokens(knd_attn.tokens()))
 }
 
 #[cfg(feature = "convert")]
 pub(crate) fn convert_literal_cell(value: ValueCell, target: &SchemaBody) -> MResult<ValueCell> {
-    if value.closed_schema_body()? == *target {
-        return Ok(value);
-    }
-    if let SchemaBody::Matrix {
-        element: target_element,
-        dimensions: target_dimensions,
-    } = target
-        && let Some(elements) = value.matrix_elements()?
-    {
-        let shape = value.shape().parameter_values().to_vec();
-        if !target_dimensions.is_empty()
-            && (target_dimensions.len() != shape.len()
-                || target_dimensions
-                    .iter()
-                    .zip(&shape)
-                    .any(|(expected, actual)| {
-                        matches!(expected, DimensionExpr::Constant(expected) if expected != actual)
-                    }))
-        {
-            return Err(MechError::new(
-                CanonicalKindConversionUnsupported {
-                    source: value.closed_schema_body()?,
-                    target: target.clone(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let converted = elements
-            .into_iter()
-            .map(|element| convert_literal_cell(element, target_element))
-            .collect::<MResult<Vec<_>>>()?;
-        let [rows, columns] = shape.as_slice() else {
-            return Err(MechError::new(
-                CanonicalKindConversionUnsupported {
-                    source: value.closed_schema_body()?,
-                    target: target.clone(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        };
-        return ValueCell::dynamic_matrix_from_cells(
-            usize::try_from(*rows).map_err(|_| {
-                MechError::new(ExpectedNumericForKindSizeError, None).with_compiler_loc()
-            })?,
-            usize::try_from(*columns).map_err(|_| {
-                MechError::new(ExpectedNumericForKindSizeError, None).with_compiler_loc()
-            })?,
-            &converted,
-        );
-    }
-    let snapshot = value.snapshot()?;
-    let numeric = match snapshot.data() {
-        ValueData::U8(value) => Some(*value as f64),
-        ValueData::U16(value) => Some(*value as f64),
-        ValueData::U32(value) => Some(*value as f64),
-        ValueData::U64(value) => Some(*value as f64),
-        ValueData::U128(value) => Some(*value as f64),
-        ValueData::I8(value) => Some(*value as f64),
-        ValueData::I16(value) => Some(*value as f64),
-        ValueData::I32(value) => Some(*value as f64),
-        ValueData::I64(value) => Some(*value as f64),
-        ValueData::I128(value) => Some(*value as f64),
-        ValueData::F32(value) => Some(value.to_f32() as f64),
-        ValueData::F64(value) => Some(value.to_f64()),
-        _ => None,
-    };
-    if let (Some(number), SchemaBody::String) = (numeric, target) {
-        return ValueCell::from_exact(number.to_string());
-    }
-    let converted = match (numeric, target) {
-        #[cfg(feature = "u8")]
-        (Some(number), SchemaBody::UnsignedInteger(IntegerWidth::W8)) => {
-            ValueCell::from_exact(number as u8)
-        }
-        #[cfg(feature = "u16")]
-        (Some(number), SchemaBody::UnsignedInteger(IntegerWidth::W16)) => {
-            ValueCell::from_exact(number as u16)
-        }
-        #[cfg(feature = "u32")]
-        (Some(number), SchemaBody::UnsignedInteger(IntegerWidth::W32)) => {
-            ValueCell::from_exact(number as u32)
-        }
-        #[cfg(feature = "u64")]
-        (Some(number), SchemaBody::UnsignedInteger(IntegerWidth::W64)) => {
-            ValueCell::from_exact(number as u64)
-        }
-        #[cfg(feature = "u128")]
-        (Some(number), SchemaBody::UnsignedInteger(IntegerWidth::W128)) => {
-            ValueCell::from_exact(number as u128)
-        }
-        #[cfg(feature = "i8")]
-        (Some(number), SchemaBody::SignedInteger(IntegerWidth::W8)) => {
-            ValueCell::from_exact(number as i8)
-        }
-        #[cfg(feature = "i16")]
-        (Some(number), SchemaBody::SignedInteger(IntegerWidth::W16)) => {
-            ValueCell::from_exact(number as i16)
-        }
-        #[cfg(feature = "i32")]
-        (Some(number), SchemaBody::SignedInteger(IntegerWidth::W32)) => {
-            ValueCell::from_exact(number as i32)
-        }
-        #[cfg(feature = "i64")]
-        (Some(number), SchemaBody::SignedInteger(IntegerWidth::W64)) => {
-            ValueCell::from_exact(number as i64)
-        }
-        #[cfg(feature = "i128")]
-        (Some(number), SchemaBody::SignedInteger(IntegerWidth::W128)) => {
-            ValueCell::from_exact(number as i128)
-        }
-        #[cfg(feature = "f32")]
-        (Some(number), SchemaBody::FloatingPoint(FloatWidth::W32)) => {
-            ValueCell::from_exact(number as f32)
-        }
-        #[cfg(feature = "f64")]
-        (Some(number), SchemaBody::FloatingPoint(FloatWidth::W64)) => ValueCell::from_exact(number),
-        _ => Err(MechError::new(
-            CanonicalKindConversionUnsupported {
-                source: value.closed_schema_body()?,
-                target: target.clone(),
+    let source_type = value.resolved_type()?;
+    let semantic_target =
+        materialize_declared_conversion_semantic_shape(source_type.kind(), target);
+    let target = materialize_declared_conversion_shape(&value.closed_schema_body()?, target);
+    let target_type =
+        ResolvedType::from_schema_body(&semantic_target, source_type.dimension_parameters())
+            .map_err(MechError::from)?;
+    let plan = plan_explicit_cast(&source_type, &target_type).map_err(|error| {
+        MechError::from(error.with_origin(TypeConstraintOrigin::new("convert/kind", None)))
+    })?;
+    execute_conversion_plan(&value, &target, &plan)
+}
+
+/// A source annotation such as `[string]` declares an element conversion while
+/// intentionally leaving the matrix extents open. Close those extents from the
+/// source value before constructing the conversion plan so the plan remains the
+/// sole execution authority and no runtime factory probing is required.
+#[cfg(feature = "convert")]
+fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBody) -> SchemaBody {
+    match (source, target) {
+        (
+            SchemaBody::Matrix {
+                element: source_element,
+                dimensions: source_dimensions,
             },
-            None,
+            SchemaBody::Matrix {
+                element: target_element,
+                dimensions: target_dimensions,
+            },
+        ) => SchemaBody::Matrix {
+            element: Box::new(materialize_declared_conversion_shape(
+                source_element,
+                target_element,
+            )),
+            dimensions: if target_dimensions.is_empty() {
+                source_dimensions.clone()
+            } else {
+                target_dimensions.clone()
+            },
+        },
+        (SchemaBody::Option(source), SchemaBody::Option(target)) => SchemaBody::Option(Box::new(
+            materialize_declared_conversion_shape(source, target),
+        )),
+        _ => target.clone(),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn materialize_declared_conversion_semantic_shape(
+    source: &KindExpr,
+    target: &SchemaBody,
+) -> SchemaBody {
+    match (source, target) {
+        (
+            KindExpr::Matrix {
+                element: source_element,
+                dimensions: source_dimensions,
+            },
+            SchemaBody::Matrix {
+                element: target_element,
+                dimensions: target_dimensions,
+            },
+        ) => SchemaBody::Matrix {
+            element: Box::new(materialize_declared_conversion_semantic_shape(
+                source_element,
+                target_element,
+            )),
+            dimensions: if target_dimensions.is_empty() {
+                source_dimensions.clone()
+            } else {
+                target_dimensions.clone()
+            },
+        },
+        (KindExpr::Option(source), SchemaBody::Option(target)) => SchemaBody::Option(Box::new(
+            materialize_declared_conversion_semantic_shape(source, target),
+        )),
+        _ => target.clone(),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn execute_conversion_plan(
+    value: &ValueCell,
+    target: &SchemaBody,
+    plan: &ConversionPlan,
+) -> MResult<ValueCell> {
+    let live_type = value.resolved_type()?;
+    if !exact_type_equal(&live_type, &plan.source) {
+        return Err(conversion_execution_error(
+            ConversionExecutionError::ConversionPlanSourceMismatch,
+        ));
+    }
+    if matches!(plan.step, ConversionStep::Identity) {
+        return Ok(value.clone());
+    }
+    let draft = value.snapshot()?.canonical_data_draft().map_err(|error| {
+        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+    })?;
+    let converted =
+        execute_conversion_draft(draft, &plan.step).map_err(conversion_execution_error)?;
+    ValueCell::from_schema_data(target.clone(), converted)?.with_resolved_output_type(&plan.target)
+}
+
+#[cfg(feature = "convert")]
+fn execute_conversion_draft(
+    draft: ValueDataDraft,
+    step: &ConversionStep,
+) -> Result<ValueDataDraft, ConversionExecutionError> {
+    match step {
+        ConversionStep::Identity => Ok(draft),
+        ConversionStep::Scalar(ScalarConversion::Builtin { source, target, .. }) => {
+            execute_scalar_conversion(draft, *source, *target)
+        }
+        ConversionStep::MatrixElements(element_plan) => {
+            let ValueDataDraft::Matrix(elements) = draft else {
+                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+            };
+            let converted = elements
+                .into_vec()
+                .into_iter()
+                .map(|element| execute_conversion_draft(element, &element_plan.step))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(ValueDataDraft::Matrix(converted.into_boxed_slice()))
+        }
+        ConversionStep::OptionPayload(payload_plan) => {
+            let ValueDataDraft::Option(option) = draft else {
+                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+            };
+            let value = option
+                .value
+                .map(|value| execute_conversion_draft(*value, &payload_plan.step).map(Box::new))
+                .transpose()?;
+            Ok(ValueDataDraft::Option(OptionDraft {
+                present: option.present,
+                value,
+            }))
+        }
+    }
+}
+
+#[cfg(feature = "convert")]
+#[derive(Clone, Copy)]
+enum RuntimeNumber {
+    Unsigned(u128),
+    Signed(i128),
+    F32(f32),
+    F64(f64),
+    C32(f32, f32),
+    C64(f64, f64),
+    Rational(i64, u64),
+}
+
+#[cfg(feature = "convert")]
+fn runtime_number(
+    draft: ValueDataDraft,
+    expected: BuiltinScalarKind,
+) -> Result<RuntimeNumber, ConversionExecutionError> {
+    let (number, actual) = match draft {
+        ValueDataDraft::U8(value) => (RuntimeNumber::Unsigned(value.into()), BuiltinScalarKind::U8),
+        ValueDataDraft::U16(value) => (
+            RuntimeNumber::Unsigned(value.into()),
+            BuiltinScalarKind::U16,
+        ),
+        ValueDataDraft::U32(value) => (
+            RuntimeNumber::Unsigned(value.into()),
+            BuiltinScalarKind::U32,
+        ),
+        ValueDataDraft::U64(value) => (
+            RuntimeNumber::Unsigned(value.into()),
+            BuiltinScalarKind::U64,
+        ),
+        ValueDataDraft::U128(value) => (RuntimeNumber::Unsigned(value), BuiltinScalarKind::U128),
+        ValueDataDraft::I8(value) => (RuntimeNumber::Signed(value.into()), BuiltinScalarKind::I8),
+        ValueDataDraft::I16(value) => (RuntimeNumber::Signed(value.into()), BuiltinScalarKind::I16),
+        ValueDataDraft::I32(value) => (RuntimeNumber::Signed(value.into()), BuiltinScalarKind::I32),
+        ValueDataDraft::I64(value) => (RuntimeNumber::Signed(value.into()), BuiltinScalarKind::I64),
+        ValueDataDraft::I128(value) => (RuntimeNumber::Signed(value), BuiltinScalarKind::I128),
+        ValueDataDraft::F32(value) => (RuntimeNumber::F32(value.to_f32()), BuiltinScalarKind::F32),
+        ValueDataDraft::F64(value) => (RuntimeNumber::F64(value.to_f64()), BuiltinScalarKind::F64),
+        ValueDataDraft::Complex32(value) => (
+            RuntimeNumber::C32(value.real().to_f32(), value.imaginary().to_f32()),
+            BuiltinScalarKind::C32,
+        ),
+        ValueDataDraft::Complex64(value) => (
+            RuntimeNumber::C64(value.real().to_f64(), value.imaginary().to_f64()),
+            BuiltinScalarKind::C64,
+        ),
+        ValueDataDraft::Rational64 {
+            numerator,
+            denominator,
+        } => (
+            RuntimeNumber::Rational(numerator, denominator),
+            BuiltinScalarKind::R64,
+        ),
+        _ => return Err(ConversionExecutionError::ConversionPlanSourceMismatch),
+    };
+    if actual != expected {
+        return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+    }
+    Ok(number)
+}
+
+#[cfg(feature = "convert")]
+fn execute_scalar_conversion(
+    draft: ValueDataDraft,
+    source: BuiltinScalarKind,
+    target: BuiltinScalarKind,
+) -> Result<ValueDataDraft, ConversionExecutionError> {
+    if source == BuiltinScalarKind::Bool {
+        let ValueDataDraft::Bool(value) = draft else {
+            return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+        };
+        return match target {
+            BuiltinScalarKind::String => Ok(ValueDataDraft::String(value.to_string())),
+            _ => Err(ConversionExecutionError::ConversionExecutionUnsupported),
+        };
+    }
+    let number = runtime_number(draft, source)?;
+    use BuiltinScalarKind as K;
+    match target {
+        K::U8 => integer_target(number, false, 8).map(|value| ValueDataDraft::U8(value as u8)),
+        K::U16 => integer_target(number, false, 16).map(|value| ValueDataDraft::U16(value as u16)),
+        K::U32 => integer_target(number, false, 32).map(|value| ValueDataDraft::U32(value as u32)),
+        K::U64 => integer_target(number, false, 64).map(|value| ValueDataDraft::U64(value as u64)),
+        K::U128 => {
+            integer_target(number, false, 128).map(|value| ValueDataDraft::U128(value as u128))
+        }
+        K::I8 => integer_target(number, true, 8).map(|value| ValueDataDraft::I8(value as i8)),
+        K::I16 => integer_target(number, true, 16).map(|value| ValueDataDraft::I16(value as i16)),
+        K::I32 => integer_target(number, true, 32).map(|value| ValueDataDraft::I32(value as i32)),
+        K::I64 => integer_target(number, true, 64).map(|value| ValueDataDraft::I64(value as i64)),
+        K::I128 => integer_target(number, true, 128).map(|value| ValueDataDraft::I128(value)),
+        K::F32 => number_to_f32(number).map(|value| ValueDataDraft::F32(F32Bits::from_f32(value))),
+        K::F64 => number_to_f64(number).map(|value| ValueDataDraft::F64(F64Bits::from_f64(value))),
+        K::C32 => number_to_complex32(number).map(|(real, imaginary)| {
+            ValueDataDraft::Complex32(Complex32Bits::new(
+                F32Bits::from_f32(real),
+                F32Bits::from_f32(imaginary),
+            ))
+        }),
+        K::C64 => number_to_complex64(number).map(|(real, imaginary)| {
+            ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(real),
+                F64Bits::from_f64(imaginary),
+            ))
+        }),
+        K::R64 => {
+            number_to_rational(number).map(|(numerator, denominator)| ValueDataDraft::Rational64 {
+                numerator,
+                denominator,
+            })
+        }
+        K::String => Ok(ValueDataDraft::String(number_display(number))),
+        K::Bool => Err(ConversionExecutionError::ConversionExecutionUnsupported),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn real_number(number: RuntimeNumber) -> Result<RuntimeNumber, ConversionExecutionError> {
+    match number {
+        RuntimeNumber::C32(real, imaginary) if imaginary == 0.0 => Ok(RuntimeNumber::F32(real)),
+        RuntimeNumber::C64(real, imaginary) if imaginary == 0.0 => Ok(RuntimeNumber::F64(real)),
+        RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => {
+            Err(ConversionExecutionError::ConversionImaginaryPartNonZero)
+        }
+        number => Ok(number),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn integer_target(
+    number: RuntimeNumber,
+    signed: bool,
+    bits: u16,
+) -> Result<i128, ConversionExecutionError> {
+    match real_number(number)? {
+        RuntimeNumber::Unsigned(value) => {
+            if signed {
+                let maximum = if bits == 128 {
+                    i128::MAX as u128
+                } else {
+                    (1_u128 << (bits - 1)) - 1
+                };
+                if value > maximum {
+                    return Err(ConversionExecutionError::ConversionOutOfRange);
+                }
+                Ok(value as i128)
+            } else {
+                let maximum = if bits == 128 {
+                    u128::MAX
+                } else {
+                    (1_u128 << bits) - 1
+                };
+                if value > maximum || value > i128::MAX as u128 {
+                    return if bits == 128 {
+                        Ok(value as i128)
+                    } else {
+                        Err(ConversionExecutionError::ConversionOutOfRange)
+                    };
+                }
+                Ok(value as i128)
+            }
+        }
+        RuntimeNumber::Signed(value) => {
+            let (minimum, maximum) = if signed {
+                if bits == 128 {
+                    (i128::MIN, i128::MAX)
+                } else {
+                    (-(1_i128 << (bits - 1)), (1_i128 << (bits - 1)) - 1)
+                }
+            } else {
+                (
+                    0,
+                    if bits == 128 {
+                        i128::MAX
+                    } else {
+                        (1_i128 << bits) - 1
+                    },
+                )
+            };
+            if value < minimum || value > maximum {
+                Err(ConversionExecutionError::ConversionOutOfRange)
+            } else {
+                Ok(value)
+            }
+        }
+        RuntimeNumber::F32(value) => float_to_integer(value as f64, signed, bits),
+        RuntimeNumber::F64(value) => float_to_integer(value, signed, bits),
+        RuntimeNumber::Rational(numerator, denominator) => {
+            let truncated = i128::from(numerator) / i128::from(denominator);
+            integer_target(RuntimeNumber::Signed(truncated), signed, bits)
+        }
+        RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => unreachable!(),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn float_to_integer(value: f64, signed: bool, bits: u16) -> Result<i128, ConversionExecutionError> {
+    if !value.is_finite() {
+        return Err(ConversionExecutionError::ConversionNonFinite);
+    }
+    let value = value.trunc();
+    let (minimum, maximum_exclusive) = if signed {
+        (
+            -(2.0_f64).powi(i32::from(bits - 1)),
+            (2.0_f64).powi(i32::from(bits - 1)),
         )
-        .with_compiler_loc()),
-    }?;
-    Ok(converted)
+    } else {
+        (0.0, (2.0_f64).powi(i32::from(bits)))
+    };
+    if value < minimum || value >= maximum_exclusive {
+        return Err(ConversionExecutionError::ConversionOutOfRange);
+    }
+    Ok(if signed {
+        value as i128
+    } else {
+        (value as u128) as i128
+    })
+}
+
+#[cfg(feature = "convert")]
+fn number_to_f32(number: RuntimeNumber) -> Result<f32, ConversionExecutionError> {
+    match real_number(number)? {
+        RuntimeNumber::Unsigned(value) => finite_f32_from_finite(value as f32),
+        RuntimeNumber::Signed(value) => finite_f32_from_finite(value as f32),
+        RuntimeNumber::F32(value) => Ok(value),
+        RuntimeNumber::F64(value) => {
+            let narrowed = value as f32;
+            if value.is_finite() && narrowed.is_infinite() {
+                Err(ConversionExecutionError::ConversionOutOfRange)
+            } else {
+                Ok(narrowed)
+            }
+        }
+        RuntimeNumber::Rational(numerator, denominator) => {
+            finite_f32_from_finite(numerator as f32 / denominator as f32)
+        }
+        RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => unreachable!(),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn number_to_f64(number: RuntimeNumber) -> Result<f64, ConversionExecutionError> {
+    match real_number(number)? {
+        RuntimeNumber::Unsigned(value) => finite_f64_from_finite(value as f64),
+        RuntimeNumber::Signed(value) => finite_f64_from_finite(value as f64),
+        RuntimeNumber::F32(value) => Ok(f64::from(value)),
+        RuntimeNumber::F64(value) => Ok(value),
+        RuntimeNumber::Rational(numerator, denominator) => {
+            finite_f64_from_finite(numerator as f64 / denominator as f64)
+        }
+        RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => unreachable!(),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn finite_f32_from_finite(value: f32) -> Result<f32, ConversionExecutionError> {
+    if value.is_infinite() {
+        Err(ConversionExecutionError::ConversionOutOfRange)
+    } else {
+        Ok(value)
+    }
+}
+
+#[cfg(feature = "convert")]
+fn finite_f64_from_finite(value: f64) -> Result<f64, ConversionExecutionError> {
+    if value.is_infinite() {
+        Err(ConversionExecutionError::ConversionOutOfRange)
+    } else {
+        Ok(value)
+    }
+}
+
+#[cfg(feature = "convert")]
+fn number_to_complex32(number: RuntimeNumber) -> Result<(f32, f32), ConversionExecutionError> {
+    match number {
+        RuntimeNumber::C32(real, imaginary) => Ok((real, imaginary)),
+        RuntimeNumber::C64(real, imaginary) => {
+            let narrowed_real = real as f32;
+            let narrowed_imaginary = imaginary as f32;
+            if (real.is_finite() && narrowed_real.is_infinite())
+                || (imaginary.is_finite() && narrowed_imaginary.is_infinite())
+            {
+                Err(ConversionExecutionError::ConversionOutOfRange)
+            } else {
+                Ok((narrowed_real, narrowed_imaginary))
+            }
+        }
+        number => number_to_f32(number).map(|real| (real, 0.0)),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn number_to_complex64(number: RuntimeNumber) -> Result<(f64, f64), ConversionExecutionError> {
+    match number {
+        RuntimeNumber::C32(real, imaginary) => Ok((f64::from(real), f64::from(imaginary))),
+        RuntimeNumber::C64(real, imaginary) => Ok((real, imaginary)),
+        number => number_to_f64(number).map(|real| (real, 0.0)),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn number_to_rational(number: RuntimeNumber) -> Result<(i64, u64), ConversionExecutionError> {
+    match real_number(number)? {
+        RuntimeNumber::Unsigned(value) => i64::try_from(value)
+            .map(|value| (value, 1))
+            .map_err(|_| ConversionExecutionError::ConversionOutOfRange),
+        RuntimeNumber::Signed(value) => i64::try_from(value)
+            .map(|value| (value, 1))
+            .map_err(|_| ConversionExecutionError::ConversionOutOfRange),
+        RuntimeNumber::Rational(numerator, denominator) => Ok((numerator, denominator)),
+        RuntimeNumber::F32(_) | RuntimeNumber::F64(_) => {
+            Err(ConversionExecutionError::ConversionExecutionUnsupported)
+        }
+        RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => unreachable!(),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn number_display(number: RuntimeNumber) -> String {
+    match number {
+        RuntimeNumber::Unsigned(value) => value.to_string(),
+        RuntimeNumber::Signed(value) => value.to_string(),
+        RuntimeNumber::F32(value) => value.to_string(),
+        RuntimeNumber::F64(value) => value.to_string(),
+        RuntimeNumber::C32(real, imaginary) => format!("{real}+{imaginary}i"),
+        RuntimeNumber::C64(real, imaginary) => format!("{real}+{imaginary}i"),
+        RuntimeNumber::Rational(numerator, denominator) => format!("{numerator}/{denominator}"),
+    }
+}
+
+#[cfg(feature = "convert")]
+fn conversion_execution_error(error: ConversionExecutionError) -> MechError {
+    MechError::new(error, None).with_compiler_loc()
 }
 
 #[cfg(feature = "convert")]
 #[derive(Debug)]
-struct CanonicalKindConversion {
+struct PlannedTypeConversion {
     source: ValueCell,
     output: ValueCell,
     target: SchemaBody,
+    plan: ConversionPlan,
 }
+
+#[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+static PURE_TYPE_CONVERSION_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[cfg(feature = "convert")]
 fn schema_body_from_reified_kind(
@@ -392,25 +764,11 @@ fn schema_body_from_reified_kind(
                     .get(id)
                     .and_then(|path| path.segments().last())
                     .ok_or_else(aggregate_error)?;
-                match name.as_str() {
-                    "u8" => SchemaBody::UnsignedInteger(IntegerWidth::W8),
-                    "u16" => SchemaBody::UnsignedInteger(IntegerWidth::W16),
-                    "u32" => SchemaBody::UnsignedInteger(IntegerWidth::W32),
-                    "u64" => SchemaBody::UnsignedInteger(IntegerWidth::W64),
-                    "u128" => SchemaBody::UnsignedInteger(IntegerWidth::W128),
-                    "i8" => SchemaBody::SignedInteger(IntegerWidth::W8),
-                    "i16" => SchemaBody::SignedInteger(IntegerWidth::W16),
-                    "i32" => SchemaBody::SignedInteger(IntegerWidth::W32),
-                    "i64" => SchemaBody::SignedInteger(IntegerWidth::W64),
-                    "i128" => SchemaBody::SignedInteger(IntegerWidth::W128),
-                    "f32" => SchemaBody::FloatingPoint(FloatWidth::W32),
-                    "f64" => SchemaBody::FloatingPoint(FloatWidth::W64),
-                    "c64" => SchemaBody::Complex(FloatWidth::W64),
-                    "r64" => SchemaBody::Rational64,
-                    "string" => SchemaBody::String,
-                    "bool" => SchemaBody::Bool,
-                    _ => return Err(aggregate_error()),
-                }
+                BuiltinScalarKind::ALL
+                    .into_iter()
+                    .find(|kind| kind.canonical_name() == name)
+                    .map(BuiltinScalarKind::schema_body)
+                    .ok_or_else(aggregate_error)?
             }
             KindExpr::Id => SchemaBody::Id,
             KindExpr::Index => SchemaBody::Index,
@@ -549,13 +907,24 @@ impl CanonicalFunctionSpecializer for ConvertKind {
                 .with_compiler_loc());
             }
         };
-        let output = convert_literal_cell(source.clone(), &target)?;
+        let source_type = source.resolved_type()?;
+        let semantic_target =
+            materialize_declared_conversion_semantic_shape(source_type.kind(), &target);
+        let target = materialize_declared_conversion_shape(&source.closed_schema_body()?, &target);
+        let target_type =
+            ResolvedType::from_schema_body(&semantic_target, source_type.dimension_parameters())
+                .map_err(MechError::from)?;
+        let plan = plan_explicit_cast(&source_type, &target_type).map_err(|error| {
+            MechError::from(error.with_origin(TypeConstraintOrigin::new("convert/kind", None)))
+        })?;
+        let output = execute_conversion_plan(&source, &target, &plan)?;
         let bound = FunctionInvocation::binary(output.clone(), source.clone(), target_cell);
         Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(CanonicalKindConversion {
+            Box::new(PlannedTypeConversion {
                 source,
                 output,
                 target,
+                plan,
             }),
             bound,
         )))
@@ -563,9 +932,9 @@ impl CanonicalFunctionSpecializer for ConvertKind {
 }
 
 #[cfg(feature = "convert")]
-impl MechFunctionImpl for CanonicalKindConversion {
+impl MechFunctionImpl for PlannedTypeConversion {
     fn solve_result(&self) -> MResult<()> {
-        let replacement = convert_literal_cell(self.source.clone(), &self.target)?;
+        let replacement = execute_conversion_plan(&self.source, &self.target, &self.plan)?;
         self.output.replace(&replacement.snapshot()?)
     }
 
@@ -573,21 +942,35 @@ impl MechFunctionImpl for CanonicalKindConversion {
         Some("convert/kind")
     }
 
+    #[cfg(feature = "semantic-compiler")]
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_TYPE_CONVERSION_CONTRACT)
+    }
+
     fn to_string(&self) -> String {
-        "CanonicalKindConversion".to_owned()
+        "PlannedTypeConversion".to_owned()
     }
 }
 
 #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
-impl MechFunctionCompiler for CanonicalKindConversion {
-    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        Err(MechError::new(
-            GenericError {
-                msg: "canonical kind conversion cannot yet be emitted as bytecode".to_owned(),
-            },
-            None,
-        )
-        .with_compiler_loc())
+impl MechFunctionCompiler for PlannedTypeConversion {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.source.clone(), self.output.clone()]
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let destination = compile_runtime_produced_value_cell_register_with_seed(
+            &self.output,
+            &self.output.snapshot()?,
+            context,
+        )?;
+        let source = compile_value_cell_register(&self.source, context)?;
+        let function = context.function_id("convert/kind")?;
+        // The resolved target is carried by the destination's canonical schema.
+        // ConversionPlan and reified compiler metadata remain in-memory only;
+        // bytecode-v1 therefore needs no reified-type constant or wire change.
+        context.emit_unop(function, destination, source);
+        Ok(destination)
     }
 }
 
@@ -599,38 +982,28 @@ pub(crate) fn convert_cell_reactively(
     target: SchemaBody,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<ValueCell> {
+    let source_type = value.resolved_type()?;
+    let semantic_target =
+        materialize_declared_conversion_semantic_shape(source_type.kind(), &target);
+    let target = materialize_declared_conversion_shape(&value.closed_schema_body()?, &target);
     if value.closed_schema_body()? == target {
         return Ok(value);
     }
-    let output = convert_literal_cell(value.clone(), &target)?;
+    let target_type =
+        ResolvedType::from_schema_body(&semantic_target, source_type.dimension_parameters())
+            .map_err(MechError::from)?;
+    let plan = plan_explicit_cast(&source_type, &target_type).map_err(MechError::from)?;
+    let output = execute_conversion_plan(&value, &target, &plan)?;
     interpreter.plan().register_instance(FunctionInstance::new(
-        Box::new(CanonicalKindConversion {
+        Box::new(PlannedTypeConversion {
             source: value.clone(),
             output: output.clone(),
             target,
+            plan,
         }),
         FunctionInvocation::unary(output.clone(), value),
     ))?;
     Ok(output)
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CanonicalKindConversionUnsupported {
-    pub source: SchemaBody,
-    pub target: SchemaBody,
-}
-
-impl MechErrorKind for CanonicalKindConversionUnsupported {
-    fn name(&self) -> &str {
-        "CanonicalKindConversionUnsupported"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "canonical conversion from {:?} to {:?} is unsupported",
-            self.source, self.target
-        )
-    }
 }
 
 #[cfg(feature = "atom")]
@@ -774,6 +1147,308 @@ mod canonical_conversion_tests {
         assert!(matches!(
             specialized.output().snapshot().unwrap().data(),
             ValueData::U8(7)
+        ));
+    }
+
+    #[cfg(all(feature = "bool", feature = "string"))]
+    #[test]
+    fn bool_to_string_uses_the_checked_explicit_plan() {
+        let output =
+            convert_literal_cell(ValueCell::from_exact(true).unwrap(), &SchemaBody::String)
+                .unwrap();
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::String(value) if value.as_ref() == "true"
+        ));
+    }
+
+    #[test]
+    fn float_to_integer_truncates_and_range_checks() {
+        let output = convert_literal_cell(
+            ValueCell::from_exact(-12.9_f64).unwrap(),
+            &SchemaBody::SignedInteger(IntegerWidth::W32),
+        )
+        .unwrap();
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::I32(-12)
+        ));
+
+        let error = convert_literal_cell(
+            ValueCell::from_exact(f64::INFINITY).unwrap(),
+            &SchemaBody::SignedInteger(IntegerWidth::W32),
+        )
+        .unwrap_err();
+        assert!(error.kind_message().contains("finite"));
+    }
+
+    #[test]
+    fn integer_conversion_never_passes_through_f64() {
+        let exact = 9_007_199_254_740_993_u64;
+        let output = convert_literal_cell(
+            ValueCell::from_exact(exact).unwrap(),
+            &SchemaBody::UnsignedInteger(IntegerWidth::W128),
+        )
+        .unwrap();
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::U128(value) if *value == u128::from(exact)
+        ));
+    }
+
+    #[test]
+    fn nonfinite_float_values_survive_lossless_float_and_complex_conversions() {
+        for value in [f32::INFINITY, f32::NEG_INFINITY, f32::NAN] {
+            let widened = execute_scalar_conversion(
+                ValueDataDraft::F32(F32Bits::from_f32(value)),
+                BuiltinScalarKind::F32,
+                BuiltinScalarKind::F64,
+            )
+            .unwrap();
+            let ValueDataDraft::F64(widened) = widened else {
+                panic!("f32 to f64 must produce f64")
+            };
+            assert_eq!(widened.to_f64().is_nan(), value.is_nan());
+            assert_eq!(widened.to_f64().is_infinite(), value.is_infinite());
+
+            let complex = execute_scalar_conversion(
+                ValueDataDraft::F32(F32Bits::from_f32(value)),
+                BuiltinScalarKind::F32,
+                BuiltinScalarKind::C32,
+            )
+            .unwrap();
+            let ValueDataDraft::Complex32(complex) = complex else {
+                panic!("f32 to c32 must produce c32")
+            };
+            assert_eq!(complex.real().to_f32().is_nan(), value.is_nan());
+            assert_eq!(complex.real().to_f32().is_infinite(), value.is_infinite());
+            assert_eq!(complex.imaginary().to_f32(), 0.0);
+        }
+    }
+
+    #[test]
+    fn finite_float_narrowing_rejects_only_overflow() {
+        assert!(matches!(
+            execute_scalar_conversion(
+                ValueDataDraft::F64(F64Bits::from_f64(f64::MAX)),
+                BuiltinScalarKind::F64,
+                BuiltinScalarKind::F32,
+            ),
+            Err(ConversionExecutionError::ConversionOutOfRange)
+        ));
+        for value in [f64::INFINITY, f64::NEG_INFINITY, f64::NAN, -0.0] {
+            let converted = execute_scalar_conversion(
+                ValueDataDraft::F64(F64Bits::from_f64(value)),
+                BuiltinScalarKind::F64,
+                BuiltinScalarKind::F32,
+            )
+            .unwrap();
+            let ValueDataDraft::F32(converted) = converted else {
+                panic!("f64 to f32 must produce f32")
+            };
+            assert_eq!(converted.to_f32().is_nan(), value.is_nan());
+            assert_eq!(converted.to_f32().is_infinite(), value.is_infinite());
+            if value == 0.0 {
+                assert!(converted.to_f32().is_sign_negative());
+            }
+        }
+    }
+
+    #[test]
+    fn integer_and_float_cast_boundaries_never_wrap() {
+        for (draft, source, target) in [
+            (
+                ValueDataDraft::I16(-1),
+                BuiltinScalarKind::I16,
+                BuiltinScalarKind::U8,
+            ),
+            (
+                ValueDataDraft::I16(256),
+                BuiltinScalarKind::I16,
+                BuiltinScalarKind::U8,
+            ),
+            (
+                ValueDataDraft::U128(u128::MAX),
+                BuiltinScalarKind::U128,
+                BuiltinScalarKind::I128,
+            ),
+        ] {
+            assert!(matches!(
+                execute_scalar_conversion(draft, source, target),
+                Err(ConversionExecutionError::ConversionOutOfRange)
+            ));
+        }
+
+        for (value, expected) in [(12.9, 12), (-12.9, -12), (-0.0, 0)] {
+            let converted = execute_scalar_conversion(
+                ValueDataDraft::F64(F64Bits::from_f64(value)),
+                BuiltinScalarKind::F64,
+                BuiltinScalarKind::I32,
+            )
+            .unwrap();
+            assert!(matches!(converted, ValueDataDraft::I32(actual) if actual == expected));
+        }
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert!(matches!(
+                execute_scalar_conversion(
+                    ValueDataDraft::F64(F64Bits::from_f64(value)),
+                    BuiltinScalarKind::F64,
+                    BuiltinScalarKind::I32,
+                ),
+                Err(ConversionExecutionError::ConversionNonFinite)
+            ));
+        }
+    }
+
+    #[cfg(feature = "complex")]
+    #[test]
+    fn complex_to_real_requires_an_exact_zero_imaginary_part() {
+        let complex = |imaginary| {
+            ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(7.5),
+                F64Bits::from_f64(imaginary),
+            ))
+        };
+        let converted = execute_scalar_conversion(
+            complex(-0.0),
+            BuiltinScalarKind::C64,
+            BuiltinScalarKind::F64,
+        )
+        .unwrap();
+        assert!(matches!(converted, ValueDataDraft::F64(value) if value.to_f64() == 7.5));
+        assert!(matches!(
+            execute_scalar_conversion(complex(1.0), BuiltinScalarKind::C64, BuiltinScalarKind::F64,),
+            Err(ConversionExecutionError::ConversionImaginaryPartNonZero)
+        ));
+    }
+
+    #[test]
+    fn failed_reactive_conversion_leaves_the_output_unchanged() {
+        let source = ValueCell::from_exact(12.9_f64).unwrap();
+        let target = SchemaBody::SignedInteger(IntegerWidth::W32);
+        let source_type = source.resolved_type().unwrap();
+        let target_type = ResolvedType::from_schema_body(&target, &[]).unwrap();
+        let plan = plan_explicit_cast(&source_type, &target_type).unwrap();
+        let output = execute_conversion_plan(&source, &target, &plan).unwrap();
+        let conversion = PlannedTypeConversion {
+            source: source.clone(),
+            output: output.clone(),
+            target,
+            plan,
+        };
+
+        source
+            .replace(
+                &ValueCell::from_exact(f64::INFINITY)
+                    .unwrap()
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+        assert_eq!(
+            conversion.solve_result().unwrap_err().kind_name(),
+            "ConversionNonFinite"
+        );
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::I32(12)
+        ));
+    }
+
+    #[cfg(feature = "matrix")]
+    #[test]
+    fn matrix_conversion_preserves_dimensions_and_element_order() {
+        let source = ValueCell::dynamic_matrix_from_cells(
+            1,
+            3,
+            &[
+                ValueCell::from_exact(1.0_f32).unwrap(),
+                ValueCell::from_exact(2.0_f32).unwrap(),
+                ValueCell::from_exact(3.0_f32).unwrap(),
+            ],
+        )
+        .unwrap();
+        let SchemaBody::Matrix { dimensions, .. } = source.closed_schema_body().unwrap() else {
+            panic!("fixture must be matrix-backed")
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            dimensions,
+        };
+        let source_type = source.resolved_type().unwrap();
+        let KindExpr::Matrix { dimensions, .. } = source_type.kind() else {
+            panic!("fixture must resolve to a matrix")
+        };
+        let target_type = ResolvedType::new(
+            KindExpr::Matrix {
+                element: Box::new(BuiltinScalarKind::F64.kind_expr()),
+                dimensions: dimensions.clone(),
+            },
+            source_type
+                .dimension_parameters()
+                .to_vec()
+                .into_boxed_slice(),
+        )
+        .unwrap();
+        let plan = plan_implicit_conversion(&source_type, &target_type).unwrap();
+        let output = execute_conversion_plan(&source, &target, &plan).unwrap();
+        assert_eq!(
+            output.current_top_level_extents().unwrap().as_ref(),
+            &[1, 3]
+        );
+        let snapshot = output.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = snapshot.data() else {
+            panic!("converted value must remain a matrix")
+        };
+        let mech_core::snapshot::SequenceView::F64(values) = matrix.elements() else {
+            panic!("converted matrix must use f64 elements")
+        };
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.to_f64())
+                .collect::<Vec<_>>(),
+            vec![1.0, 2.0, 3.0],
+        );
+    }
+
+    #[test]
+    fn option_conversion_preserves_absence_and_converts_payloads() {
+        let payload_plan = plan_implicit_conversion(
+            &ResolvedType::new(BuiltinScalarKind::U8.kind_expr(), Box::new([])).unwrap(),
+            &ResolvedType::new(BuiltinScalarKind::U16.kind_expr(), Box::new([])).unwrap(),
+        )
+        .unwrap();
+        let step = ConversionStep::OptionPayload(Box::new(payload_plan));
+        let absent = execute_conversion_draft(
+            ValueDataDraft::Option(OptionDraft {
+                present: false,
+                value: None,
+            }),
+            &step,
+        )
+        .unwrap();
+        assert!(matches!(
+            absent,
+            ValueDataDraft::Option(OptionDraft {
+                present: false,
+                value: None,
+            })
+        ));
+        let present = execute_conversion_draft(
+            ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(ValueDataDraft::U8(255))),
+            }),
+            &step,
+        )
+        .unwrap();
+        assert!(matches!(
+            present,
+            ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(value),
+            }) if matches!(*value, ValueDataDraft::U16(255))
         ));
     }
 }

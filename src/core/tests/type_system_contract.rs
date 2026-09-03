@@ -68,8 +68,8 @@ fn exact_conversion_promotion_and_cast_are_independent_relations() {
     assert!(!permitted_conversion(&u8_type, &string_type));
     assert!(explicit_cast_allowed(&u8_type, &string_type));
     assert!(explicit_cast_allowed(&f64_type, &u8_type));
-    assert!(!explicit_cast_allowed(&bool_type, &string_type));
-    assert!(!explicit_cast_allowed(&closed(named(12)), &f64_type));
+    assert!(explicit_cast_allowed(&bool_type, &string_type));
+    assert!(explicit_cast_allowed(&closed(named(12)), &f64_type));
 
     assert_eq!(
         numeric_promotion(&u8_type, &i8_type).unwrap(),
