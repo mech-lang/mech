@@ -226,7 +226,7 @@ impl CanonicalFunctionSpecializer for RangeInclusive {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 2 {
             return Err(MechError::new(
@@ -247,7 +247,14 @@ impl CanonicalFunctionSpecializer for RangeInclusive {
                     && to.representation()
                         == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
                 {
-                    bind_dynamic_binary_range!(RangeInclusiveScalar, $scalar, from, to, true);
+                    bind_dynamic_binary_range!(
+                        RangeInclusiveScalar,
+                        $scalar,
+                        from,
+                        to,
+                        true,
+                        context
+                    );
                 }
             };
         }

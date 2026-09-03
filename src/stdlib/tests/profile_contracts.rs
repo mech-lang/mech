@@ -9,23 +9,28 @@ use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_034;
+#[cfg(feature = "full_source")]
+const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_035;
+#[cfg(feature = "full_source")]
+const EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
+    "90e83995b1c3531a673df12da1cc87e71125f2be71baf03c5e72f65a0296f7b6";
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_326;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_327;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 64;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "4cdec3ae41f29816d064635f13241b4fedea3e4d1a51d95bb2197cf65460924a";
+    "8c00fe223e49fde0af94fd47d5060c26ca9690b76e65537e69d7786fa535d966";
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
-const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 12_779;
+const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 12_780;
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 const EXPECTED_FULL_SOURCE_RUNTIME_SURFACE_DIGEST: &str =
-    "7dfb1a997945bdf4ee09b967e648f2c5d8c8e9c4fbfad5f0b2d5927fdcbcd327";
+    "5b6f4a205cfd5ea9460951de6daf0cf19d6763ca75da814e8c4b8395b8fbc531";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 12_831;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 12_832;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "981088f9f3507e4a034bd0d1dc0b9f8ae37c803eaf7184828b1eb5240ec23102";
+    "59367cacc70cfabe1e19de87f6caa3feeb293a87c2154eb6afa0da8e3d637cf7";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_031;
 #[cfg(feature = "full_source")]
@@ -238,6 +243,15 @@ fn frozen_runtime_surface() -> BTreeMap<String, String> {
 #[cfg(feature = "full_runtime")]
 fn assert_runtime_surface(catalog: &FunctionCatalog) {
     let count = catalog.runtime_factory_count();
+    #[cfg(feature = "full_source")]
+    if count == EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES {
+        assert_eq!(
+            canonical_runtime_surface_digest(catalog),
+            EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST,
+            "source-enabled runtime catalog diverged from its frozen contract",
+        );
+        return;
+    }
     if count == EXPECTED_EXTENDED_RUNTIME_FACTORIES {
         assert_eq!(
             canonical_runtime_surface_digest(catalog),

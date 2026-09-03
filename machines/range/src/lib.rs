@@ -115,7 +115,7 @@ impl MechErrorKind for RangeSizeOverflowError {
 #[macro_export]
 #[cfg(feature = "source")]
 macro_rules! bind_dynamic_binary_range {
-    ($factory:ident, $scalar:ty, $first:expr, $second:expr, $inclusive:expr) => {{
+    ($factory:ident, $scalar:ty, $first:expr, $second:expr, $inclusive:expr, $context:expr) => {{
         let inputs = vec![$first.cell()?.clone(), $second.cell()?.clone()].into_boxed_slice();
         let size = $crate::catalog::canonical_range_size(&inputs, $inclusive, false)?;
         let initial = *$first.try_ref::<$scalar>()?.borrow();
@@ -128,7 +128,8 @@ macro_rules! bind_dynamic_binary_range {
                 output_ref,
                 1,
                 size,
-            )?;
+            )?
+            .with_resolved_output_type($context.resolved_output(0)?)?;
             return mech_core::SpecializedFunction::bind_factory::<
                 $factory<$scalar, nalgebra::RowDVector<$scalar>>,
             >(output, inputs);
@@ -142,7 +143,8 @@ macro_rules! bind_dynamic_binary_range {
                 output_ref,
                 1,
                 size,
-            )?;
+            )?
+            .with_resolved_output_type($context.resolved_output(0)?)?;
             return mech_core::SpecializedFunction::bind_factory::<
                 $factory<$scalar, nalgebra::DMatrix<$scalar>>,
             >(output, inputs);
@@ -159,7 +161,7 @@ macro_rules! bind_dynamic_binary_range {
 #[macro_export]
 #[cfg(feature = "source")]
 macro_rules! bind_dynamic_ternary_range {
-    ($factory:ident, $scalar:ty, $first:expr, $step:expr, $last:expr, $inclusive:expr) => {{
+    ($factory:ident, $scalar:ty, $first:expr, $step:expr, $last:expr, $inclusive:expr, $context:expr) => {{
         let inputs = vec![
             $first.cell()?.clone(),
             $step.cell()?.clone(),
@@ -177,7 +179,8 @@ macro_rules! bind_dynamic_ternary_range {
                 output_ref,
                 1,
                 size,
-            )?;
+            )?
+            .with_resolved_output_type($context.resolved_output(0)?)?;
             return mech_core::SpecializedFunction::bind_factory::<
                 $factory<$scalar, nalgebra::RowDVector<$scalar>>,
             >(output, inputs);
@@ -191,7 +194,8 @@ macro_rules! bind_dynamic_ternary_range {
                 output_ref,
                 1,
                 size,
-            )?;
+            )?
+            .with_resolved_output_type($context.resolved_output(0)?)?;
             return mech_core::SpecializedFunction::bind_factory::<
                 $factory<$scalar, nalgebra::DMatrix<$scalar>>,
             >(output, inputs);

@@ -103,9 +103,10 @@ impl CanonicalFunctionSpecializer for SetDefine {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        let output = crate::structures::canonical_set_from_inputs(invocation.inputs().to_vec())?;
+        let output = crate::structures::canonical_set_from_inputs(invocation.inputs().to_vec())?
+            .with_resolved_output_type(context.resolved_output(0)?)?;
         let invocation = FunctionInvocation::nullary(output);
         let implementation = ValueSet::new_invocation(invocation.clone())?;
         Ok(SpecializedFunction::new(FunctionInstance::new(
@@ -345,13 +346,13 @@ mod matrix_input_tests {
         let right = matrix(2, 1, &[3.0, 4.0]);
         assert!(left.shape().parameter_values().is_empty());
 
-        let horizontal = matrix_concatenation_output(&[left, right], false).unwrap();
+        let horizontal = matrix_concatenation_output(&[left, right], false, None).unwrap();
         assert_eq!(horizontal.shape().parameter_values(), &[2, 2]);
         assert_eq!(values(&horizontal), vec![1.0, 3.0, 2.0, 4.0]);
 
         let top = matrix(1, 2, &[1.0, 2.0]);
         let bottom = matrix(1, 2, &[3.0, 4.0]);
-        let vertical = matrix_concatenation_output(&[top, bottom], true).unwrap();
+        let vertical = matrix_concatenation_output(&[top, bottom], true, None).unwrap();
         assert_eq!(vertical.shape().parameter_values(), &[2, 2]);
         assert_eq!(values(&vertical), vec![1.0, 2.0, 3.0, 4.0]);
     }
@@ -438,22 +439,39 @@ pub(crate) fn matrix_comprehension_output(arguments: &[ValueCell]) -> MResult<Va
 }
 
 #[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
-fn matrix_concatenation_output(arguments: &[ValueCell], vertical: bool) -> MResult<ValueCell> {
-    let (rows, columns, cells) = if vertical {
+fn matrix_concatenation_cells(
+    arguments: &[ValueCell],
+    vertical: bool,
+) -> MResult<(usize, usize, Vec<ValueCell>)> {
+    if vertical {
         #[cfg(feature = "matrix_vertcat")]
         {
-            vertical_concatenation_cells(arguments)?
+            vertical_concatenation_cells(arguments)
         }
         #[cfg(not(feature = "matrix_vertcat"))]
         unreachable!()
     } else {
         #[cfg(feature = "matrix_horzcat")]
         {
-            horizontal_comprehension_cells(arguments)?
+            horizontal_comprehension_cells(arguments)
         }
         #[cfg(not(feature = "matrix_horzcat"))]
         unreachable!()
-    };
+    }
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+fn matrix_concatenation_output(
+    arguments: &[ValueCell],
+    vertical: bool,
+    resolved: Option<&ResolvedType>,
+) -> MResult<ValueCell> {
+    let (rows, columns, cells) = matrix_concatenation_cells(arguments, vertical)?;
+    if let Some(resolved) = resolved {
+        return ValueCell::matrix_from_resolved_type_cells(
+            resolved, rows, columns, &cells, arguments,
+        );
+    }
     if cells.is_empty() {
         return ValueCell::dynamic_matrix(
             SchemaBody::Tuple(Box::new([])),
@@ -479,8 +497,20 @@ impl<const VERTICAL: bool> MechFunctionImpl for ValueMatrixConcatenation<VERTICA
             .iter()
             .map(|argument| argument.cell().clone())
             .collect::<Vec<_>>();
-        let next = matrix_concatenation_output(&arguments, VERTICAL)?;
-        self.output.replace(&next.snapshot()?)
+        let (rows, columns, cells) = matrix_concatenation_cells(&arguments, VERTICAL)?;
+        let values = cells
+            .iter()
+            .map(|cell| {
+                cell.snapshot()?.canonical_data_draft().map_err(|_| {
+                    matrix_comprehension_error(
+                        "matrix concatenation input could not be materialized",
+                    )
+                })
+            })
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
+        self.output
+            .replace_matrix_drafts(vec![rows as u64, columns as u64].into_boxed_slice(), values)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -542,13 +572,15 @@ impl<const VERTICAL: bool> MechFunctionCompiler for ValueMatrixConcatenation<VER
 impl<const VERTICAL: bool> ValueMatrixConcatenation<VERTICAL> {
     pub(crate) fn specialize(
         invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         let arguments = invocation
             .inputs()
             .iter()
             .map(|input| Ok(input.cell()?.clone()))
             .collect::<MResult<Vec<_>>>()?;
-        let output = matrix_concatenation_output(&arguments, VERTICAL)?;
+        let output =
+            matrix_concatenation_output(&arguments, VERTICAL, Some(context.resolved_output(0)?))?;
         let invocation = FunctionInvocation::variadic(output.clone(), arguments.into_boxed_slice());
         let implementation = Self {
             arguments: invocation.inputs().map(FunctionInputPort::value).collect(),

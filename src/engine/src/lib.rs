@@ -156,6 +156,8 @@ pub mod __mech_native {
     pub use crate::intrinsics::table_ops::__mech_native::*;
     #[cfg(feature = "matrix_vertcat")]
     pub use crate::intrinsics::vertcat::__mech_native::*;
+    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+    pub use crate::literals::install_runtime_kind_conversion;
 }
 
 pub use mech_core::*;

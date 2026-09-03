@@ -132,7 +132,7 @@ impl CanonicalFunctionSpecializer for FrozenEkfSpecializer {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         let inputs = invocation
             .inputs()
@@ -140,7 +140,8 @@ impl CanonicalFunctionSpecializer for FrozenEkfSpecializer {
             .map(|input| input.cell().cloned())
             .collect::<MResult<Vec<_>>>()?;
         validate_source_arguments(self.operation, &inputs)?;
-        let output = allocate_output(operation_spec(self.operation).output)?;
+        let output = allocate_output(operation_spec(self.operation).output)?
+            .with_resolved_output_type(context.resolved_output(0)?)?;
         let function = FrozenEkfFunction {
             operation: self.operation,
             inputs: inputs.clone().into_boxed_slice(),
@@ -196,7 +197,9 @@ impl MechFunctionCompiler for FrozenEkfFunction {
     }
 
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let zero = allocate_output(operation_spec(self.operation).output)?.snapshot()?;
+        let zero = allocate_output(operation_spec(self.operation).output)?
+            .with_resolved_output_type(&self.output.resolved_type()?)?
+            .snapshot()?;
         let destination =
             compile_runtime_produced_value_cell_register_with_seed(&self.output, &zero, context)?;
         let inputs = self

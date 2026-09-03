@@ -117,6 +117,7 @@ impl SetOutput {
 #[cfg(feature = "source")]
 pub(crate) fn specialize_dynamic_set<F>(
     invocation: &SpecializationInvocation,
+    context: &mut SpecializationContext<'_>,
 ) -> MResult<SpecializedFunction>
 where
     F: MechFunctionFactory,
@@ -155,16 +156,29 @@ where
             if inputs.len() != 1 {
                 return Err(incorrect_arity(1, inputs.len()));
             }
+            let SchemaBody::Set {
+                element,
+                cardinality,
+            } = inputs[0].closed_schema_body()?
+            else {
+                return Err(argument_type_mismatch(
+                    FunctionArgumentRole::Input(0),
+                    inputs[0].representation(),
+                ));
+            };
+            let upper_bound = match cardinality {
+                CardinalitySpec::Exact(cardinality) => Some(cardinality),
+                CardinalitySpec::Dynamic { upper_bound } => upper_bound,
+            };
             SchemaBody::Set {
-                element: Box::new(set_element_schema(&inputs[0])?),
-                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                element,
+                cardinality: CardinalitySpec::Dynamic { upper_bound },
             }
         }
     };
-    SpecializedFunction::bind_factory::<F>(
-        ValueCell::empty_dynamic_set(element)?,
-        inputs.into_boxed_slice(),
-    )
+    let output = ValueCell::empty_dynamic_set(element)?
+        .with_resolved_output_type(context.resolved_output(0)?)?;
+    SpecializedFunction::bind_factory::<F>(output, inputs.into_boxed_slice())
 }
 
 #[cfg(feature = "source")]

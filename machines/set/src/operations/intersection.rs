@@ -69,8 +69,8 @@ impl CanonicalFunctionSpecializer for SetIntersection {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        specialize_dynamic_set::<SetIntersectionFxn>(invocation)
+        specialize_dynamic_set::<SetIntersectionFxn>(invocation, context)
     }
 }

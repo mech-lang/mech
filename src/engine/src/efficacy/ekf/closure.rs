@@ -2,12 +2,12 @@
 
 use mech_core::snapshot::SequenceView;
 use mech_core::{
-    AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, ConstantId, DeliveryMode,
-    DimensionExpr, ExecutionHostFunctionRequest, ExecutionResourceRequest, ExternalInteraction,
-    FloatWidth, MResult, MechError, MechErrorKind, MechExecutionServices, NodeId,
-    ObservationReplayPolicy, OperationContractId, OutputConstruction, OutputId, ProgramRevision,
-    ResolvedOperationContract, ResourceDelivery, ResourceIntent, SchemaBody, SchemaId, ShapeRule,
-    ValueCell, ValueData,
+    AccessMode, AliasPolicy, BuiltinScalarKind, CellSlotId, ChangeDetectionPolicy, ConstantId,
+    DeliveryMode, DimensionExpr, ExecutionHostFunctionRequest, ExecutionResourceRequest,
+    ExternalInteraction, FloatWidth, KindExpr, MResult, MechError, MechErrorKind,
+    MechExecutionServices, NodeId, ObservationReplayPolicy, OperationContractId,
+    OutputConstruction, OutputId, ProgramRevision, ResolvedOperationContract, ResourceDelivery,
+    ResourceIntent, SchemaBody, SchemaId, ShapeRule, ValueCell, ValueData,
 };
 use nalgebra::DVector;
 
@@ -938,6 +938,16 @@ impl FrozenEkfCompilationServices {
                 4,
                 1,
             )
+            .and_then(|value| {
+                value.with_resolved_output_type(&mech_core::ResolvedType::new(
+                    KindExpr::Matrix {
+                        element: Box::new(BuiltinScalarKind::F64.kind_expr()),
+                        dimensions: vec![DimensionExpr::Constant(4), DimensionExpr::Constant(1)]
+                            .into_boxed_slice(),
+                    },
+                    Box::new([]),
+                )?)
+            })
             .expect("the frozen EKF frame is a canonical four-element vector")
         };
         Self {

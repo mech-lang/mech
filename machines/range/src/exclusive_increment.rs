@@ -203,7 +203,7 @@ impl CanonicalFunctionSpecializer for RangeIncrementExclusive {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 3 {
             return Err(MechError::new(
@@ -233,7 +233,8 @@ impl CanonicalFunctionSpecializer for RangeIncrementExclusive {
                         from,
                         step,
                         to,
-                        false
+                        false,
+                        context
                     );
                 }
             };

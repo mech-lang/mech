@@ -1750,13 +1750,48 @@ impl<'a> InterpreterExecution<'a> {
         invocation: &SpecializationInvocation,
     ) -> MResult<SpecializedFunction> {
         let state = self.state.borrow();
+        let resolver = FunctionResolver::new(
+            self.function_catalog(),
+            &state.function_environment,
+            &state.function_extensions,
+            &state.user_functions,
+        );
+        #[cfg(feature = "convert")]
+        {
+            resolver.specialize_operation_named_with(
+                operation,
+                canonical_name,
+                invocation,
+                |cell, conversion| {
+                    crate::literals::convert_cell_with_plan_reactively(
+                        cell.clone(),
+                        conversion,
+                        self,
+                    )
+                },
+            )
+        }
+        #[cfg(not(feature = "convert"))]
+        {
+            resolver.specialize_operation_named(operation, canonical_name, invocation)
+        }
+    }
+
+    #[cfg(all(feature = "functions", feature = "string_concat", feature = "math_add"))]
+    pub(crate) fn operation_semantically_accepts(
+        &self,
+        operation: OperationId,
+        canonical_name: &str,
+        invocation: &SpecializationInvocation,
+    ) -> MResult<bool> {
+        let state = self.state.borrow();
         FunctionResolver::new(
             self.function_catalog(),
             &state.function_environment,
             &state.function_extensions,
             &state.user_functions,
         )
-        .specialize_operation_named(operation, canonical_name, invocation)
+        .operation_semantically_accepts(operation, canonical_name, invocation)
     }
 
     pub fn with_services<T>(

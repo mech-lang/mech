@@ -221,7 +221,7 @@ impl CanonicalFunctionSpecializer for CompareEqual {
     fn specialize_invocation(
         &self,
         specialization: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if specialization.len() != 2 {
             return Err(MechError::new(
@@ -255,7 +255,7 @@ impl CanonicalFunctionSpecializer for CompareEqual {
             );
         }
 
-        try_compare_binary_factories!(eq, lhs, rhs, EQ);
+        try_compare_binary_factories!(eq, lhs, rhs, context, EQ);
         Err(MechError::new(
             FunctionArgumentTypeMismatch {
                 role: FunctionArgumentRole::Input(0),

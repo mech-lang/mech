@@ -164,7 +164,7 @@ fn comprehension_generator_values(collection: &ValueCell) -> MResult<Vec<ValueCe
     }
     Err(MechError::new(
         ComprehensionGeneratorError {
-            found: collection.representation(),
+            found: collection.resolved_type()?,
         },
         None,
     )
@@ -178,7 +178,7 @@ impl CanonicalFunctionSpecializer for SetComprehensionDefine {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         let arguments = invocation
             .inputs()
@@ -194,14 +194,15 @@ impl CanonicalFunctionSpecializer for SetComprehensionDefine {
             if argument.closed_schema_body()? != element {
                 return Err(MechError::new(
                     ComprehensionGeneratorError {
-                        found: argument.representation(),
+                        found: argument.resolved_type()?,
                     },
                     None,
                 )
                 .with_compiler_loc());
             }
         }
-        let output = ValueCell::empty_dynamic_set(element)?;
+        let output = ValueCell::empty_dynamic_set(element)?
+            .with_resolved_output_type(context.resolved_output(0)?)?;
         let invocation = FunctionInvocation::variadic(output, arguments.into_boxed_slice());
         let implementation = ValueSetComprehension::new_invocation(invocation.clone())?;
         Ok(SpecializedFunction::new(FunctionInstance::new(

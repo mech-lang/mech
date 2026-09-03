@@ -7,6 +7,8 @@ mod budget;
 mod candidate;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod composite;
+#[cfg(all(feature = "resident-artifact", feature = "convert"))]
+pub(crate) mod conversion;
 mod full_write;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod general;

@@ -206,10 +206,7 @@ impl TypeResolutionError {
         Self::incompatible("type", failure)
     }
 
-    pub(crate) fn incompatible(
-        semantic_name: impl Into<String>,
-        failure: TypeConstraintFailure,
-    ) -> Self {
+    pub fn incompatible(semantic_name: impl Into<String>, failure: TypeConstraintFailure) -> Self {
         Self::Incompatible {
             origin: TypeConstraintOrigin::new(semantic_name, None),
             failures: vec![failure].into_boxed_slice(),

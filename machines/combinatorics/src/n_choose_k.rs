@@ -842,13 +842,16 @@ where
 fn specialize_n_choose_k_scalar<T>(
     n: &SpecializationInput,
     k: &SpecializationInput,
+    resolved_output: &ResolvedType,
 ) -> MResult<SpecializedFunction>
 where
     T: FunctionStateBacking,
     NChooseK<T>: MechFunctionFactory,
 {
     let invocation = FunctionInvocation::binary(
-        n.cell()?.detached_clone()?,
+        n.cell()?
+            .detached_clone()?
+            .with_resolved_output_type(resolved_output)?,
         n.cell()?.clone(),
         k.cell()?.clone(),
     );
@@ -863,6 +866,7 @@ where
 fn specialize_n_choose_k_matrix<T>(
     n: &SpecializationInput,
     k: &SpecializationInput,
+    resolved_output: &ResolvedType,
 ) -> MResult<SpecializedFunction>
 where
     T: Copy
@@ -898,7 +902,8 @@ where
         .ok_or_else(invalid_matrix_selection_value)?;
     let output = n_choose_k_matrix_result(&matrix, requested)?;
     let (rows, columns) = (output.nrows(), output.ncols());
-    let output = ValueCell::from_exact_matrix_ref(Ref::new(output), rows, columns)?;
+    let output = ValueCell::from_exact_matrix_ref(Ref::new(output), rows, columns)?
+        .with_resolved_output_type(resolved_output)?;
     let invocation = FunctionInvocation::binary(output, n.cell()?.clone(), k.cell()?.clone());
     let implementation = NChooseKMatrix::<T>::new_invocation(invocation.clone())?;
     Ok(SpecializedFunction::new(FunctionInstance::new(
@@ -909,13 +914,13 @@ where
 
 #[cfg(feature = "source")]
 macro_rules! try_n_choose_k_type {
-    ($n:ident, $k:ident, $type:ty) => {{
+    ($n:ident, $k:ident, $type:ty, $resolved_output:expr) => {{
         let scalar = <NChooseK<$type> as MechFunctionFactory>::SIGNATURE;
         if let RuntimeFunctionInputs::Binary(expected_n, expected_k) = scalar.inputs
             && expected_n.matches($n.representation().unwrap_or(FunctionValueRepresentation::Empty))
             && expected_k.matches($k.representation().unwrap_or(FunctionValueRepresentation::Empty))
         {
-            return specialize_n_choose_k_scalar::<$type>($n, $k);
+            return specialize_n_choose_k_scalar::<$type>($n, $k, $resolved_output);
         }
         #[cfg(all(feature = "matrix", feature = "matrixd"))]
         {
@@ -924,7 +929,7 @@ macro_rules! try_n_choose_k_type {
                 && expected_n.matches($n.representation().unwrap_or(FunctionValueRepresentation::Empty))
                 && expected_k.matches($k.representation().unwrap_or(FunctionValueRepresentation::Empty))
             {
-                return specialize_n_choose_k_matrix::<$type>($n, $k);
+                return specialize_n_choose_k_matrix::<$type>($n, $k, $resolved_output);
             }
         }
     }};
@@ -938,7 +943,7 @@ impl CanonicalFunctionSpecializer for CombinatoricsNChooseK {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 2 {
             return Err(MechError::new(
@@ -952,34 +957,35 @@ impl CanonicalFunctionSpecializer for CombinatoricsNChooseK {
         }
         let n = invocation.input(0).expect("validated n-choose-k input");
         let k = invocation.input(1).expect("validated n-choose-k selection");
+        let resolved_output = context.resolved_output(0)?;
         #[cfg(feature = "u8")]
-        try_n_choose_k_type!(n, k, u8);
+        try_n_choose_k_type!(n, k, u8, resolved_output);
         #[cfg(feature = "u16")]
-        try_n_choose_k_type!(n, k, u16);
+        try_n_choose_k_type!(n, k, u16, resolved_output);
         #[cfg(feature = "u32")]
-        try_n_choose_k_type!(n, k, u32);
+        try_n_choose_k_type!(n, k, u32, resolved_output);
         #[cfg(feature = "u64")]
-        try_n_choose_k_type!(n, k, u64);
+        try_n_choose_k_type!(n, k, u64, resolved_output);
         #[cfg(feature = "u128")]
-        try_n_choose_k_type!(n, k, u128);
+        try_n_choose_k_type!(n, k, u128, resolved_output);
         #[cfg(feature = "i8")]
-        try_n_choose_k_type!(n, k, i8);
+        try_n_choose_k_type!(n, k, i8, resolved_output);
         #[cfg(feature = "i16")]
-        try_n_choose_k_type!(n, k, i16);
+        try_n_choose_k_type!(n, k, i16, resolved_output);
         #[cfg(feature = "i32")]
-        try_n_choose_k_type!(n, k, i32);
+        try_n_choose_k_type!(n, k, i32, resolved_output);
         #[cfg(feature = "i64")]
-        try_n_choose_k_type!(n, k, i64);
+        try_n_choose_k_type!(n, k, i64, resolved_output);
         #[cfg(feature = "i128")]
-        try_n_choose_k_type!(n, k, i128);
+        try_n_choose_k_type!(n, k, i128, resolved_output);
         #[cfg(feature = "f32")]
-        try_n_choose_k_type!(n, k, f32);
+        try_n_choose_k_type!(n, k, f32, resolved_output);
         #[cfg(feature = "f64")]
-        try_n_choose_k_type!(n, k, f64);
+        try_n_choose_k_type!(n, k, f64, resolved_output);
         #[cfg(feature = "rational")]
-        try_n_choose_k_type!(n, k, R64);
+        try_n_choose_k_type!(n, k, R64, resolved_output);
         #[cfg(feature = "complex")]
-        try_n_choose_k_type!(n, k, C64);
+        try_n_choose_k_type!(n, k, C64, resolved_output);
         Err(MechError::new(
             FunctionArgumentTypeMismatch {
                 role: FunctionArgumentRole::Input(0),

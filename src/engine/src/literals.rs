@@ -1,7 +1,7 @@
 use crate::*;
 #[cfg(feature = "convert")]
 use mech_core::snapshot::{Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft};
-#[cfg(feature = "kind_annotation")]
+#[cfg(any(feature = "kind_annotation", feature = "convert"))]
 use mech_core::snapshot::{ReifiedKind, ReifiedType, ReifiedTypeDraft};
 #[cfg(any(feature = "kind_annotation", feature = "convert"))]
 use std::collections::BTreeMap;
@@ -327,7 +327,40 @@ fn execute_conversion_plan(
 }
 
 #[cfg(feature = "convert")]
-fn execute_conversion_draft(
+fn conversion_target_schema(
+    source: &SchemaBody,
+    step: &ConversionStep,
+) -> Result<SchemaBody, ConversionExecutionError> {
+    Ok(match step {
+        ConversionStep::Identity => source.clone(),
+        ConversionStep::Scalar(ScalarConversion::Builtin { target, .. }) => target.schema_body(),
+        ConversionStep::MatrixElements(element_plan) => {
+            let SchemaBody::Matrix {
+                element,
+                dimensions,
+            } = source
+            else {
+                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+            };
+            SchemaBody::Matrix {
+                element: Box::new(conversion_target_schema(element, &element_plan.step)?),
+                dimensions: dimensions.clone(),
+            }
+        }
+        ConversionStep::OptionPayload(payload_plan) => {
+            let SchemaBody::Option(payload) = source else {
+                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+            };
+            SchemaBody::Option(Box::new(conversion_target_schema(
+                payload,
+                &payload_plan.step,
+            )?))
+        }
+    })
+}
+
+#[cfg(feature = "convert")]
+pub(crate) fn execute_conversion_draft(
     draft: ValueDataDraft,
     step: &ConversionStep,
 ) -> Result<ValueDataDraft, ConversionExecutionError> {
@@ -708,6 +741,123 @@ struct PlannedTypeConversion {
     plan: ConversionPlan,
 }
 
+/// Bytecode/native implementation of the canonical `convert/kind`
+/// instruction. The destination schema is the reified target carried by the
+/// artifact, so runtime binding reconstructs and validates the same checked
+/// conversion plan used during source execution.
+#[cfg(feature = "convert")]
+#[derive(Debug)]
+pub struct RuntimeKindConversion {
+    source: FunctionValueInput,
+    output: FunctionValueOutput,
+    target: SchemaBody,
+    plan: ConversionPlan,
+}
+
+#[cfg(feature = "convert")]
+fn runtime_kind_conversion_plan(
+    output: &ValueCell,
+    source: &ValueCell,
+) -> MResult<(SchemaBody, ConversionPlan)> {
+    let source_type = source.resolved_type()?;
+    let target_type = output.resolved_type()?;
+    let plan = plan_explicit_cast(&source_type, &target_type).map_err(|error| {
+        MechError::from(error.with_origin(TypeConstraintOrigin::new("convert/kind", None)))
+    })?;
+    let target = output.closed_schema_body()?;
+    let expected = conversion_target_schema(&source.closed_schema_body()?, &plan.step)
+        .map_err(conversion_execution_error)?;
+    if expected != target {
+        return Err(conversion_execution_error(
+            ConversionExecutionError::ConversionShapeMismatch,
+        ));
+    }
+    Ok((target, plan))
+}
+
+#[cfg(feature = "convert")]
+impl MechFunctionFactory for RuntimeKindConversion {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+    );
+
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (output, source) = invocation.expect_unary()?;
+        let output = output.value();
+        let source = source.value();
+        let (target, plan) = runtime_kind_conversion_plan(output.cell(), source.cell())?;
+        Ok(Box::new(Self {
+            source,
+            output,
+            target,
+            plan,
+        }))
+    }
+}
+
+#[cfg(feature = "convert")]
+impl MechFunctionImpl for RuntimeKindConversion {
+    fn solve_result(&self) -> MResult<()> {
+        let replacement = execute_conversion_plan(self.source.cell(), &self.target, &self.plan)?;
+        self.output.replace(&replacement.snapshot()?)
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some("convert/kind")
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_TYPE_CONVERSION_CONTRACT)
+    }
+
+    fn to_string(&self) -> String {
+        "RuntimeKindConversion".to_owned()
+    }
+}
+
+#[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for RuntimeKindConversion {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.source.cell().clone(), self.output.cell().clone()]
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let destination = self.output.compile_register(context)?;
+        let source = self.source.compile_register(context)?;
+        let function = context.function_id("convert/kind")?;
+        context.emit_unop(function, destination, source);
+        Ok(destination)
+    }
+}
+
+#[cfg(feature = "convert")]
+fn validate_runtime_kind_conversion(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    let [source] = inputs else {
+        return Err(function_shape_contract_violation(
+            "type_conversion",
+            format!("expected one semantic source input, found {}", inputs.len()),
+        ));
+    };
+    runtime_kind_conversion_plan(output, source).map(|_| ())
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "convert", feature = "semantic-compiler"),
+    registration: register_runtime_kind_conversion,
+    installer: install_runtime_kind_conversion,
+    name: "convert/kind",
+    factory_type: RuntimeKindConversion,
+    contract: RuntimeFunctionContract::canonical_custom(
+        "type_conversion",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_runtime_kind_conversion,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_runtime_kind_conversion",
+    extra_cargo_features: ["convert", "semantic-compiler"],
+}
+
 #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
 static PURE_TYPE_CONVERSION_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
     std::sync::LazyLock::new(|| OperationContractDeclaration {
@@ -972,6 +1122,64 @@ impl MechFunctionCompiler for PlannedTypeConversion {
         context.emit_unop(function, destination, source);
         Ok(destination)
     }
+}
+
+#[cfg(feature = "convert")]
+pub(crate) fn convert_cell_with_plan_reactively(
+    value: ValueCell,
+    plan: &ConversionPlan,
+    interpreter: &InterpreterExecution<'_>,
+) -> MResult<ValueCell> {
+    if matches!(plan.step, ConversionStep::Identity) {
+        return Ok(value);
+    }
+    let source_schema = value.closed_schema_body()?;
+    let target =
+        conversion_target_schema(&source_schema, &plan.step).map_err(conversion_execution_error)?;
+    let output = execute_conversion_plan(&value, &target, plan)?;
+    interpreter.plan().register_instance(FunctionInstance::new(
+        Box::new(PlannedTypeConversion {
+            source: value.clone(),
+            output: output.clone(),
+            target,
+            plan: plan.clone(),
+        }),
+        FunctionInvocation::unary(output.clone(), value),
+    ))?;
+    Ok(output)
+}
+
+/// Builds the exact lossless conversion selected by semantic input/output
+/// compatibility. User-function boundaries use this path; lossy conversions
+/// remain available only through the explicit `convert/kind` intrinsic.
+#[cfg(feature = "convert")]
+pub(crate) fn convert_cell_implicitly_reactively(
+    value: ValueCell,
+    target: SchemaBody,
+    interpreter: &InterpreterExecution<'_>,
+) -> MResult<ValueCell> {
+    let source_type = value.resolved_type()?;
+    let semantic_target =
+        materialize_declared_conversion_semantic_shape(source_type.kind(), &target);
+    let target = materialize_declared_conversion_shape(&value.closed_schema_body()?, &target);
+    if value.closed_schema_body()? == target {
+        return Ok(value);
+    }
+    let target_type =
+        ResolvedType::from_schema_body(&semantic_target, source_type.dimension_parameters())
+            .map_err(MechError::from)?;
+    let plan = plan_implicit_conversion(&source_type, &target_type).map_err(MechError::from)?;
+    let output = execute_conversion_plan(&value, &target, &plan)?;
+    interpreter.plan().register_instance(FunctionInstance::new(
+        Box::new(PlannedTypeConversion {
+            source: value.clone(),
+            output: output.clone(),
+            target,
+            plan,
+        }),
+        FunctionInvocation::unary(output.clone(), value),
+    ))?;
+    Ok(output)
 }
 
 /// Builds one reactive, schema-directed conversion without routing semantic
@@ -1409,6 +1617,43 @@ mod canonical_conversion_tests {
                 .map(|value| value.to_f64())
                 .collect::<Vec<_>>(),
             vec![1.0, 2.0, 3.0],
+        );
+    }
+
+    #[cfg(all(feature = "matrix", feature = "string"))]
+    #[test]
+    fn open_matrix_annotation_inherits_source_dimensions() {
+        let source = ValueCell::dynamic_matrix_from_cells(
+            1,
+            3,
+            &[
+                ValueCell::from_exact(1.0_f64).unwrap(),
+                ValueCell::from_exact(2.0_f64).unwrap(),
+                ValueCell::from_exact(3.0_f64).unwrap(),
+            ],
+        )
+        .unwrap();
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::String),
+            dimensions: Box::new([]),
+        };
+
+        let output = convert_literal_cell(source, &target).unwrap();
+
+        assert_eq!(
+            output.current_top_level_extents().unwrap().as_ref(),
+            &[1, 3]
+        );
+        let snapshot = output.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = snapshot.data() else {
+            panic!("converted value must remain a matrix")
+        };
+        let mech_core::snapshot::SequenceView::String(values) = matrix.elements() else {
+            panic!("converted matrix must use string elements")
+        };
+        assert_eq!(
+            values.iter().map(|value| &**value).collect::<Vec<_>>(),
+            vec!["1", "2", "3"],
         );
     }
 
