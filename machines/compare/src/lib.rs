@@ -229,6 +229,7 @@ fn compare_boolean_output(
 fn specialize_compare_binary_factory<F>(
     first: &SpecializationInput,
     second: &SpecializationInput,
+    resolved_output: &ResolvedType,
 ) -> MResult<SpecializedFunction>
 where
     F: MechFunctionFactory,
@@ -259,7 +260,8 @@ where
             })?
             .cell()?
             .detached_clone()?,
-    };
+    }
+    .with_resolved_output_type(resolved_output)?;
     SpecializedFunction::bind_factory::<F>(
         output,
         vec![first.cell()?.clone(), second.cell()?.clone()].into_boxed_slice(),
@@ -269,7 +271,7 @@ where
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __try_compare_binary_factory {
-    (($module:ident, $first:ident, $second:ident), $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+    (($module:ident, $first:ident, $second:ident, $context:ident), $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
         mech_core::paste::paste! {
             if let RuntimeFunctionInputs::Binary(expected_first, expected_second) =
                 <$crate::$module::[<$lib $suffix>]<$scalar> as MechFunctionFactory>::SIGNATURE.inputs
@@ -278,7 +280,7 @@ macro_rules! __try_compare_binary_factory {
             {
                 return $crate::specialize_compare_binary_factory::<
                     $crate::$module::[<$lib $suffix>]<$scalar>
-                >($first, $second);
+                >($first, $second, $context.resolved_output(0)?);
             }
         }
     };
@@ -286,73 +288,73 @@ macro_rules! __try_compare_binary_factory {
 
 #[macro_export]
 macro_rules! try_compare_binary_factories {
-    ($module:ident, $first:ident, $second:ident, $lib:ident) => {{
+    ($module:ident, $first:ident, $second:ident, $context:ident, $lib:ident) => {{
         #[cfg(feature = "bool")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, bool, "bool", bool);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, bool, "bool", bool);
         #[cfg(feature = "string")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, String, "string", string);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, String, "string", string);
         #[cfg(feature = "u8")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u8, "u8", u8);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u8, "u8", u8);
         #[cfg(feature = "u16")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u16, "u16", u16);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u16, "u16", u16);
         #[cfg(feature = "u32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u32, "u32", u32);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u32, "u32", u32);
         #[cfg(feature = "u64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u64, "u64", u64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u64, "u64", u64);
         #[cfg(feature = "u128")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u128, "u128", u128);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u128, "u128", u128);
         #[cfg(feature = "i8")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i8, "i8", i8);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i8, "i8", i8);
         #[cfg(feature = "i16")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i16, "i16", i16);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i16, "i16", i16);
         #[cfg(feature = "i32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i32, "i32", i32);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i32, "i32", i32);
         #[cfg(feature = "i64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i64, "i64", i64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i64, "i64", i64);
         #[cfg(feature = "i128")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i128, "i128", i128);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i128, "i128", i128);
         #[cfg(feature = "f32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, f32, "f32", f32);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, f32, "f32", f32);
         #[cfg(feature = "f64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, f64, "f64", f64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, f64, "f64", f64);
         #[cfg(feature = "rational")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, R64, "r64", r64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, R64, "r64", r64);
         #[cfg(feature = "complex")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, C64, "c64", c64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, C64, "c64", c64);
     }};
 }
 
 #[macro_export]
 macro_rules! try_numeric_compare_binary_factories {
-    ($module:ident, $first:ident, $second:ident, $lib:ident) => {{
+    ($module:ident, $first:ident, $second:ident, $context:ident, $lib:ident) => {{
         #[cfg(feature = "u8")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u8, "u8", u8);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u8, "u8", u8);
         #[cfg(feature = "u16")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u16, "u16", u16);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u16, "u16", u16);
         #[cfg(feature = "u32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u32, "u32", u32);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u32, "u32", u32);
         #[cfg(feature = "u64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u64, "u64", u64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u64, "u64", u64);
         #[cfg(feature = "u128")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, u128, "u128", u128);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u128, "u128", u128);
         #[cfg(feature = "i8")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i8, "i8", i8);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i8, "i8", i8);
         #[cfg(feature = "i16")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i16, "i16", i16);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i16, "i16", i16);
         #[cfg(feature = "i32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i32, "i32", i32);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i32, "i32", i32);
         #[cfg(feature = "i64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i64, "i64", i64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i64, "i64", i64);
         #[cfg(feature = "i128")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, i128, "i128", i128);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i128, "i128", i128);
         #[cfg(feature = "f32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, f32, "f32", f32);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, f32, "f32", f32);
         #[cfg(feature = "f64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, f64, "f64", f64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, f64, "f64", f64);
         #[cfg(feature = "rational")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, R64, "r64", r64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, R64, "r64", r64);
         #[cfg(feature = "complex")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second), $lib, C64, "c64", c64);
+        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, C64, "c64", c64);
     }};
 }
 
@@ -367,7 +369,7 @@ macro_rules! impl_canonical_numeric_compare_specializer {
             fn specialize_invocation(
                 &self,
                 specialization: &SpecializationInvocation,
-                _context: &mut SpecializationContext<'_>,
+                context: &mut SpecializationContext<'_>,
             ) -> MResult<SpecializedFunction> {
                 if specialization.len() != 2 {
                     return Err(MechError::new(
@@ -381,7 +383,7 @@ macro_rules! impl_canonical_numeric_compare_specializer {
                 }
                 let first = specialization.input(0).expect("validated comparison lhs");
                 let second = specialization.input(1).expect("validated comparison rhs");
-                $crate::try_numeric_compare_binary_factories!($module, first, second, $lib);
+                $crate::try_numeric_compare_binary_factories!($module, first, second, context, $lib);
                 Err(MechError::new(
                     FunctionArgumentTypeMismatch {
                         role: FunctionArgumentRole::Input(0),

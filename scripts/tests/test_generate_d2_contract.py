@@ -31,8 +31,16 @@ class D2ContractGeneratorTests(unittest.TestCase):
 
     def test_historical_executor_materializes_then_uses_locked_offline_dependencies(self):
         manifest = Path("/tmp/historical-d2/Cargo.toml")
+        pins = HISTORICAL.historical_dependency_pin_commands(manifest)
         fetch, run = HISTORICAL.historical_cargo_commands(
             manifest, "--probe", release=True
+        )
+        self.assertEqual(
+            pins,
+            [[
+                "cargo", "+nightly-2026-03-03", "update", "--manifest-path",
+                str(manifest), "-p", "tinyvec", "--precise", "1.12.0",
+            ]],
         )
         self.assertEqual(
             fetch[:4],

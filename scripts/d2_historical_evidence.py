@@ -13,6 +13,24 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 D2_HEAD = "96fd051608f9d9df9eb4e9b345af7c23279c6c67"
+HISTORICAL_DEPENDENCY_PINS = (("tinyvec", "1.12.0"),)
+
+
+def historical_dependency_pin_commands(manifest: Path) -> list[list[str]]:
+    return [
+        [
+            "cargo",
+            "+nightly-2026-03-03",
+            "update",
+            "--manifest-path",
+            str(manifest),
+            "-p",
+            package,
+            "--precise",
+            version,
+        ]
+        for package, version in HISTORICAL_DEPENDENCY_PINS
+    ]
 
 
 def historical_cargo_commands(
@@ -59,6 +77,20 @@ def run_historical_d2_fixture(*arguments: str, release: bool = False) -> str:
         fetch_command, command = historical_cargo_commands(
             manifest, *arguments, release=release
         )
+        for pin_command in historical_dependency_pin_commands(manifest):
+            pin = subprocess.run(
+                pin_command,
+                cwd=checkout,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            if pin.returncode != 0:
+                raise RuntimeError(
+                    "historical D2 dependency lock materialization failed: "
+                    + (pin.stdout + pin.stderr).strip()
+                )
         fetch = subprocess.run(
             fetch_command,
             cwd=checkout,

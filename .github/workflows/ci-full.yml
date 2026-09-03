@@ -101,6 +101,7 @@ jobs:
           python3 scripts/check-operation-contract.py
           python3 scripts/check-r1-compatibility-closure.py
           python3 scripts/check-r2-type-memory-boundary.py
+          python3 scripts/check-r3-type-system.py
           python3 scripts/check-resident-activation-contract.py
           python3 scripts/check-compiler-planning-quarantine.py
           python3 scripts/generate-d1-contract.py --check
@@ -116,6 +117,7 @@ jobs:
             scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_check_r1_compatibility_closure.py \
             scripts/tests/test_check_r2_type_memory_boundary.py \
+            scripts/tests/test_check_r3_type_system.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \
@@ -131,6 +133,20 @@ jobs:
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-core
           --all-features --test type_memory_boundary
+      - name: Execute the complete R3 conformance boundary
+        run: |
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features \
+            --test type_system_builtin \
+            --test type_system_solver \
+            --test type_system_conversion \
+            --test type_system_catalog
+          cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+            --no-default-features --features full_compiler \
+            --test type_system_source
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime \
+            --no-default-features --features full_compiler,resident-routing-source \
+            --lib runtime::program::tests::compiled_conversion_executes_after_bytecode_round_trip \
+            -- --exact
 
   cargo-features:
     name: Cargo feature and example checks

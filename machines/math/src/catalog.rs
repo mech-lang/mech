@@ -243,7 +243,9 @@ pub(crate) fn install_canonical_source_specializer<T>(
 where
     T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(specializer))?;
+    let declaration = mech_core::maintained_source_type_declaration(canonical_name)?;
+    let operation =
+        builder.insert_canonical_specializer(canonical_name, declaration, Arc::new(specializer))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),

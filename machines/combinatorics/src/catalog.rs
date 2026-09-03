@@ -80,8 +80,12 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "n_choose_k")]
     {
         let canonical_name = "combinatorics/n-choose-k";
-        let operation =
-            builder.insert_canonical_specializer(canonical_name, Arc::new(CombinatoricsNChooseK {}))?;
+        let declaration = mech_core::maintained_source_type_declaration(canonical_name)?;
+        let operation = builder.insert_canonical_specializer(
+            canonical_name,
+            declaration,
+            Arc::new(CombinatoricsNChooseK {}),
+        )?;
         builder.insert_export(FunctionExport {
             operation,
             canonical_name: canonical_name.to_string(),

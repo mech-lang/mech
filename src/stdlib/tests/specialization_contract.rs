@@ -8,8 +8,9 @@
 use mech_core::snapshot::F64Bits;
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, CardinalitySpec, EncodedConstant, FloatWidth,
-    FunctionCatalog, MResult, OperationId, Ref, Register, SchemaBody, SpecializationContext,
-    SpecializationInvocation, ValueCell, ValueDataDraft, hash_str,
+    FunctionCatalog, MResult, OperationId, Ref, Register, ResolvedCall, SchemaBody,
+    SourceTypeAuthority, SpecializationContext, SpecializationInvocation, TypeConstraintOrigin,
+    TypeOverloadCandidate, ValueCell, ValueDataDraft, hash_str, resolve_type_overloads,
 };
 use nalgebra::{DMatrix, DVector, Matrix2, Vector2};
 use serde::Deserialize;
@@ -332,16 +333,70 @@ fn canonical_specialization_preserves_the_frozen_operation_factory_and_storage_c
             "{} input contract",
             case.name,
         );
+        let original_inputs = arguments
+            .iter()
+            .map(ValueCell::resolved_type)
+            .collect::<MResult<Vec<_>>>()
+            .unwrap_or_else(|error| panic!("{} semantic inputs: {error:?}", case.name));
         let invocation = SpecializationInvocation::from_cells(arguments.into_boxed_slice());
-        let mut context = SpecializationContext::for_invocation(&invocation, Some(&catalog))
-            .unwrap_or_else(|error| panic!("{} schema context: {error:?}", case.name));
         let specializer = catalog
             .specializer(operation)
             .unwrap_or_else(|| panic!("{} missing operation {}", case.name, case.operation));
+        let SourceTypeAuthority::Schemes(declaration) = &specializer.type_authority else {
+            panic!("{} must have a semantic type declaration", case.name)
+        };
+        assert!(
+            declaration.template.is_none(),
+            "{} unexpectedly requires an arity-derived scheme",
+            case.name,
+        );
+        let candidates = declaration
+            .overloads
+            .iter()
+            .map(|overload| TypeOverloadCandidate {
+                id: u64::from(overload.id),
+                scheme: &overload.scheme,
+            })
+            .collect::<Vec<_>>();
+        let resolved = resolve_type_overloads(
+            TypeConstraintOrigin::new(case.operation.clone(), None),
+            &candidates,
+            &original_inputs,
+            None,
+        )
+        .unwrap_or_else(|error| panic!("{} semantic resolution: {error:?}", case.name));
+        let overload_id = u32::try_from(resolved.candidate_ids[0]).unwrap();
+        let converted_inputs = resolved
+            .conversions
+            .iter()
+            .map(|plan| plan.target.clone())
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        let predicted_output = resolved.outputs[0].clone();
+        let resolved_call = ResolvedCall {
+            overload_id,
+            original_inputs: original_inputs.into_boxed_slice(),
+            converted_inputs,
+            input_conversions: resolved.conversions,
+            outputs: resolved.outputs,
+        };
+        let mut context = SpecializationContext::for_resolved_invocation(
+            &invocation,
+            Some(&catalog),
+            case.operation.clone(),
+            resolved_call,
+        )
+        .unwrap_or_else(|error| panic!("{} schema context: {error:?}", case.name));
         let specialized = specializer
             .specializer
             .specialize_invocation(&invocation, &mut context)
             .unwrap_or_else(|error| panic!("{} specialization: {error:?}", case.name));
+        assert_eq!(
+            specialized.output().resolved_type().unwrap(),
+            predicted_output,
+            "{} semantic output",
+            case.name,
+        );
         assert_eq!(
             value_spec(specialized.output()),
             case.output,

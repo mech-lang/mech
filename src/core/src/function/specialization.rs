@@ -4,10 +4,10 @@ use alloc::{boxed::Box, rc::Rc, string::String, vec::Vec};
 use std::{boxed::Box, rc::Rc, string::String, vec::Vec};
 
 use crate::{
-    DimensionExpr, FunctionCatalog, FunctionInstance, FunctionInvocation, FunctionPortBacking,
-    FunctionValueRepresentation, MResult, MechError, MechErrorKind, MechFunctionFactory, Ref,
-    RuntimeFunctionInputs, Schema, SchemaBody, SchemaKey, SchemaTable, SchemaTableBuilder,
-    ShapeInstance, Value, ValueCell,
+    ConversionPlan, DimensionExpr, FunctionCatalog, FunctionInstance, FunctionInvocation,
+    FunctionPortBacking, FunctionValueRepresentation, MResult, MechError, MechErrorKind,
+    MechFunctionFactory, Ref, ResolvedType, RuntimeFunctionInputs, Schema, SchemaBody, SchemaKey,
+    SchemaTable, SchemaTableBuilder, ShapeInstance, Value, ValueCell,
 };
 
 #[cfg(feature = "matrix")]
@@ -110,6 +110,15 @@ pub struct SpecializationInvocation {
     inputs: Box<[SpecializationInput]>,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResolvedCall {
+    pub overload_id: u32,
+    pub original_inputs: Box<[ResolvedType]>,
+    pub converted_inputs: Box<[ResolvedType]>,
+    pub input_conversions: Box<[ConversionPlan]>,
+    pub outputs: Box<[ResolvedType]>,
+}
+
 impl SpecializationInvocation {
     pub fn new(inputs: Box<[SpecializationInput]>) -> Self {
         Self { inputs }
@@ -148,6 +157,8 @@ impl SpecializationInvocation {
 pub struct SpecializationContext<'a> {
     schemas: Rc<SchemaTable>,
     catalog: Option<&'a FunctionCatalog>,
+    semantic_operation: Option<String>,
+    resolved_call: Option<ResolvedCall>,
 }
 
 impl<'a> SpecializationContext<'a> {
@@ -155,6 +166,8 @@ impl<'a> SpecializationContext<'a> {
         Self {
             schemas,
             catalog: None,
+            semantic_operation: None,
+            resolved_call: None,
         }
     }
 
@@ -162,6 +175,8 @@ impl<'a> SpecializationContext<'a> {
         Self {
             schemas,
             catalog: Some(catalog),
+            semantic_operation: None,
+            resolved_call: None,
         }
     }
 
@@ -184,7 +199,24 @@ impl<'a> SpecializationContext<'a> {
         } else {
             Rc::new(builder.finish()?.table)
         };
-        Ok(Self { schemas, catalog })
+        Ok(Self {
+            schemas,
+            catalog,
+            semantic_operation: None,
+            resolved_call: None,
+        })
+    }
+
+    pub fn for_resolved_invocation(
+        invocation: &SpecializationInvocation,
+        catalog: Option<&'a FunctionCatalog>,
+        semantic_operation: impl Into<String>,
+        resolved_call: ResolvedCall,
+    ) -> MResult<Self> {
+        let mut context = Self::for_invocation(invocation, catalog)?;
+        context.semantic_operation = Some(semantic_operation.into());
+        context.resolved_call = Some(resolved_call);
+        Ok(context)
     }
 
     pub fn schemas(&self) -> &SchemaTable {
@@ -193,6 +225,42 @@ impl<'a> SpecializationContext<'a> {
 
     pub fn catalog(&self) -> Option<&FunctionCatalog> {
         self.catalog
+    }
+
+    pub fn resolved_call(&self) -> MResult<&ResolvedCall> {
+        self.resolved_call.as_ref().ok_or_else(|| {
+            MechError::new(
+                SpecializationSemanticCallUnavailable {
+                    semantic_operation: self
+                        .semantic_operation
+                        .clone()
+                        .unwrap_or_else(|| "named operation".into()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })
+    }
+
+    pub fn resolved_input(&self, index: usize) -> MResult<&ResolvedType> {
+        self.resolved_call()?
+            .converted_inputs
+            .get(index)
+            .ok_or_else(|| resolved_call_index_error(self, "input", index))
+    }
+
+    pub fn resolved_output(&self, index: usize) -> MResult<&ResolvedType> {
+        self.resolved_call()?
+            .outputs
+            .get(index)
+            .ok_or_else(|| resolved_call_index_error(self, "output", index))
+    }
+
+    pub fn input_conversion(&self, index: usize) -> MResult<&ConversionPlan> {
+        self.resolved_call()?
+            .input_conversions
+            .get(index)
+            .ok_or_else(|| resolved_call_index_error(self, "input conversion", index))
     }
 
     pub fn schema(&self, key: SchemaKey) -> MResult<&Schema> {
@@ -239,6 +307,16 @@ impl<'a> SpecializationContext<'a> {
         ValueCell::from_runtime_value(value, self.schemas.clone())
     }
 
+    fn semantic_binding_inputs(&self) -> MResult<Box<[String]>> {
+        Ok(self
+            .resolved_call()?
+            .converted_inputs
+            .iter()
+            .map(ResolvedType::semantic_name)
+            .collect::<Vec<_>>()
+            .into_boxed_slice())
+    }
+
     /// Selects and binds one exact runtime factory from canonical input and
     /// output representations.
     ///
@@ -253,10 +331,20 @@ impl<'a> SpecializationContext<'a> {
         output_dimensions: Option<(usize, usize)>,
         inputs: &[&SpecializationInput],
     ) -> MResult<SpecializedFunction> {
+        let resolved_output = self.resolved_output(0)?;
+        let semantic_operation = self
+            .semantic_operation
+            .clone()
+            .unwrap_or_else(|| name_prefix.into());
+        let semantic_output = resolved_output.semantic_name();
+        let semantic_inputs = self.semantic_binding_inputs()?;
         let catalog = self.catalog.ok_or_else(|| {
             MechError::new(
                 SpecializationRuntimeCatalogUnavailable {
-                    factory_prefix: name_prefix.into(),
+                    semantic_operation: semantic_operation.clone(),
+                    semantic_inputs: semantic_inputs.clone(),
+                    semantic_output: semantic_output.clone(),
+                    execution_profile: "direct runtime",
                 },
                 None,
             )
@@ -273,32 +361,36 @@ impl<'a> SpecializationContext<'a> {
         let mut candidates = catalog.runtime_entries().filter(|entry| {
             entry.name.starts_with(name_prefix)
                 && entry.signature().output == output_representation
+                && representation_supports_resolved_type(entry.signature().output, resolved_output)
                 && runtime_inputs_match(entry.signature().inputs, input_representations.as_slice())
         });
         let entry = candidates.next().ok_or_else(|| {
             MechError::new(
                 SpecializationRuntimeFactoryUnavailable {
-                    factory_prefix: name_prefix.into(),
-                    output: output_representation,
-                    inputs: input_representations.clone().into_boxed_slice(),
+                    semantic_operation: semantic_operation.clone(),
+                    semantic_inputs: semantic_inputs.clone(),
+                    semantic_output: semantic_output.clone(),
+                    execution_profile: "direct runtime",
                 },
                 None,
             )
             .with_compiler_loc()
         })?;
-        if let Some(second) = candidates.next() {
+        if candidates.next().is_some() {
             return Err(MechError::new(
                 SpecializationRuntimeFactoryAmbiguous {
-                    factory_prefix: name_prefix.into(),
-                    first: entry.name.clone(),
-                    second: second.name.clone(),
+                    semantic_operation: semantic_operation.clone(),
+                    semantic_inputs: semantic_inputs.clone(),
+                    semantic_output: semantic_output.clone(),
+                    execution_profile: "direct runtime",
                 },
                 None,
             )
             .with_compiler_loc());
         }
         let output =
-            ValueCell::default_for_representation(output_representation, output_dimensions)?;
+            ValueCell::default_for_representation(output_representation, output_dimensions)?
+                .with_resolved_output_type(resolved_output)?;
         let input_cells = inputs
             .iter()
             .map(|input| input.cell().cloned())
@@ -319,10 +411,20 @@ impl<'a> SpecializationContext<'a> {
         output_dimensions: Option<(usize, usize)>,
         inputs: &[&SpecializationInput],
     ) -> MResult<SpecializedFunction> {
+        let resolved_output = self.resolved_output(0)?;
+        let semantic_operation = self
+            .semantic_operation
+            .clone()
+            .unwrap_or_else(|| name_prefix.into());
+        let semantic_output = resolved_output.semantic_name();
+        let semantic_inputs = self.semantic_binding_inputs()?;
         let catalog = self.catalog.ok_or_else(|| {
             MechError::new(
                 SpecializationRuntimeCatalogUnavailable {
-                    factory_prefix: name_prefix.into(),
+                    semantic_operation: semantic_operation.clone(),
+                    semantic_inputs: semantic_inputs.clone(),
+                    semantic_output: semantic_output.clone(),
+                    execution_profile: "direct runtime",
                 },
                 None,
             )
@@ -340,26 +442,25 @@ impl<'a> SpecializationContext<'a> {
             .runtime_entries()
             .filter(|entry| {
                 entry.name.starts_with(name_prefix)
+                    && representation_supports_resolved_type(
+                        entry.signature().output,
+                        resolved_output,
+                    )
                     && runtime_inputs_match(
                         entry.signature().inputs,
                         input_representations.as_slice(),
                     )
             })
-            .filter_map(|entry| {
-                let dimensions = output_dimensions
-                    .or_else(|| inferred_output_dimensions(entry.signature().output, inputs));
-                ValueCell::default_for_representation(entry.signature().output, dimensions)
-                    .ok()
-                    .map(|output| (runtime_output_rank(entry.signature().output), entry, output))
-            })
+            .map(|entry| (runtime_output_rank(entry.signature().output), entry))
             .collect::<Vec<_>>();
-        candidates.sort_by_key(|(rank, entry, _)| (*rank, entry.id));
-        let Some((best_rank, entry, output)) = candidates.into_iter().next() else {
+        candidates.sort_by_key(|(rank, entry)| (*rank, entry.id));
+        let Some((best_rank, entry)) = candidates.into_iter().next() else {
             return Err(MechError::new(
                 SpecializationRuntimeFactoryUnavailable {
-                    factory_prefix: name_prefix.into(),
-                    output: FunctionValueRepresentation::AnyValue,
-                    inputs: input_representations.into_boxed_slice(),
+                    semantic_operation: semantic_operation.clone(),
+                    semantic_inputs: semantic_inputs.clone(),
+                    semantic_output: semantic_output.clone(),
+                    execution_profile: "direct runtime",
                 },
                 None,
             )
@@ -368,30 +469,32 @@ impl<'a> SpecializationContext<'a> {
         let competing = catalog.runtime_entries().find(|candidate| {
             candidate.id != entry.id
                 && candidate.name.starts_with(name_prefix)
+                && representation_supports_resolved_type(
+                    candidate.signature().output,
+                    resolved_output,
+                )
                 && runtime_inputs_match(
                     candidate.signature().inputs,
                     input_representations.as_slice(),
                 )
                 && runtime_output_rank(candidate.signature().output) == best_rank
-                && ValueCell::default_for_representation(
-                    candidate.signature().output,
-                    output_dimensions.or_else(|| {
-                        inferred_output_dimensions(candidate.signature().output, inputs)
-                    }),
-                )
-                .is_ok()
         });
-        if let Some(second) = competing {
+        if competing.is_some() {
             return Err(MechError::new(
                 SpecializationRuntimeFactoryAmbiguous {
-                    factory_prefix: name_prefix.into(),
-                    first: entry.name.clone(),
-                    second: second.name.clone(),
+                    semantic_operation: semantic_operation.clone(),
+                    semantic_inputs: semantic_inputs.clone(),
+                    semantic_output: semantic_output.clone(),
+                    execution_profile: "direct runtime",
                 },
                 None,
             )
             .with_compiler_loc());
         }
+        let dimensions = output_dimensions
+            .or_else(|| inferred_output_dimensions(entry.signature().output, inputs));
+        let output = ValueCell::default_for_representation(entry.signature().output, dimensions)?
+            .with_resolved_output_type(resolved_output)?;
         let input_cells = inputs
             .iter()
             .map(|input| input.cell().cloned())
@@ -413,10 +516,20 @@ impl<'a> SpecializationContext<'a> {
         output: &SpecializationInput,
         inputs: &[&SpecializationInput],
     ) -> MResult<SpecializedFunction> {
+        let resolved_output = self.resolved_output(0)?;
+        let semantic_operation = self
+            .semantic_operation
+            .clone()
+            .unwrap_or_else(|| name_prefix.into());
+        let semantic_output = resolved_output.semantic_name();
+        let semantic_inputs = self.semantic_binding_inputs()?;
         let catalog = self.catalog.ok_or_else(|| {
             MechError::new(
                 SpecializationRuntimeCatalogUnavailable {
-                    factory_prefix: name_prefix.into(),
+                    semantic_operation: semantic_operation.clone(),
+                    semantic_inputs: semantic_inputs.clone(),
+                    semantic_output: semantic_output.clone(),
+                    execution_profile: "direct runtime",
                 },
                 None,
             )
@@ -425,6 +538,18 @@ impl<'a> SpecializationContext<'a> {
         let output_representation = output.representation().ok_or_else(|| {
             control_input_error("non-value", "runtime factory output representation")
         })?;
+        let live_output = output.cell()?.resolved_type()?;
+        if !crate::exact_type_equal(&live_output, resolved_output) {
+            return Err(MechError::from(crate::TypeResolutionError::incompatible(
+                self.semantic_operation
+                    .clone()
+                    .unwrap_or_else(|| name_prefix.into()),
+                crate::TypeConstraintFailure::OutputTypeMismatch {
+                    expected: resolved_output.semantic_name(),
+                    actual: live_output.semantic_name(),
+                },
+            )));
+        }
         let input_representations = inputs
             .iter()
             .map(|input| {
@@ -441,20 +566,22 @@ impl<'a> SpecializationContext<'a> {
         let entry = candidates.next().ok_or_else(|| {
             MechError::new(
                 SpecializationRuntimeFactoryUnavailable {
-                    factory_prefix: name_prefix.into(),
-                    output: output_representation,
-                    inputs: input_representations.clone().into_boxed_slice(),
+                    semantic_operation: semantic_operation.clone(),
+                    semantic_inputs: semantic_inputs.clone(),
+                    semantic_output: semantic_output.clone(),
+                    execution_profile: "direct runtime",
                 },
                 None,
             )
             .with_compiler_loc()
         })?;
-        if let Some(second) = candidates.next() {
+        if candidates.next().is_some() {
             return Err(MechError::new(
                 SpecializationRuntimeFactoryAmbiguous {
-                    factory_prefix: name_prefix.into(),
-                    first: entry.name.clone(),
-                    second: second.name.clone(),
+                    semantic_operation: semantic_operation.clone(),
+                    semantic_inputs: semantic_inputs.clone(),
+                    semantic_output: semantic_output.clone(),
+                    execution_profile: "direct runtime",
                 },
                 None,
             )
@@ -543,6 +670,103 @@ fn runtime_output_rank(representation: FunctionValueRepresentation) -> u8 {
             ..
         } => 1,
         _ => 0,
+    }
+}
+
+fn representation_supports_resolved_type(
+    representation: FunctionValueRepresentation,
+    resolved: &ResolvedType,
+) -> bool {
+    use crate::{BuiltinScalarKind as Scalar, FunctionMatrixElement as Element, KindExpr};
+    use FunctionValueRepresentation as Representation;
+
+    match (representation, resolved.kind()) {
+        (Representation::AnyValue, _) | (_, KindExpr::Wildcard) => true,
+        (Representation::U8, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U8),
+        (Representation::U16, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::U16)
+        }
+        (Representation::U32, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::U32)
+        }
+        (Representation::U64, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::U64)
+        }
+        (Representation::U128, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::U128)
+        }
+        (Representation::I8, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I8),
+        (Representation::I16, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::I16)
+        }
+        (Representation::I32, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::I32)
+        }
+        (Representation::I64, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::I64)
+        }
+        (Representation::I128, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::I128)
+        }
+        (Representation::F32, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::F32)
+        }
+        (Representation::F64, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::F64)
+        }
+        (Representation::C64, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::C64)
+        }
+        (Representation::R64, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::R64)
+        }
+        (Representation::String, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::String)
+        }
+        (Representation::Bool, KindExpr::Named(id)) => {
+            Scalar::from_kind_id(*id) == Some(Scalar::Bool)
+        }
+        (Representation::Id, KindExpr::Id) | (Representation::Index, KindExpr::Index) => true,
+        (Representation::Atom, KindExpr::Atom(_)) | (Representation::Enum, KindExpr::Enum(_)) => {
+            true
+        }
+        (Representation::Record, KindExpr::Record(_))
+        | (Representation::Map, KindExpr::Map { .. })
+        | (Representation::Set, KindExpr::Set { .. })
+        | (Representation::Table, KindExpr::Table { .. })
+        | (Representation::Tuple, KindExpr::Tuple(_))
+        | (Representation::Kind, KindExpr::TypeOf(_)) => true,
+        (
+            Representation::Matrix { element, .. },
+            KindExpr::Matrix {
+                element: resolved_element,
+                ..
+            },
+        ) => match (element, resolved_element.as_ref()) {
+            (Element::Value, _) => true,
+            (Element::Index, KindExpr::Index) => true,
+            (Element::Bool, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::Bool),
+            (Element::String, KindExpr::Named(id)) => {
+                Scalar::from_kind_id(*id) == Some(Scalar::String)
+            }
+            (Element::U8, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U8),
+            (Element::U16, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U16),
+            (Element::U32, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U32),
+            (Element::U64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U64),
+            (Element::U128, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U128),
+            (Element::I8, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I8),
+            (Element::I16, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I16),
+            (Element::I32, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I32),
+            (Element::I64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I64),
+            (Element::I128, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I128),
+            (Element::F32, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::F32),
+            (Element::F64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::F64),
+            (Element::C64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::C64),
+            (Element::R64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::R64),
+            _ => false,
+        },
+        (Representation::Empty, KindExpr::Tuple(elements)) => elements.is_empty(),
+        _ => false,
     }
 }
 
@@ -724,22 +948,39 @@ pub struct SpecializationUnknownSchema {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SpecializationSemanticCallUnavailable {
+    pub semantic_operation: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SpecializationResolvedCallIndexUnavailable {
+    pub semantic_operation: String,
+    pub category: &'static str,
+    pub index: usize,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SpecializationRuntimeCatalogUnavailable {
-    pub factory_prefix: String,
+    pub semantic_operation: String,
+    pub semantic_inputs: Box<[String]>,
+    pub semantic_output: String,
+    pub execution_profile: &'static str,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SpecializationRuntimeFactoryUnavailable {
-    pub factory_prefix: String,
-    pub output: FunctionValueRepresentation,
-    pub inputs: Box<[FunctionValueRepresentation]>,
+    pub semantic_operation: String,
+    pub semantic_inputs: Box<[String]>,
+    pub semantic_output: String,
+    pub execution_profile: &'static str,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SpecializationRuntimeFactoryAmbiguous {
-    pub factory_prefix: String,
-    pub first: String,
-    pub second: String,
+    pub semantic_operation: String,
+    pub semantic_inputs: Box<[String]>,
+    pub semantic_output: String,
+    pub execution_profile: &'static str,
 }
 
 impl MechErrorKind for SpecializationUnknownSchema {
@@ -755,6 +996,32 @@ impl MechErrorKind for SpecializationUnknownSchema {
     }
 }
 
+impl MechErrorKind for SpecializationSemanticCallUnavailable {
+    fn name(&self) -> &str {
+        "SpecializationSemanticCallUnavailable"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "named operation {:?} reached physical specialization without a resolved semantic call",
+            self.semantic_operation,
+        )
+    }
+}
+
+impl MechErrorKind for SpecializationResolvedCallIndexUnavailable {
+    fn name(&self) -> &str {
+        "SpecializationResolvedCallIndexUnavailable"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "named operation {:?} has no resolved {} at index {}",
+            self.semantic_operation, self.category, self.index,
+        )
+    }
+}
+
 impl MechErrorKind for SpecializationRuntimeCatalogUnavailable {
     fn name(&self) -> &str {
         "SpecializationRuntimeCatalogUnavailable"
@@ -762,8 +1029,11 @@ impl MechErrorKind for SpecializationRuntimeCatalogUnavailable {
 
     fn message(&self) -> String {
         format!(
-            "canonical source specialization for {} requires the runtime factory catalog",
-            self.factory_prefix,
+            "semantic operation `{}` with inputs {:?} and output {} cannot bind for the {} execution profile because its runtime catalog is unavailable",
+            self.semantic_operation,
+            self.semantic_inputs,
+            self.semantic_output,
+            self.execution_profile,
         )
     }
 }
@@ -775,8 +1045,11 @@ impl MechErrorKind for SpecializationRuntimeFactoryUnavailable {
 
     fn message(&self) -> String {
         format!(
-            "no canonical runtime factory matching {} {:?} -> {:?} is registered",
-            self.factory_prefix, self.inputs, self.output,
+            "semantic operation `{}` with inputs {:?} and output {} is unavailable for the {} execution profile",
+            self.semantic_operation,
+            self.semantic_inputs,
+            self.semantic_output,
+            self.execution_profile,
         )
     }
 }
@@ -788,8 +1061,11 @@ impl MechErrorKind for SpecializationRuntimeFactoryAmbiguous {
 
     fn message(&self) -> String {
         format!(
-            "canonical runtime factory selection for {} is ambiguous between {:?} and {:?}",
-            self.factory_prefix, self.first, self.second,
+            "semantic operation `{}` with inputs {:?} and output {} has more than one binding for the {} execution profile",
+            self.semantic_operation,
+            self.semantic_inputs,
+            self.semantic_output,
+            self.execution_profile,
         )
     }
 }
@@ -812,6 +1088,25 @@ fn control_input_error(control: &'static str, requested: &'static str) -> MechEr
         SpecializationInputAbsent {
             control: String::from(control),
             requested: String::from(requested),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+fn resolved_call_index_error(
+    context: &SpecializationContext<'_>,
+    category: &'static str,
+    index: usize,
+) -> MechError {
+    MechError::new(
+        SpecializationResolvedCallIndexUnavailable {
+            semantic_operation: context
+                .semantic_operation
+                .clone()
+                .unwrap_or_else(|| "named operation".into()),
+            category,
+            index,
         },
         None,
     )

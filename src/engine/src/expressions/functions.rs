@@ -102,18 +102,14 @@ pub fn function_call(
             let invocation = mech_core::SpecializationInvocation::new(
                 input_arg_values.clone().into_boxed_slice(),
             );
-            let mut context = mech_core::SpecializationContext::for_invocation(
-                &invocation,
-                Some(p.function_catalog()),
-            )?;
-            let specialized = entry
-                .specializer
-                .specialize_invocation(&invocation, &mut context)?;
-            execute_bound_specialized_function(
-                specialized.with_semantic_operation(entry.canonical_name),
-                &input_arg_values,
-                p,
-            )
+            let specialized = p
+                .specialize_visible_invocation_named(
+                    entry.operation,
+                    Some(&entry.canonical_name),
+                    &invocation,
+                )
+                .map_err(|error| error.with_tokens(fxn_call.name.tokens()))?;
+            execute_bound_specialized_function(specialized, &input_arg_values, p)
         }
         OwnedResolvedNamedFunction::Extension(entry) => {
             trace_println!(

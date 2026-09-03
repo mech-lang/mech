@@ -5853,9 +5853,9 @@ impl CanonicalFunctionSpecializer for MatrixHorzCat {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        ValueMatrixConcatenation::<false>::specialize(invocation)
+        ValueMatrixConcatenation::<false>::specialize(invocation, context)
     }
 }
 

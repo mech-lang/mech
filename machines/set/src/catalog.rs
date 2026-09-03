@@ -75,7 +75,9 @@ fn install_operation<T>(
 where
     T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
+    let declaration = mech_core::maintained_source_type_declaration(canonical_name)?;
+    let operation =
+        builder.insert_canonical_specializer(canonical_name, declaration, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),

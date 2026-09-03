@@ -96,11 +96,12 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 
 The current published package is `v0.3.6`; the active development target is
 `v0.4.0`. The canonical value-system cutover, R1 contract closure, and R2 type-memory
-boundary are complete. The next v0.4 phase is R3: type inference, classes, and
-conversions. The remaining work is organized into these endgame phases:
+boundary are complete. R3 Type System v1 is also complete: semantic inference,
+built-in predicates, conversion planning, and overload resolution are authoritative.
+The next v0.4 phase is R4. The remaining work is organized into these endgame phases:
 
-- R3 Type inference, classes, and conversions
-- R4 Type-system cutover
+- R3 Type inference, predicates, and conversions — complete
+- R4 Type-system storage cutover — next
 - R5 Memory planner
 - R6 Memory runtime cutover
 - R7 Release qualification

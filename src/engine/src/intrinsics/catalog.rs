@@ -66,7 +66,9 @@ fn install_canonical_named<T>(
 where
     T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
+    let declaration = mech_core::maintained_source_type_declaration(canonical_name)?;
+    let operation =
+        builder.insert_canonical_specializer(canonical_name, declaration, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -374,6 +376,8 @@ pub fn install_runtime(
     super::assign::install_runtime(builder)?;
     #[cfg(feature = "convert")]
     super::convert::scalar::install_runtime(builder)?;
+    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+    crate::literals::register_runtime_kind_conversion(builder)?;
     #[cfg(feature = "variable_define")]
     super::define::install_runtime(builder)?;
 

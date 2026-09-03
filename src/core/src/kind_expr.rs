@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[cfg(feature = "no_std")]
-use alloc::{borrow::ToOwned, boxed::Box, collections::BTreeSet, string::String, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeSet, string::String, vec, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, collections::BTreeSet, string::String, vec::Vec};
 
@@ -67,27 +67,10 @@ pub trait NamedKindPathResolver {
 pub fn builtin_scalar_named_kind(
     scalar_id: u64,
 ) -> Result<(KindId, CanonicalNominalPath), SemanticModelError> {
-    const NAMES: &[&str] = &[
-        "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64", "c64",
-        "r64", "string", "bool",
-    ];
-    let Some((index, name)) = NAMES
-        .iter()
-        .copied()
-        .enumerate()
-        .find(|(_, name)| crate::hash_str(name) == scalar_id)
-    else {
+    let Some(kind) = crate::type_system::builtin_scalar_from_name_hash(scalar_id) else {
         return Err(SemanticModelError::BuiltinScalarKindUnresolved { scalar_id });
     };
-    Ok((
-        KindId::new(index as u32),
-        CanonicalNominalPath::new([
-            "mech".to_owned(),
-            "builtin".to_owned(),
-            "scalar".to_owned(),
-            name.to_owned(),
-        ])?,
-    ))
+    Ok((kind.kind_id(), kind.canonical_path()?))
 }
 
 pub fn canonical_closed_kind_bytes(
@@ -99,6 +82,7 @@ pub fn canonical_closed_kind_bytes(
     let kind = normalize_kind_dimensions(kind.clone(), dimension_parameters.len())?;
     let mut references = Vec::new();
     collect_kind_dimension_references(&kind, &mut references);
+    let references = dependency_ordered_dimension_references(dimension_parameters, &references)?;
     let environment = canonicalize_dimension_environment(dimension_parameters, &references)?;
     let rewritten = rewrite_kind_dimensions(&kind, &environment.old_to_new)?;
     let rewritten = normalize_kind_dimensions(rewritten, environment.parameters.len())?;
@@ -110,6 +94,51 @@ pub fn canonical_closed_kind_bytes(
     let body = encode_kind_body(&rewritten, named_kinds)?;
     push_node(&mut bytes, &body);
     Ok(bytes.into_boxed_slice())
+}
+
+/// Orders the reachable dimension parameters so every bound dependency is
+/// imported before the parameter that refers to it. This keeps closed-kind
+/// normalization deterministic even when only a derived output parameter is
+/// referenced by the root kind.
+pub(crate) fn dependency_ordered_dimension_references(
+    declarations: &[DimensionParameterDeclaration],
+    roots: &[DimensionParameterId],
+) -> Result<Vec<DimensionParameterId>, SemanticModelError> {
+    fn visit(
+        id: DimensionParameterId,
+        declarations: &[DimensionParameterDeclaration],
+        state: &mut [u8],
+        ordered: &mut Vec<DimensionParameterId>,
+    ) -> Result<(), SemanticModelError> {
+        let index = id.get() as usize;
+        let Some(declaration) = declarations.get(index) else {
+            return Err(SemanticModelError::UnknownDimensionParameterV1 { id });
+        };
+        match state[index] {
+            1 => return Err(SemanticModelError::CyclicDimensionParameterBoundsV1),
+            2 => return Ok(()),
+            _ => {}
+        }
+        state[index] = 1;
+        let mut dependencies = Vec::new();
+        collect_dimension_references(&declaration.lower_bound, &mut dependencies);
+        if let Some(upper) = &declaration.upper_bound {
+            collect_dimension_references(upper, &mut dependencies);
+        }
+        for dependency in dependencies {
+            visit(dependency, declarations, state, ordered)?;
+        }
+        state[index] = 2;
+        ordered.push(id);
+        Ok(())
+    }
+
+    let mut state = vec![0_u8; declarations.len()];
+    let mut ordered = Vec::new();
+    for root in roots {
+        visit(*root, declarations, &mut state, &mut ordered)?;
+    }
+    Ok(ordered)
 }
 
 pub(crate) fn validate_kind_structure(kind: &KindExpr) -> Result<(), SemanticModelError> {
@@ -330,7 +359,7 @@ pub(crate) fn visit_kind_dimensions(
     Ok(())
 }
 
-fn rewrite_kind_dimensions(
+pub(crate) fn rewrite_kind_dimensions(
     kind: &KindExpr,
     old_to_new: &[Option<DimensionParameterId>],
 ) -> Result<KindExpr, SemanticModelError> {
@@ -411,7 +440,7 @@ fn rewrite_fields(
         .map(Vec::into_boxed_slice)
 }
 
-fn normalize_kind_dimensions(
+pub(crate) fn normalize_kind_dimensions(
     kind: KindExpr,
     parameter_count: usize,
 ) -> Result<KindExpr, SemanticModelError> {

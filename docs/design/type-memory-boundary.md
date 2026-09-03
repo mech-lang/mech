@@ -221,11 +221,12 @@ R2 is complete when the conformance matrix, architecture checker, normal CI,
 and exact-head Full CI are green. Completion does not mean the checker controls
 production binding: the compatibility boundary remains shadow-only until R4.
 
-## 16. R3 handoff
+## 16. R3 closure
 
-R3 may consume `Schema`, scalar and container `MemoryTopology`,
-`ExtentEvolution`, semantic `AddressingContract`, and declared operation
-requirements. It must not use `StorageCapabilityDescriptor`,
+R3 consumes `Schema`, `KindExpr`, `KindScheme`, validated dimensions, and
+declared operation requirements to produce closed semantic types before
+physical binding. Type System v1 inference, built-in classes, promotions,
+conversion plans, and diagnostics are complete and authoritative. It does not use `StorageCapabilityDescriptor`,
 `FunctionValueRepresentation`, exact Rust matrix backing classes,
 `CanonicalCellId`, `same_storage`, or pointer or allocator identity as
 inference inputs.

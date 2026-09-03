@@ -194,7 +194,7 @@ impl CanonicalFunctionSpecializer for RangeExclusive {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 2 {
             return Err(MechError::new(
@@ -215,7 +215,14 @@ impl CanonicalFunctionSpecializer for RangeExclusive {
                     && to.representation()
                         == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
                 {
-                    bind_dynamic_binary_range!(RangeExclusiveScalar, $scalar, from, to, false);
+                    bind_dynamic_binary_range!(
+                        RangeExclusiveScalar,
+                        $scalar,
+                        from,
+                        to,
+                        false,
+                        context
+                    );
                 }
             };
         }

@@ -70,8 +70,8 @@ impl CanonicalFunctionSpecializer for SetInsert {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        specialize_dynamic_set::<SetInsertFxn>(invocation)
+        specialize_dynamic_set::<SetInsertFxn>(invocation, context)
     }
 }

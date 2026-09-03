@@ -87,7 +87,11 @@ mod checkpoint_tests {
     fn catalog_identity_and_function_environment_survive_children_clear_and_restore() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_canonical_specializer("math/add", Arc::new(CheckpointSpecializer(1)))
+            .insert_canonical_specializer(
+                "math/add",
+                mech_core::maintained_source_type_declaration("math/add").unwrap(),
+                Arc::new(CheckpointSpecializer(1)),
+            )
             .unwrap();
         let operation = OperationId::from_name("math/add");
         builder

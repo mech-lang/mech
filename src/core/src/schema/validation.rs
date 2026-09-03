@@ -108,7 +108,7 @@ fn validate_unique_names<'a>(
     Ok(())
 }
 
-pub(super) fn is_body_keyable(body: &SchemaBody) -> bool {
+pub(crate) fn is_body_keyable(body: &SchemaBody) -> bool {
     match body {
         SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)

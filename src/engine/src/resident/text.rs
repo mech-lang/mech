@@ -8,7 +8,6 @@ use mech_core::{
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     builder.insert_resident_factory(["string"], "concat", bind_concat)?;
-    builder.insert_resident_factory(["convert"], "kind", bind_f64_vector_to_string)?;
     builder.insert_resident_factory(["matrix"], "assign-range-all", bind_string_all_assign)?;
     builder.insert_resident_factory(["matrix"], "assign-scalar", bind_string_index_assign)?;
     builder.insert_resident_factory(
@@ -524,78 +523,6 @@ fn string_scalar_access(
     let changed = *target != next;
     if changed {
         *target = next;
-    }
-    Ok(changed)
-}
-
-fn bind_f64_vector_to_string(
-    request: &ResidentKernelBindRequest<'_>,
-) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    let ResolvedOperationContract::Declared(contract) = request.contract else {
-        return Err(ResidentKernelBindError::UnsupportedContract);
-    };
-    let [input] = request.inputs else {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    };
-    let [input_contract] = contract.inputs.as_ref() else {
-        return Err(ResidentKernelBindError::UnsupportedContract);
-    };
-    let [output_contract] = contract.outputs.as_ref() else {
-        return Err(ResidentKernelBindError::UnsupportedContract);
-    };
-    if contract.interaction != ExternalInteraction::Pure
-        || input_contract.schema != input.schema_id
-        || input_contract.access != AccessMode::Read
-        || input_contract.delivery != DeliveryMode::Signal
-        || output_contract.schema != request.output.schema_id
-        || output_contract.access != AccessMode::Write
-        || output_contract.delivery != DeliveryMode::Signal
-        || output_contract.construction
-            != (OutputConstruction::FullWrite {
-                shape: ShapeRule::SameAsInput { input: 0 },
-            })
-        || output_contract.alias != AliasPolicy::NoAlias
-        || output_contract.change_detection != ChangeDetectionPolicy::KernelReported
-        || input.kind != ResidentValueKind::F64
-        || request.output.kind != ResidentValueKind::String
-        || input.shape != request.output.shape
-    {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
-    Ok(BoundResidentKernel::new(f64_vector_to_string, Box::new([])))
-}
-
-fn f64_vector_to_string(
-    _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    let Some(ResidentValueRef::F64(source)) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let ResidentValueMut::String(target) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    if source.len() != target.len() {
-        return Err(ResidentKernelError::InvalidShape);
-    }
-    let payload_upper = source
-        .len()
-        .checked_mul(32)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_materialization(
-        source.len(),
-        payload_upper,
-        payload_upper,
-        source.len(),
-        source.len(),
-        0,
-        0,
-    )?;
-    let next = source.iter().map(f64::to_string).collect::<Vec<_>>();
-    let changed = target != next;
-    for (target, value) in target.iter_mut().zip(next) {
-        *target = value;
     }
     Ok(changed)
 }
@@ -1246,32 +1173,6 @@ mod tests {
             );
             assert_eq!(output, [9]);
         }
-    }
-
-    struct NumericInput([f64; 4]);
-
-    impl ResidentKernelInputs for NumericInput {
-        fn len(&self) -> usize {
-            1
-        }
-
-        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
-            (index == 0).then_some(ResidentValueRef::F64(&self.0))
-        }
-    }
-
-    #[test]
-    fn f64_vector_conversion_matches_source_string_formatting() {
-        let kernel = BoundResidentKernel::new(f64_vector_to_string, Box::new([]));
-        let inputs = NumericInput([1.0, -2.5, f64::INFINITY, f64::NAN]);
-        let mut output = [String::new(), String::new(), String::new(), String::new()];
-
-        assert!(
-            kernel
-                .execute(&inputs, ResidentValueMut::String(&mut output))
-                .unwrap()
-        );
-        assert_eq!(output, ["1", "-2.5", "inf", "NaN"]);
     }
 
     struct MaskInputs {

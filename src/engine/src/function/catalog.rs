@@ -21,6 +21,8 @@ pub fn install_intrinsic_resident(
 ) -> MResult<()> {
     #[cfg(feature = "resident-artifact")]
     crate::resident::composite::install(builder)?;
+    #[cfg(all(feature = "resident-artifact", feature = "convert"))]
+    crate::resident::conversion::install(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::matrix_literal::install(builder)?;
     #[cfg(feature = "resident-artifact")]

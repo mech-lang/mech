@@ -319,8 +319,8 @@ if actual_digest != expected_digest:
 expected_surface = {
     "selected-runtime": (3, 0, 0, 0, 0, selected_digest, "sha256-canonical-id-tab-name-lf-v1"),
     "full-runtime": (9034, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "full-source": (12779, 120, 10, 52, 51, "7dfb1a997945bdf4ee09b967e648f2c5d8c8e9c4fbfad5f0b2d5927fdcbcd327", "sha256-canonical-id-tab-name-lf-v1"),
-    "full-compiler": (12831, 120, 10, 52, 51, "981088f9f3507e4a034bd0d1dc0b9f8ae37c803eaf7184828b1eb5240ec23102", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-source": (12780, 120, 10, 52, 51, "5b6f4a205cfd5ea9460951de6daf0cf19d6763ca75da814e8c4b8395b8fbc531", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-compiler": (12832, 120, 10, 52, 51, "59367cacc70cfabe1e19de87f6caa3feeb293a87c2154eb6afa0da8e3d637cf7", "sha256-canonical-id-tab-name-lf-v1"),
 }
 surface_keys = (
     "catalog_factory_count", "source_specializer_count", "intrinsic_count",

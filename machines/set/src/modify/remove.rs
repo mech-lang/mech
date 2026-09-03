@@ -70,8 +70,8 @@ impl CanonicalFunctionSpecializer for SetRemove {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        specialize_dynamic_set::<SetRemoveFxn>(invocation)
+        specialize_dynamic_set::<SetRemoveFxn>(invocation, context)
     }
 }

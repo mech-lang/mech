@@ -1,13 +1,27 @@
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
+use alloc::{
+    boxed::Box,
+    collections::{BTreeMap, BTreeSet},
+    string::String,
+    sync::Arc,
+    vec,
+    vec::Vec,
+};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
+use std::{
+    boxed::Box,
+    collections::{BTreeMap, BTreeSet},
+    string::String,
+    sync::Arc,
+    vec::Vec,
+};
 
 use crate::{
-    FunctionInstance, FunctionInvocation, GuardFunctionSafety, MResult, MechError, MechErrorKind,
-    MechFunction, MechFunctionFactory, OperationContractDeclaration, ResidentKernelFactory,
-    ResidentKernelFactoryEntry, ResidentOperationKey, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SpecializationContext,
+    FunctionInstance, FunctionInvocation, GuardFunctionSafety, InputKindScheme, KindScheme,
+    MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
+    OperationContractDeclaration, ResidentKernelFactory, ResidentKernelFactoryEntry,
+    ResidentOperationKey, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy, SourceSchemeTemplate, SpecializationContext,
     SpecializationInvocation, SpecializedFunction, hash_str,
 };
 
@@ -314,7 +328,105 @@ impl RuntimeFunctionEntry {
 pub struct FunctionSpecializerEntry {
     pub operation: OperationId,
     pub canonical_name: String,
+    pub type_authority: SourceTypeAuthority,
     pub specializer: Arc<dyn CanonicalFunctionSpecializer>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SourceInputKind {
+    Value,
+    Absent,
+    MatrixAllSelection,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FunctionTypeOverload {
+    pub id: u32,
+    pub input_layout: Box<[SourceInputKind]>,
+    pub scheme: KindScheme,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FunctionTypeDeclaration {
+    pub overloads: Box<[FunctionTypeOverload]>,
+    pub template: Option<SourceSchemeTemplate>,
+}
+
+impl FunctionTypeDeclaration {
+    pub fn from_schemes(schemes: Vec<KindScheme>) -> Self {
+        let overloads = schemes
+            .into_iter()
+            .enumerate()
+            .map(|(index, scheme)| {
+                let value_count = match scheme.inputs() {
+                    InputKindScheme::Fixed(inputs) => inputs.len(),
+                    InputKindScheme::Variadic { prefix, .. } => prefix.len() + 1,
+                };
+                FunctionTypeOverload {
+                    id: index as u32,
+                    input_layout: vec![SourceInputKind::Value; value_count].into_boxed_slice(),
+                    scheme,
+                }
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        Self {
+            overloads,
+            template: None,
+        }
+    }
+
+    pub fn from_template(template: SourceSchemeTemplate) -> Self {
+        Self {
+            overloads: Box::new([]),
+            template: Some(template),
+        }
+    }
+
+    pub fn with_layout(mut self, layout: Box<[SourceInputKind]>) -> Self {
+        for overload in &mut self.overloads {
+            overload.input_layout = layout.clone();
+        }
+        self
+    }
+}
+
+pub fn maintained_source_type_declaration(
+    canonical_name: &str,
+) -> MResult<FunctionTypeDeclaration> {
+    if let Some(template) = crate::type_system::maintained_source_scheme_template(canonical_name) {
+        return Ok(FunctionTypeDeclaration::from_template(template));
+    }
+    let Some(schemes) = crate::type_system::maintained_source_schemes(canonical_name)? else {
+        return Err(MechError::new(
+            FunctionCatalogInvalidTypeDeclaration {
+                canonical_name: canonical_name.into(),
+                reason: "the maintained source operation has no explicit semantic scheme".into(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    let declaration = FunctionTypeDeclaration::from_schemes(schemes);
+    if canonical_name.ends_with("/range-all") {
+        Ok(declaration.with_layout(
+            vec![
+                SourceInputKind::Value,
+                SourceInputKind::Value,
+                SourceInputKind::Value,
+                SourceInputKind::MatrixAllSelection,
+            ]
+            .into_boxed_slice(),
+        ))
+    } else {
+        Ok(declaration)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SourceTypeAuthority {
+    Schemes(FunctionTypeDeclaration),
+    SyntaxDirectedIntrinsic,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -627,6 +739,25 @@ pub struct FunctionCatalogInvalidName {
     pub id: u64,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionCatalogInvalidTypeDeclaration {
+    pub canonical_name: String,
+    pub reason: String,
+}
+
+impl MechErrorKind for FunctionCatalogInvalidTypeDeclaration {
+    fn name(&self) -> &str {
+        "FunctionCatalogInvalidTypeDeclaration"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "invalid semantic declaration for {:?}: {}",
+            self.canonical_name, self.reason,
+        )
+    }
+}
+
 #[cfg(feature = "native-plan")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FunctionCatalogInvalidNativeLinkage {
@@ -910,6 +1041,7 @@ impl FunctionCatalogBuilder {
     pub fn insert_canonical_specializer(
         &mut self,
         canonical_name: impl Into<String>,
+        type_declaration: FunctionTypeDeclaration,
         specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
@@ -917,6 +1049,7 @@ impl FunctionCatalogBuilder {
         self.insert_specializer_entry(FunctionSpecializerEntry {
             operation,
             canonical_name,
+            type_authority: SourceTypeAuthority::Schemes(type_declaration),
             specializer,
         })
     }
@@ -931,6 +1064,7 @@ impl FunctionCatalogBuilder {
         self.insert_intrinsic_specializer_entry(FunctionSpecializerEntry {
             operation,
             canonical_name,
+            type_authority: SourceTypeAuthority::SyntaxDirectedIntrinsic,
             specializer,
         })
     }
@@ -1122,6 +1256,14 @@ impl FunctionCatalogBuilder {
             .with_compiler_loc());
         }
 
+        let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
+            return Err(invalid_type_declaration(
+                &entry.canonical_name,
+                "named source operations must be scheme-authoritative",
+            ));
+        };
+        validate_type_declaration(&entry.canonical_name, declaration)?;
+
         if let Some(existing) = self
             .specializers
             .get(&entry.operation)
@@ -1169,6 +1311,16 @@ impl FunctionCatalogBuilder {
             .with_compiler_loc());
         }
 
+        if !matches!(
+            entry.type_authority,
+            SourceTypeAuthority::SyntaxDirectedIntrinsic
+        ) {
+            return Err(invalid_type_declaration(
+                &entry.canonical_name,
+                "parser-only intrinsics must be explicitly syntax-directed",
+            ));
+        }
+
         if let Some(existing) = self
             .intrinsic_specializers
             .get(&entry.operation)
@@ -1199,6 +1351,74 @@ impl FunctionCatalogBuilder {
         self.intrinsic_specializers.insert(operation, entry);
         Ok(operation)
     }
+}
+
+fn invalid_type_declaration(canonical_name: &str, reason: impl Into<String>) -> MechError {
+    MechError::new(
+        FunctionCatalogInvalidTypeDeclaration {
+            canonical_name: canonical_name.into(),
+            reason: reason.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+fn validate_type_declaration(
+    canonical_name: &str,
+    declaration: &FunctionTypeDeclaration,
+) -> MResult<()> {
+    if declaration.overloads.is_empty() && declaration.template.is_none() {
+        return Err(invalid_type_declaration(
+            canonical_name,
+            "at least one overload is required",
+        ));
+    }
+    if declaration.template.is_some() && !declaration.overloads.is_empty() {
+        return Err(invalid_type_declaration(
+            canonical_name,
+            "a declaration cannot combine fixed overloads with a source scheme template",
+        ));
+    }
+    let mut ids = BTreeSet::new();
+    for (index, overload) in declaration.overloads.iter().enumerate() {
+        if !ids.insert(overload.id) {
+            return Err(invalid_type_declaration(
+                canonical_name,
+                format!("overload ID {} is repeated", overload.id),
+            ));
+        }
+        let value_slots = overload
+            .input_layout
+            .iter()
+            .filter(|input| **input == SourceInputKind::Value)
+            .count();
+        let expected_values = match overload.scheme.inputs() {
+            InputKindScheme::Fixed(inputs) => inputs.len(),
+            InputKindScheme::Variadic { prefix, .. } => prefix.len() + 1,
+        };
+        if value_slots != expected_values {
+            return Err(invalid_type_declaration(
+                canonical_name,
+                format!(
+                    "overload {} has {value_slots} Value slots but its scheme has {expected_values} inputs",
+                    overload.id,
+                ),
+            ));
+        }
+        if declaration.overloads[..index].iter().any(|existing| {
+            existing.input_layout == overload.input_layout && existing.scheme == overload.scheme
+        }) {
+            return Err(invalid_type_declaration(
+                canonical_name,
+                format!(
+                    "overload {} duplicates an earlier semantic declaration",
+                    overload.id
+                ),
+            ));
+        }
+    }
+    Ok(())
 }
 
 #[cfg(feature = "native-plan")]

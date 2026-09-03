@@ -69,8 +69,8 @@ impl CanonicalFunctionSpecializer for SetSymmetricDifference {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        specialize_dynamic_set::<SetSymDifferenceFxn>(invocation)
+        specialize_dynamic_set::<SetSymDifferenceFxn>(invocation, context)
     }
 }

@@ -1134,38 +1134,58 @@ fn canonical_f64(value: &ValueCell) -> MResult<f64> {
 
 #[cfg(feature = "dynamic-modules")]
 fn canonical_f64_matrix_values(value: &ValueCell) -> MResult<(usize, usize, Vec<f64>)> {
-    use mech_core::snapshot::SequenceView;
-
-    let snapshot = value.snapshot()?;
-    let ValueData::Matrix(matrix) = snapshot.data() else {
+    let SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = value.closed_schema_body()?
+    else {
         return Err(dynamic_argument_error(
             value,
             "dynamic kernel",
             "f64 matrix",
         ));
     };
-    let SequenceView::F64(elements) = matrix.elements() else {
+    if *element != SchemaBody::FloatingPoint(FloatWidth::W64) {
+        return Err(dynamic_argument_error(
+            value,
+            "dynamic kernel",
+            "f64 matrix",
+        ));
+    }
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        unreachable!("closed matrix schemas have concrete dimensions")
+    };
+    let draft = value.snapshot()?.canonical_data_draft().map_err(|error| {
+        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+    })?;
+    let ValueDataDraft::Matrix(elements) = draft else {
         return Err(dynamic_argument_error(
             value,
             "dynamic kernel",
             "f64 matrix",
         ));
     };
-    let shape = value.shape();
-    let dimensions = shape.parameter_values();
-    let [rows, columns] = dimensions else {
-        return Err(dynamic_argument_error(
-            value,
-            "dynamic kernel",
-            "rank-two f64 matrix",
-        ));
-    };
+    let mut values = Vec::with_capacity(elements.len());
+    for element in elements {
+        let ValueDataDraft::F64(element) = element else {
+            return Err(dynamic_argument_error(
+                value,
+                "dynamic kernel",
+                "f64 matrix",
+            ));
+        };
+        values.push(element.to_f64());
+    }
     Ok((
         usize::try_from(*rows)
             .map_err(|_| dynamic_argument_error(value, "dynamic kernel", "host-sized matrix"))?,
         usize::try_from(*columns)
             .map_err(|_| dynamic_argument_error(value, "dynamic kernel", "host-sized matrix"))?,
-        elements.iter().map(|element| element.to_f64()).collect(),
+        values,
     ))
 }
 
@@ -1945,7 +1965,11 @@ mod static_catalog_module_tests {
             ("stats/sum/column", "stats", "sum/column"),
         ] {
             let operation = builder
-                .insert_canonical_specializer(canonical_name, Arc::new(TestSpecializer))
+                .insert_canonical_specializer(
+                    canonical_name,
+                    mech_core::maintained_source_type_declaration(canonical_name).unwrap(),
+                    Arc::new(TestSpecializer),
+                )
                 .unwrap();
             builder
                 .insert_export(FunctionExport {

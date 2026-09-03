@@ -135,8 +135,8 @@ impl CanonicalFunctionSpecializer for SetPowerset {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        specialize_dynamic_set::<SetPowersetFxn>(invocation)
+        specialize_dynamic_set::<SetPowersetFxn>(invocation, context)
     }
 }

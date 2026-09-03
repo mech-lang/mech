@@ -481,18 +481,25 @@ mod source_only {
         fxn_def: &FunctionDefinition,
         p: &InterpreterExecution<'_>,
     ) -> MResult<ValueCell> {
-        if fxn_def.output.is_empty() {
-            return Ok(value);
-        }
-        let Some((_, output_kind_annotation)) = fxn_def.output.get_index(0) else {
+        let Some(output_arg) = fxn_def.code.output.first() else {
             return Ok(value);
         };
+        coerce_value_to_declared_kind(value, &output_arg.kind, p)
+            .map_err(|error| error.with_tokens(output_arg.tokens()))
+    }
+
+    #[cfg(feature = "kind_annotation")]
+    fn coerce_value_to_declared_kind(
+        value: ValueCell,
+        output_kind_annotation: &KindAnnotation,
+        p: &InterpreterExecution<'_>,
+    ) -> MResult<ValueCell> {
         let target_schema =
             crate::structures::schema_body_from_kind(&output_kind_annotation.kind, p)?;
         if value.closed_schema_body()? == target_schema {
             return Ok(value);
         }
-        crate::literals::convert_cell_reactively(value, target_schema, p)
+        crate::literals::convert_cell_implicitly_reactively(value, target_schema, p)
     }
 
     // RAII guard that swaps in a fresh symbol table and plan for the duration of a
@@ -598,8 +605,12 @@ mod source_only {
                 if input_value.closed_schema_body()? == target_schema {
                     input_value.clone()
                 } else {
-                    crate::literals::convert_cell_reactively(input_value.clone(), target_schema, p)
-                        .map_err(|error| error.with_tokens(input_kind_annotation.tokens()))?
+                    crate::literals::convert_cell_implicitly_reactively(
+                        input_value.clone(),
+                        target_schema,
+                        p,
+                    )
+                    .map_err(|error| error.with_tokens(input_kind_annotation.tokens()))?
                 }
             };
             #[cfg(not(feature = "kind_annotation"))]
@@ -640,6 +651,13 @@ mod source_only {
                     );
                 }
             }
+        }
+        drop(symbols_brrw);
+
+        #[cfg(feature = "kind_annotation")]
+        for (output, output_arg) in outputs.iter_mut().zip(&fxn_def.code.output) {
+            *output = coerce_value_to_declared_kind(output.clone(), &output_arg.kind, p)
+                .map_err(|error| error.with_tokens(output_arg.tokens()))?;
         }
 
         match outputs.len() {

@@ -13,8 +13,8 @@ use crate::Literal;
 #[cfg(feature = "enum")]
 use crate::hash_str;
 use crate::{
-    Expression, FunctionValueRepresentation, InterpreterExecution, MResult, MatchArm,
-    MatchExpression, MechError, Pattern, SpecializationInput, Token, ValueCell, ValueData,
+    Expression, InterpreterExecution, MResult, MatchArm, MatchExpression, MechError, Pattern,
+    ResolvedType, SpecializationInput, Token, ValueCell, ValueData,
 };
 #[cfg(feature = "matrix")]
 use crate::{SchemaBody, ValueCellSnapshotFailure};
@@ -142,7 +142,7 @@ pub fn match_expression(
             match_validate_arm_kinds(
                 match_expr,
                 arm_ix,
-                output.representation(),
+                output.resolved_type()?,
                 &detached_source,
                 &base_env,
                 p,
@@ -207,7 +207,7 @@ fn infer_missing_enum_match_patterns(
 fn match_validate_arm_kinds(
     match_expr: &MatchExpression,
     matched_arm_ix: usize,
-    matched_kind: FunctionValueRepresentation,
+    matched_kind: ResolvedType,
     source: &ValueCell,
     base_env: &Environment,
     p: &InterpreterExecution<'_>,
@@ -235,7 +235,7 @@ fn match_validate_arm_kinds(
             continue;
         }
         let arm_value = expression_cell(&arm.expression, Some(&arm_env), p)?;
-        let arm_kind = arm_value.representation();
+        let arm_kind = arm_value.resolved_type()?;
         if arm_kind != matched_kind {
             return Err(MechError::new(
                 MatchArmKindMismatchError {
@@ -257,10 +257,10 @@ fn validate_match_arm_output_kinds(
     env: &Environment,
     p: &InterpreterExecution<'_>,
 ) -> MResult<()> {
-    let mut expected: Option<FunctionValueRepresentation> = None;
+    let mut expected: Option<ResolvedType> = None;
     for arm in &match_expr.arms {
         let arm_kind = match expression_cell(&arm.expression, Some(env), p) {
-            Ok(value) => value.representation(),
+            Ok(value) => value.resolved_type()?,
             Err(_) => continue,
         };
         if let Some(expected_kind) = &expected {
@@ -296,17 +296,13 @@ pub(crate) fn validate_guard_expression_result(
     guard_result: ValueCell,
     tokens: Vec<Token>,
 ) -> MResult<ValueCell> {
+    let found = guard_result.resolved_type()?;
     if matches!(guard_result.snapshot()?.data(), ValueData::Bool(_)) {
         Ok(guard_result)
     } else {
-        Err(MechError::new(
-            InvalidGuardExpressionError {
-                found: guard_result.representation(),
-            },
-            None,
-        )
-        .with_compiler_loc()
-        .with_tokens(tokens))
+        Err(MechError::new(InvalidGuardExpressionError { found }, None)
+            .with_compiler_loc()
+            .with_tokens(tokens))
     }
 }
 

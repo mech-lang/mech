@@ -2445,9 +2445,9 @@ impl CanonicalFunctionSpecializer for MatrixVertCat {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        ValueMatrixConcatenation::<true>::specialize(invocation)
+        ValueMatrixConcatenation::<true>::specialize(invocation, context)
     }
 }
 
