@@ -102,7 +102,10 @@ pub(crate) fn context_read(
     execute_bound_specialized_function(
         SpecializedFunction::syntax_directed(
             FunctionInstance::new(Box::new(function), invocation),
-            mech_core::OperationId::from_name("context/read"),
+            mech_core::ResolvedOperationDescriptor::from_name(
+                "context/read",
+                crate::function::external::RESOURCE_OBSERVATION_CONTRACT.clone(),
+            )?,
             mech_core::RuntimeFunctionId::from_name("ExternalResourceReadFunction"),
             mech_core::ExecutionTarget::DirectRuntime,
         )?,
@@ -150,7 +153,10 @@ pub(crate) fn context_assign(
     execute_bound_specialized_function(
         SpecializedFunction::syntax_directed(
             FunctionInstance::new(Box::new(function), invocation),
-            mech_core::OperationId::from_name("context/write"),
+            mech_core::ResolvedOperationDescriptor::from_name(
+                "context/write",
+                crate::function::external::RESOURCE_EFFECT_CONTRACT.clone(),
+            )?,
             mech_core::RuntimeFunctionId::from_name("ExternalResourceWriteFunction"),
             mech_core::ExecutionTarget::DirectRuntime,
         )?,
@@ -198,7 +204,10 @@ pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult
     execute_bound_specialized_function(
         SpecializedFunction::syntax_directed(
             FunctionInstance::new(Box::new(function), invocation),
-            mech_core::OperationId::from_name("context/send"),
+            mech_core::ResolvedOperationDescriptor::from_name(
+                "context/send",
+                crate::function::external::RESOURCE_EFFECT_CONTRACT.clone(),
+            )?,
             mech_core::RuntimeFunctionId::from_name("ExternalResourceWriteFunction"),
             mech_core::ExecutionTarget::DirectRuntime,
         )?,

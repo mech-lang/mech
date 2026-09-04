@@ -3,7 +3,7 @@ use crate::intrinsics::*;
 use mech_core::snapshot::{OptionDraft, TableColumnDraft};
 use std::sync::LazyLock;
 
-static PURE_TABLE_JOIN_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub(crate) static PURE_TABLE_JOIN_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![
@@ -393,6 +393,10 @@ macro_rules! table_join_factory {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 TableJoinFxn::from_invocation(invocation, JoinMode::$mode)
+            }
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_TABLE_JOIN_CONTRACT)
             }
         }
     };

@@ -374,7 +374,7 @@ fn canonical_specialization_preserves_the_frozen_operation_factory_and_storage_c
             .into_boxed_slice();
         let predicted_output = resolved.outputs[0].clone();
         let resolved_call = ResolvedCall {
-            operation: specializer.operation,
+            operation: specializer.operation.clone(),
             overload_id,
             original_inputs: original_inputs.into_boxed_slice(),
             converted_inputs,
@@ -391,6 +391,7 @@ fn canonical_specialization_preserves_the_frozen_operation_factory_and_storage_c
         let mut context = SpecializationContext::for_resolved_invocation(
             &invocation,
             Some(&catalog),
+            specializer.operation.id,
             case.operation.clone(),
             resolved_call,
         )

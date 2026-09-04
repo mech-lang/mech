@@ -946,6 +946,10 @@ impl CanonicalFunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
         let rhs_cell = invocation.input(1).expect("validated rhs").cell()?.clone();
         let lhs = dynamic_arg_as_f64_scalar_or_matrix(lhs_cell.clone(), &self.name)?;
         let rhs = dynamic_arg_as_f64_scalar_or_matrix(rhs_cell.clone(), &self.name)?;
+        let scalar = matches!(
+            (&lhs, &rhs),
+            (DynamicF64Arg::Scalar(_), DynamicF64Arg::Scalar(_))
+        );
 
         let (implementation, output): (Box<dyn MechFunction>, ValueCell) = match (&lhs, &rhs) {
             (DynamicF64Arg::Scalar(n), DynamicF64Arg::Scalar(k)) => {
@@ -980,6 +984,12 @@ impl CanonicalFunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
                 )
             }
         };
+        let contract = if scalar {
+            &*DYNAMIC_BINARY_SCALAR_CONTRACT
+        } else {
+            &*DYNAMIC_BINARY_BROADCAST_CONTRACT
+        };
+        context.resolve_syntax_operation_contract(contract)?;
         context.certify_instance(
             FunctionInstance::new(
                 implementation,
@@ -1024,6 +1034,7 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ToF64Specializer {
         dynamic_arg_as_f64_ref(&input, &self.name)?;
         let output = ValueCell::from_exact(0.0_f64)?;
 
+        context.resolve_syntax_operation_contract(&DYNAMIC_UNARY_SCALAR_CONTRACT)?;
         context.certify_instance(
             FunctionInstance::new(
                 Box::new(DynamicUnaryF64ToF64Function {
@@ -1074,6 +1085,7 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
         let (rows, cols, _) = dynamic_arg_as_f64_matrix(&input, &self.name)?;
         let output = dynamic_f64_matrix_output(rows, cols)?;
 
+        context.resolve_syntax_operation_contract(&DYNAMIC_UNARY_VIEW_CONTRACT)?;
         context.certify_instance(
             FunctionInstance::new(
                 Box::new(DynamicUnaryF64ViewToF64ViewFunction {
@@ -1977,9 +1989,10 @@ mod static_catalog_module_tests {
             ("stats/sum/column", "stats", "sum/column"),
         ] {
             let operation = builder
-                .insert_canonical_specializer(
+                .insert_canonical_specializer_with_contract(
                     canonical_name,
                     mech_core::maintained_source_type_declaration(canonical_name).unwrap(),
+                    crate::test_support::catalog::pure_test_operation_contract(1),
                     Arc::new(TestSpecializer),
                 )
                 .unwrap();

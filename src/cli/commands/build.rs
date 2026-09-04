@@ -223,7 +223,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         mech_build::validate_project_binary_name(&binary_name)?;
     }
 
-    let (bytecode, loaded_config, instruction_type_bindings) = if bytecode_count == 1 {
+    let (bytecode, loaded_config, instruction_type_sidecars) = if bytecode_count == 1 {
         let path = PathBuf::from(&options.paths[0]);
         let bytecode = fs::read(&path)?;
         let config = load_build_config(&options, Some(&path))?;
@@ -280,9 +280,22 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             &[],
         );
         let product = compiler.compile_roots(&requests, options)?;
-        let (_, bytecode, instruction_type_bindings) = product.into_native_parts();
-        (bytecode, loaded_config, Some(instruction_type_bindings))
+        let (_, bytecode, instruction_type_bindings, instruction_type_binding_requirements) =
+            product.into_native_parts();
+        (
+            bytecode,
+            loaded_config,
+            Some((
+                instruction_type_bindings,
+                instruction_type_binding_requirements,
+            )),
+        )
     };
+    let (instruction_type_bindings, instruction_type_binding_requirements) =
+        match instruction_type_sidecars {
+            Some((bindings, requirements)) => (Some(bindings), Some(requirements)),
+            None => (None, None),
+        };
 
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
     validate_build_product_capabilities(
@@ -343,6 +356,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
     let request = NativeBuildRequest {
         bytecode,
         instruction_type_bindings,
+        instruction_type_binding_requirements,
         runtime_config,
         target: options.target.clone(),
         profile: options.profile.into(),

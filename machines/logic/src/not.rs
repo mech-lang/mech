@@ -206,7 +206,7 @@ impl CanonicalFunctionSpecializer for LogicNot {
             .current_extents()
             .map_err(MechError::from)?;
         context.bind_resolved_runtime(
-            RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
             ExecutionTarget::DirectRuntime,
             vec![extents].into_boxed_slice(),
             &[input],

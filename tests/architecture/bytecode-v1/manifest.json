@@ -3069,8 +3069,8 @@
       ],
       "file": "ternary.mecb",
       "header": {
-        "checksum_offset": 2057,
-        "file_len": 2061,
+        "checksum_offset": 2153,
+        "file_len": 2157,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 6,
@@ -3196,7 +3196,7 @@
           "id": 8,
           "item_count": 1,
           "kind": "ArtifactSchemas",
-          "length": 187,
+          "length": 282,
           "offset": 872,
           "reserved": 0
         },
@@ -3206,7 +3206,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 133,
-          "offset": 1064,
+          "offset": 1160,
           "reserved": 0
         },
         {
@@ -3215,7 +3215,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1200,
+          "offset": 1296,
           "reserved": 0
         },
         {
@@ -3224,7 +3224,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 101,
-          "offset": 1208,
+          "offset": 1304,
           "reserved": 0
         },
         {
@@ -3233,7 +3233,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 90,
-          "offset": 1312,
+          "offset": 1408,
           "reserved": 0
         },
         {
@@ -3242,7 +3242,7 @@
           "item_count": 1,
           "kind": "ArtifactNodes",
           "length": 148,
-          "offset": 1408,
+          "offset": 1504,
           "reserved": 0
         },
         {
@@ -3251,7 +3251,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 265,
-          "offset": 1560,
+          "offset": 1656,
           "reserved": 0
         },
         {
@@ -3260,7 +3260,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1832,
+          "offset": 1928,
           "reserved": 0
         },
         {
@@ -3269,7 +3269,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1888,
+          "offset": 1984,
           "reserved": 0
         },
         {
@@ -3278,7 +3278,7 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 66,
-          "offset": 1896,
+          "offset": 1992,
           "reserved": 0
         },
         {
@@ -3287,11 +3287,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 89,
-          "offset": 1968,
+          "offset": 2064,
           "reserved": 0
         }
       ],
-      "sha256": "8dac09395077426c174253a14b3170a8aba906dc56eb461181d9a2cd7f0cff40",
+      "sha256": "b54d0ed79c738c594a1e9abc82f4894654b24798c98d534ec4cd1cd583dbaf42",
       "source": "1.0..1.0..=4.0",
       "source_file": "ternary.mec"
     },

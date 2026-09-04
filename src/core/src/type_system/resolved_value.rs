@@ -2,14 +2,15 @@
 
 use super::{BuiltinScalarKind, ResolvedType, TypeConstraintFailure, TypeResolutionError};
 use crate::{
-    CardinalitySpec, DimensionExpr, DimensionParameterDeclaration, KindExpr, KindField, Schema,
-    SchemaBody, SchemaDraft, SchemaField, SemanticModelError, ShapeInstance, exact_type_equal,
+    CardinalitySpec, DimensionExpr, DimensionParameterDeclaration, DimensionParameterId,
+    DimensionParameterOrigin, KindExpr, KindField, Schema, SchemaBody, SchemaDraft, SchemaField,
+    SemanticModelError, ShapeInstance, exact_type_equal,
 };
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, collections::BTreeSet, format, vec, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeSet, format, string::String, vec, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, collections::BTreeSet, format, vec, vec::Vec};
+use std::{boxed::Box, collections::BTreeSet, format, string::String, vec, vec::Vec};
 
 /// Semantic authority for constructing one resolved output schema. These
 /// rules are selected with the source overload and never by a runtime factory.
@@ -17,6 +18,7 @@ use std::{boxed::Box, collections::BTreeSet, format, vec, vec::Vec};
 pub enum ResolvedOutputSchemaRule {
     FromResolvedType,
     FromInput(usize),
+    TransposeOfInput(usize),
     Declared(SchemaBody),
     DynamicSetCartesianProduct,
     DynamicSetPowerset,
@@ -67,6 +69,28 @@ impl ResolvedValueDescriptor {
         &self.shape
     }
 
+    /// Returns whether both descriptors prove the same semantic value
+    /// contract. Turn-scoped extents may carry different current values at
+    /// adjacent nodes; program-scoped extents remain invariant.
+    pub fn has_same_type_contract(&self, other: &Self) -> bool {
+        exact_type_equal(self.resolved_type(), other.resolved_type())
+            && self.schema() == other.schema()
+            && self.shape().parameter_values().len() == other.shape().parameter_values().len()
+            && self
+                .schema()
+                .dimension_parameters()
+                .iter()
+                .zip(
+                    self.shape()
+                        .parameter_values()
+                        .iter()
+                        .zip(other.shape().parameter_values()),
+                )
+                .all(|(parameter, (left, right))| {
+                    parameter.lifetime() == crate::DimensionLifetime::Turn || left == right
+                })
+    }
+
     pub fn current_extents(&self) -> Result<Box<[u64]>, SemanticModelError> {
         let mut dimensions = Vec::new();
         match self.schema.body() {
@@ -103,6 +127,49 @@ pub fn materialize_resolved_output(
     inputs: &[ResolvedValueDescriptor],
     current_extents: Box<[u64]>,
 ) -> Result<ResolvedValueDescriptor, TypeResolutionError> {
+    if let ResolvedOutputSchemaRule::TransposeOfInput(index) = rule {
+        let input = inputs
+            .get(*index)
+            .ok_or_else(|| invalid_rule(format!("input {index} is unavailable")))?;
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = input.schema().body()
+        else {
+            return Err(invalid_rule(format!(
+                "transpose input {index} is not a matrix"
+            )));
+        };
+        let [rows, columns] = dimensions.as_ref() else {
+            return Err(invalid_rule(format!(
+                "transpose input {index} does not have two dimensions"
+            )));
+        };
+        let schema = SchemaDraft {
+            dimension_parameters: input
+                .schema()
+                .dimension_parameters()
+                .iter()
+                .enumerate()
+                .map(|(index, parameter)| DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(index as u32),
+                    origin: DimensionParameterOrigin::Inferred,
+                    lifetime: parameter.lifetime(),
+                    lower_bound: parameter.lower_bound().clone(),
+                    upper_bound: parameter.upper_bound().cloned(),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            body: SchemaBody::Matrix {
+                element: element.clone(),
+                dimensions: vec![columns.clone(), rows.clone()].into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .map_err(TypeResolutionError::semantic)?;
+        let shape = shape_for_resolved_extents(&schema, &current_extents)?;
+        return ResolvedValueDescriptor::new(resolved.clone(), schema, shape);
+    }
     let template = match rule {
         ResolvedOutputSchemaRule::FromResolvedType => {
             schema_body_from_resolved(resolved.kind(), resolved.dimension_parameters())?
@@ -111,6 +178,7 @@ pub fn materialize_resolved_output(
             .get(*index)
             .map(|input| input.schema().body().clone())
             .ok_or_else(|| invalid_rule(format!("input {index} is unavailable")))?,
+        ResolvedOutputSchemaRule::TransposeOfInput(_) => unreachable!("handled above"),
         ResolvedOutputSchemaRule::Declared(body) => body.clone(),
         ResolvedOutputSchemaRule::DynamicSetCartesianProduct => {
             if inputs.len() != 2 {
@@ -151,7 +219,7 @@ pub fn materialize_resolved_output(
         }
     };
     let schema = schema_for_resolved(resolved, &template)?;
-    let shape = shape_for_extents(&schema, &current_extents)?;
+    let shape = shape_for_resolved_extents(&schema, &current_extents)?;
     ResolvedValueDescriptor::new(resolved.clone(), schema, shape)
 }
 
@@ -627,15 +695,17 @@ fn resolved_extent(
     })
 }
 
-fn shape_for_extents(
+/// Instantiates a schema shape from the operation's concrete logical output
+/// extents. Compiler and target planners share this witness solver so compound
+/// dimensions retain one semantic authority.
+#[doc(hidden)]
+pub fn shape_for_resolved_extents(
     schema: &Schema,
     current_extents: &[u64],
 ) -> Result<ShapeInstance, TypeResolutionError> {
-    let mut values = vec![0; schema.dimension_parameters().len()];
-    for (index, parameter) in schema.dimension_parameters().iter().enumerate() {
-        values[index] = crate::evaluate_dimension(parameter.lower_bound(), &values[..index])
-            .map_err(TypeResolutionError::semantic)?;
-    }
+    let mut values = shape_for_declared_lower_bounds(schema)?
+        .parameter_values()
+        .to_vec();
     let declared = match schema.body() {
         SchemaBody::Matrix { dimensions, .. } => dimensions.as_ref(),
         SchemaBody::Table {
@@ -662,9 +732,151 @@ fn shape_for_extents(
     for (dimension, extent) in declared.iter().zip(current_extents.iter().copied()) {
         assign_dimension_witness(dimension, extent, &mut values)?;
     }
+    let shape = schema
+        .instantiate_shape(values.into_boxed_slice())
+        .map_err(TypeResolutionError::semantic)?;
+    for (dimension, extent) in declared.iter().zip(current_extents.iter().copied()) {
+        dimension_witness_mismatch(dimension, extent, shape.parameter_values())?;
+    }
+    Ok(shape)
+}
+
+/// Instantiates a schema using the declared lower bound of every dimension.
+/// Targets use this as the initial shape of snapshot-backed aggregates whose
+/// current cardinality is carried by each published value.
+#[doc(hidden)]
+pub fn shape_for_declared_lower_bounds(
+    schema: &Schema,
+) -> Result<ShapeInstance, TypeResolutionError> {
+    let mut values = vec![0; schema.dimension_parameters().len()];
+    for (index, parameter) in schema.dimension_parameters().iter().enumerate() {
+        values[index] = crate::evaluate_dimension(parameter.lower_bound(), &values[..index])
+            .map_err(TypeResolutionError::semantic)?;
+    }
     schema
         .instantiate_shape(values.into_boxed_slice())
         .map_err(TypeResolutionError::semantic)
+}
+
+/// Instantiates the canonical shape witness for a newly materialized value.
+/// Dynamic aggregate cardinalities are derived from the draft itself so a
+/// durable artifact does not need compilation-instance shape sidecars.
+pub fn shape_for_value_data(
+    schema: &Schema,
+    data: &crate::snapshot::ValueDataDraft,
+    current_extents: &[u64],
+    seed: Option<&ShapeInstance>,
+) -> Result<ShapeInstance, TypeResolutionError> {
+    if matches!(schema.body(), SchemaBody::Matrix { .. }) {
+        return shape_for_resolved_extents(schema, current_extents);
+    }
+    let mut values = match seed {
+        Some(seed) => schema
+            .instantiate_shape(seed.parameter_values().to_vec().into_boxed_slice())
+            .map_err(TypeResolutionError::semantic)?
+            .parameter_values()
+            .to_vec(),
+        None => shape_for_declared_lower_bounds(schema)?
+            .parameter_values()
+            .to_vec(),
+    };
+    assign_data_extent_witness(schema.body(), data, &mut values)?;
+    schema
+        .instantiate_shape(values.into_boxed_slice())
+        .map_err(TypeResolutionError::semantic)
+}
+
+fn assign_data_extent_witness(
+    schema: &SchemaBody,
+    data: &crate::snapshot::ValueDataDraft,
+    values: &mut [u64],
+) -> Result<(), TypeResolutionError> {
+    use crate::snapshot::ValueDataDraft;
+    match (schema, data) {
+        (
+            SchemaBody::Set {
+                element,
+                cardinality,
+            },
+            ValueDataDraft::Set(elements),
+        ) => {
+            assign_extent_witness(cardinality, elements.len() as u64, values)?;
+            for element_data in elements {
+                assign_data_extent_witness(element, element_data, values)?;
+            }
+        }
+        (
+            SchemaBody::Map {
+                key,
+                value,
+                cardinality,
+            },
+            ValueDataDraft::Map(entries),
+        ) => {
+            assign_extent_witness(cardinality, entries.len() as u64, values)?;
+            for entry in entries {
+                if let [key_data, value_data] = entry.items.as_ref() {
+                    assign_data_extent_witness(key, key_data, values)?;
+                    assign_data_extent_witness(value, value_data, values)?;
+                }
+            }
+        }
+        (
+            SchemaBody::Table {
+                columns,
+                rows: row_extent,
+            },
+            ValueDataDraft::Table(column_data),
+        ) => {
+            let row_count = column_data
+                .first()
+                .map(|column| column.values.len() as u64)
+                .unwrap_or(0);
+            assign_extent_witness(row_extent, row_count, values)?;
+            for (column, data) in columns.iter().zip(column_data) {
+                for value in &data.values {
+                    assign_data_extent_witness(&column.schema, value, values)?;
+                }
+            }
+        }
+        (SchemaBody::Option(element), ValueDataDraft::Option(option)) => {
+            if let Some(data) = option.value.as_deref() {
+                assign_data_extent_witness(element, data, values)?;
+            }
+        }
+        (SchemaBody::Tuple(elements), ValueDataDraft::Tuple(data)) => {
+            for (element, data) in elements.iter().zip(data) {
+                assign_data_extent_witness(element, data, values)?;
+            }
+        }
+        (SchemaBody::Record(fields), ValueDataDraft::Record(data)) => {
+            for (field, data) in fields.iter().zip(data) {
+                assign_data_extent_witness(&field.schema, &data.value, values)?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+fn assign_extent_witness(
+    extent: &CardinalitySpec,
+    cardinality: u64,
+    values: &mut [u64],
+) -> Result<(), TypeResolutionError> {
+    match extent {
+        CardinalitySpec::Exact(expression) => {
+            assign_dimension_witness(expression, cardinality, values)
+        }
+        CardinalitySpec::Dynamic {
+            upper_bound: Some(upper),
+        } if crate::evaluate_dimension(upper, values).map_err(TypeResolutionError::semantic)?
+            < cardinality =>
+        {
+            assign_dimension_witness(upper, cardinality, values)
+        }
+        CardinalitySpec::Dynamic { .. } => Ok(()),
+    }
 }
 
 fn assign_dimension_witness(

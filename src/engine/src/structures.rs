@@ -53,6 +53,61 @@ fn expression_value(
     required_cell(expression(expression_node, env, p)?, context)
 }
 
+#[cfg(any(
+    feature = "tuple",
+    feature = "record",
+    feature = "table",
+    feature = "matrix"
+))]
+fn composite_pack_contract() -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 0,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+#[cfg(any(
+    feature = "tuple",
+    feature = "record",
+    feature = "table",
+    feature = "matrix"
+))]
+fn register_composite_pack(
+    plan: &Plan,
+    implementation: Box<dyn MechFunction>,
+    output: ValueCell,
+    inputs: Vec<ValueCell>,
+) -> MResult<()> {
+    let instance = FunctionInstance::new(
+        implementation,
+        FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
+    );
+    plan.register_specialized(SpecializedFunction::syntax_directed(
+        instance,
+        ResolvedOperationDescriptor::from_name("core/composite-pack", composite_pack_contract())?,
+        RuntimeFunctionId::from_name("core/composite-pack"),
+        ExecutionTarget::DirectRuntime,
+    )?)?;
+    Ok(())
+}
+
 #[cfg(feature = "tuple")]
 struct CanonicalTuplePack {
     output: ValueCell,
@@ -268,13 +323,15 @@ pub fn tuple(
         elements.push(value);
     }
     let output = ValueCell::tuple_from_cells(&elements)?;
-    p.plan().register_instance(FunctionInstance::new(
+    register_composite_pack(
+        &p.plan(),
         Box::new(CanonicalTuplePack {
             output: output.clone(),
             elements: elements.clone().into_boxed_slice(),
         }),
-        FunctionInvocation::variadic(output.clone(), elements.into_boxed_slice()),
-    ))?;
+        output.clone(),
+        elements,
+    )?;
     Ok(output)
 }
 
@@ -398,20 +455,15 @@ pub fn record(
         cells.push((name, value));
     }
     let output = ValueCell::record_from_cells(&cells)?;
-    p.plan().register_instance(FunctionInstance::new(
+    register_composite_pack(
+        &p.plan(),
         Box::new(CanonicalRecordPack {
             output: output.clone(),
             fields: cells.clone().into_boxed_slice(),
         }),
-        FunctionInvocation::variadic(
-            output.clone(),
-            cells
-                .into_iter()
-                .map(|(_, cell)| cell)
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
-        ),
-    ))?;
+        output.clone(),
+        cells.into_iter().map(|(_, cell)| cell).collect(),
+    )?;
     Ok(output)
 }
 
@@ -571,13 +623,15 @@ pub fn table(
         .iter()
         .flat_map(|(_, values)| values.iter().cloned())
         .collect::<Vec<_>>();
-    p.plan().register_instance(FunctionInstance::new(
+    register_composite_pack(
+        &p.plan(),
         Box::new(CanonicalTablePack {
             output: output.clone(),
             columns: cell_columns.into_boxed_slice(),
         }),
-        FunctionInvocation::variadic(output.clone(), dependencies.into_boxed_slice()),
-    ))?;
+        output.clone(),
+        dependencies,
+    )?;
     Ok(output)
 }
 
@@ -1063,14 +1117,16 @@ pub fn matrix(
         .flatten()
         .filter_map(|cell| cell.as_ref().cloned())
         .collect::<Vec<_>>();
-    p.plan().register_instance(FunctionInstance::new(
+    register_composite_pack(
+        &p.plan(),
         Box::new(CanonicalMatrixPack {
             output: output.clone(),
             rows,
             optional,
         }),
-        FunctionInvocation::variadic(output.clone(), dependencies.into_boxed_slice()),
-    ))?;
+        output.clone(),
+        dependencies,
+    )?;
     Ok(output)
 }
 

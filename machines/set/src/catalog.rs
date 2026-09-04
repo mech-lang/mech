@@ -378,14 +378,8 @@ fn validate_set_membership(
 ) -> MResult<()> {
     require_bool_output(output, contract)?;
     let inputs = expect_arity(inputs, 2, contract)?;
-    let element = inputs[0].closed_schema_body()?;
-    let set_element = set_element(&inputs[1], contract, "set input")?;
-    if element != set_element {
-        return Err(set_contract_error(
-            contract,
-            format!("candidate schema {element:?} differs from set element {set_element:?}"),
-        ));
-    }
+    inputs[0].closed_schema_body()?;
+    set_element(&inputs[1], contract, "set input")?;
     Ok(())
 }
 
@@ -741,7 +735,7 @@ mod tests {
     }
 
     #[test]
-    fn installed_set_contracts_reject_schema_mismatches_and_wrong_outputs() {
+    fn installed_set_contracts_enforce_operation_schema_rules() {
         let mut builder = FunctionCatalogBuilder::new();
         install_runtime(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
@@ -775,14 +769,13 @@ mod tests {
 
         for name in ["SetElementOfFxn", "SetNotElementOfFxn"] {
             let membership = runtime_entry(&catalog, name);
-            let error = membership
+            membership
                 .validate_invocation(&FunctionInvocation::binary(
                     ValueCell::from_exact(false).unwrap(),
                     ValueCell::from_exact(1_u16).unwrap(),
                     empty_set(u8_body.clone()),
                 ))
-                .unwrap_err();
-            assert!(error.kind_message().contains("candidate schema"));
+                .expect("membership permits a differently typed candidate as a non-member");
         }
 
         for name in ["SetInsertFxn", "SetRemoveFxn"] {

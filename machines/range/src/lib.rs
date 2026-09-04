@@ -121,7 +121,7 @@ macro_rules! bind_dynamic_binary_range {
         let semantic_inputs = [$first, $second];
         return $context.bind_resolved_runtime(
             mech_core::RuntimeBindingSelector::Operation(
-                $context.resolved_call()?.operation,
+                $context.resolved_call()?.operation.id,
             ),
             mech_core::ExecutionTarget::DirectRuntime,
             vec![vec![1, size as u64].into_boxed_slice()].into_boxed_slice(),
@@ -145,7 +145,7 @@ macro_rules! bind_dynamic_ternary_range {
         let semantic_inputs = [$first, $step, $last];
         return $context.bind_resolved_runtime(
             mech_core::RuntimeBindingSelector::Operation(
-                $context.resolved_call()?.operation,
+                $context.resolved_call()?.operation.id,
             ),
             mech_core::ExecutionTarget::DirectRuntime,
             vec![vec![1, size as u64].into_boxed_slice()].into_boxed_slice(),

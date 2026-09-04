@@ -119,7 +119,7 @@ checked_op_assign!(
     "division assignment"
 );
 
-static PURE_WHOLE_VALUE_RMW_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub(crate) static PURE_WHOLE_VALUE_RMW_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![
@@ -646,7 +646,7 @@ macro_rules! impl_canonical_op_assign_specializers {
                 let sink = invocation.input(0).expect("validated assignment sink");
                 let source = invocation.input(1).expect("validated assignment source");
                 context.bind_resolved_runtime_existing_output(
-                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
                     ExecutionTarget::DirectRuntime,
                     sink,
                     &[source],
@@ -680,7 +680,7 @@ macro_rules! impl_canonical_op_assign_specializers {
                     .expect("validated indexed assignment source");
                 let index = invocation.input(2).expect("validated assignment index");
                 context.bind_resolved_runtime_existing_output(
-                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
                     ExecutionTarget::DirectRuntime,
                     sink,
                     &[source, index],
@@ -718,7 +718,7 @@ macro_rules! impl_canonical_op_assign_specializers {
                     .expect("validated all-selection input")
                     .require_matrix_all_selection()?;
                 context.bind_resolved_runtime_existing_output(
-                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
                     ExecutionTarget::DirectRuntime,
                     sink,
                     &[source, row_index],

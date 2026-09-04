@@ -207,7 +207,7 @@ impl CanonicalFunctionSpecializer for StatsSumColumn {
             .with_compiler_loc()
         })?;
         context.bind_resolved_runtime(
-            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
             mech_core::ExecutionTarget::DirectRuntime,
             vec![vec![shape.rows as u64, 1_u64].into_boxed_slice()].into_boxed_slice(),
             &[input],

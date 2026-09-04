@@ -170,7 +170,7 @@ fn matrix_comprehension_bytecode_reuses_repeated_child_registers() {
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
 #[test]
-fn empty_matrix_comprehension_uses_canonical_composite_seed() {
+fn empty_matrix_comprehension_uses_nullary_semantic_construction() {
     let output_cell = matrix_output(&[], 0, 0);
     let function = ValueMatrixComprehension::new_invocation(FunctionInvocation::variadic(
         output_cell,
@@ -189,11 +189,9 @@ fn empty_matrix_comprehension_uses_canonical_composite_seed() {
             .iter()
             .any(|instruction| matches!(
                 instruction,
-                BytecodeInstruction::RuntimeVariadic { function, dst, arguments }
+                BytecodeInstruction::RuntimeNullary { function, dst }
                     if *function == hash_str("matrix/comprehension")
                         && *dst == output
-                        && arguments.len() == 1
-                        && arguments[0] != output
             ))
     );
 }

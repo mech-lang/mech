@@ -2407,6 +2407,23 @@ macro_rules! declare_access_dynamic_for_shape {
 pub(crate) mod native_declarations {
     use super::*;
 
+    mech_core::declare_native_runtime_factory! {
+        cfg: any(feature = "subscript_formula", feature = "subscript_range"),
+        registration: register_canonical_index_conversion,
+        installer: install_canonical_index_conversion,
+        name: "access/index",
+        factory_type: super::CanonicalIndexConversion,
+        contract: RuntimeFunctionContract::canonical_custom(
+            "canonical_index_conversion",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            super::validate_canonical_index_conversion,
+        ),
+        operations: [OperationId::from_name("access/index")],
+        package: "mech-engine", crate_name: "mech_engine",
+        installer_path: "mech_engine::__mech_native::install_canonical_index_conversion",
+        extra_cargo_features: ["access", "subscript_formula", "subscript_range"],
+    }
+
     for_each_access_shape!(declare_access_shape, (Access1DS));
     for_each_access_shape_without_matrix1!(declare_access_shape, (Access2DSS));
     for_each_access_shape!(declare_access_shape, (Access1DVD));
@@ -2485,6 +2502,9 @@ pub mod __mech_native {
 }
 
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
+    native_declarations::register_canonical_index_conversion(builder)?;
+
     install_access_all_shapes!(builder, Access1DS);
     install_access_shapes_without_matrix1!(builder, Access2DSS);
     install_access_all_shapes!(builder, Access1DVD);
@@ -2565,31 +2585,62 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     Ok(())
 }
 
-#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
+#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
 declare_matrix_selection_contract!(PURE_UNARY_INDEX_CONVERSION_CONTRACT, 1, "scalar-index");
 
-#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
 #[derive(Debug)]
-struct CanonicalScalarIndex {
-    source: ValueCell,
-    output: ValueCell,
-    runtime_operation: u64,
+#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
+struct CanonicalIndexConversion {
+    source: FunctionValueInput,
+    output: FunctionValueOutput,
 }
 
-#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
-impl MechFunctionImpl for CanonicalScalarIndex {
+#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
+impl MechFunctionFactory for CanonicalIndexConversion {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+    );
+
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (output, source) = invocation.expect_unary()?;
+        Ok(Box::new(Self {
+            source: source.value(),
+            output: output.value(),
+        }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_UNARY_INDEX_CONVERSION_CONTRACT)
+    }
+}
+
+#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
+impl MechFunctionImpl for CanonicalIndexConversion {
     fn solve_result(&self) -> MResult<()> {
-        let index = canonical_portable_index(&self.source)?;
+        if let Some(elements) = self.source.cell().matrix_elements()? {
+            let elements = elements
+                .iter()
+                .map(canonical_portable_index)
+                .map(|value| value.map(|value| ValueDataDraft::Index(value as u64)))
+                .collect::<MResult<Vec<_>>>()?;
+            let next = self.output.cell().rebuild_matrix_drafts(
+                vec![elements.len() as u64, 1].into_boxed_slice(),
+                elements.into_boxed_slice(),
+            )?;
+            return self.output.replace(&next);
+        }
+        let index = canonical_portable_index(self.source.cell())?;
         self.output
             .replace(&ValueCell::from_exact(index)?.snapshot()?)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_cell(&self.output))
+        Some(FunctionStatePort::from_cell(self.output.cell()))
     }
 
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_cell(&self.output)]))
+        Ok(Some(vec![FunctionStatePort::from_cell(self.output.cell())]))
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -2601,25 +2652,28 @@ impl MechFunctionImpl for CanonicalScalarIndex {
     }
 
     fn to_string(&self) -> String {
-        "CanonicalScalarIndex".to_owned()
+        "CanonicalIndexConversion".to_owned()
     }
 }
 
-#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
-impl MechFunctionCompiler for CanonicalScalarIndex {
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
+impl MechFunctionCompiler for CanonicalIndexConversion {
     fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
-        vec![self.source.clone(), self.output.clone()]
+        vec![self.source.cell().clone(), self.output.cell().clone()]
     }
 
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_value_cell_register(&self.output, context)?;
-        let source = compile_value_cell_register(&self.source, context)?;
-        context.emit_unop(self.runtime_operation, output, source);
+        let output = self.output.compile_register(context)?;
+        let source = self.source.compile_register(context)?;
+        context.emit_unop(hash_str("access/index"), output, source);
         Ok(output)
     }
 }
 
-#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
+#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
 fn canonical_portable_index(value: &ValueCell) -> MResult<usize> {
     let snapshot = value.snapshot()?;
     let value = mech_core::canonical_positional_ordinal(snapshot.data()).map_err(|_| {
@@ -2634,47 +2688,54 @@ fn canonical_portable_index(value: &ValueCell) -> MResult<usize> {
     Ok(value as usize)
 }
 
-#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
-fn canonical_scalar_index_runtime_operation(
-    representation: FunctionValueRepresentation,
-) -> MResult<u64> {
-    let name = match representation {
-        FunctionValueRepresentation::Index => "ReactiveScalarIndex<usize>",
-        #[cfg(feature = "u8")]
-        FunctionValueRepresentation::U8 => "ReactiveScalarIndex<u8>",
-        #[cfg(feature = "u16")]
-        FunctionValueRepresentation::U16 => "ReactiveScalarIndex<u16>",
-        #[cfg(feature = "u32")]
-        FunctionValueRepresentation::U32 => "ReactiveScalarIndex<u32>",
-        #[cfg(feature = "u64")]
-        FunctionValueRepresentation::U64 => "ReactiveScalarIndex<u64>",
-        #[cfg(feature = "u128")]
-        FunctionValueRepresentation::U128 => "ReactiveScalarIndex<u128>",
-        #[cfg(feature = "i8")]
-        FunctionValueRepresentation::I8 => "ReactiveScalarIndex<i8>",
-        #[cfg(feature = "i16")]
-        FunctionValueRepresentation::I16 => "ReactiveScalarIndex<i16>",
-        #[cfg(feature = "i32")]
-        FunctionValueRepresentation::I32 => "ReactiveScalarIndex<i32>",
-        #[cfg(feature = "i64")]
-        FunctionValueRepresentation::I64 => "ReactiveScalarIndex<i64>",
-        #[cfg(feature = "i128")]
-        FunctionValueRepresentation::I128 => "ReactiveScalarIndex<i128>",
-        #[cfg(feature = "f32")]
-        FunctionValueRepresentation::F32 => "ReactiveScalarIndex<f32>",
-        #[cfg(feature = "f64")]
-        FunctionValueRepresentation::F64 => "ReactiveScalarIndex<f64>",
-        _ => {
-            return Err(MechError::new(
-                CannotConvertToTypeError {
-                    target_type: "portable index",
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
+#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
+fn validate_canonical_index_conversion(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
+    let [source] = inputs else {
+        return Err(function_shape_contract_violation(
+            "canonical_index_conversion",
+            format!("expected one source input, found {}", inputs.len()),
+        ));
     };
-    Ok(hash_str(name))
+    let source_schema = source.closed_schema_body()?;
+    let output_schema = output.closed_schema_body()?;
+    let valid = match (&source_schema, &output_schema) {
+        (source, SchemaBody::Index) => is_positional_selector_schema(source),
+        (
+            SchemaBody::Matrix {
+                element: source_element,
+                ..
+            },
+            SchemaBody::Matrix {
+                element: output_element,
+                ..
+            },
+        ) => {
+            let source_cardinality = source
+                .resolved_descriptor()?
+                .current_extents()
+                .map_err(MechError::from)?
+                .into_iter()
+                .try_fold(1_u64, u64::checked_mul);
+            let output_cardinality = output
+                .resolved_descriptor()?
+                .current_extents()
+                .map_err(MechError::from)?
+                .into_iter()
+                .try_fold(1_u64, u64::checked_mul);
+            is_positional_selector_schema(source_element)
+                && output_element.as_ref() == &SchemaBody::Index
+                && source_cardinality == output_cardinality
+        }
+        _ => false,
+    };
+    if valid {
+        Ok(())
+    } else {
+        Err(function_shape_contract_violation(
+            "canonical_index_conversion",
+            "source and output do not form a canonical positional-index conversion",
+        ))
+    }
 }
 
 /// Converts a canonical scalar selector into a live canonical index cell.
@@ -2690,90 +2751,27 @@ pub(crate) fn canonical_reactive_scalar_index(
     ) {
         return Ok(value);
     }
-    let runtime_operation = canonical_scalar_index_runtime_operation(value.representation())?;
     let output = ValueCell::from_exact(canonical_portable_index(&value)?)?;
+    let invocation = FunctionInvocation::unary(output.clone(), value);
     let instance = FunctionInstance::new(
-        Box::new(CanonicalScalarIndex {
-            source: value.clone(),
-            output: output.clone(),
-            runtime_operation,
-        }),
-        FunctionInvocation::unary(output.clone(), value),
+        CanonicalIndexConversion::new_invocation(invocation.clone())?,
+        invocation,
     );
     if !execution.plan().activation_registration_active() {
         instance.solve_result()?;
     }
-    execution.plan().register_instance(instance)?;
+    execution
+        .plan()
+        .register_specialized(SpecializedFunction::syntax_directed(
+            instance,
+            ResolvedOperationDescriptor::from_name(
+                "access/index",
+                PURE_UNARY_INDEX_CONVERSION_CONTRACT.clone(),
+            )?,
+            RuntimeFunctionId::from_name("access/index"),
+            ExecutionTarget::DirectRuntime,
+        )?)?;
     Ok(output)
-}
-
-#[cfg(all(feature = "subscript_range", feature = "semantic-compiler"))]
-#[derive(Debug)]
-struct CanonicalIndexMatrix {
-    source: ValueCell,
-    output: ValueCell,
-}
-
-#[cfg(all(feature = "subscript_range", feature = "semantic-compiler"))]
-impl MechFunctionImpl for CanonicalIndexMatrix {
-    fn solve_result(&self) -> MResult<()> {
-        let (rows, columns) = canonical_matrix_dimensions(&self.source)?;
-        let elements = self
-            .source
-            .matrix_elements()?
-            .ok_or_else(|| {
-                MechError::new(
-                    CannotConvertToTypeError {
-                        target_type: "portable index matrix",
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })?
-            .iter()
-            .map(canonical_portable_index)
-            .map(|value| value.map(|value| ValueDataDraft::Index(value as u64)))
-            .collect::<MResult<Vec<_>>>()?;
-        let next = self.output.rebuild_matrix_drafts(
-            vec![rows.saturating_mul(columns) as u64, 1].into_boxed_slice(),
-            elements.into_boxed_slice(),
-        )?;
-        self.output.replace(&next)
-    }
-
-    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_cell(&self.output))
-    }
-
-    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_cell(&self.output)]))
-    }
-
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        Some(&PURE_UNARY_INDEX_CONVERSION_CONTRACT)
-    }
-
-    fn semantic_operation_name(&self) -> Option<&str> {
-        Some("access/index")
-    }
-
-    fn to_string(&self) -> String {
-        "CanonicalIndexMatrix".to_owned()
-    }
-}
-
-#[cfg(all(feature = "subscript_range", feature = "semantic-compiler"))]
-impl MechFunctionCompiler for CanonicalIndexMatrix {
-    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
-        vec![self.source.clone(), self.output.clone()]
-    }
-
-    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_value_cell_register(&self.output, context)?;
-        let source = compile_value_cell_register(&self.source, context)?;
-        context.emit_unop(hash_str("access/index"), output, source);
-        Ok(output)
-    }
 }
 
 #[cfg(all(feature = "subscript_range", feature = "semantic-compiler"))]
@@ -2829,16 +2827,24 @@ pub(crate) fn canonical_reactive_index_matrix(
         vec![rows.saturating_mul(columns) as u64, 1].into_boxed_slice(),
         elements.into_boxed_slice(),
     )?;
+    let invocation = FunctionInvocation::unary(output.clone(), value);
     let instance = FunctionInstance::new(
-        Box::new(CanonicalIndexMatrix {
-            source: value.clone(),
-            output: output.clone(),
-        }),
-        FunctionInvocation::unary(output.clone(), value),
+        CanonicalIndexConversion::new_invocation(invocation.clone())?,
+        invocation,
     );
     if !execution.plan().activation_registration_active() {
         instance.solve_result()?;
     }
-    execution.plan().register_instance(instance)?;
+    execution
+        .plan()
+        .register_specialized(SpecializedFunction::syntax_directed(
+            instance,
+            ResolvedOperationDescriptor::from_name(
+                "access/index",
+                PURE_UNARY_INDEX_CONVERSION_CONTRACT.clone(),
+            )?,
+            RuntimeFunctionId::from_name("access/index"),
+            ExecutionTarget::DirectRuntime,
+        )?)?;
     Ok(output)
 }

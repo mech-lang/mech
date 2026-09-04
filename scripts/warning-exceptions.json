@@ -30,30 +30,21 @@
     },
     {
       "directive": "allow",
-      "expiry_condition": "Remove when every supported profile enables at least one fixed matrix constructor.",
-      "lint": "unused_macros",
-      "occurrences": 1,
-      "owner": "Canonical comparison outputs",
-      "path": "machines/compare/src/lib.rs",
-      "reason": "fixed matrix constructors are feature-selected below"
-    },
-    {
-      "directive": "allow",
-      "expiry_condition": "Remove when comparison no longer supports profiles without a concrete matrix storage feature.",
-      "lint": "unreachable_patterns",
-      "occurrences": 1,
-      "owner": "Canonical comparison outputs",
-      "path": "machines/compare/src/lib.rs",
-      "reason": "the fallback is reachable only in narrow matrix feature profiles"
-    },
-    {
-      "directive": "allow",
       "expiry_condition": "Remove when every supported profile enables at least one exact matrix constructor.",
       "lint": "unused_macros",
       "occurrences": 1,
       "owner": "Canonical cell bindings",
       "path": "src/core/src/cell_binding.rs",
       "reason": "exact matrix constructors are feature-selected below"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when feature-specific factory generation no longer leaves helper macros unused in reduced and native-link profiles.",
+      "lint": "unused_macros",
+      "occurrences": 3,
+      "owner": "Math runtime catalog",
+      "path": "machines/math/src/catalog.rs",
+      "reason": "native factory helpers are selected by disjoint feature profiles"
     },
     {
       "directive": "allow",
@@ -90,6 +81,15 @@
       "owner": "Canonical structure dispatch",
       "path": "src/engine/src/structures.rs",
       "reason": "the fallback is reachable only in narrow structure feature profiles"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when statement variants can no longer be unified independently across runtime dependencies.",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Runtime config profile",
+      "path": "src/runtime/src/config/profile/compile.rs",
+      "reason": "dependency feature unification can expose statement variants disabled in this runtime profile"
     },
     {
       "directive": "allow",

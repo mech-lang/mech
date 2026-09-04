@@ -2,7 +2,7 @@
 use alloc::{
     boxed::Box,
     collections::{BTreeMap, BTreeSet},
-    string::String,
+    string::{String, ToString},
     sync::Arc,
     vec,
     vec::Vec,
@@ -172,7 +172,13 @@ impl RuntimeOperationBinding {
     }
 
     pub fn permits(&self, operation: OperationId) -> bool {
-        matches!(self, Self::Fixed(operations) if operations.binary_search(&operation).is_ok())
+        match self {
+            Self::Fixed(operations) => operations.binary_search(&operation).is_ok(),
+            // A compiler family is selected by its explicit stable family ID
+            // before the concrete runtime entry is certified. The certificate
+            // retains the already-resolved semantic operation separately.
+            Self::CompilerResolved(_) => true,
+        }
     }
 }
 
@@ -323,6 +329,15 @@ impl RuntimeFunctionEntry {
         contracts
             .all(|contract| core::ptr::eq(contract, first))
             .then_some(first)
+    }
+
+    pub fn operation_contract(
+        &self,
+        operation: OperationId,
+    ) -> Option<&'static OperationContractDeclaration> {
+        match self.operation_contracts.get(&operation)? {
+            RuntimeOperationContractAuthority::Static(contract) => Some(*contract),
+        }
     }
 
     pub fn execution_capability(&self) -> RuntimeExecutionCapability {
@@ -486,10 +501,61 @@ impl MechErrorKind for RuntimeExecutionTargetUnsupported {
 
 #[derive(Clone)]
 pub struct FunctionSpecializerEntry {
-    pub operation: OperationId,
-    pub canonical_name: String,
+    pub operation: crate::ResolvedOperationDescriptor,
+    operation_contracts: Box<[OperationContractDeclaration]>,
     pub type_authority: SourceTypeAuthority,
     pub specializer: Arc<dyn CanonicalFunctionSpecializer>,
+}
+
+impl FunctionSpecializerEntry {
+    pub fn resolved_operation(
+        &self,
+        input_count: usize,
+        outputs: &[crate::ResolvedType],
+    ) -> MResult<crate::ResolvedOperationDescriptor> {
+        let output_is_matrix = outputs
+            .first()
+            .is_some_and(|output| matches!(output.kind(), crate::KindExpr::Matrix { .. }));
+        let mut candidates = self
+            .operation_contracts
+            .iter()
+            .filter(|contract| {
+                contract.inputs.resolve(input_count).is_ok()
+                    && contract.outputs.len() == outputs.len()
+            })
+            .collect::<Vec<_>>();
+        candidates.sort_by_key(|contract| {
+            let output = contract.outputs.first();
+            let matrix_specific = output_is_matrix
+                && output.is_some_and(|output| {
+                    output.change_detection != crate::ChangeDetectionPolicy::ExactScalar
+                });
+            let scalar_specific = !output_is_matrix
+                && output.is_some_and(|output| {
+                    output.change_detection == crate::ChangeDetectionPolicy::ExactScalar
+                });
+            (matrix_specific, scalar_specific)
+        });
+        let contract = candidates.last().copied().ok_or_else(|| {
+            MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(self.operation.id),
+                    reason: format!(
+                        "semantic operation {} has no contract for {input_count} inputs and {} outputs",
+                        self.operation.canonical_name,
+                        outputs.len(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        crate::ResolvedOperationDescriptor::new(
+            self.operation.id,
+            self.operation.canonical_name.clone(),
+            contract.clone(),
+        )
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -599,6 +665,7 @@ pub fn maintained_source_type_declaration(
     };
     let mut declaration = FunctionTypeDeclaration::from_schemes(schemes);
     let output_rule = match canonical_name {
+        "matrix/transpose" => Some(ResolvedOutputSchemaRule::TransposeOfInput(0)),
         "set/cartesian-product" => Some(ResolvedOutputSchemaRule::DynamicSetCartesianProduct),
         "set/powerset" => Some(ResolvedOutputSchemaRule::DynamicSetPowerset),
         "set/difference"
@@ -902,8 +969,7 @@ fn validate_bound_physical_signature(
         return Err(MechError::new(
             RuntimeOperationBindingMismatch {
                 operation: Some(binding.operation()),
-                reason: "bound descriptor arity differs from the physical runtime signature"
-                    .to_owned(),
+                reason: "bound descriptor arity differs from the physical runtime signature".into(),
             },
             None,
         )
@@ -1014,6 +1080,32 @@ impl MechErrorKind for FunctionCatalogDuplicateRuntimeFactory {
             "runtime factory {:?} is already registered at ID 0x{:016x}",
             self.name,
             self.id.raw(),
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionCatalogDuplicateRuntimeCapability {
+    pub operation: OperationId,
+    pub target: ExecutionTarget,
+    pub signature: RuntimeFunctionSignature,
+    pub existing_name: String,
+    pub incoming_name: String,
+}
+
+impl MechErrorKind for FunctionCatalogDuplicateRuntimeCapability {
+    fn name(&self) -> &str {
+        "FunctionCatalogDuplicateRuntimeCapability"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "runtime factories {:?} and {:?} declare the same {:?} capability for operation 0x{:016x} with signature {:?}",
+            self.existing_name,
+            self.incoming_name,
+            self.target,
+            self.operation.raw(),
+            self.signature,
         )
     }
 }
@@ -1507,9 +1599,35 @@ impl FunctionCatalogBuilder {
     ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
+        let contracts = self.registered_operation_contracts(operation, &canonical_name)?;
         self.insert_specializer_entry(FunctionSpecializerEntry {
-            operation,
-            canonical_name,
+            operation: crate::ResolvedOperationDescriptor::new(
+                operation,
+                canonical_name,
+                contracts[0].clone(),
+            )?,
+            operation_contracts: contracts,
+            type_authority: SourceTypeAuthority::Schemes(type_declaration),
+            specializer,
+        })
+    }
+
+    pub fn insert_canonical_specializer_with_contract(
+        &mut self,
+        canonical_name: impl Into<String>,
+        type_declaration: FunctionTypeDeclaration,
+        contract: OperationContractDeclaration,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
+    ) -> MResult<OperationId> {
+        let canonical_name = canonical_name.into();
+        let operation = OperationId::from_name(&canonical_name);
+        self.insert_specializer_entry(FunctionSpecializerEntry {
+            operation: crate::ResolvedOperationDescriptor::new(
+                operation,
+                canonical_name,
+                contract.clone(),
+            )?,
+            operation_contracts: vec![contract].into_boxed_slice(),
             type_authority: SourceTypeAuthority::Schemes(type_declaration),
             specializer,
         })
@@ -1518,28 +1636,61 @@ impl FunctionCatalogBuilder {
     pub fn insert_canonical_intrinsic_specializer(
         &mut self,
         canonical_name: impl Into<String>,
+        contract: OperationContractDeclaration,
         specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
         self.insert_intrinsic_specializer_entry(FunctionSpecializerEntry {
-            operation,
-            canonical_name,
+            operation: crate::ResolvedOperationDescriptor::new(
+                operation,
+                canonical_name,
+                contract.clone(),
+            )?,
+            operation_contracts: vec![contract].into_boxed_slice(),
             type_authority: SourceTypeAuthority::SyntaxDirectedIntrinsic,
             specializer,
         })
+    }
+
+    fn registered_operation_contracts(
+        &self,
+        operation: OperationId,
+        canonical_name: &str,
+    ) -> MResult<Box<[OperationContractDeclaration]>> {
+        let mut contracts = self
+            .runtime_factories
+            .values()
+            .filter_map(|entry| entry.operation_contract(operation))
+            .cloned()
+            .collect::<Vec<_>>();
+        contracts.sort();
+        contracts.dedup();
+        if contracts.is_empty() {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(operation),
+                    reason: format!(
+                        "source operation {canonical_name} has no catalog-declared operation contract"
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(contracts.into_boxed_slice())
     }
 
     pub fn insert_export(&mut self, export: FunctionExport) -> MResult<()> {
         validate_export(&export)?;
 
         if let Some(existing) = self.specializers.get(&export.operation)
-            && existing.canonical_name != export.canonical_name
+            && existing.operation.canonical_name.as_ref() != export.canonical_name
         {
             return Err(MechError::new(
                 FunctionCatalogOperationIdCollision {
                     operation: export.operation,
-                    existing_name: existing.canonical_name.clone(),
+                    existing_name: existing.operation.canonical_name.to_string(),
                     incoming_name: export.canonical_name.clone(),
                 },
                 None,
@@ -1605,11 +1756,11 @@ impl FunctionCatalogBuilder {
 
             for export in exports {
                 validate_export(export)?;
-                if specializer.canonical_name != export.canonical_name {
+                if specializer.operation.canonical_name.as_ref() != export.canonical_name {
                     return Err(MechError::new(
                         FunctionCatalogOperationIdCollision {
                             operation: *operation,
-                            existing_name: specializer.canonical_name.clone(),
+                            existing_name: specializer.operation.canonical_name.to_string(),
                             incoming_name: export.canonical_name.clone(),
                         },
                         None,
@@ -1694,6 +1845,42 @@ impl FunctionCatalogBuilder {
             .with_compiler_loc());
         }
 
+        if let RuntimeOperationBinding::Fixed(incoming_operations) = &entry.operation_binding {
+            for existing in self.runtime_factories.values() {
+                let RuntimeOperationBinding::Fixed(existing_operations) =
+                    &existing.operation_binding
+                else {
+                    continue;
+                };
+                if existing.signature != entry.signature {
+                    continue;
+                }
+                for operation in incoming_operations
+                    .iter()
+                    .copied()
+                    .filter(|operation| existing_operations.binary_search(operation).is_ok())
+                {
+                    if let Some(target) = entry
+                        .execution_targets
+                        .iter()
+                        .find(|target| existing.execution_targets.contains(*target))
+                    {
+                        return Err(MechError::new(
+                            FunctionCatalogDuplicateRuntimeCapability {
+                                operation,
+                                target,
+                                signature: entry.signature,
+                                existing_name: existing.name.clone(),
+                                incoming_name: entry.name.clone(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                }
+            }
+        }
+
         if let Some(existing) = self.runtime_factories.get(&entry.id) {
             let kind = if existing.name == entry.name {
                 MechError::new(
@@ -1724,12 +1911,13 @@ impl FunctionCatalogBuilder {
         &mut self,
         entry: FunctionSpecializerEntry,
     ) -> MResult<OperationId> {
-        if entry.canonical_name.is_empty() {
+        entry.operation.validate()?;
+        if entry.operation.canonical_name.is_empty() {
             return Err(MechError::new(
                 FunctionCatalogInvalidName {
                     category: "function operation",
-                    name: entry.canonical_name,
-                    id: entry.operation.raw(),
+                    name: entry.operation.canonical_name.to_string(),
+                    id: entry.operation.id.raw(),
                 },
                 None,
             )
@@ -1738,31 +1926,31 @@ impl FunctionCatalogBuilder {
 
         let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
             return Err(invalid_type_declaration(
-                &entry.canonical_name,
+                &entry.operation.canonical_name,
                 "named source operations must be scheme-authoritative",
             ));
         };
-        validate_type_declaration(&entry.canonical_name, declaration)?;
+        validate_type_declaration(&entry.operation.canonical_name, declaration)?;
 
         if let Some(existing) = self
             .specializers
-            .get(&entry.operation)
-            .or_else(|| self.intrinsic_specializers.get(&entry.operation))
+            .get(&entry.operation.id)
+            .or_else(|| self.intrinsic_specializers.get(&entry.operation.id))
         {
-            let kind = if existing.canonical_name == entry.canonical_name {
+            let kind = if existing.operation.canonical_name == entry.operation.canonical_name {
                 MechError::new(
                     FunctionCatalogDuplicateSpecializer {
-                        operation: entry.operation,
-                        canonical_name: entry.canonical_name,
+                        operation: entry.operation.id,
+                        canonical_name: entry.operation.canonical_name.to_string(),
                     },
                     None,
                 )
             } else {
                 MechError::new(
                     FunctionCatalogOperationIdCollision {
-                        operation: entry.operation,
-                        existing_name: existing.canonical_name.clone(),
-                        incoming_name: entry.canonical_name,
+                        operation: entry.operation.id,
+                        existing_name: existing.operation.canonical_name.to_string(),
+                        incoming_name: entry.operation.canonical_name.to_string(),
                     },
                     None,
                 )
@@ -1770,7 +1958,7 @@ impl FunctionCatalogBuilder {
             return Err(kind.with_compiler_loc());
         }
 
-        let operation = entry.operation;
+        let operation = entry.operation.id;
         self.specializers.insert(operation, entry);
         Ok(operation)
     }
@@ -1779,12 +1967,13 @@ impl FunctionCatalogBuilder {
         &mut self,
         entry: FunctionSpecializerEntry,
     ) -> MResult<OperationId> {
-        if entry.canonical_name.is_empty() {
+        entry.operation.validate()?;
+        if entry.operation.canonical_name.is_empty() {
             return Err(MechError::new(
                 FunctionCatalogInvalidName {
                     category: "function intrinsic",
-                    name: entry.canonical_name,
-                    id: entry.operation.raw(),
+                    name: entry.operation.canonical_name.to_string(),
+                    id: entry.operation.id.raw(),
                 },
                 None,
             )
@@ -1796,30 +1985,30 @@ impl FunctionCatalogBuilder {
             SourceTypeAuthority::SyntaxDirectedIntrinsic
         ) {
             return Err(invalid_type_declaration(
-                &entry.canonical_name,
+                &entry.operation.canonical_name,
                 "parser-only intrinsics must be explicitly syntax-directed",
             ));
         }
 
         if let Some(existing) = self
             .intrinsic_specializers
-            .get(&entry.operation)
-            .or_else(|| self.specializers.get(&entry.operation))
+            .get(&entry.operation.id)
+            .or_else(|| self.specializers.get(&entry.operation.id))
         {
-            let kind = if existing.canonical_name == entry.canonical_name {
+            let kind = if existing.operation.canonical_name == entry.operation.canonical_name {
                 MechError::new(
                     FunctionCatalogDuplicateSpecializer {
-                        operation: entry.operation,
-                        canonical_name: entry.canonical_name,
+                        operation: entry.operation.id,
+                        canonical_name: entry.operation.canonical_name.to_string(),
                     },
                     None,
                 )
             } else {
                 MechError::new(
                     FunctionCatalogOperationIdCollision {
-                        operation: entry.operation,
-                        existing_name: existing.canonical_name.clone(),
-                        incoming_name: entry.canonical_name,
+                        operation: entry.operation.id,
+                        existing_name: existing.operation.canonical_name.to_string(),
+                        incoming_name: entry.operation.canonical_name.to_string(),
                     },
                     None,
                 )
@@ -1827,7 +2016,7 @@ impl FunctionCatalogBuilder {
             return Err(kind.with_compiler_loc());
         }
 
-        let operation = entry.operation;
+        let operation = entry.operation.id;
         self.intrinsic_specializers.insert(operation, entry);
         Ok(operation)
     }

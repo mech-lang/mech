@@ -18,7 +18,11 @@ source
 
 R3 remains the only semantic resolver. A `ResolvedCall` fixes the semantic
 operation, overload, converted inputs, conversion plans, outputs, and output
-schema rules. No physical factory or storage representation may replace or
+schema rules. Its validated `ResolvedOperationDescriptor` carries the
+operation ID, canonical semantic name, and operation-memory declaration as one
+authority. The same descriptor is copied into `BoundCall`; compiler sidecars
+are derived from that certificate and may only assert, never supply, its name
+or contract. No physical factory or storage representation may replace or
 repair those decisions.
 
 `ResolvedValueDescriptor` connects a closed `ResolvedType` to its canonical
@@ -32,10 +36,17 @@ backing extraction, ABI calculation, and implementation-signature matching;
 it is never a source of semantic type, operation, conversion, output schema,
 or dimension authority.
 
-`BoundCall` certifies the exact runtime implementation selected for a resolved
-semantic call. It retains immutable input and output descriptors, operation
-identity, origin, runtime function identity, and execution target. It does not
+`BoundCall` certifies the exact implementation selected for a resolved semantic
+call. It retains the complete operation descriptor, immutable input and output
+descriptors, origin, selected runtime or resident implementation identity, and
+execution target. Artifact loading uses an explicit `ArtifactOperation` origin
+when the bytecode does not retain the original overload identity. It does not
 own allocation, capacity, alias, lifetime, or reclamation information.
+
+Catalog construction rejects duplicate concrete capabilities for the same
+semantic operation, execution target, and exact physical signature. Physical
+selection therefore cannot settle an ambiguity by runtime name, registration
+order, or implementation naming convention.
 
 ## Preserved boundaries
 

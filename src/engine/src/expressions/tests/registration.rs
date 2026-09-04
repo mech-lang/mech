@@ -1,13 +1,16 @@
 use super::super::registration::{
     register_expression_function_batch, register_initialized_expression_function,
 };
+use crate::{
+    AccessMode, AliasPolicy, CanonicalCellId, ChangeDetectionPolicy, DeliveryMode, ExecutionTarget,
+    ExternalInteraction, FunctionInstance, FunctionInvocation, InitialSolvePolicy, InputPortLayout,
+    InputPortPolicy, MResult, MechError, MechErrorKind, MechFunction, MechFunctionImpl,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, Plan,
+    ReactiveDependencyKind, ResolvedOperationDescriptor, RuntimeFunctionId, ShapeRule,
+    SpecializedFunction, ValueCell,
+};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
-use crate::{
-    CanonicalCellId, ExecutionTarget, FunctionInstance, FunctionInvocation, InitialSolvePolicy,
-    MResult, MechError, MechErrorKind, MechFunction, MechFunctionImpl, OperationId, Plan,
-    ReactiveDependencyKind, RuntimeFunctionId, SpecializedFunction, ValueCell,
-};
 use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
@@ -100,12 +103,39 @@ fn specialized(
     output: ValueCell,
     inputs: Vec<ValueCell>,
 ) -> SpecializedFunction {
+    let input_count = inputs.len();
     SpecializedFunction::syntax_directed(
         FunctionInstance::new(
             implementation,
             FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
         ),
-        OperationId::from_name("test/indexed-expression"),
+        ResolvedOperationDescriptor::from_name(
+            "test/indexed-expression",
+            OperationContractDeclaration {
+                inputs: InputPortLayout::Fixed(
+                    vec![
+                        InputPortPolicy {
+                            access: AccessMode::Read,
+                            delivery: DeliveryMode::Signal,
+                        };
+                        input_count
+                    ]
+                    .into_boxed_slice(),
+                ),
+                outputs: vec![OutputPortPolicy {
+                    access: AccessMode::Write,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::FullWrite {
+                        shape: ShapeRule::Declared,
+                    },
+                    alias: AliasPolicy::NoAlias,
+                    change_detection: ChangeDetectionPolicy::KernelReported,
+                }]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            },
+        )
+        .unwrap(),
         RuntimeFunctionId::from_name("IndexedExpressionTestFunction"),
         ExecutionTarget::DirectRuntime,
     )

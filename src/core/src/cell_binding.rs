@@ -461,7 +461,7 @@ impl ValueCell {
         .with_compiler_loc())
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "f64", feature = "matrixd"))]
     fn test_backing_for_representation(
         representation: FunctionValueRepresentation,
         matrix_dimensions: Option<(usize, usize)>,
@@ -1650,7 +1650,13 @@ impl ValueCell {
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
-        let shape = output_shape_for_data(schema, &data, &[])?;
+        let current_shape = self
+            .binding
+            .shape
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
+            .clone();
+        let shape = output_shape_for_data(schema, &data, &[], Some(&current_shape))?;
         ValueDraft {
             schema: self.binding.schema,
             shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
@@ -1982,15 +1988,25 @@ fn output_shape_for_data(
     schema: &crate::Schema,
     data: &ValueDataDraft,
     current_extents: &[u64],
+    seed: Option<&ShapeInstance>,
 ) -> MResult<ShapeInstance> {
     if matches!(schema.body(), SchemaBody::Matrix { .. }) {
-        return matrix_shape_for_extents(schema, current_extents, None);
+        return matrix_shape_for_extents(schema, current_extents, seed);
     }
-    let mut values = vec![0; schema.dimension_parameters().len()];
-    for (index, parameter) in schema.dimension_parameters().iter().enumerate() {
-        values[index] = crate::evaluate_dimension(parameter.lower_bound(), &values[..index])
-            .map_err(MechError::from)?;
-    }
+    let mut values = if let Some(seed) = seed {
+        schema
+            .instantiate_shape(seed.parameter_values().to_vec().into_boxed_slice())
+            .map_err(MechError::from)?
+            .parameter_values()
+            .to_vec()
+    } else {
+        let mut values = vec![0; schema.dimension_parameters().len()];
+        for (index, parameter) in schema.dimension_parameters().iter().enumerate() {
+            values[index] = crate::evaluate_dimension(parameter.lower_bound(), &values[..index])
+                .map_err(MechError::from)?;
+        }
+        values
+    };
     assign_data_extent_witness(schema.body(), data, &mut values)?;
     schema
         .instantiate_shape(values.into_boxed_slice())
@@ -2670,7 +2686,9 @@ fn dynamic_matrix_cell(
     let [rows, columns] = dimensions.as_ref() else {
         return Ok(None);
     };
+    #[cfg(feature = "row_vectord")]
     let row_axis_is_invariant_one = matches!(rows, DimensionExpr::Constant(1));
+    #[cfg(feature = "vectord")]
     let column_axis_is_invariant_one = matches!(columns, DimensionExpr::Constant(1));
     let (Ok(rows), Ok(columns)) = (
         shape
@@ -4458,7 +4476,7 @@ mod tests {
                 .as_slice(),
             &[1.0, 2.0, 3.0],
         );
-        assert_eq!(cell.snapshot().unwrap().shape().parameter_values(), &[3, 1]);
+        assert_eq!(cell.current_top_level_extents().unwrap().as_ref(), &[3, 1]);
     }
 
     #[cfg(feature = "f64")]
@@ -4967,6 +4985,69 @@ mod tests {
             bounded.kind_message().contains("Cardinality"),
             "{bounded:?}"
         );
+    }
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn rebuilding_a_dynamic_collection_preserves_its_bound_shape_witnesses() {
+        let dimensions = [
+            DimensionParameterDeclaration {
+                id: crate::DimensionParameterId::new(0),
+                origin: crate::DimensionParameterOrigin::Inferred,
+                lifetime: crate::DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+            DimensionParameterDeclaration {
+                id: crate::DimensionParameterId::new(1),
+                origin: crate::DimensionParameterOrigin::Inferred,
+                lifetime: crate::DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+        ];
+        let schema = test_schema(
+            SchemaBody::Set {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                cardinality: CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Add(
+                        vec![
+                            DimensionExpr::Parameter(crate::DimensionParameterId::new(0)),
+                            DimensionExpr::Parameter(crate::DimensionParameterId::new(1)),
+                        ]
+                        .into_boxed_slice(),
+                    )),
+                },
+            },
+            dimensions.into(),
+            &[2, 2],
+        );
+        let value = finalize_draft(
+            schema.id,
+            &schema.shape,
+            &schema.schemas,
+            ValueDataDraft::Set(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(2)].into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let cell = ValueCell::from_runtime_value(value, schema.schemas).unwrap();
+        let descriptor = cell.resolved_descriptor().unwrap();
+
+        let next = cell
+            .rebuild_set_drafts(
+                vec![
+                    ValueDataDraft::U8(1),
+                    ValueDataDraft::U8(2),
+                    ValueDataDraft::U8(3),
+                ]
+                .into_boxed_slice(),
+            )
+            .unwrap();
+        cell.replace(&next).unwrap();
+
+        assert_eq!(cell.shape().parameter_values(), &[2, 2]);
+        assert_eq!(cell.resolved_descriptor().unwrap(), descriptor);
     }
 
     #[cfg(feature = "u8")]

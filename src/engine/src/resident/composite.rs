@@ -89,15 +89,19 @@ fn port_matches_schema_body(
     request
         .schemas
         .get(input.schema_id)
-        .is_some_and(|schema| schema.body() == expected)
+        .and_then(|schema| schema.closed_body(&input.shape_instance).ok())
+        .is_some_and(|schema| &schema == expected)
 }
 
 fn composite_children_match_output_schema(request: &ResidentKernelBindRequest<'_>) -> bool {
     let Some(output) = request.schemas.get(request.output.schema_id) else {
         return false;
     };
+    let Ok(output) = output.closed_body(&request.output.shape_instance) else {
+        return false;
+    };
     let children = &request.inputs[1..];
-    composite_child_schemas(output.body(), children.len()).is_some_and(|(expected, _)| {
+    composite_child_schemas(&output, children.len()).is_some_and(|(expected, _)| {
         children
             .iter()
             .zip(expected.iter())

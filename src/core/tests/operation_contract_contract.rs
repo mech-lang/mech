@@ -1,14 +1,15 @@
 use mech_core::{
     AccessMode, AliasPolicy, ChangeDetectionPolicy, DeclaredOperationContract, DeliveryMode,
-    DimensionExpr, EffectContract, EffectDeliveryPolicy, EnumVariantSchema, ExternalInteraction,
-    IdempotencyRequirement, InputPortLayout, InputPortPolicy, NominalKey, ObservationContract,
-    ObservationReplayPolicy, OperationContractDeclaration, OperationContractError,
-    OperationContractId, OperationContractTable, OperationContractTableBuilder, OutputConstruction,
-    OutputPortPolicy, PortDirection, RegionPolicy, ResolvedInputPort, ResolvedOperationContract,
-    ResolvedOutputPort, SchemaBody, SchemaDraft, SchemaField, SchemaId, SchemaTableBuilder,
-    ShapeContractReference, ShapeRule, TransactionalEffectProtocol, TransactionalExternalContract,
-    validate_contract_schemas, validate_declaration, validate_resolved_contract,
-    validate_signal_bindings,
+    DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+    DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy, EnumVariantSchema,
+    ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, NominalKey,
+    ObservationContract, ObservationReplayPolicy, OperationContractDeclaration,
+    OperationContractError, OperationContractId, OperationContractTable,
+    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, PortDirection,
+    RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaBody,
+    SchemaDraft, SchemaField, SchemaId, SchemaTableBuilder, ShapeContractReference, ShapeRule,
+    TransactionalEffectProtocol, TransactionalExternalContract, validate_contract_schemas,
+    validate_declaration, validate_resolved_contract, validate_signal_bindings,
 };
 
 fn declared(change_detection: ChangeDetectionPolicy) -> ResolvedOperationContract {
@@ -529,6 +530,107 @@ fn matrix_schema(element: SchemaBody, rows: u64, columns: u64) -> mech_core::Sch
     }
     .finalize()
     .unwrap()
+}
+
+fn parameterized_matrix_schema(
+    element: SchemaBody,
+    dimensions: Box<[DimensionExpr]>,
+    parameter_count: u32,
+) -> mech_core::Schema {
+    SchemaDraft {
+        dimension_parameters: (0..parameter_count)
+            .map(|id| DimensionParameterDeclaration {
+                id: DimensionParameterId::new(id),
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions,
+        },
+    }
+    .finalize()
+    .unwrap()
+}
+
+#[test]
+fn matrix_product_compares_closed_axes_without_comparing_schema_local_parameters() {
+    let parameter = |id| DimensionExpr::Parameter(DimensionParameterId::new(id));
+    let mut builder = SchemaTableBuilder::new();
+    let lhs = builder
+        .insert(matrix_schema(SchemaBody::Bool, 3, 3))
+        .unwrap();
+    let rhs = builder
+        .insert(parameterized_matrix_schema(
+            SchemaBody::Bool,
+            vec![parameter(0), parameter(1)].into_boxed_slice(),
+            2,
+        ))
+        .unwrap();
+    let output = builder
+        .insert(parameterized_matrix_schema(
+            SchemaBody::Bool,
+            vec![DimensionExpr::Constant(3), parameter(0)].into_boxed_slice(),
+            1,
+        ))
+        .unwrap();
+    let wrong_output = builder
+        .insert(parameterized_matrix_schema(
+            SchemaBody::Bool,
+            vec![DimensionExpr::Constant(4), parameter(0)].into_boxed_slice(),
+            1,
+        ))
+        .unwrap();
+    let build = builder.finish().unwrap();
+    let lhs = build.resolve(lhs).unwrap();
+    let rhs = build.resolve(rhs).unwrap();
+    let output = build.resolve(output).unwrap();
+    let wrong_output = build.resolve(wrong_output).unwrap();
+    let (schemas, _) = build.into_parts();
+
+    let contract_for = |output_schema| {
+        ResolvedOperationContract::Declared(DeclaredOperationContract {
+            inputs: vec![
+                ResolvedInputPort {
+                    schema: lhs,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                ResolvedInputPort {
+                    schema: rhs,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+            outputs: vec![ResolvedOutputPort {
+                schema: output_schema,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::MatrixProduct { lhs: 0, rhs: 1 },
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        })
+    };
+
+    assert!(validate_contract_schemas(&contract_for(output), &schemas).is_ok());
+    assert_eq!(
+        validate_contract_schemas(&contract_for(wrong_output), &schemas),
+        Err(OperationContractError::MatrixProductSchemaMismatch {
+            lhs: 0,
+            rhs: 1,
+            output: 0,
+        })
+    );
 }
 
 #[test]

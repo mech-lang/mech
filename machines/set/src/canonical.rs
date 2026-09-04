@@ -124,7 +124,7 @@ where
 {
     let inputs = invocation.inputs().iter().collect::<Vec<_>>();
     context.bind_resolved_runtime(
-        RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+        RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
         ExecutionTarget::DirectRuntime,
         vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
         &inputs,
@@ -141,7 +141,7 @@ where
 {
     let inputs = invocation.inputs().iter().collect::<Vec<_>>();
     context.bind_resolved_runtime(
-        RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+        RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
         ExecutionTarget::DirectRuntime,
         vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
         &inputs,
@@ -158,7 +158,7 @@ where
 {
     let inputs = invocation.inputs().iter().collect::<Vec<_>>();
     context.bind_resolved_runtime(
-        RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+        RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
         ExecutionTarget::DirectRuntime,
         vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
         &inputs,

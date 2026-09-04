@@ -97,7 +97,7 @@ pub struct CompiledBytecode {
     pub instruction_roles: Vec<Option<CompiledInstructionRole>>,
     /// Portable semantic declaration captured from each specialized source
     /// node, parallel to `program.instructions`.
-    pub instruction_contracts: Vec<Option<&'static OperationContractDeclaration>>,
+    pub instruction_contracts: Vec<Option<OperationContractDeclaration>>,
     /// Canonical source-level operation, parallel to `program.instructions`.
     /// Runtime factory identities remain in executable bytecode only.
     pub instruction_operations: Vec<Option<String>>,
@@ -161,11 +161,12 @@ pub struct CompileCtx {
     pending_requirements: Vec<ApplicationRequirement>,
     instructions: Vec<BytecodeInstruction>,
     instruction_roles: Vec<Option<CompiledInstructionRole>>,
-    instruction_contracts: Vec<Option<&'static OperationContractDeclaration>>,
+    instruction_contracts: Vec<Option<OperationContractDeclaration>>,
     instruction_operations: Vec<Option<String>>,
     instruction_source_nodes: Vec<Option<u32>>,
     instruction_type_bindings: Vec<Option<crate::BoundCall>>,
     register_schemas: BTreeMap<Register, crate::SchemaBody>,
+    register_schema_conflicts: BTreeSet<Register>,
     register_type_descriptors: BTreeMap<Register, crate::ResolvedValueDescriptor>,
     absent_registers: BTreeSet<Register>,
     register_collection_cardinalities: BTreeMap<Register, usize>,
@@ -174,7 +175,7 @@ pub struct CompileCtx {
     runtime_produced_registers: BTreeSet<Register>,
     symbol_definitions: Vec<CompiledSymbolDefinition>,
     current_node_kind: Option<CompiledNodeKind>,
-    current_node_contract: Option<&'static OperationContractDeclaration>,
+    current_node_contract: Option<OperationContractDeclaration>,
     current_node_operation: Option<String>,
     current_source_node: Option<u32>,
     current_node_type_binding: Option<crate::BoundCall>,
@@ -205,6 +206,7 @@ impl Default for CompileCtx {
             instruction_source_nodes: Vec::new(),
             instruction_type_bindings: Vec::new(),
             register_schemas: BTreeMap::new(),
+            register_schema_conflicts: BTreeSet::new(),
             register_type_descriptors: BTreeMap::new(),
             absent_registers: BTreeSet::new(),
             register_collection_cardinalities: BTreeMap::new(),
@@ -328,47 +330,39 @@ impl CompileCtx {
     }
 
     pub fn begin_plan_node(&mut self, kind: CompiledNodeKind) -> MResult<()> {
-        self.begin_plan_node_with_semantics(kind, None, None)
-    }
-
-    pub fn begin_plan_node_with_contract(
-        &mut self,
-        kind: CompiledNodeKind,
-        contract: Option<&'static OperationContractDeclaration>,
-    ) -> MResult<()> {
-        self.begin_plan_node_with_semantics(kind, None, contract)
-    }
-
-    pub fn begin_plan_node_with_semantics(
-        &mut self,
-        kind: CompiledNodeKind,
-        operation: Option<&str>,
-        contract: Option<&'static OperationContractDeclaration>,
-    ) -> MResult<()> {
-        self.begin_plan_node_with_type_binding(kind, operation, contract, None)
+        if self.current_node_kind.is_some() {
+            return invalid("cannot begin a bytecode plan node while another node is active");
+        }
+        self.current_node_kind = Some(kind);
+        self.current_node_operation = None;
+        self.current_node_contract = None;
+        self.current_node_type_binding = None;
+        self.current_source_node = Some(self.next_source_node);
+        self.next_source_node = self
+            .next_source_node
+            .checked_add(1)
+            .ok_or_else(|| invalid::<()>("source plan node identity exceeds u32").unwrap_err())?;
+        Ok(())
     }
 
     pub fn begin_plan_node_with_type_binding(
         &mut self,
         kind: CompiledNodeKind,
-        operation: Option<&str>,
-        contract: Option<&'static OperationContractDeclaration>,
-        type_binding: Option<&crate::BoundCall>,
+        type_binding: &crate::BoundCall,
     ) -> MResult<()> {
         if self.current_node_kind.is_some() {
             return invalid("cannot begin a bytecode plan node while another node is active");
         }
-        if let (Some(operation), Some(binding)) = (operation, type_binding)
-            && crate::OperationId::from_name(operation) != binding.operation()
-        {
-            return invalid(format!(
-                "plan node operation {operation:?} disagrees with its bound call certificate",
-            ));
-        }
+        type_binding.operation_descriptor().validate()?;
         self.current_node_kind = Some(kind);
-        self.current_node_operation = operation.map(str::to_owned);
-        self.current_node_contract = contract;
-        self.current_node_type_binding = type_binding.cloned();
+        self.current_node_operation = Some(
+            type_binding
+                .operation_descriptor()
+                .canonical_name
+                .to_string(),
+        );
+        self.current_node_contract = Some(type_binding.operation_descriptor().contract.clone());
+        self.current_node_type_binding = Some(type_binding.clone());
         self.current_source_node = Some(self.next_source_node);
         self.next_source_node = self
             .next_source_node
@@ -577,6 +571,32 @@ impl CompileCtx {
                 })?;
             *target = Some(descriptor.clone());
         }
+        complete_register_type_descriptors(
+            &instructions,
+            &instruction_type_bindings,
+            &self.absent_registers,
+            &mut register_type_descriptors,
+        )?;
+        for register in &self.register_schema_conflicts {
+            if register_type_descriptors
+                .get(*register as usize)
+                .is_none_or(Option::is_none)
+            {
+                return invalid(format!(
+                    "register {register} has conflicting physical schemas without a bound semantic type descriptor",
+                ));
+            }
+        }
+        // The resolved descriptor is the R4 schema authority. Compiler
+        // constants can still contribute a closed physical schema body while
+        // their source call carries a dynamic semantic dimension; once the
+        // immutable BoundCall completes the descriptor sidecar, keep the
+        // compatibility body aligned with that certificate.
+        for (schema, descriptor) in register_schemas.iter_mut().zip(&register_type_descriptors) {
+            if let Some(descriptor) = descriptor {
+                *schema = Some(descriptor.schema().body().clone());
+            }
+        }
         let mut register_collection_cardinalities = vec![None; self.next_register as usize];
         for (register, cardinality) in &self.register_collection_cardinalities {
             let target = register_collection_cardinalities
@@ -710,25 +730,101 @@ impl CompileCtx {
     }
 
     fn associate_retained_symbol_cell(&mut self, name: &str, register: Register) -> MResult<()> {
-        let Some(cell) = self.retained_symbol_cells.get(name) else {
+        let Some(cell) = self.retained_symbol_cells.get(name).cloned() else {
             return Ok(());
         };
         let address = cell.compiler_identity();
-        let identity = BytecodeRegisterIdentity::Cell(address);
+        let identity = BytecodeRegisterIdentity::Typed {
+            inner: Box::new(BytecodeRegisterIdentity::Cell(address)),
+            annotation: cell.schema_key(),
+        };
         if let Some(existing) = self.reg_map.get(&identity) {
             if *existing != register {
                 return invalid(format!(
                     "compiler symbol {name:?} retained cell already owns register {existing}, incoming register {register}",
                 ));
             }
-            return Ok(());
+        } else {
+            self.reg_map.insert(identity, register);
         }
-        self.reg_map.insert(identity, register);
+        let descriptor = cell.resolved_descriptor()?;
+        if let Some(existing) = self.register_type_descriptors.get(&register) {
+            if existing != &descriptor {
+                return invalid(format!(
+                    "compiler symbol {name:?} disagrees with register {register}'s semantic descriptor",
+                ));
+            }
+        } else {
+            self.register_type_descriptors
+                .insert(register, descriptor.clone());
+        }
+        self.register_schemas
+            .insert(register, descriptor.schema().body().clone());
         Ok(())
     }
 
     fn register_for_identity(&mut self, identity: BytecodeRegisterIdentity) -> (Register, bool) {
         if let Some(&register) = self.reg_map.get(&identity) {
+            return (register, false);
+        }
+        if let BytecodeRegisterIdentity::Cell(address) = &identity {
+            let typed = self
+                .reg_map
+                .iter()
+                .filter_map(|(candidate, register)| match candidate {
+                    BytecodeRegisterIdentity::Typed { inner, annotation }
+                        if matches!(inner.as_ref(), BytecodeRegisterIdentity::Cell(candidate) if candidate == address) =>
+                    {
+                        Some((*annotation, *register))
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            let bound_matches = typed
+                .iter()
+                .filter_map(|(annotation, register)| {
+                    self.current_node_type_binding
+                        .as_ref()
+                        .is_some_and(|binding| {
+                            binding
+                                .inputs()
+                                .iter()
+                                .chain(binding.outputs())
+                                .any(|descriptor| descriptor.schema().key() == *annotation)
+                        })
+                        .then_some(*register)
+                })
+                .collect::<BTreeSet<_>>();
+            let resolved = if bound_matches.len() == 1 {
+                bound_matches.first().copied()
+            } else {
+                let registers = typed
+                    .into_iter()
+                    .map(|(_, register)| register)
+                    .collect::<BTreeSet<_>>();
+                (registers.len() == 1)
+                    .then(|| *registers.first().expect("one typed register exists"))
+            };
+            if let Some(register) = resolved {
+                self.reg_map.insert(identity, register);
+                return (register, false);
+            }
+        }
+        if let BytecodeRegisterIdentity::Typed { inner, .. } = &identity
+            && let BytecodeRegisterIdentity::Cell(address) = inner.as_ref()
+            && !self.reg_map.keys().any(|candidate| {
+                matches!(
+                    candidate,
+                    BytecodeRegisterIdentity::Typed { inner, .. }
+                        if matches!(inner.as_ref(), BytecodeRegisterIdentity::Cell(candidate) if candidate == address)
+                )
+            })
+            && let Some(register) = self
+                .reg_map
+                .get(&BytecodeRegisterIdentity::Cell(*address))
+                .copied()
+        {
+            self.reg_map.insert(identity, register);
             return (register, false);
         }
         let register = self.next_register;
@@ -760,8 +856,7 @@ impl BytecodeCompilerContext for CompileCtx {
     }
 
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool) {
-        let outer_identity = BytecodeRegisterIdentity::Cell(pointer);
-        self.register_for_identity(outer_identity)
+        self.register_for_identity(BytecodeRegisterIdentity::Cell(pointer))
     }
 
     fn retain_canonical_cell(&mut self, cell: &ValueCell) -> MResult<()> {
@@ -780,11 +875,25 @@ impl BytecodeCompilerContext for CompileCtx {
         register: Register,
         schema: crate::SchemaBody,
     ) -> MResult<()> {
+        if let Some(descriptor) = self.register_type_descriptors.get(&register) {
+            // Physical constant encoders still report a closed storage body.
+            // Once a semantic descriptor exists, that compatibility metadata
+            // cannot replace or contradict the R4 type authority.
+            if descriptor.schema().body() != &schema {
+                return Ok(());
+            }
+            self.register_schemas.insert(register, schema);
+            return Ok(());
+        }
         if let Some(existing) = self.register_schemas.get(&register) {
             if existing != &schema {
-                return invalid(format!(
-                    "register {register} has conflicting canonical schemas {existing:?} and {schema:?}",
-                ));
+                // Reservation runs before source nodes are emitted, so a
+                // mutable backing can expose both its closed initializer and
+                // parameterized live schema before its BoundCall is visible.
+                // Defer this physical disagreement until finalization, where
+                // the immutable semantic descriptor must resolve it.
+                self.register_schema_conflicts.insert(register);
+                return Ok(());
             }
         } else {
             self.register_schemas.insert(register, schema);
@@ -1072,7 +1181,7 @@ impl BytecodeCompilerContext for CompileCtx {
                 CompiledNodeKind::Combinational,
             )));
         self.instruction_contracts
-            .push(Some(&PURE_COMPOSITE_PACK_CONTRACT));
+            .push(Some(PURE_COMPOSITE_PACK_CONTRACT.clone()));
         self.instruction_operations
             .push(Some("core/composite-pack".to_owned()));
         // This is a compiler-owned record/tuple/etc. construction node, not a
@@ -1088,7 +1197,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
@@ -1104,7 +1214,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
@@ -1121,7 +1232,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
@@ -1167,7 +1279,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
@@ -1195,7 +1308,8 @@ impl BytecodeCompilerContext for CompileCtx {
             });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
@@ -1212,7 +1326,8 @@ impl BytecodeCompilerContext for CompileCtx {
             });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
@@ -1233,7 +1348,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
@@ -1248,7 +1364,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
@@ -1264,7 +1381,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
@@ -1280,13 +1398,130 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
-        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_contracts
+            .push(self.current_node_contract.clone());
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
     }
+}
+
+fn instruction_registers(instruction: &BytecodeInstruction) -> (Option<Register>, Vec<Register>) {
+    match instruction {
+        BytecodeInstruction::ConstLoad { dst, .. } => (Some(*dst), Vec::new()),
+        BytecodeInstruction::CompositePack { dst, children, .. }
+        | BytecodeInstruction::RuntimeVariadic {
+            dst,
+            arguments: children,
+            ..
+        }
+        | BytecodeInstruction::HostCall {
+            dst,
+            arguments: children,
+            ..
+        } => (Some(*dst), children.clone()),
+        BytecodeInstruction::RuntimeNullary { dst, .. }
+        | BytecodeInstruction::ResourceRead { dst, .. } => (Some(*dst), Vec::new()),
+        BytecodeInstruction::RuntimeUnary { dst, src, .. }
+        | BytecodeInstruction::ResourceWrite { dst, src, .. }
+        | BytecodeInstruction::ResourceSend { dst, src, .. } => (Some(*dst), vec![*src]),
+        BytecodeInstruction::RuntimeBinary { dst, lhs, rhs, .. } => (Some(*dst), vec![*lhs, *rhs]),
+        BytecodeInstruction::RuntimeTernary { dst, a, b, c, .. } => (Some(*dst), vec![*a, *b, *c]),
+        BytecodeInstruction::RuntimeQuaternary {
+            dst, a, b, c, d, ..
+        } => (Some(*dst), vec![*a, *b, *c, *d]),
+        BytecodeInstruction::Return { src } => (None, vec![*src]),
+    }
+}
+
+fn record_compiled_descriptor(
+    descriptors: &mut [Option<crate::ResolvedValueDescriptor>],
+    register: Register,
+    expected: &crate::ResolvedValueDescriptor,
+) -> MResult<()> {
+    let slot = descriptors.get_mut(register as usize).ok_or_else(|| {
+        invalid::<()>(format!(
+            "semantic type binding references register {register} outside the register table",
+        ))
+        .unwrap_err()
+    })?;
+    match slot {
+        Some(actual) if !actual.has_same_type_contract(expected) => invalid(format!(
+            "register {register} has conflicting bound semantic type descriptors {actual:?} and {expected:?}",
+        )),
+        Some(_) => Ok(()),
+        None => {
+            *slot = Some(expected.clone());
+            Ok(())
+        }
+    }
+}
+
+/// Completes the dense register descriptor sidecar from the immutable bound
+/// call carried by each executable source node. Legacy physical compiler
+/// helpers may record only a canonical schema; they are not allowed to leave
+/// the semantic descriptor absent from the finished compiler product.
+fn complete_register_type_descriptors(
+    instructions: &[BytecodeInstruction],
+    bindings: &[Option<crate::BoundCall>],
+    absent_registers: &BTreeSet<Register>,
+    descriptors: &mut [Option<crate::ResolvedValueDescriptor>],
+) -> MResult<()> {
+    for (instruction, binding) in instructions.iter().zip(bindings) {
+        let Some(binding) = binding else {
+            continue;
+        };
+        let (destination, mut inputs) = instruction_registers(instruction);
+        if binding.inputs().len() == inputs.len() + 1 {
+            let base_input = binding
+                .operation_descriptor()
+                .contract
+                .outputs
+                .iter()
+                .find_map(|output| match output.construction {
+                    crate::OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                        Some(base_input as usize)
+                    }
+                    _ => None,
+                });
+            let Some(base_input) = base_input else {
+                return invalid("semantic binding input arity exceeds the instruction operands");
+            };
+            let Some(destination) = destination else {
+                return invalid("read/modify/write binding has no destination register");
+            };
+            if base_input > inputs.len() {
+                return invalid("read/modify/write base input is outside the binding inputs");
+            }
+            inputs.insert(base_input, destination);
+        }
+        if inputs.len() != binding.inputs().len() {
+            return invalid(format!(
+                "instruction has {} semantic inputs but its binding declares {}",
+                inputs.len(),
+                binding.inputs().len(),
+            ));
+        }
+        for (register, expected) in inputs.into_iter().zip(binding.inputs()) {
+            if !absent_registers.contains(&register) {
+                record_compiled_descriptor(descriptors, register, expected)?;
+            }
+        }
+        if binding.outputs().len() != 1 {
+            return invalid(format!(
+                "executable binding declares {} outputs instead of one",
+                binding.outputs().len(),
+            ));
+        }
+        if let Some(destination) = destination
+            && !absent_registers.contains(&destination)
+        {
+            record_compiled_descriptor(descriptors, destination, &binding.outputs()[0])?;
+        }
+    }
+    Ok(())
 }
 
 fn encoded_collection_cardinality(

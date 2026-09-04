@@ -86,7 +86,7 @@ impl CanonicalFunctionSpecializer for CompareStrictEqual {
         let lhs = specialization.input(0).expect("validated lhs");
         let rhs = specialization.input(1).expect("validated rhs");
         context.bind_resolved_runtime(
-            RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
             ExecutionTarget::DirectRuntime,
             vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
             &[lhs, rhs],

@@ -189,19 +189,20 @@ impl<'a> FunctionResolver<'a> {
             })?;
 
         self.environment
-            .require_operation_enabled(operation, Some(&entry.canonical_name))?;
+            .require_operation_enabled(operation, Some(&entry.operation.canonical_name))?;
         match &entry.type_authority {
             SourceTypeAuthority::SyntaxDirectedIntrinsic => {
                 let mut context = mech_core::SpecializationContext::for_syntax_directed_invocation(
                     invocation,
                     Some(self.catalog),
-                    entry.operation,
-                    entry.canonical_name.clone(),
+                    entry.operation.clone(),
                 )?;
                 let function = entry
                     .specializer
                     .specialize_invocation(invocation, &mut context)
-                    .map_err(|error| semantic_operation_error(error, &entry.canonical_name))?;
+                    .map_err(|error| {
+                        semantic_operation_error(error, &entry.operation.canonical_name)
+                    })?;
                 function.output().resolved_type()?;
                 Ok(function)
             }
@@ -215,14 +216,16 @@ impl<'a> FunctionResolver<'a> {
                 let mut context = mech_core::SpecializationContext::for_resolved_invocation(
                     &converted,
                     Some(self.catalog),
-                    entry.operation,
-                    entry.canonical_name.clone(),
+                    entry.operation.id,
+                    entry.operation.canonical_name.to_string(),
                     resolved.clone(),
                 )?;
                 let function = entry
                     .specializer
                     .specialize_invocation(&converted, &mut context)
-                    .map_err(|error| semantic_operation_error(error, &entry.canonical_name))?;
+                    .map_err(|error| {
+                        semantic_operation_error(error, &entry.operation.canonical_name)
+                    })?;
                 validate_resolved_output(entry, &resolved, &function)?;
                 Ok(function)
             }
@@ -238,12 +241,10 @@ impl<'a> FunctionResolver<'a> {
             .extensions
             .entry(extension)
             .ok_or_else(|| extension_unavailable(extension, None))?;
-        let operation = OperationId::from_raw(extension.raw());
         let mut context = mech_core::SpecializationContext::for_syntax_directed_invocation(
             invocation,
             Some(self.catalog),
-            operation,
-            entry.canonical_name.clone(),
+            entry.operation.clone(),
         )?;
         entry
             .specializer
@@ -286,7 +287,7 @@ fn resolve_declared_call(
         .collect::<Vec<_>>();
     let Some(first) = matching.first() else {
         return Err(MechError::from(TypeResolutionError::incompatible(
-            entry.canonical_name.clone(),
+            entry.operation.canonical_name.to_string(),
             TypeConstraintFailure::Arity {
                 expected: declaration
                     .overloads
@@ -310,7 +311,7 @@ fn resolve_declared_call(
         })
         .collect::<Vec<_>>();
     let resolved = resolve_type_overloads(
-        TypeConstraintOrigin::new(entry.canonical_name.clone(), None),
+        TypeConstraintOrigin::new(entry.operation.canonical_name.to_string(), None),
         &candidates,
         &originals,
         None,
@@ -318,7 +319,7 @@ fn resolve_declared_call(
     .map_err(MechError::from)?;
     let overload_id = u32::try_from(resolved.candidate_ids[0]).map_err(|_| {
         MechError::from(TypeResolutionError::incompatible(
-            entry.canonical_name.clone(),
+            entry.operation.canonical_name.to_string(),
             TypeConstraintFailure::InvalidScheme {
                 reason: "resolved overload ID exceeds the declared u32 domain".into(),
             },
@@ -330,7 +331,7 @@ fn resolve_declared_call(
         .map(|overload| overload.output_schema_rules.clone())
         .ok_or_else(|| {
             MechError::from(TypeResolutionError::incompatible(
-                entry.canonical_name.clone(),
+                entry.operation.canonical_name.to_string(),
                 TypeConstraintFailure::InvalidScheme {
                     reason: "the selected overload has no declared output schema rules".into(),
                 },
@@ -339,7 +340,7 @@ fn resolve_declared_call(
     let conversions = resolved.conversions.into_vec();
     if conversions.len() != originals.len() {
         return Err(MechError::from(TypeResolutionError::incompatible(
-            entry.canonical_name.clone(),
+            entry.operation.canonical_name.to_string(),
             TypeConstraintFailure::InvalidScheme {
                 reason: "the solver did not return exactly one conversion plan per Value input"
                     .into(),
@@ -351,8 +352,9 @@ fn resolve_declared_call(
         .map(|plan| plan.target.clone())
         .collect::<Vec<_>>()
         .into_boxed_slice();
+    let operation = entry.resolved_operation(converted_inputs.len(), &resolved.outputs)?;
     Ok(ResolvedCall {
-        operation: entry.operation,
+        operation,
         overload_id,
         original_inputs: originals.into_boxed_slice(),
         converted_inputs,
@@ -478,7 +480,7 @@ fn validate_resolved_output(
     let actual = function.output().resolved_type()?;
     let Some(expected) = resolved.outputs.first() else {
         return Err(MechError::from(TypeResolutionError::incompatible(
-            entry.canonical_name.clone(),
+            entry.operation.canonical_name.to_string(),
             TypeConstraintFailure::InvalidScheme {
                 reason: "the selected overload declares no output".into(),
             },
@@ -488,7 +490,7 @@ fn validate_resolved_output(
         return Ok(());
     }
     Err(MechError::from(TypeResolutionError::incompatible(
-        entry.canonical_name.clone(),
+        entry.operation.canonical_name.to_string(),
         TypeConstraintFailure::OutputTypeMismatch {
             expected: expected.semantic_name(),
             actual: actual.semantic_name(),
@@ -513,10 +515,10 @@ mod tests {
     #[cfg(feature = "semantic-compiler")]
     use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
     use mech_core::{
-        CanonicalFunctionSpecializer, FunctionCatalogBuilder, FunctionDefine, FunctionExport,
-        FunctionExposure, FunctionInstance, FunctionInvocation, MechFunctionImpl,
-        SpecializationContext, SpecializationInvocation, SpecializedFunction, ValueCell,
-        internal_pattern_value_identifier,
+        CanonicalFunctionSpecializer, ExecutionTarget, FunctionCatalogBuilder, FunctionDefine,
+        FunctionExport, FunctionExposure, FunctionInstance, FunctionInvocation, MechFunctionImpl,
+        RuntimeFunctionId, SpecializationContext, SpecializationInvocation, SpecializedFunction,
+        ValueCell, internal_pattern_value_identifier,
     };
     use std::sync::Arc;
 
@@ -560,7 +562,11 @@ mod tests {
                 })
                 .collect::<Vec<_>>()
                 .into_boxed_slice();
-            let output = inputs.first().cloned().unwrap_or_else(ValueCell::unit);
+            let output = inputs
+                .first()
+                .map(ValueCell::detached_clone)
+                .transpose()?
+                .unwrap_or_else(ValueCell::unit);
             let invocation = FunctionInvocation::variadic(output, inputs);
             context.certify_instance(
                 FunctionInstance::new(Box::new(TestFunction(self.0)), invocation),
@@ -573,9 +579,10 @@ mod tests {
     fn test_catalog() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
         let operation = builder
-            .insert_canonical_specializer(
+            .insert_canonical_specializer_with_contract(
                 "math/add",
                 mech_core::maintained_source_type_declaration("math/add").unwrap(),
+                crate::test_support::catalog::pure_test_operation_contract(2),
                 Arc::new(TestSpecializer("catalog")),
             )
             .unwrap();
@@ -702,12 +709,13 @@ mod tests {
     fn disabled_catalog_operations_fail_before_specialization() {
         let mut builder = FunctionCatalogBuilder::new();
         let operation = builder
-            .insert_canonical_specializer(
+            .insert_canonical_specializer_with_contract(
                 "stats/mean",
                 mech_core::FunctionTypeDeclaration::from_schemes(vec![
                     mech_core::exact_unary(mech_core::KindExpr::Index, mech_core::KindExpr::Index)
                         .unwrap(),
                 ]),
+                crate::test_support::catalog::pure_test_operation_contract(1),
                 Arc::new(TestSpecializer("catalog")),
             )
             .unwrap();

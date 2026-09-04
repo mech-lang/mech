@@ -104,8 +104,8 @@ pub fn function_call(
             );
             let specialized = p
                 .specialize_visible_invocation_named(
-                    entry.operation,
-                    Some(&entry.canonical_name),
+                    entry.operation.id,
+                    Some(&entry.operation.canonical_name),
                     &invocation,
                 )
                 .map_err(|error| error.with_tokens(fxn_call.name.tokens()))?;
@@ -134,8 +134,7 @@ pub fn function_call(
             let mut context = mech_core::SpecializationContext::for_syntax_directed_invocation(
                 &invocation,
                 Some(p.function_catalog()),
-                mech_core::OperationId::from_raw(entry.id.raw()),
-                entry.canonical_name.clone(),
+                entry.operation.clone(),
             )?;
             let specialized = entry
                 .specializer

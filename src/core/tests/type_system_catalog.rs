@@ -1,17 +1,35 @@
 #![cfg(feature = "functions")]
 
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use mech_core::{
-    BuiltinKindPredicate, BuiltinScalarKind, CanonicalFunctionSpecializer, DimensionExpr,
-    DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
-    DimensionParameterOrigin, FunctionCatalogBuilder, FunctionTypeDeclaration,
-    FunctionTypeOverload, InputKindScheme, KindConstraint, KindExpr, KindScheme, MResult,
-    ResolvedOutputSchemaRule, ResolvedType, SourceInputKind, SourceSchemeTemplate,
-    SourceTypeAuthority, SpecializationContext, SpecializationInvocation, SpecializedFunction,
+    AccessMode, AliasPolicy, BuiltinKindPredicate, BuiltinScalarKind, CanonicalFunctionSpecializer,
+    ChangeDetectionPolicy, DeliveryMode, DimensionExpr, DimensionLifetime,
+    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin,
+    ExternalInteraction, FunctionCatalogBuilder, FunctionTypeDeclaration, FunctionTypeOverload,
+    InputKindScheme, InputPortLayout, KindConstraint, KindExpr, KindScheme, MResult,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ResolvedOutputSchemaRule,
+    ResolvedType, ShapeRule, SourceInputKind, SourceSchemeTemplate, SourceTypeAuthority,
+    SpecializationContext, SpecializationInvocation, SpecializedFunction,
     TypeConstraintEnvironment, TypeConstraintOrigin, instantiate_source_scheme_template,
     maintained_source_type_declaration,
 };
+
+static TEST_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(Box::new([])),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::AlwaysChanged,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 struct NeverSpecialize;
 
@@ -40,9 +58,10 @@ fn nullary_scheme() -> KindScheme {
 fn named_specializers_are_scheme_authoritative() {
     let mut builder = FunctionCatalogBuilder::new();
     builder
-        .insert_canonical_specializer(
+        .insert_canonical_specializer_with_contract(
             "math/add",
             maintained_source_type_declaration("math/add").unwrap(),
+            TEST_CONTRACT.clone(),
             Arc::new(NeverSpecialize),
         )
         .unwrap();
@@ -58,7 +77,11 @@ fn named_specializers_are_scheme_authoritative() {
 fn parser_intrinsics_are_explicit_and_never_named_exports() {
     let mut builder = FunctionCatalogBuilder::new();
     builder
-        .insert_canonical_intrinsic_specializer("assign", Arc::new(NeverSpecialize))
+        .insert_canonical_intrinsic_specializer(
+            "assign",
+            TEST_CONTRACT.clone(),
+            Arc::new(NeverSpecialize),
+        )
         .unwrap();
     let catalog = builder.build().unwrap();
     let entry = catalog.intrinsic_specializer_entries().next().unwrap();
@@ -85,7 +108,12 @@ fn malformed_and_duplicate_overloads_are_rejected() {
     };
     let mut builder = FunctionCatalogBuilder::new();
     let error = builder
-        .insert_canonical_specializer("test/malformed", malformed, Arc::new(NeverSpecialize))
+        .insert_canonical_specializer_with_contract(
+            "test/malformed",
+            malformed,
+            TEST_CONTRACT.clone(),
+            Arc::new(NeverSpecialize),
+        )
         .unwrap_err();
     assert_eq!(error.kind_name(), "FunctionCatalogInvalidTypeDeclaration");
 
@@ -100,7 +128,12 @@ fn malformed_and_duplicate_overloads_are_rejected() {
         template: None,
     };
     let error = builder
-        .insert_canonical_specializer("test/duplicate", duplicate, Arc::new(NeverSpecialize))
+        .insert_canonical_specializer_with_contract(
+            "test/duplicate",
+            duplicate,
+            TEST_CONTRACT.clone(),
+            Arc::new(NeverSpecialize),
+        )
         .unwrap_err();
     assert_eq!(error.kind_name(), "FunctionCatalogInvalidTypeDeclaration");
 }
@@ -169,6 +202,17 @@ fn fixed_matrix(kind: BuiltinScalarKind, rows: u64, columns: u64) -> ResolvedTyp
                 DimensionExpr::Constant(columns),
             ]
             .into_boxed_slice(),
+        },
+        Box::new([]),
+    )
+    .unwrap()
+}
+
+fn fixed_set(kind: BuiltinScalarKind, cardinality: u64) -> ResolvedType {
+    ResolvedType::new(
+        KindExpr::Set {
+            element: Box::new(kind.kind_expr()),
+            cardinality: DimensionExpr::Constant(cardinality),
         },
         Box::new([]),
     )
@@ -416,6 +460,25 @@ fn set_definition_cardinality_and_keyability_are_semantic() {
             )
         })
     }));
+}
+
+#[test]
+fn set_union_closes_bound_input_dimensions_inside_the_output_upper_bound() {
+    let declaration = maintained_source_type_declaration("set/union").unwrap();
+    let inputs = [
+        fixed_set(BuiltinScalarKind::F64, 2),
+        fixed_set(BuiltinScalarKind::F64, 2),
+    ];
+    let solved = TypeConstraintEnvironment::new(TypeConstraintOrigin::new("set/union", None))
+        .solve_scheme(&declaration.overloads[0].scheme, &inputs, None)
+        .unwrap();
+    let output = &solved.outputs[0];
+
+    assert_eq!(output.dimension_parameters().len(), 1);
+    assert_eq!(
+        output.dimension_parameters()[0].upper_bound,
+        Some(DimensionExpr::Constant(4))
+    );
 }
 
 #[test]

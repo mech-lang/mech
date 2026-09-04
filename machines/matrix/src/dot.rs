@@ -105,7 +105,7 @@ impl CanonicalFunctionSpecializer for MatrixDot {
         let lhs = invocation.input(0).expect("validated dot lhs");
         let rhs = invocation.input(1).expect("validated dot rhs");
         context.bind_resolved_runtime(
-            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
             mech_core::ExecutionTarget::DirectRuntime,
             vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
             &[lhs, rhs],

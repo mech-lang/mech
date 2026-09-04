@@ -249,8 +249,15 @@ fn record_resolved_register(
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<()> {
     let descriptor = cell.resolved_descriptor()?;
-    context.record_register_schema(register, descriptor.schema().body().clone())?;
-    context.record_register_type_descriptor(register, descriptor)
+    context.record_register_type_descriptor(register, descriptor.clone())?;
+    context.record_register_schema(register, descriptor.schema().body().clone())
+}
+
+fn value_cell_register_identity(cell: &ValueCell) -> BytecodeRegisterIdentity {
+    BytecodeRegisterIdentity::Typed {
+        inner: Box::new(BytecodeRegisterIdentity::Cell(cell.compiler_identity())),
+        annotation: cell.schema_key(),
+    }
 }
 
 /// Resolves and, when necessary, initializes the register owned by `cell`.
@@ -266,8 +273,8 @@ pub fn compile_value_cell_register(
         return compile_value_cell_composite_register(cell, children, context);
     }
     context.retain_canonical_cell(cell)?;
-    let (register, initialize) =
-        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    let (register, initialize) = context
+        .register_for_identity_with_initialization_status(&value_cell_register_identity(cell));
     record_resolved_register(cell, register, context)?;
     if initialize {
         let value = compiler_value_cell_snapshot(cell, "value-cell register compilation")?;
@@ -292,8 +299,8 @@ pub fn compile_value_cell_initializer_register(
 ) -> MResult<Register> {
     context.retain_canonical_cell(cell)?;
     let encoded = crate::encode_canonical_constant(initial, cell.representation())?;
-    let (register, initialize) =
-        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    let (register, initialize) = context
+        .register_for_identity_with_initialization_status(&value_cell_register_identity(cell));
     record_resolved_register(cell, register, context)?;
     let constant = context.intern_constant(encoded)?;
     if initialize {
@@ -317,8 +324,8 @@ pub fn compile_value_cell_composite_register(
     context.retain_canonical_cell(cell)?;
     let value = compiler_value_cell_snapshot(cell, "composite value-cell compilation")?;
     let encoded = crate::encode_canonical_composite_template(&value, cell.representation())?;
-    let (register, initialize) =
-        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    let (register, initialize) = context
+        .register_for_identity_with_initialization_status(&value_cell_register_identity(cell));
     record_resolved_register(cell, register, context)?;
     if !initialize {
         return Ok(register);
@@ -347,8 +354,8 @@ pub fn compile_value_cell_matrix_literal_register(
 ) -> MResult<Register> {
     context.retain_canonical_cell(cell)?;
     let _ = compiler_value_cell_snapshot(cell, "matrix value-cell compilation")?;
-    let (register, initialize) =
-        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    let (register, initialize) = context
+        .register_for_identity_with_initialization_status(&value_cell_register_identity(cell));
     let schema = cell.closed_schema_body()?;
     record_resolved_register(cell, register, context)?;
     if !initialize {
@@ -494,8 +501,8 @@ pub fn compile_runtime_produced_value_cell_register(
 ) -> MResult<Register> {
     context.retain_canonical_cell(cell)?;
     let _ = compiler_value_cell_snapshot(cell, "runtime-produced value-cell compilation")?;
-    let (register, _) =
-        context.register_for_ptr_with_initialization_status(cell.compiler_identity());
+    let (register, _) = context
+        .register_for_identity_with_initialization_status(&value_cell_register_identity(cell));
     record_resolved_register(cell, register, context)?;
     context.record_runtime_produced_register(register)?;
     Ok(register)

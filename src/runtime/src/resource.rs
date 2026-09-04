@@ -210,6 +210,14 @@ impl RuntimeResidentProviderBinding {
         )
     }
 
+    pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        invoke_extension(
+            format!("resource provider `{}`", self.scheme),
+            "plan_read",
+            || self.provider.plan_read(request),
+        )
+    }
+
     pub(crate) fn semantic_write_contract(
         &self,
         intent: RuntimeResourceWriteIntent,

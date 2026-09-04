@@ -1,11 +1,15 @@
 #[cfg(feature = "variable_define")]
 use super::{AddressedAssignmentUnsupported, VariableAlreadyDefinedError};
 #[cfg(feature = "variable_define")]
-use crate::intrinsics::define::CanonicalVariableDefinition;
+use crate::intrinsics::define::{
+    CanonicalVariableDefinition, PURE_VARIABLE_DEFINITION_CONTRACT,
+    canonical_variable_definition_runtime_name,
+};
 #[cfg(feature = "variable_define")]
 use crate::{
-    CanonicalAggregateSourceAbsence, FunctionInstance, FunctionInvocation, InterpreterExecution,
-    MResult, MechError, SpecializationInput, ValueCell, VariableDefine, expression,
+    CanonicalAggregateSourceAbsence, ExecutionTarget, FunctionInstance, FunctionInvocation,
+    InterpreterExecution, MResult, MechError, ResolvedOperationDescriptor, RuntimeFunctionId,
+    SpecializationInput, SpecializedFunction, ValueCell, VariableDefine, expression,
 };
 #[cfg(all(
     feature = "variable_define",
@@ -179,17 +183,27 @@ pub fn variable_define(
     let root_visible = !p.in_user_function_scope() && !p.plan().activation_registration_active();
     #[cfg(feature = "semantic-compiler")]
     let initial = value.snapshot()?;
-    p.plan().register_instance(FunctionInstance::new(
-        Box::new(CanonicalVariableDefinition {
-            value: value.clone(),
-            #[cfg(feature = "semantic-compiler")]
-            initial,
-            name,
-            mutable: definition.mutable,
-            root_visible,
-        }),
-        FunctionInvocation::nullary(value.clone()),
-    ))?;
+    let runtime_name = canonical_variable_definition_runtime_name(value.representation())?;
+    p.plan()
+        .register_specialized(SpecializedFunction::syntax_directed(
+            FunctionInstance::new(
+                Box::new(CanonicalVariableDefinition {
+                    value: value.clone(),
+                    #[cfg(feature = "semantic-compiler")]
+                    initial,
+                    name,
+                    mutable: definition.mutable,
+                    root_visible,
+                }),
+                FunctionInvocation::nullary(value.clone()),
+            ),
+            ResolvedOperationDescriptor::from_name(
+                "var/define",
+                PURE_VARIABLE_DEFINITION_CONTRACT.clone(),
+            )?,
+            RuntimeFunctionId::from_name(&runtime_name),
+            ExecutionTarget::DirectRuntime,
+        )?)?;
     Ok(value)
 }
 

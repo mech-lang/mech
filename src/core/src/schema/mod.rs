@@ -60,6 +60,16 @@ impl SchemaDraft {
 }
 
 impl Schema {
+    /// Resolves every dimension expression in this schema against one
+    /// validated shape instance, producing the concrete schema body carried by
+    /// the current value without changing its durable schema identity.
+    pub fn closed_body(&self, shape: &crate::ShapeInstance) -> crate::MResult<SchemaBody> {
+        let shape = self
+            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .map_err(crate::MechError::from)?;
+        crate::cell_binding::close_schema_body(&self.body, &shape)
+    }
+
     pub fn type_memory_contract(&self) -> Result<crate::TypeMemoryContract, SemanticModelError> {
         crate::memory_contract::derive_type_memory_contract(&self.body, &self.dimension_parameters)
     }

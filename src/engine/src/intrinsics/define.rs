@@ -3,6 +3,27 @@ use std::marker::PhantomData;
 
 #[cfg(all(
     feature = "variable_define",
+    any(feature = "semantic-compiler", feature = "source")
+))]
+pub(crate) static PURE_VARIABLE_DEFINITION_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| OperationContractDeclaration {
+    inputs: InputPortLayout::Fixed(Box::new([])),
+    outputs: vec![OutputPortPolicy {
+        access: AccessMode::Write,
+        delivery: DeliveryMode::Signal,
+        construction: OutputConstruction::FullWrite {
+            shape: ShapeRule::Declared,
+        },
+        alias: AliasPolicy::NoAlias,
+        change_detection: ChangeDetectionPolicy::KernelReported,
+    }]
+    .into_boxed_slice(),
+    interaction: ExternalInteraction::Pure,
+});
+
+#[cfg(all(
+    feature = "variable_define",
     any(
         feature = "semantic-compiler",
         feature = "table",
@@ -98,8 +119,11 @@ impl MechFunctionCompiler for CanonicalVariableDefinition {
     }
 }
 
-#[cfg(all(feature = "variable_define", feature = "semantic-compiler"))]
-fn canonical_variable_definition_runtime_name(
+#[cfg(all(
+    feature = "variable_define",
+    any(feature = "semantic-compiler", feature = "source")
+))]
+pub(crate) fn canonical_variable_definition_runtime_name(
     representation: FunctionValueRepresentation,
 ) -> MResult<String> {
     use crate::{
@@ -1296,9 +1320,11 @@ impl CanonicalFunctionSpecializer for VarDefine {
             mutable: *mutable,
             root_visible: *root_visible,
         };
+        context.resolve_syntax_operation_contract(&PURE_VARIABLE_DEFINITION_CONTRACT)?;
+        let runtime_name = canonical_variable_definition_runtime_name(value.representation())?;
         context.certify_instance(
             FunctionInstance::new(Box::new(implementation), FunctionInvocation::nullary(value)),
-            mech_core::RuntimeFunctionId::from_name("CanonicalVariableDefinition"),
+            mech_core::RuntimeFunctionId::from_name(&runtime_name),
             mech_core::ExecutionTarget::DirectRuntime,
         )
     }

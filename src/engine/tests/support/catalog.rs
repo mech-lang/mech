@@ -1,6 +1,35 @@
-use mech_core::MResult;
-use mech_core::{FunctionCatalog, FunctionCatalogBuilder};
+use mech_core::{
+    AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
+    FunctionCatalog, FunctionCatalogBuilder, InputPortLayout, InputPortPolicy, MResult,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ShapeRule,
+};
 use std::sync::Arc;
+
+pub(crate) fn pure_test_operation_contract(input_count: usize) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                input_count
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
 
 /// Installs the concrete factories owned by the engine's intrinsic fragment.
 ///
@@ -31,6 +60,9 @@ pub(crate) fn function_catalog() -> Arc<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
     install_intrinsic_runtime(&mut builder)
         .expect("engine intrinsic runtime catalog must be valid");
+    #[cfg(feature = "semantic-compiler")]
+    crate::install_intrinsic_compiler_runtime(&mut builder)
+        .expect("engine compiler runtime catalog must be valid");
     #[cfg(feature = "source")]
     install_intrinsic_source(&mut builder).expect("engine intrinsic source catalog must be valid");
     test_operations::install(&mut builder).expect("engine test catalog must be valid");
@@ -67,6 +99,7 @@ mod test_operations {
     }
 
     fn specialized_function(
+        context: &SpecializationContext<'_>,
         implementation: Box<dyn MechFunction>,
         output: ValueCell,
         inputs: Vec<ValueCell>,
@@ -77,13 +110,44 @@ mod test_operations {
             [first, second] => FunctionInvocation::binary(output, first.clone(), second.clone()),
             _ => FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
         };
-        SpecializedFunction::syntax_directed(
-            FunctionInstance::new(implementation, invocation),
-            OperationId::from_name("test/specialized"),
-            RuntimeFunctionId::from_name("TestSpecialized"),
-            ExecutionTarget::DirectRuntime,
-        )
-        .unwrap()
+        context
+            .certify_instance(
+                FunctionInstance::new(implementation, invocation),
+                RuntimeFunctionId::from_name("TestSpecialized"),
+                ExecutionTarget::DirectRuntime,
+            )
+            .expect("test implementation must retain its semantic operation descriptor")
+    }
+
+    fn pure_contract(input_count: usize) -> OperationContractDeclaration {
+        super::pure_test_operation_contract(input_count)
+    }
+
+    fn state_rmw_contract() -> OperationContractDeclaration {
+        OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![
+                    InputPortPolicy {
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    };
+                    2
+                ]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::ReadWrite,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::ReadModifyWrite {
+                    base_input: 0,
+                    regions: RegionPolicy::WholeValue,
+                },
+                alias: AliasPolicy::MayAlias { input: 0 },
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        }
     }
 
     #[derive(Clone, Copy, Debug)]
@@ -154,6 +218,7 @@ mod test_operations {
                 out: exact_ref(&output)?,
             };
             Ok(specialized_function(
+                context,
                 Box::new(function),
                 output,
                 vec![lhs, rhs],
@@ -195,7 +260,7 @@ mod test_operations {
         fn specialize_invocation(
             &self,
             invocation: &SpecializationInvocation,
-            _: &mut SpecializationContext<'_>,
+            context: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             if invocation.len() != 1 {
                 return Err(test_operation_error("negation expects one argument"));
@@ -207,6 +272,7 @@ mod test_operations {
                 out: exact_ref(&output)?,
             };
             Ok(specialized_function(
+                context,
                 Box::new(function),
                 output,
                 vec![input],
@@ -267,7 +333,7 @@ mod test_operations {
         fn specialize_invocation(
             &self,
             invocation: &SpecializationInvocation,
-            _: &mut SpecializationContext<'_>,
+            context: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             if invocation.len() != 2 {
                 return Err(test_operation_error("comparison expects two arguments"));
@@ -282,6 +348,7 @@ mod test_operations {
                 out: exact_ref(&output)?,
             };
             Ok(specialized_function(
+                context,
                 Box::new(function),
                 output,
                 vec![lhs, rhs],
@@ -342,7 +409,7 @@ mod test_operations {
         fn specialize_invocation(
             &self,
             invocation: &SpecializationInvocation,
-            _: &mut SpecializationContext<'_>,
+            context: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             if invocation.len() != 2 {
                 return Err(test_operation_error(
@@ -359,6 +426,7 @@ mod test_operations {
                 out: exact_ref(&output)?,
             };
             Ok(specialized_function(
+                context,
                 Box::new(function),
                 output,
                 vec![lhs, rhs],
@@ -404,7 +472,7 @@ mod test_operations {
         fn specialize_invocation(
             &self,
             invocation: &SpecializationInvocation,
-            _: &mut SpecializationContext<'_>,
+            context: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             if invocation.len() != 1 {
                 return Err(test_operation_error("boolean not expects one argument"));
@@ -416,6 +484,7 @@ mod test_operations {
                 out: exact_ref(&output)?,
             };
             Ok(specialized_function(
+                context,
                 Box::new(function),
                 output,
                 vec![input],
@@ -475,7 +544,7 @@ mod test_operations {
         fn specialize_invocation(
             &self,
             invocation: &SpecializationInvocation,
-            _: &mut SpecializationContext<'_>,
+            context: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             if invocation.len() != 2 {
                 return Err(test_operation_error("add assignment expects two arguments"));
@@ -487,6 +556,7 @@ mod test_operations {
                 source: exact_ref(&source)?,
             };
             Ok(specialized_function(
+                context,
                 Box::new(function),
                 sink.clone(),
                 vec![sink, source],
@@ -546,7 +616,7 @@ mod test_operations {
         fn specialize_invocation(
             &self,
             invocation: &SpecializationInvocation,
-            _: &mut SpecializationContext<'_>,
+            context: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             if invocation.len() != 2 {
                 return Err(test_operation_error(
@@ -564,6 +634,7 @@ mod test_operations {
                 Self::function(exact_ref(&start)?, exact_ref(&terminal)?, output.clone());
             function.solve_result()?;
             Ok(specialized_function(
+                context,
                 Box::new(function),
                 output,
                 vec![start, terminal],
@@ -636,10 +707,15 @@ mod test_operations {
         ] {
             builder.insert_canonical_intrinsic_specializer(
                 name,
+                pure_contract(2),
                 Arc::new(BinaryArithmeticSpecializer(operation)),
             )?;
         }
-        builder.insert_canonical_intrinsic_specializer("math/neg", Arc::new(NegateSpecializer))?;
+        builder.insert_canonical_intrinsic_specializer(
+            "math/neg",
+            pure_contract(1),
+            Arc::new(NegateSpecializer),
+        )?;
 
         for (name, operation) in [
             ("compare/eq", Comparison::Equal),
@@ -651,6 +727,7 @@ mod test_operations {
         ] {
             builder.insert_canonical_intrinsic_specializer(
                 name,
+                pure_contract(2),
                 Arc::new(ComparisonSpecializer(operation)),
             )?;
         }
@@ -662,17 +739,24 @@ mod test_operations {
         ] {
             builder.insert_canonical_intrinsic_specializer(
                 name,
+                pure_contract(2),
                 Arc::new(BooleanSpecializer(operation)),
             )?;
         }
-        builder.insert_canonical_intrinsic_specializer("logic/not", Arc::new(NotSpecializer))?;
+        builder.insert_canonical_intrinsic_specializer(
+            "logic/not",
+            pure_contract(1),
+            Arc::new(NotSpecializer),
+        )?;
         builder.insert_canonical_intrinsic_specializer(
             "math/add-assign",
+            state_rmw_contract(),
             Arc::new(AddAssignSpecializer),
         )?;
         #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
         builder.insert_canonical_intrinsic_specializer(
             "range/inclusive",
+            pure_contract(2),
             Arc::new(InclusiveRangeSpecializer),
         )?;
         Ok(())
@@ -702,9 +786,10 @@ mod tests {
         feature = "f64"
     ))]
     use mech_core::{
-        CanonicalFunctionSpecializer, FunctionExport, FunctionExposure, FunctionInstance,
-        FunctionInvocation, FunctionPortBacking, MechFunctionImpl, Ref, SpecializationContext,
-        SpecializationInvocation, SpecializedFunction, ValueCell,
+        CanonicalFunctionSpecializer, ExecutionTarget, FunctionExport, FunctionExposure,
+        FunctionInstance, FunctionInvocation, FunctionPortBacking, MechFunctionImpl, Ref,
+        RuntimeFunctionId, SpecializationContext, SpecializationInvocation, SpecializedFunction,
+        ValueCell,
     };
 
     #[cfg(all(
@@ -789,7 +874,7 @@ mod tests {
         fn specialize_invocation(
             &self,
             invocation: &SpecializationInvocation,
-            _: &mut SpecializationContext<'_>,
+            context: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             let [lhs, rhs] = invocation.inputs() else {
                 panic!("test math/add expects two f64 arguments");
@@ -933,9 +1018,10 @@ mod tests {
     fn supplied_custom_catalog_executes_math_add() {
         let mut builder = FunctionCatalogBuilder::new();
         let operation = builder
-            .insert_canonical_specializer(
+            .insert_canonical_specializer_with_contract(
                 "math/add",
                 mech_core::maintained_source_type_declaration("math/add").unwrap(),
+                super::pure_test_operation_contract(2),
                 Arc::new(TestAddSpecializer),
             )
             .unwrap();

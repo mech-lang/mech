@@ -189,7 +189,7 @@ macro_rules! impl_canonical_numeric_compare_specializer {
                 let second = specialization.input(1).expect("validated comparison rhs");
                 let extents = $crate::semantic_compare_extents(&[first, second])?;
                 context.bind_resolved_runtime(
-                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
                     ExecutionTarget::DirectRuntime,
                     vec![extents].into_boxed_slice(),
                     &[first, second],

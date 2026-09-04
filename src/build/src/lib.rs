@@ -70,6 +70,7 @@ impl NativeApplicationBuilder {
             &program,
             &self.environment.function_catalog,
             request.instruction_type_bindings.as_deref(),
+            request.instruction_type_binding_requirements.as_deref(),
         )?;
         for function in &runtime_functions {
             plan::validate_installer_path(&function.installer_path)?;

@@ -78,7 +78,7 @@ ARTIFACT_COMPLETENESS_PROOFS = (
         (
             "pub struct NotV",
             "logic_unary_full_write_contract(MatA::REPRESENTATION)",
-            "FunctionMatrixRepresentation::MatrixD",
+            "RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id)",
         ),
     ),
     (

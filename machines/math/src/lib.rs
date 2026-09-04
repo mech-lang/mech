@@ -201,7 +201,7 @@ macro_rules! impl_canonical_registered_math_unop_specializer {
                 let output_extents = input.cell()?.resolved_descriptor()?.current_extents()
                     .map_err(MechError::from)?;
                 context.bind_resolved_runtime(
-                    mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
                     mech_core::ExecutionTarget::DirectRuntime,
                     vec![output_extents].into_boxed_slice(),
                     &[input],
@@ -238,7 +238,7 @@ macro_rules! impl_canonical_registered_math_binop_specializer {
                 let second = invocation.input(1).expect("validated binary math rhs");
                 let output_extents = $crate::semantic_broadcast_extents(&[first, second])?;
                 context.bind_resolved_runtime(
-                    mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
                     mech_core::ExecutionTarget::DirectRuntime,
                     vec![output_extents].into_boxed_slice(),
                     &[first, second],
@@ -350,7 +350,7 @@ macro_rules! impl_canonical_math_float_unop_specializer {
                 let input = specialization.input(0).expect("validated unary input");
                 let extents = $crate::semantic_broadcast_extents(&[input])?;
                 context.bind_resolved_runtime(
-                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
                     ExecutionTarget::DirectRuntime,
                     vec![extents].into_boxed_slice(),
                     &[input],
@@ -387,7 +387,7 @@ macro_rules! impl_canonical_math_same_type_binop_specializer {
                 let second = specialization.input(1).expect("validated second input");
                 let extents = $crate::semantic_broadcast_extents(&[first, second])?;
                 context.bind_resolved_runtime(
-                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
                     ExecutionTarget::DirectRuntime,
                     vec![extents].into_boxed_slice(),
                     &[first, second],
@@ -396,4 +396,3 @@ macro_rules! impl_canonical_math_same_type_binop_specializer {
         }
     };
 }
-

@@ -212,7 +212,7 @@ impl CanonicalFunctionSpecializer for SetComprehensionDefine {
         let implementation = ValueSetComprehension::new_invocation(invocation.clone())?;
         context.certify_instance(
             FunctionInstance::new(implementation, invocation),
-            mech_core::RuntimeFunctionId::from_name("ValueSetComprehension"),
+            mech_core::RuntimeFunctionId::from_name("set/comprehension"),
             mech_core::ExecutionTarget::DirectRuntime,
         )
     }
@@ -236,7 +236,7 @@ impl CanonicalFunctionSpecializer for MatrixComprehensionDefine {
         let implementation = ValueMatrixComprehension::new_invocation(invocation.clone())?;
         context.certify_instance(
             FunctionInstance::new(implementation, invocation),
-            mech_core::RuntimeFunctionId::from_name("ValueMatrixComprehension"),
+            mech_core::RuntimeFunctionId::from_name("matrix/comprehension"),
             mech_core::ExecutionTarget::DirectRuntime,
         )
     }
@@ -289,8 +289,11 @@ pub fn matrix_comprehension(
         let implementation = ValueMatrixComprehension::new_invocation(invocation.clone())?;
         let specialized = SpecializedFunction::syntax_directed(
             FunctionInstance::new(implementation, invocation),
-            mech_core::OperationId::from_name("matrix/comprehension"),
-            mech_core::RuntimeFunctionId::from_name("ValueMatrixComprehension"),
+            mech_core::ResolvedOperationDescriptor::from_name(
+                "matrix/comprehension",
+                crate::intrinsics::constructors::PURE_MATRIX_COMPREHENSION_CONTRACT.clone(),
+            )?,
+            mech_core::RuntimeFunctionId::from_name("matrix/comprehension"),
             mech_core::ExecutionTarget::DirectRuntime,
         )?;
         return execute_function_instance(p, &plan, specialized);

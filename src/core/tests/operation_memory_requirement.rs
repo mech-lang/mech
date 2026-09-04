@@ -945,37 +945,19 @@ fn invocation_validates_ports_and_current_output_bridge() {
 }
 
 #[test]
-fn invocation_port_failures_remain_structured_and_vector_mismatch_stays_shadow_only() {
+fn invocation_dynamic_vector_ports_match_their_resizable_storage_axes() {
     let row = ValueCell::from_exact(RowDVector::<f64>::zeros(3)).unwrap();
     let scalar = ValueCell::from_exact(0_f64).unwrap();
     let declaration = declaration(
         vec![input_policy(AccessMode::Read, DeliveryMode::Signal)],
         vec![full_output(AliasPolicy::NoAlias)],
     );
-    assert!(matches!(
-        invocation_reason(
-            &FunctionInvocation::unary(scalar.clone(), row.clone()),
-            &declaration,
-        ),
-        FunctionMemoryContractViolationReason::InputPort {
-            index: 0,
-            error: PortStorageCompatibilityError::SchemaStorage(
-                SchemaStorageCompatibilityError::Storage(
-                    StorageCompatibilityError::DynamicAxisUnsupported
-                )
-            )
-        }
-    ));
-    assert!(matches!(
-        invocation_reason(&FunctionInvocation::unary(row, scalar), &declaration,),
-        FunctionMemoryContractViolationReason::OutputPort {
-            error: PortStorageCompatibilityError::SchemaStorage(
-                SchemaStorageCompatibilityError::Storage(
-                    StorageCompatibilityError::DynamicAxisUnsupported
-                )
-            )
-        }
-    ));
+    FunctionInvocation::unary(scalar.clone(), row.clone())
+        .check_operation_memory_contract(&declaration)
+        .unwrap();
+    FunctionInvocation::unary(row, scalar)
+        .check_operation_memory_contract(&declaration)
+        .unwrap();
 }
 
 #[test]

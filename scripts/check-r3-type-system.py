@@ -557,7 +557,9 @@ def failures(root: Path) -> list[str]:
         "bind_runtime_factory", "bind_runtime_factory_derived_output",
         "bind_runtime_factory_existing_output",
     ):
-        body = extract_item_body(specialization, re.compile(rf"\bfn\s+{method}\b")) or ""
+        body = extract_item_body(specialization, re.compile(rf"\bfn\s+{method}\b"))
+        if body is None:
+            continue
         if not re.search(r"self\s*\.\s*resolved_output\s*\(", body):
             found.append(f"{method} can bind without an existing ResolvedCall output")
         allocation = body.find("default_for_representation")
@@ -596,11 +598,11 @@ def failures(root: Path) -> list[str]:
 
     design = sources["docs/design/type-system-v1.md"]
     for marker in (
-        "Status: R3 complete", "Semantic authority order", "Builtin scalar registry",
+        "Status: R3 semantic solver complete", "Semantic authority order", "Builtin scalar registry",
         "Built-in predicate table", "ResolvedType", "Rigid and bindable dimensions",
         "Implicit conversion table", "Numeric promotion table", "Explicit cast table",
-        "Source operation schemes", "Serialization and artifact policy", "R4 handoff",
-        "first-order", "expression-local", "shadow-only", "0.3.6",
+        "Source operation schemes", "Serialization and artifact policy", "R4 authority cutover",
+        "first-order", "expression-local", "0.3.6",
     ):
         if marker not in design:
             found.append(f"type-system design is missing {marker}")

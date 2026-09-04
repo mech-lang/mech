@@ -1,17 +1,25 @@
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, format, rc::Rc, string::String, vec::Vec};
+use alloc::{
+    boxed::Box,
+    format,
+    rc::Rc,
+    string::{String, ToString},
+    vec::Vec,
+};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, rc::Rc, string::String, vec::Vec};
 
 use crate::{
     ConversionPlan, DimensionExpr, ExecutionTarget, FunctionCatalog, FunctionInstance,
     FunctionInvocation, FunctionPortBacking, FunctionValueRepresentation, MResult, MechError,
-    MechErrorKind, MechFunctionFactory, OperationId, Ref, ResolvedOutputSchemaRule, ResolvedType,
-    ResolvedValueDescriptor, RuntimeBindingSelector, RuntimeFunctionEntry, RuntimeFunctionId,
-    RuntimeFunctionInputs, RuntimeOperationBindingMismatch, Schema, SchemaBody, SchemaKey,
-    SchemaTable, SchemaTableBuilder, ShapeInstance, TypeConstraintFailure, TypeResolutionError,
-    Value, ValueCell,
+    MechErrorKind, MechFunctionFactory, OperationContractDeclaration, OperationId, Ref,
+    ResolvedOperationContract, ResolvedOutputSchemaRule, ResolvedType, ResolvedValueDescriptor,
+    RuntimeBindingSelector, RuntimeFunctionEntry, RuntimeFunctionId, RuntimeFunctionInputs,
+    RuntimeOperationBindingMismatch, Schema, SchemaBody, SchemaKey, SchemaTable,
+    SchemaTableBuilder, ShapeInstance, TypeConstraintFailure, TypeResolutionError, Value,
+    ValueCell,
 };
+use core::cell::RefCell;
 
 #[cfg(feature = "matrix")]
 use crate::{FunctionArgumentRole, matrix::Matrix};
@@ -68,13 +76,13 @@ fn validate_resolved_inputs(
 }
 
 fn validate_binding_selector(call: &ResolvedCall, selector: RuntimeBindingSelector) -> MResult<()> {
-    if matches!(selector, RuntimeBindingSelector::Operation(operation) if operation == call.operation)
+    if matches!(selector, RuntimeBindingSelector::Operation(operation) if operation == call.operation.id)
     {
         Ok(())
     } else {
         Err(MechError::new(
             RuntimeOperationBindingMismatch {
-                operation: Some(call.operation),
+                operation: Some(call.operation.id),
                 reason: "a resolved source call must bind through its exact operation ID".into(),
             },
             None,
@@ -211,8 +219,94 @@ pub struct SpecializationInvocation {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResolvedOperationDescriptor {
+    pub id: OperationId,
+    pub canonical_name: Box<str>,
+    pub contract: OperationContractDeclaration,
+}
+
+impl ResolvedOperationDescriptor {
+    pub fn new(
+        id: OperationId,
+        canonical_name: impl Into<Box<str>>,
+        contract: OperationContractDeclaration,
+    ) -> MResult<Self> {
+        let canonical_name = canonical_name.into();
+        if canonical_name.is_empty() || OperationId::from_name(&canonical_name) != id {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(id),
+                    reason: format!(
+                        "canonical operation name {canonical_name:?} does not match operation ID 0x{:016x}",
+                        id.raw(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(Self {
+            id,
+            canonical_name,
+            contract,
+        })
+    }
+
+    pub fn from_name(
+        canonical_name: impl Into<Box<str>>,
+        contract: OperationContractDeclaration,
+    ) -> MResult<Self> {
+        let canonical_name = canonical_name.into();
+        Self::new(
+            OperationId::from_name(&canonical_name),
+            canonical_name,
+            contract,
+        )
+    }
+
+    pub fn from_resolved_contract(
+        canonical_name: impl Into<Box<str>>,
+        contract: &ResolvedOperationContract,
+    ) -> MResult<Self> {
+        let declaration = match contract {
+            ResolvedOperationContract::Declared(contract) => OperationContractDeclaration {
+                inputs: crate::InputPortLayout::Fixed(
+                    contract
+                        .inputs
+                        .iter()
+                        .map(|input| crate::InputPortPolicy {
+                            access: input.access,
+                            delivery: input.delivery,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+                outputs: contract
+                    .outputs
+                    .iter()
+                    .map(|output| crate::OutputPortPolicy {
+                        access: output.access,
+                        delivery: output.delivery,
+                        construction: output.construction.clone(),
+                        alias: output.alias,
+                        change_detection: output.change_detection,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                interaction: contract.interaction.clone(),
+            },
+        };
+        Self::from_name(canonical_name, declaration)
+    }
+
+    pub fn validate(&self) -> MResult<()> {
+        Self::new(self.id, self.canonical_name.clone(), self.contract.clone()).map(|_| ())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedCall {
-    pub operation: OperationId,
+    pub operation: ResolvedOperationDescriptor,
     pub overload_id: u32,
     pub original_inputs: Box<[ResolvedType]>,
     pub converted_inputs: Box<[ResolvedType]>,
@@ -223,6 +317,7 @@ pub struct ResolvedCall {
 
 impl ResolvedCall {
     pub fn validate(&self) -> MResult<()> {
+        self.operation.validate()?;
         if self.original_inputs.len() != self.input_conversions.len()
             || self.converted_inputs.len() != self.input_conversions.len()
             || self.outputs.len() != self.output_schema_rules.len()
@@ -272,7 +367,7 @@ pub enum BoundImplementationId {
 /// implementation. It contains no allocation or lifetime policy.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BoundCall {
-    operation: OperationId,
+    operation: ResolvedOperationDescriptor,
     origin: BoundCallOrigin,
     inputs: Box<[ResolvedValueDescriptor]>,
     outputs: Box<[ResolvedValueDescriptor]>,
@@ -292,7 +387,7 @@ impl BoundCall {
         validate_bound_descriptors(&call.converted_inputs, &inputs, "input")?;
         validate_bound_descriptors(&call.outputs, &outputs, "output")?;
         Ok(Self {
-            operation: call.operation,
+            operation: call.operation.clone(),
             origin: BoundCallOrigin::ResolvedOverload(call.overload_id),
             inputs,
             outputs,
@@ -302,7 +397,7 @@ impl BoundCall {
     }
 
     pub fn syntax_directed(
-        operation: OperationId,
+        operation: ResolvedOperationDescriptor,
         inputs: Box<[ResolvedValueDescriptor]>,
         outputs: Box<[ResolvedValueDescriptor]>,
         runtime_function: RuntimeFunctionId,
@@ -319,7 +414,7 @@ impl BoundCall {
     }
 
     pub fn artifact_operation(
-        operation: OperationId,
+        operation: ResolvedOperationDescriptor,
         inputs: Box<[ResolvedValueDescriptor]>,
         outputs: Box<[ResolvedValueDescriptor]>,
         resident_operation: crate::ResidentOperationKey,
@@ -329,10 +424,10 @@ impl BoundCall {
             resident_operation.module_path.join("/"),
             resident_operation.operation_name
         );
-        if OperationId::from_name(&canonical_name) != operation {
+        if canonical_name != operation.canonical_name.as_ref() {
             return Err(MechError::new(
                 crate::RuntimeOperationBindingMismatch {
-                    operation: Some(operation),
+                    operation: Some(operation.id),
                     reason: format!(
                         "resident operation {canonical_name:?} does not match the artifact operation"
                     ),
@@ -352,7 +447,19 @@ impl BoundCall {
     }
 
     pub const fn operation(&self) -> OperationId {
-        self.operation
+        self.operation.id
+    }
+
+    pub const fn operation_descriptor(&self) -> &ResolvedOperationDescriptor {
+        &self.operation
+    }
+
+    pub fn resolve_operation_contract(
+        &mut self,
+        contract: &OperationContractDeclaration,
+    ) -> MResult<()> {
+        self.operation.contract = contract.clone();
+        self.operation.validate()
     }
 
     pub const fn origin(&self) -> &BoundCallOrigin {
@@ -485,6 +592,7 @@ pub struct SpecializationContext<'a> {
     catalog: Option<&'a FunctionCatalog>,
     selected_operation: Option<OperationId>,
     diagnostic_operation: Option<String>,
+    syntax_operation: RefCell<Option<ResolvedOperationDescriptor>>,
     resolved_call: Option<ResolvedCall>,
 }
 
@@ -495,6 +603,7 @@ impl<'a> SpecializationContext<'a> {
             catalog: None,
             selected_operation: None,
             diagnostic_operation: None,
+            syntax_operation: RefCell::new(None),
             resolved_call: None,
         }
     }
@@ -505,6 +614,7 @@ impl<'a> SpecializationContext<'a> {
             catalog: Some(catalog),
             selected_operation: None,
             diagnostic_operation: None,
+            syntax_operation: RefCell::new(None),
             resolved_call: None,
         }
     }
@@ -533,6 +643,7 @@ impl<'a> SpecializationContext<'a> {
             catalog,
             selected_operation: None,
             diagnostic_operation: None,
+            syntax_operation: RefCell::new(None),
             resolved_call: None,
         })
     }
@@ -540,12 +651,13 @@ impl<'a> SpecializationContext<'a> {
     pub fn for_syntax_directed_invocation(
         invocation: &SpecializationInvocation,
         catalog: Option<&'a FunctionCatalog>,
-        operation: OperationId,
-        diagnostic_operation: impl Into<String>,
+        operation: ResolvedOperationDescriptor,
     ) -> MResult<Self> {
         let mut context = Self::for_invocation(invocation, catalog)?;
-        context.selected_operation = Some(operation);
-        context.diagnostic_operation = Some(diagnostic_operation.into());
+        operation.validate()?;
+        context.selected_operation = Some(operation.id);
+        context.diagnostic_operation = Some(operation.canonical_name.to_string());
+        *context.syntax_operation.borrow_mut() = Some(operation);
         Ok(context)
     }
 
@@ -556,14 +668,14 @@ impl<'a> SpecializationContext<'a> {
         diagnostic_operation: impl Into<String>,
         resolved_call: ResolvedCall,
     ) -> MResult<Self> {
-        if resolved_call.operation != selected_operation {
+        if resolved_call.operation.id != selected_operation {
             return Err(MechError::new(
                 RuntimeOperationBindingMismatch {
                     operation: Some(selected_operation),
                     reason: format!(
                         "selected specializer operation 0x{:016x} differs from resolved operation 0x{:016x}",
                         selected_operation.raw(),
-                        resolved_call.operation.raw(),
+                        resolved_call.operation.id.raw(),
                     ),
                 },
                 None,
@@ -574,12 +686,60 @@ impl<'a> SpecializationContext<'a> {
         let mut context = Self::for_invocation(invocation, catalog)?;
         context.selected_operation = Some(selected_operation);
         context.diagnostic_operation = Some(diagnostic_operation.into());
+        *context.syntax_operation.borrow_mut() = None;
         context.resolved_call = Some(resolved_call);
         Ok(context)
     }
 
     pub fn schemas(&self) -> &SchemaTable {
         self.schemas.as_ref()
+    }
+
+    /// Resolves a syntax-directed operation's invocation-specific memory
+    /// declaration before any physical implementation is certified.
+    pub fn resolve_syntax_operation_contract(
+        &self,
+        contract: &OperationContractDeclaration,
+    ) -> MResult<()> {
+        let diagnostic_operation = self.diagnostic_operation_name();
+        let mut syntax_operation = self.syntax_operation.borrow_mut();
+        let descriptor = syntax_operation.as_mut().ok_or_else(|| {
+            MechError::new(
+                SpecializationSemanticCallUnavailable {
+                    semantic_operation: diagnostic_operation,
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        descriptor.contract = contract.clone();
+        descriptor.validate()
+    }
+
+    /// Resolves an invocation-specific syntax operation whose semantic
+    /// identity, as well as its memory contract, depends on the parsed
+    /// selector form. The finalized identity is recorded before an
+    /// implementation is certified and later artifact lowering consumes it
+    /// verbatim.
+    pub fn resolve_syntax_operation(
+        &mut self,
+        canonical_name: impl Into<Box<str>>,
+        contract: &OperationContractDeclaration,
+    ) -> MResult<()> {
+        if self.resolved_call.is_some() {
+            return Err(MechError::new(
+                SpecializationSemanticCallUnavailable {
+                    semantic_operation: self.diagnostic_operation_name(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let descriptor = ResolvedOperationDescriptor::from_name(canonical_name, contract.clone())?;
+        self.selected_operation = Some(descriptor.id);
+        self.diagnostic_operation = Some(descriptor.canonical_name.to_string());
+        *self.syntax_operation.borrow_mut() = Some(descriptor);
+        Ok(())
     }
 
     pub fn catalog(&self) -> Option<&FunctionCatalog> {
@@ -714,10 +874,10 @@ impl<'a> SpecializationContext<'a> {
             )
             .with_compiler_loc()
         })?;
-        let operation_contract = instance
-            .implementation()
-            .semantic_operation_contract()
-            .ok_or_else(|| {
+        let operation_descriptor = if let Some(call) = self.resolved_call.as_ref() {
+            call.operation.clone()
+        } else {
+            self.syntax_operation.borrow().clone().ok_or_else(|| {
                 MechError::new(
                     SpecializationSemanticCallUnavailable {
                         semantic_operation: format!(
@@ -728,15 +888,34 @@ impl<'a> SpecializationContext<'a> {
                     None,
                 )
                 .with_compiler_loc()
-            })?;
+            })?
+        };
+        if operation_descriptor.id != operation {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(operation),
+                    reason:
+                        "specialization semantic descriptor disagrees with the selected operation"
+                            .into(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
         instance
             .invocation()
-            .check_operation_memory_contract(operation_contract)?;
+            .check_operation_memory_contract(&operation_descriptor.contract)?;
         let outputs = vec![instance.output().resolved_descriptor()?].into_boxed_slice();
         let bound_call = if let Some(call) = self.resolved_call.as_ref() {
             BoundCall::from_resolved_call(call, inputs, outputs, runtime_function, target)?
         } else {
-            BoundCall::syntax_directed(operation, inputs, outputs, runtime_function, target)?
+            BoundCall::syntax_directed(
+                operation_descriptor,
+                inputs,
+                outputs,
+                runtime_function,
+                target,
+            )?
         };
         Ok(SpecializedFunction::new(instance, bound_call))
     }
@@ -814,7 +993,7 @@ impl<'a> SpecializationContext<'a> {
         let input_cells = specialization_input_cells(inputs)?;
         let invocation =
             invocation_for_runtime_inputs(entry.signature().inputs, output, input_cells)?;
-        let instance = entry.bind_resolved_invocation(call.operation, target, invocation)?;
+        let instance = entry.bind_resolved_invocation(call.operation.id, target, invocation)?;
         let bound_call = BoundCall::from_resolved_call(
             call,
             input_descriptors,
@@ -892,7 +1071,7 @@ impl<'a> SpecializationContext<'a> {
             output_cell.clone(),
             input_cells,
         )?;
-        let instance = entry.bind_resolved_invocation(call.operation, target, invocation)?;
+        let instance = entry.bind_resolved_invocation(call.operation.id, target, invocation)?;
         let bound_call = BoundCall::from_resolved_call(
             call,
             input_descriptors,
@@ -957,7 +1136,7 @@ impl<'a> SpecializationContext<'a> {
         else {
             return Err(MechError::new(
                 SpecializationRuntimeFactoryUnavailable {
-                    operation: self.resolved_call()?.operation,
+                    operation: self.resolved_call()?.operation.id,
                     semantic_operation: self.diagnostic_operation_name(),
                     semantic_inputs: self.semantic_binding_inputs()?,
                     semantic_outputs: vec![output.resolved_type().semantic_name()]
@@ -977,7 +1156,7 @@ impl<'a> SpecializationContext<'a> {
         if tied.len() != 1 {
             return Err(MechError::new(
                 SpecializationRuntimeFactoryAmbiguous {
-                    operation: self.resolved_call()?.operation,
+                    operation: self.resolved_call()?.operation.id,
                     semantic_operation: self.diagnostic_operation_name(),
                     target,
                     candidates: tied
@@ -999,7 +1178,7 @@ impl<'a> SpecializationContext<'a> {
                 "operation 0x{:016x}",
                 self.resolved_call
                     .as_ref()
-                    .map_or(0, |call| call.operation.raw())
+                    .map_or(0, |call| call.operation.id.raw())
             )
         })
     }
@@ -1119,10 +1298,14 @@ impl SpecializedFunction {
 
     pub fn syntax_directed(
         instance: FunctionInstance,
-        operation: OperationId,
+        operation: ResolvedOperationDescriptor,
         runtime_function: RuntimeFunctionId,
         target: ExecutionTarget,
     ) -> MResult<Self> {
+        operation.validate()?;
+        instance
+            .invocation()
+            .check_operation_memory_contract(&operation.contract)?;
         let inputs = instance
             .inputs()
             .iter()

@@ -1539,7 +1539,7 @@ macro_rules! __mech_elementwise_binop_contract {
         )
     };
     (MDMD) => {
-        $crate::RuntimeFunctionContract::same_shape(
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
             $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
         )
     };

@@ -898,7 +898,7 @@ macro_rules! try_n_choose_k_type {
             )
         {
             return $context.bind_resolved_runtime(
-                mech_core::RuntimeBindingSelector::Operation($context.resolved_call()?.operation),
+                mech_core::RuntimeBindingSelector::Operation($context.resolved_call()?.operation.id),
                 mech_core::ExecutionTarget::DirectRuntime,
                 vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
                 &[$n, $k],
@@ -920,7 +920,7 @@ macro_rules! try_n_choose_k_type {
                 let extents = n_choose_k_matrix_extents::<$type>($n, $k)?;
                 return $context.bind_resolved_runtime(
                     mech_core::RuntimeBindingSelector::Operation(
-                        $context.resolved_call()?.operation,
+                        $context.resolved_call()?.operation.id,
                     ),
                     mech_core::ExecutionTarget::DirectRuntime,
                     vec![extents].into_boxed_slice(),

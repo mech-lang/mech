@@ -11,7 +11,9 @@ use crate::{
 };
 
 /// Resolves the exact native linkage for every runtime instruction in a
-/// validated bytecode program.
+/// validated bytecode program. Compiler semantic sidecars carry both the
+/// bindings and a parallel requirement bit, so source operations are checked
+/// while non-semantic compiler markers remain explicitly unbound.
 ///
 /// IDs are sorted and deduplicated before catalog lookup, so repeated calls to
 /// one runtime factory result in one planned installer.
@@ -19,52 +21,96 @@ pub(crate) fn analyze_runtime_functions(
     program: &ParsedProgram,
     catalog: &FunctionCatalog,
     instruction_type_bindings: Option<&[Option<BoundCall>]>,
+    instruction_type_binding_requirements: Option<&[bool]>,
 ) -> MResult<Vec<PlannedRuntimeFunction>> {
-    if let Some(instruction_type_bindings) = instruction_type_bindings {
-        if instruction_type_bindings.len() != program.instructions.len() {
-            return Err(native_build_error(
-                NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
-                    reason: format!(
-                        "semantic binding count {} does not match instruction count {}",
-                        instruction_type_bindings.len(),
-                        program.instructions.len(),
-                    ),
-                },
-                None,
-            ));
-        }
-        for (index, instruction) in program.instructions.iter().enumerate() {
-            let Some(runtime) = instruction.runtime_function() else {
-                continue;
-            };
-            let binding = instruction_type_bindings[index].as_ref().ok_or_else(|| {
-                native_build_error(
-                    NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
-                        reason: format!("runtime instruction {index} has no semantic type binding"),
-                    },
-                    None,
-                )
-            })?;
-            if binding.runtime_function().map(RuntimeFunctionId::raw) != Some(runtime) {
+    match (
+        instruction_type_bindings,
+        instruction_type_binding_requirements,
+    ) {
+        (None, None) => {}
+        (Some(instruction_type_bindings), Some(instruction_type_binding_requirements)) => {
+            if instruction_type_bindings.len() != program.instructions.len() {
                 return Err(native_build_error(
                     NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
                         reason: format!(
-                            "runtime instruction {index} does not match its selected implementation"
+                            "semantic binding count {} does not match instruction count {}",
+                            instruction_type_bindings.len(),
+                            program.instructions.len(),
                         ),
                     },
                     None,
                 ));
             }
-            catalog
-                .validate_bound_call_for_target(binding, ExecutionTarget::Native)
-                .map_err(|error| {
+            if instruction_type_binding_requirements.len() != program.instructions.len() {
+                return Err(native_build_error(
+                    NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                        reason: format!(
+                            "semantic binding requirement count {} does not match instruction count {}",
+                            instruction_type_binding_requirements.len(),
+                            program.instructions.len(),
+                        ),
+                    },
+                    None,
+                ));
+            }
+            for (index, instruction) in program.instructions.iter().enumerate() {
+                let Some(runtime) = instruction.runtime_function() else {
+                    continue;
+                };
+                if !instruction_type_binding_requirements[index] {
+                    if instruction_type_bindings[index].is_some() {
+                        return Err(native_build_error(
+                            NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                                reason: format!(
+                                    "compiler-owned runtime instruction {index} unexpectedly has a semantic type binding"
+                                ),
+                            },
+                            None,
+                        ));
+                    }
+                    continue;
+                }
+                let binding = instruction_type_bindings[index].as_ref().ok_or_else(|| {
                     native_build_error(
                         NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
-                            reason: error.simple_message(),
+                            reason: format!(
+                                "runtime instruction {index} has no semantic type binding"
+                            ),
                         },
                         None,
                     )
                 })?;
+                if binding.runtime_function().map(RuntimeFunctionId::raw) != Some(runtime) {
+                    return Err(native_build_error(
+                        NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                            reason: format!(
+                                "runtime instruction {index} does not match its selected implementation"
+                            ),
+                        },
+                        None,
+                    ));
+                }
+                catalog
+                    .validate_bound_call_for_target(binding, ExecutionTarget::Native)
+                    .map_err(|error| {
+                        native_build_error(
+                            NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                                reason: error.simple_message(),
+                            },
+                            None,
+                        )
+                    })?;
+            }
+        }
+        _ => {
+            return Err(native_build_error(
+                NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                    reason:
+                        "semantic binding certificates and requirements must be provided together"
+                            .to_owned(),
+                },
+                None,
+            ));
         }
     }
     analyze_runtime_function_ids(
@@ -237,9 +283,9 @@ mod tests {
         ChangeDetectionPolicy, DeliveryMode, EncodedConstant, ExecutionTarget, ExternalInteraction,
         FunctionCatalogBuilder, FunctionInvocation, FunctionValueRepresentation, InputPortLayout,
         MechFunction, MechFunctionFactory, NativeFunctionLinkage, OperationContractDeclaration,
-        OperationId, OutputConstruction, OutputPortPolicy, RuntimeFunctionContract,
-        RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, ShapeRule, ValueCell,
-        write_bytecode,
+        OperationId, OutputConstruction, OutputPortPolicy, ResolvedOperationDescriptor,
+        RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType,
+        ShapeRule, ValueCell, write_bytecode,
     };
     use std::collections::{BTreeMap, BTreeSet};
     use std::sync::LazyLock;
@@ -342,8 +388,7 @@ mod tests {
         assert_eq!(error.kind_name(), "NativeRuntimeFunctionLinkageMissing");
     }
 
-    #[test]
-    fn typed_native_analysis_rejects_a_valid_runtime_with_the_wrong_operation() {
+    fn typed_native_fixture() -> (ParsedProgram, FunctionCatalog, RuntimeFunctionId) {
         const NAME: &str = "TypedNativeF64";
         let expected_operation = OperationId::from_name("test/native-expected");
         let runtime = RuntimeFunctionId::from_name(NAME);
@@ -387,20 +432,65 @@ mod tests {
         })
         .unwrap();
         let program = ParsedProgram::from_bytes(&bytes).unwrap();
+        (program, catalog, runtime)
+    }
+
+    #[test]
+    fn typed_native_analysis_allows_compiler_owned_runtime_instructions_without_bindings() {
+        let (program, catalog, _) = typed_native_fixture();
+
+        let planned = analyze_runtime_functions(
+            &program,
+            &catalog,
+            Some(&[None, None, None]),
+            Some(&[false, false, false]),
+        )
+        .unwrap();
+
+        assert_eq!(planned.len(), 1);
+    }
+
+    #[test]
+    fn typed_native_analysis_rejects_a_source_runtime_without_a_binding() {
+        let (program, catalog, _) = typed_native_fixture();
+
+        let error = analyze_runtime_functions(
+            &program,
+            &catalog,
+            Some(&[None, None, None]),
+            Some(&[false, true, false]),
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "NativeRuntimeFunctionBindingInvalid");
+    }
+
+    #[test]
+    fn typed_native_analysis_rejects_a_valid_runtime_with_the_wrong_operation() {
+        let (program, catalog, runtime) = typed_native_fixture();
         let descriptor = ValueCell::from_exact(0.0_f64)
             .unwrap()
             .resolved_descriptor()
             .unwrap();
         let wrong = BoundCall::syntax_directed(
-            OperationId::from_name("test/native-wrong"),
+            ResolvedOperationDescriptor::from_name(
+                "test/native-wrong",
+                NULLARY_F64_CONTRACT.clone(),
+            )
+            .unwrap(),
             Box::new([]),
             vec![descriptor].into_boxed_slice(),
             runtime,
             ExecutionTarget::DirectRuntime,
         )
         .unwrap();
-        let error = analyze_runtime_functions(&program, &catalog, Some(&[None, Some(wrong), None]))
-            .unwrap_err();
+        let error = analyze_runtime_functions(
+            &program,
+            &catalog,
+            Some(&[None, Some(wrong), None]),
+            Some(&[false, true, false]),
+        )
+        .unwrap_err();
         assert_eq!(error.kind_name(), "NativeRuntimeFunctionBindingInvalid");
     }
 }

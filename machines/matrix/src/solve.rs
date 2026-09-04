@@ -391,7 +391,7 @@ impl CanonicalFunctionSpecializer for MatrixSolve {
             .with_compiler_loc());
         }
         context.bind_resolved_runtime(
-            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
             mech_core::ExecutionTarget::DirectRuntime,
             vec![vec![rhs_shape.rows as u64, rhs_shape.cols as u64].into_boxed_slice()]
                 .into_boxed_slice(),

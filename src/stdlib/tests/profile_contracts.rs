@@ -8,35 +8,35 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_034;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_109;
 #[cfg(feature = "full_source")]
-const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_035;
+const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_110;
 #[cfg(feature = "full_source")]
 const EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
-    "90e83995b1c3531a673df12da1cc87e71125f2be71baf03c5e72f65a0296f7b6";
+    "c638151b58bfe35a232c3f8fe66683ceb011d8e5fde9aece4fcb9900c92e5feb";
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_327;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_330;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 64;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "8c00fe223e49fde0af94fd47d5060c26ca9690b76e65537e69d7786fa535d966";
+    "e6510208b4008b51ea8a1d77ac05dec4dfec93eb722c9221fa4c2723ac793bc5";
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
-const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 12_780;
+const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_087;
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 const EXPECTED_FULL_SOURCE_RUNTIME_SURFACE_DIGEST: &str =
-    "5b6f4a205cfd5ea9460951de6daf0cf19d6763ca75da814e8c4b8395b8fbc531";
+    "07bc9dc494bcce69aabdd147f0eadcb61a5247de8413525136aa7e314668a0e1";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 12_832;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_091;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "59367cacc70cfabe1e19de87f6caa3feeb293a87c2154eb6afa0da8e3d637cf7";
+    "90b1dcb9d7e80d7aa1c0d4ed725d326c5e8d7b77bf6b10cf2598791b339ac9bc";
 #[cfg(feature = "full_runtime")]
-const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_031;
+const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_568;
 #[cfg(feature = "full_source")]
 const EXPECTED_NAMED_SPECIALIZERS: usize = 120;
 #[cfg(feature = "full_source")]
-const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 10;
+const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 13;
 #[cfg(feature = "full_source")]
 const EXPECTED_PRELUDE_EXPORTS: usize = 52;
 #[cfg(feature = "full_source")]
@@ -45,10 +45,10 @@ const EXPECTED_MODULE_EXPORTS: usize = 51;
 const EXPECTED_ALL_EXPORTS: usize = 121;
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
-    "a47820fe8ca2b4e7e2b24e1f73cfd98bab0ac6bc97025879b63559ec3eb92c5d";
+    "bcd95a7278b912be6dbb6eb5132a0ef9818c7122a0975fe1811a80442a3fbcf9";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
-    "cff8f46c08a43180908b3a4be9c885e5b8a2b5a8fbf984e0e923a0cf812e6a18";
+    "86529416b74d8aa1237ecf32a68dd86a16c6ae2cf2c40ca3dd5c2edda4949757";
 
 static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
 
@@ -324,8 +324,8 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
     let mut actual_specializers = catalog
         .all_specializers()
         .map(|entry| FrozenSpecializer {
-            name: entry.canonical_name.clone(),
-            id_hex: id_hex(entry.operation.raw()),
+            name: entry.operation.canonical_name.to_string(),
+            id_hex: id_hex(entry.operation.id.raw()),
         })
         .collect::<Vec<_>>();
     actual_specializers
@@ -336,13 +336,13 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
         .all_specializers()
         .filter(|entry| {
             catalog
-                .exports_for_operation(entry.operation)
+                .exports_for_operation(entry.operation.id)
                 .iter()
                 .any(|export| export.exposure == FunctionExposure::Prelude)
         })
         .map(|entry| FrozenSpecializer {
-            name: entry.canonical_name.clone(),
-            id_hex: id_hex(entry.operation.raw()),
+            name: entry.operation.canonical_name.to_string(),
+            id_hex: id_hex(entry.operation.id.raw()),
         })
         .collect::<Vec<_>>();
     actual_prelude

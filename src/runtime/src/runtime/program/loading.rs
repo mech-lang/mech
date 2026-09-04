@@ -10,7 +10,7 @@ use mech_core::{
     ApplicationRequirement, MResult, MechError, ParsedProgram, ReactiveInstanceId, ResourceIntent,
 };
 use mech_engine::{
-    ProgramArtifact, decode_program_artifact_sections,
+    BindingDeclaration, ProgramArtifact, decode_program_artifact_sections,
     resident::{
         ActivationFacts, ResidentActivationOptions, ResidentExternalAdmission,
         ResidentIntegrityMode, activate_with_options, preflight_resident_target,
@@ -20,8 +20,8 @@ use mech_engine::{
 #[cfg(feature = "resident-routing-source")]
 use crate::{ModuleBuildOptions, SourceRequest};
 use crate::{
-    ResidentExternalCoordinator, ResidentExternalLimits, RuntimeResourceWriteIntent,
-    runtime::MechRuntime,
+    ResidentExternalCoordinator, ResidentExternalLimits, RuntimeResourceReadRequest,
+    RuntimeResourceWriteIntent, runtime::MechRuntime,
 };
 #[cfg(feature = "resident-routing-source")]
 use mech_engine::{CompilerPlanningConfig, CompilerPlanningLimits, ProgramCompilationProduct};
@@ -412,17 +412,23 @@ impl MechRuntime {
             },
         };
 
-        // Provider availability and semantic contracts are authority failures,
-        // not semantic-admission failures. Check them before activation so
-        // callers receive the correct failure classification.
-        if external {
+        // Provider availability, authority, and planned observation shapes are
+        // established before resident preflight. Dynamic matrix schemas need
+        // their concrete provider-owned shape parameters to build storage,
+        // but those ephemeral facts are not part of durable program identity.
+        let (activation_facts, authority) = if external {
             self.preflight_provider_contract_presence(&artifact)?;
-        }
+            let authority = self.build_resident_authority(&artifact)?;
+            let facts = self.plan_resident_activation_facts(&artifact)?;
+            (facts, Some(authority))
+        } else {
+            (ActivationFacts::default(), None)
+        };
 
         let preflight = preflight_resident_target(
             &artifact,
             &self.function_catalog,
-            &ActivationFacts::default(),
+            &activation_facts,
             activation_options,
         )
         .map_err(|error| {
@@ -440,26 +446,22 @@ impl MechRuntime {
             ));
         }
 
-        let authority = if external {
-            let authority = self.build_resident_authority(&artifact)?;
+        if let Some(authority) = authority.as_ref() {
             crate::bind_external_requirements(
                 &preflight.plan,
                 &artifact,
                 &self.resources,
-                &authority,
+                authority,
             )
             .map_err(classify_provider_preflight)?;
-            Some(authority)
-        } else {
-            None
-        };
+        }
 
         let instance_id = self.allocate_resident_instance()?;
         let mut instance = activate_with_options(
             instance_id,
             &artifact,
             &self.function_catalog,
-            &ActivationFacts::default(),
+            &activation_facts,
             activation_options,
         )
         .map_err(|error| activation_failure_for_artifact(&artifact, error))?;
@@ -665,6 +667,95 @@ impl MechRuntime {
             }
         }
         Ok(())
+    }
+
+    fn plan_resident_activation_facts(
+        &self,
+        artifact: &ProgramArtifact,
+    ) -> MResult<ActivationFacts> {
+        let mut facts = ActivationFacts::default();
+        for node in artifact.nodes() {
+            let Some(requirement) = node.requirement else {
+                continue;
+            };
+            let Some(ApplicationRequirement::Resource(request)) =
+                artifact.requirements().get(requirement)
+            else {
+                continue;
+            };
+            if request.intent != ResourceIntent::Read {
+                continue;
+            }
+            let mut dynamic_outputs = Vec::new();
+            for binding_index in node.output_bindings.clone() {
+                let Some(BindingDeclaration::Output { target, .. }) =
+                    artifact.bindings().get(binding_index as usize)
+                else {
+                    return Err(route_failure(
+                        ResidentRouteFailureClass::InvalidArtifact,
+                        "resident observation has an invalid output binding",
+                    ));
+                };
+                let declaration = artifact.slots().get(target.get() as usize).ok_or_else(|| {
+                    route_failure(
+                        ResidentRouteFailureClass::InvalidArtifact,
+                        "resident observation output slot is out of range",
+                    )
+                })?;
+                let schema = artifact
+                    .schemas()
+                    .entry(declaration.schema)
+                    .ok_or_else(|| {
+                        route_failure(
+                            ResidentRouteFailureClass::InvalidArtifact,
+                            "resident observation output schema is out of range",
+                        )
+                    })?;
+                if !schema.schema().dimension_parameters().is_empty() {
+                    dynamic_outputs.push((*target, schema));
+                }
+            }
+            if dynamic_outputs.is_empty() {
+                continue;
+            }
+            let binding = self
+                .resources
+                .resident_provider_binding(&request.base_uri)
+                .map_err(classify_provider_preflight)?;
+            let planned = binding
+                .plan_read(RuntimeResourceReadRequest {
+                    base_uri: request.base_uri.clone(),
+                    path: request.path.clone(),
+                    context_name: request.context_name.clone(),
+                })
+                .map_err(classify_provider_preflight)?;
+            for (target, schema) in dynamic_outputs {
+                if schema.key() != planned.schema_key() {
+                    return Err(route_failure(
+                        ResidentRouteFailureClass::ProviderContractMismatch,
+                        "provider planning value does not match the declared observation schema",
+                    ));
+                }
+                schema
+                    .schema()
+                    .instantiate_shape(planned.shape().parameter_values().to_vec().into_boxed_slice())
+                    .map_err(|error| {
+                        route_failure(
+                            ResidentRouteFailureClass::ProviderContractMismatch,
+                            format!("provider planning value has an invalid observation shape: {error:?}"),
+                        )
+                    })?;
+                if let Some(existing) = facts.slot_shapes.insert(target, planned.shape().clone())
+                    && existing != *planned.shape()
+                {
+                    return Err(route_failure(
+                        ResidentRouteFailureClass::ProviderContractMismatch,
+                        "provider planning values disagree about an observation slot shape",
+                    ));
+                }
+            }
+        }
+        Ok(facts)
     }
 }
 

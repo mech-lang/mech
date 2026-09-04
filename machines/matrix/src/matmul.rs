@@ -243,7 +243,7 @@ impl CanonicalFunctionSpecializer for MatrixMatMul {
             |(rows, columns)| vec![rows as u64, columns as u64].into_boxed_slice(),
         );
         context.bind_resolved_runtime(
-            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
             mech_core::ExecutionTarget::DirectRuntime,
             vec![output_extents].into_boxed_slice(),
             &[lhs, rhs],

@@ -147,7 +147,7 @@ impl CanonicalFunctionSpecializer for StringConcat {
             .cloned()
             .unwrap_or_else(|| Box::new([]));
         context.bind_resolved_runtime(
-            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
             mech_core::ExecutionTarget::DirectRuntime,
             vec![output_extents].into_boxed_slice(),
             &[lhs, rhs],
@@ -226,7 +226,8 @@ mod scalar_port_tests {
         let function = StringConcat {}
             .specialize_invocation(&invocation, &mut context)
             .unwrap()
-            .into_instance();
+            .into_parts()
+            .0;
         function.solve_result().unwrap();
         assert!(matches!(
             function.output().snapshot().unwrap().data(),

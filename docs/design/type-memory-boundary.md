@@ -5,13 +5,13 @@
 R2A derives type-memory contracts from finalized schemas and validated shapes.
 R2B describes the capabilities of actual backings and separates logical-cell
 identity from physical-storage identity. R2C derives operation-port memory
-requirements from R1 declarations and performs opt-in shadow checks. R2D
+requirements from R1 declarations. R2D
 installs stack-wide conformance, permanent architecture enforcement, and CI
 ownership for the complete boundary.
 
-The boundary remains descriptive and shadow-only. It changes no runtime
-binding, storage, target, or execution behavior. R4 makes the compatibility
-boundary authoritative during the binding cutover.
+R2 defines the compatibility relation without choosing layouts or allocators.
+R4 now requires that relation before runtime binding, storage installation,
+resident construction, and host/resource ingress.
 
 The projection has one direction:
 
@@ -40,8 +40,8 @@ to traverse `SchemaBody`.
 | What can an existing backing provide? | `StorageCapabilityDescriptor` |
 | What does an operation port require? | `PortMemoryRequirement` derived from `OperationContractDeclaration` |
 | Can the combination coexist? | R2 compatibility checks |
-| What concrete runtime factory/backing is selected today? | transitional runtime machinery |
-| When does R2 compatibility become binding authority? | R4 |
+| What concrete runtime factory/backing is selected today? | exact R4 operation binding after semantic validation |
+| When does R2 compatibility become binding authority? | before every R4 physical binding |
 | What physical byte layout is chosen? | R5 |
 | How is memory allocated, reused, and reclaimed? | R6 |
 
@@ -169,7 +169,8 @@ from physical storage identity. `StorageCapabilityDescriptor` is derived from
 the actual backing. The public compatibility boundary accepts a finalized
 `Schema` and validated `ShapeInstance`, rederives the R2A contract internally,
 and then checks the backing. Callers cannot pair a schema with a contract
-derived from another schema. The checker remains opt-in and shadow-only.
+derived from another schema. R4 invokes the checker as a mandatory binding
+precondition.
 
 `same_cell` remains a compatibility alias for physical storage identity. New
 code chooses `same_logical_cell` or `same_storage` explicitly. No public
@@ -178,16 +179,10 @@ representations can become logical identity.
 
 ### Known transitional mismatch
 
-Current `RowDVector` inference marks both dimensions as turn-varying even
-though its first physical axis is fixed at one. Current `DVector` inference
-likewise marks both dimensions as turn-varying even though its second physical
-axis is fixed at one. R2B deliberately reports both as
-`DynamicAxisUnsupported` during shadow validation; weakening the truthful
-storage descriptors would conceal the mismatch.
-
-R4 must infer each physically invariant vector axis as `Constant(1)` before the
-compatibility boundary becomes authoritative. R2C and R2D must not interpret
-these expected shadow failures as valid storage-incompatibility policy.
+R2B exposed that a dynamic row vector's first axis and a dynamic column
+vector's second axis must remain invariant. R4 closes the mismatch by
+representing those axes as `Constant(1)` before authoritative compatibility
+validation.
 
 ## 14. R2C operation memory requirements
 
@@ -208,18 +203,16 @@ universal but cannot authorize positional, collection-entry, or regional access
 that the semantic type does not expose. Stream and Future delivery remain
 visible metadata and are not rejected by this generic storage boundary.
 
-`FunctionInvocation::check_operation_memory_contract` is a separate opt-in
-shadow check. It validates the current single-output compatibility bridge and
-uses `same_storage` for operation alias policy. It is not called from runtime
-signature checks, factories, source specialization, Resident or GPU
-activation, or native planning. R2C does not make these requirements
-authoritative and does not mark R2 complete.
+`FunctionInvocation::check_operation_memory_contract` validates the current
+single-output compatibility bridge and uses `same_storage` for operation alias
+policy. R4 requires that validation before a selected implementation is
+returned from binding; missing operation-contract authority is an error.
 
 ## 15. R2 closure
 
 R2 is complete when the conformance matrix, architecture checker, normal CI,
-and exact-head Full CI are green. Completion does not mean the checker controls
-production binding: the compatibility boundary remains shadow-only until R4.
+and exact-head Full CI are green. R4 consumes that completed relation as a
+production binding invariant.
 
 ## 16. R3 closure
 
@@ -231,11 +224,11 @@ conversion plans, and diagnostics are complete and authoritative. It does not us
 `CanonicalCellId`, `same_storage`, or pointer or allocator identity as
 inference inputs.
 
-## 17. R4 handoff
+## 17. R4 cutover
 
-R4 consumes the complete R2 compatibility boundary. It owns the production
-binding cutover, removal of representation-based semantic decisions, and
-correction of the `RowDVector`/`DVector` invariant-axis inference mismatch.
+R4 consumes the complete R2 compatibility boundary in production. Semantic
+descriptors are validated before physical selection and allocation;
+`RowDVector` and `DVector` expose their invariant axes as `Constant(1)`.
 
 ## 18. R5/R6 handoff
 
@@ -274,10 +267,10 @@ R2 is complete when:
 16. R2 analysis is deterministic and non-mutating.
 17. R2 metadata is not serialized.
 18. R2 contains no physical layout, allocation, or reclamation policy.
-19. The known `RowDVector`/`DVector` inferred-axis mismatch remains explicit and assigned to R4.
-20. R2 checks remain shadow-only.
+19. The `RowDVector`/`DVector` inferred-axis mismatch is closed by R4.
+20. R2 checks are authoritative at R4 physical binding boundaries.
 21. Normal CI runs the architecture checker.
 22. Full CI runs the architecture checker.
 23. Checker changes themselves trigger Full CI.
-24. README, ROADMAP, type-memory design, and v0.4 endgame agree that R2 is complete and R3 is next.
+24. ROADMAP, type-memory design, and v0.4 endgame agree that R4 is complete and R5 is next.
 25. Package version remains `0.3.6`.

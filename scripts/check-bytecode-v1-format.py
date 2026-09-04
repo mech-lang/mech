@@ -16,7 +16,7 @@ CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
-EXPECTED_MANIFEST_SHA256 = "e0b46f2ab365c6ce6e04dfbc9a445d64d47b2f2a50f299a9947009a8c531a1d7"
+EXPECTED_MANIFEST_SHA256 = "f678435ca1d13814bf96ee888c76128b7ba8e045735271ed1e4b801376314f8c"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
@@ -28,7 +28,7 @@ EXPECTED_FIXTURE_SHA256 = {
     "variadic-horzcat-f64.mecb": "4f1a78777c046c7da86db3b8394b5e712cd0838938d9aa3c27ea8fdaf724094a",
     "string.mecb": "f1d6f944a4b17053219e3ddc3b387113ac51817576d2b8021ae91e9fc51b6989",
     "unary.mecb": "06121a378e5e5e1881ff767b12017e5f1531e043626a692f117d4068af9c5026",
-    "ternary.mecb": "8dac09395077426c174253a14b3170a8aba906dc56eb461181d9a2cd7f0cff40",
+    "ternary.mecb": "b54d0ed79c738c594a1e9abc82f4894654b24798c98d534ec4cd1cd583dbaf42",
     "quaternary.mecb": "12fb2a340abaa236dbd726868656e5746e4b5f6ac34ae15b4688c05911123079",
     "named-module-operation.mecb": "994a63985c5f0f36626603f55d8dc6b7a5e6b1f5a42a115ee9f48ae68a94fe6e",
     "cli-stdout.mecb": "6e5456c54a93a98112694410027941a244122eb15b44fb144d68d67f342474e4",

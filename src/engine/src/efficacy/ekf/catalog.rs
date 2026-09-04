@@ -108,6 +108,8 @@ static PREDICATE_1: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| semantic_declaration(1, ChangeDetectionPolicy::ExactScalar));
 static PREDICATE_2: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| semantic_declaration(2, ChangeDetectionPolicy::ExactScalar));
+static NEGATE: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| semantic_declaration(1, ChangeDetectionPolicy::ExactScalar));
 
 pub(crate) fn semantic_contract(
     operation: FrozenEkfOperation,
@@ -154,8 +156,7 @@ impl CanonicalFunctionSpecializer for FrozenEkfSpecializer {
             output_extents.into_boxed_slice(),
             &semantic_inputs,
         )?;
-        let output = allocate_output(output_shape)?;
-        output.validate_descriptor(&descriptor)?;
+        let output = allocate_output_for_descriptor(output_shape, &descriptor)?;
         let function = FrozenEkfFunction {
             operation: self.operation,
             inputs: inputs.clone().into_boxed_slice(),
@@ -215,8 +216,11 @@ impl MechFunctionCompiler for FrozenEkfFunction {
     }
 
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let zero_cell = allocate_output(operation_spec(self.operation).output)?;
-        zero_cell.validate_descriptor(&self.output.resolved_descriptor()?)?;
+        let output_descriptor = self.output.resolved_descriptor()?;
+        let zero_cell = allocate_output_for_descriptor(
+            operation_spec(self.operation).output,
+            &output_descriptor,
+        )?;
         let zero = zero_cell.snapshot()?;
         let destination =
             compile_runtime_produced_value_cell_register_with_seed(&self.output, &zero, context)?;
@@ -514,9 +518,10 @@ pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()
             exposure: FunctionExposure::ModuleOnly,
         })?;
     }
-    let negate = builder.insert_canonical_specializer(
+    let negate = builder.insert_canonical_specializer_with_contract(
         "math/neg",
         mech_core::maintained_source_type_declaration("math/neg")?,
+        NEGATE.clone(),
         Arc::new(FrozenF64NegateSpecializer),
     )?;
     builder.insert_export(FunctionExport {
@@ -783,6 +788,14 @@ fn allocate_output(shape: FrozenEkfValueShape) -> MResult<ValueCell> {
         }
         FrozenEkfValueShape::F64 => ValueCell::from_exact(0.0_f64),
     }
+}
+
+fn allocate_output_for_descriptor(
+    shape: FrozenEkfValueShape,
+    descriptor: &mech_core::ResolvedValueDescriptor,
+) -> MResult<ValueCell> {
+    let backing = allocate_output(shape)?;
+    ValueCell::allocate_for_descriptor(descriptor, backing.representation())
 }
 
 fn shape_dimensions(shape: FrozenEkfValueShape) -> Option<(usize, usize)> {

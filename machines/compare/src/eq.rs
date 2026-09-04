@@ -246,7 +246,7 @@ impl CanonicalFunctionSpecializer for CompareEqual {
 
         let extents = crate::semantic_compare_extents(&[lhs, rhs])?;
         context.bind_resolved_runtime(
-            RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
             ExecutionTarget::DirectRuntime,
             vec![extents].into_boxed_slice(),
             &[lhs, rhs],

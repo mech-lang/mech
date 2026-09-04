@@ -2,7 +2,7 @@
 
 ## 1. Status and scope
 
-**Status: R3 complete.**
+**Status: R3 semantic solver complete; R4 authority cutover complete.**
 
 Type System v1 is the semantic authority for the language Mech already
 exposes. R3 covers first-order, expression-local inference; built-in semantic
@@ -24,12 +24,14 @@ The compiler resolves calls in this order:
    semantics.
 3. `TypeConstraintEnvironment` resolves a semantic overload.
 4. `ConversionPlan` records every selected input conversion or explicit cast.
-5. Converted semantic inputs are passed to physical runtime-factory binding.
-6. The produced value is checked against the resolved semantic output.
+5. Converted inputs and outputs become validated `ResolvedValueDescriptor` values.
+6. R2 compatibility validates candidate storage against those descriptors.
+7. Exact operation declarations select one physical runtime implementation.
+8. `BoundCall` preserves the result through compiler, resident, and native planning.
 
 `FunctionValueRepresentation` and `RuntimeFunctionSignature` are temporary
 physical execution metadata. They cannot select a semantic overload or output.
-R2 storage compatibility remains shadow-only until R4.
+R2 storage compatibility is an authoritative precondition of physical binding.
 
 ## 3. Builtin scalar registry
 
@@ -221,13 +223,13 @@ operation-contract encoding, `ProgramArtifact`, stable operation IDs, native
 linkage names, dynamic-module ABI v1, or package version 0.3.6. Selected
 conversions lower through existing semantic operations.
 
-## 19. R4 handoff
+## 19. R4 authority cutover
 
-R3 makes semantic resolution authoritative. Physical runtime representations
-remain temporary binding metadata, and R2 storage compatibility remains
-shadow-only. R4 makes storage compatibility authoritative, removes remaining
-representation-based semantic decisions, and corrects the
-RowDVector/DVector invariant-axis schema mismatch.
+R4 carries the R3 result through `ResolvedValueDescriptor` and `BoundCall`.
+Physical runtime representations remain implementation metadata, while exact
+R2 compatibility is required before allocation or binding. Runtime names and
+Rust backing types no longer select operations, overloads, conversions,
+semantic dimensions, or output schemas.
 
 ## 20. Non-goals
 
@@ -246,5 +248,6 @@ every named source operation has explicit schemes; semantic resolution occurs
 before physical binding; conversions remain reactive and lower into compiled
 programs; diagnostics are structured and semantic; standard and full catalogs
 and product artifacts pass; the architecture checker runs in normal and Full
-CI; both CIs pass on one exact head; R2 remains shadow-only; and the PR retains
-the required eight commits.
+CI; both CIs pass on one exact head; and the PR retains the required eight
+commits. R4 subsequently makes that semantic result authoritative at every
+physical binding boundary.

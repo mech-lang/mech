@@ -237,13 +237,13 @@ fn selected_source_catalog_is_completely_scheme_authoritative() {
         let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
             panic!(
                 "named operation {} is syntax-directed",
-                entry.canonical_name
+                entry.operation.canonical_name
             )
         };
         assert!(
             !declaration.overloads.is_empty() || declaration.template.is_some(),
             "{} has neither semantic overloads nor an arity template",
-            entry.canonical_name,
+            entry.operation.canonical_name,
         );
         let ids = declaration
             .overloads
@@ -254,11 +254,12 @@ fn selected_source_catalog_is_completely_scheme_authoritative() {
             ids.len(),
             declaration.overloads.len(),
             "{} repeats an overload ID",
-            entry.canonical_name,
+            entry.operation.canonical_name,
         );
-        if let Some(previous) = previous_name.replace(entry.canonical_name.as_str()) {
+        if let Some(previous) = previous_name.replace(entry.operation.canonical_name.as_ref()) {
             assert_ne!(
-                previous, entry.canonical_name,
+                previous,
+                entry.operation.canonical_name.as_ref(),
                 "catalog names must be unique"
             );
         }
@@ -271,7 +272,7 @@ fn selected_source_catalog_is_completely_scheme_authoritative() {
                 entry.type_authority,
                 SourceTypeAuthority::SyntaxDirectedIntrinsic,
             );
-            entry.operation
+            entry.operation.id
         })
         .collect::<BTreeSet<_>>();
     assert!(
@@ -290,6 +291,8 @@ fn representative_named_outputs_match_their_resolved_calls_exactly() {
         "set/union({1<u8>, 2<u8>}, {2<u8>, 3<u8>})",
         "set/intersection({1<u8>, 2<u8>}, {2<u8>, 3<u8>})",
         "set/powerset({1<u8>, 2<u8>})",
+        "[1<u8> 2<u8> 3<u8>]",
+        "[1<u8>; 2<u8>; 3<u8>]",
         "+> stats\nstats/sum/row([1<u64> 2<u64>; 3<u64> 4<u64>])",
         "+> combinatorics\ncombinatorics/n-choose-k([4<u64> 5<u64>], 2<u64>)",
     ] {

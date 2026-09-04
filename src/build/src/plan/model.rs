@@ -26,8 +26,12 @@ pub enum NativeEmit {
 pub struct NativeBuildRequest {
     pub bytecode: Vec<u8>,
     /// Compiler-only semantic certificates parallel to bytecode instructions.
-    /// Raw bytecode inputs legitimately leave this absent.
+    /// Non-semantic compiler markers have `None` entries, while raw bytecode
+    /// inputs legitimately leave the complete sidecar absent.
     pub instruction_type_bindings: Option<Vec<Option<BoundCall>>>,
+    /// Compiler-only flags identifying instructions that require a semantic
+    /// certificate. Raw bytecode inputs legitimately leave this absent.
+    pub instruction_type_binding_requirements: Option<Vec<bool>>,
     pub runtime_config: Option<NativeRuntimeConfig>,
     pub target: Option<String>,
     pub profile: NativeBuildProfile,

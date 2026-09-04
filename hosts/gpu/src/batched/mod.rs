@@ -8,7 +8,7 @@ use mech_compute::{
     ComparisonOperation, ComputeKernel, ComputeProgram, FixedShape, FixedShapeConstraint,
     FixedShapeInputStorage, FixedShapeIr, FixedShapeStateStorage, FixedShapeStoragePlan,
     LogicOperation, ScalarComputation, ScalarInstruction, ScalarOperand, ScalarPredicate,
-    build_compute_region_interface, plan_compute_artifact,
+    build_compute_region_interface, plan_compute_artifact, resolve_compute_slot_dimensions,
 };
 use mech_core::{
     CellSlotId, DimensionExpr, ExecutionTargetSet, FloatWidth, IntegrityConstraintId, NodeId,
@@ -1155,6 +1155,7 @@ fn infer_broadcast_instances(
     artifact: &ProgramArtifact,
     inputs: &BTreeMap<String, Vec<f32>>,
 ) -> Result<u32, GpuAdmissionError> {
+    let resolved_dimensions = resolve_compute_slot_dimensions(artifact);
     let required = turn_required_nodes(artifact);
     let required_slots = required
         .iter()
@@ -1201,7 +1202,11 @@ fn infer_broadcast_instances(
             });
             continue;
         };
-        let elements = match fixed_shape(artifact, *schema) {
+        let elements = match resolved_dimensions
+            .get(&input.slot)
+            .map(|dimensions| fixed_shape_with_dimensions(artifact, *schema, dimensions))
+            .unwrap_or_else(|| fixed_shape(artifact, *schema))
+        {
             Ok(shape) => shape.elements(),
             Err(detail) => {
                 diagnostics.push(GpuDiagnostic {
@@ -1278,6 +1283,7 @@ struct PendingState {
 struct BatchCompiler<'a> {
     artifact: &'a ProgramArtifact,
     instances: u32,
+    resolved_dimensions: BTreeMap<CellSlotId, Box<[u64]>>,
     shapes: BTreeMap<CellSlotId, FixedShape>,
     register_offsets: BTreeMap<CellSlotId, usize>,
     register_count: usize,
@@ -1368,6 +1374,7 @@ impl<'a> BatchCompiler<'a> {
         Self {
             artifact,
             instances,
+            resolved_dimensions: resolve_compute_slot_dimensions(artifact),
             shapes: BTreeMap::new(),
             register_offsets: BTreeMap::new(),
             register_count: 0,
@@ -1605,7 +1612,14 @@ impl<'a> BatchCompiler<'a> {
             if self.static_selector_slot(slot.slot) {
                 continue;
             }
-            let shape = match fixed_shape(self.artifact, slot.schema) {
+            let shape = match self
+                .resolved_dimensions
+                .get(&slot.slot)
+                .map(|dimensions| {
+                    fixed_shape_with_dimensions(self.artifact, slot.schema, dimensions)
+                })
+                .unwrap_or_else(|| fixed_shape(self.artifact, slot.schema))
+            {
                 Ok(shape) => shape,
                 Err(detail) => {
                     self.reject(None, None, format!("slot {}: {detail}", slot.slot.get()));
@@ -2788,25 +2802,55 @@ fn logic_operation(name: &str) -> Option<LogicOperation> {
 
 fn fixed_shape(
     artifact: &ProgramArtifact,
+    schema_id: mech_core::SchemaId,
+) -> Result<FixedShape, String> {
+    let schema = artifact
+        .schemas()
+        .get(schema_id)
+        .ok_or_else(|| "schema does not exist".to_owned())?;
+    let dimensions = match schema.body() {
+        SchemaBody::FloatingPoint(FloatWidth::W32) | SchemaBody::Bool => Box::new([]),
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) => dimensions
+            .iter()
+            .map(|dimension| match dimension {
+                DimensionExpr::Constant(value) => Ok(*value),
+                _ => Err("matrix dimension is not compile-time constant".to_owned()),
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_boxed_slice(),
+        body => {
+            return Err(format!(
+                "schema {body:?} is not fixed-shape f32 numeric data"
+            ));
+        }
+    };
+    fixed_shape_with_dimensions(artifact, schema_id, &dimensions)
+}
+
+fn fixed_shape_with_dimensions(
+    artifact: &ProgramArtifact,
     schema: mech_core::SchemaId,
+    dimensions: &[u64],
 ) -> Result<FixedShape, String> {
     let schema = artifact
         .schemas()
         .get(schema)
         .ok_or_else(|| "schema does not exist".to_owned())?;
     match schema.body() {
-        SchemaBody::FloatingPoint(FloatWidth::W32) => Ok(FixedShape::scalar()),
-        SchemaBody::Bool => Ok(FixedShape::scalar()),
-        SchemaBody::Matrix {
-            element,
-            dimensions,
-        } if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) => {
+        SchemaBody::FloatingPoint(FloatWidth::W32) | SchemaBody::Bool if dimensions.is_empty() => {
+            Ok(FixedShape::scalar())
+        }
+        SchemaBody::Matrix { element, .. }
+            if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) =>
+        {
             let dimensions = dimensions
                 .iter()
-                .map(|dimension| match dimension {
-                    DimensionExpr::Constant(value) => usize::try_from(*value)
-                        .map_err(|_| "matrix dimension does not fit usize".to_owned()),
-                    _ => Err("matrix dimension is not compile-time constant".to_owned()),
+                .map(|dimension| {
+                    usize::try_from(*dimension)
+                        .map_err(|_| "matrix dimension does not fit usize".to_owned())
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             if dimensions.is_empty() || dimensions.len() > 2 {

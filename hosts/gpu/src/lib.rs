@@ -13,7 +13,7 @@ use mech_compute::{
     ElementwiseInstruction, ElementwiseIr, ElementwiseLowering, ElementwiseOperation,
     ElementwiseStateStorage, ElementwiseStoragePlan, UnaryOperation,
     build_compute_region_interface, display_operation, elementwise_lowering, plan_compute_artifact,
-    turn_required_nodes,
+    resolve_compute_slot_dimensions, turn_required_nodes,
 };
 pub use mech_compute::{
     ComputeAdmissionError as GpuAdmissionError, ComputeDiagnostic as GpuDiagnostic,
@@ -23,9 +23,9 @@ pub use mech_compute::{
 };
 use mech_core::snapshot::SequenceView;
 use mech_core::{
-    AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, DeliveryMode, DimensionExpr,
-    ExternalInteraction, FloatWidth, NodeId, OutputConstruction, ResolvedOperationContract,
-    SchemaBody, SchemaId, ValueData,
+    AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
+    FloatWidth, NodeId, OutputConstruction, ResolvedOperationContract, SchemaBody, SchemaId,
+    ValueData,
 };
 use mech_engine::{
     ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, ProducerReference,
@@ -879,6 +879,7 @@ impl ComputeLowerer {
 struct Compiler<'a> {
     artifact: &'a ProgramArtifact,
     diagnostics: Vec<GpuDiagnostic>,
+    resolved_dimensions: BTreeMap<CellSlotId, Box<[u64]>>,
     slot_elements: BTreeMap<CellSlotId, u64>,
     input_slots: BTreeMap<CellSlotId, (String, u64, u32)>,
     constants: BTreeMap<mech_core::ConstantId, Vec<f32>>,
@@ -903,6 +904,7 @@ impl<'a> Compiler<'a> {
         Self {
             artifact,
             diagnostics: Vec::new(),
+            resolved_dimensions: resolve_compute_slot_dimensions(artifact),
             slot_elements: BTreeMap::new(),
             input_slots: BTreeMap::new(),
             constants: BTreeMap::new(),
@@ -1001,7 +1003,7 @@ impl<'a> Compiler<'a> {
             if self.is_composite_pack_slot(slot.slot) {
                 continue;
             }
-            match self.schema_elements(slot.schema) {
+            match self.slot_schema_elements(slot.slot, slot.schema) {
                 Ok(elements) => {
                     self.slot_elements.insert(slot.slot, elements);
                     if slot.role == SlotRole::State {
@@ -1610,7 +1612,21 @@ impl<'a> Compiler<'a> {
         let values = match value.data() {
             ValueData::F32(value) => vec![value.to_f32()],
             ValueData::Matrix(matrix) => match matrix.elements() {
-                SequenceView::F32(values) => values.iter().map(|value| value.to_f32()).collect(),
+                SequenceView::F32(values) => {
+                    let values = values
+                        .iter()
+                        .map(|value| value.to_f32())
+                        .collect::<Vec<_>>();
+                    let dimensions = self.slot_dimensions(slot.slot);
+                    mech_compute::column_major_to_row_major(&dimensions, &values).map_err(
+                        |error| {
+                            (
+                                GpuDiagnosticCode::ShapeMismatch,
+                                format!("initializer matrix layout is invalid: {error}"),
+                            )
+                        },
+                    )?
+                }
                 _ => {
                     return Err((
                         GpuDiagnosticCode::ConstantUnsupported,
@@ -1638,7 +1654,11 @@ impl<'a> Compiler<'a> {
         Ok(values)
     }
 
-    fn schema_elements(&self, schema: SchemaId) -> Result<u64, (GpuDiagnosticCode, String)> {
+    fn slot_schema_elements(
+        &self,
+        slot: CellSlotId,
+        schema: SchemaId,
+    ) -> Result<u64, (GpuDiagnosticCode, String)> {
         let schema = self.artifact.schemas().get(schema).ok_or_else(|| {
             (
                 GpuDiagnosticCode::ArtifactMalformed,
@@ -1647,18 +1667,17 @@ impl<'a> Compiler<'a> {
         })?;
         match schema.body() {
             SchemaBody::FloatingPoint(FloatWidth::W32) => Ok(1),
-            SchemaBody::Matrix {
-                element,
-                dimensions,
-            } if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) => {
+            SchemaBody::Matrix { element, .. }
+                if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) =>
+            {
+                let dimensions = self.resolved_dimensions.get(&slot).ok_or_else(|| {
+                    (
+                        GpuDiagnosticCode::DynamicShapeUnsupported,
+                        "matrix dimensions are not resolved for this compute instance".to_owned(),
+                    )
+                })?;
                 let mut elements = 1_u64;
-                for dimension in dimensions {
-                    let DimensionExpr::Constant(extent) = dimension else {
-                        return Err((
-                            GpuDiagnosticCode::DynamicShapeUnsupported,
-                            format!("matrix dimension {dimension:?} is not compile-time constant"),
-                        ));
-                    };
+                for extent in dimensions {
                     elements = elements.checked_mul(*extent).ok_or_else(|| {
                         (
                             GpuDiagnosticCode::SchemaUnsupported,
@@ -1676,36 +1695,33 @@ impl<'a> Compiler<'a> {
     }
 
     fn slot_dimensions(&self, slot: CellSlotId) -> Vec<u64> {
-        let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
-            return Vec::new();
-        };
-        self.schema_dimensions(declaration.schema)
-    }
-
-    fn schema_dimensions(&self, schema: SchemaId) -> Vec<u64> {
-        let Some(schema) = self.artifact.schemas().get(schema) else {
-            return Vec::new();
-        };
-        match schema.body() {
-            SchemaBody::Matrix { dimensions, .. } => dimensions
-                .iter()
-                .filter_map(|dimension| match dimension {
-                    DimensionExpr::Constant(extent) => Some(*extent),
-                    _ => None,
-                })
-                .collect(),
-            _ => Vec::new(),
-        }
+        self.resolved_dimensions
+            .get(&slot)
+            .map(|dimensions| dimensions.to_vec())
+            .unwrap_or_default()
     }
 
     fn source_dimensions(&self, source: ArtifactSource) -> Option<Vec<u64>> {
         match source {
-            ArtifactSource::Slot(slot) => Some(self.slot_dimensions(slot)),
-            ArtifactSource::Constant(constant) => self
-                .artifact
-                .constants()
-                .get(constant)
-                .map(|value| self.schema_dimensions(value.schema())),
+            ArtifactSource::Slot(slot) => self
+                .resolved_dimensions
+                .get(&slot)
+                .map(|dimensions| dimensions.to_vec()),
+            ArtifactSource::Constant(constant) => {
+                let value = self.artifact.constants().get(constant)?;
+                let schema = self.artifact.schemas().get(value.schema())?;
+                let body = schema.closed_body(value.shape()).ok()?;
+                match body {
+                    SchemaBody::Matrix { dimensions, .. } => dimensions
+                        .iter()
+                        .map(|dimension| match dimension {
+                            mech_core::DimensionExpr::Constant(extent) => Some(*extent),
+                            _ => None,
+                        })
+                        .collect::<Option<Vec<_>>>(),
+                    _ => Some(Vec::new()),
+                }
+            }
         }
     }
 
@@ -1773,6 +1789,31 @@ impl<'a> Compiler<'a> {
                                 .iter()
                                 .map(|value| value.to_f32())
                                 .collect::<Vec<_>>();
+                            let Some(dimensions) =
+                                self.source_dimensions(ArtifactSource::Constant(constant))
+                            else {
+                                self.reject(
+                                    GpuDiagnosticCode::DynamicShapeUnsupported,
+                                    Some(node),
+                                    Some(operation.to_owned()),
+                                    "constant matrix dimensions are not resolved",
+                                );
+                                return None;
+                            };
+                            let values =
+                                match mech_compute::column_major_to_row_major(&dimensions, &values)
+                                {
+                                    Ok(values) => values,
+                                    Err(error) => {
+                                        self.reject(
+                                            GpuDiagnosticCode::ShapeMismatch,
+                                            Some(node),
+                                            Some(operation.to_owned()),
+                                            format!("constant matrix layout is invalid: {error}"),
+                                        );
+                                        return None;
+                                    }
+                                };
                             let elements = values.len() as u64;
                             self.constants.insert(constant, values);
                             Some(elements)

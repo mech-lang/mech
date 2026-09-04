@@ -323,18 +323,14 @@ fn execute_conversion_plan(
     })?;
     let converted =
         execute_conversion_draft(draft, &plan.step).map_err(conversion_execution_error)?;
-    let output = ValueCell::from_schema_data(target.clone(), converted)?;
-    let actual = output.resolved_type()?;
-    if !exact_type_equal(&actual, &plan.target) {
-        return Err(MechError::from(TypeResolutionError::incompatible(
-            "convert/kind",
-            TypeConstraintFailure::OutputTypeMismatch {
-                expected: plan.target.semantic_name(),
-                actual: actual.semantic_name(),
-            },
-        )));
-    }
-    Ok(output)
+    let descriptor = materialize_resolved_output(
+        &plan.target,
+        &ResolvedOutputSchemaRule::Declared(target.clone()),
+        &[],
+        value.current_top_level_extents()?,
+    )
+    .map_err(MechError::from)?;
+    ValueCell::from_resolved_descriptor_data(&descriptor, converted)
 }
 
 #[cfg(feature = "convert")]
@@ -382,6 +378,43 @@ struct PlannedTypeConversion {
     output: ValueCell,
     target: SchemaBody,
     plan: ConversionPlan,
+}
+
+#[cfg(feature = "convert")]
+fn planned_type_conversion_instance(
+    source: ValueCell,
+    output: ValueCell,
+    target: SchemaBody,
+    plan: ConversionPlan,
+) -> FunctionInstance {
+    FunctionInstance::new(
+        Box::new(PlannedTypeConversion {
+            source: source.clone(),
+            output: output.clone(),
+            target,
+            plan,
+        }),
+        FunctionInvocation::unary(output, source),
+    )
+}
+
+#[cfg(feature = "convert")]
+fn planned_type_conversion_specialized(
+    source: ValueCell,
+    output: ValueCell,
+    target: SchemaBody,
+    plan: ConversionPlan,
+) -> MResult<SpecializedFunction> {
+    let instance = planned_type_conversion_instance(source, output, target, plan);
+    SpecializedFunction::syntax_directed(
+        instance,
+        ResolvedOperationDescriptor::from_name(
+            "convert/kind",
+            PURE_TYPE_CONVERSION_CONTRACT.clone(),
+        )?,
+        RuntimeFunctionId::from_name("convert/kind"),
+        ExecutionTarget::DirectRuntime,
+    )
 }
 
 /// Bytecode/native implementation of the canonical `convert/kind`
@@ -506,8 +539,8 @@ mech_core::declare_native_runtime_factory! {
     extra_cargo_features: ["convert", "semantic-compiler"],
 }
 
-#[cfg(all(feature = "convert", feature = "semantic-compiler"))]
-static PURE_TYPE_CONVERSION_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+#[cfg(feature = "convert")]
+pub(crate) static PURE_TYPE_CONVERSION_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
     std::sync::LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![InputPortPolicy {
@@ -716,18 +749,11 @@ impl CanonicalFunctionSpecializer for ConvertKind {
             MechError::from(error.with_origin(TypeConstraintOrigin::new("convert/kind", None)))
         })?;
         let output = execute_conversion_plan(&source, &target, &plan)?;
-        let bound = FunctionInvocation::binary(output.clone(), source.clone(), target_cell);
+        let _ = target_cell;
+        context.resolve_syntax_operation_contract(&PURE_TYPE_CONVERSION_CONTRACT)?;
         context.certify_instance(
-            FunctionInstance::new(
-                Box::new(PlannedTypeConversion {
-                    source,
-                    output,
-                    target,
-                    plan,
-                }),
-                bound,
-            ),
-            mech_core::RuntimeFunctionId::from_name("PlannedTypeConversion"),
+            planned_type_conversion_instance(source, output, target, plan),
+            mech_core::RuntimeFunctionId::from_name("convert/kind"),
             mech_core::ExecutionTarget::DirectRuntime,
         )
     }
@@ -789,15 +815,14 @@ pub(crate) fn convert_cell_with_plan_reactively(
     let target =
         conversion_target_schema(&source_schema, &plan.step).map_err(conversion_execution_error)?;
     let output = execute_conversion_plan(&value, &target, plan)?;
-    interpreter.plan().register_instance(FunctionInstance::new(
-        Box::new(PlannedTypeConversion {
-            source: value.clone(),
-            output: output.clone(),
+    interpreter
+        .plan()
+        .register_specialized(planned_type_conversion_specialized(
+            value,
+            output.clone(),
             target,
-            plan: plan.clone(),
-        }),
-        FunctionInvocation::unary(output.clone(), value),
-    ))?;
+            plan.clone(),
+        )?)?;
     Ok(output)
 }
 
@@ -822,15 +847,14 @@ pub(crate) fn convert_cell_implicitly_reactively(
             .map_err(MechError::from)?;
     let plan = plan_implicit_conversion(&source_type, &target_type).map_err(MechError::from)?;
     let output = execute_conversion_plan(&value, &target, &plan)?;
-    interpreter.plan().register_instance(FunctionInstance::new(
-        Box::new(PlannedTypeConversion {
-            source: value.clone(),
-            output: output.clone(),
+    interpreter
+        .plan()
+        .register_specialized(planned_type_conversion_specialized(
+            value,
+            output.clone(),
             target,
             plan,
-        }),
-        FunctionInvocation::unary(output.clone(), value),
-    ))?;
+        )?)?;
     Ok(output)
 }
 
@@ -854,15 +878,14 @@ pub(crate) fn convert_cell_reactively(
             .map_err(MechError::from)?;
     let plan = plan_explicit_cast(&source_type, &target_type).map_err(MechError::from)?;
     let output = execute_conversion_plan(&value, &target, &plan)?;
-    interpreter.plan().register_instance(FunctionInstance::new(
-        Box::new(PlannedTypeConversion {
-            source: value.clone(),
-            output: output.clone(),
+    interpreter
+        .plan()
+        .register_specialized(planned_type_conversion_specialized(
+            value,
+            output.clone(),
             target,
             plan,
-        }),
-        FunctionInvocation::unary(output.clone(), value),
-    ))?;
+        )?)?;
     Ok(output)
 }
 
@@ -998,7 +1021,14 @@ mod canonical_conversion_tests {
         let source = ValueCell::from_exact(7.0_f64).unwrap();
         let invocation =
             SpecializationInvocation::from_cells(vec![source, target].into_boxed_slice());
-        let mut context = SpecializationContext::for_invocation(&invocation, None).unwrap();
+        let operation = ResolvedOperationDescriptor::from_name(
+            "convert/kind",
+            PURE_TYPE_CONVERSION_CONTRACT.clone(),
+        )
+        .unwrap();
+        let mut context =
+            SpecializationContext::for_syntax_directed_invocation(&invocation, None, operation)
+                .unwrap();
 
         let specialized = ConvertKind
             .specialize_invocation(&invocation, &mut context)

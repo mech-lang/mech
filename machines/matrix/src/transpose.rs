@@ -331,7 +331,7 @@ impl CanonicalFunctionSpecializer for MatrixTranspose {
         };
         let _ = (element, storage);
         context.bind_resolved_runtime(
-            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
             mech_core::ExecutionTarget::DirectRuntime,
             vec![vec![descriptor.cols as u64, descriptor.rows as u64].into_boxed_slice()]
                 .into_boxed_slice(),
