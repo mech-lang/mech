@@ -1,7 +1,9 @@
 use super::{MemoryBudgetViolation, MemoryObjectId, MemoryPlanAuditMismatch, MemoryWitnessStage};
 
 #[cfg(feature = "no_std")]
-use alloc::string::{String, ToString};
+use alloc::string::String;
+#[cfg(all(feature = "no_std", feature = "functions"))]
+use alloc::string::ToString;
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
 

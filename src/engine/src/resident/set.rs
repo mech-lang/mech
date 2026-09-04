@@ -813,8 +813,8 @@ fn admit_set_candidate_operation(
     let mut cost = meter.estimate();
     let set_bytes = set_footprint.retained_bytes;
     let set_nodes = set_footprint.node_count;
-    let current_persistent_nodes = cost.retained_nodes;
-    cost.retained_nodes = 0;
+    let current_persistent_nodes = cost.retained_nodes();
+    cost.set_retained_nodes(0);
     let Some(output_elements) = output_elements else {
         return PreparedMutationPlan::new(
             operation,
@@ -849,26 +849,22 @@ fn admit_set_candidate_operation(
         checked_u64(output_elements)?,
         checked_u64(core::mem::size_of::<ValueDataDraft>())?,
     ])?;
-    cost.compute_work = cost
-        .compute_work
-        .checked_add(checked_u64(output_elements)?)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.temporary_bytes = cost
-        .temporary_bytes
-        .checked_add(
-            output_clone_bytes
-                .checked_mul(2)
-                .ok_or(ResidentKernelError::InvalidShape)?,
-        )
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.cloned_bytes = cost
-        .cloned_bytes
-        .checked_add(output_clone_bytes)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.container_bytes = cost
-        .container_bytes
-        .checked_add(container_bytes)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    cost.set_compute_work(
+        cost.compute_work()
+            .checked_add(checked_u64(output_elements)?)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    cost.add_temporary_bytes(
+        output_clone_bytes
+            .checked_mul(2)
+            .and_then(|bytes| bytes.checked_add(container_bytes))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    cost.set_cloned_bytes(
+        cost.cloned_bytes()
+            .checked_add(output_clone_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    );
     let output_footprint = mech_core::snapshot::ValueFootprint {
         encoded_bytes: set_footprint
             .encoded_bytes
@@ -897,14 +893,16 @@ fn admit_set_candidate_operation(
         }
         _ => 0,
     };
-    cost.comparison_work = cost
-        .comparison_work
-        .checked_add(publication_work)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.compute_work = cost
-        .compute_work
-        .checked_add(publication_work)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    cost.set_comparison_work(
+        cost.comparison_work()
+            .checked_add(publication_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    cost.set_compute_work(
+        cost.compute_work()
+            .checked_add(publication_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
     operation.canonicalization_work_limit = Some(finalization_work);
     // The cloned `ValueData` population and the canonical draft tree coexist
     // while the immutable current set remains borrowed. The mutation plan
@@ -1266,7 +1264,7 @@ fn merged_set_element_drafts(
     let mut footprint_meter = ResidentBudgetMeter::default();
     let (left_bytes, left_nodes) = value_retained_cost(&mut footprint_meter, kernel, left)?;
     let (right_bytes, right_nodes) = value_retained_cost(&mut footprint_meter, kernel, right)?;
-    let measurement_work = footprint_meter.estimate().comparison_work;
+    let measurement_work = footprint_meter.estimate().comparison_work();
     let merge_compute_work = checked_u64(checked_sum(&[left_count, right_count])?)?;
     let borrowed_nodes = checked_cost_sum(&[left_nodes, right_nodes])?;
     let staged_output_nodes = borrowed_nodes;
@@ -1465,11 +1463,11 @@ fn set_cartesian_product(
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
         comparison_work: footprint_work
-            .comparison_work
+            .comparison_work()
             .checked_add(finalization_work)
             .ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: checked_cost_sum(&[
-            footprint_work.compute_work,
+            footprint_work.compute_work(),
             checked_u64(output_len)?,
             finalization_work,
         ])?,
@@ -1647,11 +1645,11 @@ fn set_powerset(
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
         comparison_work: checked_cost_sum(&[
-            footprint_work.comparison_work,
+            footprint_work.comparison_work(),
             finalization_work,
         ])?,
         compute_work: checked_cost_sum(&[
-            footprint_work.compute_work,
+            footprint_work.compute_work(),
             checked_u64(output_elements)?,
             finalization_work,
         ])?,
@@ -1753,17 +1751,20 @@ fn admit_set_relation(
         set_cardinality(right)?,
     ])?)?;
     let mut cost = meter.estimate();
-    cost.compute_work = cost
-        .compute_work
-        .checked_add(relation_compute_work)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.output_elements = 1;
-    cost.output_bytes = checked_u64(core::mem::size_of::<u8>())?;
-    cost.retained_nodes = left_footprint
-        .node_count
-        .checked_add(right_footprint.node_count)
-        .and_then(|nodes| nodes.checked_add(1))
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    cost.set_compute_work(
+        cost.compute_work()
+            .checked_add(relation_compute_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    cost.set_output_elements(1);
+    cost.set_output_bytes(checked_u64(core::mem::size_of::<u8>())?);
+    cost.set_retained_nodes(
+        left_footprint
+            .node_count
+            .checked_add(right_footprint.node_count)
+            .and_then(|nodes| nodes.checked_add(1))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    );
     PreparedKernel::new(cost.remaining_incremental_work()?, cost)
         .admit()
         .map(|admitted| admitted.into_plan())

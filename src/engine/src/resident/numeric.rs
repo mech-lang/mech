@@ -117,6 +117,208 @@ fn snapshot_element_finalization_work(
     }
 }
 
+fn snapshot_string_element<'a>(
+    body: &SchemaBody,
+    data: &'a ValueData,
+    index: usize,
+) -> Result<&'a str, ResidentKernelError> {
+    match (body, data) {
+        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix))
+            if element.as_ref() == &SchemaBody::String =>
+        {
+            let SequenceView::String(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values
+                .get(index)
+                .map(|value| value.as_ref())
+                .ok_or(ResidentKernelError::InvalidShape)
+        }
+        (SchemaBody::String, ValueData::String(value)) if index == 0 => Ok(value.as_ref()),
+        _ => Err(ResidentKernelError::InvalidShape),
+    }
+}
+
+fn projected_snapshot_matrix_output(
+    meter: &mut super::budget::ResidentBudgetMeter,
+    current_schema: &SchemaBody,
+    current_data: &ValueData,
+    current_footprint: ValueFootprint,
+    source_schema: &SchemaBody,
+    source_data: &ValueData,
+    output_len: usize,
+    mut selected_source: impl FnMut(
+        usize,
+        &mut super::budget::ResidentBudgetMeter,
+    ) -> Result<Option<usize>, ResidentKernelError>,
+) -> Result<(ValueFootprint, u64), ResidentKernelError> {
+    let (SchemaBody::Matrix { element, .. }, ValueData::Matrix(current_matrix)) =
+        (current_schema, current_data)
+    else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if current_matrix.elements().len() != output_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let mut finalization_work =
+        snapshot_data_finalization_work(meter, current_schema, current_data)?;
+    match current_matrix.elements() {
+        SequenceView::Values(current_values) => {
+            let mut current_elements = ValueFootprint::zero();
+            for value in current_values {
+                current_elements = current_elements
+                    .checked_add(super::budget::measure_canonical_data_footprint(
+                        meter, element, value,
+                    )?)
+                    .map_err(|_| ResidentKernelError::InvalidShape)?;
+            }
+            let base = ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: current_footprint
+                    .retained_bytes
+                    .checked_sub(current_elements.retained_bytes)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                node_count: current_footprint
+                    .node_count
+                    .checked_sub(
+                        current_elements
+                            .node_count
+                            .checked_add(1)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    )
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            };
+            let mut final_elements = ValueFootprint::zero();
+            for destination in 0..output_len {
+                let selected = selected_source(destination, meter)?;
+                let footprint = match selected {
+                    Some(source_index) => {
+                        finalization_work = finalization_work
+                            .checked_add(snapshot_element_finalization_work(
+                                meter,
+                                source_schema,
+                                source_data,
+                                source_index,
+                            )?)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                        snapshot_element_clone_footprint(
+                            meter,
+                            source_schema,
+                            source_data,
+                            source_index,
+                        )?
+                    }
+                    None => super::budget::measure_canonical_data_footprint(
+                        meter,
+                        element,
+                        current_values
+                            .get(destination)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    )?,
+                };
+                final_elements = final_elements
+                    .checked_add(footprint)
+                    .map_err(|_| ResidentKernelError::InvalidShape)?;
+            }
+            let sequence_node = ValueFootprint {
+                encoded_bytes: 0,
+                retained_bytes: 0,
+                node_count: 1,
+            };
+            Ok((
+                base.checked_add(sequence_node)
+                    .and_then(|footprint| footprint.checked_add(final_elements))
+                    .map_err(|_| ResidentKernelError::InvalidShape)?,
+                finalization_work,
+            ))
+        }
+        SequenceView::String(current_values) => {
+            let container_bytes = super::budget::checked_u64(
+                output_len
+                    .checked_mul(core::mem::size_of::<Box<str>>())
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
+            let current_payload = current_values.iter().try_fold(0u64, |total, value| {
+                total
+                    .checked_add(super::budget::checked_u64(value.len())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
+            let sequence_nodes = super::budget::checked_u64(
+                output_len
+                    .checked_add(1)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
+            let base_bytes = current_footprint
+                .retained_bytes
+                .checked_sub(container_bytes)
+                .and_then(|bytes| bytes.checked_sub(current_payload))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let base_nodes = current_footprint
+                .node_count
+                .checked_sub(sequence_nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let mut final_payload = 0u64;
+            let mut encoded_bytes = 0u64;
+            for (destination, current) in current_values.iter().enumerate() {
+                let selected = selected_source(destination, meter)?;
+                let next = match selected {
+                    Some(source_index) => {
+                        finalization_work = finalization_work
+                            .checked_add(snapshot_element_finalization_work(
+                                meter,
+                                source_schema,
+                                source_data,
+                                source_index,
+                            )?)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                        snapshot_string_element(source_schema, source_data, source_index)?
+                    }
+                    None => current.as_ref(),
+                };
+                let bytes = super::budget::checked_u64(next.len())?;
+                final_payload = final_payload
+                    .checked_add(bytes)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                encoded_bytes = encoded_bytes
+                    .checked_add(
+                        bytes
+                            .checked_add(8)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    )
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+            }
+            Ok((
+                ValueFootprint {
+                    encoded_bytes,
+                    retained_bytes: base_bytes
+                        .checked_add(container_bytes)
+                        .and_then(|bytes| bytes.checked_add(final_payload))
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    node_count: base_nodes
+                        .checked_add(sequence_nodes)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                },
+                finalization_work,
+            ))
+        }
+        _ => {
+            for destination in 0..output_len {
+                if let Some(source_index) = selected_source(destination, meter)? {
+                    finalization_work = finalization_work
+                        .checked_add(snapshot_element_finalization_work(
+                            meter,
+                            source_schema,
+                            source_data,
+                            source_index,
+                        )?)
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                }
+            }
+            Ok((current_footprint, finalization_work))
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 #[repr(u64)]
 enum SemanticComparison {
@@ -4627,26 +4829,23 @@ fn admit_matrix_solve(
     super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
-            comparison_work: supplemental.comparison_work,
+            comparison_work: supplemental.comparison_work(),
             compute_work: super::budget::checked_u64(
                 matrix_solve_work(rows, right_columns)
                     .ok_or(ResidentKernelError::InvalidShape)?,
             )?
-                .checked_add(supplemental.compute_work)
+                .checked_add(supplemental.compute_work())
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements: output_count,
             output_bytes,
             temporary_bytes: super::budget::checked_u64(temporary_bytes)?
-                .checked_add(supplemental.temporary_bytes)
+                .checked_add(supplemental.temporary_bytes())
                 .ok_or(ResidentKernelError::InvalidShape)?,
             cloned_bytes: super::budget::checked_u64(coefficient_bytes)?
                 .checked_add(super::budget::checked_u64(output_bytes)?)
-                .and_then(|bytes| bytes.checked_add(supplemental.cloned_bytes))
+                .and_then(|bytes| bytes.checked_add(supplemental.cloned_bytes()))
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            container_bytes: supplemental.container_bytes,
-            selector_bytes: supplemental.selector_bytes,
-            index_bytes: supplemental.index_bytes,
-            retained_nodes: supplemental.retained_nodes,
+            retained_nodes: supplemental.retained_nodes(),
             ..super::budget::KernelCostEstimate::default()
         },
     )
@@ -5081,56 +5280,56 @@ struct NormalizedWritePlan {
     last_source_by_destination: Box<[Option<usize>]>,
 }
 
-impl NormalizedWritePlan {
-    fn retained_nodes(&self) -> Result<u64, ResidentKernelError> {
-        super::budget::checked_u64(self.last_source_by_destination.len())?
-            .checked_add(1)
-            .ok_or(ResidentKernelError::InvalidShape)
-    }
-}
-
-fn normalized_last_write_sources(
+fn normalized_write_plan_cost(
     positions: ValidatedPositions<'_>,
     output_len: usize,
-    mut source_index: impl FnMut(usize, usize) -> usize,
-) -> Result<(NormalizedWritePlan, usize, usize), ResidentKernelError> {
-    let compute_work = positions
+) -> Result<(usize, usize), ResidentKernelError> {
+    let scan_work = positions
         .traversal_len()
-        .checked_add(
+        .checked_mul(output_len)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let compute_work = scan_work
+        .checked_add(positions.traversal_len())
+        .and_then(|work| {
             output_len
-                .checked_mul(4)
-                .ok_or(ResidentKernelError::InvalidShape)?,
-        )
+                .checked_mul(3)
+                .and_then(|tail| work.checked_add(tail))
+        })
         .ok_or(ResidentKernelError::InvalidShape)?;
     let index_bytes = output_len
         .checked_mul(core::mem::size_of::<Option<usize>>())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    // Selector-plan storage and the complete normalization/staging work are
-    // admitted before allocating the last-write table. The exact published
-    // footprint is admitted by the mutation plan after this bounded borrowed
-    // planning pass.
-    super::budget::PreparedKernel::new(
-        (),
-        super::budget::resident_cost! {
-            compute_work,
-            index_bytes,
-            ..super::budget::KernelCostEstimate::default()
-        },
-    )
-    .admit()?
-    .into_plan();
+    Ok((compute_work, index_bytes))
+}
+
+fn last_source_for_destination(
+    positions: ValidatedPositions<'_>,
+    destination: usize,
+    mut source_index: impl FnMut(usize, usize) -> usize,
+) -> Result<Option<usize>, ResidentKernelError> {
+    let mut last = None;
+    positions.try_for_each(|ordinal, position| {
+        if position == destination {
+            last = Some(source_index(ordinal, position));
+        }
+        Ok(())
+    })?;
+    Ok(last)
+}
+
+fn materialize_normalized_last_write_sources(
+    positions: ValidatedPositions<'_>,
+    output_len: usize,
+    mut source_index: impl FnMut(usize, usize) -> usize,
+) -> Result<NormalizedWritePlan, ResidentKernelError> {
     let mut last_writes = vec![None; output_len];
     positions.try_for_each(|ordinal, position| {
         last_writes[position] = Some(source_index(ordinal, position));
         Ok(())
     })?;
-    Ok((
-        NormalizedWritePlan {
-            last_source_by_destination: last_writes.into_boxed_slice(),
-        },
-        compute_work,
-        index_bytes,
-    ))
+    Ok(NormalizedWritePlan {
+        last_source_by_destination: last_writes.into_boxed_slice(),
+    })
 }
 
 fn replace_f64(output: &mut [f64], mut next: impl FnMut(usize) -> f64) -> bool {
@@ -5282,8 +5481,8 @@ fn admit_dense_string_comparison(
         )?)?;
     }
     let mut cost = meter.estimate();
-    cost.output_elements = super::budget::checked_u64(output_len)?;
-    cost.output_bytes = super::budget::checked_u64(output_len)?;
+    cost.set_output_elements(super::budget::checked_u64(output_len)?);
+    cost.set_output_bytes(super::budget::checked_u64(output_len)?);
     super::budget::PreparedKernel::new((), cost)
         .admit()?
         .into_plan();
@@ -5460,8 +5659,8 @@ fn snapshot_comparison(
     super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
-            comparison_work: footprint_work.comparison_work,
-            compute_work: footprint_work.compute_work
+            comparison_work: footprint_work.comparison_work(),
+            compute_work: footprint_work.compute_work()
                 .checked_add(super::budget::checked_u64(output_len)?)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements: output_len,
@@ -5658,10 +5857,10 @@ fn hold_state(
             super::budget::PreparedKernel::new(
                 (),
                 super::budget::resident_cost! {
-                    comparison_work: measured.comparison_work
+                    comparison_work: measured.comparison_work()
                         .checked_add(equality_work)
                         .ok_or(ResidentKernelError::InvalidShape)?,
-                    compute_work: measured.compute_work
+                    compute_work: measured.compute_work()
                         .checked_add(equality_work)
                         .and_then(|work| work.checked_add(super::budget::checked_u64(source.len()).ok()?))
                         .ok_or(ResidentKernelError::InvalidShape)?,
@@ -5744,6 +5943,9 @@ fn indexed_assign(
     // replay without staging heap copies.
     match (source, output) {
         (ResidentValueRef::Bool(source), ResidentValueMut::Bool(output)) => {
+            if positions.len() == 0 {
+                return Ok(false);
+            }
             let mut changed = false;
             positions.try_for_each(|ordinal, position| {
                 let next = source[source_index(ordinal, position)];
@@ -5754,6 +5956,9 @@ fn indexed_assign(
             Ok(changed)
         }
         (ResidentValueRef::Index(source), ResidentValueMut::Index(output)) => {
+            if positions.len() == 0 {
+                return Ok(false);
+            }
             let mut changed = false;
             positions.try_for_each(|ordinal, position| {
                 let next = source[source_index(ordinal, position)];
@@ -5764,6 +5969,9 @@ fn indexed_assign(
             Ok(changed)
         }
         (ResidentValueRef::F64(source), ResidentValueMut::F64(output)) => {
+            if positions.len() == 0 {
+                return Ok(false);
+            }
             let mut changed = false;
             positions.try_for_each(|ordinal, position| {
                 let next = source[source_index(ordinal, position)];
@@ -5774,15 +5982,22 @@ fn indexed_assign(
             Ok(changed)
         }
         (ResidentValueRef::String(source), ResidentValueMut::String(output)) => {
-            let (plan, compute_work, index_bytes) =
-                normalized_last_write_sources(positions, output_len, source_index)?;
+            if positions.len() == 0 {
+                return Ok(false);
+            }
+            let (compute_work, index_bytes) = normalized_write_plan_cost(positions, output_len)?;
             let mut output_payload = 0u64;
-            for (current, selected) in output.iter().zip(&plan.last_source_by_destination) {
+            let mut publication_work = 0u64;
+            for (destination, current) in output.iter().enumerate() {
+                let selected = last_source_for_destination(positions, destination, source_index)?;
                 let next = selected
                     .map(|source_index| &source[source_index])
                     .unwrap_or(current);
                 output_payload = output_payload
                     .checked_add(super::budget::checked_u64(next.len())?)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                publication_work = publication_work
+                    .checked_add(super::budget::checked_u64(current.len().max(next.len()))?)
                     .ok_or(ResidentKernelError::InvalidShape)?;
             }
             let container_bytes = super::budget::checked_u64(
@@ -5790,9 +6005,11 @@ fn indexed_assign(
                     .checked_mul(core::mem::size_of::<String>())
                     .ok_or(ResidentKernelError::InvalidShape)?,
             )?;
-            let plan_nodes = plan.retained_nodes()?;
+            let plan_nodes = super::budget::checked_u64(output_len)?
+                .checked_add(1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
             let admitted = super::budget::PreparedMutationPlan::new(
-                plan,
+                (),
                 super::budget::PublishedOutputFootprint {
                     elements: super::budget::checked_u64(output_len)?,
                     retained_bytes: output_payload
@@ -5812,7 +6029,10 @@ fn indexed_assign(
                         .ok_or(ResidentKernelError::InvalidShape)?,
                 },
                 super::budget::resident_cost! {
-                    compute_work,
+                    comparison_work: publication_work,
+                    compute_work: super::budget::checked_u64(compute_work)?
+                        .checked_add(publication_work)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
                     temporary_bytes: output_payload,
                     container_bytes,
                     cloned_bytes: output_payload,
@@ -5821,7 +6041,9 @@ fn indexed_assign(
                 },
             )?
             .admit()?;
-            let plan = admitted.into_plan();
+            admitted.into_plan();
+            let plan =
+                materialize_normalized_last_write_sources(positions, output_len, source_index)?;
             let mut changed = false;
             let staged = output
                 .iter()
@@ -5840,11 +6062,13 @@ fn indexed_assign(
             Ok(changed)
         }
         (ResidentValueRef::Snapshot(source), ResidentValueMut::Snapshot(output)) => {
+            if positions.len() == 0 {
+                return Ok(false);
+            }
             let schemas = kernel
                 .snapshot_schemas()
                 .ok_or(ResidentKernelError::InvalidInput)?;
-            let (plan, compute_work, index_bytes) =
-                normalized_last_write_sources(positions, output_len, source_index)?;
+            let (compute_work, index_bytes) = normalized_write_plan_cost(positions, output_len)?;
             let mut meter = super::budget::ResidentBudgetMeter::default();
             let mut current_footprint = ValueFootprint::zero();
             for current in output.iter().flatten() {
@@ -5854,34 +6078,47 @@ fn indexed_assign(
                     )?)
                     .map_err(|_| ResidentKernelError::InvalidShape)?;
             }
-            let measured_current_and_final_nodes = meter.estimate().retained_nodes;
             let mut final_footprint = ValueFootprint::zero();
-            for (current, selected) in output.iter().zip(&plan.last_source_by_destination) {
+            let mut publication_equality_work = 0u64;
+            for (destination, current) in output.iter().enumerate() {
+                let selected = last_source_for_destination(positions, destination, source_index)?;
                 let next = selected
                     .map(|source_index| &source[source_index])
                     .unwrap_or(current);
                 if let Some(next) = next {
+                    let next_footprint = super::budget::measure_canonical_value_footprint(
+                        &mut meter, next, schemas,
+                    )?;
                     final_footprint = final_footprint
-                        .checked_add(super::budget::measure_canonical_value_footprint(
-                            &mut meter, next, schemas,
-                        )?)
+                        .checked_add(next_footprint)
                         .map_err(|_| ResidentKernelError::InvalidShape)?;
+                    if let Some(current) = current {
+                        let current_footprint = super::budget::measure_canonical_value_footprint(
+                            &mut meter, current, schemas,
+                        )?;
+                        publication_equality_work = publication_equality_work
+                            .checked_add(super::budget::projected_language_equality_work(
+                                schemas,
+                                current,
+                                current_footprint,
+                                next.schema(),
+                                next.shape().parameter_values().len(),
+                                next_footprint,
+                            )?)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                    }
                 }
             }
-            let final_nodes_measured = meter
-                .estimate()
-                .retained_nodes
-                .checked_sub(measured_current_and_final_nodes)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            debug_assert_eq!(final_nodes_measured, final_footprint.node_count);
             let container_bytes = super::budget::checked_u64(
                 output_len
                     .checked_mul(core::mem::size_of::<Option<mech_core::Value>>())
                     .ok_or(ResidentKernelError::InvalidShape)?,
             )?;
-            let plan_nodes = plan.retained_nodes()?;
+            let plan_nodes = super::budget::checked_u64(output_len)?
+                .checked_add(1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
             let admitted = super::budget::PreparedMutationPlan::new(
-                plan,
+                (),
                 super::budget::PublishedOutputFootprint {
                     elements: super::budget::checked_u64(output_len)?,
                     retained_bytes: final_footprint
@@ -5910,9 +6147,12 @@ fn indexed_assign(
                 {
                     let measured = meter.estimate();
                     super::budget::resident_cost! {
-                    comparison_work: measured.comparison_work,
-                    compute_work: measured.compute_work
+                    comparison_work: measured.comparison_work()
+                        .checked_add(publication_equality_work)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    compute_work: measured.compute_work()
                         .checked_add(super::budget::checked_u64(compute_work)?)
+                        .and_then(|work| work.checked_add(publication_equality_work))
                         .ok_or(ResidentKernelError::InvalidShape)?,
                     temporary_bytes: final_footprint.retained_bytes,
                     container_bytes,
@@ -5924,7 +6164,9 @@ fn indexed_assign(
             )?
             .admit()?;
             let mut changed = false;
-            let plan = admitted.into_plan();
+            admitted.into_plan();
+            let plan =
+                materialize_normalized_last_write_sources(positions, output_len, source_index)?;
             let staged = output
                 .iter()
                 .zip(plan.last_source_by_destination)
@@ -6005,6 +6247,9 @@ fn indexed_assign_snapshot(
     if current_matrix.elements().len() != output_len {
         return Err(ResidentKernelError::InvalidShape);
     }
+    if positions.len() == 0 {
+        return Ok(false);
+    }
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -6029,11 +6274,25 @@ fn indexed_assign_snapshot(
         let column = position / source_rows;
         row * source_columns + column
     };
-    let mut assignment_footprint = ValueFootprint::zero();
-    let mut finalization_work = snapshot_data_finalization_work(
+    let mut execution_clone_footprint = ValueFootprint::zero();
+    let (final_output_footprint, finalization_work) = projected_snapshot_matrix_output(
         &mut footprint_meter,
         current_schema.body(),
         current.data(),
+        current_footprint,
+        source_schema.body(),
+        source.data(),
+        output_len,
+        |destination, meter| {
+            meter.charge_compute_work(super::budget::checked_u64(positions.traversal_len())?)?;
+            last_source_for_destination(positions, destination, |ordinal, position| {
+                match source_routing {
+                    ResolvedSourceRouting::ScalarBroadcast => 0,
+                    ResolvedSourceRouting::Positional => canonical_source_index(position),
+                    ResolvedSourceRouting::CompactSelectionOrder => ordinal,
+                }
+            })
+        },
     )?;
     positions.try_for_each(|ordinal, position| {
         let source_index = match source_routing {
@@ -6041,7 +6300,7 @@ fn indexed_assign_snapshot(
             ResolvedSourceRouting::Positional => canonical_source_index(position),
             ResolvedSourceRouting::CompactSelectionOrder => ordinal,
         };
-        assignment_footprint = assignment_footprint
+        execution_clone_footprint = execution_clone_footprint
             .checked_add(snapshot_element_clone_footprint(
                 &mut footprint_meter,
                 source_schema.body(),
@@ -6049,19 +6308,11 @@ fn indexed_assign_snapshot(
                 source_index,
             )?)
             .map_err(|_| ResidentKernelError::InvalidShape)?;
-        finalization_work = finalization_work
-            .checked_add(snapshot_element_finalization_work(
-                &mut footprint_meter,
-                source_schema.body(),
-                source.data(),
-                source_index,
-            )?)
-            .ok_or(ResidentKernelError::InvalidShape)?;
         Ok::<(), ResidentKernelError>(())
     })?;
     let cloned_bytes = current_bytes
         .checked_add(source_bytes)
-        .and_then(|bytes| bytes.checked_add(assignment_footprint.retained_bytes))
+        .and_then(|bytes| bytes.checked_add(execution_clone_footprint.retained_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let container_bytes = super::budget::checked_u64(
         output_len
@@ -6070,18 +6321,6 @@ fn indexed_assign_snapshot(
             .ok_or(ResidentKernelError::InvalidShape)?,
     )?;
     let footprint_work = footprint_meter.estimate();
-    let final_output_footprint = ValueFootprint {
-        encoded_bytes: current_footprint
-            .encoded_bytes
-            .checked_add(assignment_footprint.encoded_bytes)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        retained_bytes: current_bytes
-            .checked_add(assignment_footprint.retained_bytes)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        node_count: current_nodes
-            .checked_add(assignment_footprint.node_count)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-    };
     let metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -6094,12 +6333,14 @@ fn indexed_assign_snapshot(
         final_output_footprint,
     )?;
     let cost = super::budget::resident_cost! {
-        comparison_work: footprint_work.comparison_work
+        comparison_work: footprint_work.comparison_work()
             .checked_add(publication_equality_work)
             .ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: footprint_work
-            .compute_work
-            .checked_add(super::budget::checked_u64(positions.len())?)
+            .compute_work()
+            .checked_add(super::budget::checked_u64(
+                positions.len(),
+            )?)
             .and_then(|work| work.checked_add(publication_equality_work))
             .ok_or(ResidentKernelError::InvalidShape)?,
         temporary_bytes: cloned_bytes
@@ -6120,10 +6361,10 @@ fn indexed_assign_snapshot(
             current_persistent: current_nodes
                 .checked_add(source_nodes)
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            normalized_plan: assignment_footprint.node_count,
+            normalized_plan: 0,
             temporary_draft: current_nodes
                 .checked_add(source_nodes)
-                .and_then(|nodes| nodes.checked_add(assignment_footprint.node_count))
+                .and_then(|nodes| nodes.checked_add(execution_clone_footprint.node_count))
                 .ok_or(ResidentKernelError::InvalidShape)?,
         },
         cost,
@@ -6194,6 +6435,97 @@ fn matrix_selection_coordinates(
         | ResolvedSelectionMode::TableColumn { .. }
         | ResolvedSelectionMode::MapKey => Err(ResidentKernelError::InvalidInput),
     }
+}
+
+fn matrix_selection_for_each_coordinate(
+    plan: &MatrixSelectionAssignPlan,
+    inputs: &dyn ResidentKernelInputs,
+    mut visit: impl FnMut(usize, usize, usize) -> Result<(), ResidentKernelError>,
+) -> Result<usize, ResidentKernelError> {
+    let mut ordinal = 0usize;
+    let mut emit = |row: usize, column: usize| {
+        let current = ordinal;
+        ordinal = ordinal
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        visit(current, row, column)
+    };
+    let selector = |index: usize| {
+        inputs
+            .get(index + 1)
+            .ok_or(ResidentKernelError::InvalidInput)
+    };
+    match plan.mode {
+        ResolvedSelectionMode::Whole => {
+            for row in 0..plan.rows {
+                for column in 0..plan.columns {
+                    emit(row, column)?;
+                }
+            }
+        }
+        ResolvedSelectionMode::Rows => {
+            selector_for_each_access_index(selector(0)?, plan.rows, |row| {
+                for column in 0..plan.columns {
+                    emit(row, column)?;
+                }
+                Ok(())
+            })?;
+        }
+        ResolvedSelectionMode::Columns => {
+            for row in 0..plan.rows {
+                selector_for_each_access_index(selector(0)?, plan.columns, |column| {
+                    emit(row, column)
+                })?;
+            }
+        }
+        ResolvedSelectionMode::Rectangle => {
+            selector_for_each_access_index(selector(0)?, plan.rows, |row| {
+                selector_for_each_access_index(selector(1)?, plan.columns, |column| {
+                    emit(row, column)
+                })
+            })?;
+        }
+        ResolvedSelectionMode::LinearScalar
+        | ResolvedSelectionMode::LinearGather
+        | ResolvedSelectionMode::Field { .. }
+        | ResolvedSelectionMode::TableColumn { .. }
+        | ResolvedSelectionMode::MapKey => return Err(ResidentKernelError::InvalidInput),
+    }
+    Ok(ordinal)
+}
+
+fn matrix_selection_last_source(
+    plan: &MatrixSelectionAssignPlan,
+    inputs: &dyn ResidentKernelInputs,
+    destination: usize,
+    snapshot_layout: bool,
+    meter: &mut super::budget::ResidentBudgetMeter,
+) -> Result<Option<usize>, ResidentKernelError> {
+    let mut selected = None;
+    matrix_selection_for_each_coordinate(plan, inputs, |ordinal, row, column| {
+        meter.charge_compute_work(1)?;
+        let candidate = if snapshot_layout {
+            row.checked_mul(plan.columns)
+                .and_then(|offset| offset.checked_add(column))
+        } else {
+            column
+                .checked_mul(plan.rows)
+                .and_then(|offset| offset.checked_add(row))
+        }
+        .ok_or(ResidentKernelError::InvalidShape)?;
+        if candidate == destination {
+            selected = Some(match plan.source_routing {
+                ResolvedSourceRouting::ScalarBroadcast => 0,
+                ResolvedSourceRouting::Positional => candidate,
+                ResolvedSourceRouting::CompactSelectionOrder if snapshot_layout => ordinal,
+                ResolvedSourceRouting::CompactSelectionOrder => {
+                    dense_compact_source_index(ordinal, plan)?
+                }
+            });
+        }
+        Ok(())
+    })?;
+    Ok(selected)
 }
 
 fn dense_compact_source_index(
@@ -6275,6 +6607,7 @@ fn assign_dense_matrix_selection<T: Clone>(
 }
 
 fn matrix_assignment_clone_amplification(
+    meter: &mut super::budget::ResidentBudgetMeter,
     source: ResidentValueRef<'_>,
     schemas: &mech_core::SchemaTable,
     write_count: usize,
@@ -6294,7 +6627,6 @@ fn matrix_assignment_clone_amplification(
             ))
         }
         ResidentValueRef::Snapshot([Some(value)]) => {
-            let mut meter = super::budget::ResidentBudgetMeter::default();
             let schema = value
                 .validate_against(schemas)
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -6304,15 +6636,13 @@ fn matrix_assignment_clone_amplification(
                     let mut maximum = ValueFootprint::zero();
                     for index in 0..values.len() {
                         let mut next = ValueFootprint::zero();
-                        selected_sequence_footprint(&mut next, &mut meter, element, values, index)?;
+                        selected_sequence_footprint(&mut next, meter, element, values, index)?;
                         maximum.retained_bytes = maximum.retained_bytes.max(next.retained_bytes);
                         maximum.node_count = maximum.node_count.max(next.node_count);
                     }
                     maximum
                 }
-                (body, data) => {
-                    super::budget::measure_canonical_data_footprint(&mut meter, body, data)?
-                }
+                (body, data) => super::budget::measure_canonical_data_footprint(meter, body, data)?,
             };
             let amplified = maximum
                 .checked_multiply(multiplicity)
@@ -6445,6 +6775,67 @@ fn indexed_assign_matrix_selection(
     {
         return Err(ResidentKernelError::InvalidOutput);
     }
+    let actual_source_len = match source_ref {
+        ResidentValueRef::Snapshot([Some(value)]) => match value.data() {
+            ValueData::Matrix(matrix) => matrix.elements().len(),
+            _ => 1,
+        },
+        ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
+        source => source.len(),
+    };
+    let actual_output_len = match &output {
+        ResidentValueMut::Snapshot([Some(value)]) => match value.data() {
+            ValueData::Matrix(matrix) => matrix.elements().len(),
+            _ => return Err(ResidentKernelError::InvalidOutput),
+        },
+        ResidentValueMut::Snapshot(_) => return Err(ResidentKernelError::InvalidOutput),
+        ResidentValueMut::Bool(values) => values.len(),
+        ResidentValueMut::Index(values) => values.len(),
+        ResidentValueMut::F64(values) => values.len(),
+        ResidentValueMut::String(values) => values.len(),
+    };
+    if actual_source_len != source_len || actual_output_len != output_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let selector = |index: usize| {
+        inputs
+            .get(index + 1)
+            .ok_or(ResidentKernelError::InvalidInput)
+    };
+    let (selected_rows_count, selected_columns_count) = match plan.mode {
+        ResolvedSelectionMode::Whole => (plan.rows, plan.columns),
+        ResolvedSelectionMode::Rows => (
+            selector_access_count(selector(0)?, plan.rows)?,
+            plan.columns,
+        ),
+        ResolvedSelectionMode::Columns => (
+            plan.rows,
+            selector_access_count(selector(0)?, plan.columns)?,
+        ),
+        ResolvedSelectionMode::Rectangle => (
+            selector_access_count(selector(0)?, plan.rows)?,
+            selector_access_count(selector(1)?, plan.columns)?,
+        ),
+        ResolvedSelectionMode::LinearScalar
+        | ResolvedSelectionMode::LinearGather
+        | ResolvedSelectionMode::Field { .. }
+        | ResolvedSelectionMode::TableColumn { .. }
+        | ResolvedSelectionMode::MapKey => return Err(ResidentKernelError::InvalidInput),
+    };
+    let write_count = selected_rows_count
+        .checked_mul(selected_columns_count)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let source_shape_valid = match plan.source_routing {
+        ResolvedSourceRouting::ScalarBroadcast => source_len == 1,
+        ResolvedSourceRouting::Positional => source_len == output_len,
+        ResolvedSourceRouting::CompactSelectionOrder => source_len == write_count,
+    };
+    if !source_shape_valid {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    if write_count == 0 {
+        return Ok(false);
+    }
     let (source_clone_bytes, source_materialization_bytes, source_nodes) = match source_ref {
         ResidentValueRef::Snapshot(_) => {
             let (cloned, materialized, _, nodes) = value_cost(&mut footprint_meter, source_ref)?;
@@ -6538,75 +6929,178 @@ fn indexed_assign_matrix_selection(
             .checked_add(nodes)
             .ok_or(ResidentKernelError::InvalidShape)?;
     }
-    let selector = |index: usize| {
-        inputs
-            .get(index + 1)
-            .ok_or(ResidentKernelError::InvalidInput)
-    };
-    let (selected_rows_count, selected_columns_count) = match plan.mode {
-        ResolvedSelectionMode::Whole => (plan.rows, plan.columns),
-        ResolvedSelectionMode::Rows => (
-            selector_access_count(selector(0)?, plan.rows)?,
-            plan.columns,
-        ),
-        ResolvedSelectionMode::Columns => (
-            plan.rows,
-            selector_access_count(selector(0)?, plan.columns)?,
-        ),
-        ResolvedSelectionMode::Rectangle => (
-            selector_access_count(selector(0)?, plan.rows)?,
-            selector_access_count(selector(1)?, plan.columns)?,
-        ),
-        ResolvedSelectionMode::LinearScalar
-        | ResolvedSelectionMode::LinearGather
-        | ResolvedSelectionMode::Field { .. }
-        | ResolvedSelectionMode::TableColumn { .. }
-        | ResolvedSelectionMode::MapKey => return Err(ResidentKernelError::InvalidInput),
-    };
-    let write_count = selected_rows_count
-        .checked_mul(selected_columns_count)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let (assignment_clone_bytes, assignment_clone_nodes) =
-        matrix_assignment_clone_amplification(source_ref, schemas, write_count)?;
+    let (assignment_clone_bytes, assignment_clone_nodes) = matrix_assignment_clone_amplification(
+        &mut footprint_meter,
+        source_ref,
+        schemas,
+        write_count,
+    )?;
     let coordinate_bytes = super::budget::checked_u64(
         selected_rows_count
             .checked_add(selected_columns_count)
             .and_then(|count| count.checked_mul(core::mem::size_of::<usize>()))
             .ok_or(ResidentKernelError::InvalidShape)?,
     )?;
+    let coordinate_nodes = super::budget::checked_u64(
+        selected_rows_count
+            .checked_add(selected_columns_count)
+            .and_then(|count| count.checked_add(2))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    let mut final_output_bytes = output_bytes;
+    let mut final_output_nodes = output_nodes;
+    let mut publication_comparison_work = super::budget::checked_u64(output_len)?;
+    let mut additional_temporary_bytes = 0u64;
+    let mut additional_cloned_bytes = 0u64;
+    let snapshot_finalization_work = match (source_ref, &output) {
+        (ResidentValueRef::String(source), ResidentValueMut::String(current)) => {
+            let mut final_payload = 0u64;
+            publication_comparison_work = 0;
+            for (destination, current) in current.iter().enumerate() {
+                let selected = matrix_selection_last_source(
+                    plan,
+                    inputs,
+                    destination,
+                    false,
+                    &mut footprint_meter,
+                )?;
+                let next = match selected {
+                    Some(source_index) => source
+                        .get(source_index)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    None => current,
+                };
+                final_payload = final_payload
+                    .checked_add(super::budget::checked_u64(next.len())?)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                publication_comparison_work = publication_comparison_work
+                    .checked_add(super::budget::checked_u64(current.len().max(next.len()))?)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+            }
+            let container_bytes = super::budget::checked_u64(
+                output_len
+                    .checked_mul(core::mem::size_of::<String>())
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
+            final_output_bytes = final_payload
+                .checked_add(container_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            final_output_nodes = super::budget::checked_u64(
+                output_len
+                    .checked_add(1)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
+            // The staged final vector remains live while publication clones
+            // its strings into the output resident.
+            additional_temporary_bytes = final_output_bytes;
+            additional_cloned_bytes = final_payload;
+            None
+        }
+        (
+            ResidentValueRef::Snapshot([Some(source)]),
+            ResidentValueMut::Snapshot([Some(current)]),
+        ) => {
+            let current_schema = current
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            let source_schema = source
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            let current_footprint = super::budget::measure_canonical_value_footprint(
+                &mut footprint_meter,
+                current,
+                schemas,
+            )
+            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            let (final_footprint, finalization_work) = projected_snapshot_matrix_output(
+                &mut footprint_meter,
+                current_schema.body(),
+                current.data(),
+                current_footprint,
+                source_schema.body(),
+                source.data(),
+                output_len,
+                |destination, meter| {
+                    matrix_selection_last_source(plan, inputs, destination, true, meter)
+                },
+            )?;
+            let metadata = kernel
+                .snapshot_output()
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            publication_comparison_work = super::budget::projected_language_equality_work(
+                schemas,
+                current,
+                current_footprint,
+                metadata.schema,
+                metadata.shape.parameter_values().len(),
+                final_footprint,
+            )?;
+            final_output_bytes = final_footprint.retained_bytes;
+            final_output_nodes = final_footprint.node_count;
+            additional_temporary_bytes = final_footprint.retained_bytes;
+            additional_cloned_bytes = final_footprint.retained_bytes;
+            Some(finalization_work)
+        }
+        (ResidentValueRef::Bool(_), ResidentValueMut::Bool(_))
+        | (ResidentValueRef::Index(_), ResidentValueMut::Index(_))
+        | (ResidentValueRef::F64(_), ResidentValueMut::F64(_)) => None,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
     let temporary_bytes = output_materialization_bytes
         .checked_add(source_materialization_bytes)
         .and_then(|bytes| bytes.checked_add(selector_materialization_bytes))
         .and_then(|bytes| bytes.checked_add(coordinate_bytes))
         .and_then(|bytes| bytes.checked_add(assignment_clone_bytes))
+        .and_then(|bytes| bytes.checked_add(additional_temporary_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let cloned_bytes = output_bytes
         .checked_add(source_clone_bytes)
         .and_then(|bytes| bytes.checked_add(selector_clone_bytes))
         .and_then(|bytes| bytes.checked_add(assignment_clone_bytes))
+        .and_then(|bytes| bytes.checked_add(additional_cloned_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let retained_nodes = output_nodes
+    let current_persistent_nodes = output_nodes
+        .checked_add(source_nodes)
+        .and_then(|nodes| nodes.checked_add(selector_nodes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let temporary_draft_nodes = output_nodes
         .checked_add(source_nodes)
         .and_then(|nodes| nodes.checked_add(selector_nodes))
         .and_then(|nodes| nodes.checked_add(assignment_clone_nodes))
+        .and_then(|nodes| nodes.checked_add(final_output_nodes))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let final_output_bytes = output_bytes
-        .checked_add(assignment_clone_bytes)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    super::budget::PreparedKernel::new(
-        (),
+    let measured = footprint_meter.estimate();
+    let snapshot_finalization_work = super::budget::PreparedMutationPlan::new(
+        snapshot_finalization_work,
+        super::budget::PublishedOutputFootprint {
+            elements: super::budget::checked_u64(output_len)?,
+            retained_bytes: final_output_bytes,
+            retained_nodes: final_output_nodes,
+        },
+        super::budget::MutationRetainedNodeFootprint {
+            current_persistent: current_persistent_nodes,
+            normalized_plan: coordinate_nodes,
+            temporary_draft: temporary_draft_nodes,
+        },
         super::budget::resident_cost! {
-            compute_work: output_len
-                .checked_add(write_count)
+            comparison_work: measured
+                .comparison_work()
+                .checked_add(publication_comparison_work)
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            output_elements: output_len,
-            output_bytes: final_output_bytes,
+            compute_work: measured
+                .compute_work()
+                .checked_add(super::budget::checked_u64(
+                    output_len
+                .checked_add(write_count)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )?)
+                .and_then(|work| work.checked_add(publication_comparison_work))
+                .ok_or(ResidentKernelError::InvalidShape)?,
             temporary_bytes,
             cloned_bytes,
-            retained_nodes,
             ..super::budget::KernelCostEstimate::default()
         },
-    )
+    )?
     .admit()?
     .into_plan();
     let selectors = plan
@@ -6725,7 +7219,11 @@ fn indexed_assign_matrix_selection(
                         .ok_or(ResidentKernelError::InvalidShape)?;
                 }
             }
-            let next = finalize_snapshot_data(kernel, ValueDataDraft::Matrix(next))?;
+            let next = finalize_snapshot_data_with_work_budget(
+                kernel,
+                ValueDataDraft::Matrix(next),
+                Some(snapshot_finalization_work.ok_or(ResidentKernelError::InvalidOutput)?),
+            )?;
             let changed = !current
                 .language_eq(schemas, &next, schemas)
                 .map_err(|_| ResidentKernelError::InvalidOutput)?;
@@ -6988,11 +7486,11 @@ fn indexed_assign_snapshot_aggregate(
     )?;
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
-        comparison_work: footprint_work.comparison_work
+        comparison_work: footprint_work.comparison_work()
             .checked_add(publication_equality_work)
             .ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: measured_nodes
-            .checked_add(footprint_work.compute_work)
+            .checked_add(footprint_work.compute_work())
             .and_then(|work| work.checked_add(publication_equality_work))
             .ok_or(ResidentKernelError::InvalidShape)?,
         temporary_bytes: current_bytes
@@ -8220,17 +8718,17 @@ fn admit_snapshot_equality_work(
     super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
-            comparison_work: measured.comparison_work
+            comparison_work: measured.comparison_work()
                 .checked_add(equality_work)
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            compute_work: measured.compute_work
+            compute_work: measured.compute_work()
                 .checked_add(equality_work)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements: 1,
             output_bytes: core::mem::size_of::<u8>(),
             temporary_bytes: if materializes_canonical_bytes { encoded_bytes } else { 0 },
             cloned_bytes: if materializes_canonical_bytes { encoded_bytes } else { 0 },
-            retained_nodes: measured.retained_nodes,
+            retained_nodes: measured.retained_nodes(),
             ..super::budget::KernelCostEstimate::default()
         },
     )
@@ -8536,10 +9034,10 @@ fn transpose_snapshot(
     super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
-            comparison_work: measured.comparison_work
+            comparison_work: measured.comparison_work()
                 .checked_add(publication_work)
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            compute_work: measured.compute_work
+            compute_work: measured.compute_work()
                 .checked_add(super::budget::checked_u64(count)?)
                 .and_then(|work| work.checked_add(publication_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
@@ -8552,7 +9050,7 @@ fn transpose_snapshot(
             cloned_bytes: input_bytes
                 .checked_mul(2)
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            retained_nodes: measured.retained_nodes
+            retained_nodes: measured.retained_nodes()
                 .checked_add(retained_nodes.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             ..super::budget::KernelCostEstimate::default()
@@ -9048,11 +9546,11 @@ fn constructor_snapshot_inputs(
     };
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
-        comparison_work: footprint_work.comparison_work
+        comparison_work: footprint_work.comparison_work()
             .checked_add(change_detection_work)
             .ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: super::budget::checked_u64(output_count)?
-            .checked_add(footprint_work.compute_work)
+            .checked_add(footprint_work.compute_work())
             .and_then(|work| work.checked_add(change_detection_work))
             .ok_or(ResidentKernelError::InvalidShape)?,
         output_elements: output_count,
@@ -9065,7 +9563,7 @@ fn constructor_snapshot_inputs(
             .ok_or(ResidentKernelError::InvalidShape)?,
         container_bytes,
         retained_nodes: super::budget::checked_cost_sum(&[
-            footprint_work.retained_nodes,
+            footprint_work.retained_nodes(),
             staged_nodes,
             result_nodes,
             final_nodes,
@@ -10502,7 +11000,7 @@ fn map_access_entry_for_selector(
 ) -> Result<(usize, u64), ResidentKernelError> {
     let mut meter = super::budget::ResidentBudgetMeter::default();
     let ordinal = map_access_entry_for_selector_with_meter(map, key_schema, selector, &mut meter)?;
-    Ok((ordinal, meter.estimate().comparison_work))
+    Ok((ordinal, meter.estimate().comparison_work()))
 }
 
 fn selector_value(
@@ -11503,12 +12001,12 @@ fn snapshot_access(
         node_phases,
         super::budget::resident_cost! {
             comparison_work: footprint_work
-                .comparison_work
+                .comparison_work()
                 .checked_add(publication_work)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             compute_work: super::budget::checked_u64(selector_cost.elements)?
                 .checked_add(super::budget::checked_u64(output_cost.count)?)
-                .and_then(|work| work.checked_add(footprint_work.compute_work))
+                .and_then(|work| work.checked_add(footprint_work.compute_work()))
                 .and_then(|work| work.checked_add(publication_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             temporary_bytes: output_retained_bytes
@@ -11520,7 +12018,7 @@ fn snapshot_access(
                 .ok_or(ResidentKernelError::InvalidShape)?,
             selector_bytes: selector_cost
                 .retained_bytes
-                .checked_add(footprint_work.selector_bytes)
+                .checked_add(footprint_work.temporary_bytes())
                 .ok_or(ResidentKernelError::InvalidShape)?,
             index_bytes: coordinate_bytes,
             ..super::budget::KernelCostEstimate::default()
@@ -11837,12 +12335,12 @@ fn preflight_snapshot_arithmetic(
     super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
-            comparison_work: measured.comparison_work
+            comparison_work: measured.comparison_work()
                 .checked_add(publication_work)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             compute_work: super::budget::checked_u64(output_elements)?
                 .checked_add(super::budget::checked_u64(additional_compute_work)?)
-                .and_then(|work| work.checked_add(measured.compute_work))
+                .and_then(|work| work.checked_add(measured.compute_work()))
                 .and_then(|work| work.checked_add(publication_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements,
@@ -11851,7 +12349,7 @@ fn preflight_snapshot_arithmetic(
                 .checked_add(draft_bytes)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             cloned_bytes,
-            retained_nodes: measured.retained_nodes
+            retained_nodes: measured.retained_nodes()
                 .checked_add(output_nodes.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             ..super::budget::KernelCostEstimate::default()
@@ -12552,13 +13050,6 @@ fn write_snapshot_data_with_work_budget(
     Ok(changed)
 }
 
-fn finalize_snapshot_data(
-    kernel: &BoundResidentKernel,
-    data: ValueDataDraft,
-) -> Result<mech_core::Value, ResidentKernelError> {
-    finalize_snapshot_data_with_work_budget(kernel, data, None)
-}
-
 fn finalize_snapshot_data_with_work_budget(
     kernel: &BoundResidentKernel,
     data: ValueDataDraft,
@@ -12870,22 +13361,28 @@ fn matrix_solve_f32_snapshot(
         _ => 0,
     };
     let mut supplemental = meter.estimate();
-    supplemental.comparison_work = supplemental
-        .comparison_work
-        .checked_add(publication_work)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    supplemental.compute_work = supplemental
-        .compute_work
-        .checked_add(publication_work)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    supplemental.retained_nodes = supplemental
-        .retained_nodes
-        .checked_add(
-            output_nodes
-                .checked_mul(2)
-                .ok_or(ResidentKernelError::InvalidShape)?,
-        )
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    supplemental.set_comparison_work(
+        supplemental
+            .comparison_work()
+            .checked_add(publication_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    supplemental.set_compute_work(
+        supplemental
+            .compute_work()
+            .checked_add(publication_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    supplemental.set_retained_nodes(
+        supplemental
+            .retained_nodes()
+            .checked_add(
+                output_nodes
+                    .checked_mul(2)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    );
     admit_matrix_solve(
         rows,
         right_columns,
@@ -15346,6 +15843,92 @@ mod tests {
     }
 
     #[test]
+    fn partial_string_matrix_assignment_admits_the_complete_published_value() {
+        let (schemas, ids) = test_schema_table([SchemaBody::String, SchemaBody::Index]);
+        let selector_schema = ids[1];
+        let selector_shape = schemas
+            .get(selector_schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let plan = MatrixSelectionAssignPlan {
+            selectors: vec![SnapshotAccessSelectorLayout {
+                schema: selector_schema,
+                shape: selector_shape,
+                resident_shape: ResidentShape::SCALAR,
+            }]
+            .into_boxed_slice(),
+            mode: ResolvedSelectionMode::Columns,
+            rows: 1,
+            columns: 3,
+            source_rows: 1,
+            source_columns: 1,
+            source_routing: ResolvedSourceRouting::ScalarBroadcast,
+        };
+        let kernel = BoundResidentKernel::new(indexed_assign_matrix_selection, Box::new([]))
+            .with_retained_state(Arc::new(plan))
+            .with_snapshot_schemas(schemas);
+        let source = ["replacement".to_owned()];
+        let selected_column = [1_u64];
+        let inputs = [
+            ResidentValueRef::String(&source),
+            ResidentValueRef::Index(&selected_column),
+        ];
+        let mut output = [
+            "a".repeat(6 * 1024 * 1024),
+            "b".repeat(6 * 1024 * 1024),
+            "c".repeat(6 * 1024 * 1024),
+        ];
+        let previous = output.clone();
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::String(&mut output)),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(output, previous);
+    }
+
+    #[test]
+    fn empty_string_matrix_selection_returns_before_output_sized_planning() {
+        let (schemas, ids) = test_schema_table([SchemaBody::String, SchemaBody::Index]);
+        let selector_schema = ids[1];
+        let selector_shape = schemas
+            .get(selector_schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let plan = MatrixSelectionAssignPlan {
+            selectors: vec![SnapshotAccessSelectorLayout {
+                schema: selector_schema,
+                shape: selector_shape,
+                resident_shape: ResidentShape::SCALAR,
+            }]
+            .into_boxed_slice(),
+            mode: ResolvedSelectionMode::Columns,
+            rows: 1,
+            columns: 2,
+            source_rows: 1,
+            source_columns: 1,
+            source_routing: ResolvedSourceRouting::ScalarBroadcast,
+        };
+        let kernel = BoundResidentKernel::new(indexed_assign_matrix_selection, Box::new([]))
+            .with_retained_state(Arc::new(plan))
+            .with_snapshot_schemas(schemas);
+        let source = ["replacement".to_owned()];
+        let selected_columns = Vec::<u64>::new();
+        let inputs = [
+            ResidentValueRef::String(&source),
+            ResidentValueRef::Index(&selected_columns),
+        ];
+        let mut output = ["a".repeat(9 * 1024 * 1024), "b".repeat(9 * 1024 * 1024)];
+        let previous = output.clone();
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::String(&mut output)),
+            Ok(false),
+        );
+        assert_eq!(output, previous);
+    }
+
+    #[test]
     fn snapshot_u64_matrix_assignment_is_schema_aware_and_atomic() {
         let u64_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
         let matrix_body = SchemaBody::Matrix {
@@ -15436,6 +16019,141 @@ mod tests {
                 ValueData::U64(9),
                 ValueData::U64(4)
             ]
+        ));
+    }
+
+    #[test]
+    fn snapshot_whole_matrix_selection_carries_finalization_into_publication() {
+        let scalar_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let matrix_body = SchemaBody::Matrix {
+            element: Box::new(scalar_body.clone()),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(2),
+                mech_core::DimensionExpr::Constant(2),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([scalar_body, matrix_body]);
+        let [scalar_schema, matrix_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let plan = MatrixSelectionAssignPlan {
+            selectors: Box::new([]),
+            mode: ResolvedSelectionMode::Whole,
+            rows: 2,
+            columns: 2,
+            source_rows: 1,
+            source_columns: 1,
+            source_routing: ResolvedSourceRouting::ScalarBroadcast,
+        };
+        let kernel = BoundResidentKernel::new(indexed_assign_matrix_selection, Box::new([]))
+            .with_retained_state(Arc::new(plan))
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: *matrix_schema,
+                schema_key: schemas.entry(*matrix_schema).unwrap().key(),
+                shape: schemas
+                    .get(*matrix_schema)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+            .with_snapshot_schemas(schemas.clone());
+        let source = [Some(test_value(
+            &schemas,
+            *scalar_schema,
+            ValueDataDraft::U64(9),
+        ))];
+        let current = test_value(
+            &schemas,
+            *matrix_schema,
+            ValueDataDraft::Matrix(
+                [1, 2, 3, 4]
+                    .into_iter()
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        );
+        let inputs = [ResidentValueRef::Snapshot(&source)];
+        let mut output = [Some(current)];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Ok(true),
+        );
+        let ValueData::Matrix(values) = output[0].as_ref().unwrap().data() else {
+            panic!("assignment output must remain a matrix")
+        };
+        assert!(matches!(
+            values.elements().to_values().as_slice(),
+            [
+                ValueData::U64(9),
+                ValueData::U64(9),
+                ValueData::U64(9),
+                ValueData::U64(9)
+            ]
+        ));
+    }
+
+    #[test]
+    fn snapshot_nested_matrix_selection_plans_recursive_final_storage() {
+        let scalar_body = SchemaBody::Tuple(vec![SchemaBody::Bool].into_boxed_slice());
+        let matrix_body = SchemaBody::Matrix {
+            element: Box::new(scalar_body.clone()),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(2),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([scalar_body, matrix_body]);
+        let [scalar_schema, matrix_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let plan = MatrixSelectionAssignPlan {
+            selectors: Box::new([]),
+            mode: ResolvedSelectionMode::Whole,
+            rows: 1,
+            columns: 2,
+            source_rows: 1,
+            source_columns: 1,
+            source_routing: ResolvedSourceRouting::ScalarBroadcast,
+        };
+        let kernel = BoundResidentKernel::new(indexed_assign_matrix_selection, Box::new([]))
+            .with_retained_state(Arc::new(plan))
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: *matrix_schema,
+                schema_key: schemas.entry(*matrix_schema).unwrap().key(),
+                shape: schemas
+                    .get(*matrix_schema)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+            .with_snapshot_schemas(schemas.clone());
+        let tuple =
+            |value| ValueDataDraft::Tuple(vec![ValueDataDraft::Bool(value)].into_boxed_slice());
+        let source = [Some(test_value(&schemas, *scalar_schema, tuple(true)))];
+        let current = test_value(
+            &schemas,
+            *matrix_schema,
+            ValueDataDraft::Matrix(vec![tuple(false), tuple(false)].into_boxed_slice()),
+        );
+        let inputs = [ResidentValueRef::Snapshot(&source)];
+        let mut output = [Some(current)];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Ok(true),
+        );
+        let ValueData::Matrix(values) = output[0].as_ref().unwrap().data() else {
+            panic!("assignment output must remain a matrix")
+        };
+        assert!(matches!(
+            values.elements().to_values().as_slice(),
+            [ValueData::Tuple(_), ValueData::Tuple(_)]
         ));
     }
 

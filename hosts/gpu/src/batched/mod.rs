@@ -34,6 +34,77 @@ const SIMD_LANES: usize = 4;
 const FIXED_SHAPE_INTEGRITY_WORDS: usize = 2;
 const MAX_STATIC_SELECTOR_ELEMENTS: usize = 65_536;
 const MAX_STATIC_SELECTOR_SOURCE_STEPS: usize = 65_536;
+const MAX_SCALAR_INSTRUCTIONS: u64 = 16_777_216;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ScalarInstructionExpansion {
+    pub existing: u64,
+    pub selected_rows: u64,
+    pub selected_columns: u64,
+    pub instructions_per_element: u64,
+    pub additional: u64,
+    pub total: u64,
+}
+
+pub fn plan_scalar_instruction_expansion(
+    existing: usize,
+    selected_rows: usize,
+    selected_columns: usize,
+    instructions_per_element: usize,
+) -> Result<ScalarInstructionExpansion, mech_core::MemoryPlanError> {
+    let existing =
+        u64::try_from(existing).map_err(|_| mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "existing scalar instructions",
+        })?;
+    let selected_rows = u64::try_from(selected_rows).map_err(|_| {
+        mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "selected rows",
+        }
+    })?;
+    let selected_columns = u64::try_from(selected_columns).map_err(|_| {
+        mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "selected columns",
+        }
+    })?;
+    let instructions_per_element = u64::try_from(instructions_per_element).map_err(|_| {
+        mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "instructions per element",
+        }
+    })?;
+    let additional = selected_rows
+        .checked_mul(selected_columns)
+        .and_then(|value| value.checked_mul(instructions_per_element))
+        .ok_or(mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "scalar instruction expansion",
+        })?;
+    let total =
+        existing
+            .checked_add(additional)
+            .ok_or(mech_core::MemoryPlanError::ArithmeticOverflow {
+                field: "scalar instruction total",
+            })?;
+    if total > MAX_SCALAR_INSTRUCTIONS {
+        return Err(mech_core::MemoryPlanError::TargetLimitExceeded {
+            violation: mech_core::MemoryBudgetViolation {
+                owner: mech_core::MemoryObjectOwner::NodeScratch {
+                    node: NodeId::new(0),
+                    ordinal: 0,
+                },
+                dimension: mech_core::MemoryBudgetDimension::ScalarInstructions,
+                required: total,
+                limit: MAX_SCALAR_INSTRUCTIONS,
+            },
+        });
+    }
+    Ok(ScalarInstructionExpansion {
+        existing,
+        selected_rows,
+        selected_columns,
+        instructions_per_element,
+        additional,
+        total,
+    })
+}
 
 fn evaluate_operand_simd(operand: ScalarOperand, registers: &[f32x4]) -> f32x4 {
     match operand {
@@ -1861,6 +1932,7 @@ impl<'a> BatchCompiler<'a> {
             ));
         }
         let shape = self.shape(output)?;
+        self.reserve_scalar_instructions(shape.elements(), 1, 1)?;
         for component in 0..shape.elements() {
             let operands = inputs
                 .iter()
@@ -1916,6 +1988,7 @@ impl<'a> BatchCompiler<'a> {
                 result,
                 self.constant_indices(inputs[1], source.elements(), "linear")?,
             )?;
+            self.reserve_scalar_instructions(selector.len(), 1, 1)?;
             for (canonical_output, source_component) in selector.into_iter().enumerate() {
                 let result_row = canonical_output / result.columns;
                 let result_column = canonical_output % result.columns;
@@ -1952,6 +2025,7 @@ impl<'a> BatchCompiler<'a> {
                 result.columns
             ));
         }
+        self.reserve_scalar_instructions(rows.len(), columns.len(), 1)?;
         for (result_column, source_column) in columns.into_iter().enumerate() {
             for (result_row, source_row) in rows.iter().copied().enumerate() {
                 self.emit(
@@ -1975,6 +2049,7 @@ impl<'a> BatchCompiler<'a> {
             return Err("negate requires one input".to_owned());
         }
         let shape = self.shape(output)?;
+        self.reserve_scalar_instructions(shape.elements(), 1, 1)?;
         for component in 0..shape.elements() {
             let input = self.operand(inputs[0], component)?;
             self.emit(output, component, ScalarComputation::Negate(input));
@@ -1990,6 +2065,7 @@ impl<'a> BatchCompiler<'a> {
         if inputs.len() != 1 || self.shape(output)?.elements() != 1 {
             return Err("absolute value requires one scalar input and output".to_owned());
         }
+        self.reserve_scalar_instructions(1, 1, 1)?;
         self.emit(
             output,
             0,
@@ -2007,6 +2083,7 @@ impl<'a> BatchCompiler<'a> {
         if inputs.len() != 2 || self.shape(output)?.elements() != 1 {
             return Err("comparison requires two scalar inputs and one scalar output".to_owned());
         }
+        self.reserve_scalar_instructions(1, 1, 1)?;
         let right = self.operand(inputs[1], 0)?;
         if operation == ComparisonOperation::LessEqual
             && matches!(right, ScalarOperand::Constant(value) if value == f32::MAX)
@@ -2071,6 +2148,7 @@ impl<'a> BatchCompiler<'a> {
             .iter()
             .map(|source| self.operand(*source, 0))
             .collect::<Result<Vec<_>, _>>()?;
+        self.reserve_scalar_instructions(1, 1, 1)?;
         self.emit(output, 0, ScalarComputation::Logic { operation, inputs });
         Ok(())
     }
@@ -2092,6 +2170,7 @@ impl<'a> BatchCompiler<'a> {
                 ))
             })
             .collect::<Result<Vec<_>, String>>()?;
+        self.reserve_scalar_instructions(1, 1, 1)?;
         self.emit(output, 0, ScalarComputation::SumProducts(terms));
         Ok(())
     }
@@ -2114,6 +2193,7 @@ impl<'a> BatchCompiler<'a> {
                 left.rows, left.columns, right.rows, right.columns, result.rows, result.columns
             ));
         }
+        self.reserve_scalar_instructions(result.rows, result.columns, 1)?;
         for column in 0..result.columns {
             for row in 0..result.rows {
                 let terms = (0..left.columns)
@@ -2158,6 +2238,22 @@ impl<'a> BatchCompiler<'a> {
             ));
         }
 
+        let instructions_per_column = match coefficients.rows {
+            1 => coefficients.rows,
+            2 => 8,
+            rows => {
+                return Err(format!(
+                    "fixed-shape matrix solve currently supports 1x1 and 2x2 coefficient matrices, found {rows}x{rows}"
+                ));
+            }
+        };
+        let fixed_instructions = usize::from(coefficients.rows == 2) * 3;
+        let solve_instructions = rhs
+            .columns
+            .checked_mul(instructions_per_column)
+            .and_then(|instructions| instructions.checked_add(fixed_instructions))
+            .ok_or_else(|| "matrix solve instruction count overflow".to_owned())?;
+        self.reserve_scalar_instructions(solve_instructions, 1, 1)?;
         match coefficients.rows {
             1 => {
                 let denominator = self.operand(inputs[0], 0)?;
@@ -2239,11 +2335,7 @@ impl<'a> BatchCompiler<'a> {
                 }
                 self.emit_solve_constraint(determinant, finite_results)?;
             }
-            rows => {
-                return Err(format!(
-                    "fixed-shape matrix solve currently supports 1x1 and 2x2 coefficient matrices, found {rows}x{rows}"
-                ));
-            }
+            _ => unreachable!("supported solve dimensions were admitted above"),
         }
         Ok(())
     }
@@ -2278,6 +2370,7 @@ impl<'a> BatchCompiler<'a> {
         if result.rows != input.columns || result.columns != input.rows {
             return Err("transpose output shape is inconsistent".to_owned());
         }
+        self.reserve_scalar_instructions(result.rows, result.columns, 1)?;
         for column in 0..result.columns {
             for row in 0..result.rows {
                 let source = self.operand(inputs[0], input.index(column, row))?;
@@ -2298,8 +2391,8 @@ impl<'a> BatchCompiler<'a> {
         horizontal: bool,
     ) -> Result<(), String> {
         let result = self.shape(output)?;
-        let mut row_offset = 0;
-        let mut column_offset = 0;
+        let mut row_offset = 0usize;
+        let mut column_offset = 0usize;
         for source in inputs {
             let shape = self.source_shape(*source)?;
             if horizontal && shape.rows != result.rows {
@@ -2308,6 +2401,27 @@ impl<'a> BatchCompiler<'a> {
             if !horizontal && shape.columns != result.columns {
                 return Err("vertical concatenation column count differs".to_owned());
             }
+            if horizontal {
+                column_offset = column_offset
+                    .checked_add(shape.columns)
+                    .ok_or_else(|| "concatenation column count overflow".to_owned())?;
+            } else {
+                row_offset = row_offset
+                    .checked_add(shape.rows)
+                    .ok_or_else(|| "concatenation row count overflow".to_owned())?;
+            }
+        }
+        if (horizontal && column_offset != result.columns)
+            || (!horizontal && row_offset != result.rows)
+        {
+            return Err("concatenation inputs do not fill the output shape".to_owned());
+        }
+        self.reserve_scalar_instructions(result.rows, result.columns, 1)?;
+
+        row_offset = 0;
+        column_offset = 0;
+        for source in inputs {
+            let shape = self.source_shape(*source)?;
             for column in 0..shape.columns {
                 for row in 0..shape.rows {
                     let destination = result.index(row + row_offset, column + column_offset);
@@ -2321,15 +2435,32 @@ impl<'a> BatchCompiler<'a> {
                 row_offset += shape.rows;
             }
         }
-        if (horizontal && column_offset != result.columns)
-            || (!horizontal && row_offset != result.rows)
-        {
-            return Err("concatenation inputs do not fill the output shape".to_owned());
-        }
         Ok(())
     }
 
+    fn reserve_scalar_instructions(
+        &mut self,
+        selected_rows: usize,
+        selected_columns: usize,
+        instructions_per_element: usize,
+    ) -> Result<ScalarInstructionExpansion, String> {
+        let expansion = plan_scalar_instruction_expansion(
+            self.instructions.len(),
+            selected_rows,
+            selected_columns,
+            instructions_per_element,
+        )
+        .map_err(|error| format!("scalar instruction expansion rejected: {error:?}"))?;
+        let additional = usize::try_from(expansion.additional)
+            .map_err(|_| "scalar instruction expansion does not fit usize".to_owned())?;
+        self.instructions
+            .try_reserve_exact(additional)
+            .map_err(|_| "unable to reserve scalar instruction expansion".to_owned())?;
+        Ok(expansion)
+    }
+
     fn emit(&mut self, slot: CellSlotId, component: usize, computation: ScalarComputation) {
+        debug_assert!(self.instructions.len() < MAX_SCALAR_INSTRUCTIONS as usize);
         self.instructions.push(ScalarInstruction {
             output: self.register_offsets[&slot] + component,
             computation,
@@ -2342,6 +2473,7 @@ impl<'a> BatchCompiler<'a> {
         left: ScalarOperand,
         right: ScalarOperand,
     ) -> ScalarOperand {
+        debug_assert!(self.instructions.len() < MAX_SCALAR_INSTRUCTIONS as usize);
         let output = self.register_count;
         self.register_count += 1;
         self.instructions.push(ScalarInstruction {
@@ -3089,6 +3221,37 @@ mod axis_tests {
             "f64" => format!("{value}.9"),
             _ => format!("{value}<{kind}>"),
         }
+    }
+
+    #[test]
+    fn scalar_instruction_expansion_is_admitted_before_cartesian_emission() {
+        let exact =
+            plan_scalar_instruction_expansion(MAX_SCALAR_INSTRUCTIONS as usize - 6, 2, 3, 1)
+                .unwrap();
+        assert_eq!(exact.additional, 6);
+        assert_eq!(exact.total, MAX_SCALAR_INSTRUCTIONS);
+        assert!(matches!(
+            plan_scalar_instruction_expansion(
+                MAX_SCALAR_INSTRUCTIONS as usize - 5,
+                2,
+                3,
+                1,
+            ),
+            Err(mech_core::MemoryPlanError::TargetLimitExceeded {
+                violation: mech_core::MemoryBudgetViolation {
+                    dimension: mech_core::MemoryBudgetDimension::ScalarInstructions,
+                    required,
+                    limit: MAX_SCALAR_INSTRUCTIONS,
+                    ..
+                },
+            }) if required == MAX_SCALAR_INSTRUCTIONS + 1
+        ));
+        assert!(matches!(
+            plan_scalar_instruction_expansion(0, usize::MAX, usize::MAX, usize::MAX),
+            Err(mech_core::MemoryPlanError::ArithmeticOverflow {
+                field: "scalar instruction expansion",
+            })
+        ));
     }
 
     #[test]

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
+use mech_core::snapshot::{F64Bits, SequenceView, SnapshotValidationContext};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
@@ -9,6 +9,323 @@ use mech_core::{
     ResidentValueRef, ResolvedOperationContract, ResolvedType, SchemaBody, ShapeRule,
     ValueDataDraft, ValueDraft, execute_conversion_draft, plan_explicit_cast,
 };
+
+#[derive(Default)]
+struct DisplayByteCounter(usize);
+
+impl core::fmt::Write for DisplayByteCounter {
+    fn write_str(&mut self, value: &str) -> core::fmt::Result {
+        self.0 = self.0.checked_add(value.len()).ok_or(core::fmt::Error)?;
+        Ok(())
+    }
+}
+
+fn displayed_bytes(value: impl core::fmt::Display) -> Result<usize, ResidentKernelError> {
+    use core::fmt::Write;
+
+    let mut counter = DisplayByteCounter::default();
+    write!(&mut counter, "{value}").map_err(|_| ResidentKernelError::InvalidShape)?;
+    Ok(counter.0)
+}
+
+fn projected_string_value_bytes(
+    value: &mech_core::ValueData,
+) -> Result<usize, ResidentKernelError> {
+    use mech_core::ValueData;
+
+    match value {
+        ValueData::U8(value) => displayed_bytes(value),
+        ValueData::U16(value) => displayed_bytes(value),
+        ValueData::U32(value) => displayed_bytes(value),
+        ValueData::U64(value) => displayed_bytes(value),
+        ValueData::U128(value) => displayed_bytes(value),
+        ValueData::I8(value) => displayed_bytes(value),
+        ValueData::I16(value) => displayed_bytes(value),
+        ValueData::I32(value) => displayed_bytes(value),
+        ValueData::I64(value) => displayed_bytes(value),
+        ValueData::I128(value) => displayed_bytes(value),
+        ValueData::F32(value) => displayed_bytes(value.to_f32()),
+        ValueData::F64(value) => displayed_bytes(value.to_f64()),
+        ValueData::Complex32(value) => displayed_bytes(value.real().to_f32())?
+            .checked_add(displayed_bytes(value.imaginary().to_f32())?)
+            .and_then(|bytes| bytes.checked_add(2))
+            .ok_or(ResidentKernelError::InvalidShape),
+        ValueData::Complex64(value) => displayed_bytes(value.real().to_f64())?
+            .checked_add(displayed_bytes(value.imaginary().to_f64())?)
+            .and_then(|bytes| bytes.checked_add(2))
+            .ok_or(ResidentKernelError::InvalidShape),
+        ValueData::Rational64(value) => displayed_bytes(value.numerator())?
+            .checked_add(displayed_bytes(value.denominator())?)
+            .and_then(|bytes| bytes.checked_add(1))
+            .ok_or(ResidentKernelError::InvalidShape),
+        ValueData::Bool(value) => Ok(if *value { 4 } else { 5 }),
+        ValueData::String(value) => Ok(value.len()),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn projected_display_sequence<T: core::fmt::Display>(
+    values: &[T],
+) -> Result<usize, ResidentKernelError> {
+    values.iter().try_fold(0usize, |bytes, value| {
+        bytes
+            .checked_add(displayed_bytes(value)?)
+            .ok_or(ResidentKernelError::InvalidShape)
+    })
+}
+
+fn projected_string_payload(input: ResidentValueRef<'_>) -> Result<usize, ResidentKernelError> {
+    match input {
+        ResidentValueRef::Bool(values) => values.iter().try_fold(0usize, |bytes, value| {
+            let next = match *value {
+                0 => 5,
+                1 => 4,
+                _ => return Err(ResidentKernelError::InvalidInput),
+            };
+            bytes
+                .checked_add(next)
+                .ok_or(ResidentKernelError::InvalidShape)
+        }),
+        ResidentValueRef::Index(values) => projected_display_sequence(values),
+        ResidentValueRef::F64(values) => projected_display_sequence(values),
+        ResidentValueRef::String(values) => values.iter().try_fold(0usize, |bytes, value| {
+            bytes
+                .checked_add(value.len())
+                .ok_or(ResidentKernelError::InvalidShape)
+        }),
+        ResidentValueRef::Snapshot([Some(value)]) => match value.data() {
+            mech_core::ValueData::Matrix(matrix) => match matrix.elements() {
+                SequenceView::U8(values) => projected_display_sequence(values),
+                SequenceView::U16(values) => projected_display_sequence(values),
+                SequenceView::U32(values) => projected_display_sequence(values),
+                SequenceView::U64(values) => projected_display_sequence(values),
+                SequenceView::U128(values) => projected_display_sequence(values),
+                SequenceView::I8(values) => projected_display_sequence(values),
+                SequenceView::I16(values) => projected_display_sequence(values),
+                SequenceView::I32(values) => projected_display_sequence(values),
+                SequenceView::I64(values) => projected_display_sequence(values),
+                SequenceView::I128(values) => projected_display_sequence(values),
+                SequenceView::F32(values) => values.iter().try_fold(0usize, |bytes, value| {
+                    bytes
+                        .checked_add(displayed_bytes(value.to_f32())?)
+                        .ok_or(ResidentKernelError::InvalidShape)
+                }),
+                SequenceView::F64(values) => values.iter().try_fold(0usize, |bytes, value| {
+                    bytes
+                        .checked_add(displayed_bytes(value.to_f64())?)
+                        .ok_or(ResidentKernelError::InvalidShape)
+                }),
+                SequenceView::Complex32(values) => {
+                    values.iter().try_fold(0usize, |bytes, value| {
+                        bytes
+                            .checked_add(projected_string_value_bytes(
+                                &mech_core::ValueData::Complex32(*value),
+                            )?)
+                            .ok_or(ResidentKernelError::InvalidShape)
+                    })
+                }
+                SequenceView::Complex64(values) => {
+                    values.iter().try_fold(0usize, |bytes, value| {
+                        bytes
+                            .checked_add(projected_string_value_bytes(
+                                &mech_core::ValueData::Complex64(*value),
+                            )?)
+                            .ok_or(ResidentKernelError::InvalidShape)
+                    })
+                }
+                SequenceView::Rational64(values) => {
+                    values.iter().try_fold(0usize, |bytes, value| {
+                        bytes
+                            .checked_add(projected_string_value_bytes(
+                                &mech_core::ValueData::Rational64(value.clone()),
+                            )?)
+                            .ok_or(ResidentKernelError::InvalidShape)
+                    })
+                }
+                SequenceView::Bool(values) => values.iter().try_fold(0usize, |bytes, value| {
+                    bytes
+                        .checked_add(if *value { 4 } else { 5 })
+                        .ok_or(ResidentKernelError::InvalidShape)
+                }),
+                SequenceView::String(values) => values.iter().try_fold(0usize, |bytes, value| {
+                    bytes
+                        .checked_add(value.len())
+                        .ok_or(ResidentKernelError::InvalidShape)
+                }),
+                SequenceView::Values(values) => values.iter().try_fold(0usize, |bytes, value| {
+                    bytes
+                        .checked_add(projected_string_value_bytes(value)?)
+                        .ok_or(ResidentKernelError::InvalidShape)
+                }),
+                SequenceView::Id(_) | SequenceView::Index(_) | SequenceView::Unit(_) => {
+                    Err(ResidentKernelError::InvalidInput)
+                }
+            },
+            value => projected_string_value_bytes(value),
+        },
+        ResidentValueRef::Snapshot(_) => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn target_is_string(schema: &SchemaBody) -> bool {
+    match schema {
+        SchemaBody::String => true,
+        SchemaBody::Matrix { element, .. } => element.as_ref() == &SchemaBody::String,
+        _ => false,
+    }
+}
+
+fn logical_input_len(input: ResidentValueRef<'_>) -> Result<usize, ResidentKernelError> {
+    match input {
+        ResidentValueRef::Snapshot([Some(value)]) => Ok(match value.data() {
+            mech_core::ValueData::Matrix(matrix) => matrix.elements().len(),
+            _ => 1,
+        }),
+        ResidentValueRef::Snapshot(_) => Err(ResidentKernelError::InvalidInput),
+        input => Ok(input.len()),
+    }
+}
+
+fn preflight_string_conversion(
+    kernel: &BoundResidentKernel,
+    input: ResidentValueRef<'_>,
+    output: &ResidentValueMut<'_>,
+    target_schema: &SchemaBody,
+) -> Result<(), ResidentKernelError> {
+    if !target_is_string(target_schema) {
+        return Ok(());
+    }
+    let ResidentValueMut::String(current) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let output_len = logical_input_len(input)?;
+    if output_len != current.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output_len_u64 = super::budget::checked_u64(output_len)?;
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    let draft_container_bytes = super::budget::checked_u64(
+        output_len
+            .checked_mul(core::mem::size_of::<ValueDataDraft>())
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    let (source_temporary_bytes, source_cloned_bytes, source_nodes) = match input {
+        ResidentValueRef::Snapshot([Some(value)]) => {
+            let schemas = kernel
+                .snapshot_schemas()
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            let footprint =
+                super::budget::measure_canonical_value_footprint(&mut meter, value, schemas)?;
+            (
+                footprint
+                    .retained_bytes
+                    .checked_add(draft_container_bytes)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                footprint.retained_bytes,
+                footprint
+                    .node_count
+                    .checked_add(output_len_u64)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )
+        }
+        ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
+        ResidentValueRef::String(values) => {
+            let payload = values.iter().try_fold(0u64, |bytes, value| {
+                bytes
+                    .checked_add(super::budget::checked_u64(value.len())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
+            (
+                payload
+                    .checked_add(draft_container_bytes)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                payload,
+                super::budget::checked_u64(
+                    output_len
+                        .checked_add(1)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )?,
+            )
+        }
+        input => (
+            draft_container_bytes,
+            0,
+            super::budget::checked_u64(input.len())?,
+        ),
+    };
+    let output_payload = super::budget::checked_u64(projected_string_payload(input)?)?;
+    let current_payload = current.iter().try_fold(0u64, |bytes, value| {
+        bytes
+            .checked_add(super::budget::checked_u64(value.len())?)
+            .ok_or(ResidentKernelError::InvalidShape)
+    })?;
+    // Comparing every current and converted String cannot inspect more than
+    // both complete payloads. Use that deterministic fail-closed bound before
+    // conversion formatting allocates its first String.
+    let publication_work = current_payload
+        .checked_add(output_payload)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_containers = super::budget::checked_u64(
+        current
+            .len()
+            .checked_mul(core::mem::size_of::<String>())
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    let output_bytes = output_containers
+        .checked_add(output_payload)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_nodes = super::budget::checked_u64(
+        output_len
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    let measured = meter.estimate();
+    super::budget::PreparedMutationPlan::new(
+        (),
+        super::budget::PublishedOutputFootprint {
+            elements: output_len_u64,
+            retained_bytes: output_bytes,
+            retained_nodes: output_nodes,
+        },
+        super::budget::MutationRetainedNodeFootprint {
+            current_persistent: output_nodes
+                .checked_add(source_nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            normalized_plan: 0,
+            temporary_draft: source_nodes
+                .checked_add(
+                    output_nodes
+                        .checked_mul(2)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        },
+        super::budget::resident_cost! {
+            comparison_work: measured
+                .comparison_work()
+                .checked_add(publication_work)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            compute_work: measured
+                .compute_work()
+                .checked_add(publication_work)
+                .and_then(|work| work.checked_add(output_len_u64))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            temporary_bytes: source_temporary_bytes
+                .checked_add(draft_container_bytes)
+                .and_then(|bytes| bytes.checked_add(output_payload))
+                .and_then(|bytes| bytes.checked_add(output_containers))
+                .and_then(|bytes| bytes.checked_add(output_payload))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes: source_cloned_bytes
+                .checked_add(output_payload)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )?
+    .admit()?
+    .into_plan();
+    Ok(())
+}
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     builder.insert_resident_factory(
@@ -172,6 +489,7 @@ fn execute_kind_conversion(
     let plan = kernel
         .retained_state::<ResidentConversionPlan>()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    preflight_string_conversion(kernel, input, &output, &plan.target)?;
     let source = resident_input_draft(input, &plan.source)?;
     let converted = execute_conversion_draft(source, &plan.conversion.step)
         .map_err(|_| ResidentKernelError::Arithmetic)?;
@@ -270,4 +588,56 @@ fn publish_slice<T: PartialEq>(
         *target = next;
     }
     Ok(changed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_core::{DimensionExpr, IntegerWidth, SchemaDraft, SchemaTableBuilder};
+
+    #[test]
+    fn snapshot_matrix_string_conversion_plans_logical_elements_before_drafting() {
+        let matrix_body = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        };
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: matrix_body,
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let pending = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(pending).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U64(1), ValueDataDraft::U64(2)].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let source = [Some(value)];
+        let input = ResidentValueRef::Snapshot(&source);
+        let mut current = ["old".to_owned(), "values".to_owned()];
+        let output = ResidentValueMut::String(&mut current);
+        let kernel = BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+            .with_snapshot_schemas(schemas);
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::String),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        };
+
+        assert_eq!(
+            preflight_string_conversion(&kernel, input, &output, &target),
+            Ok(()),
+        );
+        assert_eq!(current, ["old", "values"]);
+    }
 }

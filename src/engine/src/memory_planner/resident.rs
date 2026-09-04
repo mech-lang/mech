@@ -49,9 +49,11 @@ pub fn plan_resident_arenas(
     let mut allocations = Vec::new();
     let mut values = Vec::new();
     let mut offsets = BTreeMap::new();
+    let mut elements_by_owner = BTreeMap::new();
     let mut demand = ResourceDemand::default();
     let mut next_id = 0_u32;
     for input in ordered {
+        elements_by_owner.insert(input.owner.clone(), input.elements);
         let slot = resident_slot_layout(&target, input.kind);
         let bytes =
             input
@@ -172,9 +174,14 @@ pub fn plan_resident_arenas(
     arenas.sort_by_key(|arena| arena.id);
     let mut budget_violations = Vec::new();
     for allocation in &allocations {
+        let mut allocation_demand = allocation_demand(allocation);
+        allocation_demand.output_elements = elements_by_owner
+            .get(&allocation.owner)
+            .copied()
+            .unwrap_or_default();
         budget_violations.extend(mech_core::evaluate_memory_budget(
             allocation.owner.clone(),
-            allocation_demand(allocation),
+            allocation_demand,
             allocation.capacity_bytes,
             0,
             target.limits,
@@ -566,6 +573,7 @@ fn checked_next(value: u32) -> Result<u32, MemoryPlanError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_core::{DimensionExpr, FloatWidth, SchemaBody, SchemaDraft};
 
     #[test]
     fn resident_arena_ids_are_stable_and_state_buffers_are_distinct() {
@@ -575,5 +583,36 @@ mod tests {
             resident_arena_id((PlannedValueClass::State, ResidentValueKind::F64, 1)).unwrap();
         assert_eq!(current, MemoryArenaId::new(12));
         assert_eq!(next, MemoryArenaId::new(32));
+    }
+
+    #[test]
+    fn resident_arena_admission_uses_semantic_elements_not_only_lane_bytes() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(65_537)]
+                    .into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let shape = schema.instantiate_shape(Box::new([])).unwrap();
+        let descriptor = mech_core::ResolvedValueDescriptor::from_schema(schema, shape).unwrap();
+        let projection = plan_resident_arenas(&[ResidentValuePlanInput {
+            owner: MemoryObjectOwner::Slot(mech_core::CellSlotId::new(0)),
+            slot: Some(mech_core::CellSlotId::new(0)),
+            descriptor,
+            class: PlannedValueClass::Scratch,
+            kind: ResidentValueKind::F64,
+            elements: 65_537,
+            lifetime: MemoryLifetime::Activation,
+            producer: None,
+        }])
+        .unwrap();
+        assert!(projection.plan.budget_violations.iter().any(|violation| {
+            violation.dimension == mech_core::MemoryBudgetDimension::OutputElements
+                && violation.required == 65_537
+        }));
     }
 }
