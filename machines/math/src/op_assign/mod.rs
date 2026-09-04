@@ -12,25 +12,13 @@ use nalgebra::{
     base::{Matrix as naMatrix, Storage, StorageMut},
 };
 
-#[cfg(all(
-    feature = "add_assign",
-    any(feature = "matrix", feature = "source")
-))]
+#[cfg(all(feature = "add_assign", any(feature = "matrix", feature = "source")))]
 pub mod add_assign;
-#[cfg(all(
-    feature = "div_assign",
-    any(feature = "matrix", feature = "source")
-))]
+#[cfg(all(feature = "div_assign", any(feature = "matrix", feature = "source")))]
 pub mod div_assign;
-#[cfg(all(
-    feature = "mul_assign",
-    any(feature = "matrix", feature = "source")
-))]
+#[cfg(all(feature = "mul_assign", any(feature = "matrix", feature = "source")))]
 pub mod mul_assign;
-#[cfg(all(
-    feature = "sub_assign",
-    any(feature = "matrix", feature = "source")
-))]
+#[cfg(all(feature = "sub_assign", any(feature = "matrix", feature = "source")))]
 pub mod sub_assign;
 
 #[cfg(feature = "add_assign")]
@@ -41,7 +29,6 @@ pub use self::div_assign::*;
 pub use self::mul_assign::*;
 #[cfg(feature = "sub_assign")]
 pub use self::sub_assign::*;
-
 
 pub trait RuntimeCheckedOpAssign: Copy {
     fn runtime_checked_add(self, rhs: Self) -> Option<Self>;
@@ -84,10 +71,18 @@ impl_ieee_op_assign!(C64);
 
 #[cfg(feature = "rational")]
 impl RuntimeCheckedOpAssign for R64 {
-    fn runtime_checked_add(self, rhs: Self) -> Option<Self> { self.checked_add(rhs) }
-    fn runtime_checked_sub(self, rhs: Self) -> Option<Self> { self.checked_sub(rhs) }
-    fn runtime_checked_mul(self, rhs: Self) -> Option<Self> { self.checked_mul(rhs) }
-    fn runtime_checked_div(self, rhs: Self) -> Option<Self> { self.checked_div(rhs) }
+    fn runtime_checked_add(self, rhs: Self) -> Option<Self> {
+        self.checked_add(rhs)
+    }
+    fn runtime_checked_sub(self, rhs: Self) -> Option<Self> {
+        self.checked_sub(rhs)
+    }
+    fn runtime_checked_mul(self, rhs: Self) -> Option<Self> {
+        self.checked_mul(rhs)
+    }
+    fn runtime_checked_div(self, rhs: Self) -> Option<Self> {
+        self.checked_div(rhs)
+    }
 }
 
 macro_rules! checked_op_assign {
@@ -100,13 +95,29 @@ macro_rules! checked_op_assign {
 }
 
 #[cfg(feature = "add_assign")]
-checked_op_assign!(checked_add_assign, runtime_checked_add, "addition assignment");
+checked_op_assign!(
+    checked_add_assign,
+    runtime_checked_add,
+    "addition assignment"
+);
 #[cfg(feature = "sub_assign")]
-checked_op_assign!(checked_sub_assign, runtime_checked_sub, "subtraction assignment");
+checked_op_assign!(
+    checked_sub_assign,
+    runtime_checked_sub,
+    "subtraction assignment"
+);
 #[cfg(feature = "mul_assign")]
-checked_op_assign!(checked_mul_assign, runtime_checked_mul, "multiplication assignment");
+checked_op_assign!(
+    checked_mul_assign,
+    runtime_checked_mul,
+    "multiplication assignment"
+);
 #[cfg(feature = "div_assign")]
-checked_op_assign!(checked_div_assign, runtime_checked_div, "division assignment");
+checked_op_assign!(
+    checked_div_assign,
+    runtime_checked_div,
+    "division assignment"
+);
 
 static PURE_WHOLE_VALUE_RMW_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
@@ -258,6 +269,10 @@ macro_rules! impl_op_assign_range_fxn_s {
                 IxVec::REPRESENTATION,
             );
 
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (sink, source, ixes) = invocation.expect_binary()?;
                 let source: Ref<T> = source.try_ref()?;
@@ -270,7 +285,6 @@ macro_rules! impl_op_assign_range_fxn_s {
                     _marker: PhantomData::default(),
                 }))
             }
-
         }
         impl<T, R1, C1, S1, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
@@ -416,6 +430,10 @@ macro_rules! impl_op_assign_range_fxn_v {
                 IxVec::REPRESENTATION,
             );
 
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (sink, source, ixes) = invocation.expect_binary()?;
                 let source: Ref<naMatrix<T, R2, C2, S2>> = source.try_ref()?;
@@ -428,7 +446,6 @@ macro_rules! impl_op_assign_range_fxn_v {
                     _marker: PhantomData::default(),
                 }))
             }
-
         }
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
@@ -628,8 +645,12 @@ macro_rules! impl_canonical_op_assign_specializers {
                 }
                 let sink = invocation.input(0).expect("validated assignment sink");
                 let source = invocation.input(1).expect("validated assignment source");
-                $crate::try_canonical_op_assign_vs!(($operation, sink, source));
-                context.bind_runtime_factory_existing_output($value_prefix, sink, &[source])
+                context.bind_resolved_runtime_existing_output(
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    ExecutionTarget::DirectRuntime,
+                    sink,
+                    &[source],
+                )
             }
         }
 
@@ -651,11 +672,16 @@ macro_rules! impl_canonical_op_assign_specializers {
                     )
                     .with_compiler_loc());
                 }
-                let sink = invocation.input(0).expect("validated indexed assignment sink");
-                let source = invocation.input(1).expect("validated indexed assignment source");
+                let sink = invocation
+                    .input(0)
+                    .expect("validated indexed assignment sink");
+                let source = invocation
+                    .input(1)
+                    .expect("validated indexed assignment source");
                 let index = invocation.input(2).expect("validated assignment index");
-                context.bind_runtime_factory_existing_output(
-                    $range_prefix,
+                context.bind_resolved_runtime_existing_output(
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    ExecutionTarget::DirectRuntime,
                     sink,
                     &[source, index],
                 )
@@ -680,15 +706,20 @@ macro_rules! impl_canonical_op_assign_specializers {
                     )
                     .with_compiler_loc());
                 }
-                let sink = invocation.input(0).expect("validated indexed assignment sink");
-                let source = invocation.input(1).expect("validated indexed assignment source");
+                let sink = invocation
+                    .input(0)
+                    .expect("validated indexed assignment sink");
+                let source = invocation
+                    .input(1)
+                    .expect("validated indexed assignment source");
                 let row_index = invocation.input(2).expect("validated row assignment index");
                 invocation
                     .input(3)
                     .expect("validated all-selection input")
                     .require_matrix_all_selection()?;
-                context.bind_runtime_factory_existing_output(
-                    $range_all_prefix,
+                context.bind_resolved_runtime_existing_output(
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    ExecutionTarget::DirectRuntime,
                     sink,
                     &[source, row_index],
                 )
@@ -720,6 +751,10 @@ macro_rules! impl_assign_scalar_scalar {
           T::REPRESENTATION,
           T::REPRESENTATION,
         );
+
+        fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+          Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
+        }
 
         fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
           let (sink, source) = invocation.expect_unary()?;
@@ -805,6 +840,10 @@ macro_rules! impl_assign_vector_vector {
           MatA::REPRESENTATION,
           MatB::REPRESENTATION,
         );
+
+        fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+          Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
+        }
 
         fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
           let (sink, source) = invocation.expect_unary()?;
@@ -903,6 +942,10 @@ macro_rules! impl_assign_vector_scalar {
           FunctionValueRepresentation::AnyValue,
           T::REPRESENTATION,
         );
+
+        fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+          Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
+        }
 
         fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
           let (sink, _base, source) = invocation.expect_binary()?;

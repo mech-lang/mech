@@ -144,16 +144,19 @@ macro_rules! impl_checked_div_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(super::arithmetic_full_write_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
                 let lhs: Ref<$arg1_type> = lhs.try_ref()?;
                 let rhs: Ref<$arg2_type> = rhs.try_ref()?;
                 let out: Ref<$out_type> = out.try_ref()?;
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
-
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -213,7 +216,11 @@ macro_rules! impl_checked_div_binop {
                 + RuntimeCheckedDiv,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }

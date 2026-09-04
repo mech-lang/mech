@@ -100,7 +100,12 @@ pub(crate) fn context_read(
     let arguments = Vec::<SpecializationInput>::new();
     let invocation = FunctionInvocation::nullary(output.clone());
     execute_bound_specialized_function(
-        SpecializedFunction::new(FunctionInstance::new(Box::new(function), invocation)),
+        SpecializedFunction::syntax_directed(
+            FunctionInstance::new(Box::new(function), invocation),
+            mech_core::OperationId::from_name("context/read"),
+            mech_core::RuntimeFunctionId::from_name("ExternalResourceReadFunction"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )?,
         &arguments,
         interpreter,
     )?;
@@ -143,7 +148,12 @@ pub(crate) fn context_assign(
     };
     let invocation = FunctionInvocation::unary(output, input_cell);
     execute_bound_specialized_function(
-        SpecializedFunction::new(FunctionInstance::new(Box::new(function), invocation)),
+        SpecializedFunction::syntax_directed(
+            FunctionInstance::new(Box::new(function), invocation),
+            mech_core::OperationId::from_name("context/write"),
+            mech_core::RuntimeFunctionId::from_name("ExternalResourceWriteFunction"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )?,
         &arguments,
         interpreter,
     )
@@ -186,7 +196,12 @@ pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult
     };
     let invocation = FunctionInvocation::unary(output, input_cell);
     execute_bound_specialized_function(
-        SpecializedFunction::new(FunctionInstance::new(Box::new(function), invocation)),
+        SpecializedFunction::syntax_directed(
+            FunctionInstance::new(Box::new(function), invocation),
+            mech_core::OperationId::from_name("context/send"),
+            mech_core::RuntimeFunctionId::from_name("ExternalResourceWriteFunction"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )?,
         &arguments,
         p,
     )

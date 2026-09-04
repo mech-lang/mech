@@ -259,6 +259,10 @@ where
             source: source.try_ref()?,
         }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_STATE_REGISTER_CONTRACT)
+    }
 }
 impl<T> MechFunctionImpl for Assign<T>
 where
@@ -990,6 +994,7 @@ impl MechFunctionCompiler for AssignCanonicalSelection {
 #[cfg(feature = "semantic-compiler")]
 fn canonical_indexed_assignment(
     invocation: &SpecializationInvocation,
+    context: &SpecializationContext<'_>,
 ) -> MResult<SpecializedFunction> {
     let sink = invocation
         .input(0)
@@ -1057,10 +1062,14 @@ fn canonical_indexed_assignment(
         selection_kind,
     };
     implementation.next_value()?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        Box::new(implementation),
-        FunctionInvocation::variadic(sink, inputs),
-    )))
+    context.certify_instance(
+        FunctionInstance::new(
+            Box::new(implementation),
+            FunctionInvocation::variadic(sink, inputs),
+        ),
+        mech_core::RuntimeFunctionId::from_name("AssignCanonicalSelection"),
+        mech_core::ExecutionTarget::DirectRuntime,
+    )
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -1083,19 +1092,22 @@ impl CanonicalFunctionSpecializer for AssignValue {
         let sink = invocation.input(0).expect("validated assignment sink");
         let source = invocation.input(1).expect("validated assignment source");
         if invocation.len() > 2 {
-            return canonical_indexed_assignment(invocation);
+            return canonical_indexed_assignment(invocation, context);
         }
-        let _ = context;
         let sink = sink.cell()?.clone();
         let source = source.cell()?.clone();
         sink.preflight_replace()?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(AssignCanonicalCell {
-                sink: sink.clone(),
-                source: source.clone(),
-            }),
-            FunctionInvocation::unary(sink, source),
-        )))
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(AssignCanonicalCell {
+                    sink: sink.clone(),
+                    source: source.clone(),
+                }),
+                FunctionInvocation::unary(sink, source),
+            ),
+            mech_core::RuntimeFunctionId::from_name("AssignCanonicalCell"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 
@@ -1106,9 +1118,9 @@ impl CanonicalFunctionSpecializer for AssignColumn {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        canonical_indexed_assignment(invocation)
+        canonical_indexed_assignment(invocation, context)
     }
 }
 
@@ -1265,7 +1277,7 @@ impl CanonicalFunctionSpecializer for AddAssignValue {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 2 {
             return Err(MechError::new(
@@ -1292,10 +1304,14 @@ impl CanonicalFunctionSpecializer for AddAssignValue {
             source: source.clone(),
         };
         implementation.next_value()?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(implementation),
-            FunctionInvocation::unary(sink, source),
-        )))
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(implementation),
+                FunctionInvocation::unary(sink, source),
+            ),
+            mech_core::RuntimeFunctionId::from_name("AddAssignCanonicalTable"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 

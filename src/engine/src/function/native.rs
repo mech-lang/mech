@@ -32,7 +32,7 @@ impl CanonicalFunctionSpecializer for ClosureFunctionSpecializer {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         let arguments = invocation
             .inputs()
@@ -48,12 +48,16 @@ impl CanonicalFunctionSpecializer for ClosureFunctionSpecializer {
             .collect::<MResult<Vec<_>>>()?
             .into_boxed_slice();
         let bound = FunctionInvocation::variadic(output, inputs);
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(ClosureNativeFunction {
-                name: self.name.clone(),
-            }),
-            bound,
-        )))
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(ClosureNativeFunction {
+                    name: self.name.clone(),
+                }),
+                bound,
+            ),
+            mech_core::RuntimeFunctionId::from_name(&self.name),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 
     fn guard_safety(&self) -> GuardFunctionSafety {

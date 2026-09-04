@@ -162,6 +162,7 @@ macro_rules! declare_structural_access_alias {
             contract: RuntimeFunctionContract::same_shape(
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
             ),
+            compiler_family: mech_core::RuntimeFamilyId::from_name($name),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: $path,
             extra_cargo_features: ["access"],
@@ -560,6 +561,7 @@ fn canonical_access_result(
 #[cfg(feature = "semantic-compiler")]
 fn canonical_access(
     invocation: &SpecializationInvocation,
+    context: &SpecializationContext<'_>,
     fallback_name: &'static str,
 ) -> MResult<SpecializedFunction> {
     if !(2..=3).contains(&invocation.len()) {
@@ -598,15 +600,19 @@ fn canonical_access(
         }))
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        Box::new(CanonicalAccess {
-            source,
-            selectors,
-            output: output.clone(),
-            name,
-        }),
-        FunctionInvocation::variadic(output, inputs),
-    )))
+    context.certify_instance(
+        FunctionInstance::new(
+            Box::new(CanonicalAccess {
+                source,
+                selectors,
+                output: output.clone(),
+                name,
+            }),
+            FunctionInvocation::variadic(output, inputs),
+        ),
+        mech_core::RuntimeFunctionId::from_name(name),
+        mech_core::ExecutionTarget::DirectRuntime,
+    )
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -670,7 +676,10 @@ impl MechFunctionCompiler for CanonicalSwizzle {
 }
 
 #[cfg(feature = "semantic-compiler")]
-fn canonical_swizzle(invocation: &SpecializationInvocation) -> MResult<SpecializedFunction> {
+fn canonical_swizzle(
+    invocation: &SpecializationInvocation,
+    context: &SpecializationContext<'_>,
+) -> MResult<SpecializedFunction> {
     if invocation.len() < 2 {
         return Err(MechError::new(
             IncorrectNumberOfArguments {
@@ -705,13 +714,17 @@ fn canonical_swizzle(invocation: &SpecializationInvocation) -> MResult<Specializ
         .cloned()
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        Box::new(CanonicalSwizzle {
-            output: output.clone(),
-            ..implementation
-        }),
-        FunctionInvocation::variadic(output, inputs),
-    )))
+    context.certify_instance(
+        FunctionInstance::new(
+            Box::new(CanonicalSwizzle {
+                output: output.clone(),
+                ..implementation
+            }),
+            FunctionInvocation::variadic(output, inputs),
+        ),
+        mech_core::RuntimeFunctionId::from_name("CanonicalSwizzle"),
+        mech_core::ExecutionTarget::DirectRuntime,
+    )
 }
 
 #[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
@@ -719,7 +732,7 @@ fn canonical_matrix_access(
     invocation: &SpecializationInvocation,
     _context: &mut SpecializationContext<'_>,
 ) -> MResult<SpecializedFunction> {
-    canonical_access(invocation, "MatrixAccessCanonical")
+    canonical_access(invocation, _context, "MatrixAccessCanonical")
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -738,7 +751,7 @@ impl CanonicalFunctionSpecializer for AccessScalar {
         }) {
             return canonical_matrix_access(invocation, context);
         }
-        canonical_access(invocation, "CanonicalScalarAccess")
+        canonical_access(invocation, context, "CanonicalScalarAccess")
     }
 }
 pub struct AccessRange {}
@@ -758,7 +771,7 @@ impl CanonicalFunctionSpecializer for AccessRange {
         }) {
             return canonical_matrix_access(invocation, context);
         }
-        canonical_access(invocation, "CanonicalRangeAccess")
+        canonical_access(invocation, context, "CanonicalRangeAccess")
     }
 }
 pub struct AccessSwizzle {}
@@ -767,9 +780,9 @@ impl CanonicalFunctionSpecializer for AccessSwizzle {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        canonical_swizzle(invocation)
+        canonical_swizzle(invocation, context)
     }
 }
 
@@ -783,9 +796,9 @@ impl CanonicalFunctionSpecializer for AccessColumn {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        canonical_access(invocation, "CanonicalColumnAccess")
+        canonical_access(invocation, context, "CanonicalColumnAccess")
     }
 }
 

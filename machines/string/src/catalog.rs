@@ -45,6 +45,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-string",
     crate_name: "mech_string",
     operation: Concat,
+    canonical_operation: "string/concat",
     operation_feature: "concat",
     additional_features: [],
     scalars: ("string", String, "string", string),

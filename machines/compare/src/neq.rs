@@ -124,6 +124,10 @@ impl MechFunctionFactory for AtomNeq {
         let out: Ref<bool> = out.try_ref()?;
         Ok(Box::new(AtomNeq { lhs, rhs, out }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_COMPARE_SCALAR_CONTRACT)
+    }
 }
 #[cfg(feature = "atom")]
 impl MechFunctionImpl for AtomNeq {
@@ -179,6 +183,10 @@ impl MechFunctionFactory for TableNeq {
         let rhs = rhs.value();
         let out: Ref<bool> = out.try_ref()?;
         Ok(Box::new(TableNeq { lhs, rhs, out }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_COMPARE_SCALAR_CONTRACT)
     }
 }
 #[cfg(feature = "table")]
@@ -237,38 +245,12 @@ impl CanonicalFunctionSpecializer for CompareNotEqual {
         let lhs = specialization.input(0).expect("validated comparison lhs");
         let rhs = specialization.input(1).expect("validated comparison rhs");
 
-        #[cfg(feature = "atom")]
-        if lhs.representation() == Some(FunctionValueRepresentation::Atom)
-            && rhs.representation() == Some(FunctionValueRepresentation::Atom)
-        {
-            return SpecializedFunction::bind_factory::<AtomNeq>(
-                ValueCell::from_exact(false)?,
-                vec![lhs.cell()?.clone(), rhs.cell()?.clone()].into_boxed_slice(),
-            );
-        }
-        #[cfg(feature = "table")]
-        if lhs.representation() == Some(FunctionValueRepresentation::Table)
-            && rhs.representation() == Some(FunctionValueRepresentation::Table)
-        {
-            return SpecializedFunction::bind_factory::<TableNeq>(
-                ValueCell::from_exact(false)?,
-                vec![lhs.cell()?.clone(), rhs.cell()?.clone()].into_boxed_slice(),
-            );
-        }
-
-        try_compare_binary_factories!(neq, lhs, rhs, context, NEQ);
-        Err(MechError::new(
-            FunctionArgumentTypeMismatch {
-                role: FunctionArgumentRole::Input(0),
-                expected: "matching supported comparison inputs".into(),
-                found: format!(
-                    "{:?} and {:?}",
-                    lhs.representation(),
-                    rhs.representation(),
-                ),
-            },
-            None,
+        let extents = crate::semantic_compare_extents(&[lhs, rhs])?;
+        context.bind_resolved_runtime(
+            RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            ExecutionTarget::DirectRuntime,
+            vec![extents].into_boxed_slice(),
+            &[lhs, rhs],
         )
-        .with_compiler_loc())
     }
 }

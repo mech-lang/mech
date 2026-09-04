@@ -23,10 +23,7 @@ macro_rules! mul_vec_op {
             let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (o, (l, r)) in next
-                .iter_mut()
-                .zip(lhs_deref.iter().zip(rhs_deref.iter()))
-            {
+            for (o, (l, r)) in next.iter_mut().zip(lhs_deref.iter().zip(rhs_deref.iter())) {
                 *o = checked_runtime_mul(*l, *r)?;
             }
             *$out = next;

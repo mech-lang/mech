@@ -246,6 +246,21 @@ macro_rules! for_each_range_family {
     };
 }
 
+macro_rules! range_operation {
+    (exclusive) => {
+        "range/exclusive"
+    };
+    (exclusive_increment) => {
+        "range/exclusive-increment"
+    };
+    (inclusive) => {
+        "range/inclusive"
+    };
+    (inclusive_increment) => {
+        "range/inclusive-increment"
+    };
+}
+
 macro_rules! declare_range_runtime_factory {
     ($_context:tt; [$cfg:meta]; $module:ident; $factory:ident; $operation_feature:literal; $shape:ident; [$($shape_feature:literal),* $(,)?]; $scalar_cfg:meta; $scalar_feature:literal; $scalar:ty; $scalar_token:ident) => {
         mech_core::paste::paste! {
@@ -260,6 +275,7 @@ macro_rules! declare_range_runtime_factory {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     canonical_range_contract_validator!($module),
                 ),
+                operations: [mech_core::OperationId::from_name(range_operation!($module))],
                 package: "mech-range", crate_name: "mech_range",
                 installer_path: concat!("mech_range::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token _ $shape:snake>])),
                 extra_cargo_features: [$operation_feature],

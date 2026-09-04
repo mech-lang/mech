@@ -121,7 +121,9 @@ impl_unbounded_sum!(C64);
 
 #[cfg(feature = "rational")]
 impl StatsCheckedAdd for R64 {
-    fn stats_checked_add(self, rhs: Self) -> Option<Self> { self.checked_add(rhs) }
+    fn stats_checked_add(self, rhs: Self) -> Option<Self> {
+        self.checked_add(rhs)
+    }
 }
 
 fn checked_sum_add<T: StatsCheckedAdd>(lhs: T, rhs: T) -> MResult<T> {
@@ -186,15 +188,16 @@ macro_rules! impl_stats_unop {
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_STATS_REDUCTION_CONTRACT)
+            }
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg) = invocation.expect_unary()?;
                 let arg: Ref<$arg_type> = arg.try_ref()?;
                 let out: Ref<$out_type> = out.try_ref()?;
                 Ok(Box::new($struct_name { arg, out }))
             }
-
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -243,7 +246,11 @@ macro_rules! impl_stats_unop {
             T: CanonicalMatrixElementBacking + CompileConst + ConstElem + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_unop!(name, self.out, self.arg, ctx);
             }
         }

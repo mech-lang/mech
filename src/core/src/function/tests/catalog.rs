@@ -111,7 +111,9 @@ fn runtime_entry(id: RuntimeFunctionId, name: &str) -> RuntimeFunctionEntry {
         signature: IndexUnaryFactory::SIGNATURE,
         contract: contract(RuntimeOutputAliasPolicy::DisallowInputAlias),
         semantic_contract: None,
-        operation_binding: RuntimeOperationBinding::CompilerResolved,
+        operation_binding: RuntimeOperationBinding::CompilerResolved(RuntimeFamilyId::from_name(
+            name,
+        )),
         execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
         #[cfg(feature = "native-plan")]
         native_linkage: None,
@@ -183,7 +185,9 @@ fn generated_runtime_capability_matrix_does_not_infer_backend_support() {
     assert_eq!(capability.signature, IndexUnaryFactory::SIGNATURE);
     assert_eq!(
         capability.operation_binding,
-        RuntimeOperationBinding::CompilerResolved
+        RuntimeOperationBinding::CompilerResolved(RuntimeFamilyId::from_name(
+            "IndexUnaryCapability"
+        ))
     );
     assert_eq!(
         capability.targets.iter().collect::<Vec<_>>(),

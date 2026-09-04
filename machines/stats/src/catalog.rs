@@ -1,9 +1,9 @@
+#[cfg(feature = "source")]
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 use mech_core::{
     FunctionCatalogBuilder, MResult, RuntimeFunctionContract, RuntimeOutputAliasPolicy, SchemaBody,
     ValueCell, function_shape_contract_violation,
 };
-#[cfg(feature = "source")]
-use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -73,8 +73,10 @@ fn validate_canonical_statistical_reduction(
                 format!("{label} must be matrix-backed"),
             ));
         };
-        let [mech_core::DimensionExpr::Constant(rows), mech_core::DimensionExpr::Constant(columns)] =
-            dimensions.as_ref()
+        let [
+            mech_core::DimensionExpr::Constant(rows),
+            mech_core::DimensionExpr::Constant(columns),
+        ] = dimensions.as_ref()
         else {
             return Err(function_shape_contract_violation(
                 contract,
@@ -195,6 +197,15 @@ macro_rules! for_each_stats_family {
     };
 }
 
+macro_rules! stats_operation {
+    (sum_column) => {
+        "stats/sum/column"
+    };
+    (sum_row) => {
+        "stats/sum/row"
+    };
+}
+
 macro_rules! declare_stats_runtime_factory {
     ($_context:tt; [$cfg:meta]; $module:ident; $factory:ident; [$($shape_feature:literal),* $(,)?]; $scalar_feature:meta; $scalar:ty; $scalar_name:literal; $scalar_token:ident) => {
         mech_core::paste::paste! {
@@ -209,6 +220,7 @@ macro_rules! declare_stats_runtime_factory {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     statistical_reduction_contract!($module),
                 ),
+                operations: [mech_core::OperationId::from_name(stats_operation!($module))],
                 package: "mech-stats", crate_name: "mech_stats",
                 installer_path: concat!("mech_stats::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token>])),
                 extra_cargo_features: ["sum"],
@@ -315,7 +327,11 @@ mod tests {
                 .specialize_invocation(&invocation, &mut context)
                 .unwrap();
             assert_eq!(specialized.output().representation(), output);
-            specialized.instance().implementation().solve_result().unwrap();
+            specialized
+                .instance()
+                .implementation()
+                .solve_result()
+                .unwrap();
         }
     }
 }

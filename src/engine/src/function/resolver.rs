@@ -192,16 +192,18 @@ impl<'a> FunctionResolver<'a> {
             .require_operation_enabled(operation, Some(&entry.canonical_name))?;
         match &entry.type_authority {
             SourceTypeAuthority::SyntaxDirectedIntrinsic => {
-                let mut context = mech_core::SpecializationContext::for_invocation(
+                let mut context = mech_core::SpecializationContext::for_syntax_directed_invocation(
                     invocation,
                     Some(self.catalog),
+                    entry.operation,
+                    entry.canonical_name.clone(),
                 )?;
                 let function = entry
                     .specializer
                     .specialize_invocation(invocation, &mut context)
                     .map_err(|error| semantic_operation_error(error, &entry.canonical_name))?;
                 function.output().resolved_type()?;
-                Ok(function.with_semantic_operation(entry.canonical_name.clone()))
+                Ok(function)
             }
             SourceTypeAuthority::Schemes(declaration) => {
                 let resolved = resolve_declared_call(entry, declaration, invocation)?;
@@ -213,6 +215,7 @@ impl<'a> FunctionResolver<'a> {
                 let mut context = mech_core::SpecializationContext::for_resolved_invocation(
                     &converted,
                     Some(self.catalog),
+                    entry.operation,
                     entry.canonical_name.clone(),
                     resolved.clone(),
                 )?;
@@ -221,7 +224,7 @@ impl<'a> FunctionResolver<'a> {
                     .specialize_invocation(&converted, &mut context)
                     .map_err(|error| semantic_operation_error(error, &entry.canonical_name))?;
                 validate_resolved_output(entry, &resolved, &function)?;
-                Ok(function.with_semantic_operation(entry.canonical_name.clone()))
+                Ok(function)
             }
         }
     }
@@ -235,12 +238,16 @@ impl<'a> FunctionResolver<'a> {
             .extensions
             .entry(extension)
             .ok_or_else(|| extension_unavailable(extension, None))?;
-        let mut context =
-            mech_core::SpecializationContext::for_invocation(invocation, Some(self.catalog))?;
+        let operation = OperationId::from_raw(extension.raw());
+        let mut context = mech_core::SpecializationContext::for_syntax_directed_invocation(
+            invocation,
+            Some(self.catalog),
+            operation,
+            entry.canonical_name.clone(),
+        )?;
         entry
             .specializer
             .specialize_invocation(invocation, &mut context)
-            .map(|function| function.with_semantic_operation(entry.canonical_name.clone()))
     }
 }
 

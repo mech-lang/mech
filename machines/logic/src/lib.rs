@@ -22,6 +22,36 @@ pub mod catalog;
 #[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
+#[cfg(feature = "source")]
+fn semantic_logic_extents(inputs: &[&SpecializationInput]) -> MResult<Box<[u64]>> {
+    let mut extents = Vec::<u64>::new().into_boxed_slice();
+    for input in inputs {
+        let current = input
+            .cell()?
+            .resolved_descriptor()?
+            .current_extents()
+            .map_err(MechError::from)?;
+        if !current.is_empty() {
+            if extents.is_empty() || extents == current {
+                extents = current;
+            } else {
+                return Err(MechError::new(
+                    DimensionMismatch {
+                        dims: extents
+                            .iter()
+                            .chain(current.iter())
+                            .map(|extent| *extent as usize)
+                            .collect(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        }
+    }
+    Ok(extents)
+}
+
 #[cfg(all(
     any(feature = "and", feature = "or", feature = "xor"),
     feature = "matrixd"
@@ -98,12 +128,7 @@ use nalgebra::Vector3;
 ))]
 use nalgebra::Vector4;
 
-#[cfg(any(
-    feature = "and",
-    feature = "not",
-    feature = "or",
-    feature = "xor"
-))]
+#[cfg(any(feature = "and", feature = "not", feature = "or", feature = "xor"))]
 use std::sync::LazyLock;
 
 #[cfg(any(feature = "and", feature = "or", feature = "xor"))]
@@ -205,9 +230,7 @@ macro_rules! impl_logic_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
                 let lhs: Ref<$arg1_type> = lhs.try_ref()?;
                 let rhs: Ref<$arg2_type> = rhs.try_ref()?;
@@ -215,6 +238,11 @@ macro_rules! impl_logic_binop {
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
 
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some($crate::logic_binary_full_write_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
         }
         impl MechFunctionImpl for $struct_name {
             fn solve_result(&self) -> MResult<()> {
@@ -256,64 +284,6 @@ macro_rules! impl_logic_fxns {
     };
 }
 
-#[cfg(feature = "source")]
-fn specialize_logic_binary_factory<F>(
-    first: &SpecializationInput,
-    second: &SpecializationInput,
-) -> MResult<SpecializedFunction>
-where
-    F: MechFunctionFactory,
-{
-    let output_representation = F::SIGNATURE.output;
-    let template = if first.representation() == Some(output_representation) {
-        first
-    } else if second.representation() == Some(output_representation) {
-        second
-    } else {
-        return Err(MechError::new(
-            FunctionArgumentTypeMismatch {
-                role: FunctionArgumentRole::Output,
-                expected: format!("{output_representation:?}"),
-                found: format!(
-                    "inputs {:?} and {:?}",
-                    first.representation(),
-                    second.representation(),
-                ),
-            },
-            None,
-        )
-        .with_compiler_loc());
-    };
-    let invocation = FunctionInvocation::binary(
-        template.cell()?.detached_clone()?,
-        first.cell()?.clone(),
-        second.cell()?.clone(),
-    );
-    let implementation = F::new_invocation(invocation.clone())?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        implementation,
-        invocation,
-    )))
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __try_logic_binary_factory {
-    (($module:ident, $first:ident, $second:ident), $lib:ident, $suffix:ident, $shape_features:tt, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
-        mech_core::paste::paste! {
-            if let RuntimeFunctionInputs::Binary(expected_first, expected_second) =
-                <$crate::$module::[<$lib $suffix>] as MechFunctionFactory>::SIGNATURE.inputs
-                && $first.representation() == Some(expected_first)
-                && $second.representation() == Some(expected_second)
-            {
-                return $crate::specialize_logic_binary_factory::<
-                    $crate::$module::[<$lib $suffix>]
-                >($first, $second);
-            }
-        }
-    };
-}
-
 #[macro_export]
 macro_rules! impl_canonical_logic_binop_specializer {
     ($specializer:ident, $module:ident, $lib:ident, $operation:literal) => {
@@ -325,7 +295,7 @@ macro_rules! impl_canonical_logic_binop_specializer {
             fn specialize_invocation(
                 &self,
                 specialization: &SpecializationInvocation,
-                _context: &mut SpecializationContext<'_>,
+                context: &mut SpecializationContext<'_>,
             ) -> MResult<SpecializedFunction> {
                 if specialization.len() != 2 {
                     return Err(MechError::new(
@@ -339,27 +309,13 @@ macro_rules! impl_canonical_logic_binop_specializer {
                 }
                 let first = specialization.input(0).expect("validated first input");
                 let second = specialization.input(1).expect("validated second input");
-                mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
-                    $crate::__try_logic_binary_factory,
-                    ($module, first, second),
-                    $lib,
-                    bool,
-                    "bool",
-                    bool
-                );
-                Err(MechError::new(
-                    FunctionArgumentTypeMismatch {
-                        role: FunctionArgumentRole::Input(0),
-                        expected: concat!("supported Bool inputs for ", $operation).into(),
-                        found: format!(
-                            "{:?} and {:?}",
-                            first.representation(),
-                            second.representation(),
-                        ),
-                    },
-                    None,
+                let extents = $crate::semantic_logic_extents(&[first, second])?;
+                context.bind_resolved_runtime(
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+                    ExecutionTarget::DirectRuntime,
+                    vec![extents].into_boxed_slice(),
+                    &[first, second],
                 )
-                .with_compiler_loc())
             }
         }
     };
@@ -438,10 +394,7 @@ mod invocation_port_tests {
         .unwrap()
         .solve_result()
         .unwrap();
-        assert_eq!(
-            *fixed_out.borrow(),
-            Matrix2::new(true, false, false, false)
-        );
+        assert_eq!(*fixed_out.borrow(), Matrix2::new(true, false, false, false));
         let fixed_not_input = Ref::new(Matrix2::new(true, false, false, true));
         let fixed_not_output = Ref::new(Matrix2::from_element(false));
         crate::not::NotV::<bool, Matrix2<bool>>::new_invocation(FunctionInvocation::unary(
@@ -456,16 +409,8 @@ mod invocation_port_tests {
             Matrix2::new(false, true, true, false)
         );
 
-        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(
-            2,
-            2,
-            &[true, true, false, false],
-        ));
-        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(
-            2,
-            2,
-            &[true, false, true, false],
-        ));
+        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(2, 2, &[true, true, false, false]));
+        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(2, 2, &[true, false, true, false]));
         let dynamic_out = Ref::new(DMatrix::from_element(2, 2, false));
         let function = crate::and::AndMDMD::new_invocation(FunctionInvocation::binary(
             ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 2, 2).unwrap(),
@@ -486,11 +431,8 @@ mod invocation_port_tests {
             *dynamic_out.borrow(),
             DMatrix::from_row_slice(2, 2, &[true, false, false, false])
         );
-        let dynamic_not_input = Ref::new(DMatrix::from_row_slice(
-            2,
-            2,
-            &[true, false, false, true],
-        ));
+        let dynamic_not_input =
+            Ref::new(DMatrix::from_row_slice(2, 2, &[true, false, false, true]));
         let dynamic_not_output = Ref::new(DMatrix::from_element(2, 2, false));
         crate::not::NotV::<bool, DMatrix<bool>>::new_invocation(FunctionInvocation::unary(
             ValueCell::from_exact_matrix_ref(dynamic_not_output.clone(), 2, 2).unwrap(),
@@ -507,16 +449,20 @@ mod invocation_port_tests {
 
     #[test]
     fn logic_ports_reject_wrong_types_and_layouts() {
-        assert!(crate::and::AndSS::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact(false).unwrap(),
-            ValueCell::from_exact(1_usize).unwrap(),
-            ValueCell::from_exact(true).unwrap(),
-        ))
-        .is_err());
-        assert!(crate::and::AndSS::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact(false).unwrap(),
-            ValueCell::from_exact(true).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            crate::and::AndSS::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact(false).unwrap(),
+                ValueCell::from_exact(1_usize).unwrap(),
+                ValueCell::from_exact(true).unwrap(),
+            ))
+            .is_err()
+        );
+        assert!(
+            crate::and::AndSS::new_invocation(FunctionInvocation::unary(
+                ValueCell::from_exact(false).unwrap(),
+                ValueCell::from_exact(true).unwrap(),
+            ))
+            .is_err()
+        );
     }
 }

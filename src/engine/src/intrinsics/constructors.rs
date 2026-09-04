@@ -105,14 +105,27 @@ impl CanonicalFunctionSpecializer for SetDefine {
         invocation: &SpecializationInvocation,
         context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        let output = crate::structures::canonical_set_from_inputs(invocation.inputs().to_vec())?
-            .with_resolved_output_type(context.resolved_output(0)?)?;
-        let invocation = FunctionInvocation::nullary(output);
-        let implementation = ValueSet::new_invocation(invocation.clone())?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            implementation,
-            invocation,
-        )))
+        let inputs = invocation.inputs().iter().collect::<Vec<_>>();
+        let descriptor = context.resolved_output_descriptor(
+            0,
+            vec![inputs.len() as u64].into_boxed_slice(),
+            &inputs,
+        )?;
+        let draft = crate::structures::canonical_set_from_inputs(invocation.inputs().to_vec())?
+            .snapshot()?
+            .canonical_data_draft()
+            .map_err(|error| {
+                MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+            })?;
+        let output = ValueCell::from_resolved_descriptor_data(&descriptor, draft)?;
+        let runtime_invocation = FunctionInvocation::nullary(output);
+        let implementation = ValueSet::new_invocation(runtime_invocation.clone())?;
+        context.certify_instance_for_inputs(
+            FunctionInstance::new(implementation, runtime_invocation),
+            mech_core::RuntimeFunctionId::from_name("ValueSet"),
+            mech_core::ExecutionTarget::DirectRuntime,
+            &inputs,
+        )
     }
 }
 
@@ -586,10 +599,15 @@ impl<const VERTICAL: bool> ValueMatrixConcatenation<VERTICAL> {
             arguments: invocation.inputs().map(FunctionInputPort::value).collect(),
             output: invocation.output().value(),
         };
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(implementation),
-            invocation,
-        )))
+        context.certify_instance(
+            FunctionInstance::new(Box::new(implementation), invocation),
+            mech_core::RuntimeFunctionId::from_name(if VERTICAL {
+                "ValueMatrixVerticalConcatenation"
+            } else {
+                "ValueMatrixHorizontalConcatenation"
+            }),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 
@@ -609,6 +627,19 @@ impl<const VERTICAL: bool> MechFunctionFactory for ValueMatrixConcatenation<VERT
             )));
         };
         Ok(Box::new(Self { arguments, output }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        if VERTICAL {
+            #[cfg(feature = "matrix_vertcat")]
+            return Some(&PURE_MATRIX_VERTCAT_CONTRACT);
+            #[cfg(not(feature = "matrix_vertcat"))]
+            unreachable!();
+        }
+        #[cfg(feature = "matrix_horzcat")]
+        return Some(&PURE_MATRIX_HORZCAT_CONTRACT);
+        #[cfg(not(feature = "matrix_horzcat"))]
+        unreachable!();
     }
 }
 
@@ -677,6 +708,10 @@ impl MechFunctionFactory for ValueMatrixComprehension {
             )));
         };
         Ok(Box::new(Self { arguments, output }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_COMPREHENSION_CONTRACT)
     }
 }
 

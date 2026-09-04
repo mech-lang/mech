@@ -87,6 +87,20 @@ use std::sync::Arc;
 
 #[cfg(feature = "abs")]
 use crate::arithmetic::abs::*;
+#[cfg(feature = "copysign")]
+use crate::arithmetic::copysign::*;
+#[cfg(feature = "fdim")]
+use crate::arithmetic::fdim::*;
+#[cfg(feature = "fmod")]
+use crate::arithmetic::fmod::*;
+#[cfg(feature = "nextafter")]
+use crate::arithmetic::nextafter::*;
+#[cfg(feature = "remainder")]
+use crate::arithmetic::remainder::*;
+#[cfg(feature = "jn")]
+use crate::bessel::jn::*;
+#[cfg(feature = "yn")]
+use crate::bessel::yn::*;
 #[cfg(feature = "j0")]
 use crate::bessel::j0::*;
 #[cfg(feature = "j1")]
@@ -588,6 +602,7 @@ macro_rules! declare_math_float_unop_factory {
                 name: stringify!([<$operation $scalar:camel $suffix>]),
                 factory_type: [<$operation $scalar:camel $suffix>],
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: [mech_core::OperationId::from_name(concat!("math/", $operation_feature))],
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
                 extra_cargo_features: [$operation_feature],
@@ -606,6 +621,7 @@ macro_rules! declare_math_float_unop_factory {
                     0,
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
+                operations: [mech_core::OperationId::from_name(concat!("math/", $operation_feature))],
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
                 extra_cargo_features: [$operation_feature],
@@ -733,6 +749,85 @@ macro_rules! math_float_unop_families {
 
 math_float_unop_families!(declare_math_float_unop);
 
+macro_rules! declare_math_float_binop_factory {
+    (($operation:ident; $operation_feature:literal; $canonical:literal; $scalar:ident; $scalar_feature:literal), S, none) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_feature),
+                registration: [<register_ $operation:snake _s_ $scalar:lower>],
+                installer: [<install_ $operation:snake _s_ $scalar:lower>],
+                name: stringify!([<$operation $scalar:camel>]),
+                factory_type: [<$operation $scalar:camel>],
+                contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: [mech_core::OperationId::from_name($canonical)],
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _s_ $scalar:lower>])),
+                extra_cargo_features: [$operation_feature],
+            }
+        }
+    };
+    (($operation:ident; $operation_feature:literal; $canonical:literal; $scalar:ident; $scalar_feature:literal), $suffix:ident, $shape_feature:literal) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_feature),
+                registration: [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>],
+                installer: [<install_ $operation:snake _ $suffix:lower _ $scalar:lower>],
+                name: stringify!([<$operation $suffix $scalar:camel>]),
+                factory_type: [<$operation $suffix $scalar:camel>],
+                contract: RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: [mech_core::OperationId::from_name($canonical)],
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
+                extra_cargo_features: [$operation_feature],
+            }
+        }
+    };
+}
+
+macro_rules! declare_math_float_binop {
+    ($operation:ident, $operation_feature:literal, $canonical:literal) => {
+        for_each_math_unop_shape!(declare_math_float_binop_factory, ($operation; $operation_feature; $canonical; f32; "f32"));
+        for_each_math_unop_shape!(declare_math_float_binop_factory, ($operation; $operation_feature; $canonical; f64; "f64"));
+    };
+}
+
+macro_rules! math_float_binop_families {
+    ($callback:ident) => {
+        $callback!(Copysign, "copysign", "math/copysign");
+        $callback!(Fdim, "fdim", "math/fdim");
+        $callback!(Fmod, "fmod", "math/fmod");
+        $callback!(Nextafter, "nextafter", "math/nextafter");
+        $callback!(Remainder, "remainder", "math/remainder");
+        $callback!(Jn, "jn", "math/bessel/jn");
+        $callback!(Yn, "yn", "math/bessel/yn");
+    };
+}
+
+math_float_binop_families!(declare_math_float_binop);
+
+#[cfg(any(
+    feature = "copysign", feature = "fdim", feature = "fmod",
+    feature = "nextafter", feature = "remainder", feature = "jn", feature = "yn"
+))]
+macro_rules! register_math_float_binop_factory {
+    (($builder:ident; $operation:ident; $_operation_feature:literal; $_canonical:literal; $scalar:ident), $suffix:ident, $_shape_feature:tt) => {
+        mech_core::paste::paste! { [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>]($builder)?; }
+    };
+}
+
+#[cfg(any(
+    feature = "copysign", feature = "fdim", feature = "fmod",
+    feature = "nextafter", feature = "remainder", feature = "jn", feature = "yn"
+))]
+macro_rules! install_math_float_binop {
+    ($builder:ident, $operation:ident, $operation_feature:literal, $canonical:literal) => {
+        #[cfg(feature = "f32")]
+        for_each_math_unop_shape!(register_math_float_binop_factory, ($builder; $operation; $operation_feature; $canonical; f32));
+        #[cfg(feature = "f64")]
+        for_each_math_unop_shape!(register_math_float_binop_factory, ($builder; $operation; $operation_feature; $canonical; f64));
+    };
+}
+
 macro_rules! for_each_math_abs_scalar {
     ($callback:ident, $($context:tt)*) => {
         $callback!($($context)*; u8; u8; "u8"; "u8");
@@ -762,6 +857,7 @@ macro_rules! declare_math_abs_factory {
                 name: stringify!([<MathAbs $scalar_token:camel $suffix>]),
                 factory_type: [<MathAbs $scalar_token:camel $suffix>],
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: [mech_core::OperationId::from_name("math/abs")],
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_math_abs_ $scalar_token _ $suffix:lower>])),
                 extra_cargo_features: ["abs"],
@@ -780,6 +876,7 @@ macro_rules! declare_math_abs_factory {
                     0,
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
+                operations: [mech_core::OperationId::from_name("math/abs")],
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_math_abs_ $scalar_token _ $suffix:lower>])),
                 extra_cargo_features: ["abs"],
@@ -858,6 +955,7 @@ macro_rules! declare_math_neg_factory {
                 name: concat!(stringify!($factory), "<", stringify!($scalar_token), ">"),
                 factory_type: crate::ops::negate::$factory<$scalar>,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: [mech_core::OperationId::from_name("math/neg")],
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token>])),
                 extra_cargo_features: ["neg"],
@@ -1051,6 +1149,30 @@ macro_rules! for_each_canonical_op_assign_vector_range_source {
 }
 
 #[cfg(feature = "op_assign")]
+macro_rules! op_assign_operation_ids {
+    (Add) => { [
+        mech_core::OperationId::from_name("math/add-assign"),
+        mech_core::OperationId::from_name("math/add-assign/range"),
+        mech_core::OperationId::from_name("math/add-assign/range-all"),
+    ] };
+    (Div) => { [
+        mech_core::OperationId::from_name("math/div-assign"),
+        mech_core::OperationId::from_name("math/div-assign/range"),
+        mech_core::OperationId::from_name("math/div-assign/range-all"),
+    ] };
+    (Mul) => { [
+        mech_core::OperationId::from_name("math/mul-assign"),
+        mech_core::OperationId::from_name("math/mul-assign/range"),
+        mech_core::OperationId::from_name("math/mul-assign/range-all"),
+    ] };
+    (Sub) => { [
+        mech_core::OperationId::from_name("math/sub-assign"),
+        mech_core::OperationId::from_name("math/sub-assign/range"),
+        mech_core::OperationId::from_name("math/sub-assign/range-all"),
+    ] };
+}
+
+#[cfg(feature = "op_assign")]
 macro_rules! declare_op_assign_ss {
     (($operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
         mech_core::paste::paste! {
@@ -1061,6 +1183,7 @@ macro_rules! declare_op_assign_ss {
                 name: concat!(stringify!($operation), "AssignSS<", $scalar_name, ">"),
                 factory_type: [<$operation AssignSS>]<$scalar>,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: op_assign_operation_ids!($operation),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ss_ $scalar_token>])),
                 extra_cargo_features: [$operation_feature],
@@ -1080,6 +1203,7 @@ macro_rules! declare_op_assign_vv {
                 name: concat!(stringify!($operation), "AssignVV<[", $scalar_name, "]:", $shape_name, ">"),
                 factory_type: [<$operation AssignVV>]<$scalar, $shape<$scalar>, $shape<$scalar>>,
                 contract: RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: op_assign_operation_ids!($operation),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>])),
                 extra_cargo_features: [$operation_feature],
@@ -1103,6 +1227,7 @@ macro_rules! declare_op_assign_range_s {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_canonical_op_assign_slice,
                 ),
+                operations: op_assign_operation_ids!($operation),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>])),
                 extra_cargo_features: [$operation_feature],
@@ -1126,6 +1251,7 @@ macro_rules! declare_op_assign_range_v {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_canonical_op_assign_slice,
                 ),
+                operations: op_assign_operation_ids!($operation),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>])),
                 extra_cargo_features: [$operation_feature],
@@ -1453,6 +1579,7 @@ macro_rules! declare_atan2_factory {
             cfg: all(feature = "atan2", $cfg), registration: [<register_ $factory:snake>], installer: [<install_ $factory:snake>],
             name: stringify!($factory), factory_type: crate::trig::atan2::$factory,
             contract: atan2_runtime_contract!([$($shape_feature),*]),
+            operations: [mech_core::OperationId::from_name("math/atan2")],
             package: "mech-math", crate_name: "mech_math", installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $factory:snake>])),
             extra_cargo_features: ["atan2"],
         }}
@@ -1491,6 +1618,7 @@ mech_core::declare_native_runtime_factory! {
     contract: RuntimeFunctionContract::no_matrix(
         RuntimeOutputAliasPolicy::DisallowInputAlias
     ),
+    operations: [mech_core::OperationId::from_name("math/pow")],
     package: "mech-math",
     crate_name: "mech_math",
     installer_path: "mech_math::__mech_native::install_pow_rational",
@@ -1501,6 +1629,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Div,
+    canonical_operation: "math/div",
     operation_feature: "div",
     additional_features: [],
     scalars:
@@ -1518,6 +1647,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Mod,
+    canonical_operation: "math/mod",
     operation_feature: "mod",
     additional_features: [],
     scalars:
@@ -1533,6 +1663,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Mul,
+    canonical_operation: "math/mul",
     operation_feature: "mul",
     additional_features: [],
     scalars:
@@ -1550,6 +1681,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Pow,
+    canonical_operation: "math/pow",
     operation_feature: "pow",
     additional_features: [],
     scalars:
@@ -1562,6 +1694,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Sub,
+    canonical_operation: "math/sub",
     operation_feature: "sub",
     additional_features: [],
     scalars:
@@ -1606,6 +1739,23 @@ pub mod __mech_native {
     }
 
     math_float_unop_families!(export_math_float_unop);
+
+    macro_rules! export_math_float_binop_factory {
+        (($operation:ident; $_operation_feature:literal; $_canonical:literal; $scalar:ident), $suffix:ident, $_shape_feature:tt) => {
+            mech_core::paste::paste! { pub use super::[<install_ $operation:snake _ $suffix:lower _ $scalar:lower>]; }
+        };
+    }
+
+    macro_rules! export_math_float_binop {
+        ($operation:ident, $operation_feature:literal, $canonical:literal) => {
+            #[cfg(all(feature = $operation_feature, feature = "f32"))]
+            for_each_math_unop_shape!(export_math_float_binop_factory, ($operation; $operation_feature; $canonical; f32));
+            #[cfg(all(feature = $operation_feature, feature = "f64"))]
+            for_each_math_unop_shape!(export_math_float_binop_factory, ($operation; $operation_feature; $canonical; f64));
+        };
+    }
+
+    math_float_binop_families!(export_math_float_binop);
 
     macro_rules! export_math_abs_for_scalar {
         ($_context:tt; $scalar_token:ident; $_scalar:ty; $scalar_cfg:literal; $_scalar_feature:literal) => {
@@ -1850,6 +2000,20 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_float_unop!(builder, MathAtan);
     #[cfg(feature = "atan2")]
     install_atan2_runtime(builder)?;
+    #[cfg(feature = "copysign")]
+    install_math_float_binop!(builder, Copysign, "copysign", "math/copysign");
+    #[cfg(feature = "fdim")]
+    install_math_float_binop!(builder, Fdim, "fdim", "math/fdim");
+    #[cfg(feature = "fmod")]
+    install_math_float_binop!(builder, Fmod, "fmod", "math/fmod");
+    #[cfg(feature = "nextafter")]
+    install_math_float_binop!(builder, Nextafter, "nextafter", "math/nextafter");
+    #[cfg(feature = "remainder")]
+    install_math_float_binop!(builder, Remainder, "remainder", "math/remainder");
+    #[cfg(feature = "jn")]
+    install_math_float_binop!(builder, Jn, "jn", "math/bessel/jn");
+    #[cfg(feature = "yn")]
+    install_math_float_binop!(builder, Yn, "yn", "math/bessel/yn");
     #[cfg(feature = "atanh")]
     install_float_unop!(builder, MathAtanh);
     #[cfg(feature = "cos")]

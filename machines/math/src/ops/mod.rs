@@ -6,58 +6,137 @@ static PURE_BINARY_FULL_WRITE_EXACT_SCALAR: LazyLock<OperationContractDeclaratio
 static PURE_BINARY_FULL_WRITE_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_binary_full_write(ChangeDetectionPolicy::KernelReported));
 #[cfg(any(
-    feature = "abs", feature = "neg",
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "abs",
+    feature = "neg",
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
 static PURE_UNARY_FULL_WRITE_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_unary_full_write(ChangeDetectionPolicy::ExactScalar));
 #[cfg(any(
-    feature = "abs", feature = "neg",
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "abs",
+    feature = "neg",
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
 static PURE_UNARY_FULL_WRITE_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_unary_full_write(ChangeDetectionPolicy::KernelReported));
 
 #[cfg(any(
-    feature = "abs", feature = "neg",
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "abs",
+    feature = "neg",
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
-fn pure_unary_full_write(
-    change_detection: ChangeDetectionPolicy,
-) -> OperationContractDeclaration {
+fn pure_unary_full_write(change_detection: ChangeDetectionPolicy) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![InputPortPolicy {
@@ -81,19 +160,46 @@ fn pure_unary_full_write(
 }
 
 #[cfg(any(
-    feature = "abs", feature = "neg",
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "abs",
+    feature = "neg",
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
 pub(crate) fn unary_full_write_contract(
     output: FunctionValueRepresentation,
@@ -104,9 +210,7 @@ pub(crate) fn unary_full_write_contract(
     }
 }
 
-fn pure_binary_full_write(
-    change_detection: ChangeDetectionPolicy,
-) -> OperationContractDeclaration {
+fn pure_binary_full_write(change_detection: ChangeDetectionPolicy) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![
@@ -363,6 +467,10 @@ macro_rules! impl_checked_arithmetic_binop {
                 <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                arithmetic_semantic_contract!($out_type $(, $semantic_contract)?)
+            }
 
             fn new_invocation(
                 invocation: FunctionInvocation,

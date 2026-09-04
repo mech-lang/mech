@@ -439,6 +439,10 @@ where
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, out }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for HorizontalConcatenateTwoArgs<T>
@@ -524,6 +528,10 @@ where
         let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "matrixd")]
@@ -625,6 +633,10 @@ where
             e3,
             out,
         }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "matrixd")]
@@ -736,6 +748,10 @@ where
         }
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, out }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "matrixd")]
@@ -928,6 +944,10 @@ where
             out,
         }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "row_vectord")]
 impl<T> MechFunctionImpl for HorizontalConcatenateRDN<T>
@@ -1005,6 +1025,7 @@ mech_core::declare_native_runtime_factory! {
     name: "HorizontalConcatenateRDN<f64>",
     factory_type: HorizontalConcatenateRDN<f64>,
     contract: RuntimeFunctionContract::horizontal_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("HorizontalConcatenateRDN<f64>"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -1213,6 +1234,10 @@ where
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { arg, out }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_UNARY_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for HorizontalConcatenateS1D<T>
@@ -1283,6 +1308,10 @@ where
         let arg: Ref<T> = arg0.try_ref()?;
         let out: Ref<Matrix1<T>> = out.try_ref()?;
         Ok(Box::new(Self { arg, out }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_UNARY_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "matrix1")]
@@ -1359,6 +1388,10 @@ where
         let out: Ref<RowVector2<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, out }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "row_vector2")]
 impl<T> MechFunctionImpl for HorizontalConcatenateS2<T>
@@ -1410,6 +1443,7 @@ mech_core::declare_native_runtime_factory! {
     name: "HorizontalConcatenateS2<f64>",
     factory_type: HorizontalConcatenateS2<f64>,
     contract: RuntimeFunctionContract::horizontal_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("HorizontalConcatenateS2<f64>"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -1458,6 +1492,10 @@ where
         let e2: Ref<T> = arg2.try_ref()?;
         let out: Ref<RowVector3<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "row_vector3")]
@@ -1547,6 +1585,10 @@ where
             e3,
             out,
         }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "row_vector4")]
@@ -5379,6 +5421,7 @@ macro_rules! declare_horzcat_scalar {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_nullary_horizontal_concatenation_canonical,
                 ),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!("HorizontalConcatenateRD<", $name, ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::install_horizontal_concatenate_r_d_", stringify!($token)),
                 extra_cargo_features: ["matrix_horzcat"],
@@ -5394,6 +5437,7 @@ macro_rules! declare_horzcat_scalar {
                 name: concat!(stringify!($factory), "<", $name, ">"),
                 factory_type: $factory<$scalar>,
                 contract: RuntimeFunctionContract::horizontal_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($factory), "<", $name, ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
                 extra_cargo_features: ["matrix_horzcat"],

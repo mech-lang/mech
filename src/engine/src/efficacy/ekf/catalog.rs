@@ -140,18 +140,36 @@ impl CanonicalFunctionSpecializer for FrozenEkfSpecializer {
             .map(|input| input.cell().cloned())
             .collect::<MResult<Vec<_>>>()?;
         validate_source_arguments(self.operation, &inputs)?;
-        let output = allocate_output(operation_spec(self.operation).output)?
-            .with_resolved_output_type(context.resolved_output(0)?)?;
+        let semantic_inputs = invocation.inputs().iter().collect::<Vec<_>>();
+        let output_shape = operation_spec(self.operation).output;
+        let output_extents = match output_shape {
+            FrozenEkfValueShape::F64 | FrozenEkfValueShape::Bool => Vec::new(),
+            FrozenEkfValueShape::Vector(length) => vec![length as u64, 1],
+            FrozenEkfValueShape::Matrix { rows, columns } => {
+                vec![rows as u64, columns as u64]
+            }
+        };
+        let descriptor = context.resolved_output_descriptor(
+            0,
+            output_extents.into_boxed_slice(),
+            &semantic_inputs,
+        )?;
+        let output = allocate_output(output_shape)?;
+        output.validate_descriptor(&descriptor)?;
         let function = FrozenEkfFunction {
             operation: self.operation,
             inputs: inputs.clone().into_boxed_slice(),
             output: output.clone(),
         };
         function.solve_result()?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(function),
-            invocation_from_cells(output, inputs.into_boxed_slice()),
-        )))
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(function),
+                invocation_from_cells(output, inputs.into_boxed_slice()),
+            ),
+            mech_core::RuntimeFunctionId::from_name(operation_spec(self.operation).canonical_name),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 
     fn guard_safety(&self) -> GuardFunctionSafety {
@@ -197,9 +215,9 @@ impl MechFunctionCompiler for FrozenEkfFunction {
     }
 
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let zero = allocate_output(operation_spec(self.operation).output)?
-            .with_resolved_output_type(&self.output.resolved_type()?)?
-            .snapshot()?;
+        let zero_cell = allocate_output(operation_spec(self.operation).output)?;
+        zero_cell.validate_descriptor(&self.output.resolved_descriptor()?)?;
+        let zero = zero_cell.snapshot()?;
         let destination =
             compile_runtime_produced_value_cell_register_with_seed(&self.output, &zero, context)?;
         let inputs = self
@@ -541,7 +559,7 @@ impl CanonicalFunctionSpecializer for FrozenF64NegateSpecializer {
     fn specialize_invocation(
         &self,
         arguments: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if arguments.len() != 1 {
             return Err(MechError::new(
@@ -566,12 +584,16 @@ impl CanonicalFunctionSpecializer for FrozenF64NegateSpecializer {
             ));
         };
         let output = ValueCell::from_exact(-value.to_f64())?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(FrozenF64NegateFunction {
-                output: output.clone(),
-            }),
-            FunctionInvocation::unary(output, input),
-        )))
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(FrozenF64NegateFunction {
+                    output: output.clone(),
+                }),
+                FunctionInvocation::unary(output, input),
+            ),
+            mech_core::RuntimeFunctionId::from_name("FrozenF64Negate"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 
     fn guard_safety(&self) -> GuardFunctionSafety {

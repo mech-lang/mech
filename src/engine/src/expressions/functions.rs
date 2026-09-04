@@ -131,18 +131,16 @@ pub fn function_call(
             let invocation = mech_core::SpecializationInvocation::new(
                 input_arg_values.clone().into_boxed_slice(),
             );
-            let mut context = mech_core::SpecializationContext::for_invocation(
+            let mut context = mech_core::SpecializationContext::for_syntax_directed_invocation(
                 &invocation,
                 Some(p.function_catalog()),
+                mech_core::OperationId::from_raw(entry.id.raw()),
+                entry.canonical_name.clone(),
             )?;
             let specialized = entry
                 .specializer
                 .specialize_invocation(&invocation, &mut context)?;
-            execute_bound_specialized_function(
-                specialized.with_semantic_operation(entry.canonical_name),
-                &input_arg_values,
-                p,
-            )
+            execute_bound_specialized_function(specialized, &input_arg_values, p)
         }
     }
 }

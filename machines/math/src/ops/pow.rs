@@ -161,16 +161,19 @@ macro_rules! impl_powop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(crate::ops::arithmetic_full_write_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
                 let lhs: Ref<$arg1_type> = lhs.try_ref()?;
                 let rhs: Ref<$arg2_type> = rhs.try_ref()?;
                 let out: Ref<$out_type> = out.try_ref()?;
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
-
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -230,7 +233,11 @@ macro_rules! impl_powop {
                 + RuntimeCheckedPow,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
@@ -269,6 +276,12 @@ impl MechFunctionFactory for PowRational {
         let out: Ref<R64> = out.try_ref()?;
         Ok(Box::new(Self { lhs, rhs, out }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(crate::ops::arithmetic_full_write_contract(
+            FunctionValueRepresentation::R64,
+        ))
+    }
 }
 
 #[cfg(all(feature = "rational", feature = "i32"))]
@@ -302,11 +315,7 @@ impl MechFunctionImpl for PowRational {
     }
 }
 
-#[cfg(all(
-    feature = "rational",
-    feature = "i32",
-    feature = "semantic-compiler"
-))]
+#[cfg(all(feature = "rational", feature = "i32", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for PowRational {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!(
@@ -336,7 +345,10 @@ mod rational_port_tests {
 
         function.solve_result().unwrap();
         assert!(output.same_cell(&output_alias));
-        assert_eq!(function.transaction_state_ports().unwrap().unwrap().len(), 1);
+        assert_eq!(
+            function.transaction_state_ports().unwrap().unwrap().len(),
+            1
+        );
         let snapshot = output.snapshot().unwrap();
         assert!(matches!(
             snapshot.data(),
@@ -344,12 +356,14 @@ mod rational_port_tests {
                 if value.numerator() == 9 && value.denominator() == 4
         ));
 
-        assert!(PowRational::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact(R64::default()).unwrap(),
-            ValueCell::from_exact(R64::new(3, 2)).unwrap(),
-            ValueCell::from_exact(2_usize).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            PowRational::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact(R64::default()).unwrap(),
+                ValueCell::from_exact(R64::new(3, 2)).unwrap(),
+                ValueCell::from_exact(2_usize).unwrap(),
+            ))
+            .is_err()
+        );
     }
 }
 

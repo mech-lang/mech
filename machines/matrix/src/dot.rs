@@ -104,7 +104,12 @@ impl CanonicalFunctionSpecializer for MatrixDot {
         }
         let lhs = invocation.input(0).expect("validated dot lhs");
         let rhs = invocation.input(1).expect("validated dot rhs");
-        context.bind_runtime_factory_derived_output("Dot", None, &[lhs, rhs])
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
+            &[lhs, rhs],
+        )
     }
 }
 
@@ -219,18 +224,21 @@ mod canonical_port_tests {
 
     #[test]
     fn dot_rejects_wrong_exact_type_and_layout() {
-        let rhs = ValueCell::from_exact_matrix_ref(Ref::new(Vector2::new(1.0, 2.0)), 2, 1)
-            .unwrap();
-        assert!(DotV2V2::<f64>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact(0.0_f64).unwrap(),
-            ValueCell::from_exact(1.0_f64).unwrap(),
-            rhs.clone(),
-        ))
-        .is_err());
-        assert!(DotV2V2::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact(0.0_f64).unwrap(),
-            rhs,
-        ))
-        .is_err());
+        let rhs = ValueCell::from_exact_matrix_ref(Ref::new(Vector2::new(1.0, 2.0)), 2, 1).unwrap();
+        assert!(
+            DotV2V2::<f64>::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact(0.0_f64).unwrap(),
+                ValueCell::from_exact(1.0_f64).unwrap(),
+                rhs.clone(),
+            ))
+            .is_err()
+        );
+        assert!(
+            DotV2V2::<f64>::new_invocation(FunctionInvocation::unary(
+                ValueCell::from_exact(0.0_f64).unwrap(),
+                rhs,
+            ))
+            .is_err()
+        );
     }
 }

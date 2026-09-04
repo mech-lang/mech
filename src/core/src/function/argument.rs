@@ -434,20 +434,39 @@ impl FunctionInvocation {
         &self,
         declaration: &OperationContractDeclaration,
     ) -> MResult<()> {
-        let requirements = declaration
-            .memory_requirements(self.input_count())
-            .map_err(|error| {
-                function_memory_contract_error(
-                    FunctionMemoryContractViolationReason::OperationContractDerivation { error },
-                )
-            })?;
+        let direct = declaration.memory_requirements(self.input_count());
+        let (requirements, coalesced_input) = match direct {
+            Ok(requirements) => (requirements, None),
+            Err(direct_error) => {
+                let Some(base_input) = coalesced_read_modify_write_input(declaration) else {
+                    return Err(function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::OperationContractDerivation {
+                            error: direct_error,
+                        },
+                    ));
+                };
+                let semantic_input_count = self.input_count().checked_add(1).ok_or_else(|| {
+                    function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::OperationContractDerivation {
+                            error: direct_error.clone(),
+                        },
+                    )
+                })?;
+                let requirements = declaration
+                    .memory_requirements(semantic_input_count)
+                    .map_err(|_| {
+                        function_memory_contract_error(
+                            FunctionMemoryContractViolationReason::OperationContractDerivation {
+                                error: direct_error,
+                            },
+                        )
+                    })?;
+                (requirements, Some(base_input))
+            }
+        };
 
-        for (index, (cell, requirement)) in self
-            .inputs
-            .iter()
-            .zip(requirements.inputs.iter())
-            .enumerate()
-        {
+        for (index, requirement) in requirements.inputs.iter().enumerate() {
+            let cell = self.semantic_input_cell(index, coalesced_input)?;
             check_invocation_cell_requirement(cell, requirement).map_err(|error| {
                 function_memory_contract_error(FunctionMemoryContractViolationReason::InputPort {
                     index,
@@ -477,7 +496,7 @@ impl FunctionInvocation {
                         FunctionMemoryContractViolationReason::OutputPort { error },
                     )
                 })?;
-                self.check_operation_output_alias(requirement)?;
+                self.check_operation_output_alias(requirement, coalesced_input)?;
             }
             outputs => {
                 return Err(function_memory_contract_error(
@@ -490,18 +509,41 @@ impl FunctionInvocation {
         Ok(())
     }
 
-    fn declared_alias_input(&self, input: u16) -> MResult<&ValueCell> {
-        self.inputs.get(input as usize).ok_or_else(|| {
+    fn semantic_input_cell(
+        &self,
+        input: usize,
+        coalesced_input: Option<usize>,
+    ) -> MResult<&ValueCell> {
+        if coalesced_input == Some(input) {
+            return Ok(&self.output);
+        }
+        let physical_input = match coalesced_input {
+            Some(base) if input > base => input - 1,
+            _ => input,
+        };
+        self.inputs.get(physical_input).ok_or_else(|| {
             function_memory_contract_error(
                 FunctionMemoryContractViolationReason::InvalidDeclaredAliasInput {
-                    input,
-                    inputs: self.input_count(),
+                    input: u16::try_from(input).unwrap_or(u16::MAX),
+                    inputs: self.input_count() + usize::from(coalesced_input.is_some()),
                 },
             )
         })
     }
 
-    fn check_operation_output_alias(&self, requirement: &PortMemoryRequirement) -> MResult<()> {
+    fn declared_alias_input(
+        &self,
+        input: u16,
+        coalesced_input: Option<usize>,
+    ) -> MResult<&ValueCell> {
+        self.semantic_input_cell(usize::from(input), coalesced_input)
+    }
+
+    fn check_operation_output_alias(
+        &self,
+        requirement: &PortMemoryRequirement,
+        coalesced_input: Option<usize>,
+    ) -> MResult<()> {
         let Some(alias) = requirement.alias else {
             return Ok(());
         };
@@ -518,8 +560,11 @@ impl FunctionInvocation {
                 }
             }
             crate::AliasPolicy::MayAlias { input } => {
-                let designated = self.declared_alias_input(input)?;
-                for (index, candidate) in self.inputs.iter().enumerate() {
+                let designated = self.declared_alias_input(input, coalesced_input)?;
+                let semantic_input_count =
+                    self.input_count() + usize::from(coalesced_input.is_some());
+                for index in 0..semantic_input_count {
+                    let candidate = self.semantic_input_cell(index, coalesced_input)?;
                     if self.output.same_storage(candidate) && !designated.same_storage(candidate) {
                         return Err(function_memory_contract_error(
                             FunctionMemoryContractViolationReason::MayAliasViolation {
@@ -531,7 +576,7 @@ impl FunctionInvocation {
                 }
             }
             crate::AliasPolicy::InPlaceRequired { input } => {
-                let designated = self.declared_alias_input(input)?;
+                let designated = self.declared_alias_input(input, coalesced_input)?;
                 if !self.output.same_storage(designated) {
                     return Err(function_memory_contract_error(
                         FunctionMemoryContractViolationReason::InPlaceRequiredViolation { input },
@@ -566,6 +611,22 @@ fn check_invocation_cell_requirement(
         requirement,
         &cell.storage_capabilities(),
     )
+}
+
+fn coalesced_read_modify_write_input(declaration: &OperationContractDeclaration) -> Option<usize> {
+    let [output] = declaration.outputs.as_ref() else {
+        return None;
+    };
+    let crate::OutputConstruction::ReadModifyWrite { base_input, .. } = &output.construction else {
+        return None;
+    };
+    let alias_input = match output.alias {
+        crate::AliasPolicy::MayAlias { input } | crate::AliasPolicy::InPlaceRequired { input } => {
+            input
+        }
+        crate::AliasPolicy::NoAlias => return None,
+    };
+    (alias_input == *base_input).then_some(usize::from(*base_input))
 }
 
 fn function_memory_contract_error(reason: FunctionMemoryContractViolationReason) -> MechError {
@@ -1256,7 +1317,7 @@ mod operation_memory_tests {
     use super::*;
     use crate::{
         AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction, InputPortLayout,
-        InputPortPolicy, OutputConstruction, OutputPortPolicy, ShapeRule,
+        InputPortPolicy, OutputConstruction, OutputPortPolicy, RegionPolicy, ShapeRule,
     };
 
     fn declaration(alias: AliasPolicy) -> OperationContractDeclaration {
@@ -1337,6 +1398,43 @@ mod operation_memory_tests {
             .check_operation_memory_contract(&declaration(AliasPolicy::InPlaceRequired {
                 input: 0,
             }))
+            .unwrap();
+    }
+
+    #[test]
+    fn coalesced_read_modify_write_output_satisfies_its_semantic_base_input() {
+        let declaration = OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![
+                    InputPortPolicy {
+                        access: crate::AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    },
+                    InputPortPolicy {
+                        access: crate::AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: crate::AccessMode::ReadWrite,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::ReadModifyWrite {
+                    base_input: 0,
+                    regions: RegionPolicy::WholeValue,
+                },
+                alias: AliasPolicy::InPlaceRequired { input: 0 },
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        };
+        let destination = ValueCell::from_exact(1_f64).unwrap();
+        let source = ValueCell::from_exact(2_f64).unwrap();
+
+        FunctionInvocation::unary(destination, source)
+            .check_operation_memory_contract(&declaration)
             .unwrap();
     }
 }

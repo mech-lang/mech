@@ -537,6 +537,7 @@ macro_rules! declare_assign_scalar_factory {
                 name: concat!("Assign<", $runtime_name, ">"),
                 factory_type: Assign<$scalar>,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!("Assign<", $runtime_name, ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::", stringify!([<install_assign_ $installer_token>])),
                 extra_cargo_features: ["assign"],
@@ -554,6 +555,7 @@ mech_core::declare_native_runtime_factory! {
     name: "Assign<index>",
     factory_type: Assign<usize>,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("Assign<index>"),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_assign_index",
     extra_cargo_features: ["assign"],
@@ -615,6 +617,7 @@ macro_rules! declare_assign_value_matrix_shape {
                 contract: RuntimeFunctionContract::same_shape(
                     RuntimeOutputAliasPolicy::AllowInputAlias,
                 ),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!("Assign<", $runtime_name, stringify!($shape), ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!(
                     "mech_engine::__mech_native::",
@@ -728,6 +731,7 @@ macro_rules! declare_matrix_assign_factory {
                     $output_alias,
                     assign_layout_validator!($layout),
                 ),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($fxn_name), "<", $scalar_name, $(stringify!($shape)),*, ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!(
                     "mech_engine::__mech_native::",

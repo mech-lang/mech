@@ -63,7 +63,7 @@ mod source_only {
         p: &InterpreterExecution<'_>,
     ) -> MResult<ValueCell> {
         let plan = p.plan();
-        let instance = specialized.into_instance();
+        let instance = specialized.instance();
         let implementation = instance.implementation();
         trace_println!(
             p,
@@ -88,7 +88,7 @@ mod source_only {
         solve_specialized_initial_output(implementation, &plan, p)?;
         let result = instance.output().clone();
         trace_println!(p, "{}", format_trace("arm", format!("result {result:?}")));
-        plan.register_instance(instance)?;
+        plan.register_specialized(specialized)?;
         Ok(result)
     }
 
@@ -103,17 +103,18 @@ mod source_only {
         let invocation = SpecializationInvocation::from_cells(compile_arguments.into_boxed_slice());
         let specialized =
             p.specialize_visible_invocation_named(operation, Some(canonical_name), &invocation)?;
-        execute_function_instance(p, plan, specialized.into_instance())
+        execute_function_instance(p, plan, specialized)
     }
 
     pub(crate) fn execute_function_instance(
         p: &InterpreterExecution<'_>,
         plan: &Plan,
-        instance: FunctionInstance,
+        specialized: SpecializedFunction,
     ) -> MResult<ValueCell> {
+        let instance = specialized.instance();
         solve_specialized_initial_output(instance.implementation(), plan, p)?;
         let output = instance.output().clone();
-        plan.register_instance(instance)?;
+        plan.register_specialized(specialized)?;
         Ok(output)
     }
 

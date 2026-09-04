@@ -359,6 +359,7 @@ macro_rules! declare_add_matrix1_dynamic_native_factories {
                 contract: RuntimeFunctionContract::same_shape(
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
+                operations: [mech_core::OperationId::from_name("math/add")],
                 package: "mech-math",
                 crate_name: "mech_math",
                 installer_path: concat!(
@@ -381,6 +382,7 @@ macro_rules! declare_add_matrix1_dynamic_native_factories {
                 contract: RuntimeFunctionContract::same_shape(
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
+                operations: [mech_core::OperationId::from_name("math/add")],
                 package: "mech-math",
                 crate_name: "mech_math",
                 installer_path: concat!(
@@ -421,6 +423,7 @@ macro_rules! declare_add_f64_native_runtime_factory {
                 name: concat!("Add", stringify!($suffix), "<", $scalar_name, ">"),
                 factory_type: [<Add $suffix>]<$scalar>,
                 contract: mech_core::__mech_elementwise_binop_contract!($suffix),
+                operations: [mech_core::OperationId::from_name("math/add")],
 
                 package: "mech-math",
                 crate_name: "mech_math",
@@ -458,6 +461,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Add,
+    canonical_operation: "math/add",
     operation_feature: "add",
     additional_features: [],
     scalars:
@@ -484,10 +488,10 @@ mech_core::declare_native_binop_runtime_factories! {
 macro_rules! register_add_matrix1_dynamic_native_factories {
     ($builder:expr; $scalar_feature:literal, $scalar_token:ident) => {
         #[cfg(all(
-            feature = $scalar_feature,
-            feature = "matrixd",
-            any(feature = "matrix1", feature = "matrix1_interop")
-        ))]
+                    feature = $scalar_feature,
+                    feature = "matrixd",
+                    any(feature = "matrix1", feature = "matrix1_interop")
+                ))]
         paste! {
             [<register_add_m1_md_ $scalar_token>]($builder)?;
             [<register_add_md_m1_ $scalar_token>]($builder)?;
@@ -535,10 +539,10 @@ pub mod __mech_native {
     macro_rules! export_add_matrix1_dynamic_native_factories {
         ($scalar_feature:literal, $scalar_token:ident) => {
             #[cfg(all(
-                feature = $scalar_feature,
-                feature = "matrixd",
-                any(feature = "matrix1", feature = "matrix1_interop")
-            ))]
+                            feature = $scalar_feature,
+                            feature = "matrixd",
+                            any(feature = "matrix1", feature = "matrix1_interop")
+                        ))]
             mech_core::paste::paste! {
                 pub use super::[<install_add_m1_md_ $scalar_token>];
                 pub use super::[<install_add_md_m1_ $scalar_token>];

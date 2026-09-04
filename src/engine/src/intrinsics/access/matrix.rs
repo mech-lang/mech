@@ -1638,6 +1638,7 @@ macro_rules! declare_access_typed_scalar {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_matrix_access_contract,
                 ),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($factory), "<", $runtime_name, ">")),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -1840,6 +1841,7 @@ macro_rules! declare_access_range_range_scalar {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_matrix_access_contract,
                 ),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($factory), "<", $cargo_scalar, stringify!($output), stringify!($input), stringify!($ix1), stringify!($ix2), ">")),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -1920,6 +1922,7 @@ macro_rules! declare_access_all_range_scalar {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_matrix_access_all_range_contract,
                 ),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($factory), "<", $cargo_scalar, stringify!($output), stringify!($input), stringify!($ix), ">")),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(

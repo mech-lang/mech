@@ -607,6 +607,7 @@ mech_core::declare_native_runtime_factory! {
     name: "VariableDefineF64",
     factory_type: VariableDefineF64,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("VariableDefineF64"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -670,6 +671,7 @@ macro_rules! declare_variable_define_scalar_native {
                 name: stringify!([<VariableDefine $kind:camel>]),
                 factory_type: [<VariableDefine $kind:camel>],
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(stringify!([<VariableDefine $kind:camel>])),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -715,6 +717,7 @@ macro_rules! declare_canonical_variable_define_native {
                 name: $runtime_name,
                 factory_type: $factory,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name($runtime_name),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -871,6 +874,7 @@ macro_rules! declare_variable_define_matrix_native {
                 name: concat!("VariableDefineMatrix<", $kind_name, stringify!($shape), ">"),
                 factory_type: VariableDefineMatrix<$kind, $shape<$kind>>,
                 contract: RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!("VariableDefineMatrix<", $kind_name, stringify!($shape), ">")),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -1028,6 +1032,7 @@ mech_core::declare_native_runtime_factory! {
     name: "VariableDefineEmpty",
     factory_type: VariableDefineEmpty,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("VariableDefineEmpty"),
     package: "mech-engine",
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_variable_define_empty",
@@ -1224,7 +1229,7 @@ impl CanonicalFunctionSpecializer for VarDefine {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 4 {
             return Err(MechError::new(
@@ -1291,9 +1296,10 @@ impl CanonicalFunctionSpecializer for VarDefine {
             mutable: *mutable,
             root_visible: *root_visible,
         };
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(implementation),
-            FunctionInvocation::nullary(value),
-        )))
+        context.certify_instance(
+            FunctionInstance::new(Box::new(implementation), FunctionInvocation::nullary(value)),
+            mech_core::RuntimeFunctionId::from_name("CanonicalVariableDefinition"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }

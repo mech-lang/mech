@@ -323,7 +323,18 @@ fn execute_conversion_plan(
     })?;
     let converted =
         execute_conversion_draft(draft, &plan.step).map_err(conversion_execution_error)?;
-    ValueCell::from_schema_data(target.clone(), converted)?.with_resolved_output_type(&plan.target)
+    let output = ValueCell::from_schema_data(target.clone(), converted)?;
+    let actual = output.resolved_type()?;
+    if !exact_type_equal(&actual, &plan.target) {
+        return Err(MechError::from(TypeResolutionError::incompatible(
+            "convert/kind",
+            TypeConstraintFailure::OutputTypeMismatch {
+                expected: plan.target.semantic_name(),
+                actual: actual.semantic_name(),
+            },
+        )));
+    }
+    Ok(output)
 }
 
 #[cfg(feature = "convert")]
@@ -426,6 +437,10 @@ impl MechFunctionFactory for RuntimeKindConversion {
             plan,
         }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_TYPE_CONVERSION_CONTRACT)
+    }
 }
 
 #[cfg(feature = "convert")]
@@ -485,6 +500,7 @@ mech_core::declare_native_runtime_factory! {
         RuntimeOutputAliasPolicy::DisallowInputAlias,
         validate_runtime_kind_conversion,
     ),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("convert/kind"),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_runtime_kind_conversion",
     extra_cargo_features: ["convert", "semantic-compiler"],
@@ -701,15 +717,19 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         })?;
         let output = execute_conversion_plan(&source, &target, &plan)?;
         let bound = FunctionInvocation::binary(output.clone(), source.clone(), target_cell);
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(PlannedTypeConversion {
-                source,
-                output,
-                target,
-                plan,
-            }),
-            bound,
-        )))
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(PlannedTypeConversion {
+                    source,
+                    output,
+                    target,
+                    plan,
+                }),
+                bound,
+            ),
+            mech_core::RuntimeFunctionId::from_name("PlannedTypeConversion"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 

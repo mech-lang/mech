@@ -929,7 +929,7 @@ impl CanonicalFunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 2 {
             return Err(MechError::new(
@@ -980,10 +980,14 @@ impl CanonicalFunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
                 )
             }
         };
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            implementation,
-            FunctionInvocation::binary(output, lhs_cell, rhs_cell),
-        )))
+        context.certify_instance(
+            FunctionInstance::new(
+                implementation,
+                FunctionInvocation::binary(output, lhs_cell, rhs_cell),
+            ),
+            mech_core::RuntimeFunctionId::from_name(&self.name),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 
@@ -999,7 +1003,7 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ToF64Specializer {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 1 {
             return Err(MechError::new(
@@ -1020,16 +1024,20 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ToF64Specializer {
         dynamic_arg_as_f64_ref(&input, &self.name)?;
         let output = ValueCell::from_exact(0.0_f64)?;
 
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(DynamicUnaryF64ToF64Function {
-                name: self.name.clone(),
-                input: input.clone(),
-                output: output.clone(),
-                kernel: self.kernel,
-                _library: self._library.clone(),
-            }),
-            FunctionInvocation::unary(output, input),
-        )))
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(DynamicUnaryF64ToF64Function {
+                    name: self.name.clone(),
+                    input: input.clone(),
+                    output: output.clone(),
+                    kernel: self.kernel,
+                    _library: self._library.clone(),
+                }),
+                FunctionInvocation::unary(output, input),
+            ),
+            mech_core::RuntimeFunctionId::from_name(&self.name),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 
@@ -1045,7 +1053,7 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 1 {
             return Err(MechError::new(
@@ -1066,16 +1074,20 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
         let (rows, cols, _) = dynamic_arg_as_f64_matrix(&input, &self.name)?;
         let output = dynamic_f64_matrix_output(rows, cols)?;
 
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(DynamicUnaryF64ViewToF64ViewFunction {
-                name: self.name.clone(),
-                input: input.clone(),
-                output: output.clone(),
-                kernel: self.kernel,
-                _library: self._library.clone(),
-            }),
-            FunctionInvocation::unary(output, input),
-        )))
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(DynamicUnaryF64ViewToF64ViewFunction {
+                    name: self.name.clone(),
+                    input: input.clone(),
+                    output: output.clone(),
+                    kernel: self.kernel,
+                    _library: self._library.clone(),
+                }),
+                FunctionInvocation::unary(output, input),
+            ),
+            mech_core::RuntimeFunctionId::from_name(&self.name),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 
