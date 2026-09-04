@@ -250,6 +250,10 @@ macro_rules! impl_binop {
             $arg2_type: FunctionRuntimeType + FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
+            fn implementation_memory_class() -> $crate::ImplementationMemoryClass {
+                $crate::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
@@ -335,6 +339,10 @@ macro_rules! impl_unop {
             $arg_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
+            fn implementation_memory_class() -> $crate::ImplementationMemoryClass {
+                $crate::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,

@@ -54,6 +54,10 @@ macro_rules! impl_two_arg_fxn {
             out: Ref<$out_kind>,
         }
         impl MechFunctionFactory for $struct_name {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_kind as FunctionRuntimeType>::REPRESENTATION,
                 <$kind1 as FunctionRuntimeType>::REPRESENTATION,

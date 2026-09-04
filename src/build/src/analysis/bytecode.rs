@@ -311,6 +311,10 @@ mod tests {
         });
 
     impl MechFunctionFactory for UnusedFactory {
+        fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch
+        }
+
         const SIGNATURE: RuntimeFunctionSignature =
             RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Empty);
 

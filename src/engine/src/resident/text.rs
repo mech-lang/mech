@@ -1,18 +1,34 @@
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction, RegionPolicy,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, ShapeRule,
+    ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
+    OutputConstruction, RegionPolicy, ResidentKernelBindError, ResidentKernelBindRequest,
+    ResidentKernelError, ResidentKernelInputs, ResidentShape, ResidentValueKind, ResidentValueMut,
+    ResidentValueRef, ResolvedOperationContract, ShapeRule,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(["string"], "concat", bind_concat)?;
-    builder.insert_resident_factory(["matrix"], "assign-range-all", bind_string_all_assign)?;
-    builder.insert_resident_factory(["matrix"], "assign-scalar", bind_string_index_assign)?;
+    builder.insert_resident_factory(
+        ["string"],
+        "concat",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        bind_concat,
+    )?;
+    builder.insert_resident_factory(
+        ["matrix"],
+        "assign-range-all",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        bind_string_all_assign,
+    )?;
+    builder.insert_resident_factory(
+        ["matrix"],
+        "assign-scalar",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        bind_string_index_assign,
+    )?;
     builder.insert_resident_factory(
         ["matrix"],
         "assign-range",
+        ImplementationMemoryClass::NoAdditionalScratch,
         bind_semantic_string_range_assign,
     )?;
     Ok(())

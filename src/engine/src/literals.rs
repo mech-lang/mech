@@ -453,6 +453,10 @@ fn runtime_kind_conversion_plan(
 
 #[cfg(feature = "convert")]
 impl MechFunctionFactory for RuntimeKindConversion {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::AnyValue,
         FunctionValueRepresentation::AnyValue,

@@ -173,6 +173,10 @@ macro_rules! impl_range_range_fxn_v {
                 <IxVec2 as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (sink, source, ix1, ix2) = invocation.expect_ternary()?;
                 let source: Ref<naMatrix<T, R2, C2, S2>> = source.try_ref()?;
@@ -301,6 +305,10 @@ macro_rules! impl_all_fxn_v {
                 <naMatrix<T, R2, C2, S2> as FunctionRuntimeType>::REPRESENTATION,
                 <IxVec as FunctionRuntimeType>::REPRESENTATION,
             );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
             fn new_invocation(
                 invocation: FunctionInvocation,

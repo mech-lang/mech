@@ -268,6 +268,10 @@ pub struct BytecodeIntegrityConstraintMarker {
 
 #[cfg(feature = "invariant_define")]
 impl MechFunctionFactory for BytecodeIntegrityConstraintMarker {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
         FunctionValueRepresentation::Bool,
         FunctionValueRepresentation::AnyValue,
@@ -356,6 +360,10 @@ where
     #[cfg(feature = "semantic-compiler")]
     MatA: CompileConst,
 {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         MatA::REPRESENTATION,
         FunctionValueRepresentation::String,
@@ -462,6 +470,10 @@ macro_rules! impl_variable_define_fxn {
             root_visible: bool,
           }
           impl MechFunctionFactory for [<VariableDefine $kind:camel>] {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
           const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
               <$kind as FunctionRuntimeType>::REPRESENTATION,
               FunctionValueRepresentation::String,
@@ -568,6 +580,10 @@ macro_rules! impl_canonical_variable_define_fxn {
         pub struct $factory;
 
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 $representation,
                 FunctionValueRepresentation::String,
@@ -1017,6 +1033,10 @@ pub struct VariableDefineEmpty {
 }
 
 impl MechFunctionFactory for VariableDefineEmpty {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::MutableValueCell,
         FunctionValueRepresentation::String,

@@ -180,6 +180,9 @@ impl MechErrorKind for UserFunctionIdCollision {
 pub trait MechFunctionFactory {
     const SIGNATURE: RuntimeFunctionSignature;
 
+    /// Closed R5 declaration of heap work beyond generic atomic publication.
+    fn implementation_memory_class() -> ImplementationMemoryClass;
+
     /// Semantic memory contract declared by a statically registered runtime
     /// implementation. Fixed operation bindings must provide this authority
     /// before their constructor can be called.

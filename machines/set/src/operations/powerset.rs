@@ -70,6 +70,10 @@ pub(crate) struct SetPowersetFxn {
 }
 
 impl MechFunctionFactory for SetPowersetFxn {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalSortUnique
+            }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::Set,

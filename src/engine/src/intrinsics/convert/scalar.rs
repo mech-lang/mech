@@ -9,6 +9,10 @@ struct ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionFactory for ConvertSEnum {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Enum);
 
@@ -44,6 +48,10 @@ struct ConvertSEmpty {
 }
 
 impl MechFunctionFactory for ConvertSEmpty {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(FunctionValueRepresentation::MutableValueCell);
 

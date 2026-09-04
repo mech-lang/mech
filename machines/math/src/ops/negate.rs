@@ -28,6 +28,10 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(O::REPRESENTATION, O::REPRESENTATION);
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg) = invocation.expect_unary()?;
         let arg: Ref<O> = arg.try_ref()?;
@@ -116,6 +120,10 @@ where
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(O::REPRESENTATION, O::REPRESENTATION);
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg) = invocation.expect_unary()?;

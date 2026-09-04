@@ -30,6 +30,10 @@ impl MechFunctionImpl for StrictEqValue {
 }
 
 impl MechFunctionFactory for StrictEqValue {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
         FunctionValueRepresentation::AnyValue,

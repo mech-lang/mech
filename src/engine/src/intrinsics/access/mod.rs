@@ -118,6 +118,10 @@ macro_rules! declare_structural_access_alias {
         }
 
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
             const SIGNATURE: RuntimeFunctionSignature =
                 RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
 

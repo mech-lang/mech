@@ -3,15 +3,20 @@ use std::sync::Arc;
 use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, ResolvedType, SchemaBody, ShapeRule, ValueDataDraft, ValueDraft,
-    execute_conversion_draft, plan_explicit_cast,
+    ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
+    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
+    ResidentKernelInputs, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut,
+    ResidentValueRef, ResolvedOperationContract, ResolvedType, SchemaBody, ShapeRule,
+    ValueDataDraft, ValueDraft, execute_conversion_draft, plan_explicit_cast,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(["convert"], "kind", bind_kind_conversion)
+    builder.insert_resident_factory(
+        ["convert"],
+        "kind",
+        ImplementationMemoryClass::CanonicalFinalize,
+        bind_kind_conversion,
+    )
 }
 
 #[derive(Debug)]

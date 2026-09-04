@@ -8,11 +8,12 @@ use mech_core::snapshot::{
 };
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction, RegionPolicy,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, ResolvedSelectionMode, ResolvedSourceRouting, SchemaBody, SchemaId,
-    ShapeContractReference, ShapeInstance, ShapeRule, ValueData,
+    ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
+    OutputConstruction, RegionPolicy, ResidentKernelBindError, ResidentKernelBindRequest,
+    ResidentKernelError, ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput,
+    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract,
+    ResolvedSelectionMode, ResolvedSourceRouting, SchemaBody, SchemaId, ShapeContractReference,
+    ShapeInstance, ShapeRule, ValueData,
 };
 use std::sync::Arc;
 
@@ -215,236 +216,242 @@ impl SemanticComparison {
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     // ProgramArtifact nodes carry semantic identities. These factories select
     // the resident implementation from the resolved contract and layouts.
-    register(builder, &["math"], "add", bind_add)?;
-    register(builder, &["math"], "add-assign", bind_semantic_add_assign)?;
-    register(
+    register_no_additional_scratch(builder, &["math"], "add", bind_add)?;
+    register_no_additional_scratch(builder, &["math"], "add-assign", bind_semantic_add_assign)?;
+    register_no_additional_scratch(
         builder,
         &["math", "add-assign"],
         "range-all",
         bind_add_indexed_rows,
     )?;
-    register(
+    register_no_additional_scratch(
         builder,
         &["math", "sub-assign"],
         "range-all",
         bind_sub_indexed_rows,
     )?;
-    register(builder, &["math"], "sub", bind_sub)?;
-    register(builder, &["math"], "mul", bind_semantic_mul)?;
-    register(builder, &["math"], "div", bind_div)?;
-    register(builder, &["math"], "mod", bind_remainder)?;
-    register(builder, &["math"], "neg", bind_negate)?;
-    register(builder, &["math"], "pow", bind_pow)?;
-    register(builder, &["math"], "abs", bind_abs)?;
-    register(builder, &["math"], "acos", bind_math_acos)?;
-    register(builder, &["math"], "acosh", bind_math_acosh)?;
-    register(builder, &["math"], "acot", bind_math_acot)?;
-    register(builder, &["math"], "acsc", bind_math_acsc)?;
-    register(builder, &["math"], "asec", bind_math_asec)?;
-    register(builder, &["math"], "asin", bind_math_asin)?;
-    register(builder, &["math"], "asinh", bind_math_asinh)?;
-    register(builder, &["math"], "atan", bind_math_atan)?;
-    register(builder, &["math"], "copysign", bind_math_copysign)?;
-    register(builder, &["math"], "atanh", bind_math_atanh)?;
-    register(builder, &["math"], "cbrt", bind_math_cbrt)?;
-    register(builder, &["math"], "ceil", bind_math_ceil)?;
-    register(builder, &["math"], "cosh", bind_math_cosh)?;
-    register(builder, &["math"], "cot", bind_math_cot)?;
-    register(builder, &["math"], "csc", bind_math_csc)?;
-    register(builder, &["math"], "erf", bind_math_erf)?;
-    register(builder, &["math"], "erfc", bind_math_erfc)?;
-    register(builder, &["math"], "fdim", bind_math_fdim)?;
-    register(builder, &["math"], "floor", bind_floor)?;
-    register(builder, &["math"], "fmod", bind_math_fmod)?;
-    register(builder, &["math"], "lgamma", bind_math_lgamma)?;
-    register(builder, &["math"], "log", bind_math_log)?;
-    register(builder, &["math"], "log10", bind_math_log10)?;
-    register(builder, &["math"], "log1p", bind_math_log1p)?;
-    register(builder, &["math"], "log2", bind_math_log2)?;
-    register(builder, &["math"], "nextafter", bind_math_nextafter)?;
-    register(builder, &["math"], "remainder", bind_math_remainder)?;
-    register(builder, &["math"], "rint", bind_math_rint)?;
-    register(builder, &["math"], "round", bind_math_round)?;
-    register(builder, &["math"], "roundeven", bind_math_roundeven)?;
-    register(builder, &["math"], "sec", bind_math_sec)?;
-    register(builder, &["math"], "sqrt", bind_sqrt)?;
-    register(builder, &["math"], "sinh", bind_math_sinh)?;
-    register(builder, &["math"], "tan", bind_math_tan)?;
-    register(builder, &["math"], "tanh", bind_math_tanh)?;
-    register(builder, &["math"], "tgamma", bind_math_tgamma)?;
-    register(builder, &["math"], "trunc", bind_math_trunc)?;
-    register(builder, &["math"], "atan2", bind_atan2)?;
-    register(builder, &["math"], "cos", bind_cos)?;
-    register(builder, &["math"], "sin", bind_sin)?;
-    register(builder, &["math", "bessel"], "j0", bind_math_bessel_j0)?;
-    register(builder, &["math", "bessel"], "j1", bind_math_bessel_j1)?;
-    register(builder, &["math", "bessel"], "jn", bind_math_bessel_jn)?;
-    register(builder, &["math", "bessel"], "y0", bind_math_bessel_y0)?;
-    register(builder, &["math", "bessel"], "y1", bind_math_bessel_y1)?;
-    register(builder, &["math", "bessel"], "yn", bind_math_bessel_yn)?;
-    register(builder, &["logic"], "and", bind_semantic_bool_and)?;
-    register(builder, &["logic"], "or", bind_semantic_bool_or)?;
-    register(builder, &["logic"], "xor", bind_semantic_bool_xor)?;
-    register(builder, &["logic"], "not", bind_bool_not)?;
-    register(builder, &["compare"], "eq", bind_semantic_equal)?;
-    register(builder, &["compare"], "neq", bind_semantic_not_equal)?;
-    register(builder, &["compare"], "lt", bind_semantic_less)?;
-    register(builder, &["compare"], "lte", bind_semantic_less_equal)?;
-    register(builder, &["compare"], "gt", bind_semantic_greater)?;
-    register(builder, &["compare"], "gte", bind_semantic_greater_equal)?;
-    register(builder, &["compare"], "seq", bind_strict_equal)?;
-    register(builder, &["compare"], "sneq", bind_strict_not_equal)?;
-    register(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
-    register(builder, &["access"], "rows", bind_semantic_rows_access)?;
-    register(
+    register_no_additional_scratch(builder, &["math"], "sub", bind_sub)?;
+    register_no_additional_scratch(builder, &["math"], "mul", bind_semantic_mul)?;
+    register_no_additional_scratch(builder, &["math"], "div", bind_div)?;
+    register_no_additional_scratch(builder, &["math"], "mod", bind_remainder)?;
+    register_no_additional_scratch(builder, &["math"], "neg", bind_negate)?;
+    register_no_additional_scratch(builder, &["math"], "pow", bind_pow)?;
+    register_no_additional_scratch(builder, &["math"], "abs", bind_abs)?;
+    register_no_additional_scratch(builder, &["math"], "acos", bind_math_acos)?;
+    register_no_additional_scratch(builder, &["math"], "acosh", bind_math_acosh)?;
+    register_no_additional_scratch(builder, &["math"], "acot", bind_math_acot)?;
+    register_no_additional_scratch(builder, &["math"], "acsc", bind_math_acsc)?;
+    register_no_additional_scratch(builder, &["math"], "asec", bind_math_asec)?;
+    register_no_additional_scratch(builder, &["math"], "asin", bind_math_asin)?;
+    register_no_additional_scratch(builder, &["math"], "asinh", bind_math_asinh)?;
+    register_no_additional_scratch(builder, &["math"], "atan", bind_math_atan)?;
+    register_no_additional_scratch(builder, &["math"], "copysign", bind_math_copysign)?;
+    register_no_additional_scratch(builder, &["math"], "atanh", bind_math_atanh)?;
+    register_no_additional_scratch(builder, &["math"], "cbrt", bind_math_cbrt)?;
+    register_no_additional_scratch(builder, &["math"], "ceil", bind_math_ceil)?;
+    register_no_additional_scratch(builder, &["math"], "cosh", bind_math_cosh)?;
+    register_no_additional_scratch(builder, &["math"], "cot", bind_math_cot)?;
+    register_no_additional_scratch(builder, &["math"], "csc", bind_math_csc)?;
+    register_no_additional_scratch(builder, &["math"], "erf", bind_math_erf)?;
+    register_no_additional_scratch(builder, &["math"], "erfc", bind_math_erfc)?;
+    register_no_additional_scratch(builder, &["math"], "fdim", bind_math_fdim)?;
+    register_no_additional_scratch(builder, &["math"], "floor", bind_floor)?;
+    register_no_additional_scratch(builder, &["math"], "fmod", bind_math_fmod)?;
+    register_no_additional_scratch(builder, &["math"], "lgamma", bind_math_lgamma)?;
+    register_no_additional_scratch(builder, &["math"], "log", bind_math_log)?;
+    register_no_additional_scratch(builder, &["math"], "log10", bind_math_log10)?;
+    register_no_additional_scratch(builder, &["math"], "log1p", bind_math_log1p)?;
+    register_no_additional_scratch(builder, &["math"], "log2", bind_math_log2)?;
+    register_no_additional_scratch(builder, &["math"], "nextafter", bind_math_nextafter)?;
+    register_no_additional_scratch(builder, &["math"], "remainder", bind_math_remainder)?;
+    register_no_additional_scratch(builder, &["math"], "rint", bind_math_rint)?;
+    register_no_additional_scratch(builder, &["math"], "round", bind_math_round)?;
+    register_no_additional_scratch(builder, &["math"], "roundeven", bind_math_roundeven)?;
+    register_no_additional_scratch(builder, &["math"], "sec", bind_math_sec)?;
+    register_no_additional_scratch(builder, &["math"], "sqrt", bind_sqrt)?;
+    register_no_additional_scratch(builder, &["math"], "sinh", bind_math_sinh)?;
+    register_no_additional_scratch(builder, &["math"], "tan", bind_math_tan)?;
+    register_no_additional_scratch(builder, &["math"], "tanh", bind_math_tanh)?;
+    register_no_additional_scratch(builder, &["math"], "tgamma", bind_math_tgamma)?;
+    register_no_additional_scratch(builder, &["math"], "trunc", bind_math_trunc)?;
+    register_no_additional_scratch(builder, &["math"], "atan2", bind_atan2)?;
+    register_no_additional_scratch(builder, &["math"], "cos", bind_cos)?;
+    register_no_additional_scratch(builder, &["math"], "sin", bind_sin)?;
+    register_no_additional_scratch(builder, &["math", "bessel"], "j0", bind_math_bessel_j0)?;
+    register_no_additional_scratch(builder, &["math", "bessel"], "j1", bind_math_bessel_j1)?;
+    register_no_additional_scratch(builder, &["math", "bessel"], "jn", bind_math_bessel_jn)?;
+    register_no_additional_scratch(builder, &["math", "bessel"], "y0", bind_math_bessel_y0)?;
+    register_no_additional_scratch(builder, &["math", "bessel"], "y1", bind_math_bessel_y1)?;
+    register_no_additional_scratch(builder, &["math", "bessel"], "yn", bind_math_bessel_yn)?;
+    register_no_additional_scratch(builder, &["logic"], "and", bind_semantic_bool_and)?;
+    register_no_additional_scratch(builder, &["logic"], "or", bind_semantic_bool_or)?;
+    register_no_additional_scratch(builder, &["logic"], "xor", bind_semantic_bool_xor)?;
+    register_no_additional_scratch(builder, &["logic"], "not", bind_bool_not)?;
+    register_no_additional_scratch(builder, &["compare"], "eq", bind_semantic_equal)?;
+    register_no_additional_scratch(builder, &["compare"], "neq", bind_semantic_not_equal)?;
+    register_no_additional_scratch(builder, &["compare"], "lt", bind_semantic_less)?;
+    register_no_additional_scratch(builder, &["compare"], "lte", bind_semantic_less_equal)?;
+    register_no_additional_scratch(builder, &["compare"], "gt", bind_semantic_greater)?;
+    register_no_additional_scratch(builder, &["compare"], "gte", bind_semantic_greater_equal)?;
+    register_no_additional_scratch(builder, &["compare"], "seq", bind_strict_equal)?;
+    register_no_additional_scratch(builder, &["compare"], "sneq", bind_strict_not_equal)?;
+    register_canonical_finalize(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
+    register_canonical_finalize(builder, &["access"], "rows", bind_semantic_rows_access)?;
+    register_canonical_finalize(
         builder,
         &["access"],
         "columns",
         bind_semantic_columns_access,
     )?;
-    register(builder, &["access"], "index", bind_scalar_index)?;
-    register(builder, &["access"], "range", bind_semantic_range_access)?;
-    register(builder, &["matrix"], "horzcat", bind_horizontal)?;
-    register(builder, &["matrix"], "vertcat", bind_vertical)?;
-    register(
+    register_no_additional_scratch(builder, &["access"], "index", bind_scalar_index)?;
+    register_canonical_finalize(builder, &["access"], "range", bind_semantic_range_access)?;
+    register_canonical_finalize(builder, &["matrix"], "horzcat", bind_horizontal)?;
+    register_canonical_finalize(builder, &["matrix"], "vertcat", bind_vertical)?;
+    register_canonical_finalize(
         builder,
         &["matrix"],
         "comprehension",
         bind_matrix_comprehension,
     )?;
-    register(builder, &["matrix"], "multiply", bind_matmul)?;
-    register(builder, &["matrix"], "dot", bind_matrix_dot)?;
-    register(builder, &["matrix"], "solve", bind_matrix_solve)?;
-    register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
-    register(builder, &["core"], "assign", bind_hold_state)?;
-    register(
+    register_no_additional_scratch(builder, &["matrix"], "multiply", bind_matmul)?;
+    register_no_additional_scratch(builder, &["matrix"], "dot", bind_matrix_dot)?;
+    register_with_memory_class(
+        builder,
+        &["matrix"],
+        "solve",
+        ImplementationMemoryClass::MatrixSolve,
+        bind_matrix_solve,
+    )?;
+    register_canonical_finalize(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
+    register_canonical_finalize(builder, &["core"], "assign", bind_hold_state)?;
+    register_canonical_finalize(
         builder,
         &["core", "assign"],
         "whole-value",
         bind_whole_matrix_assign,
     )?;
-    register(
+    register_canonical_finalize(
         builder,
         &["core", "assign"],
         "indexed-axis",
         bind_indexed_assign,
     )?;
-    register(
+    register_canonical_finalize(
         builder,
         &["core", "assign"],
         "indexed-rows",
         bind_indexed_assign_rows,
     )?;
-    register(
+    register_canonical_finalize(
         builder,
         &["core", "assign"],
         "indexed-columns",
         bind_indexed_assign_columns,
     )?;
-    register(
+    register_canonical_finalize(
         builder,
         &["core", "assign"],
         "indexed-rectangle",
         bind_indexed_assign_rectangle,
     )?;
-    register(
+    register_canonical_finalize(
         builder,
         &["core", "assign"],
         "collection-entry",
         bind_collection_entry_assign,
     )?;
-    register(
+    register_canonical_finalize(
         builder,
         &["core", "assign"],
         "single-element",
         bind_single_element_assign,
     )?;
-    register(builder, &["range"], "exclusive", bind_range_exclusive)?;
-    register(
+    register_no_additional_scratch(builder, &["range"], "exclusive", bind_range_exclusive)?;
+    register_no_additional_scratch(
         builder,
         &["range"],
         "exclusive-increment",
         bind_range_increment_exclusive,
     )?;
-    register(builder, &["range"], "inclusive", bind_range_inclusive)?;
-    register(
+    register_no_additional_scratch(builder, &["range"], "inclusive", bind_range_inclusive)?;
+    register_no_additional_scratch(
         builder,
         &["range"],
         "inclusive-increment",
         bind_range_increment_inclusive,
     )?;
-    register(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
-    register(builder, &["stats", "sum"], "column", bind_sum_columns)?;
-    register(builder, &["stats", "sum"], "row", bind_sum_rows)?;
+    register_no_additional_scratch(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
+    register_no_additional_scratch(builder, &["stats", "sum"], "column", bind_sum_columns)?;
+    register_no_additional_scratch(builder, &["stats", "sum"], "row", bind_sum_rows)?;
 
-    register(builder, &["ekf"], "trigonometric-state", bind_ekf_trig)?;
-    register(builder, &["ekf"], "motion-jacobian", bind_ekf_motion)?;
-    register(builder, &["ekf"], "control-jacobian", bind_ekf_control)?;
-    register(
+    register_no_additional_scratch(builder, &["ekf"], "trigonometric-state", bind_ekf_trig)?;
+    register_no_additional_scratch(builder, &["ekf"], "motion-jacobian", bind_ekf_motion)?;
+    register_no_additional_scratch(builder, &["ekf"], "control-jacobian", bind_ekf_control)?;
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "predicted-state",
         bind_ekf_predicted_state,
     )?;
-    register(
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "predicted-covariance",
         bind_ekf_predicted_covariance,
     )?;
-    register(
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "landmark-delta-and-range",
         bind_ekf_landmark,
     )?;
-    register(
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "predicted-measurement",
         bind_ekf_measurement,
     )?;
-    register(
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "measurement-jacobian",
         bind_ekf_measurement_jacobian,
     )?;
-    register(
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "innovation-covariance",
         bind_ekf_innovation_covariance,
     )?;
-    register(builder, &["ekf"], "solve-2x2", bind_ekf_solve)?;
-    register(builder, &["ekf"], "kalman-gain", bind_ekf_gain)?;
-    register(builder, &["ekf"], "innovation", bind_ekf_innovation)?;
-    register(
+    register_no_additional_scratch(builder, &["ekf"], "solve-2x2", bind_ekf_solve)?;
+    register_no_additional_scratch(builder, &["ekf"], "kalman-gain", bind_ekf_gain)?;
+    register_no_additional_scratch(builder, &["ekf"], "innovation", bind_ekf_innovation)?;
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "corrected-state",
         bind_ekf_corrected_state,
     )?;
-    register(
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "joseph-covariance-update",
         bind_ekf_joseph,
     )?;
-    register(
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "covariance-symmetrization",
         bind_ekf_symmetrize,
     )?;
-    register(builder, &["ekf"], "candidate-finite", bind_ekf_finite)?;
-    register(
+    register_no_additional_scratch(builder, &["ekf"], "candidate-finite", bind_ekf_finite)?;
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "covariance-positive-diagonal",
         bind_ekf_positive_diagonal,
     )?;
-    register(
+    register_no_additional_scratch(
         builder,
         &["ekf"],
         "covariance-symmetric",
@@ -453,13 +460,49 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-fn register(
+fn register_no_additional_scratch(
     builder: &mut FunctionCatalogBuilder,
     module: &[&str],
     operation: &str,
     factory: mech_core::ResidentKernelFactory,
 ) -> MResult<()> {
-    builder.insert_resident_factory(module.iter().copied(), operation, factory)
+    register_with_memory_class(
+        builder,
+        module,
+        operation,
+        ImplementationMemoryClass::NoAdditionalScratch,
+        factory,
+    )
+}
+
+fn register_canonical_finalize(
+    builder: &mut FunctionCatalogBuilder,
+    module: &[&str],
+    operation: &str,
+    factory: mech_core::ResidentKernelFactory,
+) -> MResult<()> {
+    register_with_memory_class(
+        builder,
+        module,
+        operation,
+        ImplementationMemoryClass::CanonicalFinalize,
+        factory,
+    )
+}
+
+fn register_with_memory_class(
+    builder: &mut FunctionCatalogBuilder,
+    module: &[&str],
+    operation: &str,
+    implementation_memory: ImplementationMemoryClass,
+    factory: mech_core::ResidentKernelFactory,
+) -> MResult<()> {
+    builder.insert_resident_factory(
+        module.iter().copied(),
+        operation,
+        implementation_memory,
+        factory,
+    )
 }
 
 fn bound(

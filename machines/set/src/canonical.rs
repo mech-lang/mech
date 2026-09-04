@@ -194,6 +194,10 @@ macro_rules! define_set_relation {
         }
 
         impl MechFunctionFactory for $function {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 FunctionValueRepresentation::Bool,
                 FunctionValueRepresentation::Set,
@@ -276,6 +280,10 @@ macro_rules! define_set_membership {
         }
 
         impl MechFunctionFactory for $function {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 FunctionValueRepresentation::Bool,
                 FunctionValueRepresentation::AnyValue,

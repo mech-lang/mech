@@ -17,12 +17,13 @@ use std::{
 };
 
 use crate::{
-    FunctionInstance, FunctionInvocation, GuardFunctionSafety, InputKindScheme, KindScheme,
-    MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
-    OperationContractDeclaration, ResidentKernelFactory, ResidentKernelFactoryEntry,
-    ResidentOperationKey, ResolvedOutputSchemaRule, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SourceSchemeTemplate,
-    SpecializationContext, SpecializationInvocation, SpecializedFunction, hash_str,
+    FunctionInstance, FunctionInvocation, GuardFunctionSafety, ImplementationMemoryClass,
+    InputKindScheme, KindScheme, MResult, MechError, MechErrorKind, MechFunction,
+    MechFunctionFactory, OperationContractDeclaration, ResidentKernelFactory,
+    ResidentKernelFactoryEntry, ResidentOperationKey, ResolvedOutputSchemaRule,
+    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
+    SourceSchemeTemplate, SpecializationContext, SpecializationInvocation, SpecializedFunction,
+    hash_str,
 };
 
 #[cfg(feature = "native-plan")]
@@ -258,6 +259,7 @@ pub struct RuntimeFunctionEntry {
     operation_contracts: BTreeMap<OperationId, RuntimeOperationContractAuthority>,
     operation_binding: RuntimeOperationBinding,
     execution_targets: ExecutionTargetSet,
+    implementation_memory: ImplementationMemoryClass,
 
     #[cfg(feature = "native-plan")]
     pub native_linkage: Option<NativeFunctionLinkage>,
@@ -274,6 +276,7 @@ impl Clone for RuntimeFunctionEntry {
             operation_contracts: self.operation_contracts.clone(),
             operation_binding: self.operation_binding.clone(),
             execution_targets: self.execution_targets,
+            implementation_memory: self.implementation_memory,
             #[cfg(feature = "native-plan")]
             native_linkage: self.native_linkage.clone(),
         }
@@ -355,6 +358,10 @@ impl RuntimeFunctionEntry {
 
     pub const fn supports_target(&self, target: ExecutionTarget) -> bool {
         self.execution_targets.contains(target)
+    }
+
+    pub const fn implementation_memory_class(&self) -> ImplementationMemoryClass {
+        self.implementation_memory
     }
 
     fn wrap_contract_error(&self, error: MechError) -> MechError {
@@ -1361,6 +1368,7 @@ impl FunctionCatalogBuilder {
             operation_contracts: BTreeMap::new(),
             operation_binding: RuntimeOperationBinding::CompilerResolved(compiler_family),
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
+            implementation_memory: F::implementation_memory_class(),
             #[cfg(feature = "native-plan")]
             native_linkage: None,
         })
@@ -1409,6 +1417,7 @@ impl FunctionCatalogBuilder {
             operation_contracts,
             operation_binding: RuntimeOperationBinding::fixed(operations)?,
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
+            implementation_memory: F::implementation_memory_class(),
             #[cfg(feature = "native-plan")]
             native_linkage: None,
         })
@@ -1418,6 +1427,7 @@ impl FunctionCatalogBuilder {
         &mut self,
         module_path: impl IntoIterator<Item = impl Into<String>>,
         operation_name: impl Into<String>,
+        implementation_memory: ImplementationMemoryClass,
         factory: ResidentKernelFactory,
     ) -> MResult<()> {
         let module_path = module_path
@@ -1448,8 +1458,14 @@ impl FunctionCatalogBuilder {
             )
             .with_compiler_loc());
         }
-        self.resident_factories
-            .insert(key.clone(), ResidentKernelFactoryEntry { key, factory });
+        self.resident_factories.insert(
+            key.clone(),
+            ResidentKernelFactoryEntry {
+                key,
+                implementation_memory,
+                factory,
+            },
+        );
         Ok(())
     }
 
@@ -1479,6 +1495,7 @@ impl FunctionCatalogBuilder {
             .collect(),
             operation_binding: RuntimeOperationBinding::fixed([semantic_operation])?,
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
+            implementation_memory: F::implementation_memory_class(),
             #[cfg(feature = "native-plan")]
             native_linkage: None,
         })
@@ -1506,6 +1523,7 @@ impl FunctionCatalogBuilder {
             operation_contracts: BTreeMap::new(),
             operation_binding: RuntimeOperationBinding::CompilerResolved(compiler_family),
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME.with(ExecutionTarget::Native),
+            implementation_memory: F::implementation_memory_class(),
             native_linkage: Some(linkage),
         })
     }
@@ -1555,6 +1573,7 @@ impl FunctionCatalogBuilder {
             operation_contracts,
             operation_binding: RuntimeOperationBinding::fixed(operations)?,
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME.with(ExecutionTarget::Native),
+            implementation_memory: F::implementation_memory_class(),
             native_linkage: Some(linkage),
         })
     }
@@ -1587,6 +1606,7 @@ impl FunctionCatalogBuilder {
             .collect(),
             operation_binding: RuntimeOperationBinding::fixed([semantic_operation])?,
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME.with(ExecutionTarget::Native),
+            implementation_memory: F::implementation_memory_class(),
             native_linkage: Some(linkage),
         })
     }

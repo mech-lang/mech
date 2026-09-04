@@ -37,6 +37,10 @@ impl MechFunctionCompiler for NativeProbe {
 struct BinopProbeSS<T>(PhantomData<T>);
 
 impl MechFunctionFactory for BinopProbeSS<f64> {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::F64,
         FunctionValueRepresentation::F64,
@@ -51,6 +55,10 @@ impl MechFunctionFactory for BinopProbeSS<f64> {
 struct UnopProbeF64S;
 
 impl MechFunctionFactory for UnopProbeF64S {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::F64,
         FunctionValueRepresentation::F64,

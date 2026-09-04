@@ -284,6 +284,10 @@ macro_rules! factory {
     ($factory:ident, $validator:ident, $operation:expr, unary, $output:ty, [$a:ty]) => {
         struct $factory;
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
                 <$output as FunctionRuntimeType>::REPRESENTATION,
                 <$a as FunctionRuntimeType>::REPRESENTATION,
@@ -304,6 +308,10 @@ macro_rules! factory {
     ($factory:ident, $validator:ident, $operation:expr, binary, $output:ty, [$a:ty, $b:ty]) => {
         struct $factory;
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$output as FunctionRuntimeType>::REPRESENTATION,
                 <$a as FunctionRuntimeType>::REPRESENTATION,
@@ -325,6 +333,10 @@ macro_rules! factory {
     ($factory:ident, $validator:ident, $operation:expr, ternary, $output:ty, [$a:ty, $b:ty, $c:ty]) => {
         struct $factory;
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
                 <$output as FunctionRuntimeType>::REPRESENTATION,
                 <$a as FunctionRuntimeType>::REPRESENTATION,
@@ -347,6 +359,10 @@ macro_rules! factory {
     ($factory:ident, $validator:ident, $operation:expr, quaternary, $output:ty, [$a:ty, $b:ty, $c:ty, $d:ty]) => {
         struct $factory;
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
                 <$output as FunctionRuntimeType>::REPRESENTATION,
                 <$a as FunctionRuntimeType>::REPRESENTATION,

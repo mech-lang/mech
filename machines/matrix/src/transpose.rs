@@ -54,6 +54,10 @@ macro_rules! impl_transpose {
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_TRANSPOSE_CONTRACT)
             }

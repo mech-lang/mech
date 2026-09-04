@@ -9,11 +9,11 @@ use mech_core::snapshot::{
 };
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
-    DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, SchemaId, SchemaKey, SetValueRelation, ShapeInstance,
-    ShapeRule, ValueData,
+    DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
+    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
+    ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
+    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, SchemaId, SchemaKey,
+    SetValueRelation, ShapeInstance, ShapeRule, ValueData,
 };
 #[cfg(test)]
 use std::cmp::Ordering;
@@ -79,24 +79,41 @@ fn cardinality_bounds(
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(["set"], "union", bind_union)?;
-    builder.insert_resident_factory(["set"], "cartesian-product", bind_cartesian_product)?;
-    builder.insert_resident_factory(["set"], "difference", bind_difference)?;
-    builder.insert_resident_factory(["set"], "disjoint", bind_disjoint)?;
-    builder.insert_resident_factory(["set"], "equals", bind_equals)?;
-    builder.insert_resident_factory(["set"], "intersection", bind_intersection)?;
-    builder.insert_resident_factory(["set"], "not_equals", bind_not_equals)?;
-    builder.insert_resident_factory(["set"], "powerset", bind_powerset)?;
-    builder.insert_resident_factory(["set"], "proper-superset", bind_proper_superset)?;
-    builder.insert_resident_factory(["set"], "proper_subset", bind_proper_subset)?;
-    builder.insert_resident_factory(["set"], "size", bind_size)?;
-    builder.insert_resident_factory(["set"], "subset", bind_subset)?;
-    builder.insert_resident_factory(["set"], "superset", bind_superset)?;
-    builder.insert_resident_factory(["set"], "symmetric-difference", bind_symmetric_difference)?;
-    builder.insert_resident_factory(["set"], "element-of", bind_element_of)?;
-    builder.insert_resident_factory(["set"], "not-element-of", bind_not_element_of)?;
-    builder.insert_resident_factory(["set"], "insert", bind_insert)?;
-    builder.insert_resident_factory(["set"], "remove", bind_remove)?;
+    let canonical = ImplementationMemoryClass::CanonicalSortUnique;
+    let no_scratch = ImplementationMemoryClass::NoAdditionalScratch;
+    builder.insert_resident_factory(["set"], "union", canonical, bind_union)?;
+    builder.insert_resident_factory(
+        ["set"],
+        "cartesian-product",
+        canonical,
+        bind_cartesian_product,
+    )?;
+    builder.insert_resident_factory(["set"], "difference", canonical, bind_difference)?;
+    builder.insert_resident_factory(["set"], "disjoint", no_scratch, bind_disjoint)?;
+    builder.insert_resident_factory(["set"], "equals", no_scratch, bind_equals)?;
+    builder.insert_resident_factory(["set"], "intersection", canonical, bind_intersection)?;
+    builder.insert_resident_factory(["set"], "not_equals", no_scratch, bind_not_equals)?;
+    builder.insert_resident_factory(["set"], "powerset", canonical, bind_powerset)?;
+    builder.insert_resident_factory(
+        ["set"],
+        "proper-superset",
+        no_scratch,
+        bind_proper_superset,
+    )?;
+    builder.insert_resident_factory(["set"], "proper_subset", no_scratch, bind_proper_subset)?;
+    builder.insert_resident_factory(["set"], "size", no_scratch, bind_size)?;
+    builder.insert_resident_factory(["set"], "subset", no_scratch, bind_subset)?;
+    builder.insert_resident_factory(["set"], "superset", no_scratch, bind_superset)?;
+    builder.insert_resident_factory(
+        ["set"],
+        "symmetric-difference",
+        canonical,
+        bind_symmetric_difference,
+    )?;
+    builder.insert_resident_factory(["set"], "element-of", no_scratch, bind_element_of)?;
+    builder.insert_resident_factory(["set"], "not-element-of", no_scratch, bind_not_element_of)?;
+    builder.insert_resident_factory(["set"], "insert", canonical, bind_insert)?;
+    builder.insert_resident_factory(["set"], "remove", canonical, bind_remove)?;
     Ok(())
 }
 

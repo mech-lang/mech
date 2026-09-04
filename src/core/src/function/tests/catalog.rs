@@ -65,6 +65,10 @@ static FACTORY_CALLS: AtomicUsize = AtomicUsize::new(0);
 struct IndexUnaryFactory;
 
 impl MechFunctionFactory for IndexUnaryFactory {
+    fn implementation_memory_class() -> crate::ImplementationMemoryClass {
+        crate::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::Index,
         FunctionValueRepresentation::Index,
@@ -86,6 +90,10 @@ impl MechFunctionFactory for IndexUnaryFactory {
 struct WrongContractFactory;
 
 impl MechFunctionFactory for WrongContractFactory {
+    fn implementation_memory_class() -> crate::ImplementationMemoryClass {
+        crate::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = IndexUnaryFactory::SIGNATURE;
 
     fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
@@ -102,6 +110,10 @@ impl MechFunctionFactory for WrongContractFactory {
 struct DuplicateIndexUnaryFactory;
 
 impl MechFunctionFactory for DuplicateIndexUnaryFactory {
+    fn implementation_memory_class() -> crate::ImplementationMemoryClass {
+        crate::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = IndexUnaryFactory::SIGNATURE;
 
     fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
@@ -117,6 +129,10 @@ impl MechFunctionFactory for DuplicateIndexUnaryFactory {
 struct AnyUnaryFactory;
 
 impl MechFunctionFactory for AnyUnaryFactory {
+    fn implementation_memory_class() -> crate::ImplementationMemoryClass {
+        crate::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::AnyValue,
         FunctionValueRepresentation::AnyValue,
@@ -183,6 +199,7 @@ fn runtime_entry(id: RuntimeFunctionId, name: &str) -> RuntimeFunctionEntry {
             name,
         )),
         execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
+        implementation_memory: ImplementationMemoryClass::NoAdditionalScratch,
         #[cfg(feature = "native-plan")]
         native_linkage: None,
     }
@@ -231,6 +248,26 @@ fn runtime_ids_reject_collisions_and_duplicate_registrations() {
     assert_eq!(
         duplicate.kind_name(),
         "FunctionCatalogDuplicateRuntimeFactory"
+    );
+}
+
+#[test]
+fn runtime_entries_preserve_the_factory_memory_class() {
+    let mut builder = FunctionCatalogBuilder::new();
+    builder
+        .insert_runtime_factory::<IndexUnaryFactory>(
+            "IndexUnaryMemoryClass",
+            contract(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            RuntimeFamilyId::from_name("IndexUnaryMemoryClass"),
+        )
+        .unwrap();
+    let catalog = builder.build().unwrap();
+    let entry = catalog
+        .runtime_entry(RuntimeFunctionId::from_name("IndexUnaryMemoryClass"))
+        .unwrap();
+    assert_eq!(
+        entry.implementation_memory_class(),
+        ImplementationMemoryClass::NoAdditionalScratch
     );
 }
 

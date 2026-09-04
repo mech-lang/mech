@@ -1,11 +1,11 @@
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    DimensionExpr, ExternalInteraction, FloatWidth, FunctionCatalogBuilder, MResult,
-    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
-    ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
-    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, ShapeRule,
-    ValueDataDraft, ValueDraft,
+    DimensionExpr, ExternalInteraction, FloatWidth, FunctionCatalogBuilder,
+    ImplementationMemoryClass, MResult, OutputConstruction, ResidentKernelBindError,
+    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentShape,
+    ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedOperationContract, SchemaBody, ShapeRule, ValueDataDraft, ValueDraft,
 };
 use std::sync::Arc;
 
@@ -17,7 +17,12 @@ struct MatrixLiteralPlan {
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(["matrix"], "literal", bind_matrix_literal)?;
+    builder.insert_resident_factory(
+        ["matrix"],
+        "literal",
+        ImplementationMemoryClass::CanonicalFinalize,
+        bind_matrix_literal,
+    )?;
     Ok(())
 }
 

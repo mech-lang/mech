@@ -186,6 +186,10 @@ macro_rules! impl_set_all_fxn_s {
                 IxVec::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2) = invocation.expect_binary()?;
                         let source: Ref<T> =
@@ -328,6 +332,10 @@ macro_rules! impl_assign_fxn_s {
                 T::REPRESENTATION,
                 <$ix as FunctionRuntimeType>::REPRESENTATION,
             );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2) = invocation.expect_binary()?;
@@ -517,6 +525,10 @@ where
         T::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg1) = invocation.expect_unary()?;
         let source: Ref<T> = arg1.try_ref()?;
@@ -607,6 +619,10 @@ where
         <usize as FunctionRuntimeType>::REPRESENTATION,
         <usize as FunctionRuntimeType>::REPRESENTATION,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
@@ -740,6 +756,10 @@ macro_rules! impl_assign_scalar_fxn_v {
                 <naMatrix<T, R2, C2, S2> as FunctionRuntimeType>::REPRESENTATION,
                 <$ix as FunctionRuntimeType>::REPRESENTATION,
             );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2) = invocation.expect_binary()?;
@@ -931,6 +951,10 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                 <usize as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
                 let source: Ref<T> = arg1.try_ref()?;
@@ -1051,6 +1075,10 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                 IxVec::REPRESENTATION,
                 <usize as FunctionRuntimeType>::REPRESENTATION,
             );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
@@ -1225,6 +1253,10 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                 IxVec::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
                 let source: Ref<T> = arg1.try_ref()?;
@@ -1345,6 +1377,10 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                 <usize as FunctionRuntimeType>::REPRESENTATION,
                 IxVec::REPRESENTATION,
             );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;
@@ -1634,6 +1670,10 @@ macro_rules! impl_assign_range_range_fxn_s {
                 IxVec1::REPRESENTATION,
                 IxVec2::REPRESENTATION,
             );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2, arg3) = invocation.expect_ternary()?;

@@ -33,6 +33,10 @@ struct ArtifactFixtureUnary;
 struct ArtifactFixtureFunction;
 
 impl MechFunctionFactory for ArtifactFixtureUnary {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::F64,
         FunctionValueRepresentation::F64,
