@@ -1,7 +1,7 @@
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    DimensionExpr, ExternalInteraction, FloatWidth, FunctionCatalogBuilder,
+    ExternalInteraction, FloatWidth, FunctionCatalogBuilder,
     ImplementationMemoryClass, MResult, OutputConstruction, ResidentKernelBindError,
     ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentShape,
     ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
@@ -68,16 +68,23 @@ fn bind_matrix_literal(
     else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let [
-        DimensionExpr::Constant(rows),
-        DimensionExpr::Constant(columns),
-    ] = dimensions.as_ref()
-    else {
+    let [rows, columns] = dimensions.as_ref() else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let columns =
-        usize::try_from(*columns).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    let rows = request
+        .output
+        .shape_instance
+        .resolve_dimension(rows)
+        .ok()
+        .and_then(|rows| usize::try_from(rows).ok())
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let columns = request
+        .output
+        .shape_instance
+        .resolve_dimension(columns)
+        .ok()
+        .and_then(|columns| usize::try_from(columns).ok())
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let count = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;

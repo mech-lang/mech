@@ -2786,6 +2786,7 @@ pub(crate) fn canonical_reactive_scalar_index(
             )?,
             RuntimeFunctionId::from_name("access/index"),
             ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
         )?)?;
     Ok(output)
 }
@@ -2861,6 +2862,7 @@ pub(crate) fn canonical_reactive_index_matrix(
             )?,
             RuntimeFunctionId::from_name("access/index"),
             ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
         )?)?;
     Ok(output)
 }

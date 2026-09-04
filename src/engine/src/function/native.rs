@@ -57,6 +57,7 @@ impl CanonicalFunctionSpecializer for ClosureFunctionSpecializer {
             ),
             mech_core::RuntimeFunctionId::from_name(&self.name),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
     }
 

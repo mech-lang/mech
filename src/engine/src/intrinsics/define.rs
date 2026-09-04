@@ -1346,6 +1346,7 @@ impl CanonicalFunctionSpecializer for VarDefine {
             FunctionInstance::new(Box::new(implementation), FunctionInvocation::nullary(value)),
             mech_core::RuntimeFunctionId::from_name(&runtime_name),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
     }
 }

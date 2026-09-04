@@ -228,6 +228,7 @@ impl PlannedGpuExecution {
             execution,
             memory: ProgramMemoryPlan {
                 values: values.into_boxed_slice(),
+                call_nodes: Box::new([]),
                 calls: Box::new([]),
                 allocations: allocations.into_boxed_slice(),
                 arenas: arenas.into_boxed_slice(),

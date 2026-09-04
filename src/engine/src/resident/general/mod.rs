@@ -9,22 +9,24 @@ use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel, CellSlotId,
-    ChangeDetectionPolicy, ConstantId, DeliveryMode, DimensionExpr, DimensionLifetime,
-    ExecutionTarget, ExecutionTargetSet, ExternalInteraction, FunctionCatalog, InputId,
-    InstanceEpoch, IntegrityConstraintId, LayoutGeneration, MemoryPlanError, NodeId,
-    ObservationReplayPolicy, OutputConstruction, PlanGeneration, ProgramRevision,
-    ReactiveInstanceId, ResidentBuildContext, ResidentKernelBindError, ResidentKernelBindRequest,
-    ResidentKernelInputs, ResidentOperationKey, ResidentPortLayout, ResidentShape,
-    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedRangeMode,
-    ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule, SlotIndex,
-    Value,
+    AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel,
+    CallMemoryPlanningRequest, CellSlotId, ChangeDetectionPolicy, ConstantId,
+    CurrentMemoryFootprint, DeliveryMode, DimensionExpr, DimensionLifetime, ExecutionTarget,
+    ExecutionTargetSet, ExternalInteraction, FunctionCatalog, ImplementationMemoryClass, InputId,
+    InstanceEpoch, IntegrityConstraintId, LayoutGeneration, MemoryFootprintWitness, MemoryLifetime,
+    MemoryPlanError, MemoryPlanPoint, NodeId, ObservationReplayPolicy, OutputConstruction,
+    PlanGeneration, ProgramRevision, ReactiveInstanceId, RegionAccessPlan, ResidentBuildContext,
+    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs, ResidentOperationKey,
+    ResidentPortLayout, ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedRangeMode, ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance,
+    ShapeRule, SlotIndex, TargetMemoryProfile, Value, plan_call_memory,
 };
 use sha2::{Digest, Sha256};
 
 use crate::memory_planner::{
     PlannedValueClass, ProgramMemoryPlan, ResidentValuePlanInput, node_points,
     plan_resident_arenas, plan_resident_effect_payload, resident_arena_id,
+    resident_storage_descriptor,
 };
 use crate::{
     ArtifactSource, BindingDeclaration, InitializerReference, OperationReference,
@@ -457,6 +459,24 @@ impl TypedResidentArena {
             strings: vec![String::new(); sizes.strings].into_boxed_slice(),
             snapshots: vec![None; sizes.snapshots].into_boxed_slice(),
         }
+    }
+
+    fn lane_bytes(&self, kind: ResidentValueKind) -> Result<u64, ResidentActivationError> {
+        let bytes = match kind {
+            ResidentValueKind::Bool => Some(self.bools.len()),
+            ResidentValueKind::Index => self.indexes.len().checked_mul(core::mem::size_of::<u64>()),
+            ResidentValueKind::F64 => self.f64s.len().checked_mul(core::mem::size_of::<f64>()),
+            ResidentValueKind::String => self
+                .strings
+                .len()
+                .checked_mul(core::mem::size_of::<String>()),
+            ResidentValueKind::Snapshot => self
+                .snapshots
+                .len()
+                .checked_mul(core::mem::size_of::<Option<Value>>()),
+        }
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+        u64::try_from(bytes).map_err(|_| ResidentActivationError::RegionSizeOverflow)
     }
 
     pub fn bool_storage(&self) -> &[u8] {
@@ -1442,6 +1462,7 @@ fn activate_internal(
         }
     }
     let workspace = TurnWorkspace::new(&plan)?;
+    audit_resident_backings(&plan.memory_plan, &activation, &state, &workspace)?;
     Ok(ReactiveInstance {
         id,
         plan,
@@ -1453,6 +1474,80 @@ fn activate_internal(
         candidate_active: false,
         candidate_epoch: None,
     })
+}
+
+fn audit_resident_backings(
+    plan: &ProgramMemoryPlan,
+    activation: &TypedResidentArena,
+    state: &StateArena,
+    workspace: &TurnWorkspace,
+) -> Result<(), ResidentActivationError> {
+    let arenas = [
+        (PlannedValueClass::Constant, 0_u8, activation),
+        (PlannedValueClass::Input, 0, &workspace.input),
+        (PlannedValueClass::State, 0, &state.buffers[0]),
+        (PlannedValueClass::State, 1, &state.buffers[1]),
+        (PlannedValueClass::Scratch, 0, &workspace.scratch),
+        (PlannedValueClass::Scratch, 1, &workspace.effect_payloads),
+    ];
+    for (class, buffer, backing) in arenas {
+        for kind in [
+            ResidentValueKind::Bool,
+            ResidentValueKind::Index,
+            ResidentValueKind::F64,
+            ResidentValueKind::String,
+            ResidentValueKind::Snapshot,
+        ] {
+            let arena = resident_arena_id((class, kind, buffer))
+                .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+            let planned = plan
+                .arenas
+                .iter()
+                .find(|candidate| candidate.id == arena)
+                .map_or(0, |candidate| candidate.capacity_bytes);
+            let observed = backing.lane_bytes(kind)?;
+            if observed != planned {
+                let object = plan
+                    .arenas
+                    .iter()
+                    .find(|candidate| candidate.id == arena)
+                    .and_then(|candidate| candidate.members.first())
+                    .copied()
+                    .unwrap_or_else(|| mech_core::MemoryObjectId::new(0));
+                return Err(ResidentActivationError::ResidentMemoryPlanRejected {
+                    error: MemoryPlanError::ObservationExceeded {
+                        mismatch: mech_core::MemoryPlanAuditMismatch {
+                            object,
+                            field: "arena_capacity_bytes",
+                            planned,
+                            observed,
+                        },
+                    },
+                });
+            }
+        }
+    }
+    let observations = plan
+        .allocations
+        .iter()
+        .map(|allocation| {
+            let value = plan
+                .values
+                .iter()
+                .find(|value| value.object == allocation.id);
+            mech_core::MemoryPlanObservation {
+                object: allocation.id,
+                current_bytes: allocation.current_bytes,
+                capacity_bytes: allocation.capacity_bytes,
+                payload_bytes: value.map_or(0, |value| value.layout.payload.current_bytes),
+                retained_nodes: value.map_or(0, |value| value.layout.payload.current_nodes),
+                logical_elements: value.map_or(0, |value| value.layout.current_elements),
+            }
+        })
+        .collect::<Vec<_>>();
+    crate::memory_planner::audit_program_memory_plan(plan, &observations)
+        .and_then(|report| report.assert_conformant())
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })
 }
 
 fn preflight_state_initializers(artifact: &ProgramArtifact) -> Result<(), ResidentActivationError> {
@@ -2526,6 +2621,8 @@ fn build_plan(
     let mut reads = Vec::new();
     let mut steps = Vec::new();
     let mut activation_steps = Vec::new();
+    let mut call_memory_plan_nodes = Vec::new();
+    let mut call_memory_plans = Vec::new();
     let mut artifact_to_activated = vec![None; artifact.nodes().len()];
     let mut effect_ordinal = 0_u32;
     for node in artifact.nodes() {
@@ -2701,6 +2798,18 @@ fn build_plan(
                 error: ResidentKernelBindError::InvalidParameters,
             })?,
         };
+        let implementation_memory = resident_entry
+            .map_or(ImplementationMemoryClass::NoAdditionalScratch, |entry| {
+                entry.implementation_memory
+            });
+        call_memory_plan_nodes.push(node.node);
+        call_memory_plans.push(resident_call_memory_plan(
+            &resident_context.bound_call,
+            &input_layouts,
+            &output_layout,
+            output_contract,
+            implementation_memory,
+        )?);
         let bind_request = ResidentKernelBindRequest {
             contract: artifact.contracts().get(node.contract).unwrap(),
             schemas: artifact.schemas(),
@@ -2911,6 +3020,9 @@ fn build_plan(
             .collect::<Vec<_>>()
             .into_boxed_slice()
     });
+    layout.memory_plan.call_nodes = call_memory_plan_nodes.into_boxed_slice();
+    layout.memory_plan.calls = call_memory_plans.into_boxed_slice();
+    ensure_resident_plan_admitted(&layout.memory_plan)?;
     let plan = ActivatedPlan {
         program_revision: artifact.revision(),
         activation_facts_fingerprint,
@@ -2941,6 +3053,77 @@ fn build_plan(
         state_hash_seed,
     };
     Ok(plan)
+}
+
+fn resident_call_memory_plan(
+    bound_call: &BoundCall,
+    inputs: &[ResidentPortLayout],
+    output: &ResidentPortLayout,
+    output_contract: &mech_core::ResolvedOutputPort,
+    implementation_memory: ImplementationMemoryClass,
+) -> Result<mech_core::CallMemoryPlan, ResidentActivationError> {
+    let target = TargetMemoryProfile::current_resident_cpu()
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+    let lifetime = MemoryLifetime::Turn {
+        first: MemoryPlanPoint::new(0),
+        last: MemoryPlanPoint::new(1),
+    };
+    let input_storage = inputs
+        .iter()
+        .zip(bound_call.inputs())
+        .map(|(layout, descriptor)| resident_storage_descriptor(descriptor, layout.kind, lifetime))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+    let output_storage = vec![
+        resident_storage_descriptor(&bound_call.outputs()[0], output.kind, lifetime)
+            .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?,
+    ];
+    let input_witnesses = inputs
+        .iter()
+        .map(resident_port_memory_witness)
+        .collect::<Result<Vec<_>, _>>()?;
+    let output_witnesses = vec![resident_port_memory_witness(output)?];
+    let regions = vec![match &output_contract.construction {
+        OutputConstruction::ReadModifyWrite { regions, .. } => RegionAccessPlan::Deferred(*regions),
+        _ => RegionAccessPlan::WholeValue,
+    }];
+    plan_call_memory(CallMemoryPlanningRequest {
+        bound_call,
+        input_storage: &input_storage,
+        output_storage: &output_storage,
+        input_witnesses: &input_witnesses,
+        output_witnesses: &output_witnesses,
+        implementation_memory,
+        target: &target,
+        regions: &regions,
+    })
+    .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })
+}
+
+fn resident_port_memory_witness(
+    layout: &ResidentPortLayout,
+) -> Result<MemoryFootprintWitness, ResidentActivationError> {
+    if matches!(
+        layout.kind,
+        ResidentValueKind::String | ResidentValueKind::Snapshot
+    ) {
+        return Ok(MemoryFootprintWitness::Deferred(
+            mech_core::MemoryWitnessStage::Turn,
+        ));
+    }
+    let logical_elements = u64::try_from(
+        layout
+            .shape
+            .len()
+            .ok_or(ResidentActivationError::RegionSizeOverflow)?,
+    )
+    .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+    Ok(MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+        logical_elements,
+        shape_parameter_count: u64::try_from(layout.shape_instance.parameter_values().len())
+            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+        ..CurrentMemoryFootprint::default()
+    }))
 }
 
 fn build_execution_node_order(

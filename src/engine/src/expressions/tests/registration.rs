@@ -138,6 +138,7 @@ fn specialized(
         .unwrap(),
         RuntimeFunctionId::from_name("IndexedExpressionTestFunction"),
         ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch,
     )
     .unwrap()
 }

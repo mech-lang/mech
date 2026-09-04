@@ -35,7 +35,7 @@ pub fn plan_turn_memory(
         .collect::<Vec<_>>();
     let mut transactions = Vec::new();
     let mut demand = facts.additional_demand;
-    if let Some(call) = plan.calls.get(node.get() as usize) {
+    if let Some(call) = plan.call_for_node(node) {
         demand = checked_demand_add(demand, call.demand)?;
         transactions.extend(call.transactions.iter().copied());
         for (ordinal, output) in call.outputs.iter().enumerate() {

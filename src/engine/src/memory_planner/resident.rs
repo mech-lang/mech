@@ -203,6 +203,7 @@ pub fn plan_resident_arenas(
     Ok(ResidentArenaProjection {
         plan: ProgramMemoryPlan {
             values: values.into_boxed_slice(),
+            call_nodes: Box::new([]),
             calls: Box::new([]),
             allocations: allocations.into_boxed_slice(),
             arenas: arenas.into_boxed_slice(),
@@ -226,12 +227,12 @@ pub fn resident_storage_descriptor(
         ResidentValueKind::String => Some(ScalarMemoryKind::String),
         ResidentValueKind::Snapshot => None,
     };
-    let topology = match descriptor
+    let semantic_topology = descriptor
         .schema()
         .type_memory_contract()
         .map_err(|_| MemoryPlanError::DescriptorMismatch)?
-        .topology
-    {
+        .topology;
+    let topology = match semantic_topology {
         mech_core::MemoryTopology::Scalar(_) => scalar
             .map(StorageTopology::Scalar)
             .unwrap_or(StorageTopology::CanonicalValue),
@@ -244,12 +245,18 @@ pub fn resident_storage_descriptor(
         }
         _ => StorageTopology::CanonicalValue,
     };
+    let extent = match topology {
+        StorageTopology::Scalar(_) => StorageExtentCapability::Single,
+        StorageTopology::DenseSequence { .. } => {
+            StorageExtentCapability::ResizableDimensions(vec![None, None].into_boxed_slice())
+        }
+        StorageTopology::CanonicalValue => StorageExtentCapability::Any,
+        _ => return Err(MemoryPlanError::UnsupportedStorageLayout),
+    };
     Ok(PhysicalStorageDescriptor {
         capabilities: StorageCapabilityDescriptor {
             topology,
-            extent: StorageExtentCapability::ResizableDimensions(
-                vec![None, None].into_boxed_slice(),
-            ),
+            extent,
             addressing: StorageAddressingCapabilities {
                 whole_value: true,
                 positional: mech_core::PositionalAddressingCapability::AnyRank,
@@ -259,7 +266,11 @@ pub fn resident_storage_descriptor(
             },
             canonicalization: StorageCanonicalizationCapabilities {
                 self_describing: kind == ResidentValueKind::Snapshot,
-                recursive: kind == ResidentValueKind::Snapshot,
+                recursive: kind == ResidentValueKind::Snapshot
+                    || matches!(
+                        semantic_topology,
+                        mech_core::MemoryTopology::DenseSequence { .. }
+                    ),
                 tagged: kind == ResidentValueKind::Snapshot,
                 ordered_keys: kind == ResidentValueKind::Snapshot,
                 unique_keys: kind == ResidentValueKind::Snapshot,

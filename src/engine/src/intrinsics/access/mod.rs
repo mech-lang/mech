@@ -679,6 +679,7 @@ fn canonical_access(
         ),
         mech_core::RuntimeFunctionId::from_name(name),
         mech_core::ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
     )
 }
 
@@ -792,6 +793,7 @@ fn canonical_swizzle(
         ),
         mech_core::RuntimeFunctionId::from_name("CanonicalSwizzle"),
         mech_core::ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
     )
 }
 

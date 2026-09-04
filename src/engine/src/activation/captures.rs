@@ -126,6 +126,7 @@ pub(super) fn register_node(
         ResolvedOperationDescriptor::from_name("activation/pattern-node", contract)?,
         RuntimeFunctionId::from_name("ActivationPatternNode"),
         ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
     )?)
 }
 

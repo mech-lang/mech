@@ -279,14 +279,13 @@ pub fn plan_value_layout(
         .schema()
         .resolved_type_memory_contract(descriptor.shape())
         .map_err(|_| MemoryPlanError::DescriptorMismatch)?;
+    // A template/call plan is allowed to retain an explicit deferred witness.
+    // The zero-valued payload below is not an estimate: the stage remains on
+    // `CallMemoryPlan::deferred_witnesses` and must be replaced by the
+    // activation or turn planner before covered materialization begins.
     let footprint = match request.witness {
         MemoryFootprintWitness::Known(footprint) => Some(footprint),
-        MemoryFootprintWitness::Deferred(stage) => {
-            if needs_footprint(&request.storage.slot, contract.topology) {
-                return Err(MemoryPlanError::MissingFootprintWitness { stage });
-            }
-            None
-        }
+        MemoryFootprintWitness::Deferred(_) => None,
     };
     let slot = target_slot_layout(request.target, request.storage.slot)?;
     super::validate_alignment(slot.alignment)?;
@@ -538,11 +537,7 @@ fn derive_axes(
     match expressions {
         CardinalitySpec::Exact(expression) => Ok(vec![derive_axis(schema, shape, expression)?]),
         CardinalitySpec::Dynamic { upper_bound } => {
-            let current = footprint
-                .ok_or(MemoryPlanError::MissingFootprintWitness {
-                    stage: super::MemoryWitnessStage::Activation,
-                })?
-                .logical_elements;
+            let current = footprint.map_or(0, |footprint| footprint.logical_elements);
             let maximum = upper_bound
                 .as_ref()
                 .map(|bound| derive_dimension_capacity(schema, shape, bound))
@@ -673,13 +668,6 @@ fn checked_axis_product(values: impl IntoIterator<Item = u64>) -> Result<u64, Me
     })
 }
 
-fn needs_footprint(slot: &PlannedSlotKind, topology: MemoryTopology) -> bool {
-    matches!(
-        slot,
-        PlannedSlotKind::StringHeader | PlannedSlotKind::CanonicalValueHandle
-    ) || !matches!(topology, MemoryTopology::Scalar(_))
-}
-
 fn storage_layout(
     topology: MemoryTopology,
     slot: PlannedSlotKind,
@@ -715,9 +703,18 @@ fn derive_payload_capacity(
             growth: GrowthPolicy::Fixed,
         });
     }
-    let footprint = footprint.ok_or(MemoryPlanError::MissingFootprintWitness {
-        stage: super::MemoryWitnessStage::Activation,
-    })?;
+    let Some(footprint) = footprint else {
+        return Ok(PayloadCapacityPlan {
+            current_bytes: 0,
+            required_bytes: 0,
+            maximum_bytes: None,
+            current_nodes: 0,
+            required_nodes: 0,
+            maximum_nodes: None,
+            authority: CapacityAuthority::CurrentValueWitness,
+            growth: GrowthPolicy::ReplanBeforeGrowth,
+        });
+    };
     Ok(PayloadCapacityPlan {
         current_bytes: footprint.payload_bytes,
         required_bytes: footprint.payload_bytes,
@@ -1135,7 +1132,8 @@ fn derive_call_demand(
                     checked_add(demand.work.comparison, 1, "exact scalar comparison")?;
             }
             Some(ChangeDetectionPolicy::SemanticHash) => {
-                let footprint = known_footprint(request.output_witnesses[ordinal])?;
+                let footprint =
+                    known_footprint(request.output_witnesses[ordinal])?.unwrap_or_default();
                 let one_side = checked_add(
                     checked_add(
                         footprint.schema_bytes,
@@ -1247,7 +1245,7 @@ fn apply_implementation_demand(
             let mut encoded = 0_u64;
             let mut nodes = 0_u64;
             for witness in request.output_witnesses {
-                let footprint = known_footprint(*witness)?;
+                let footprint = known_footprint(*witness)?.unwrap_or_default();
                 encoded = checked_add(encoded, footprint.encoded_bytes, "canonical encoded bytes")?;
                 nodes = checked_add(nodes, footprint.retained_nodes, "canonical retained nodes")?;
             }
@@ -1295,12 +1293,10 @@ fn apply_implementation_demand(
 #[cfg(feature = "functions")]
 fn known_footprint(
     witness: MemoryFootprintWitness,
-) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
+) -> Result<Option<CurrentMemoryFootprint>, MemoryPlanError> {
     match witness {
-        MemoryFootprintWitness::Known(footprint) => Ok(footprint),
-        MemoryFootprintWitness::Deferred(stage) => {
-            Err(MemoryPlanError::MissingFootprintWitness { stage })
-        }
+        MemoryFootprintWitness::Known(footprint) => Ok(Some(footprint)),
+        MemoryFootprintWitness::Deferred(_) => Ok(None),
     }
 }
 

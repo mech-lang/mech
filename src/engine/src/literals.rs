@@ -414,6 +414,7 @@ fn planned_type_conversion_specialized(
         )?,
         RuntimeFunctionId::from_name("convert/kind"),
         ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch,
     )
 }
 
@@ -759,6 +760,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
             planned_type_conversion_instance(source, output, target, plan),
             mech_core::RuntimeFunctionId::from_name("convert/kind"),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
     }
 }

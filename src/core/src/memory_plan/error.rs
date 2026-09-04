@@ -1,7 +1,7 @@
 use super::{MemoryBudgetViolation, MemoryObjectId, MemoryPlanAuditMismatch, MemoryWitnessStage};
 
 #[cfg(feature = "no_std")]
-use alloc::string::String;
+use alloc::string::{String, ToString};
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
 
@@ -34,6 +34,17 @@ pub enum MemoryPlanError {
 impl core::fmt::Display for MemoryPlanError {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(formatter, "{self:?}")
+    }
+}
+
+#[cfg(feature = "functions")]
+impl crate::MechErrorKind for MemoryPlanError {
+    fn name(&self) -> &str {
+        "MemoryPlanError"
+    }
+
+    fn message(&self) -> String {
+        self.to_string()
     }
 }
 

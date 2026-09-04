@@ -170,6 +170,7 @@ impl CanonicalFunctionSpecializer for FrozenEkfSpecializer {
             ),
             mech_core::RuntimeFunctionId::from_name(operation_spec(self.operation).canonical_name),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
         )
     }
 
@@ -614,6 +615,7 @@ impl CanonicalFunctionSpecializer for FrozenF64NegateSpecializer {
             ),
             mech_core::RuntimeFunctionId::from_name("FrozenF64Negate"),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
         )
     }
 

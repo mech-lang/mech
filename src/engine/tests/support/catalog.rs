@@ -115,6 +115,7 @@ mod test_operations {
                 FunctionInstance::new(implementation, invocation),
                 RuntimeFunctionId::from_name("TestSpecialized"),
                 ExecutionTarget::DirectRuntime,
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch,
             )
             .expect("test implementation must retain its semantic operation descriptor")
     }
@@ -894,6 +895,7 @@ mod tests {
                 ),
                 RuntimeFunctionId::from_name("TestAddFunction"),
                 ExecutionTarget::DirectRuntime,
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch,
             )
         }
     }

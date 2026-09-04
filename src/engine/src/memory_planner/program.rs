@@ -110,6 +110,10 @@ pub struct ActivationMemoryFacts {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ProgramMemoryPlanTemplate {
     pub values: Box<[ValueMemoryPlanTemplate]>,
+    /// Artifact node identity for each entry in `calls`. This remains
+    /// explicit because marker, observation, and external-effect nodes may
+    /// not have an executable call plan in every target projection.
+    pub call_nodes: Box<[mech_core::NodeId]>,
     pub calls: Box<[CallMemoryPlan]>,
     pub allocations: Box<[AllocationPlan]>,
     pub transfers: Box<[TransferPlan]>,
@@ -118,6 +122,7 @@ pub struct ProgramMemoryPlanTemplate {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ProgramMemoryPlan {
     pub values: Box<[ValueMemoryPlan]>,
+    pub call_nodes: Box<[mech_core::NodeId]>,
     pub calls: Box<[CallMemoryPlan]>,
     pub allocations: Box<[AllocationPlan]>,
     pub arenas: Box<[ArenaPlan]>,
@@ -195,6 +200,12 @@ pub fn plan_program_memory_template(
 
     Ok(ProgramMemoryPlanTemplate {
         values,
+        call_nodes: artifact
+            .nodes()
+            .iter()
+            .map(|node| node.node)
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
         calls: calls.into_boxed_slice(),
         allocations: Box::new([]),
         transfers: Box::new([]),
@@ -311,12 +322,10 @@ pub fn instantiate_program_memory_plan(
         });
     }
 
-    for (node, call) in template.calls.iter().enumerate() {
-        let node = mech_core::NodeId::new(u32::try_from(node).map_err(|_| {
-            MemoryPlanError::ArithmeticOverflow {
-                field: "program node id",
-            }
-        })?);
+    if template.call_nodes.len() != template.calls.len() {
+        return Err(MemoryPlanError::DescriptorArityMismatch);
+    }
+    for (&node, call) in template.call_nodes.iter().zip(&template.calls) {
         allocations.extend(remap_call_allocations(node, call, &mut next_id)?);
     }
     for mut allocation in template.allocations.iter().cloned() {
@@ -352,6 +361,7 @@ pub fn instantiate_program_memory_plan(
     budget_violations.dedup();
     Ok(ProgramMemoryPlan {
         values: values.into_boxed_slice(),
+        call_nodes: template.call_nodes.clone(),
         calls: template.calls.clone(),
         allocations: allocations.into_boxed_slice(),
         arenas,
@@ -368,6 +378,15 @@ impl ProgramMemoryPlan {
     /// projection rather than a wire format.
     pub fn diagnostic_text(&self) -> String {
         format!("{self:#?}")
+    }
+
+    /// Returns the call plan attached to an artifact node without assuming
+    /// that call plans are dense over every artifact node kind.
+    pub fn call_for_node(&self, node: mech_core::NodeId) -> Option<&CallMemoryPlan> {
+        self.call_nodes
+            .binary_search(&node)
+            .ok()
+            .and_then(|index| self.calls.get(index))
     }
 }
 fn slot_descriptor(

@@ -52,6 +52,7 @@ pub struct ProgramCompilationProduct {
     bytecode: Vec<u8>,
     instruction_type_bindings: Vec<Option<mech_core::BoundCall>>,
     instruction_type_binding_requirements: Vec<bool>,
+    instruction_memory_plans: Vec<Option<mech_core::CallMemoryPlan>>,
 }
 
 /// Immutable source-compilation product for hosts that immediately activate
@@ -106,6 +107,10 @@ impl ProgramCompilationProduct {
         &self.instruction_type_binding_requirements
     }
 
+    pub fn instruction_memory_plans(&self) -> &[Option<mech_core::CallMemoryPlan>] {
+        &self.instruction_memory_plans
+    }
+
     pub fn into_native_parts(
         self,
     ) -> (
@@ -113,12 +118,14 @@ impl ProgramCompilationProduct {
         Vec<u8>,
         Vec<Option<mech_core::BoundCall>>,
         Vec<bool>,
+        Vec<Option<mech_core::CallMemoryPlan>>,
     ) {
         (
             self.artifact,
             self.bytecode,
             self.instruction_type_bindings,
             self.instruction_type_binding_requirements,
+            self.instruction_memory_plans,
         )
     }
 }
@@ -575,6 +582,7 @@ impl CompilerPlanningProgram {
             .iter()
             .map(|role| matches!(role, Some(mech_core::CompiledInstructionRole::Node(_))))
             .collect();
+        let instruction_memory_plans = compiled.bytecode.instruction_memory_plans.clone();
         let artifact = compile_executable_program_artifact_with_named_outputs_and_external_inputs(
             &compiled.bytecode,
             &compiled.published_outputs,
@@ -606,6 +614,7 @@ impl CompilerPlanningProgram {
             bytecode,
             instruction_type_bindings,
             instruction_type_binding_requirements,
+            instruction_memory_plans,
         })
     }
 }
@@ -776,6 +785,15 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
                     BytecodeValidationError {
                         reason: "executable source plan node has no bound semantic certificate"
                             .to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
+            step.memory_plan().ok_or_else(|| {
+                MechError::new(
+                    BytecodeValidationError {
+                        reason: "executable source plan node has no R5 memory plan".to_owned(),
                     },
                     None,
                 )

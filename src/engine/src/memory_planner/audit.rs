@@ -111,6 +111,14 @@ pub fn audit_program_memory_plan(
     })
 }
 
+/// Public R5 audit entry point named by the architecture contract.
+pub fn audit_memory_plan(
+    plan: &ProgramMemoryPlan,
+    observations: &[MemoryPlanObservation],
+) -> Result<MemoryPlanAuditReport, MemoryPlanError> {
+    audit_program_memory_plan(plan, observations)
+}
+
 fn compare(
     mismatches: &mut Vec<MemoryPlanAuditMismatch>,
     object: MemoryObjectId,

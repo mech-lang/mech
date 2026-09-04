@@ -181,6 +181,7 @@ impl CanonicalFunctionSpecializer for SetDefine {
             mech_core::RuntimeFunctionId::from_name("ValueSet"),
             mech_core::ExecutionTarget::DirectRuntime,
             &inputs,
+            mech_core::ImplementationMemoryClass::CanonicalSortUnique,
         )
     }
 }
@@ -679,6 +680,7 @@ impl<const VERTICAL: bool> ValueMatrixConcatenation<VERTICAL> {
                 "matrix/horzcat"
             }),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
     }
 }

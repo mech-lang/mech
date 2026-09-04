@@ -1212,6 +1212,7 @@ fn compiled_scalar_artifact_fixture(
         instruction_operations: vec![None, None, None],
         instruction_source_nodes: vec![None, None, None],
         instruction_type_bindings: vec![None, None, None],
+        instruction_memory_plans: vec![None, None, None],
         register_schemas: vec![
             first_schema,
             Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
@@ -1293,6 +1294,20 @@ fn compiled_assign_artifact_fixture(
         ExecutionTarget::DirectRuntime,
     )
     .unwrap();
+    compiled.instruction_memory_plans.insert(
+        2,
+        Some(mech_core::CallMemoryPlan {
+            bound_call: binding.clone(),
+            inputs: Box::new([]),
+            outputs: Box::new([]),
+            allocations: Box::new([]),
+            aliases: Box::new([]),
+            transactions: Box::new([]),
+            implementation_memory: mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            demand: mech_core::ResourceDemand::default(),
+            deferred_witnesses: Box::new([]),
+        }),
+    );
     compiled.instruction_type_bindings.insert(2, Some(binding));
     (compiled, catalog)
 }
@@ -1343,6 +1358,9 @@ fn malformed_compiled_scalar_metadata_fails_closed() {
         .insert(2, None);
     wrong_integrity_kind
         .instruction_type_bindings
+        .insert(2, None);
+    wrong_integrity_kind
+        .instruction_memory_plans
         .insert(2, None);
     wrong_integrity_kind
         .integrity_constraints

@@ -594,6 +594,7 @@ macro_rules! table_join_specializer {
                         stringify!($mode)
                     )),
                     mech_core::ExecutionTarget::DirectRuntime,
+                    mech_core::ImplementationMemoryClass::CanonicalFinalize,
                 )
             }
         }
