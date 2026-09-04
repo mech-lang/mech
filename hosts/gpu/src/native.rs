@@ -66,6 +66,7 @@ pub struct ResidentGpuSession {
     workgroups: u32,
     next_group: usize,
     last_output_group: Option<usize>,
+    memory_plan: crate::PlannedGpuExecution,
 }
 
 #[derive(Clone, Debug)]
@@ -126,8 +127,14 @@ impl ElementwiseKernel {
             format!("{} ({:?})", info.name, info.backend)
         };
         let adapter_limits = adapter.limits();
+        let planned_execution = crate::PlannedGpuExecution::from_execution(
+            execution_plan,
+            crate::gpu_memory_limits(&adapter_limits),
+        )
+        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let execution_plan = &planned_execution.execution;
         let (required_limits, workgroups) =
-            required_device_limits_for_plan(&execution_plan, &adapter_limits)?;
+            required_device_limits_for_plan(execution_plan, &adapter_limits)?;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -144,6 +151,15 @@ impl ElementwiseKernel {
         let pipeline_started = Instant::now();
         let mut buffers = BTreeMap::new();
         for binding in &execution_plan.bindings {
+            let planned_bytes = binding
+                .elements
+                .checked_mul(scalar_size(binding.scalar))
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan("GPU binding byte count overflow".to_owned())
+                })?;
+            planned_execution
+                .assert_binding_bytes(binding.binding, planned_bytes)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
             let usage = wgpu::BufferUsages::STORAGE
                 | if matches!(
                     binding.role,
@@ -245,6 +261,9 @@ impl ElementwiseKernel {
         }
         for output in &execution_plan.physical_outputs {
             let size = output.sample_elements * std::mem::size_of::<f32>() as u64;
+            planned_execution
+                .assert_readback_bytes(CellSlotId::new(output.slot), size)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
             let readback = device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("Mech GPU readback"),
                 size,
@@ -313,8 +332,14 @@ impl ElementwiseKernel {
         let adapter_info = adapter.get_info();
         let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
         let adapter_limits = adapter.limits();
+        let planned_execution = crate::PlannedGpuExecution::from_execution(
+            execution_plan,
+            crate::gpu_memory_limits(&adapter_limits),
+        )
+        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let execution_plan = &planned_execution.execution;
         let (required_limits, workgroups) =
-            required_device_limits_for_plan(&execution_plan, &adapter_limits)?;
+            required_device_limits_for_plan(execution_plan, &adapter_limits)?;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -332,6 +357,17 @@ impl ElementwiseKernel {
         let mut input_buffers = BTreeMap::new();
         for state in &execution_plan.states {
             let slot = CellSlotId::new(state.slot);
+            let state_bytes = state
+                .elements
+                .checked_mul(core::mem::size_of::<f32>() as u64)
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan("GPU state byte count overflow".to_owned())
+                })?;
+            if planned_execution.state_bytes(slot) != Some(state_bytes) {
+                return Err(GpuExecutionError::InvalidPlan(
+                    "GPU state backing differs from the admitted memory plan".to_owned(),
+                ));
+            }
             let initial = Arc::new(
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("Mech resident initial state"),
@@ -351,6 +387,15 @@ impl ElementwiseKernel {
             if binding.role != GpuExecutionBindingRole::Input {
                 continue;
             }
+            let planned_bytes = binding
+                .elements
+                .checked_mul(scalar_size(binding.scalar))
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan("GPU input byte count overflow".to_owned())
+                })?;
+            planned_execution
+                .assert_binding_bytes(binding.binding, planned_bytes)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
             let Some(GpuPlanInitialValues::F32(values)) = &binding.initial_values else {
                 return Err(GpuExecutionError::InvalidPlan(format!(
                     "input binding `{}` has no f32 initializer",
@@ -388,9 +433,18 @@ impl ElementwiseKernel {
                     group_buffers[1].insert(binding.binding, state_buffers[&slot][0].clone());
                 }
                 GpuExecutionBindingRole::Output => {
+                    let planned_bytes = binding
+                        .elements
+                        .checked_mul(scalar_size(binding.scalar))
+                        .ok_or_else(|| {
+                        GpuExecutionError::InvalidPlan("GPU output byte count overflow".to_owned())
+                    })?;
+                    planned_execution
+                        .assert_binding_bytes(binding.binding, planned_bytes)
+                        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
                     let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
                         label: Some(&binding.name),
-                        size: binding.elements * scalar_size(binding.scalar),
+                        size: planned_bytes,
                         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                         mapped_at_creation: false,
                     }));
@@ -490,6 +544,7 @@ impl ElementwiseKernel {
             workgroups,
             next_group: 0,
             last_output_group: None,
+            memory_plan: planned_execution,
         })
     }
 }
@@ -622,6 +677,21 @@ impl ResidentGpuSession {
         let mut readbacks = Vec::new();
         for (name, buffer) in &self.output_buffers[group] {
             let size = self.output_elements[name] * std::mem::size_of::<f32>() as u64;
+            let slot = self
+                .memory_plan
+                .execution
+                .outputs
+                .iter()
+                .find(|output| output.name == *name)
+                .map(|output| CellSlotId::new(output.slot))
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan(format!(
+                        "output `{name}` has no memory-plan slot"
+                    ))
+                })?;
+            self.memory_plan
+                .assert_readback_bytes(slot, size)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
             let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("Mech resident GPU readback buffer"),
                 size,

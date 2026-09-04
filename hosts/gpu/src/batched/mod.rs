@@ -3598,6 +3598,7 @@ mod native {
         next_group: usize,
         last_output_group: Option<usize>,
         faults: BatchedFaultRecorder,
+        memory_plan: crate::PlannedGpuExecution,
     }
 
     #[derive(Clone, Debug)]
@@ -3641,6 +3642,12 @@ mod native {
             let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
             let required_storage_buffers = execution_plan.bindings.len() as u32;
             let limits = adapter.limits();
+            let planned_execution = crate::PlannedGpuExecution::from_execution(
+                execution_plan,
+                crate::gpu_memory_limits(&limits),
+            )
+            .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            let execution_plan = &planned_execution.execution;
             if required_storage_buffers > limits.max_storage_buffers_per_shader_stage {
                 return Err(BatchedExecutionError::Native(format!(
                     "kernel requires {required_storage_buffers} storage buffers; adapter supports {}",
@@ -3679,6 +3686,12 @@ mod native {
                 .iter()
                 .filter(|binding| binding.role == GpuExecutionBindingRole::Input)
             {
+                let planned_bytes = binding.elements.checked_mul(4).ok_or_else(|| {
+                    BatchedExecutionError::Native("GPU input byte count overflow".to_owned())
+                })?;
+                planned_execution
+                    .assert_binding_bytes(binding.binding, planned_bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
                 let Some(GpuPlanInitialValues::F32(values)) = &binding.initial_values else {
                     return Err(BatchedExecutionError::Native(format!(
                         "GPU input `{}` has no f32 initializer",
@@ -3700,6 +3713,14 @@ mod native {
             let mut state_buffers = BTreeMap::new();
             for state in &execution_plan.states {
                 let slot = CellSlotId::new(state.slot);
+                let state_bytes = state.elements.checked_mul(4).ok_or_else(|| {
+                    BatchedExecutionError::Native("GPU state byte count overflow".to_owned())
+                })?;
+                if planned_execution.state_bytes(slot) != Some(state_bytes) {
+                    return Err(BatchedExecutionError::Native(
+                        "GPU state backing differs from the admitted memory plan".to_owned(),
+                    ));
+                }
                 let initial = Arc::new(device.create_buffer_init(
                     &wgpu::util::BufferInitDescriptor {
                         label: Some("Mech fixed-shape initial state"),
@@ -3720,6 +3741,14 @@ mod native {
                 .bindings
                 .iter()
                 .find(|binding| binding.role == GpuExecutionBindingRole::IntegrityFault);
+            if let Some(binding) = integrity_binding {
+                let planned_bytes = binding.elements.checked_mul(4).ok_or_else(|| {
+                    BatchedExecutionError::Native("GPU integrity byte count overflow".to_owned())
+                })?;
+                planned_execution
+                    .assert_binding_bytes(binding.binding, planned_bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            }
             let integrity_fault = integrity_binding.map(|binding| {
                 Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech integrity-constraint fault"),
@@ -3847,13 +3876,14 @@ mod native {
                 output_buffers,
                 output_elements,
                 output_elements_per_instance,
-                constraints: execution_plan.constraints.into_boxed_slice(),
+                constraints: execution_plan.constraints.clone().into_boxed_slice(),
                 integrity_fault,
                 integrity_readback,
                 workgroups: workgroup_count,
                 next_group: 0,
                 last_output_group: None,
                 faults: BatchedFaultRecorder::default(),
+                memory_plan: planned_execution,
             })
         }
     }
@@ -4072,6 +4102,9 @@ mod native {
                     self.output_elements[slot]
                 };
                 let size = (elements * std::mem::size_of::<f32>()) as u64;
+                self.memory_plan
+                    .assert_readback_bytes(*slot, size)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
                 let source_offset =
                     sample_instance.map_or(0, |instance| u64::from(instance) * size);
                 if source_offset.saturating_add(size) > buffer.size() {

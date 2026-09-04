@@ -107,7 +107,7 @@ pub struct ActivationMemoryFacts {
     pub classes: BTreeMap<CellSlotId, PlannedValueClass>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ProgramMemoryPlanTemplate {
     pub values: Box<[ValueMemoryPlanTemplate]>,
     pub calls: Box<[CallMemoryPlan]>,
@@ -115,7 +115,7 @@ pub struct ProgramMemoryPlanTemplate {
     pub transfers: Box<[TransferPlan]>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ProgramMemoryPlan {
     pub values: Box<[ValueMemoryPlan]>,
     pub calls: Box<[CallMemoryPlan]>,

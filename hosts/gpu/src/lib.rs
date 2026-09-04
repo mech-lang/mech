@@ -47,6 +47,8 @@ mod compute_backends;
 pub use compute_backends::*;
 mod execution_plan;
 pub use execution_plan::*;
+mod memory;
+pub use memory::*;
 pub const WORKGROUP_SIZE: u32 = 64;
 
 #[cfg(all(test, feature = "native"))]

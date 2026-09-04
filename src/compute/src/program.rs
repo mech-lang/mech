@@ -26,7 +26,11 @@ pub struct ElementwiseStateStorage {
     pub initializer: Arc<[f32]>,
 }
 
-/// A backend-neutral, fully planned resident compute region.
+/// A backend-neutral executable compute region.
+///
+/// Target-local memory authority is carried separately by
+/// [`crate::PlannedComputeArtifact`] and the selected backend's admitted plan;
+/// it cannot be defaulted before target selection.
 #[derive(Clone, Debug)]
 pub struct ComputeProgram {
     interface: ComputeRegionInterface,
