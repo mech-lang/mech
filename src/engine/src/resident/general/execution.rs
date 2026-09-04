@@ -2406,8 +2406,8 @@ mod tests {
         };
         let mut state = StateArena {
             buffers: [
-                TypedResidentArena::allocate(sizes),
-                TypedResidentArena::allocate(sizes),
+                TypedResidentArena::allocate_projected_sizes(sizes),
+                TypedResidentArena::allocate_projected_sizes(sizes),
             ],
             versions: vec![
                 StateVersion {

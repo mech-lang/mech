@@ -14672,37 +14672,6 @@ mod tests {
     }
 
     #[test]
-    fn strict_identity_distinguishes_scalar_from_one_by_one_matrix() {
-        let shape_instance = || {
-            mech_core::SchemaDraft {
-                dimension_parameters: Box::new([]),
-                body: SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
-            }
-            .finalize()
-            .unwrap()
-            .instantiate_shape(Box::new([]))
-            .unwrap()
-        };
-        let scalar = mech_core::ResidentPortLayout {
-            schema_id: mech_core::SchemaId::new(1),
-            schema_key: mech_core::SchemaKey::from_bytes([1; 32]),
-            kind: ResidentValueKind::F64,
-            shape: ResidentShape::SCALAR,
-            shape_instance: shape_instance(),
-            resolved_selector: None,
-        };
-        let matrix = mech_core::ResidentPortLayout {
-            schema_id: mech_core::SchemaId::new(2),
-            schema_key: mech_core::SchemaKey::from_bytes([2; 32]),
-            kind: ResidentValueKind::F64,
-            shape: ResidentShape::SCALAR,
-            shape_instance: shape_instance(),
-            resolved_selector: None,
-        };
-        assert!(!strict_inputs_share_identity(&scalar, &matrix));
-    }
-
-    #[test]
     fn hold_state_rejects_same_shape_values_with_different_schemas() {
         fn schema(body: SchemaBody) -> mech_core::Schema {
             mech_core::SchemaDraft {

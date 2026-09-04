@@ -12,15 +12,20 @@ use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel, CellSlotId,
     ChangeDetectionPolicy, ConstantId, DeliveryMode, DimensionExpr, DimensionLifetime,
     ExecutionTarget, ExecutionTargetSet, ExternalInteraction, FunctionCatalog, InputId,
-    InstanceEpoch, IntegrityConstraintId, LayoutGeneration, NodeId, ObservationReplayPolicy,
-    OutputConstruction, PlanGeneration, ProgramRevision, ReactiveInstanceId, ResidentBuildContext,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs, ResidentOperationKey,
-    ResidentPortLayout, ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedRangeMode, ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance,
-    ShapeRule, SlotIndex, Value,
+    InstanceEpoch, IntegrityConstraintId, LayoutGeneration, MemoryPlanError, NodeId,
+    ObservationReplayPolicy, OutputConstruction, PlanGeneration, ProgramRevision,
+    ReactiveInstanceId, ResidentBuildContext, ResidentKernelBindError, ResidentKernelBindRequest,
+    ResidentKernelInputs, ResidentOperationKey, ResidentPortLayout, ResidentShape,
+    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedRangeMode,
+    ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule, SlotIndex,
+    Value,
 };
 use sha2::{Digest, Sha256};
 
+use crate::memory_planner::{
+    PlannedValueClass, ProgramMemoryPlan, ResidentValuePlanInput, node_points,
+    plan_resident_arenas, plan_resident_effect_payload, resident_arena_id,
+};
 use crate::{
     ArtifactSource, BindingDeclaration, InitializerReference, OperationReference,
     ProducerReference, ProgramArtifact, SlotRole,
@@ -254,6 +259,7 @@ pub struct ActivatedPlan {
     pub activation_facts_fingerprint: [u8; 32],
     pub plan_generation: PlanGeneration,
     pub layout_generation: LayoutGeneration,
+    pub memory_plan: ProgramMemoryPlan,
     pub slots: Box<[ResolvedSlot]>,
     pub steps: Box<[ActivatedTurnStep]>,
     external_step_count: usize,
@@ -276,7 +282,6 @@ pub struct ActivatedPlan {
     pub(crate) state_slots: Box<[CellSlotId]>,
     pub(crate) rmw_state_slots: Box<[CellSlotId]>,
     pub(crate) state_hash_seed: u64,
-    pub(crate) effect_payload_sizes: ResidentArenaSizes,
 }
 
 impl ActivatedPlan {
@@ -367,17 +372,51 @@ pub struct ResidentArenaSizes {
 }
 
 impl ResidentArenaSizes {
-    fn allocate(&mut self, kind: ResidentValueKind, len: usize) -> Option<usize> {
-        let cursor = match kind {
-            ResidentValueKind::Bool => &mut self.bools,
-            ResidentValueKind::Index => &mut self.indexes,
-            ResidentValueKind::F64 => &mut self.f64s,
-            ResidentValueKind::String => &mut self.strings,
-            ResidentValueKind::Snapshot => &mut self.snapshots,
+    fn from_memory_plan(
+        plan: &ProgramMemoryPlan,
+        class: ResidentStorageClass,
+    ) -> Result<Self, ResidentActivationError> {
+        Self::from_memory_plan_buffer(plan, class, 0)
+    }
+
+    fn from_memory_plan_buffer(
+        plan: &ProgramMemoryPlan,
+        class: ResidentStorageClass,
+        buffer: u8,
+    ) -> Result<Self, ResidentActivationError> {
+        let class = match class {
+            ResidentStorageClass::Constant => PlannedValueClass::Constant,
+            ResidentStorageClass::Input => PlannedValueClass::Input,
+            ResidentStorageClass::State => PlannedValueClass::State,
+            ResidentStorageClass::Scratch => PlannedValueClass::Scratch,
         };
-        let offset = *cursor;
-        *cursor = cursor.checked_add(len)?;
-        Some(offset)
+        let capacity = |kind, bytes: usize| -> Result<usize, ResidentActivationError> {
+            let arena = resident_arena_id((class, kind, buffer))
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            let bytes =
+                u64::try_from(bytes).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            let capacity = plan
+                .arenas
+                .iter()
+                .find(|candidate| candidate.id == arena)
+                .map(|arena| arena.capacity_bytes)
+                .unwrap_or(0);
+            if bytes == 0 || capacity % bytes != 0 {
+                return Err(ResidentActivationError::RegionSizeOverflow);
+            }
+            usize::try_from(capacity / bytes)
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)
+        };
+        Ok(Self {
+            bools: capacity(ResidentValueKind::Bool, core::mem::size_of::<u8>())?,
+            indexes: capacity(ResidentValueKind::Index, core::mem::size_of::<u64>())?,
+            f64s: capacity(ResidentValueKind::F64, core::mem::size_of::<f64>())?,
+            strings: capacity(ResidentValueKind::String, core::mem::size_of::<String>())?,
+            snapshots: capacity(
+                ResidentValueKind::Snapshot,
+                core::mem::size_of::<Option<Value>>(),
+            )?,
+        })
     }
 }
 
@@ -391,7 +430,26 @@ pub struct TypedResidentArena {
 }
 
 impl TypedResidentArena {
-    fn allocate(sizes: ResidentArenaSizes) -> Self {
+    fn allocate_from_plan(
+        plan: &ProgramMemoryPlan,
+        class: ResidentStorageClass,
+    ) -> Result<Self, ResidentActivationError> {
+        ensure_resident_plan_admitted(plan)?;
+        let sizes = ResidentArenaSizes::from_memory_plan(plan, class)?;
+        Ok(Self::allocate_projected_sizes(sizes))
+    }
+
+    fn allocate_from_plan_buffer(
+        plan: &ProgramMemoryPlan,
+        class: ResidentStorageClass,
+        buffer: u8,
+    ) -> Result<Self, ResidentActivationError> {
+        ensure_resident_plan_admitted(plan)?;
+        let sizes = ResidentArenaSizes::from_memory_plan_buffer(plan, class, buffer)?;
+        Ok(Self::allocate_projected_sizes(sizes))
+    }
+
+    fn allocate_projected_sizes(sizes: ResidentArenaSizes) -> Self {
         Self {
             bools: vec![0; sizes.bools].into_boxed_slice(),
             indexes: vec![1; sizes.indexes].into_boxed_slice(),
@@ -512,7 +570,10 @@ pub struct StateArena {
 }
 
 impl StateArena {
-    fn new(sizes: ResidentArenaSizes, slots: &[ResolvedSlot]) -> Self {
+    fn new(
+        plan: &ProgramMemoryPlan,
+        slots: &[ResolvedSlot],
+    ) -> Result<Self, ResidentActivationError> {
         let versions = slots
             .iter()
             .filter(|slot| slot.storage == ResidentStorageClass::State)
@@ -527,14 +588,22 @@ impl StateArena {
         for (index, version) in versions.iter().enumerate() {
             version_by_slot[version.slot.get() as usize] = Some(index);
         }
-        Self {
+        Ok(Self {
             buffers: [
-                TypedResidentArena::allocate(sizes),
-                TypedResidentArena::allocate(sizes),
+                TypedResidentArena::allocate_from_plan_buffer(
+                    plan,
+                    ResidentStorageClass::State,
+                    0,
+                )?,
+                TypedResidentArena::allocate_from_plan_buffer(
+                    plan,
+                    ResidentStorageClass::State,
+                    1,
+                )?,
             ],
             versions,
             version_by_slot: version_by_slot.into_boxed_slice(),
-        }
+        })
     }
 
     fn version(&self, slot: CellSlotId) -> &StateVersion {
@@ -635,15 +704,17 @@ pub struct TurnWorkspace {
 }
 
 impl TurnWorkspace {
-    fn new(
-        input_sizes: ResidentArenaSizes,
-        scratch_sizes: ResidentArenaSizes,
-        plan: &ActivatedPlan,
-    ) -> Self {
+    fn new(plan: &ActivatedPlan) -> Result<Self, ResidentActivationError> {
         let words = plan.topology.word_len();
-        Self {
-            input: TypedResidentArena::allocate(input_sizes),
-            scratch: TypedResidentArena::allocate(scratch_sizes),
+        Ok(Self {
+            input: TypedResidentArena::allocate_from_plan(
+                &plan.memory_plan,
+                ResidentStorageClass::Input,
+            )?,
+            scratch: TypedResidentArena::allocate_from_plan(
+                &plan.memory_plan,
+                ResidentStorageClass::Scratch,
+            )?,
             dirty_bits: vec![0; words].into_boxed_slice(),
             executed_bits: vec![0; words].into_boxed_slice(),
             initialized_output_bits: vec![0; words].into_boxed_slice(),
@@ -656,9 +727,13 @@ impl TurnWorkspace {
                     .filter(|step| matches!(step, ActivatedTurnStep::External(_)))
                     .count(),
             ),
-            effect_payloads: TypedResidentArena::allocate(plan.effect_payload_sizes),
+            effect_payloads: TypedResidentArena::allocate_from_plan_buffer(
+                &plan.memory_plan,
+                ResidentStorageClass::Scratch,
+                1,
+            )?,
             state_f64_arena_by_slot: vec![0; plan.slots.len()].into_boxed_slice(),
-        }
+        })
     }
 }
 
@@ -1017,6 +1092,9 @@ pub enum ResidentActivationError {
         slot: CellSlotId,
     },
     RegionSizeOverflow,
+    ResidentMemoryPlanRejected {
+        error: MemoryPlanError,
+    },
     InvalidSnapshotRepresentation,
     MissingStateInitializer {
         slot: CellSlotId,
@@ -1065,6 +1143,17 @@ pub enum ResidentActivationError {
     InvalidStateMigration,
     PlanGenerationExhausted,
     LayoutGenerationExhausted,
+}
+
+fn ensure_resident_plan_admitted(plan: &ProgramMemoryPlan) -> Result<(), ResidentActivationError> {
+    if let Some(violation) = plan.budget_violations.first() {
+        return Err(ResidentActivationError::ResidentMemoryPlanRejected {
+            error: MemoryPlanError::TargetLimitExceeded {
+                violation: violation.clone(),
+            },
+        });
+    }
+    Ok(())
 }
 
 pub fn activate(
@@ -1134,7 +1223,7 @@ pub fn preflight_activation(
     let layout = build_layout(artifact, &facts, &classification)?;
     let facts_fingerprint = activation_facts_fingerprint(&facts);
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
-    let (plan, _, _, _, _) = build_plan(
+    let plan = build_plan(
         artifact,
         catalog,
         classification,
@@ -1297,7 +1386,7 @@ fn activate_internal(
     let layout = build_layout(artifact, &facts, &classification)?;
     let facts_fingerprint = activation_facts_fingerprint(&facts);
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
-    let (plan, input_sizes, state_sizes, scratch_sizes, activation_sizes) = build_plan(
+    let plan = build_plan(
         artifact,
         catalog,
         classification,
@@ -1306,7 +1395,8 @@ fn activate_internal(
         options,
         &mut static_selectors,
     )?;
-    let mut activation = TypedResidentArena::allocate(activation_sizes);
+    let mut activation =
+        TypedResidentArena::allocate_from_plan(&plan.memory_plan, ResidentStorageClass::Constant)?;
     for raw in 0..artifact.constants().len() {
         let constant = ConstantId::new(raw as u32);
         let value = artifact
@@ -1320,7 +1410,7 @@ fn activate_internal(
         )?;
     }
     execute_activation_graph(&plan, &mut activation)?;
-    let mut state = StateArena::new(state_sizes, &plan.slots);
+    let mut state = StateArena::new(&plan.memory_plan, &plan.slots)?;
     for slot in plan
         .slots
         .iter()
@@ -1351,7 +1441,7 @@ fn activate_internal(
             state.initialize_from_arena(materialization.target, &activation, source);
         }
     }
-    let workspace = TurnWorkspace::new(input_sizes, scratch_sizes, &plan);
+    let workspace = TurnWorkspace::new(&plan)?;
     Ok(ReactiveInstance {
         id,
         plan,
@@ -2031,16 +2121,7 @@ fn complete_activation_shape_facts(
 struct LayoutBuild {
     slots: Box<[ResolvedSlot]>,
     constant_regions: Box<[ResidentRegion]>,
-    sizes: [ResidentArenaSizes; 4],
-}
-
-fn class_index(class: ResidentStorageClass) -> usize {
-    match class {
-        ResidentStorageClass::Constant => 0,
-        ResidentStorageClass::Input => 1,
-        ResidentStorageClass::State => 2,
-        ResidentStorageClass::Scratch => 3,
-    }
+    memory_plan: ProgramMemoryPlan,
 }
 
 fn build_layout(
@@ -2048,28 +2129,52 @@ fn build_layout(
     facts: &ActivationFacts,
     classes: &[NodeClass],
 ) -> Result<LayoutBuild, ResidentActivationError> {
-    let mut sizes = [ResidentArenaSizes::default(); 4];
-    let mut constant_regions = Vec::with_capacity(artifact.constants().len());
+    let mut last_consumers = BTreeMap::<CellSlotId, NodeId>::new();
+    for binding in artifact.bindings() {
+        if let BindingDeclaration::Input {
+            node,
+            source: ArtifactSource::Slot(slot),
+            ..
+        } = binding
+        {
+            last_consumers
+                .entry(*slot)
+                .and_modify(|last| *last = (*last).max(*node))
+                .or_insert(*node);
+        }
+    }
+    let mut planned = Vec::with_capacity(artifact.constants().len() + artifact.slots().len());
+    let mut constant_layouts = Vec::with_capacity(artifact.constants().len());
     for raw in 0..artifact.constants().len() {
-        let value = artifact
-            .constants()
-            .get(ConstantId::new(raw as u32))
-            .unwrap();
+        let constant = ConstantId::new(raw as u32);
+        let value = artifact.constants().get(constant).unwrap();
         let (kind, shape) = value_layout(artifact, value)?;
         let len = shape
             .len()
             .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-        let offset = sizes[0]
-            .allocate(kind, len)
-            .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-        constant_regions.push(ResidentRegion {
+        let schema = artifact
+            .schemas()
+            .entry(value.schema())
+            .unwrap()
+            .schema()
+            .clone();
+        let descriptor =
+            mech_core::ResolvedValueDescriptor::from_schema(schema, value.shape().clone())
+                .map_err(|_| ResidentActivationError::InvalidSnapshotRepresentation)?;
+        planned.push(ResidentValuePlanInput {
+            owner: mech_core::MemoryObjectOwner::Constant(constant),
+            slot: None,
+            descriptor,
+            class: PlannedValueClass::Constant,
             kind,
-            offset,
-            len,
-            shape,
+            elements: u64::try_from(len)
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+            lifetime: mech_core::MemoryLifetime::Program,
+            producer: None,
         });
+        constant_layouts.push((constant, kind, shape, len));
     }
-    let mut slots = Vec::with_capacity(artifact.slots().len());
+    let mut slot_layouts = Vec::with_capacity(artifact.slots().len());
     for declaration in artifact.slots() {
         let producer_class = match declaration.producer {
             ProducerReference::Input(_) => Some(NodeClass::Observation),
@@ -2096,32 +2201,125 @@ fn build_layout(
         let len = resident_shape
             .len()
             .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-        let class = class_index(storage);
-        let offset = sizes[class]
-            .allocate(kind, len)
-            .ok_or(ResidentActivationError::RegionSizeOverflow)?;
         let schema = artifact.schemas().entry(declaration.schema).unwrap();
-        slots.push(ResolvedSlot {
-            artifact_id: declaration.slot,
-            role: declaration.role,
-            physical_index: SlotIndex::new(declaration.slot.get()),
-            schema: declaration.schema,
-            schema_key: schema.key(),
-            shape,
-            storage,
-            region: ResidentRegion {
-                kind,
-                offset,
-                len,
-                shape: resident_shape,
+        let descriptor =
+            mech_core::ResolvedValueDescriptor::from_schema(schema.schema().clone(), shape.clone())
+                .map_err(|_| ResidentActivationError::InvalidSnapshotRepresentation)?;
+        planned.push(ResidentValuePlanInput {
+            owner: mech_core::MemoryObjectOwner::Slot(declaration.slot),
+            slot: Some(declaration.slot),
+            descriptor,
+            class: match storage {
+                ResidentStorageClass::Constant => PlannedValueClass::Constant,
+                ResidentStorageClass::Input => PlannedValueClass::Input,
+                ResidentStorageClass::State => PlannedValueClass::State,
+                ResidentStorageClass::Scratch => PlannedValueClass::Scratch,
+            },
+            kind,
+            elements: u64::try_from(len)
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+            lifetime: resident_slot_lifetime(
+                declaration,
+                storage,
+                last_consumers.get(&declaration.slot).copied(),
+            )?,
+            producer: match declaration.producer {
+                ProducerReference::NodeOutput { node, .. } => Some(node),
+                _ => None,
             },
         });
+        slot_layouts.push((
+            declaration,
+            schema.key(),
+            shape,
+            storage,
+            kind,
+            resident_shape,
+            len,
+        ));
     }
+    let projection = plan_resident_arenas(&planned)
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+    ensure_resident_plan_admitted(&projection.plan)?;
+    let constant_regions = constant_layouts
+        .into_iter()
+        .map(|(constant, kind, shape, len)| {
+            Ok(ResidentRegion {
+                kind,
+                offset: *projection
+                    .element_offsets
+                    .get(&mech_core::MemoryObjectOwner::Constant(constant))
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?,
+                len,
+                shape,
+            })
+        })
+        .collect::<Result<Vec<_>, ResidentActivationError>>()?;
+    let slots = slot_layouts
+        .into_iter()
+        .map(
+            |(declaration, schema_key, shape, storage, kind, resident_shape, len)| {
+                Ok(ResolvedSlot {
+                    artifact_id: declaration.slot,
+                    role: declaration.role,
+                    physical_index: SlotIndex::new(declaration.slot.get()),
+                    schema: declaration.schema,
+                    schema_key,
+                    shape,
+                    storage,
+                    region: ResidentRegion {
+                        kind,
+                        offset: *projection
+                            .element_offsets
+                            .get(&mech_core::MemoryObjectOwner::Slot(declaration.slot))
+                            .ok_or(ResidentActivationError::RegionSizeOverflow)?,
+                        len,
+                        shape: resident_shape,
+                    },
+                })
+            },
+        )
+        .collect::<Result<Vec<_>, ResidentActivationError>>()?;
     Ok(LayoutBuild {
         slots: slots.into_boxed_slice(),
         constant_regions: constant_regions.into_boxed_slice(),
-        sizes,
+        memory_plan: projection.plan,
     })
+}
+
+fn resident_slot_lifetime(
+    declaration: &crate::SlotDeclaration,
+    storage: ResidentStorageClass,
+    last_consumer: Option<NodeId>,
+) -> Result<mech_core::MemoryLifetime, ResidentActivationError> {
+    match storage {
+        ResidentStorageClass::Input | ResidentStorageClass::State => {
+            Ok(mech_core::MemoryLifetime::Activation)
+        }
+        ResidentStorageClass::Constant => Ok(match declaration.producer {
+            ProducerReference::NodeOutput { .. } => mech_core::MemoryLifetime::Activation,
+            _ => mech_core::MemoryLifetime::Program,
+        }),
+        ResidentStorageClass::Scratch => {
+            let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                return Err(ResidentActivationError::RegionSizeOverflow);
+            };
+            let (first, producer_after) =
+                node_points(node).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            let last = match last_consumer {
+                Some(consumer) => {
+                    node_points(consumer)
+                        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?
+                        .1
+                }
+                None => producer_after,
+            };
+            if last < first {
+                return Err(ResidentActivationError::RegionSizeOverflow);
+            }
+            Ok(mech_core::MemoryLifetime::Turn { first, last })
+        }
+    }
 }
 
 fn slot_shape(
@@ -2320,26 +2518,16 @@ fn build_plan(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     classes: Box<[NodeClass]>,
-    layout: LayoutBuild,
+    mut layout: LayoutBuild,
     activation_facts_fingerprint: [u8; 32],
     options: ResidentActivationOptions,
     static_selectors: &mut ArtifactStaticSelectorResolver,
-) -> Result<
-    (
-        ActivatedPlan,
-        ResidentArenaSizes,
-        ResidentArenaSizes,
-        ResidentArenaSizes,
-        ResidentArenaSizes,
-    ),
-    ResidentActivationError,
-> {
+) -> Result<ActivatedPlan, ResidentActivationError> {
     let mut reads = Vec::new();
     let mut steps = Vec::new();
     let mut activation_steps = Vec::new();
     let mut artifact_to_activated = vec![None; artifact.nodes().len()];
     let mut effect_ordinal = 0_u32;
-    let mut effect_payload_sizes = ResidentArenaSizes::default();
     for node in artifact.nodes() {
         let class = classes[node.node.get() as usize];
         if class == NodeClass::Observation {
@@ -2369,12 +2557,18 @@ fn build_plan(
             let payload_region = payload.region();
             let captured_payload = ResidentRegion {
                 kind: payload_region.kind,
-                offset: effect_payload_sizes
-                    .allocate(payload_region.kind, payload_region.len)
-                    .ok_or(ResidentActivationError::RegionSizeOverflow)?,
+                offset: plan_resident_effect_payload(
+                    &mut layout.memory_plan,
+                    node.node,
+                    payload_region.kind,
+                    u64::try_from(payload_region.len)
+                        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                )
+                .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?,
                 len: payload_region.len,
                 shape: payload_region.shape,
             };
+            ensure_resident_plan_admitted(&layout.memory_plan)?;
             let activated = ActivatedNodeIndex(steps.len() as u32);
             artifact_to_activated[node.node.get() as usize] = Some(activated);
             steps.push(ActivatedTurnStep::External(ActivatedExternalNode {
@@ -2700,10 +2894,6 @@ fn build_plan(
         .map(|step| step.artifact_node)
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    let input_sizes = layout.sizes[1];
-    let state_sizes = layout.sizes[2];
-    let scratch_sizes = layout.sizes[3];
-    let activation_sizes = layout.sizes[0];
     let f64_read_tape = build_f64_read_tape(&reads);
     let external_step_count = steps
         .iter()
@@ -2726,6 +2916,7 @@ fn build_plan(
         activation_facts_fingerprint,
         plan_generation: PlanGeneration::ZERO,
         layout_generation: LayoutGeneration::ZERO,
+        memory_plan: layout.memory_plan,
         slots: layout.slots,
         steps: steps.into_boxed_slice(),
         external_step_count,
@@ -2748,15 +2939,8 @@ fn build_plan(
         state_slots,
         rmw_state_slots,
         state_hash_seed,
-        effect_payload_sizes,
     };
-    Ok((
-        plan,
-        input_sizes,
-        state_sizes,
-        scratch_sizes,
-        activation_sizes,
-    ))
+    Ok(plan)
 }
 
 fn build_execution_node_order(

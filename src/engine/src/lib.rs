@@ -60,6 +60,8 @@ pub mod literals;
 #[cfg(feature = "semantic-compiler")]
 pub mod mechdown;
 #[cfg(feature = "semantic-compiler")]
+pub mod memory_planner;
+#[cfg(feature = "semantic-compiler")]
 pub mod patterns;
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
