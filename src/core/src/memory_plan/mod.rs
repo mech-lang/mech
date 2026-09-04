@@ -11,7 +11,6 @@ mod model;
 mod target;
 
 pub use self::budget::*;
-#[cfg(feature = "functions")]
 pub use self::derive::*;
 pub use self::error::*;
 pub use self::implementation::*;

@@ -114,6 +114,13 @@ pub struct PayloadCapacityPlan {
     pub growth: GrowthPolicy,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DimensionCapacity {
+    pub current: u64,
+    pub maximum: Option<u64>,
+    pub evolution: ExtentEvolution,
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CurrentMemoryFootprint {
     pub logical_elements: u64,
