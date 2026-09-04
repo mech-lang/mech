@@ -4,9 +4,9 @@ use super::super::registration::{
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{
-    CanonicalCellId, FunctionInstance, FunctionInvocation, InitialSolvePolicy, MResult, MechError,
-    MechErrorKind, MechFunction, MechFunctionImpl, Plan, ReactiveDependencyKind,
-    SpecializedFunction, ValueCell,
+    CanonicalCellId, ExecutionTarget, FunctionInstance, FunctionInvocation, InitialSolvePolicy,
+    MResult, MechError, MechErrorKind, MechFunction, MechFunctionImpl, OperationId, Plan,
+    ReactiveDependencyKind, RuntimeFunctionId, SpecializedFunction, ValueCell,
 };
 use std::sync::{
     Arc,
@@ -100,10 +100,16 @@ fn specialized(
     output: ValueCell,
     inputs: Vec<ValueCell>,
 ) -> SpecializedFunction {
-    SpecializedFunction::new(FunctionInstance::new(
-        implementation,
-        FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
-    ))
+    SpecializedFunction::syntax_directed(
+        FunctionInstance::new(
+            implementation,
+            FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
+        ),
+        OperationId::from_name("test/indexed-expression"),
+        RuntimeFunctionId::from_name("IndexedExpressionTestFunction"),
+        ExecutionTarget::DirectRuntime,
+    )
+    .unwrap()
 }
 
 #[test]

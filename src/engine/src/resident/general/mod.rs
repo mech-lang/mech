@@ -9,14 +9,14 @@ use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirementId, BoundResidentKernel, CellSlotId,
+    AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel, CellSlotId,
     ChangeDetectionPolicy, ConstantId, DeliveryMode, DimensionExpr, DimensionLifetime,
     ExecutionTarget, ExecutionTargetSet, ExternalInteraction, FunctionCatalog, InputId,
     InstanceEpoch, IntegrityConstraintId, LayoutGeneration, NodeId, ObservationReplayPolicy,
-    OutputConstruction, PlanGeneration, ProgramRevision, ReactiveInstanceId,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs, ResidentPortLayout,
-    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, SchemaBody, SchemaId,
-    SchemaKey, ShapeInstance, SlotIndex, Value,
+    OperationId, OutputConstruction, PlanGeneration, ProgramRevision, ReactiveInstanceId,
+    ResidentBuildContext, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs,
+    ResidentOperationKey, ResidentPortLayout, ResidentShape, ResidentValueKind, ResidentValueMut,
+    ResidentValueRef, SchemaBody, SchemaId, SchemaKey, ShapeInstance, SlotIndex, Value,
 };
 use sha2::{Digest, Sha256};
 
@@ -1910,15 +1910,84 @@ fn build_plan(
             .map(|source| source_port_layout(artifact, &layout, *source, static_selectors))
             .collect::<Result<Vec<_>, _>>()?;
         let output_layout = slot_port_layout(output);
+        let canonical_operation = node.operation.canonical_name();
+        let input_descriptors = input_layouts
+            .iter()
+            .map(|layout| {
+                artifact
+                    .schemas()
+                    .get(layout.schema_id)
+                    .cloned()
+                    .ok_or(ResidentActivationError::KernelBind {
+                        node: node.node,
+                        error: ResidentKernelBindError::InvalidParameters,
+                    })
+                    .and_then(|schema| {
+                        mech_core::ResolvedValueDescriptor::from_schema(
+                            schema,
+                            layout.shape_instance.clone(),
+                        )
+                        .map_err(|_| ResidentActivationError::KernelBind {
+                            node: node.node,
+                            error: ResidentKernelBindError::InvalidParameters,
+                        })
+                    })
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_boxed_slice();
+        let output_descriptor = artifact
+            .schemas()
+            .get(output_layout.schema_id)
+            .cloned()
+            .ok_or(ResidentActivationError::KernelBind {
+                node: node.node,
+                error: ResidentKernelBindError::InvalidParameters,
+            })
+            .and_then(|schema| {
+                mech_core::ResolvedValueDescriptor::from_schema(
+                    schema,
+                    output_layout.shape_instance.clone(),
+                )
+                .map_err(|_| ResidentActivationError::KernelBind {
+                    node: node.node,
+                    error: ResidentKernelBindError::InvalidParameters,
+                })
+            })?;
+        let resident_entry =
+            catalog.resident_factory(&node.operation.module_path, &node.operation.operation_name);
+        let resident_operation = resident_entry.map_or_else(
+            || {
+                ResidentOperationKey::new(
+                    node.operation.module_path.clone(),
+                    node.operation.operation_name.clone(),
+                )
+            },
+            |entry| Some(entry.key.clone()),
+        );
+        let resident_operation = resident_operation.ok_or(ResidentActivationError::KernelBind {
+            node: node.node,
+            error: ResidentKernelBindError::InvalidParameters,
+        })?;
+        let semantic_operation = OperationId::from_name(&canonical_operation);
+        let resident_context = ResidentBuildContext {
+            bound_call: BoundCall::artifact_operation(
+                semantic_operation,
+                input_descriptors,
+                vec![output_descriptor].into_boxed_slice(),
+                resident_operation,
+            )
+            .map_err(|_| ResidentActivationError::KernelBind {
+                node: node.node,
+                error: ResidentKernelBindError::InvalidParameters,
+            })?,
+        };
         let bind_request = ResidentKernelBindRequest {
             contract: artifact.contracts().get(node.contract).unwrap(),
             schemas: artifact.schemas(),
             inputs: &input_layouts,
             output: output_layout,
         };
-        let kernel = if let Some(factory) =
-            catalog.resident_factory(&node.operation.module_path, &node.operation.operation_name)
-        {
+        let kernel = if let Some(factory) = resident_entry {
             (factory.factory)(&bind_request)
         } else {
             #[cfg(feature = "dynamic-modules")]
@@ -1938,7 +2007,8 @@ fn build_plan(
         .map_err(|error| ResidentActivationError::KernelBind {
             node: node.node,
             error,
-        })?;
+        })?
+        .with_bound_call(resident_context.bound_call);
         if class == NodeClass::Activation {
             activation_steps.push(ActivatedOnceNode {
                 artifact_node: node.node,

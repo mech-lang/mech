@@ -103,9 +103,15 @@ pub struct CompiledBytecode {
     pub instruction_operations: Vec<Option<String>>,
     /// Dense source-plan node identity, parallel to `program.instructions`.
     pub instruction_source_nodes: Vec<Option<u32>>,
+    /// Immutable semantic call certificate for each executable instruction,
+    /// parallel to `program.instructions`.
+    pub instruction_type_bindings: Vec<Option<crate::BoundCall>>,
     /// Canonical schema authority for registers owned by canonical cells.
     /// Dense and parallel to the register space.
     pub register_schemas: Vec<Option<crate::SchemaBody>>,
+    /// Complete semantic descriptor for every canonical register, dense and
+    /// parallel to the register space.
+    pub register_type_descriptors: Vec<Option<crate::ResolvedValueDescriptor>>,
     /// Compiler-control absence registers, kept distinct from canonical unit.
     pub absent_registers: BTreeSet<Register>,
     /// Exact current cardinality for map/set registers. Dense and parallel to
@@ -158,7 +164,9 @@ pub struct CompileCtx {
     instruction_contracts: Vec<Option<&'static OperationContractDeclaration>>,
     instruction_operations: Vec<Option<String>>,
     instruction_source_nodes: Vec<Option<u32>>,
+    instruction_type_bindings: Vec<Option<crate::BoundCall>>,
     register_schemas: BTreeMap<Register, crate::SchemaBody>,
+    register_type_descriptors: BTreeMap<Register, crate::ResolvedValueDescriptor>,
     absent_registers: BTreeSet<Register>,
     register_collection_cardinalities: BTreeMap<Register, usize>,
     register_state_initializers: BTreeMap<Register, u32>,
@@ -169,6 +177,7 @@ pub struct CompileCtx {
     current_node_contract: Option<&'static OperationContractDeclaration>,
     current_node_operation: Option<String>,
     current_source_node: Option<u32>,
+    current_node_type_binding: Option<crate::BoundCall>,
     next_source_node: u32,
     integrity_constraints: Vec<CompiledIntegrityConstraint>,
     compute_regions: Vec<CompiledComputeRegion>,
@@ -194,7 +203,9 @@ impl Default for CompileCtx {
             instruction_contracts: Vec::new(),
             instruction_operations: Vec::new(),
             instruction_source_nodes: Vec::new(),
+            instruction_type_bindings: Vec::new(),
             register_schemas: BTreeMap::new(),
+            register_type_descriptors: BTreeMap::new(),
             absent_registers: BTreeSet::new(),
             register_collection_cardinalities: BTreeMap::new(),
             register_state_initializers: BTreeMap::new(),
@@ -205,6 +216,7 @@ impl Default for CompileCtx {
             current_node_contract: None,
             current_node_operation: None,
             current_source_node: None,
+            current_node_type_binding: None,
             next_source_node: 0,
             integrity_constraints: Vec::new(),
             compute_regions: Vec::new(),
@@ -269,6 +281,7 @@ impl CompileCtx {
         self.instruction_contracts.remove(index);
         self.instruction_operations.remove(index);
         self.instruction_source_nodes.remove(index);
+        self.instruction_type_bindings.remove(index);
     }
 
     fn remove_constant_if_unreferenced(&mut self, constant: u32) {
@@ -332,12 +345,30 @@ impl CompileCtx {
         operation: Option<&str>,
         contract: Option<&'static OperationContractDeclaration>,
     ) -> MResult<()> {
+        self.begin_plan_node_with_type_binding(kind, operation, contract, None)
+    }
+
+    pub fn begin_plan_node_with_type_binding(
+        &mut self,
+        kind: CompiledNodeKind,
+        operation: Option<&str>,
+        contract: Option<&'static OperationContractDeclaration>,
+        type_binding: Option<&crate::BoundCall>,
+    ) -> MResult<()> {
         if self.current_node_kind.is_some() {
             return invalid("cannot begin a bytecode plan node while another node is active");
+        }
+        if let (Some(operation), Some(binding)) = (operation, type_binding)
+            && crate::OperationId::from_name(operation) != binding.operation()
+        {
+            return invalid(format!(
+                "plan node operation {operation:?} disagrees with its bound call certificate",
+            ));
         }
         self.current_node_kind = Some(kind);
         self.current_node_operation = operation.map(str::to_owned);
         self.current_node_contract = contract;
+        self.current_node_type_binding = type_binding.cloned();
         self.current_source_node = Some(self.next_source_node);
         self.next_source_node = self
             .next_source_node
@@ -351,6 +382,7 @@ impl CompileCtx {
         self.current_node_operation = None;
         self.current_node_contract = None;
         self.current_source_node = None;
+        self.current_node_type_binding = None;
     }
 
     pub fn record_integrity_constraint(
@@ -431,6 +463,7 @@ impl CompileCtx {
         self.instruction_contracts.push(None);
         self.instruction_operations.push(None);
         self.instruction_source_nodes.push(None);
+        self.instruction_type_bindings.push(None);
     }
 
     pub fn finish_program(&mut self, return_register: Register) -> MResult<CompiledBytecode> {
@@ -466,6 +499,13 @@ impl CompileCtx {
             return invalid(format!(
                 "instruction source node count {} does not match instruction count {}",
                 self.instruction_source_nodes.len(),
+                self.instructions.len(),
+            ));
+        }
+        if self.instruction_type_bindings.len() != self.instructions.len() {
+            return invalid(format!(
+                "instruction type binding count {} does not match instruction count {}",
+                self.instruction_type_bindings.len(),
                 self.instructions.len(),
             ));
         }
@@ -508,6 +548,8 @@ impl CompileCtx {
         instruction_operations.push(None);
         let mut instruction_source_nodes = self.instruction_source_nodes.clone();
         instruction_source_nodes.push(None);
+        let mut instruction_type_bindings = self.instruction_type_bindings.clone();
+        instruction_type_bindings.push(None);
 
         let mut register_schemas = vec![None; self.next_register as usize];
         for (register, schema) in &self.register_schemas {
@@ -521,6 +563,19 @@ impl CompileCtx {
                     .unwrap_err()
                 })?;
             *target = Some(schema.clone());
+        }
+        let mut register_type_descriptors = vec![None; self.next_register as usize];
+        for (register, descriptor) in &self.register_type_descriptors {
+            let target = register_type_descriptors
+                .get_mut(*register as usize)
+                .ok_or_else(|| {
+                    invalid::<()>(format!(
+                        "recorded register type descriptor {register} is outside register count {}",
+                        self.next_register,
+                    ))
+                    .unwrap_err()
+                })?;
+            *target = Some(descriptor.clone());
         }
         let mut register_collection_cardinalities = vec![None; self.next_register as usize];
         for (register, cardinality) in &self.register_collection_cardinalities {
@@ -573,7 +628,9 @@ impl CompileCtx {
             instruction_contracts,
             instruction_operations,
             instruction_source_nodes,
+            instruction_type_bindings,
             register_schemas,
+            register_type_descriptors,
             absent_registers: self.absent_registers.clone(),
             register_collection_cardinalities,
             register_state_initializers,
@@ -731,6 +788,23 @@ impl BytecodeCompilerContext for CompileCtx {
             }
         } else {
             self.register_schemas.insert(register, schema);
+        }
+        Ok(())
+    }
+
+    fn record_register_type_descriptor(
+        &mut self,
+        register: Register,
+        descriptor: crate::ResolvedValueDescriptor,
+    ) -> MResult<()> {
+        if let Some(existing) = self.register_type_descriptors.get(&register) {
+            if existing != &descriptor {
+                return invalid(format!(
+                    "register {register} has conflicting semantic type descriptors",
+                ));
+            }
+        } else {
+            self.register_type_descriptors.insert(register, descriptor);
         }
         Ok(())
     }
@@ -976,6 +1050,7 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_contracts.push(None);
         self.instruction_operations.push(None);
         self.instruction_source_nodes.push(None);
+        self.instruction_type_bindings.push(None);
     }
 
     fn emit_composite_pack(
@@ -1003,6 +1078,7 @@ impl BytecodeCompilerContext for CompileCtx {
         // This is a compiler-owned record/tuple/etc. construction node, not a
         // second lowering of the source plan node whose input requested it.
         self.instruction_source_nodes.push(None);
+        self.instruction_type_bindings.push(None);
     }
 
     fn emit_nullop(&mut self, function: u64, destination: Register) {
@@ -1016,6 +1092,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 
     fn emit_unop(&mut self, function: u64, destination: Register, source: Register) {
@@ -1030,6 +1108,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 
     fn emit_binop(&mut self, function: u64, destination: Register, lhs: Register, rhs: Register) {
@@ -1045,6 +1125,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 
     fn emit_declaration_binary(
@@ -1065,6 +1147,7 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_contracts.push(None);
         self.instruction_operations.push(None);
         self.instruction_source_nodes.push(None);
+        self.instruction_type_bindings.push(None);
     }
 
     fn emit_ternop(
@@ -1088,6 +1171,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 
     fn emit_quadop(
@@ -1114,6 +1199,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 
     fn emit_varop(&mut self, function: u64, destination: Register, arguments: Vec<Register>) {
@@ -1129,6 +1216,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 
     fn emit_host_call(
@@ -1148,6 +1237,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 
     fn emit_resource_read(&mut self, requirement: u32, destination: Register) {
@@ -1161,6 +1252,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 
     fn emit_resource_write(&mut self, requirement: u32, destination: Register, source: Register) {
@@ -1175,6 +1268,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 
     fn emit_resource_send(&mut self, requirement: u32, destination: Register, source: Register) {
@@ -1189,6 +1284,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations
             .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_type_bindings
+            .push(self.current_node_type_binding.clone());
     }
 }
 

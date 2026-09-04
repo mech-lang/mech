@@ -28,6 +28,13 @@ pub struct OperationReference {
 }
 
 impl OperationReference {
+    pub fn canonical_name(&self) -> String {
+        if self.module_path.is_empty() {
+            return self.operation_name.clone();
+        }
+        format!("{}/{}", self.module_path.join("/"), self.operation_name)
+    }
+
     fn module_is(&self, expected: &[&str]) -> bool {
         self.module_path.len() == expected.len()
             && self
@@ -546,6 +553,14 @@ pub enum ArtifactBuildError {
         table: &'static str,
         expected: usize,
         actual: usize,
+    },
+    CompiledTypeBindingMismatch {
+        instruction: u32,
+        reason: String,
+    },
+    CompiledRegisterDescriptorMismatch {
+        register: u32,
+        reason: String,
     },
     MissingOperationContract {
         node: NodeId,

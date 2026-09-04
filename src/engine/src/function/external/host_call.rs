@@ -25,8 +25,7 @@ impl ExternalHostCallFunction {
             .map(ValueCell::snapshot)
             .collect::<MResult<Vec<_>>>()?;
         let result = services.invoke_host_function(&self.request, &arguments)?;
-        self.output.replace(&result)?;
-        Ok(())
+        super::install_external_value(&self.output, result)
     }
 }
 

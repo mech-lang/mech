@@ -50,6 +50,7 @@ impl Default for CompilerPlanningConfig {
 pub struct ProgramCompilationProduct {
     artifact: ProgramArtifact,
     bytecode: Vec<u8>,
+    instruction_type_bindings: Vec<Option<mech_core::BoundCall>>,
 }
 
 /// Immutable source-compilation product for hosts that immediately activate
@@ -94,6 +95,16 @@ impl ProgramCompilationProduct {
 
     pub fn into_parts(self) -> (ProgramArtifact, Vec<u8>) {
         (self.artifact, self.bytecode)
+    }
+
+    pub fn instruction_type_bindings(&self) -> &[Option<mech_core::BoundCall>] {
+        &self.instruction_type_bindings
+    }
+
+    pub fn into_native_parts(
+        self,
+    ) -> (ProgramArtifact, Vec<u8>, Vec<Option<mech_core::BoundCall>>) {
+        (self.artifact, self.bytecode, self.instruction_type_bindings)
     }
 }
 
@@ -542,6 +553,7 @@ impl CompilerPlanningProgram {
         &self,
         compiled: CompilerPlanningBytecode,
     ) -> MResult<ProgramCompilationProduct> {
+        let instruction_type_bindings = compiled.bytecode.instruction_type_bindings.clone();
         let artifact = compile_executable_program_artifact_with_named_outputs_and_external_inputs(
             &compiled.bytecode,
             &compiled.published_outputs,
@@ -568,7 +580,11 @@ impl CompilerPlanningProgram {
             .with_compiler_loc()
         })?;
         let bytecode = write_bytecode_with_artifact(&compiled.bytecode.program, &sections)?;
-        Ok(ProgramCompilationProduct { artifact, bytecode })
+        Ok(ProgramCompilationProduct {
+            artifact,
+            bytecode,
+            instruction_type_bindings,
+        })
     }
 }
 
@@ -728,13 +744,14 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     }
 
     for step in plan.iter() {
-        context.begin_plan_node_with_semantics(
+        context.begin_plan_node_with_type_binding(
             match step.reactive_node_kind() {
                 ReactiveNodeKind::Combinational => CompiledNodeKind::Combinational,
                 ReactiveNodeKind::Register => CompiledNodeKind::Register,
             },
             step.semantic_operation_name(),
             step.semantic_operation_contract(),
+            step.bound_call(),
         )?;
         let compile_result = step.compile(&mut context);
         context.end_plan_node();

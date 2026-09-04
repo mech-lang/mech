@@ -2,12 +2,12 @@
 
 use mech_core::snapshot::SequenceView;
 use mech_core::{
-    AccessMode, AliasPolicy, BuiltinScalarKind, CellSlotId, ChangeDetectionPolicy, ConstantId,
-    DeliveryMode, DimensionExpr, ExecutionHostFunctionRequest, ExecutionResourceRequest,
-    ExternalInteraction, FloatWidth, KindExpr, MResult, MechError, MechErrorKind,
-    MechExecutionServices, NodeId, ObservationReplayPolicy, OperationContractId,
-    OutputConstruction, OutputId, ProgramRevision, ResolvedOperationContract, ResourceDelivery,
-    ResourceIntent, SchemaBody, SchemaId, ShapeRule, ValueCell, ValueData,
+    AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, ConstantId, DeliveryMode,
+    DimensionExpr, ExecutionHostFunctionRequest, ExecutionResourceRequest, ExternalInteraction,
+    FloatWidth, MResult, MechError, MechErrorKind, MechExecutionServices, NodeId,
+    ObservationReplayPolicy, OperationContractId, OutputConstruction, OutputId, ProgramRevision,
+    ResolvedOperationContract, ResourceDelivery, ResourceIntent, SchemaBody, SchemaId, ShapeRule,
+    ValueCell, ValueData,
 };
 use nalgebra::DVector;
 

@@ -76,7 +76,7 @@ impl ExternalResourceReadFunction {
     }
 
     fn apply_read_result(&self, result: Value) -> MResult<()> {
-        self.output.replace(&result)?;
+        super::install_external_value(&self.output, result)?;
         *self.initialized.borrow_mut() = 1;
         Ok(())
     }

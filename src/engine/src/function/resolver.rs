@@ -549,7 +549,7 @@ mod tests {
         fn specialize_invocation(
             &self,
             invocation: &SpecializationInvocation,
-            _: &mut SpecializationContext<'_>,
+            context: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             let inputs = invocation
                 .inputs()
@@ -562,10 +562,11 @@ mod tests {
                 .into_boxed_slice();
             let output = inputs.first().cloned().unwrap_or_else(ValueCell::unit);
             let invocation = FunctionInvocation::variadic(output, inputs);
-            Ok(SpecializedFunction::new(FunctionInstance::new(
-                Box::new(TestFunction(self.0)),
-                invocation,
-            )))
+            context.certify_instance(
+                FunctionInstance::new(Box::new(TestFunction(self.0)), invocation),
+                RuntimeFunctionId::from_name(self.0),
+                ExecutionTarget::DirectRuntime,
+            )
         }
     }
 

@@ -1079,6 +1079,7 @@ mod tests {
     fn request() -> NativeBuildRequest {
         NativeBuildRequest {
             bytecode: b"bytecode".to_vec(),
+            instruction_type_bindings: None,
             runtime_config: None,
             target: None,
             profile: NativeBuildProfile::Debug,

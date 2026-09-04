@@ -606,10 +606,6 @@ impl FunctionInstance {
             invocation,
         )
     }
-
-    pub(crate) fn into_implementation(self) -> Box<dyn MechFunction> {
-        self.implementation
-    }
 }
 
 #[cfg(all(test, feature = "f64"))]

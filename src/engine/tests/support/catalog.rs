@@ -77,7 +77,13 @@ mod test_operations {
             [first, second] => FunctionInvocation::binary(output, first.clone(), second.clone()),
             _ => FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
         };
-        SpecializedFunction::new(FunctionInstance::new(implementation, invocation))
+        SpecializedFunction::syntax_directed(
+            FunctionInstance::new(implementation, invocation),
+            OperationId::from_name("test/specialized"),
+            RuntimeFunctionId::from_name("TestSpecialized"),
+            ExecutionTarget::DirectRuntime,
+        )
+        .unwrap()
     }
 
     #[derive(Clone, Copy, Debug)]
@@ -131,7 +137,7 @@ mod test_operations {
         fn specialize_invocation(
             &self,
             invocation: &SpecializationInvocation,
-            _: &mut SpecializationContext<'_>,
+            context: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             if invocation.len() != 2 {
                 return Err(test_operation_error(
@@ -796,10 +802,14 @@ mod tests {
                 rhs: exact_ref(&rhs)?,
                 out: exact_ref(&output)?,
             };
-            Ok(SpecializedFunction::new(FunctionInstance::new(
-                Box::new(function),
-                FunctionInvocation::binary(output, lhs, rhs),
-            )))
+            context.certify_instance(
+                FunctionInstance::new(
+                    Box::new(function),
+                    FunctionInvocation::binary(output, lhs, rhs),
+                ),
+                RuntimeFunctionId::from_name("TestAddFunction"),
+                ExecutionTarget::DirectRuntime,
+            )
         }
     }
 

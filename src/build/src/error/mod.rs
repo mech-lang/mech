@@ -67,6 +67,9 @@ pub enum NativeBuildErrorKind {
         name: String,
         reason: String,
     },
+    NativeRuntimeFunctionBindingInvalid {
+        reason: String,
+    },
     NativeRuntimeTypeUnsupported {
         runtime_type: String,
     },
@@ -191,6 +194,9 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeRuntimeFunctionLinkageInvalid { .. } => {
                 "NativeRuntimeFunctionLinkageInvalid"
             }
+            Self::NativeRuntimeFunctionBindingInvalid { .. } => {
+                "NativeRuntimeFunctionBindingInvalid"
+            }
             Self::NativeRuntimeTypeUnsupported { .. } => "NativeRuntimeTypeUnsupported",
             Self::NativeRuntimeConfigMissing { .. } => "NativeRuntimeConfigMissing",
             Self::NativeRuntimeConfigDuplicateHostInstance { .. } => {
@@ -247,6 +253,9 @@ impl MechErrorKind for NativeBuildErrorKind {
             }
             Self::NativeRuntimeFunctionLinkageInvalid { id, name, reason } => {
                 format!("runtime function `{name}` ({id}) has invalid native linkage: {reason}")
+            }
+            Self::NativeRuntimeFunctionBindingInvalid { reason } => {
+                format!("native runtime semantic binding is invalid: {reason}")
             }
             Self::NativeRuntimeTypeUnsupported { runtime_type } => {
                 format!("runtime type `{runtime_type}` is not supported by native applications")

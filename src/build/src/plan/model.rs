@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use mech_core::{ResourceDelivery, ResourceIntent, RuntimeType};
+use mech_core::{BoundCall, ResourceDelivery, ResourceIntent, RuntimeType};
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +25,9 @@ pub enum NativeEmit {
 #[derive(Clone, Debug, PartialEq)]
 pub struct NativeBuildRequest {
     pub bytecode: Vec<u8>,
+    /// Compiler-only semantic certificates parallel to bytecode instructions.
+    /// Raw bytecode inputs legitimately leave this absent.
+    pub instruction_type_bindings: Option<Vec<Option<BoundCall>>>,
     pub runtime_config: Option<NativeRuntimeConfig>,
     pub target: Option<String>,
     pub profile: NativeBuildProfile,

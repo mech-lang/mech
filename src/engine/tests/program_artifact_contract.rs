@@ -1138,10 +1138,12 @@ fn compiled_scalar_artifact_fixture(
         instruction_contracts: vec![None, None, None],
         instruction_operations: vec![None, None, None],
         instruction_source_nodes: vec![None, None, None],
+        instruction_type_bindings: vec![None, None, None],
         register_schemas: vec![
             first_schema,
             Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
         ],
+        register_type_descriptors: vec![None, None],
         absent_registers,
         register_collection_cardinalities: vec![None, None],
         register_state_initializers: vec![None, None],
@@ -1190,6 +1192,7 @@ fn compiled_assign_artifact_fixture(
         .instruction_operations
         .insert(2, Some("assign/value".to_owned()));
     compiled.instruction_source_nodes.insert(2, Some(0));
+    compiled.instruction_type_bindings.insert(2, None);
     (compiled, catalog)
 }
 
@@ -1239,6 +1242,9 @@ fn malformed_compiled_scalar_metadata_fails_closed() {
     wrong_integrity_kind.instruction_operations.insert(2, None);
     wrong_integrity_kind
         .instruction_source_nodes
+        .insert(2, None);
+    wrong_integrity_kind
+        .instruction_type_bindings
         .insert(2, None);
     wrong_integrity_kind
         .integrity_constraints
