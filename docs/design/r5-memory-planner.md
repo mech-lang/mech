@@ -2,8 +2,10 @@
 
 ## 1. Status
 
-R5 defines the deterministic memory plan consumed by the existing runtime. The
-contract is locked here before implementation: R5 predicts and validates
+R5 Memory planner — complete. R6 Memory runtime cutover — next.
+
+R5 defines the deterministic memory plan consumed by the existing runtime. R5
+predicts and validates
 storage, capacity, placement, lifetime, aliasing, reuse eligibility,
 transactions, budgets, and transfers. It does not introduce an allocator or
 replace any backing.
@@ -42,10 +44,14 @@ R5 has exactly three stages:
 
 - `ProgramMemoryPlanTemplate` records immutable graph facts, symbolic capacity,
   lifetimes, aliases, reuse groups, transactions, placement, transfers, and
-  explicit deferred witnesses.
-- `ProgramMemoryPlan` combines the template with one target profile and
-  activation facts to produce exact fixed-layout sizes, alignments, arena
-  placements, persistent and activation peaks, and remaining turn witnesses.
+  explicit deferred witnesses. Executable sidecars carry their artifact node
+  identities explicitly; marker, composite-pack, and synthetic state-hold
+  nodes may legitimately have no call sidecar.
+- `ProgramMemoryPlan` combines the template with activation facts and the
+  target profile for each occupied memory space to produce exact fixed-layout
+  sizes, alignments, arena placements, persistent and activation peaks, and
+  remaining turn witnesses. Mixed compute plans use the native-host profile
+  for Host values and the adapter profile for Device values.
 - `TurnMemoryPlan` combines the program plan with current dynamic footprints
   and selector results before any covered clone, draft, comparison,
   finalization, stage, or publication begins.
@@ -70,6 +76,8 @@ R5 supports rank-two dense matrices. It does not add row-major host matrices,
 arbitrary striding, packed records, user-selected alignment, or backend layout
 plugins. Fixed byte arithmetic is checked. Host zero-sized values occupy zero
 bytes; GPU storage bindings may not be zero-sized.
+Complex32 and Complex64 use distinct target slots (8 and 16 bytes on the host);
+one complex width is never used as the physical layout of the other.
 
 ## 5. Current extent versus required capacity
 
@@ -114,12 +122,24 @@ their identity. Reuse is a plan result only. Eligible fixed-width turn
 temporaries use deterministic first-fit by lifetime and object ID. R5 neither
 reuses nor frees an allocation.
 
+Call-local port, scratch, and transaction identities are remapped into one
+program-wide object namespace before publication. The program planner then
+validates that every port and transaction reference names an allocation in
+that namespace. Resident execution consumes those remapped calls; a
+call-local Resident plan is never installed directly into a program plan.
+
 ## 8. Transaction requirements
 
 Direct, native, and WASM publications use stage-and-swap. Their read-modify-
 write operations also use stage-and-swap. Resident CPU and GPU state use double
 buffers. Required in-place operations use undo snapshots. Read-only operations
 and unit external effects need no transaction storage.
+
+Published outputs are a distinct planned value class, not state. A published
+output uses stage-and-swap unless it is also independently declared as
+Resident/GPU state; only that state declaration authorizes double buffering.
+The producing call and value plan reference the same globally identified
+transaction stage, so this policy never creates a second call-local copy.
 
 The plan counts old and candidate values simultaneously wherever failure
 atomicity or rollback requires their coexistence.
@@ -134,6 +154,12 @@ Transfers are planned only across an existing host/device boundary or when a
 device producer becomes an externally retained output. Uploads and readbacks
 are deduplicated by direction, slot, consumer, and interface name. Each plan
 records current and capacity bytes plus its transfer lifetime.
+The descriptor is the single accounting authority for transfer demand; its
+backing allocation is placed but is not charged a second time.
+The GPU host's adapter-sized binding arenas are a subordinate
+`GpuBackingMemoryPlan` projection of an already selected `GpuExecutionPlan`.
+They are not a semantic `ProgramMemoryPlan` and cannot define operation,
+alias, lifetime, or transaction policy.
 
 ## 10. Resource demand and target limits
 
@@ -151,6 +177,14 @@ arbitrary quota beyond checked addressability.
 
 Violations identify the owning plan object, budget dimension, required amount,
 and limit in deterministic order.
+Turn-deferred input and output witnesses are keyed by node, direction, and port.
+The turn planner replaces their zero-valued placeholders and re-runs the same
+complete call planner used for the original call. Clone, transaction,
+canonical finalization/sorting, semantic-hash, retained-node, and output
+obligations are therefore derived together rather than patched field by field.
+Resolved transaction-stage families (fixed storage plus any separate Resident
+payload backing) are resized as one complete footprint and re-placed before
+admission; payload growth is never applied independently to every component.
 
 ## 11. Implementation scratch classes
 
@@ -180,6 +214,10 @@ or oversized observations are mismatches. A current allocation that is smaller
 than future planned capacity is accepted only as `CapacityDeferredToR6`.
 Production does not fail solely for that deferred capacity; tests and CI reject
 all actual mismatches.
+Resident String and canonical Snapshot constants and initializers contribute
+their measured payload and recursive retained-node footprints. The shadow
+audit measures those live backings instead of copying the planned values into
+its observations.
 
 ## 13. Resident/GPU hard safety preflight
 
@@ -189,6 +227,14 @@ clone, draft, finalization, comparison, stage, or write begins. One accumulated
 turn plan covers all phases of a value-dependent operation. Empty indexed
 assignments return unchanged after semantic validation without output-sized
 planning or staging.
+
+Resident kernels obtain permits only by reconciling their concrete estimate
+with the real node-scoped `TurnMemoryPlan` from the activated program. The
+kernel estimate cannot manufacture a semantic-empty plan or replace the
+program's node identity, globally remapped objects, transactions, or arena
+placement. Provider-resolved external contracts likewise re-run complete call
+planning; changing a bound contract never leaves stale aliases, scratch,
+transactions, or demand in its sidecar.
 
 GPU buffer and binding limits are evaluated from the adapter-backed profile
 before buffer creation. Cartesian scalar-instruction expansion is calculated

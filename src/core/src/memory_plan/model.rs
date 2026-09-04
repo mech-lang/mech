@@ -145,6 +145,13 @@ pub enum MemoryFootprintWitness {
     Deferred(MemoryWitnessStage),
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct DeferredMemoryWitness {
+    pub direction: PortDirection,
+    pub port: u16,
+    pub stage: MemoryWitnessStage,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ValueLayoutPlan {
     pub storage: StorageLayoutClass,
@@ -345,12 +352,29 @@ pub struct CallMemoryPlan {
     pub bound_call: BoundCall,
     pub inputs: Box<[PortMemoryPlan]>,
     pub outputs: Box<[PortMemoryPlan]>,
+    /// Physical authorities are retained so resolving a provider-owned
+    /// contract can re-run the complete planner rather than relabeling a
+    /// stale layout, alias, transaction, scratch, and demand result.
+    pub input_storage: Box<[PhysicalStorageDescriptor]>,
+    pub output_storage: Box<[PhysicalStorageDescriptor]>,
+    /// Original footprint authorities are retained so a deferred activation
+    /// or turn witness can replace them and re-derive every dependent demand
+    /// through the same core calculation used during call planning.
+    pub input_witnesses: Box<[MemoryFootprintWitness]>,
+    pub output_witnesses: Box<[MemoryFootprintWitness]>,
+    /// Original semantic output regions are retained independently from the
+    /// provisionally derived output ports. External contracts may not expose
+    /// their final memory requirements until provider resolution.
+    pub output_regions: Box<[RegionAccessPlan]>,
+    pub input_lifetimes: Box<[MemoryLifetime]>,
+    pub output_lifetimes: Box<[MemoryLifetime]>,
     pub allocations: Box<[AllocationPlan]>,
     pub aliases: Box<[AliasDecision]>,
     pub transactions: Box<[TransactionRequirement]>,
     pub implementation_memory: super::ImplementationMemoryClass,
+    pub target: super::TargetMemoryProfile,
     pub demand: super::ResourceDemand,
-    pub deferred_witnesses: Box<[MemoryWitnessStage]>,
+    pub deferred_witnesses: Box<[DeferredMemoryWitness]>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

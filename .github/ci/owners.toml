@@ -24,6 +24,19 @@ command = ["cargo", "test", "--locked", "--offline", "-p", "mech-engine", "--lib
 standard = true
 cross_cutting = true
 
+[owners.mech-compute]
+paths = ["src/compute/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-compute"]
+standard = true
+cross_cutting = true
+
+[owners.mech-gpu]
+paths = ["hosts/gpu/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-gpu", "--test", "r5_memory_plan"]
+standard = true
+cross_cutting = true
+browser = true
+
 [owners.mech-runtime]
 paths = ["src/runtime/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-runtime", "--lib", "--no-default-features", "--features", "full_compiler,resident-routing-source"]
@@ -193,7 +206,7 @@ cross_cutting = false
 browser = true
 
 [owners.architecture-contracts]
-paths = [".github/workflows/ci-full.yml", ".github/ci/owners.toml", "scripts/ci-impact.py", "tests/ci/test_ci_impact.py", "scripts/check-*-contract.py", "scripts/generate-*-contract.py", "scripts/check-production-resident-routing.py", "scripts/check-bytecode-v1-format.py", "scripts/check-native-host-catalog.py", "scripts/check-r2-type-memory-boundary.py", "scripts/check-r3-type-system.py", "scripts/check-r4-type-cutover.py", "scripts/tests/test_check_*_contract.py", "scripts/tests/test_generate_*_contract.py", "scripts/tests/test_check_r2_type_memory_boundary.py", "scripts/tests/test_check_r3_type_system.py", "scripts/tests/test_check_r4_type_cutover.py", "README.md", "docs/design/type-memory-boundary.md", "docs/design/type-system-v1.md", "docs/design/r4-type-system-cutover.md", "docs/design/ROADMAP.mec", "docs/design/v0.4-endgame.md", "tests/architecture/**"]
+paths = [".github/workflows/ci-full.yml", ".github/ci/owners.toml", "scripts/ci-impact.py", "tests/ci/test_ci_impact.py", "scripts/check-*-contract.py", "scripts/generate-*-contract.py", "scripts/check-production-resident-routing.py", "scripts/check-bytecode-v1-format.py", "scripts/check-native-host-catalog.py", "scripts/check-r2-type-memory-boundary.py", "scripts/check-r3-type-system.py", "scripts/check-r4-type-cutover.py", "scripts/check-r5-memory-planner.py", "scripts/tests/test_check_*_contract.py", "scripts/tests/test_generate_*_contract.py", "scripts/tests/test_check_r2_type_memory_boundary.py", "scripts/tests/test_check_r3_type_system.py", "scripts/tests/test_check_r4_type_cutover.py", "scripts/tests/test_check_r5_memory_planner.py", "README.md", "docs/design/type-memory-boundary.md", "docs/design/type-system-v1.md", "docs/design/r4-type-system-cutover.md", "docs/design/r5-memory-planner.md", "docs/design/ROADMAP.mec", "docs/design/v0.4-endgame.md", "tests/architecture/**"]
 command = []
 standard = false
 cross_cutting = true

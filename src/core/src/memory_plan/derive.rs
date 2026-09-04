@@ -2,7 +2,7 @@
 
 use crate::{
     CardinalitySpec, DimensionExpr, DimensionLifetime, DimensionParameterId, ExtentEvolution,
-    FloatWidth, IntegerWidth, MemoryTopology, Schema, SchemaBody, ShapeInstance,
+    FloatWidth, IntegerWidth, MemoryTopology, Schema, SchemaBody, ShapeInstance, StorageTopology,
     check_schema_storage_compatibility,
 };
 
@@ -224,26 +224,69 @@ pub fn plan_call_memory(
     {
         return Err(MemoryPlanError::TargetLimitExceeded { violation });
     }
+    let mut deferred_witnesses = Vec::new();
+    for (direction, witnesses) in [
+        (PortDirection::Input, request.input_witnesses),
+        (PortDirection::Output, request.output_witnesses),
+    ] {
+        for (port, witness) in witnesses.iter().enumerate() {
+            if let MemoryFootprintWitness::Deferred(stage) = witness {
+                deferred_witnesses.push(super::DeferredMemoryWitness {
+                    direction,
+                    port: checked_u16(port, "deferred witness port ordinal")?,
+                    stage: *stage,
+                });
+            }
+        }
+    }
     allocations.sort_by_key(|allocation| allocation.id);
     Ok(CallMemoryPlan {
         bound_call: request.bound_call.clone(),
         inputs: inputs.into_boxed_slice(),
         outputs: outputs.into_boxed_slice(),
+        input_storage: request.input_storage.into(),
+        output_storage: request.output_storage.into(),
+        input_witnesses: request.input_witnesses.into(),
+        output_witnesses: request.output_witnesses.into(),
+        output_regions: request.regions.into(),
+        input_lifetimes: request
+            .input_storage
+            .iter()
+            .map(|storage| storage.lifetime)
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+        output_lifetimes: request
+            .output_storage
+            .iter()
+            .map(|storage| storage.lifetime)
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
         allocations: allocations.into_boxed_slice(),
         aliases: aliases.into_boxed_slice(),
         transactions: transactions.into_boxed_slice(),
         implementation_memory: request.implementation_memory,
+        target: request.target.clone(),
         demand,
-        deferred_witnesses: request
-            .input_witnesses
-            .iter()
-            .chain(request.output_witnesses)
-            .filter_map(|witness| match witness {
-                MemoryFootprintWitness::Known(_) => None,
-                MemoryFootprintWitness::Deferred(stage) => Some(*stage),
-            })
-            .collect::<Vec<_>>()
-            .into_boxed_slice(),
+        deferred_witnesses: deferred_witnesses.into_boxed_slice(),
+    })
+}
+
+/// Re-runs the complete call planner when a provider supplies the final
+/// semantic operation contract. No derived field survives by assignment.
+#[cfg(feature = "functions")]
+pub fn replan_call_memory(
+    previous: &CallMemoryPlan,
+    bound_call: &BoundCall,
+) -> Result<CallMemoryPlan, MemoryPlanError> {
+    plan_call_memory(CallMemoryPlanningRequest {
+        bound_call,
+        input_storage: &previous.input_storage,
+        output_storage: &previous.output_storage,
+        input_witnesses: &previous.input_witnesses,
+        output_witnesses: &previous.output_witnesses,
+        implementation_memory: previous.implementation_memory,
+        target: &previous.target,
+        regions: &previous.output_regions,
     })
 }
 
@@ -289,7 +332,11 @@ pub fn plan_value_layout(
     };
     let slot = target_slot_layout(request.target, request.storage.slot)?;
     super::validate_alignment(slot.alignment)?;
-    let storage = storage_layout(contract.topology, request.storage.slot)?;
+    let storage = storage_layout(
+        contract.topology,
+        request.storage.capabilities.topology,
+        request.storage.slot,
+    )?;
     let axes = derive_axes(descriptor, footprint)?;
     let (current_elements, capacity_elements) =
         derive_element_capacity(descriptor, contract.topology, &axes, footprint)?;
@@ -423,10 +470,12 @@ fn evaluate_dimension_capacity(
         ),
         DimensionExpr::Min(operands) => {
             let capacities = evaluate_operands(schema, shape, operands, visiting)?;
-            (
-                capacities.iter().filter_map(|value| value.maximum).min(),
-                joined_evolution(&capacities),
-            )
+            let maximum = capacities.iter().filter_map(|value| value.maximum).min();
+            let evolution = match (maximum, joined_evolution(&capacities)) {
+                (Some(_), ExtentEvolution::TurnUnbounded) => ExtentEvolution::TurnBounded,
+                (_, evolution) => evolution,
+            };
+            (maximum, evolution)
         }
         DimensionExpr::Max(operands) => {
             let capacities = evaluate_operands(schema, shape, operands, visiting)?;
@@ -669,16 +718,33 @@ fn checked_axis_product(values: impl IntoIterator<Item = u64>) -> Result<u64, Me
 }
 
 fn storage_layout(
-    topology: MemoryTopology,
+    semantic: MemoryTopology,
+    physical: StorageTopology,
     slot: PlannedSlotKind,
 ) -> Result<StorageLayoutClass, MemoryPlanError> {
-    Ok(match topology {
-        MemoryTopology::Scalar(_) => StorageLayoutClass::Scalar { slot },
-        MemoryTopology::DenseSequence { rank: 2 } => StorageLayoutClass::DenseColumnMajor { slot },
-        MemoryTopology::DenseSequence { rank } => {
-            return Err(MemoryPlanError::UnsupportedDenseRank { rank });
+    Ok(match physical {
+        StorageTopology::CanonicalValue => {
+            StorageLayoutClass::CanonicalSnapshot { topology: semantic }
         }
-        topology => StorageLayoutClass::CanonicalSnapshot { topology },
+        StorageTopology::Scalar(_) => StorageLayoutClass::Scalar { slot },
+        StorageTopology::DenseSequence { .. } => match semantic {
+            MemoryTopology::DenseSequence { rank: 2 } => {
+                StorageLayoutClass::DenseColumnMajor { slot }
+            }
+            MemoryTopology::DenseSequence { rank } => {
+                return Err(MemoryPlanError::UnsupportedDenseRank { rank });
+            }
+            _ => return Err(MemoryPlanError::DescriptorMismatch),
+        },
+        StorageTopology::Opaque => return Err(MemoryPlanError::UnsupportedStorageLayout),
+        StorageTopology::Tagged
+        | StorageTopology::Product
+        | StorageTopology::Columnar
+        | StorageTopology::OrderedSet
+        | StorageTopology::OrderedMap
+        | StorageTopology::ReifiedType => {
+            StorageLayoutClass::CanonicalSnapshot { topology: semantic }
+        }
     })
 }
 
@@ -774,10 +840,8 @@ fn target_slot_layout(
             Signed(IntegerWidth::W128) => layouts.i128_slot,
             Floating(FloatWidth::W32) => layouts.f32_slot,
             Floating(FloatWidth::W64) => layouts.f64_slot,
-            Complex(FloatWidth::W32) => layouts.c64_slot,
-            Complex(FloatWidth::W64) => {
-                return Err(MemoryPlanError::UnsupportedStorageLayout);
-            }
+            Complex(FloatWidth::W32) => layouts.c32_slot,
+            Complex(FloatWidth::W64) => layouts.c64_slot,
             Rational64 => layouts.r64_slot,
             StringKind => layouts.string_header,
             Id => layouts.id_slot,
@@ -1134,26 +1198,9 @@ fn derive_call_demand(
             Some(ChangeDetectionPolicy::SemanticHash) => {
                 let footprint =
                     known_footprint(request.output_witnesses[ordinal])?.unwrap_or_default();
-                let one_side = checked_add(
-                    checked_add(
-                        footprint.schema_bytes,
-                        footprint.encoded_bytes,
-                        "semantic hash bytes",
-                    )?,
-                    footprint.shape_parameter_count.checked_mul(8).ok_or(
-                        MemoryPlanError::ArithmeticOverflow {
-                            field: "semantic hash shape bytes",
-                        },
-                    )?,
-                    "semantic hash shape work",
-                )?;
                 demand.work.comparison = checked_add(
                     demand.work.comparison,
-                    one_side
-                        .checked_mul(2)
-                        .ok_or(MemoryPlanError::ArithmeticOverflow {
-                            field: "semantic hash current and candidate",
-                        })?,
+                    semantic_hash_comparison_work(footprint)?,
                     "semantic hash comparison work",
                 )?;
             }
@@ -1242,52 +1289,185 @@ fn apply_implementation_demand(
         }
         ImplementationMemoryClass::CanonicalFinalize
         | ImplementationMemoryClass::CanonicalSortUnique => {
-            let mut encoded = 0_u64;
-            let mut nodes = 0_u64;
-            for witness in request.output_witnesses {
-                let footprint = known_footprint(*witness)?.unwrap_or_default();
-                encoded = checked_add(encoded, footprint.encoded_bytes, "canonical encoded bytes")?;
-                nodes = checked_add(nodes, footprint.retained_nodes, "canonical retained nodes")?;
-            }
-            let traversal = encoded.max(nodes).max(1);
+            let contribution = canonical_footprint_demand(
+                request.implementation_memory,
+                outputs,
+                request.output_witnesses,
+            )?;
             demand.work.canonicalization = checked_add(
                 demand.work.canonicalization,
-                traversal
-                    .checked_mul(2)
-                    .ok_or(MemoryPlanError::ArithmeticOverflow {
-                        field: "canonical draft and finalization work",
-                    })?,
+                contribution.canonicalization,
                 "canonicalization work",
             )?;
-            demand.retained_nodes = checked_add(demand.retained_nodes, nodes, "retained nodes")?;
+            demand.work.comparison = checked_add(
+                demand.work.comparison,
+                contribution.comparison,
+                "canonical sorting work",
+            )?;
+            demand.retained_nodes = checked_add(
+                demand.retained_nodes,
+                contribution.retained_nodes,
+                "retained nodes",
+            )?;
             demand.turn_peak_bytes = checked_add(
                 demand.turn_peak_bytes,
-                encoded
-                    .checked_mul(2)
-                    .ok_or(MemoryPlanError::ArithmeticOverflow {
-                        field: "canonical draft and candidate bytes",
-                    })?,
+                contribution.temporary_bytes,
                 "canonical temporary bytes",
             )?;
-            if request.implementation_memory == ImplementationMemoryClass::CanonicalSortUnique {
-                let entries = outputs.iter().try_fold(0_u64, |total, output| {
-                    checked_add(
-                        total,
-                        output.value.capacity_elements.required,
-                        "canonical output entries",
-                    )
-                })?;
-                let sort_work = ceil_log2(entries.max(1))
-                    .checked_mul(encoded.max(nodes).max(entries))
-                    .ok_or(MemoryPlanError::ArithmeticOverflow {
-                        field: "canonical sorting work",
-                    })?;
-                demand.work.comparison =
-                    checked_add(demand.work.comparison, sort_work, "canonical sorting work")?;
-            }
         }
     }
     Ok(())
+}
+
+#[cfg(feature = "functions")]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+struct FootprintDemandContribution {
+    temporary_bytes: u64,
+    retained_nodes: u64,
+    comparison: u64,
+    canonicalization: u64,
+}
+
+#[cfg(feature = "functions")]
+fn semantic_hash_comparison_work(
+    footprint: CurrentMemoryFootprint,
+) -> Result<u64, MemoryPlanError> {
+    let one_side = checked_add(
+        checked_add(
+            footprint.schema_bytes,
+            footprint.encoded_bytes,
+            "semantic hash bytes",
+        )?,
+        footprint.shape_parameter_count.checked_mul(8).ok_or(
+            MemoryPlanError::ArithmeticOverflow {
+                field: "semantic hash shape bytes",
+            },
+        )?,
+        "semantic hash shape work",
+    )?;
+    one_side
+        .checked_mul(2)
+        .ok_or(MemoryPlanError::ArithmeticOverflow {
+            field: "semantic hash current and candidate",
+        })
+}
+
+#[cfg(feature = "functions")]
+fn canonical_footprint_demand(
+    implementation: ImplementationMemoryClass,
+    outputs: &[PortMemoryPlan],
+    witnesses: &[MemoryFootprintWitness],
+) -> Result<FootprintDemandContribution, MemoryPlanError> {
+    let mut encoded = 0_u64;
+    let mut nodes = 0_u64;
+    for witness in witnesses {
+        let footprint = known_footprint(*witness)?.unwrap_or_default();
+        encoded = checked_add(encoded, footprint.encoded_bytes, "canonical encoded bytes")?;
+        nodes = checked_add(nodes, footprint.retained_nodes, "canonical retained nodes")?;
+    }
+    let traversal = encoded.max(nodes).max(1);
+    let canonicalization = traversal
+        .checked_mul(2)
+        .ok_or(MemoryPlanError::ArithmeticOverflow {
+            field: "canonical draft and finalization work",
+        })?;
+    let temporary_bytes = encoded
+        .checked_mul(2)
+        .ok_or(MemoryPlanError::ArithmeticOverflow {
+            field: "canonical draft and candidate bytes",
+        })?;
+    let comparison = if implementation == ImplementationMemoryClass::CanonicalSortUnique {
+        let entries = outputs
+            .iter()
+            .enumerate()
+            .try_fold(0_u64, |total, (ordinal, output)| {
+                let entries = witnesses
+                    .get(ordinal)
+                    .copied()
+                    .map(known_footprint)
+                    .transpose()?
+                    .flatten()
+                    .map_or(output.value.capacity_elements.required, |footprint| {
+                        footprint.logical_elements
+                    });
+                checked_add(total, entries, "canonical output entries")
+            })?;
+        ceil_log2(entries.max(1))
+            .checked_mul(encoded.max(nodes).max(entries))
+            .ok_or(MemoryPlanError::ArithmeticOverflow {
+                field: "canonical sorting work",
+            })?
+    } else {
+        0
+    };
+    Ok(FootprintDemandContribution {
+        temporary_bytes,
+        retained_nodes: nodes,
+        comparison,
+        canonicalization,
+    })
+}
+
+/// Resolves every footprint-dependent component of a call's demand through
+/// the same semantic calculations used by initial call planning. The stored
+/// demand remains the static baseline; deferred witnesses replace, rather
+/// than layer independent estimates over, that baseline.
+#[cfg(feature = "functions")]
+pub fn resolve_deferred_call_demand(
+    call: &CallMemoryPlan,
+    resolved: &BTreeMap<(PortDirection, u16), CurrentMemoryFootprint>,
+) -> Result<ResourceDemand, MemoryPlanError> {
+    Ok(resolve_deferred_call_memory(call, resolved)?.demand)
+}
+
+/// Re-runs the complete call planner with every turn-deferred witness
+/// replaced by its concrete footprint. Consumers that need transaction or
+/// allocation geometry use this plan rather than independently patching the
+/// original zero-footprint projection.
+#[cfg(feature = "functions")]
+pub fn resolve_deferred_call_memory(
+    call: &CallMemoryPlan,
+    resolved: &BTreeMap<(PortDirection, u16), CurrentMemoryFootprint>,
+) -> Result<CallMemoryPlan, MemoryPlanError> {
+    if call.inputs.len() != call.input_witnesses.len()
+        || call.inputs.len() != call.input_lifetimes.len()
+        || call.outputs.len() != call.output_witnesses.len()
+        || call.outputs.len() != call.output_lifetimes.len()
+    {
+        return Err(MemoryPlanError::DescriptorArityMismatch);
+    }
+    let mut input_witnesses = call.input_witnesses.to_vec();
+    let mut output_witnesses = call.output_witnesses.to_vec();
+    for deferred in &call.deferred_witnesses {
+        if deferred.stage != super::MemoryWitnessStage::Turn {
+            continue;
+        }
+        let footprint = resolved
+            .get(&(deferred.direction, deferred.port))
+            .copied()
+            .ok_or(MemoryPlanError::MissingFootprintWitness {
+                stage: super::MemoryWitnessStage::Turn,
+            })?;
+        let witnesses = match deferred.direction {
+            PortDirection::Input => &mut input_witnesses,
+            PortDirection::Output => &mut output_witnesses,
+        };
+        *witnesses
+            .get_mut(usize::from(deferred.port))
+            .ok_or(MemoryPlanError::DescriptorArityMismatch)? =
+            MemoryFootprintWitness::Known(footprint);
+    }
+
+    plan_call_memory(CallMemoryPlanningRequest {
+        bound_call: &call.bound_call,
+        input_storage: &call.input_storage,
+        output_storage: &call.output_storage,
+        input_witnesses: &input_witnesses,
+        output_witnesses: &output_witnesses,
+        implementation_memory: call.implementation_memory,
+        target: &call.target,
+        regions: &call.output_regions,
+    })
 }
 
 #[cfg(feature = "functions")]

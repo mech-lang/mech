@@ -12,7 +12,10 @@ use mech_core::{
     TargetMemoryProfile, TransactionRequirement, ValueLayoutPlan,
 };
 
-use super::{PlannedValueClass, ProgramMemoryPlan, ValueMemoryPlan, checked_demand_add};
+use super::{
+    PlannedValueClass, ProgramMemoryPlan, ValueMemoryPlan, checked_demand_add,
+    recompute_program_peak,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResidentValuePlanInput {
@@ -22,6 +25,7 @@ pub struct ResidentValuePlanInput {
     pub class: PlannedValueClass,
     pub kind: ResidentValueKind,
     pub elements: u64,
+    pub footprint: mech_core::CurrentMemoryFootprint,
     pub lifetime: MemoryLifetime,
     pub producer: Option<mech_core::NodeId>,
 }
@@ -46,14 +50,21 @@ pub fn plan_resident_arenas(
     let mut cursors = BTreeMap::<(PlannedValueClass, ResidentValueKind, u8), u64>::new();
     let mut members =
         BTreeMap::<(PlannedValueClass, ResidentValueKind, u8), Vec<MemoryObjectId>>::new();
+    let mut payload_cursors = BTreeMap::<(PlannedValueClass, u8), u64>::new();
+    let mut payload_members = BTreeMap::<(PlannedValueClass, u8), Vec<MemoryObjectId>>::new();
     let mut allocations = Vec::new();
     let mut values = Vec::new();
     let mut offsets = BTreeMap::new();
     let mut elements_by_owner = BTreeMap::new();
+    let mut footprints_by_owner = BTreeMap::new();
     let mut demand = ResourceDemand::default();
     let mut next_id = 0_u32;
     for input in ordered {
+        if input.footprint.logical_elements != input.elements {
+            return Err(MemoryPlanError::DescriptorMismatch);
+        }
         elements_by_owner.insert(input.owner.clone(), input.elements);
+        footprints_by_owner.insert(input.owner.clone(), input.footprint);
         let slot = resident_slot_layout(&target, input.kind);
         let bytes =
             input
@@ -102,6 +113,51 @@ pub fn plan_resident_arenas(
         );
         members.entry(key).or_default().push(id);
         demand = checked_demand_add(demand, allocation_demand(&allocation))?;
+        demand.retained_nodes = demand
+            .retained_nodes
+            .checked_add(input.footprint.retained_nodes)
+            .ok_or(MemoryPlanError::ArithmeticOverflow {
+                field: "resident retained nodes",
+            })?;
+
+        if matches!(
+            input.kind,
+            ResidentValueKind::String | ResidentValueKind::Snapshot
+        ) {
+            let payload_id = MemoryObjectId::new(next_id);
+            next_id = checked_next(next_id)?;
+            let payload_key = (input.class, 0);
+            let payload_offset = *payload_cursors.get(&payload_key).unwrap_or(&0);
+            let payload = AllocationPlan {
+                id: payload_id,
+                owner: input.owner.clone(),
+                role: AllocationRole::VariablePayload,
+                space: MemorySpace::ResidentCpu,
+                current_bytes: input.footprint.payload_bytes,
+                capacity_bytes: input.footprint.payload_bytes,
+                alignment: 1,
+                lifetime,
+                placement: ArenaPlacement {
+                    arena: resident_payload_arena_id(payload_key)?,
+                    offset: payload_offset,
+                },
+                reuse_group: None,
+            };
+            payload_cursors.insert(
+                payload_key,
+                payload_offset
+                    .checked_add(input.footprint.payload_bytes)
+                    .ok_or(MemoryPlanError::ArithmeticOverflow {
+                        field: "resident payload arena capacity",
+                    })?,
+            );
+            payload_members
+                .entry(payload_key)
+                .or_default()
+                .push(payload_id);
+            demand = checked_demand_add(demand, allocation_demand(&payload))?;
+            allocations.push(payload);
+        }
 
         let mut transaction = TransactionRequirement::None;
         if input.class == PlannedValueClass::State {
@@ -136,6 +192,44 @@ pub fn plan_resident_arenas(
             members.entry(next_key).or_default().push(next);
             demand = checked_demand_add(demand, allocation_demand(&staged))?;
             allocations.push(staged);
+            if matches!(
+                input.kind,
+                ResidentValueKind::String | ResidentValueKind::Snapshot
+            ) {
+                let payload_id = MemoryObjectId::new(next_id);
+                next_id = checked_next(next_id)?;
+                let payload_key = (input.class, 1);
+                let payload_offset = *payload_cursors.get(&payload_key).unwrap_or(&0);
+                let payload = AllocationPlan {
+                    id: payload_id,
+                    owner: input.owner.clone(),
+                    role: AllocationRole::TransactionStage,
+                    space: MemorySpace::ResidentCpu,
+                    current_bytes: 0,
+                    capacity_bytes: input.footprint.payload_bytes,
+                    alignment: 1,
+                    lifetime: MemoryLifetime::Activation,
+                    placement: ArenaPlacement {
+                        arena: resident_payload_arena_id(payload_key)?,
+                        offset: payload_offset,
+                    },
+                    reuse_group: None,
+                };
+                payload_cursors.insert(
+                    payload_key,
+                    payload_offset
+                        .checked_add(input.footprint.payload_bytes)
+                        .ok_or(MemoryPlanError::ArithmeticOverflow {
+                            field: "resident staged payload capacity",
+                        })?,
+                );
+                payload_members
+                    .entry(payload_key)
+                    .or_default()
+                    .push(payload_id);
+                demand = checked_demand_add(demand, allocation_demand(&payload))?;
+                allocations.push(payload);
+            }
             transaction = TransactionRequirement::DoubleBuffer { current: id, next };
         }
         let layout = resident_value_layout(&input, slot, bytes)?;
@@ -172,22 +266,167 @@ pub fn plan_resident_arenas(
         })
         .collect::<Result<Vec<_>, MemoryPlanError>>()?;
     arenas.sort_by_key(|arena| arena.id);
-    let mut budget_violations = Vec::new();
-    for allocation in &allocations {
+    for (key, capacity_bytes) in payload_cursors {
+        arenas.push(ArenaPlan {
+            id: resident_payload_arena_id(key)?,
+            space: MemorySpace::ResidentCpu,
+            alignment: 1,
+            capacity_bytes,
+            members: payload_members
+                .remove(&key)
+                .unwrap_or_default()
+                .into_boxed_slice(),
+        });
+    }
+    arenas.sort_by_key(|arena| arena.id);
+    let budget_violations = resident_budget_violations(
+        &allocations,
+        &arenas,
+        &footprints_by_owner,
+        &elements_by_owner,
+        demand,
+        target.limits,
+    )?;
+    Ok(ResidentArenaProjection {
+        plan: ProgramMemoryPlan {
+            values: values.into_boxed_slice(),
+            call_nodes: Box::new([]),
+            calls: Box::new([]),
+            allocations: allocations.into_boxed_slice(),
+            arenas: arenas.into_boxed_slice(),
+            transfers: Box::new([]),
+            budget_limits: target.limits,
+            peak: demand,
+            budget_violations,
+        },
+        element_offsets: offsets,
+    })
+}
+
+/// Finalizes the current variable-payload witnesses after the existing
+/// Resident activation path has materialized activation values and initial
+/// state. Stable zero-capacity payload objects are present in the preliminary
+/// plan, so this updates only their sizes and placements; object identities
+/// and every call/transaction reference remain unchanged.
+pub fn finalize_resident_current_footprints(
+    plan: &mut ProgramMemoryPlan,
+    footprints: &BTreeMap<MemoryObjectOwner, mech_core::CurrentMemoryFootprint>,
+) -> Result<(), MemoryPlanError> {
+    for value in &mut plan.values {
+        let owner = plan
+            .allocations
+            .iter()
+            .find(|allocation| allocation.id == value.object)
+            .map(|allocation| allocation.owner.clone())
+            .ok_or(MemoryPlanError::DescriptorMismatch)?;
+        let footprint = footprints
+            .get(&owner)
+            .ok_or(MemoryPlanError::DescriptorMismatch)?;
+        if footprint.logical_elements != value.layout.current_elements {
+            return Err(MemoryPlanError::DescriptorMismatch);
+        }
+        value.layout.payload.current_bytes = footprint.payload_bytes;
+        value.layout.payload.required_bytes = footprint.payload_bytes;
+        value.layout.payload.current_nodes = footprint.retained_nodes;
+        value.layout.payload.required_nodes = footprint.retained_nodes;
+    }
+
+    let payload_arenas = [
+        (PlannedValueClass::Constant, 0_u8),
+        (PlannedValueClass::Input, 0),
+        (PlannedValueClass::State, 0),
+        (PlannedValueClass::State, 1),
+        (PlannedValueClass::Scratch, 0),
+    ]
+    .into_iter()
+    .map(|key| Ok((resident_payload_arena_id(key)?, key.1)))
+    .collect::<Result<BTreeMap<_, _>, MemoryPlanError>>()?;
+
+    for allocation in &mut plan.allocations {
+        let Some(&buffer) = payload_arenas.get(&allocation.placement.arena) else {
+            continue;
+        };
+        let footprint = footprints
+            .get(&allocation.owner)
+            .ok_or(MemoryPlanError::DescriptorMismatch)?;
+        allocation.current_bytes = if buffer == 0 {
+            footprint.payload_bytes
+        } else {
+            0
+        };
+        allocation.capacity_bytes = footprint.payload_bytes;
+    }
+
+    let mut payload_offsets = BTreeMap::<MemoryArenaId, u64>::new();
+    for allocation in &mut plan.allocations {
+        if !payload_arenas.contains_key(&allocation.placement.arena) {
+            continue;
+        }
+        let offset = payload_offsets
+            .entry(allocation.placement.arena)
+            .or_default();
+        allocation.placement.offset = *offset;
+        *offset = offset.checked_add(allocation.capacity_bytes).ok_or(
+            MemoryPlanError::ArithmeticOverflow {
+                field: "resident finalized payload arena capacity",
+            },
+        )?;
+    }
+    for arena in &mut plan.arenas {
+        if payload_arenas.contains_key(&arena.id) {
+            arena.capacity_bytes = payload_offsets.get(&arena.id).copied().unwrap_or(0);
+        }
+    }
+
+    let mut demand = recompute_program_peak(plan)?;
+    for footprint in footprints.values() {
+        demand.retained_nodes = demand
+            .retained_nodes
+            .checked_add(footprint.retained_nodes)
+            .ok_or(MemoryPlanError::ArithmeticOverflow {
+                field: "resident finalized retained nodes",
+            })?;
+    }
+    let elements_by_owner = footprints
+        .iter()
+        .map(|(owner, footprint)| (owner.clone(), footprint.logical_elements))
+        .collect::<BTreeMap<_, _>>();
+    plan.peak = demand;
+    plan.budget_violations = resident_budget_violations(
+        &plan.allocations,
+        &plan.arenas,
+        footprints,
+        &elements_by_owner,
+        demand,
+        plan.budget_limits,
+    )?;
+    Ok(())
+}
+
+fn resident_budget_violations(
+    allocations: &[AllocationPlan],
+    arenas: &[ArenaPlan],
+    footprints_by_owner: &BTreeMap<MemoryObjectOwner, mech_core::CurrentMemoryFootprint>,
+    elements_by_owner: &BTreeMap<MemoryObjectOwner, u64>,
+    demand: ResourceDemand,
+    limits: mech_core::MemoryBudgetLimits,
+) -> Result<Box<[mech_core::MemoryBudgetViolation]>, MemoryPlanError> {
+    let mut violations = Vec::new();
+    for allocation in allocations {
         let mut allocation_demand = allocation_demand(allocation);
         allocation_demand.output_elements = elements_by_owner
             .get(&allocation.owner)
             .copied()
             .unwrap_or_default();
-        budget_violations.extend(mech_core::evaluate_memory_budget(
+        violations.extend(mech_core::evaluate_memory_budget(
             allocation.owner.clone(),
             allocation_demand,
             allocation.capacity_bytes,
             0,
-            target.limits,
+            limits,
         ));
     }
-    for arena in &arenas {
+    for arena in arenas {
         let owner = arena
             .members
             .first()
@@ -197,29 +436,59 @@ pub fn plan_resident_arenas(
                 node: mech_core::NodeId::new(0),
                 ordinal: 0,
             });
-        budget_violations.extend(mech_core::evaluate_memory_budget(
+        violations.extend(mech_core::evaluate_memory_budget(
             owner,
             ResourceDemand::default(),
             arena.capacity_bytes,
             0,
-            target.limits,
+            limits,
         ));
     }
-    budget_violations.sort();
-    budget_violations.dedup();
-    Ok(ResidentArenaProjection {
-        plan: ProgramMemoryPlan {
-            values: values.into_boxed_slice(),
-            call_nodes: Box::new([]),
-            calls: Box::new([]),
-            allocations: allocations.into_boxed_slice(),
-            arenas: arenas.into_boxed_slice(),
-            transfers: Box::new([]),
-            peak: demand,
-            budget_violations: budget_violations.into_boxed_slice(),
-        },
-        element_offsets: offsets,
-    })
+    for (owner, footprint) in footprints_by_owner {
+        let output_bytes = allocations
+            .iter()
+            .filter(|allocation| {
+                &allocation.owner == owner
+                    && matches!(
+                        allocation.role,
+                        AllocationRole::FixedStorage | AllocationRole::VariablePayload
+                    )
+            })
+            .try_fold(0_u64, |total, allocation| {
+                total.checked_add(allocation.capacity_bytes).ok_or(
+                    MemoryPlanError::ArithmeticOverflow {
+                        field: "resident published output bytes",
+                    },
+                )
+            })?;
+        violations.extend(mech_core::evaluate_memory_budget(
+            owner.clone(),
+            ResourceDemand {
+                retained_nodes: footprint.retained_nodes,
+                output_elements: footprint.logical_elements,
+                ..ResourceDemand::default()
+            },
+            output_bytes,
+            0,
+            limits,
+        ));
+    }
+    violations.extend(mech_core::evaluate_memory_budget(
+        allocations
+            .first()
+            .map(|allocation| allocation.owner.clone())
+            .unwrap_or(MemoryObjectOwner::NodeScratch {
+                node: mech_core::NodeId::new(0),
+                ordinal: 0,
+            }),
+        demand,
+        0,
+        0,
+        limits,
+    ));
+    violations.sort();
+    violations.dedup();
+    Ok(violations.into_boxed_slice())
 }
 
 pub fn resident_storage_descriptor(
@@ -323,6 +592,9 @@ pub fn resident_arena_id(
         PlannedValueClass::Constant => 0_u32,
         PlannedValueClass::Input => 1,
         PlannedValueClass::State => 2,
+        PlannedValueClass::PublishedOutput => {
+            return Err(MemoryPlanError::DescriptorMismatch);
+        }
         PlannedValueClass::Scratch => 3,
     };
     let kind = match key.1 {
@@ -342,6 +614,28 @@ pub fn resident_arena_id(
         .and_then(|base| base.checked_add(kind))
         .ok_or(MemoryPlanError::ArithmeticOverflow {
             field: "resident arena id",
+        })?;
+    Ok(MemoryArenaId::new(raw))
+}
+
+pub(crate) fn resident_payload_arena_id(
+    key: (PlannedValueClass, u8),
+) -> Result<MemoryArenaId, MemoryPlanError> {
+    let class = match key.0 {
+        PlannedValueClass::Constant => 0_u32,
+        PlannedValueClass::Input => 1,
+        PlannedValueClass::State => 2,
+        PlannedValueClass::PublishedOutput => {
+            return Err(MemoryPlanError::DescriptorMismatch);
+        }
+        PlannedValueClass::Scratch => 3,
+    };
+    let raw = u32::from(key.1)
+        .checked_mul(4)
+        .and_then(|base| base.checked_add(class))
+        .and_then(|value| value.checked_add(40))
+        .ok_or(MemoryPlanError::ArithmeticOverflow {
+            field: "resident payload arena id",
         })?;
     Ok(MemoryArenaId::new(raw))
 }
@@ -536,11 +830,11 @@ fn resident_value_layout(
         current_address_span_bytes: bytes,
         capacity_bytes: bytes,
         payload: PayloadCapacityPlan {
-            current_bytes: 0,
-            required_bytes: 0,
+            current_bytes: input.footprint.payload_bytes,
+            required_bytes: input.footprint.payload_bytes,
             maximum_bytes: None,
-            current_nodes: input.elements,
-            required_nodes: input.elements,
+            current_nodes: input.footprint.retained_nodes,
+            required_nodes: input.footprint.retained_nodes,
             maximum_nodes: None,
             authority: CapacityAuthority::CurrentValueWitness,
             growth: GrowthPolicy::ReplanBeforeGrowth,
@@ -575,6 +869,17 @@ mod tests {
     use super::*;
     use mech_core::{DimensionExpr, FloatWidth, SchemaBody, SchemaDraft};
 
+    fn string_descriptor() -> mech_core::ResolvedValueDescriptor {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::String,
+        }
+        .finalize()
+        .unwrap();
+        let shape = schema.instantiate_shape(Box::new([])).unwrap();
+        mech_core::ResolvedValueDescriptor::from_schema(schema, shape).unwrap()
+    }
+
     #[test]
     fn resident_arena_ids_are_stable_and_state_buffers_are_distinct() {
         let current =
@@ -606,6 +911,10 @@ mod tests {
             class: PlannedValueClass::Scratch,
             kind: ResidentValueKind::F64,
             elements: 65_537,
+            footprint: mech_core::CurrentMemoryFootprint {
+                logical_elements: 65_537,
+                ..mech_core::CurrentMemoryFootprint::default()
+            },
             lifetime: MemoryLifetime::Activation,
             producer: None,
         }])
@@ -614,5 +923,98 @@ mod tests {
             violation.dimension == mech_core::MemoryBudgetDimension::OutputElements
                 && violation.required == 65_537
         }));
+    }
+
+    #[test]
+    fn resident_projection_retains_string_and_snapshot_footprint_witnesses() {
+        let descriptor = string_descriptor();
+        let footprint = mech_core::CurrentMemoryFootprint {
+            logical_elements: 1,
+            payload_bytes: 7,
+            retained_nodes: 1,
+            ..mech_core::CurrentMemoryFootprint::default()
+        };
+        let projection = plan_resident_arenas(&[ResidentValuePlanInput {
+            owner: MemoryObjectOwner::Slot(mech_core::CellSlotId::new(0)),
+            slot: Some(mech_core::CellSlotId::new(0)),
+            descriptor,
+            class: PlannedValueClass::Input,
+            kind: ResidentValueKind::String,
+            elements: 1,
+            footprint,
+            lifetime: MemoryLifetime::Activation,
+            producer: None,
+        }])
+        .unwrap();
+        assert_eq!(projection.plan.values[0].layout.payload.current_bytes, 7);
+        assert_eq!(projection.plan.values[0].layout.payload.current_nodes, 1);
+        assert!(projection.plan.allocations.iter().any(|allocation| {
+            allocation.role == AllocationRole::VariablePayload
+                && allocation.current_bytes == 7
+                && allocation.capacity_bytes == 7
+        }));
+    }
+
+    #[test]
+    fn resident_payload_identity_survives_current_footprint_finalization() {
+        let descriptor = string_descriptor();
+        let owner = MemoryObjectOwner::Slot(mech_core::CellSlotId::new(0));
+        let mut projection = plan_resident_arenas(&[ResidentValuePlanInput {
+            owner: owner.clone(),
+            slot: Some(mech_core::CellSlotId::new(0)),
+            descriptor,
+            class: PlannedValueClass::Constant,
+            kind: ResidentValueKind::String,
+            elements: 1,
+            footprint: mech_core::CurrentMemoryFootprint {
+                logical_elements: 1,
+                ..mech_core::CurrentMemoryFootprint::default()
+            },
+            lifetime: MemoryLifetime::Program,
+            producer: Some(mech_core::NodeId::new(0)),
+        }])
+        .unwrap();
+        let payload_id = projection
+            .plan
+            .allocations
+            .iter()
+            .find(|allocation| allocation.role == AllocationRole::VariablePayload)
+            .unwrap()
+            .id;
+        assert_eq!(
+            projection
+                .plan
+                .allocations
+                .iter()
+                .find(|allocation| allocation.id == payload_id)
+                .unwrap()
+                .capacity_bytes,
+            0
+        );
+
+        finalize_resident_current_footprints(
+            &mut projection.plan,
+            &BTreeMap::from([(
+                owner,
+                mech_core::CurrentMemoryFootprint {
+                    logical_elements: 1,
+                    payload_bytes: 9,
+                    retained_nodes: 1,
+                    ..mech_core::CurrentMemoryFootprint::default()
+                },
+            )]),
+        )
+        .unwrap();
+
+        assert_eq!(projection.plan.values[0].layout.payload.current_bytes, 9);
+        let payload = projection
+            .plan
+            .allocations
+            .iter()
+            .find(|allocation| allocation.id == payload_id)
+            .unwrap();
+        assert_eq!(payload.current_bytes, 9);
+        assert_eq!(payload.capacity_bytes, 9);
+        assert!(projection.plan.budget_violations.is_empty());
     }
 }

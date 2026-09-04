@@ -141,11 +141,6 @@ fn bind_matrix_literal(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    // A Snapshot matrix occupies one resident handle, but its semantic matrix
-    // still contains `count` elements. Admit that complete fixed output before
-    // activation is allowed to allocate any typed arena; variable String and
-    // recursive Snapshot payloads remain turn witnesses below.
-    admit_literal_binding(count, kind).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let kernel = BoundResidentKernel::new(matrix_literal, Box::new([])).with_retained_state(
         Arc::new(MatrixLiteralPlan {
             rows,
@@ -168,7 +163,8 @@ fn bind_matrix_literal(
     }
 }
 
-fn admit_literal_binding(count: usize, kind: ResidentValueKind) -> Result<(), ResidentKernelError> {
+#[cfg(test)]
+fn admit_literal_output(count: usize, kind: ResidentValueKind) -> Result<(), ResidentKernelError> {
     let slot_bytes = match kind {
         ResidentValueKind::Bool => core::mem::size_of::<u8>(),
         ResidentValueKind::Index => core::mem::size_of::<u64>(),
@@ -989,10 +985,10 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_literal_binding_uses_semantic_element_cardinality() {
-        assert!(admit_literal_binding(65_536, ResidentValueKind::Snapshot).is_ok());
+    fn snapshot_literal_output_admission_uses_semantic_element_cardinality() {
+        assert!(admit_literal_output(65_536, ResidentValueKind::Snapshot).is_ok());
         assert_eq!(
-            admit_literal_binding(65_537, ResidentValueKind::Snapshot),
+            admit_literal_output(65_537, ResidentValueKind::Snapshot),
             Err(ResidentKernelError::InvalidShape),
         );
     }

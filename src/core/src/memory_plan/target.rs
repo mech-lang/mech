@@ -1,6 +1,6 @@
 use super::{MemoryBudgetLimits, MemoryPlanError, MemoryTargetKind, SlotLayout};
 use crate::Value;
-use crate::snapshot::{Complex32Bits, Rational64Value};
+use crate::snapshot::{Complex32Bits, Complex64Bits, Rational64Value};
 
 #[cfg(feature = "no_std")]
 use alloc::string::String;
@@ -22,6 +22,7 @@ pub struct TargetPrimitiveLayouts {
     pub i128_slot: SlotLayout,
     pub f32_slot: SlotLayout,
     pub f64_slot: SlotLayout,
+    pub c32_slot: SlotLayout,
     pub c64_slot: SlotLayout,
     pub r64_slot: SlotLayout,
     pub id_slot: SlotLayout,
@@ -123,6 +124,7 @@ impl TargetMemoryProfile {
                 i128_slot: scalar,
                 f32_slot: scalar,
                 f64_slot: scalar,
+                c32_slot: scalar,
                 c64_slot: scalar,
                 r64_slot: scalar,
                 id_slot: scalar,
@@ -170,7 +172,8 @@ fn host_primitives() -> Result<TargetPrimitiveLayouts, MemoryPlanError> {
         i128_slot: rust_layout::<i128>()?,
         f32_slot: rust_layout::<f32>()?,
         f64_slot: rust_layout::<f64>()?,
-        c64_slot: rust_layout::<Complex32Bits>()?,
+        c32_slot: rust_layout::<Complex32Bits>()?,
+        c64_slot: rust_layout::<Complex64Bits>()?,
         r64_slot: rust_layout::<Rational64Value>()?,
         id_slot: rust_layout::<u64>()?,
         index_slot: rust_layout::<usize>()?,

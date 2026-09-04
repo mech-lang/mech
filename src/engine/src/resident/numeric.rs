@@ -1805,11 +1805,6 @@ fn bind_dense_comparison(
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let right_mode = binary_broadcast_mode(right_shape, output)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    // Dense resident arenas are allocated after binding but before the first
-    // executor call. Reject oversized declared outputs at this boundary; the
-    // String executor adds its data-dependent payload scan separately.
-    admit_dense_comparison_layout(output)
-        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     bound(
         dense_comparison,
         vec![
@@ -2615,8 +2610,6 @@ fn bind_transpose(
         && request.output.shape.rows == input.shape.columns
         && request.output.shape.columns == input.shape.rows
     {
-        admit_dense_transpose_layout(request.output.kind, request.output.shape)
-            .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
         return bound(
             transpose_dense,
             vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
@@ -3998,15 +3991,6 @@ fn require_f64_scalar_range_layout(
     if !inputs_are_scalars || !output_is_matrix || request.output.shape.rows != 1 {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let output_len = request
-        .output
-        .shape
-        .len()
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    // Dense activation allocates its output arena before the executor runs.
-    // Reuse the execution admission here so oversized declared ranges fail at
-    // target preflight instead of after that allocation.
-    admit_dense_range(output_len).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     Ok(())
 }
 
@@ -4918,16 +4902,6 @@ fn bind_matrix_solve(
     let parameters = vec![rows as u64, right_columns as u64].into_boxed_slice();
     match (coefficients.kind, right.kind, request.output.kind) {
         (ResidentValueKind::F64, ResidentValueKind::F64, ResidentValueKind::F64) => {
-            admit_matrix_solve(
-                rows,
-                right_columns,
-                core::mem::size_of::<f64>(),
-                1,
-                1,
-                0,
-                super::budget::KernelCostEstimate::default(),
-            )
-            .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
             bound(matrix_solve_f64, parameters)
         }
         (ResidentValueKind::Snapshot, ResidentValueKind::Snapshot, ResidentValueKind::Snapshot)
@@ -4935,20 +4909,6 @@ fn bind_matrix_solve(
                 && right.shape == ResidentShape::SCALAR
                 && request.output.shape == ResidentShape::SCALAR =>
         {
-            let output_container_bytes = rows
-                .checked_mul(right_columns)
-                .and_then(|count| count.checked_mul(core::mem::size_of::<ValueDataDraft>()))
-                .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-            admit_matrix_solve(
-                rows,
-                right_columns,
-                core::mem::size_of::<f32>(),
-                2,
-                3,
-                output_container_bytes,
-                super::budget::KernelCostEstimate::default(),
-            )
-            .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
             Ok(bound(matrix_solve_f32_snapshot, parameters)?
                 .with_snapshot_output(ResidentSnapshotOutput {
                     schema: request.output.schema_id,
@@ -5507,6 +5467,13 @@ fn dense_comparison(
     let ResidentValueMut::Bool(output) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
+    let [rows, columns, ..] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    admit_dense_comparison_layout(ResidentShape {
+        rows: u32::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+        columns: u32::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+    })?;
     match (inputs.get(0), inputs.get(1)) {
         (Some(ResidentValueRef::Bool(left)), Some(ResidentValueRef::Bool(right))) => {
             if left.iter().chain(right).any(|value| *value > 1) {
@@ -8920,6 +8887,19 @@ fn transpose_dense(
     let count = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let kind = match &output {
+        ResidentValueMut::Bool(_) => ResidentValueKind::Bool,
+        ResidentValueMut::Index(_) => ResidentValueKind::Index,
+        ResidentValueMut::F64(_) => ResidentValueKind::F64,
+        _ => return Err(ResidentKernelError::InvalidOutput),
+    };
+    admit_dense_transpose_layout(
+        kind,
+        ResidentShape {
+            rows: u32::try_from(columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+            columns: u32::try_from(rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+        },
+    )?;
     let source_index = |index: usize| {
         let output_row = index % columns;
         let output_column = index / columns;
@@ -13656,7 +13636,7 @@ mod tests {
     }
 
     #[test]
-    fn dense_transpose_layout_is_admitted_before_arena_allocation() {
+    fn dense_transpose_execution_admits_the_complete_output() {
         let maximum = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS as u32;
         for kind in [
             ResidentValueKind::Bool,
@@ -13687,7 +13667,7 @@ mod tests {
     }
 
     #[test]
-    fn dense_comparison_layout_is_admitted_before_arena_allocation() {
+    fn dense_comparison_execution_admits_the_complete_output() {
         let maximum = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS as u32;
         assert!(
             admit_dense_comparison_layout(ResidentShape {
@@ -13706,7 +13686,7 @@ mod tests {
     }
 
     #[test]
-    fn dense_matrix_solve_layout_is_rejected_during_binding() {
+    fn dense_matrix_solve_binding_does_not_manufacture_an_execution_permit() {
         let columns = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS + 1;
         let coefficient_body = SchemaBody::Matrix {
             element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
@@ -13754,15 +13734,15 @@ mod tests {
             },
         );
 
-        assert!(matches!(
+        assert!(
             bind_matrix_solve(&ResidentKernelBindRequest {
                 contract: &contract,
                 schemas: &schemas,
                 inputs: &[coefficient, right.clone()],
                 output: right,
-            }),
-            Err(ResidentKernelBindError::UnsupportedLayout),
-        ));
+            })
+            .is_ok()
+        );
     }
 
     #[test]
@@ -14194,16 +14174,14 @@ mod tests {
 
             let oversized_contract = contract(&vec![scalar; arity], oversized, postcondition);
             assert!(
-                matches!(
-                    binder(&ResidentKernelBindRequest {
-                        contract: &oversized_contract,
-                        schemas: &schemas,
-                        inputs: &valid_inputs,
-                        output: port(oversized, oversized_shape),
-                    }),
-                    Err(ResidentKernelBindError::UnsupportedLayout)
-                ),
-                "an oversized {postcondition} output was admitted before dense activation"
+                binder(&ResidentKernelBindRequest {
+                    contract: &oversized_contract,
+                    schemas: &schemas,
+                    inputs: &valid_inputs,
+                    output: port(oversized, oversized_shape),
+                })
+                .is_ok(),
+                "the semantic binder tried to manufacture an execution permit for {postcondition}"
             );
         }
     }

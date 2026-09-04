@@ -20,7 +20,7 @@ Canonical contract and compatibility closure: complete
 Type–memory boundary: complete
 Type System v1: complete
 Type-system authority cutover: complete
-Next endgame phase: R5
+Next endgame phase: R6
 
 - `v0.1` proof of concept `Concluded 2023`
 - `v0.2` data specification    `Concluded 2025`
@@ -129,14 +129,14 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 (2.3) System specification (v0.4)
 
 The canonical value-system cutover, R1 contract closure, R2 type–memory
-boundary, R3 Type System v1, and the R4 authority cutover are complete. R5 is
-the next v0.4 endgame phase:
+boundary, R3 Type System v1, the R4 authority cutover, and the R5 deterministic
+memory planner are complete. R6 is the next v0.4 endgame phase:
 
 - R2 Type–memory boundary — complete
 - R3 Type inference, predicates, and conversions — complete
 - R4 Type-system storage cutover — complete
-- R5 Memory planner — next
-- R6 Memory runtime cutover
+- R5 Memory planner — complete
+- R6 Memory runtime cutover — next
 - R7 Release qualification
 
 The root package remains `v0.3.6` until R7 qualifies `v0.4.0`.

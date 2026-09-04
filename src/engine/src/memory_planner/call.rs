@@ -23,23 +23,27 @@ pub(crate) fn node_points(
 pub(crate) fn remap_call_allocations(
     node: NodeId,
     plan: &mech_core::CallMemoryPlan,
+    existing_objects: &std::collections::BTreeMap<MemoryObjectId, MemoryObjectId>,
     next_id: &mut u32,
-) -> Result<Vec<AllocationPlan>, MemoryPlanError> {
+) -> Result<Vec<(MemoryObjectId, AllocationPlan)>, MemoryPlanError> {
     let (first, last) = node_points(node)?;
     plan.allocations
         .iter()
         // Input and output port storage is owned by artifact slots and was
-        // already placed by the program planner. Only call-local material is
-        // remapped here; otherwise every call double-counts its live ports.
+        // already placed by the program planner. A value-level transaction
+        // stage may also already own the call's publication backing. Only
+        // genuinely call-local material is remapped here; otherwise every
+        // call double-counts its live ports or its publication stage.
         .filter(|allocation| {
-            matches!(
-                allocation.role,
-                mech_core::AllocationRole::OrderedIndex
-                    | mech_core::AllocationRole::SelectorPlan
-                    | mech_core::AllocationRole::Scratch
-                    | mech_core::AllocationRole::TransactionStage
-                    | mech_core::AllocationRole::TransferStage
-            )
+            !existing_objects.contains_key(&allocation.id)
+                && matches!(
+                    allocation.role,
+                    mech_core::AllocationRole::OrderedIndex
+                        | mech_core::AllocationRole::SelectorPlan
+                        | mech_core::AllocationRole::Scratch
+                        | mech_core::AllocationRole::TransactionStage
+                        | mech_core::AllocationRole::TransferStage
+                )
         })
         .map(|allocation| {
             let id = MemoryObjectId::new(*next_id);
@@ -67,26 +71,29 @@ pub(crate) fn remap_call_allocations(
                 }
                 ref owner => owner.clone(),
             };
-            Ok(AllocationPlan {
-                id,
-                owner,
-                role: allocation.role,
-                space: allocation.space,
-                current_bytes: allocation.current_bytes,
-                capacity_bytes: allocation.capacity_bytes,
-                alignment: allocation.alignment,
-                lifetime: match allocation.lifetime {
-                    MemoryLifetime::Transaction { .. } => {
-                        MemoryLifetime::Transaction { first, last }
-                    }
-                    _ => MemoryLifetime::Turn { first, last },
+            Ok((
+                allocation.id,
+                AllocationPlan {
+                    id,
+                    owner,
+                    role: allocation.role,
+                    space: allocation.space,
+                    current_bytes: allocation.current_bytes,
+                    capacity_bytes: allocation.capacity_bytes,
+                    alignment: allocation.alignment,
+                    lifetime: match allocation.lifetime {
+                        MemoryLifetime::Transaction { .. } => {
+                            MemoryLifetime::Transaction { first, last }
+                        }
+                        _ => MemoryLifetime::Turn { first, last },
+                    },
+                    placement: mech_core::ArenaPlacement {
+                        arena: mech_core::MemoryArenaId::new(0),
+                        offset: 0,
+                    },
+                    reuse_group: None,
                 },
-                placement: mech_core::ArenaPlacement {
-                    arena: mech_core::MemoryArenaId::new(0),
-                    offset: 0,
-                },
-                reuse_group: None,
-            })
+            ))
         })
         .collect()
 }

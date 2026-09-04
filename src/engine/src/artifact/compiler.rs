@@ -233,7 +233,8 @@ pub fn resolve_compiled_external_contracts(
                     None,
                 )
             })?;
-            memory_plan.bound_call = binding.clone();
+            *memory_plan = mech_core::replan_call_memory(memory_plan, binding)
+                .map_err(|error| mech_core::MechError::new(error, None).with_compiler_loc())?;
         }
     }
     Ok(())

@@ -106,6 +106,12 @@ pub fn plan_scalar_instruction_expansion(
     })
 }
 
+fn sum_products_work(product_terms: usize) -> Result<usize, String> {
+    product_terms
+        .checked_add(1)
+        .ok_or_else(|| "sum-products scalar instruction work overflow".to_owned())
+}
+
 fn evaluate_operand_simd(operand: ScalarOperand, registers: &[f32x4]) -> f32x4 {
     match operand {
         ScalarOperand::Register(register) => registers[register],
@@ -338,6 +344,7 @@ fn scalar_computation_wgsl(computation: &ScalarComputation) -> String {
                 .collect::<Vec<_>>();
             super::wgsl_elementwise_expression(*operation, &inputs)
         }
+        ScalarComputation::SumProducts(terms) if terms.is_empty() => "0.0".to_owned(),
         ScalarComputation::SumProducts(terms) => terms
             .iter()
             .map(|(left, right)| {
@@ -1359,6 +1366,7 @@ struct BatchCompiler<'a> {
     register_offsets: BTreeMap<CellSlotId, usize>,
     register_count: usize,
     instructions: Vec<ScalarInstruction>,
+    scalar_instruction_work: u64,
     inputs: Vec<(CellSlotId, String, FixedShape)>,
     states: BTreeMap<CellSlotId, PendingState>,
     concrete_cases: Vec<ConcreteGpuExecutionCase>,
@@ -1450,6 +1458,7 @@ impl<'a> BatchCompiler<'a> {
             register_offsets: BTreeMap::new(),
             register_count: 0,
             instructions: Vec::new(),
+            scalar_instruction_work: 0,
             inputs: Vec::new(),
             states: BTreeMap::new(),
             concrete_cases: Vec::new(),
@@ -2162,6 +2171,7 @@ impl<'a> BatchCompiler<'a> {
         if left.elements() != right.elements() {
             return Err("dot input element counts differ".to_owned());
         }
+        self.reserve_scalar_instructions(1, 1, sum_products_work(left.elements())?)?;
         let terms = (0..left.elements())
             .map(|component| {
                 Ok((
@@ -2170,7 +2180,6 @@ impl<'a> BatchCompiler<'a> {
                 ))
             })
             .collect::<Result<Vec<_>, String>>()?;
-        self.reserve_scalar_instructions(1, 1, 1)?;
         self.emit(output, 0, ScalarComputation::SumProducts(terms));
         Ok(())
     }
@@ -2193,7 +2202,11 @@ impl<'a> BatchCompiler<'a> {
                 left.rows, left.columns, right.rows, right.columns, result.rows, result.columns
             ));
         }
-        self.reserve_scalar_instructions(result.rows, result.columns, 1)?;
+        self.reserve_scalar_instructions(
+            result.rows,
+            result.columns,
+            sum_products_work(left.columns)?,
+        )?;
         for column in 0..result.columns {
             for row in 0..result.rows {
                 let terms = (0..left.columns)
@@ -2445,14 +2458,17 @@ impl<'a> BatchCompiler<'a> {
         instructions_per_element: usize,
     ) -> Result<ScalarInstructionExpansion, String> {
         let expansion = plan_scalar_instruction_expansion(
-            self.instructions.len(),
+            usize::try_from(self.scalar_instruction_work)
+                .map_err(|_| "scalar instruction work does not fit usize".to_owned())?,
             selected_rows,
             selected_columns,
             instructions_per_element,
         )
         .map_err(|error| format!("scalar instruction expansion rejected: {error:?}"))?;
-        let additional = usize::try_from(expansion.additional)
-            .map_err(|_| "scalar instruction expansion does not fit usize".to_owned())?;
+        self.scalar_instruction_work = expansion.total;
+        let additional = selected_rows
+            .checked_mul(selected_columns)
+            .ok_or_else(|| "emitted scalar instruction count overflow".to_owned())?;
         self.instructions
             .try_reserve_exact(additional)
             .map_err(|_| "unable to reserve scalar instruction expansion".to_owned())?;
@@ -3251,6 +3267,32 @@ mod axis_tests {
             Err(mech_core::MemoryPlanError::ArithmeticOverflow {
                 field: "scalar instruction expansion",
             })
+        ));
+        assert_eq!(
+            plan_scalar_instruction_expansion(0, 1_024, 1_024, 16)
+                .unwrap()
+                .total,
+            MAX_SCALAR_INSTRUCTIONS
+        );
+        assert!(matches!(
+            plan_scalar_instruction_expansion(0, 1_024, 1_024, 17),
+            Err(mech_core::MemoryPlanError::TargetLimitExceeded { .. })
+        ));
+        assert_eq!(sum_products_work(0), Ok(1));
+        assert_eq!(
+            scalar_computation_wgsl(&ScalarComputation::SumProducts(Vec::new())),
+            "0.0"
+        );
+        assert_eq!(sum_products_work(16), Ok(17));
+        assert!(sum_products_work(usize::MAX).is_err());
+        assert!(matches!(
+            plan_scalar_instruction_expansion(
+                MAX_SCALAR_INSTRUCTIONS as usize,
+                1,
+                1,
+                sum_products_work(0).unwrap(),
+            ),
+            Err(mech_core::MemoryPlanError::TargetLimitExceeded { .. })
         ));
     }
 

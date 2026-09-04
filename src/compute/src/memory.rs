@@ -7,7 +7,7 @@ use mech_core::{
 };
 use mech_engine::memory_planner::{
     ActivationMemoryFacts, ProgramMemoryPlan, ProgramMemoryPlanTemplate,
-    instantiate_program_memory_plan, plan_program_memory_template,
+    instantiate_program_memory_plan_with_target_overrides, plan_program_memory_template,
 };
 use mech_engine::{ComputeRegionDeclaration, ProgramArtifact};
 
@@ -24,12 +24,17 @@ pub struct PlannedComputeArtifact {
 pub fn plan_compute_memory(
     artifact: &ProgramArtifact,
     explicit_regions: &[ComputeRegionDeclaration],
+    instruction_nodes: &[mech_core::NodeId],
     instruction_bindings: &[Option<BoundCall>],
     instruction_memory_plans: &[Option<CallMemoryPlan>],
 ) -> Result<PlannedComputeArtifact, MemoryPlanError> {
     let placement = plan_compute_artifact(artifact, explicit_regions);
-    let mut memory =
-        plan_program_memory_template(artifact, instruction_bindings, instruction_memory_plans)?;
+    let mut memory = plan_program_memory_template(
+        artifact,
+        instruction_nodes,
+        instruction_bindings,
+        instruction_memory_plans,
+    )?;
     let elements = placement
         .slots
         .iter()
@@ -95,7 +100,14 @@ pub fn instantiate_compute_memory(
     target: &TargetMemoryProfile,
     facts: &ActivationMemoryFacts,
 ) -> Result<ProgramMemoryPlan, MemoryPlanError> {
-    instantiate_program_memory_plan(&artifact.memory, target, facts)
+    let host = TargetMemoryProfile::current_native_host()?;
+    let target_overrides = BTreeMap::from([(MemorySpace::Host, host)]);
+    instantiate_program_memory_plan_with_target_overrides(
+        &artifact.memory,
+        target,
+        &target_overrides,
+        facts,
+    )
 }
 
 fn transfer_plan(

@@ -1,10 +1,43 @@
+use std::sync::Mutex;
+
 use mech_core::snapshot::{SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint};
 use mech_core::{
-    MemoryObjectOwner, NodeId, ResidentKernelError, ResourceDemand, SchemaBody, SchemaId,
-    SchemaTable, TargetMemoryProfile, Value, ValueData, evaluate_memory_budget,
+    ResidentKernelError, ResourceDemand, SchemaBody, SchemaId, SchemaTable, Value, ValueData,
 };
 
-use crate::memory_planner::TurnMemoryPlan;
+use crate::memory_planner::{TurnMemoryPlan, apply_observed_turn_demand};
+
+thread_local! {
+    static ACTIVE_TURN_PLANS: Mutex<Vec<TurnMemoryPlan>> = const { Mutex::new(Vec::new()) };
+}
+
+fn with_active_turn_plans<T>(use_plans: impl FnOnce(&mut Vec<TurnMemoryPlan>) -> T) -> T {
+    ACTIVE_TURN_PLANS.with(|plans| {
+        let mut plans = plans
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        use_plans(&mut plans)
+    })
+}
+
+struct ActiveTurnPlanGuard;
+
+impl Drop for ActiveTurnPlanGuard {
+    fn drop(&mut self) {
+        with_active_turn_plans(|plans| {
+            plans.pop();
+        });
+    }
+}
+
+/// Scopes every Resident materialization permit to the real node plan built
+/// from the activated program. Nested execution remains deterministic and a
+/// panic cannot leak authority to the next kernel on the worker thread.
+pub(crate) fn with_resident_turn_plan<T>(plan: TurnMemoryPlan, execute: impl FnOnce() -> T) -> T {
+    with_active_turn_plans(|plans| plans.push(plan));
+    let _guard = ActiveTurnPlanGuard;
+    execute()
+}
 
 macro_rules! resident_cost {
     (@value $field:ident, $value:expr) => {
@@ -153,10 +186,6 @@ impl KernelCostEstimate {
         self.demand.work.compute
     }
 
-    pub(crate) const fn output_bytes(self) -> u64 {
-        self.demand.persistent_bytes
-    }
-
     pub(crate) const fn temporary_bytes(self) -> u64 {
         self.demand.turn_peak_bytes
     }
@@ -205,21 +234,19 @@ impl KernelCostEstimate {
     }
 
     fn turn_plan(self) -> Result<TurnMemoryPlan, ResidentKernelError> {
-        let target = TargetMemoryProfile::current_resident_cpu()
-            .map_err(|_| ResidentKernelError::InvalidShape)?;
-        let owner = MemoryObjectOwner::NodeScratch {
-            node: NodeId::new(0),
-            ordinal: 0,
-        };
-        let violations =
-            evaluate_memory_budget(owner, self.demand, self.output_bytes(), 0, target.limits);
-        Ok(TurnMemoryPlan {
-            node: NodeId::new(0),
-            allocations: Box::new([]),
-            transactions: Box::new([]),
-            demand: self.demand,
-            budget_violations: violations,
-        })
+        let active = with_active_turn_plans(|plans| plans.last().cloned());
+        if let Some(active) = active {
+            return apply_observed_turn_demand(active, self.demand)
+                .map_err(|_| ResidentKernelError::InvalidShape);
+        }
+        #[cfg(test)]
+        {
+            return detached_test_turn_plan(self.demand);
+        }
+        #[cfg(not(test))]
+        {
+            Err(ResidentKernelError::InvalidInput)
+        }
     }
 
     fn checked(self) -> Result<TurnMemoryPlan, ResidentKernelError> {
@@ -254,6 +281,45 @@ impl KernelCostEstimate {
                     .ok_or(ResidentKernelError::InvalidShape)?,
             ))
     }
+}
+
+#[cfg(test)]
+fn detached_test_turn_plan(demand: ResourceDemand) -> Result<TurnMemoryPlan, ResidentKernelError> {
+    let target = mech_core::TargetMemoryProfile::current_resident_cpu()
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let node = mech_core::NodeId::new(0);
+    let program = crate::memory_planner::ProgramMemoryPlan {
+        allocations: vec![mech_core::AllocationPlan {
+            id: mech_core::MemoryObjectId::new(0),
+            owner: mech_core::MemoryObjectOwner::TransactionStage { node, output: 0 },
+            role: mech_core::AllocationRole::TransactionStage,
+            space: mech_core::MemorySpace::ResidentCpu,
+            current_bytes: 0,
+            capacity_bytes: 0,
+            alignment: 1,
+            lifetime: mech_core::MemoryLifetime::Transaction {
+                first: mech_core::MemoryPlanPoint::new(0),
+                last: mech_core::MemoryPlanPoint::new(1),
+            },
+            placement: mech_core::ArenaPlacement {
+                arena: mech_core::MemoryArenaId::new(0),
+                offset: 0,
+            },
+            reuse_group: None,
+        }]
+        .into_boxed_slice(),
+        budget_limits: target.limits,
+        ..crate::memory_planner::ProgramMemoryPlan::default()
+    };
+    crate::memory_planner::plan_turn_memory(
+        &program,
+        node,
+        &crate::memory_planner::TurnMemoryFacts {
+            observed_demand: Some(demand),
+            ..crate::memory_planner::TurnMemoryFacts::default()
+        },
+    )
+    .map_err(|_| ResidentKernelError::InvalidShape)
 }
 
 impl ResidentBudgetPermit {
@@ -698,6 +764,55 @@ pub(crate) fn checked_cost_sum(values: &[u64]) -> Result<u64, ResidentKernelErro
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn resident_estimates_reconcile_with_the_real_node_turn_plan() {
+        let node = mech_core::NodeId::new(7);
+        let program = crate::memory_planner::ProgramMemoryPlan {
+            allocations: vec![mech_core::AllocationPlan {
+                id: mech_core::MemoryObjectId::new(3),
+                owner: mech_core::MemoryObjectOwner::NodeScratch { node, ordinal: 0 },
+                role: mech_core::AllocationRole::TransactionStage,
+                space: mech_core::MemorySpace::ResidentCpu,
+                current_bytes: 8,
+                capacity_bytes: 8,
+                alignment: 8,
+                lifetime: mech_core::MemoryLifetime::Transaction {
+                    first: mech_core::MemoryPlanPoint::new(14),
+                    last: mech_core::MemoryPlanPoint::new(15),
+                },
+                placement: mech_core::ArenaPlacement {
+                    arena: mech_core::MemoryArenaId::new(0),
+                    offset: 0,
+                },
+                reuse_group: None,
+            }]
+            .into_boxed_slice(),
+            budget_limits: mech_core::TargetMemoryProfile::current_resident_cpu()
+                .unwrap()
+                .limits,
+            ..crate::memory_planner::ProgramMemoryPlan::default()
+        };
+        let base = crate::memory_planner::plan_turn_memory(
+            &program,
+            node,
+            &crate::memory_planner::TurnMemoryFacts::default(),
+        )
+        .unwrap();
+        let checked = with_resident_turn_plan(base, || {
+            KernelCostEstimate {
+                demand: ResourceDemand {
+                    persistent_bytes: 24,
+                    ..ResourceDemand::default()
+                },
+            }
+            .checked()
+        })
+        .unwrap();
+        assert_eq!(checked.node, node);
+        assert_eq!(checked.allocations[0].capacity_bytes, 24);
+        assert_eq!(checked.arenas[0].capacity_bytes, 24);
+    }
 
     #[test]
     fn resident_budget_fails_closed_on_limits_and_arithmetic() {

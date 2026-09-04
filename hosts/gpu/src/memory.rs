@@ -1,16 +1,14 @@
 use std::collections::BTreeMap;
 
+use crate::{
+    GpuExecutionBindingRole, GpuExecutionPlan, GpuExecutionPlanError, GpuKernelPlanSource,
+    GpuPlanScalar,
+};
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaPlacement, ArenaPlan, GpuMemoryLimits, MemoryArenaId,
     MemoryBudgetViolation, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanError,
     MemoryPlanPoint, MemorySpace, ResourceDemand, TargetMemoryProfile, TransferDirection,
     TransferPlan, evaluate_memory_budget,
-};
-use mech_engine::memory_planner::{ProgramMemoryPlan, ValueMemoryPlan};
-
-use crate::{
-    GpuExecutionBindingRole, GpuExecutionPlan, GpuExecutionPlanError, GpuKernelPlanSource,
-    GpuPlanScalar,
 };
 
 /// Existing GPU execution plan paired with the process-local, non-wire R5
@@ -18,10 +16,23 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct PlannedGpuExecution {
     pub execution: GpuExecutionPlan,
-    pub memory: ProgramMemoryPlan,
+    /// A physical backing projection subordinate to `execution`. It is not a
+    /// semantic `ProgramMemoryPlan` and therefore cannot become an alternate
+    /// operation, alias, transaction, or lifetime authority.
+    pub memory: GpuBackingMemoryPlan,
     binding_objects: BTreeMap<u32, MemoryObjectId>,
     state_objects: BTreeMap<mech_core::CellSlotId, [MemoryObjectId; 2]>,
     readback_objects: BTreeMap<mech_core::CellSlotId, MemoryObjectId>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GpuBackingMemoryPlan {
+    pub allocations: Box<[AllocationPlan]>,
+    pub arenas: Box<[ArenaPlan]>,
+    pub transfers: Box<[TransferPlan]>,
+    pub budget_limits: mech_core::MemoryBudgetLimits,
+    pub demand: ResourceDemand,
+    pub budget_violations: Box<[MemoryBudgetViolation]>,
 }
 
 impl PlannedGpuExecution {
@@ -58,7 +69,6 @@ impl PlannedGpuExecution {
         let mut binding_objects = BTreeMap::new();
         let mut state_objects = BTreeMap::new();
         let mut readback_objects = BTreeMap::new();
-        let mut values = Vec::new();
         let mut next_id = 0_u32;
         for state in &execution.states {
             let slot = mech_core::CellSlotId::new(state.slot);
@@ -223,17 +233,14 @@ impl PlannedGpuExecution {
         }
         allocations.sort_by_key(|allocation| allocation.id);
         arenas.sort_by_key(|arena| arena.id);
-        values.sort_by_key(|value: &ValueMemoryPlan| value.slot);
         Ok(Self {
             execution,
-            memory: ProgramMemoryPlan {
-                values: values.into_boxed_slice(),
-                call_nodes: Box::new([]),
-                calls: Box::new([]),
+            memory: GpuBackingMemoryPlan {
                 allocations: allocations.into_boxed_slice(),
                 arenas: arenas.into_boxed_slice(),
                 transfers: transfers.into_boxed_slice(),
-                peak: demand,
+                budget_limits: target.limits,
+                demand,
                 budget_violations: budget_violations.into_boxed_slice(),
             },
             binding_objects,
@@ -446,10 +453,7 @@ pub fn gpu_memory_limits(limits: &wgpu::Limits) -> GpuMemoryLimits {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        GPU_EXECUTION_PLAN_VERSION, GpuBindingAccess, GpuPlanBinding, GpuPlanInitialValues,
-        GpuPlanKernelKind,
-    };
+    use crate::execution_plan::test_execution_plan;
 
     fn limits(max_buffer_size: u64) -> GpuMemoryLimits {
         GpuMemoryLimits {
@@ -464,33 +468,10 @@ mod tests {
         }
     }
 
-    fn execution() -> GpuExecutionPlan {
-        GpuExecutionPlan {
-            version: GPU_EXECUTION_PLAN_VERSION,
-            kernel_kind: GpuPlanKernelKind::Elementwise,
-            wgsl: "@compute @workgroup_size(64) fn main() {}".to_owned(),
-            workgroup_size: 64,
-            dispatch_elements: 1,
-            bindings: vec![GpuPlanBinding {
-                binding: 0,
-                name: "input".to_owned(),
-                access: GpuBindingAccess::Read,
-                role: GpuExecutionBindingRole::Input,
-                slot: 1,
-                elements: 2,
-                scalar: GpuPlanScalar::F32,
-                initial_values: Some(GpuPlanInitialValues::F32(vec![1.0, 2.0])),
-            }],
-            states: Vec::new(),
-            outputs: Vec::new(),
-            physical_outputs: Vec::new(),
-            constraints: Vec::new(),
-        }
-    }
-
     #[test]
     fn exact_gpu_binding_bytes_are_planned_before_creation() {
-        let planned = PlannedGpuExecution::from_execution(execution(), limits(1024)).unwrap();
+        let planned =
+            PlannedGpuExecution::from_execution(test_execution_plan(2), limits(1024)).unwrap();
         assert_eq!(planned.binding_bytes(0), Some(8));
         assert!(planned.assert_binding_bytes(0, 8).is_ok());
         assert!(planned.assert_binding_bytes(0, 4).is_err());
@@ -499,7 +480,7 @@ mod tests {
     #[test]
     fn adapter_buffer_limit_is_a_structured_plan_rejection() {
         assert!(matches!(
-            PlannedGpuExecution::from_execution(execution(), limits(7)),
+            PlannedGpuExecution::from_execution(test_execution_plan(2), limits(7)),
             Err(GpuMemoryPlanError::Plan(
                 MemoryPlanError::TargetLimitExceeded { .. }
             ))

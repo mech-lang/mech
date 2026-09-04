@@ -24,9 +24,10 @@ use mech_core::{
 use sha2::{Digest, Sha256};
 
 use crate::memory_planner::{
-    PlannedValueClass, ProgramMemoryPlan, ResidentValuePlanInput, node_points,
-    plan_resident_arenas, plan_resident_effect_payload, resident_arena_id,
-    resident_storage_descriptor,
+    PlannedValueClass, ProgramMemoryPlan, ResidentValuePlanInput,
+    attach_resident_call_memory_template, finalize_resident_current_footprints, node_points,
+    plan_program_memory_template, plan_resident_arenas, plan_resident_effect_payload,
+    resident_arena_id, resident_payload_arena_id, resident_storage_descriptor,
 };
 use crate::{
     ArtifactSource, BindingDeclaration, InitializerReference, OperationReference,
@@ -1406,7 +1407,7 @@ fn activate_internal(
     let layout = build_layout(artifact, &facts, &classification)?;
     let facts_fingerprint = activation_facts_fingerprint(&facts);
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
-    let plan = build_plan(
+    let mut plan = build_plan(
         artifact,
         catalog,
         classification,
@@ -1462,7 +1463,9 @@ fn activate_internal(
         }
     }
     let workspace = TurnWorkspace::new(&plan)?;
-    audit_resident_backings(&plan.memory_plan, &activation, &state, &workspace)?;
+    finalize_resident_backing_footprints(artifact, &mut plan, &activation, &state, &workspace)?;
+    ensure_resident_plan_admitted(&plan.memory_plan)?;
+    audit_resident_backings(artifact, &plan, &activation, &state, &workspace)?;
     Ok(ReactiveInstance {
         id,
         plan,
@@ -1476,12 +1479,40 @@ fn activate_internal(
     })
 }
 
-fn audit_resident_backings(
-    plan: &ProgramMemoryPlan,
+fn finalize_resident_backing_footprints(
+    artifact: &ProgramArtifact,
+    activated: &mut ActivatedPlan,
     activation: &TypedResidentArena,
     state: &StateArena,
     workspace: &TurnWorkspace,
 ) -> Result<(), ResidentActivationError> {
+    let mut footprints = BTreeMap::new();
+    for allocation in &activated.memory_plan.allocations {
+        if footprints.contains_key(&allocation.owner) {
+            continue;
+        }
+        let Some(value) =
+            resident_observation_value(activated, allocation, activation, state, workspace)
+        else {
+            continue;
+        };
+        footprints.insert(
+            allocation.owner.clone(),
+            resident_value_observed_footprint(artifact, value)?,
+        );
+    }
+    finalize_resident_current_footprints(&mut activated.memory_plan, &footprints)
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })
+}
+
+fn audit_resident_backings(
+    artifact: &ProgramArtifact,
+    activated: &ActivatedPlan,
+    activation: &TypedResidentArena,
+    state: &StateArena,
+    workspace: &TurnWorkspace,
+) -> Result<(), ResidentActivationError> {
+    let plan = &activated.memory_plan;
     let arenas = [
         (PlannedValueClass::Constant, 0_u8, activation),
         (PlannedValueClass::Input, 0, &workspace.input),
@@ -1535,19 +1566,133 @@ fn audit_resident_backings(
                 .values
                 .iter()
                 .find(|value| value.object == allocation.id);
-            mech_core::MemoryPlanObservation {
+            let observed =
+                resident_observation_value(activated, allocation, activation, state, workspace)
+                    .map(|value| resident_value_observed_footprint(artifact, value))
+                    .transpose()?;
+            Ok(mech_core::MemoryPlanObservation {
                 object: allocation.id,
-                current_bytes: allocation.current_bytes,
+                current_bytes: if allocation.role == mech_core::AllocationRole::VariablePayload {
+                    observed.map_or(allocation.current_bytes, |footprint| {
+                        footprint.payload_bytes
+                    })
+                } else {
+                    allocation.current_bytes
+                },
                 capacity_bytes: allocation.capacity_bytes,
-                payload_bytes: value.map_or(0, |value| value.layout.payload.current_bytes),
-                retained_nodes: value.map_or(0, |value| value.layout.payload.current_nodes),
-                logical_elements: value.map_or(0, |value| value.layout.current_elements),
-            }
+                payload_bytes: value
+                    .and_then(|_| observed)
+                    .map_or(0, |footprint| footprint.payload_bytes),
+                retained_nodes: value
+                    .and_then(|_| observed)
+                    .map_or(0, |footprint| footprint.retained_nodes),
+                logical_elements: observed.map_or_else(
+                    || value.map_or(0, |value| value.layout.current_elements),
+                    |footprint| footprint.logical_elements,
+                ),
+            })
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>, ResidentActivationError>>()?;
     crate::memory_planner::audit_program_memory_plan(plan, &observations)
         .and_then(|report| report.assert_conformant())
         .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })
+}
+
+fn resident_observation_value<'a>(
+    activated: &'a ActivatedPlan,
+    allocation: &mech_core::AllocationPlan,
+    activation: &'a TypedResidentArena,
+    state: &'a StateArena,
+    workspace: &'a TurnWorkspace,
+) -> Option<ResidentValueRef<'a>> {
+    match allocation.owner {
+        mech_core::MemoryObjectOwner::Constant(constant) => activated
+            .constant_regions
+            .get(constant.get() as usize)
+            .copied()
+            .map(|region| activation.read(region)),
+        mech_core::MemoryObjectOwner::Slot(slot) => {
+            let resolved = activated.slots.get(slot.get() as usize)?;
+            Some(match resolved.storage {
+                ResidentStorageClass::Constant => activation.read(resolved.region),
+                ResidentStorageClass::Input => workspace.input.read(resolved.region),
+                ResidentStorageClass::State => {
+                    state.buffers[resident_state_buffer(allocation)].read(resolved.region)
+                }
+                ResidentStorageClass::Scratch => workspace.scratch.read(resolved.region),
+            })
+        }
+        _ => None,
+    }
+}
+
+fn resident_state_buffer(allocation: &mech_core::AllocationPlan) -> usize {
+    for buffer in [0_u8, 1] {
+        if resident_payload_arena_id((PlannedValueClass::State, buffer))
+            .is_ok_and(|arena| arena == allocation.placement.arena)
+        {
+            return usize::from(buffer);
+        }
+        for kind in [
+            ResidentValueKind::Bool,
+            ResidentValueKind::Index,
+            ResidentValueKind::F64,
+            ResidentValueKind::String,
+            ResidentValueKind::Snapshot,
+        ] {
+            if resident_arena_id((PlannedValueClass::State, kind, buffer))
+                .is_ok_and(|arena| arena == allocation.placement.arena)
+            {
+                return usize::from(buffer);
+            }
+        }
+    }
+    0
+}
+
+fn resident_value_observed_footprint(
+    artifact: &ProgramArtifact,
+    value: ResidentValueRef<'_>,
+) -> Result<CurrentMemoryFootprint, ResidentActivationError> {
+    let logical_elements =
+        u64::try_from(value.len()).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+    let mut footprint = CurrentMemoryFootprint {
+        logical_elements,
+        ..CurrentMemoryFootprint::default()
+    };
+    match value {
+        ResidentValueRef::String(values) => {
+            footprint.payload_bytes = values.iter().try_fold(0_u64, |total, value| {
+                total
+                    .checked_add(
+                        u64::try_from(value.len())
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                    )
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)
+            })?;
+        }
+        ResidentValueRef::Snapshot(values) => {
+            for value in values.iter().flatten() {
+                let retained = value
+                    .retained_footprint(artifact.schemas())
+                    .map_err(|_| ResidentActivationError::InvalidSnapshotRepresentation)?;
+                footprint.payload_bytes = footprint
+                    .payload_bytes
+                    .checked_add(retained.retained_bytes)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                footprint.encoded_bytes = footprint
+                    .encoded_bytes
+                    .checked_add(retained.encoded_bytes)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                footprint.retained_nodes = footprint
+                    .retained_nodes
+                    .checked_add(retained.node_count)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            }
+        }
+        ResidentValueRef::Bool(_) | ResidentValueRef::Index(_) | ResidentValueRef::F64(_) => {}
+    }
+    Ok(footprint)
 }
 
 fn preflight_state_initializers(artifact: &ProgramArtifact) -> Result<(), ResidentActivationError> {
@@ -2256,6 +2401,7 @@ fn build_layout(
         let descriptor =
             mech_core::ResolvedValueDescriptor::from_schema(schema, value.shape().clone())
                 .map_err(|_| ResidentActivationError::InvalidSnapshotRepresentation)?;
+        let footprint = resident_value_footprint(artifact, value, kind, len)?;
         planned.push(ResidentValuePlanInput {
             owner: mech_core::MemoryObjectOwner::Constant(constant),
             slot: None,
@@ -2264,6 +2410,7 @@ fn build_layout(
             kind,
             elements: u64::try_from(len)
                 .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+            footprint,
             lifetime: mech_core::MemoryLifetime::Program,
             producer: None,
         });
@@ -2300,6 +2447,18 @@ fn build_layout(
         let descriptor =
             mech_core::ResolvedValueDescriptor::from_schema(schema.schema().clone(), shape.clone())
                 .map_err(|_| ResidentActivationError::InvalidSnapshotRepresentation)?;
+        let footprint = declaration
+            .initializer
+            .and_then(|initializer| match initializer {
+                InitializerReference::Constant(constant) => artifact.constants().get(constant),
+            })
+            .map(|value| resident_value_footprint(artifact, value, kind, len))
+            .transpose()?
+            .unwrap_or(CurrentMemoryFootprint {
+                logical_elements: u64::try_from(len)
+                    .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                ..CurrentMemoryFootprint::default()
+            });
         planned.push(ResidentValuePlanInput {
             owner: mech_core::MemoryObjectOwner::Slot(declaration.slot),
             slot: Some(declaration.slot),
@@ -2313,6 +2472,7 @@ fn build_layout(
             kind,
             elements: u64::try_from(len)
                 .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+            footprint,
             lifetime: resident_slot_lifetime(
                 declaration,
                 storage,
@@ -2516,6 +2676,37 @@ fn value_layout(
     // A constant's concrete shape is immutable even when its semantic schema
     // originated from a turn-lifetime dynamic backing.
     schema_layout(artifact, value.schema(), value.shape(), true)
+}
+
+fn resident_value_footprint(
+    artifact: &ProgramArtifact,
+    value: &Value,
+    kind: ResidentValueKind,
+    logical_elements: usize,
+) -> Result<CurrentMemoryFootprint, ResidentActivationError> {
+    if !matches!(
+        kind,
+        ResidentValueKind::String | ResidentValueKind::Snapshot
+    ) {
+        return Ok(CurrentMemoryFootprint {
+            logical_elements: u64::try_from(logical_elements)
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+            ..CurrentMemoryFootprint::default()
+        });
+    }
+    let retained = value
+        .retained_footprint(artifact.schemas())
+        .map_err(|_| ResidentActivationError::InvalidSnapshotRepresentation)?;
+    Ok(CurrentMemoryFootprint {
+        logical_elements: u64::try_from(logical_elements)
+            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+        payload_bytes: retained.retained_bytes,
+        encoded_bytes: retained.encoded_bytes,
+        retained_nodes: retained.node_count,
+        shape_parameter_count: u64::try_from(value.shape().parameter_values().len())
+            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+        ..CurrentMemoryFootprint::default()
+    })
 }
 
 fn dense_resident_kind(body: &SchemaBody) -> Option<ResidentValueKind> {
@@ -3020,8 +3211,20 @@ fn build_plan(
             .collect::<Vec<_>>()
             .into_boxed_slice()
     });
-    layout.memory_plan.call_nodes = call_memory_plan_nodes.into_boxed_slice();
-    layout.memory_plan.calls = call_memory_plans.into_boxed_slice();
+    let call_bindings = call_memory_plans
+        .iter()
+        .map(|plan| Some(plan.bound_call.clone()))
+        .collect::<Vec<_>>();
+    let call_plans = call_memory_plans.into_iter().map(Some).collect::<Vec<_>>();
+    let call_template = plan_program_memory_template(
+        artifact,
+        &call_memory_plan_nodes,
+        &call_bindings,
+        &call_plans,
+    )
+    .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+    attach_resident_call_memory_template(&mut layout.memory_plan, &call_template)
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
     ensure_resident_plan_admitted(&layout.memory_plan)?;
     let plan = ActivatedPlan {
         program_revision: artifact.revision(),
@@ -3232,35 +3435,49 @@ fn execute_activation_graph(
                 node: step.artifact_node,
             });
         }
-        let inputs = step
-            .sources
-            .iter()
-            .map(|source| owned_activation_input(plan, arena, *source))
-            .collect::<Result<Vec<_>, _>>()?;
-        if let Some(base_input) = step.base_input {
-            let source =
-                inputs
-                    .get(base_input)
-                    .ok_or(ResidentActivationError::InvalidDependency {
-                        node: step.artifact_node,
-                    })?;
-            copy_owned_activation_value(source, arena.write(step.write)).map_err(|_| {
-                ResidentActivationError::ActivationKernel {
-                    node: step.artifact_node,
-                }
-            })?;
-        }
-        step.kernel
-            .execute(
-                &OwnedActivationInputs {
-                    values: &inputs,
-                    omitted: step.base_input,
-                },
-                arena.write(step.write),
-            )
-            .map_err(|_| ResidentActivationError::ActivationKernel {
+        let turn_plan = crate::memory_planner::plan_current_resident_turn(
+            &plan.memory_plan,
+            step.artifact_node,
+        )
+        .map_err(|_| ResidentActivationError::ActivationKernel {
+            node: step.artifact_node,
+        })?;
+        if !turn_plan.budget_violations.is_empty() {
+            return Err(ResidentActivationError::ActivationKernel {
                 node: step.artifact_node,
-            })?;
+            });
+        }
+        super::budget::with_resident_turn_plan(turn_plan, || {
+            let inputs = step
+                .sources
+                .iter()
+                .map(|source| owned_activation_input(plan, arena, *source))
+                .collect::<Result<Vec<_>, _>>()?;
+            if let Some(base_input) = step.base_input {
+                let source =
+                    inputs
+                        .get(base_input)
+                        .ok_or(ResidentActivationError::InvalidDependency {
+                            node: step.artifact_node,
+                        })?;
+                copy_owned_activation_value(source, arena.write(step.write)).map_err(|_| {
+                    ResidentActivationError::ActivationKernel {
+                        node: step.artifact_node,
+                    }
+                })?;
+            }
+            step.kernel
+                .execute(
+                    &OwnedActivationInputs {
+                        values: &inputs,
+                        omitted: step.base_input,
+                    },
+                    arena.write(step.write),
+                )
+                .map_err(|_| ResidentActivationError::ActivationKernel {
+                    node: step.artifact_node,
+                })
+        })?;
     }
     Ok(())
 }

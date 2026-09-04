@@ -256,6 +256,37 @@ impl Drop for PreparedResidentTurn<'_> {
 }
 
 impl ReactiveInstance {
+    fn with_kernel_turn_plan<T>(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
+    ) -> Result<T, ResidentExecutionError> {
+        let index = node_index.get() as usize;
+        let artifact_node = if let Some(nodes) = &self.plan.pure_kernel_steps {
+            nodes[index].artifact_node
+        } else {
+            let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
+                unreachable!("external steps are staged by the dispatcher")
+            };
+            node.artifact_node
+        };
+        let turn_plan = crate::memory_planner::plan_current_resident_turn(
+            &self.plan.memory_plan,
+            artifact_node,
+        )
+        .map_err(|_| ResidentExecutionError::Kernel {
+            node: artifact_node,
+            error: ResidentKernelError::InvalidShape,
+        })?;
+        if !turn_plan.budget_violations.is_empty() {
+            return Err(ResidentExecutionError::Kernel {
+                node: artifact_node,
+                error: ResidentKernelError::InvalidShape,
+            });
+        }
+        super::super::budget::with_resident_turn_plan(turn_plan, || execute(self))
+    }
+
     /// Hash the currently published resident state without beginning a candidate.
     pub fn published_state_hash(&self) -> u64 {
         state_hash(self, self.published_epoch())
@@ -1006,6 +1037,24 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         change_is_observed: bool,
     ) -> Result<bool, ResidentExecutionError> {
+        self.with_kernel_turn_plan(node_index, |this| {
+            this.execute_kernel_without_summary_planned(
+                node_index,
+                before_epoch,
+                working_epoch,
+                change_is_observed,
+            )
+        })
+    }
+
+    #[inline(always)]
+    fn execute_kernel_without_summary_planned(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        change_is_observed: bool,
+    ) -> Result<bool, ResidentExecutionError> {
         let index = node_index.get() as usize;
         let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
             &nodes[index]
@@ -1017,7 +1066,7 @@ impl ReactiveInstance {
         };
         if node.write.storage == ResidentStorageClass::Scratch {
             let mut ignored_probe = ResidentStructuralProbe::default();
-            return self.execute_kernel(
+            return self.execute_kernel_planned(
                 node_index,
                 before_epoch,
                 working_epoch,
@@ -1182,6 +1231,19 @@ impl ReactiveInstance {
 
     #[inline(always)]
     fn execute_kernel(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+    ) -> Result<bool, ResidentExecutionError> {
+        self.with_kernel_turn_plan(node_index, |this| {
+            this.execute_kernel_planned(node_index, before_epoch, working_epoch, probe)
+        })
+    }
+
+    #[inline(always)]
+    fn execute_kernel_planned(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
