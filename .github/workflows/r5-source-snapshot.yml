@@ -1,0 +1,20 @@
+name: R5 correction source snapshot
+on:
+  push:
+    branches: [codex/r5-review-fixes-validation]
+    paths: [.github/workflows/r5-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - run: git archive --format=tar.gz f8c96170ed65e999d1ef3ed383e4df69a660e8ee -o /tmp/r5-source.tar.gz
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-exact-source
+          path: /tmp/r5-source.tar.gz
+          retention-days: 1
