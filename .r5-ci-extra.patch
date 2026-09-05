@@ -1,0 +1,38 @@
+diff --git a/scripts/check-r5-memory-planner.py b/scripts/check-r5-memory-planner.py
+index 0cf2e9e..56fb49d 100644
+--- a/scripts/check-r5-memory-planner.py
++++ b/scripts/check-r5-memory-planner.py
+@@ -432,8 +432,10 @@ def failures(root: Path) -> list[str]:
+     ):
+         if required not in turn:
+             found.append(f"turn planning omits deferred budget closure: {required}")
+-    if turn.count("plan.budget_limits") < 3:
+-        found.append("turn planning omits deferred budget closure: plan.budget_limits")
++    for name in ("plan_turn_memory", "apply_observed_turn_demand", "check_turn_planning_progress"):
++        body = dict(function_bodies(turn, name)).get(name, "")
++        if not re.search(r"evaluate_memory_budget\([\s\S]*?plan\.budget_limits,\s*\)", body):
++            found.append(f"turn planning omits deferred budget closure: {name} plan.budget_limits")
+     if not re.search(
+         r"let\s+call_transactions\b.*?\.chain\s*\(\s*&call_transactions\s*\)",
+         turn,
+diff --git a/scripts/tests/test_check_r5_memory_planner.py b/scripts/tests/test_check_r5_memory_planner.py
+index 6a2865e..b9cd266 100644
+--- a/scripts/tests/test_check_r5_memory_planner.py
++++ b/scripts/tests/test_check_r5_memory_planner.py
+@@ -265,6 +265,16 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
+         )
+         self.assert_failure(root, "deferred budget closure")
+ 
++    def test_incremental_progress_cannot_replace_target_limits(self):
++        root = self.fixture()
++        path = "src/engine/src/memory_planner/turn.rs"
++        source = (root / path).read_text(encoding="utf-8")
++        start = source.index("pub(crate) fn check_turn_planning_progress(")
++        prefix, body = source[:start], source[start:]
++        self.assertIn("plan.budget_limits,", body)
++        self.write(root, path, prefix + body.replace("plan.budget_limits,", "Default::default(),", 1))
++        self.assert_failure(root, "deferred budget closure")
++
+     def test_25_resident_observation_fails(self):
+         root = self.fixture()
+         self.replace(
