@@ -6,18 +6,125 @@ on:
 permissions:
   contents: read
 jobs:
-  bounded-math-check:
-    name: Bounded math check (${{ matrix.version }})
+  prepare:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      fix: ${{ steps.patch.outputs.fix }}
+      experiment: ${{ steps.patch.outputs.experiment }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: e1bdb6363188751565a5c1b4de984e3e49d1a04b
+          persist-credentials: false
+      - name: Prepare narrowly scoped candidate commits without moving a branch
+        id: patch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -u - <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess
+          head = 'e1bdb6363188751565a5c1b4de984e3e49d1a04b'
+          repo = 'mech-lang/mech'
+          evidence = pathlib.Path('/tmp/r5-candidates')
+          evidence.mkdir(exist_ok=True)
+          def api(path, payload=None):
+              cmd = ['gh', 'api', f'repos/{repo}/{path}']
+              if payload is not None:
+                  cmd += ['--method', 'POST', '--input', '-']
+              result = subprocess.run(cmd, input=json.dumps(payload) if payload is not None else None, text=True, capture_output=True, check=True)
+              return json.loads(result.stdout)
+          assert api('git/ref/heads/codex/v0.4-r5-memory-planner')['object']['sha'] == head
+          fixture = pathlib.Path('tests/fixtures/d2-contract-generator/src/main.rs')
+          text = fixture.read_text()
+          for name, function in [('zero-input-state', 'bind_zero_input_state'), ('reported-copy', 'bind_reported_copy'), ('always-copy', 'bind_always_copy'), ('state-copy', 'bind_reported_copy')]:
+              old = f'.insert_resident_factory(["test"], "{name}", {function})'
+              assert text.count(old) == 1, name
+              new = f'.insert_resident_factory(\n            ["test"],\n            "{name}",\n            mech_core::ImplementationMemoryClass::NoAdditionalScratch,\n            {function},\n        )'
+              text = text.replace(old, new)
+          fixture.write_text(text)
+          workflow = pathlib.Path('.github/workflows/ci-full.yml')
+          text = workflow.read_text()
+          keys = ('CARGO_BUILD_JOBS', 'CARGO_INCREMENTAL', 'CARGO_PROFILE_DEV_DEBUG', 'CARGO_PROFILE_TEST_DEBUG')
+          for name in ('r1-artifact-closure', 'architecture-contracts', 'cargo-features', 'function-system-contracts', 'bytecode-v1-determinism', 'native-linkage-owners', 'native-linkage-surfaces'):
+              pattern = re.compile(r'(?ms)^  ' + re.escape(name) + r':\n.*?(?=^  [a-z0-9][a-z0-9-]*:\n|\Z)')
+              match = pattern.search(text)
+              assert match, name
+              block = match.group()
+              added = ''.join(f'      {key}: "{1 if key == "CARGO_BUILD_JOBS" else 0}"\n' for key in keys if not re.search(r'^      ' + key + ':', block, re.M))
+              if '    env:\n' in block:
+                  env_match = re.search(r'(?ms)^    env:\n.*?(?=^    [a-z][a-z-]*:)', block)
+                  assert env_match, name
+                  block = block[:env_match.end()] + added + block[env_match.end():]
+              else:
+                  line = re.search(r'^    runs-on:.*\n', block, re.M)
+                  assert line, name
+                  block = block[:line.end()] + '    env:\n' + added + block[line.end():]
+              text = text[:match.start()] + block + text[match.end():]
+          workflow.write_text(text)
+          expected = {str(fixture): 'fb7084f3a4a248842096768986b253f9cca2c31a1c75035d23070a04d656a334', str(workflow): '5def0b46b4683e6d6076effdeb6169927c109c4eb2e1f41af5088ca57ba34a3c'}
+          for name, digest in expected.items():
+              assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() == digest, name
+          subprocess.run(['git', 'diff', '--check'], check=True)
+          subprocess.run(['python3', '-B', '-m', 'unittest', 'tests/ci/test_ci_full_contract.py'], check=True)
+          (evidence/'fix.patch').write_text(subprocess.check_output(['git', 'diff'], text=True))
+          def commit(parent, paths, message):
+              base_tree = api('git/commits/' + parent)['tree']['sha']
+              tree = api('git/trees', {'base_tree': base_tree, 'tree': [{'path': str(p), 'mode': '100644', 'type': 'blob', 'content': p.read_text()} for p in paths]})
+              return api('git/commits', {'message': message, 'tree': tree['sha'], 'parents': [parent]})['sha']
+          fix = commit(head, [fixture, workflow], 'fix(r5): migrate D2 resident fixtures and bound qualification build memory')
+          core = pathlib.Path('src/core/src/function/catalog.rs')
+          text = core.read_text()
+          start = text.index('macro_rules! declare_native_runtime_factory {')
+          end = text.index('\nfn invalid_export_error', start)
+          macro = text[start:end]
+          old = '        #[cfg($cfg)]\n        pub(crate) fn $registration('
+          assert macro.count(old) == 2
+          macro = macro.replace(old, '        #[cfg($cfg)]\n        #[cfg(any(feature = "native-plan", not(feature = "native-link")))]\n        pub(crate) fn $registration(')
+          old = '        #[doc(hidden)]\n        #[cfg(feature = "native-link")]'
+          assert macro.count(old) == 2
+          macro = macro.replace(old, '        #[cfg($cfg)]\n        #[cfg(all(feature = "native-link", not(feature = "native-plan")))]\n        pub(crate) use $installer as $registration;\n\n' + old)
+          core.write_text(text[:start] + macro + text[end:])
+          assert hashlib.sha256(core.read_bytes()).hexdigest() == 'dacd277c1be1f9b157f6e5b37097056e6f3ac6c48afa2b3cf275d2fce002612c'
+          subprocess.run(['git', 'diff', '--check'], check=True)
+          (evidence/'experiment.patch').write_text(subprocess.check_output(['git', 'diff', '--', str(core)], text=True))
+          experiment = commit(fix, [core], 'perf(catalog): alias equivalent native-link runtime registrations')
+          receipt = {'parent': head, 'fix': fix, 'experiment': experiment, 'fix_files_sha256': expected, 'branch_refs_changed': False}
+          (evidence/'receipt.json').write_text(json.dumps(receipt, indent=2))
+          print(json.dumps(receipt, indent=2))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write(f'fix={fix}\nexperiment={experiment}\n')
+          PY
+      - name: Preserve candidate patches and commit identities
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-candidate-patches
+          path: /tmp/r5-candidates
+          retention-days: 1
+  qualify:
+    needs: prepare
+    name: Candidate qualification (${{ matrix.case }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         include:
-          - version: r4
-            ref: ee578153e6731d6fe549238155244873dc745892
-          - version: r5
-            ref: e1bdb6363188751565a5c1b4de984e3e49d1a04b
+          - case: nbody
+            experiment: false
+            command: python3 scripts/check-r1-artifact-closure.py nbody
+          - case: source-contracts
+            experiment: false
+            command: bash scripts/check-function-system-contracts.sh source
+          - case: bytecode-determinism
+            experiment: false
+            command: cargo +nightly-2026-03-03 run --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml -- --check
+          - case: math-alias-experiment
+            experiment: true
+            command: python3 scripts/check-native-linkage-coverage.py owners mech-math
     env:
       CARGO_BUILD_JOBS: "1"
       CARGO_INCREMENTAL: "0"
@@ -27,79 +134,36 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ matrix.ref }}
+          ref: ${{ matrix.experiment && needs.prepare.outputs.experiment || needs.prepare.outputs.fix }}
+          persist-credentials: false
       - name: Install the pinned compiler
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Measure compilation while protecting the runner
+      - name: Prefetch the independent bytecode generators
+        if: matrix.case == 'bytecode-determinism'
         run: |
-          python3 -u - <<'PY'
-          import json, os, pathlib, signal, subprocess, threading, time
-          root = pathlib.Path('/tmp/r5-bounded')
-          root.mkdir(exist_ok=True)
-          command = ['cargo', '+nightly-2026-03-03', 'check', '--manifest-path', 'machines/math/Cargo.toml', '--no-default-features', '--features', 'full_runtime native-link']
-          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-          print('HEAD', head, flush=True)
-          subprocess.run(['free', '-m'], check=True)
-          (root/'HEAD').write_text(head + '\n')
-          child = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
-          def output():
-              with (root/'compile.log').open('w') as log:
-                  for line in child.stdout:
-                      log.write(line)
-                      log.flush()
-                      print(line, end='', flush=True)
-          thread = threading.Thread(target=output, daemon=True)
-          thread.start()
-          started = time.monotonic()
-          peak = 0
-          guard = None
-          rows = []
-          with (root/'memory.jsonl').open('w') as log:
-              while child.poll() is None:
-                  mem = {line.split(':')[0]: int(line.split()[1]) for line in pathlib.Path('/proc/meminfo').read_text().splitlines()}
-                  processes = []
-                  for path in pathlib.Path('/proc').glob('[0-9]*/stat'):
-                      try:
-                          text = path.read_text()
-                          fields = text[text.rfind(')') + 2:].split()
-                          if int(fields[2]) == child.pid:
-                              rss = int(fields[21]) * os.sysconf('SC_PAGE_SIZE') // 1024
-                              processes.append({'pid': int(path.parent.name), 'name': text[text.find('(') + 1:text.rfind(')')], 'rss_kib': rss})
-                      except (OSError, ValueError, IndexError):
-                          continue
-                  rss = sum(p['rss_kib'] for p in processes)
-                  peak = max(peak, rss)
-                  row = {'elapsed_s': round(time.monotonic() - started, 1), 'rss_kib': rss, 'available_kib': mem['MemAvailable'], 'total_kib': mem['MemTotal'], 'processes': processes}
-                  rows.append(row)
-                  log.write(json.dumps(row) + '\n')
-                  log.flush()
-                  print('RESOURCE', json.dumps(row), flush=True)
-                  if rss > 8 * 1024 * 1024 or mem['MemAvailable'] < 2 * 1024 * 1024:
-                      guard = 'resource guard: compiler process group exceeded 8 GiB or host available memory fell below 2 GiB'
-                  elif row['elapsed_s'] > 11 * 60:
-                      guard = 'diagnostic command exceeded 11 minutes'
-                  if guard:
-                      print('GUARD', guard, flush=True)
-                      os.killpg(child.pid, signal.SIGTERM)
-                      try:
-                          child.wait(timeout=10)
-                      except subprocess.TimeoutExpired:
-                          os.killpg(child.pid, signal.SIGKILL)
-                      break
-                  time.sleep(2)
-          status = child.wait()
-          thread.join(timeout=10)
-          report = {'head': head, 'command': command, 'returncode': status, 'guard': guard, 'peak_process_group_rss_kib': peak, 'elapsed_s': round(time.monotonic() - started, 1)}
-          (root/'result.json').write_text(json.dumps(report, indent=2))
-          print(json.dumps(report, indent=2), flush=True)
-          with open(os.environ['GITHUB_STEP_SUMMARY'], 'w') as summary:
-              summary.write('```json\n' + json.dumps(report, indent=2) + '\n```\n')
-          raise SystemExit(1 if guard or status else 0)
-          PY
-      - name: Preserve bounded compiler evidence
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-source-generator/Cargo.toml
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-fixed-source-generator/Cargo.toml
+      - name: Execute the unchanged qualification command
+        env:
+          COMMAND: ${{ matrix.command }}
+          EXPERIMENT: ${{ matrix.experiment }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/r5-qualification
+          git rev-parse HEAD | tee /tmp/r5-qualification/HEAD
+          if [ "$EXPERIMENT" = true ]; then ulimit -v 12582912; fi
+          set +e
+          /usr/bin/time -v -o /tmp/r5-qualification/time.txt bash -c "$COMMAND" 2>&1 | tee /tmp/r5-qualification/command.log
+          status=${PIPESTATUS[0]}
+          set -e
+          cat /tmp/r5-qualification/time.txt
+          echo "$status" > /tmp/r5-qualification/exit-status
+          exit "$status"
+      - name: Preserve qualification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-bounded-math-${{ matrix.version }}
-          path: /tmp/r5-bounded
+          name: r5-qualification-${{ matrix.case }}
+          path: /tmp/r5-qualification
           retention-days: 1
