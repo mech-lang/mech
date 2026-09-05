@@ -1,37 +1,39 @@
 config := {
   runtime: {
     name: "n-body"
-
-    resident-durability: "volatile"
-
     limits: {
       max-turn-duration-ms: 2000
+      max-in-memory-events: 2048
     }
   }
 
   serve: {
     address: "127.0.0.1"
     port: 8081
-    paths: ["."]
-    presentation: "output"
+    paths: ["n-body.mec"]
+    shim: "index.html"
   }
 
   hosts: [
     {
-      name: "clock"
+      name: "simulation"
       provider: "timer"
       settings: {
-        frequency-hz: 60
-        max-catch-up-steps: 1
-        queue-policy: "latest"
+        frequency-hz: 15
+        max-catch-up-steps: 4
       }
     }
-
     {
-      name: "orbit"
+      name: "console"
+      provider: "console"
+      settings: {}
+    }
+    {
+      name: "view"
       provider: "scene"
       settings: {
-        renderer: "output"
+        selector: "#solar-system"
+        renderer: "svg"
       }
     }
   ]
@@ -41,13 +43,17 @@ config := {
 
     grants: [
       {
-        target: "clock/tick"
+        target: "simulation/tick"
         operations: ["read"]
-        paths: ["tick"]
+        paths: ["tick", "delta-seconds"]
       }
-
       {
-        target: "orbit/frame"
+        target: "console/output"
+        operations: ["write"]
+        paths: ["line"]
+      }
+      {
+        target: "view/frame"
         operations: ["write"]
         paths: ["replace"]
       }

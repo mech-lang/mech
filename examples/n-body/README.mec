@@ -1,0 +1,22 @@
+Solar-System Orbit Viewer
+===============================================================================
+
+Run the configured native/browser application:
+
+```sh
+mech run examples/n-body
+```
+
+Serve its SVG visualization:
+
+```sh
+mech serve examples/n-body
+```
+
+Both commands use the same `mech.mcfg` and `n-body.mec`. The timer host drives
+a circular-orbit model, the scene host presents projected planet positions,
+and the console host reports phase, angular momentum, and total energy.
+
+This is deliberately not labeled as the numerical n-body integrator. The
+configured native runner does not yet register the `state/commit` primitive
+needed to retain numerical state between timer turns.
