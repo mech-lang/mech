@@ -83,6 +83,10 @@ def main() -> None:
     )
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument(
+        "--pypy",
+        help="path to pypy3; when supplied, include the pure-Python scalar EKF lanes",
+    )
+    parser.add_argument(
         "--julia-source",
         type=Path,
         default=HERE / "julia_mojo_style.jl",
@@ -125,6 +129,7 @@ def main() -> None:
         "rustc": shutil.which("rustc"),
     }
     mojo = args.mojo or shutil.which("mojo")
+    pypy = args.pypy
     missing = [name for name, path in required.items() if path is None]
     if missing:
         raise RuntimeError(f"missing benchmark tools: {', '.join(missing)}")
@@ -193,6 +198,31 @@ def main() -> None:
                 *common,
             ],
         }
+        if pypy is not None:
+            language_commands["PyPy textbook scalar (unchecked)"] = [
+                pypy,
+                str(HERE / "pypy_textbook.py"),
+                *common,
+                "unchecked",
+            ]
+            language_commands["PyPy textbook scalar (checked)"] = [
+                pypy,
+                str(HERE / "pypy_textbook.py"),
+                *common,
+                "checked",
+            ]
+            language_commands["PyPy optimized scalar (unchecked)"] = [
+                pypy,
+                str(HERE / "pypy_optimized.py"),
+                *common,
+                "unchecked",
+            ]
+            language_commands["PyPy optimized scalar (checked)"] = [
+                pypy,
+                str(HERE / "pypy_optimized.py"),
+                *common,
+                "checked",
+            ]
         if mojo_binary is not None:
             language_commands["Mojo fixed-shape scalar (unchecked)"] = [
                 str(mojo_binary),
@@ -348,6 +378,8 @@ def main() -> None:
             }
             if mojo is not None:
                 metadata_commands["mojo"] = [mojo, "--version"]
+            if pypy is not None:
+                metadata_commands["pypy"] = [pypy, "--version"]
             evidence = {
                 "schema_version": 1,
                 "generated_at": datetime.datetime.now().astimezone().isoformat(),

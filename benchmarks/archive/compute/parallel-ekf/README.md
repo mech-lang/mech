@@ -27,6 +27,9 @@ git switch --track origin/codex/mech-program-gpu
 | Revised Julia SoA control | `benchmarks/archive/compute/parallel-ekf/julia_mojo_style.jl` |
 | Revised Taichi SoA control | `benchmarks/archive/compute/parallel-ekf/taichi_mojo_style.py` |
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
+| PyPy textbook-fidelity control | `benchmarks/archive/compute/parallel-ekf/pypy_textbook.py` |
+| PyPy optimized control | `benchmarks/archive/compute/parallel-ekf/pypy_optimized.py` |
+| PyPy flattened control | `benchmarks/archive/compute/parallel-ekf/pypy_scalar.py` |
 | Mojo control | `benchmarks/archive/compute/parallel-ekf/mojo_scalar.mojo` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -56,6 +59,43 @@ The table below is the preserved **unchecked** Apple M1 baseline from commit
 `6b27e4cdbcdd53ddb0c646169be0bb597bd2a39e`: five-process median after one
 discarded warmup, 100,000 filters, 2026-08-14. It predates the integrity policy
 and must not be presented as checked throughput.
+
+### PyPy controls
+
+`pypy_textbook.py` is the baseline: ordinary Python lists, generic matrix
+products, and direct prediction/update phases. `pypy_optimized.py` is the
+optimized control: structure-of-arrays float32 storage, expanded fixed-shape
+products, and allocation-free checked publication. Both are pure Python; they
+do not import NumPy or call a native matrix library. The optional `checked`
+mode performs the same finite-state, positive-diagonal, and symmetry checks as
+the Mech control and retains the previous candidate on failure. The existing
+`pypy_scalar.py` is retained as an intermediate flattened control for profiling.
+
+Run it with a PyPy 3 interpreter:
+
+```text
+pypy3 pypy_textbook.py 10000 20 checked
+pypy3 pypy_optimized.py 10000 20 checked
+```
+
+To include both lanes in the controlled language runner, pass
+`--pypy /path/to/pypy3`. The runner records the interpreter version and both
+raw outputs in its evidence JSON. A CPython smoke run is useful for correctness
+only; it is not a PyPy performance result.
+
+The controlled scalar rerun used the archive's 10,000-filter x 20-turn
+workload, five measured processes after one discarded warmup, and the timing
+boundary above. On PyPy 7.3.23,
+the scalar medians were:
+
+| PyPy lane | Checked M/s | Unchecked M/s |
+| --- | ---: | ---: |
+| Textbook-fidelity | 0.097 | 0.102 |
+| Optimized SoA/fixed-shape | 1.615 | 1.768 |
+
+All samples reported zero faults. Raw stdout, interpreter version, machine
+metadata, and source hashes are preserved in
+[`results/apple-m1-pypy-2026-09-05.json`](results/apple-m1-pypy-2026-09-05.json).
 
 | Mech backend | Million EKF-turns/s | Scalar speedup |
 | --- | ---: | ---: |
