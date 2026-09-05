@@ -12,32 +12,24 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          fetch-depth: 0
-      - name: Export exact product source and failure logs
+      - name: Collect current Full CI failures
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p /tmp/r5-debug/logs
-          git archive --format=tar.gz e1bdb6363188751565a5c1b4de984e3e49d1a04b -o /tmp/r5-debug/source.tar.gz
-          echo e1bdb6363188751565a5c1b4de984e3e49d1a04b > /tmp/r5-debug/HEAD
+          mkdir -p /tmp/r5-logs
           python3 - <<'PY'
-          import json, subprocess, concurrent.futures, pathlib
-          root = pathlib.Path('/tmp/r5-debug')
-          jobs = []
-          for page in range(1, 4):
-              result = subprocess.run(['gh', 'api', f'repos/mech-lang/mech/actions/runs/33986289473/jobs?per_page=100&page={page}'], text=True, capture_output=True, check=True)
-              batch = json.loads(result.stdout)['jobs']
-              jobs.extend(batch)
-              if len(batch) < 100:
-                  break
-          (root/'jobs.json').write_text(json.dumps(jobs, indent=2))
+          import json, subprocess, concurrent.futures, pathlib, re
+          root = pathlib.Path('/tmp/r5-logs')
+          result = subprocess.run(['gh','api','repos/mech-lang/mech/actions/runs/33986289473/jobs?per_page=100'],text=True,capture_output=True,check=True)
+          jobs = json.loads(result.stdout)['jobs']
+          (root/'jobs.json').write_text(json.dumps(jobs,indent=2))
           failed = [j for j in jobs if j['conclusion'] in ('failure','cancelled','timed_out')]
           def capture(job):
-              result = subprocess.run(['gh','api',f"repos/mech-lang/mech/actions/jobs/{job['id']}/logs"],text=True,capture_output=True)
+              result = subprocess.run(['gh','api','--allow-escape-sequences',f"repos/mech-lang/mech/actions/jobs/{job['id']}/logs"],text=True,capture_output=True)
               text = result.stdout if result.returncode == 0 else result.stderr
-              (root/'logs'/f"{job['id']}.log").write_text(text)
-              return f"{job['id']} {job['name']} [{job['conclusion']}]\n" + '\n'.join(text.splitlines()[-90:])
+              text = re.sub(r'\x1b\[[0-9;]*m','',text)
+              (root/f"{job['id']}.log").write_text(text)
+              return f"{job['id']} {job['name']} [{job['conclusion']}]\n" + '\n'.join(text.splitlines()[-100:])
           with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
               reports = list(pool.map(capture, failed))
           (root/'failures.txt').write_text('\n\n'.join(reports))
@@ -45,6 +37,6 @@ jobs:
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-e1-source-and-ci-logs
-          path: /tmp/r5-debug
+          name: r5-full-ci-logs
+          path: /tmp/r5-logs
           retention-days: 1
