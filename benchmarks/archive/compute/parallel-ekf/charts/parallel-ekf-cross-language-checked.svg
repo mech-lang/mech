@@ -289,4 +289,6 @@
 <text x="1182" y="64" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
 <text x="1182" y="79" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
 </g>
+<text x="52" y="1518" class="muted" font-size="11">Timing is a lower bound for this test on this hardware, not a general language ranking.</text>
+<text x="52" y="1543" class="muted" font-size="11">Programs can improve; rows progress from naive to optimized and do not predict all workloads or hardware.</text>
 </svg>
