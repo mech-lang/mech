@@ -1,0 +1,25 @@
+name: R5 offline correction toolchain
+on:
+  push:
+    branches: [codex/r5-review-fixes-validation]
+    paths: [.github/workflows/r5-offline-toolchain.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: f8c96170ed65e999d1ef3ed383e4df69a660e8ee
+      - run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
+          cargo +nightly-2026-03-03 fetch --locked --target x86_64-unknown-linux-gnu
+          tar -C "$HOME" -czf /tmp/r5-toolchain.tar.gz .rustup/toolchains/nightly-2026-03-03-x86_64-unknown-linux-gnu .cargo/registry .cargo/bin
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-offline-toolchain
+          path: /tmp/r5-toolchain.tar.gz
+          compression-level: 0
+          retention-days: 1
