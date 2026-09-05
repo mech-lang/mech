@@ -6,116 +6,9 @@ on:
 permissions:
   contents: read
 jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: 251be1356f5049ce00ced8de519e4646d3159e24
-          persist-credentials: false
-      - name: Verify and preserve the exact candidate without changing refs
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 -u - <<'PY'
-          import base64, gzip, hashlib, json, pathlib, subprocess
-          root = pathlib.Path('/tmp/r5-fixed-candidate')
-          root.mkdir()
-          parent = '251be1356f5049ce00ced8de519e4646d3159e24'
-          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == parent
-          def api(path, payload=None):
-              command = ['gh', 'api', 'repos/mech-lang/mech/' + path]
-              if payload is not None:
-                  command += ['--method', 'POST', '--input', '-']
-              result = subprocess.run(command, input=None if payload is None else json.dumps(payload), text=True, capture_output=True, check=True)
-              return json.loads(result.stdout)
-          encoded = ''.join(api('git/blobs/67afcd79ce22b280b58b9791dae6fef22ca74686')['content'].split())
-          # Repair the three verified transcription insertions in transport.
-          for bad, good in [('UR1dhxJxJ/ixyp', 'UR1dhxJ/ixyp'), ('UrWRVVUFN', 'UrWRVUFN'), ('Vm+4aUU6H', 'Vm+4aU6H')]:
-              assert encoded.count(bad) == 1
-              encoded = encoded.replace(bad, good)
-          patch = gzip.decompress(base64.b64decode(encoded, validate=True))
-          assert hashlib.sha256(patch).hexdigest() == 'c8680d73b7283b1006aa66aeb306c104901cc10242e792a114eb9a596f98d67d'
-          patch_blob = api('git/blobs', {'content': patch.decode(), 'encoding': 'utf-8'})['sha']
-          (root/'candidate.patch').write_bytes(patch)
-          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
-          subprocess.run(['git', 'apply', '-'], input=patch, check=True)
-          subprocess.run(['git', 'diff', '--check'], check=True)
-          files = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
-          assert len(files) == 7
-          assert all(path.startswith(('src/engine/', 'scripts/')) for path in files)
-          subprocess.run(['git', 'add', '-u'], check=True)
-          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
-          assert tree == '43686788eaa0089b351106814fd17b2b57ba70d5'
-          elements = []
-          for name in files:
-              path = pathlib.Path(name)
-              sha = api('git/blobs', {'content': path.read_text(), 'encoding': 'utf-8'})['sha']
-              elements.append({'path': name, 'mode': '100644', 'type': 'blob', 'sha': sha})
-          receipt = {'parent': parent, 'tree': tree, 'patch_blob': patch_blob, 'tree_elements': elements, 'branch_refs_changed': False}
-          (root/'receipt.json').write_text(json.dumps(receipt, indent=2))
-          print(json.dumps(receipt, indent=2))
-          PY
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: r5-fixed-candidate
-          path: /tmp/r5-fixed-candidate
-          retention-days: 3
-  qualification:
-    needs: prepare
+  architecture-complete-history:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - case: nbody
-            command: python3 scripts/check-r1-artifact-closure.py nbody
-          - case: engine
-            command: cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib --test r5_memory_plan
-          - case: source
-            command: bash scripts/check-function-system-contracts.sh source
-          - case: owners
-            command: |
-              python3 -B -m unittest scripts/tests/test_native_linkage_profiles.py
-              python3 scripts/check-native-linkage-coverage.py owners
-          - case: r5
-            command: |
-              cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --test r5_memory_plan
-              cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_compiler --test r5_memory_plan
-              cargo +nightly-2026-03-03 test --locked -p mech-stdlib --no-default-features --features full_compiler --test r5_memory_contract
-              cargo +nightly-2026-03-03 test --locked -p mech-compute
-              cargo +nightly-2026-03-03 test --locked -p mech-gpu --test r5_memory_plan
-          - case: architecture
-            command: |
-              python3 scripts/check-value-system-contract.py
-              python3 scripts/check-no-retired-value-system.py
-              python3 scripts/check-program-artifact-contract.py
-              python3 scripts/check-operation-contract.py
-              python3 scripts/check-r1-compatibility-closure.py
-              python3 scripts/check-r2-type-memory-boundary.py
-              python3 scripts/check-r3-type-system.py
-              python3 scripts/check-r4-type-cutover.py
-              python3 scripts/check-r5-memory-planner.py
-              python3 scripts/check-resident-activation-contract.py
-              python3 scripts/check-compiler-planning-quarantine.py
-              python3 scripts/generate-d1-contract.py --check
-              python3 scripts/check-d1-contract.py
-              python3 scripts/generate-d2-contract.py --check
-              python3 scripts/check-d2-contract.py
-              python3 scripts/check-gate-d-contract.py --report benchmarks/runtime/gate-d/d3-resident-external.json --expected-phase D3-resident-external
-              python3 -B -m unittest tests/ci/test_ci_full_contract.py scripts/tests/test_check_obsolete_program_reachability.py scripts/tests/test_check_no_retired_value_system.py scripts/tests/test_check_r1_compatibility_closure.py scripts/tests/test_check_r2_type_memory_boundary.py scripts/tests/test_check_r3_type_system.py scripts/tests/test_check_r4_type_cutover.py scripts/tests/test_check_r5_memory_planner.py scripts/tests/test_check_program_artifact_contract.py scripts/tests/test_check_operation_contract.py scripts/tests/test_generate_resident_activation_contract.py scripts/tests/test_check_resident_activation_contract.py scripts/tests/test_check_compiler_planning_quarantine.py scripts/tests/test_generate_d1_contract.py scripts/tests/test_check_d1_contract.py scripts/tests/test_generate_d2_contract.py scripts/tests/test_check_d2_contract.py scripts/tests/test_run_gate_a_benchmarks.py scripts/tests/test_run_gate_b_benchmarks.py
-              cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --test type_memory_boundary
-              cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --test type_system_builtin --test type_system_solver --test type_system_conversion --test type_system_catalog
-              cargo +nightly-2026-03-03 test --locked -p mech-stdlib --no-default-features --features full_compiler --test type_system_source
-              cargo +nightly-2026-03-03 test --locked -p mech-runtime --no-default-features --features full_compiler,resident-routing-source --lib runtime::program::tests::compiled_conversion_executes_after_bytecode_round_trip -- --exact
-              cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --test r4_type_cutover
-              cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_compiler --test r4_type_cutover
-              cargo +nightly-2026-03-03 test --locked -p mech-stdlib --no-default-features --features full_compiler --test r4_type_cutover
     env:
       CARGO_BUILD_JOBS: "1"
       CARGO_INCREMENTAL: "0"
@@ -127,51 +20,72 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: 251be1356f5049ce00ced8de519e4646d3159e24
+          fetch-depth: 0
           persist-credentials: false
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: r5-fixed-candidate
-          path: /tmp/r5-fixed-candidate
-      - name: Verify and apply the identical seven-file candidate
+      - name: Apply the unchanged candidate and copy the authoritative architecture commands
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          python3 - <<'PY'
-          import hashlib, pathlib, subprocess
-          patch = pathlib.Path('/tmp/r5-fixed-candidate/candidate.patch').read_bytes()
+          python3 -u - <<'PY'
+          import base64, hashlib, json, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-architecture-exact')
+          root.mkdir()
+          raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/5bb36788dc7edbc58d63c44ee24297924dbebf50'], timeout=60)
+          patch = base64.b64decode(json.loads(raw)['content'])
           assert hashlib.sha256(patch).hexdigest() == 'c8680d73b7283b1006aa66aeb306c104901cc10242e792a114eb9a596f98d67d'
           subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
           subprocess.run(['git', 'apply', '-'], input=patch, check=True)
           subprocess.run(['git', 'add', '-u'], check=True)
-          assert subprocess.check_output(['git', 'write-tree'], text=True).strip() == '43686788eaa0089b351106814fd17b2b57ba70d5'
+          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
+          assert tree == '43686788eaa0089b351106814fd17b2b57ba70d5'
+          (root/'tree').write_text(tree + '\n')
+          (root/'candidate.patch').write_bytes(patch)
+          text = pathlib.Path('.github/workflows/ci-full.yml').read_text()
+          job = text.split('\n  architecture-contracts:\n', 1)[1].split('\n  r5-memory-planner:\n', 1)[0]
+          names = ['Validate permanent architecture contracts', 'Execute the complete R2 conformance boundary', 'Execute the complete R3 conformance boundary', 'Execute the complete R4 conformance boundary']
+          commands = []
+          selected = []
+          for step in job.split('\n      - name: ')[1:]:
+              name = step.splitlines()[0]
+              if name not in names:
+                  continue
+              kind, body = step.split('\n        run: ', 1)[1].split('\n', 1)
+              lines = body.rstrip('\n').splitlines()
+              assert kind in ('|', '>-')
+              assert all(not line.strip() or line.startswith('          ') for line in lines)
+              lines = [line[10:] for line in lines]
+              commands.append((' '.join(lines) if kind == '>-' else '\n'.join(lines)) + '\n')
+              selected.append(name)
+          assert selected == names
+          (root/'commands.sh').write_text('set -euo pipefail\n' + '\n'.join(commands))
+          print('Exact tree:', tree)
+          print('Authoritative steps:', selected)
           PY
-      - name: Install pinned compiler and required tools
+          bash -n /tmp/r5-architecture-exact/commands.sh
+      - name: Install pinned compiler and original architecture tools
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal
           if ! command -v rg >/dev/null 2>&1; then
             sudo apt-get update
             sudo apt-get install --yes ripgrep
           fi
-      - name: Execute the complete qualification commands
-        env:
-          COMMAND: ${{ matrix.command }}
+          cargo +nightly-2026-03-03 fetch --locked
+      - name: Run the complete unchanged architecture qualification
         run: |
           set -euo pipefail
-          mkdir -p /tmp/r5-fixed-result
-          cp /tmp/r5-fixed-candidate/receipt.json /tmp/r5-fixed-result/
-          git rev-parse HEAD > /tmp/r5-fixed-result/parent
-          git write-tree > /tmp/r5-fixed-result/tree
           set +e
-          /usr/bin/time -v -o /tmp/r5-fixed-result/time.txt bash -euo pipefail -c "$COMMAND" 2>&1 | tee /tmp/r5-fixed-result/command.log
+          /usr/bin/time -v -o /tmp/r5-architecture-exact/time.txt bash /tmp/r5-architecture-exact/commands.sh 2>&1 | tee /tmp/r5-architecture-exact/command.log
           status=${PIPESTATUS[0]}
           set -e
-          echo "$status" > /tmp/r5-fixed-result/exit-status
+          echo "$status" > /tmp/r5-architecture-exact/exit-status
           git diff HEAD --check
           test "$(git write-tree)" = 43686788eaa0089b351106814fd17b2b57ba70d5
           git diff --exit-code
           exit "$status"
-      - name: Preserve complete qualification evidence
+      - name: Preserve exact architecture qualification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-fixed-${{ matrix.case }}
-          path: /tmp/r5-fixed-result
+          name: r5-fixed-architecture-complete-history
+          path: /tmp/r5-architecture-exact
           retention-days: 3
