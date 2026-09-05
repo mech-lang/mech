@@ -2,38 +2,49 @@ name: R5 CI diagnostics
 on:
   push:
     branches: [codex/r5-ci-diagnostics]
-    paths: [.github/workflows/r5-ci-diagnostics.yml, .r5-ci.patch.b64, .r5-ci-extra.patch]
+    paths: [.github/workflows/r5-ci-diagnostics.yml]
 permissions:
-  contents: write
+  contents: read
+  actions: read
 jobs:
-  candidate:
+  snapshot:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-      - name: Apply only the reviewed product patches
+      - name: Export exact product source and failure logs
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          base64 -d .r5-ci.patch.b64 | gzip -d > /tmp/r5-fix.patch
-          cp .r5-ci-extra.patch /tmp/r5-extra.patch
-          git checkout --detach d96425614d69c61427419e01f4bba1343824ab50
-          git apply --check /tmp/r5-fix.patch /tmp/r5-extra.patch
-          git apply /tmp/r5-fix.patch /tmp/r5-extra.patch
-          git diff --check
-          test -z "$(git diff --name-only -- Cargo.lock '**/Cargo.toml' '.github/**')"
-      - name: Check pinned formatting and architectural constraints
-        run: |
-          rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
-          cargo +nightly-2026-03-03 fmt --all -- --check
-          python3 scripts/check-r5-memory-planner.py
-          python3 -B -m unittest scripts.tests.test_check_r5_memory_planner
-      - name: Publish candidate without moving the PR branch
-        run: |
-          git config user.name 'Corey Montella'
-          git config user.email 'cmontella@live.com'
-          git add docs/design/r5-memory-planner.md scripts/check-r5-memory-planner.py scripts/tests/test_check_r5_memory_planner.py src/engine/src/memory_planner/turn.rs src/engine/src/resident/budget.rs src/engine/src/resident/general/execution.rs src/engine/src/resident/general/live.rs src/engine/src/resident/general/mod.rs
-          git commit -m 'perf(r5): reuse invariant plans and bound traversal progress without replanning'
-          sha=$(git rev-parse HEAD)
-          git push origin "HEAD:refs/heads/codex/r5-ci-candidate-${sha:0:12}"
-          echo "CANDIDATE_SHA=$sha" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p /tmp/r5-debug/logs
+          git archive --format=tar.gz e1bdb6363188751565a5c1b4de984e3e49d1a04b -o /tmp/r5-debug/source.tar.gz
+          echo e1bdb6363188751565a5c1b4de984e3e49d1a04b > /tmp/r5-debug/HEAD
+          python3 - <<'PY'
+          import json, subprocess, concurrent.futures, pathlib
+          root = pathlib.Path('/tmp/r5-debug')
+          jobs = []
+          for page in range(1, 4):
+              result = subprocess.run(['gh', 'api', f'repos/mech-lang/mech/actions/runs/33986289473/jobs?per_page=100&page={page}'], text=True, capture_output=True, check=True)
+              batch = json.loads(result.stdout)['jobs']
+              jobs.extend(batch)
+              if len(batch) < 100:
+                  break
+          (root/'jobs.json').write_text(json.dumps(jobs, indent=2))
+          failed = [j for j in jobs if j['conclusion'] in ('failure','cancelled','timed_out')]
+          def capture(job):
+              result = subprocess.run(['gh','api',f"repos/mech-lang/mech/actions/jobs/{job['id']}/logs"],text=True,capture_output=True)
+              text = result.stdout if result.returncode == 0 else result.stderr
+              (root/'logs'/f"{job['id']}.log").write_text(text)
+              return f"{job['id']} {job['name']} [{job['conclusion']}]\n" + '\n'.join(text.splitlines()[-90:])
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              reports = list(pool.map(capture, failed))
+          (root/'failures.txt').write_text('\n\n'.join(reports))
+          print('\n'.join(f"{j['id']} {j['name']} {j['conclusion']}" for j in jobs))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-e1-source-and-ci-logs
+          path: /tmp/r5-debug
+          retention-days: 1
