@@ -5,10 +5,44 @@ on:
     paths: [.github/workflows/r5-ci-diagnostics.yml]
 permissions:
   contents: read
+  actions: read
+  checks: read
 jobs:
-  exact-candidate-full-ci:
-    name: Exact candidate 251be13
-    uses: mech-lang/mech/.github/workflows/ci-full.yml@251be1356f5049ce00ced8de519e4646d3159e24
-    with:
-      validation_ref: 251be1356f5049ce00ced8de519e4646d3159e24
-      release_channel: stable
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read rejected workflow annotations and qualification status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -u - <<'PY'
+          import json, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-inspect')
+          root.mkdir()
+          def api(path):
+              return json.loads(subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/' + path]))
+          checks = api('commits/961f54f7fdef146e108f91a4dbe25c6622faf3ef/check-runs?per_page=100')['check_runs']
+          for check in checks:
+              data = {'name': check['name'], 'output': check['output'], 'annotations': api(f"check-runs/{check['id']}/annotations?per_page=100")}
+              print(json.dumps(data, indent=2))
+              (root/f"check-{check['id']}.json").write_text(json.dumps(data, indent=2))
+          for run_id in [33992916915, 33996019888, 33997252528]:
+              jobs = []
+              for page in range(1, 11):
+                  batch = api(f'actions/runs/{run_id}/jobs?filter=latest&per_page=100&page={page}')['jobs']
+                  jobs.extend(batch)
+                  if len(batch) < 100:
+                      break
+              else:
+                  raise RuntimeError('Refusing partial job inventory')
+              (root/f'jobs-{run_id}.json').write_text(json.dumps(jobs, indent=2))
+              print('RUN', run_id)
+              for job in jobs:
+                  if job['conclusion'] != 'success':
+                      print(job['id'], job['name'], job['status'], job['conclusion'])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-inspect-reusable-call
+          path: /tmp/r5-inspect
+          retention-days: 2
