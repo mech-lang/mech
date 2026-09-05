@@ -1,0 +1,85 @@
+name: R5 exact candidate canaries
+on:
+  push:
+    branches: [codex/r5-ci-diagnostics]
+    paths: [.github/workflows/r5-exact-canaries.yml]
+permissions:
+  contents: read
+jobs:
+  canary:
+    name: Exact candidate (${{ matrix.case }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: static-contracts
+            os: ubuntu-latest
+            timeout: 30
+          - case: standard-linux
+            os: ubuntu-latest
+            timeout: 12
+          - case: standard-windows
+            os: windows-latest
+            timeout: 12
+          - case: browser-canary
+            os: ubuntu-latest
+            timeout: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 251be1356f5049ce00ced8de519e4646d3159e24
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Execute the unchanged canary definition from the candidate
+        shell: python
+        env:
+          CASE: ${{ matrix.case }}
+        run: |
+          import json, os, pathlib, subprocess, sys
+          subprocess.run([sys.executable, '-m', 'pip', 'install', 'PyYAML==6.0.2'], check=True)
+          import yaml
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '251be1356f5049ce00ced8de519e4646d3159e24', head
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'r5-canary'
+          root.mkdir(exist_ok=True)
+          job = yaml.safe_load(pathlib.Path('.github/workflows/ci.yml').read_text())['jobs'][os.environ['CASE']]
+          (root/'definition.json').write_text(json.dumps(job, indent=2))
+          environment = os.environ.copy()
+          environment.update({k: str(v) for k, v in job.get('env', {}).items()})
+          failed = 0
+          results = []
+          for step in job['steps']:
+              if 'uses' in step:
+                  assert step['uses'].startswith('actions/checkout@'), step
+                  continue
+              assert 'run' in step, step
+              assert step.get('if') in (None, 'always()'), step
+              if failed and step.get('if') != 'always()':
+                  results.append({'name': step['name'], 'status': 'skipped-after-failure'})
+                  continue
+              command = step['run']
+              assert '$' + '{{' not in command, command
+              env = {**environment, **{k: str(v) for k, v in step.get('env', {}).items()}}
+              shell = step.get('shell', 'pwsh' if os.name == 'nt' else 'bash')
+              if shell == 'pwsh':
+                  argv = ['pwsh', '-NoLogo', '-NoProfile', '-NonInteractive', '-Command', "$ErrorActionPreference = 'Stop';\n" + command]
+              else:
+                  assert shell == 'bash', shell
+                  argv = ['bash', '-euo', 'pipefail', '-c', command]
+              print('::group::' + step['name'], flush=True)
+              result = subprocess.run(argv, env=env)
+              print('::endgroup::', flush=True)
+              results.append({'name': step['name'], 'exit_status': result.returncode})
+              if result.returncode and not failed:
+                  failed = result.returncode
+          (root/'result.json').write_text(json.dumps({'head': head, 'results': results, 'exit_status': failed}, indent=2))
+          raise SystemExit(failed)
+      - name: Preserve exact commands and results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-exact-${{ matrix.case }}
+          path: ${{ runner.temp }}/r5-canary
+          retention-days: 2
