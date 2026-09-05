@@ -6,20 +6,18 @@ on:
 permissions:
   contents: read
 jobs:
-  resource-reproduction:
-    name: Resource reproduction (${{ matrix.case }})
+  bounded-math-check:
+    name: Bounded math check (${{ matrix.version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
-          - case: math-owner
-            command: python3 scripts/check-native-linkage-coverage.py owners mech-math
-          - case: nbody
-            command: python3 scripts/check-r1-artifact-closure.py nbody
-          - case: rational-surface
-            command: python3 scripts/check-native-linkage-coverage.py surface extended-math-shard-rational
+          - version: r4
+            ref: ee578153e6731d6fe549238155244873dc745892
+          - version: r5
+            ref: e1bdb6363188751565a5c1b4de984e3e49d1a04b
     env:
       CARGO_BUILD_JOBS: "1"
       CARGO_INCREMENTAL: "0"
@@ -29,41 +27,79 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: e1bdb6363188751565a5c1b4de984e3e49d1a04b
+          ref: ${{ matrix.ref }}
       - name: Install the pinned compiler
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Measure compilation while protecting the runner
         run: |
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-      - name: Run the unchanged failing profile and measure resources
-        env:
-          COMMAND: ${{ matrix.command }}
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/r5-resources
-          git rev-parse HEAD | tee /tmp/r5-resources/HEAD
-          rustc -Vv | tee /tmp/r5-resources/compiler.txt
-          (
-            while true; do
-              date -u +%FT%TZ
-              free -m
-              ps -eo pid,ppid,rss,pcpu,comm --sort=-rss | head -12 || true
-              sleep 15
-            done
-          ) > /tmp/r5-resources/memory.log &
-          monitor=$!
-          trap 'kill "$monitor" 2>/dev/null || true; wait "$monitor" 2>/dev/null || true' EXIT
-          set +e
-          /usr/bin/time -v -o /tmp/r5-resources/time.txt bash -c "$COMMAND" 2>&1 | tee /tmp/r5-resources/command.log
-          status=${PIPESTATUS[0]}
-          set -e
-          cat /tmp/r5-resources/time.txt
-          printf '%s\n' "$status" > /tmp/r5-resources/exit-status
-          df -h > /tmp/r5-resources/disk.txt
-          exit "$status"
-      - name: Preserve resource evidence
+          python3 -u - <<'PY'
+          import json, os, pathlib, signal, subprocess, threading, time
+          root = pathlib.Path('/tmp/r5-bounded')
+          root.mkdir(exist_ok=True)
+          command = ['cargo', '+nightly-2026-03-03', 'check', '--manifest-path', 'machines/math/Cargo.toml', '--no-default-features', '--features', 'full_runtime native-link']
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          print('HEAD', head, flush=True)
+          subprocess.run(['free', '-m'], check=True)
+          (root/'HEAD').write_text(head + '\n')
+          child = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+          def output():
+              with (root/'compile.log').open('w') as log:
+                  for line in child.stdout:
+                      log.write(line)
+                      log.flush()
+                      print(line, end='', flush=True)
+          thread = threading.Thread(target=output, daemon=True)
+          thread.start()
+          started = time.monotonic()
+          peak = 0
+          guard = None
+          rows = []
+          with (root/'memory.jsonl').open('w') as log:
+              while child.poll() is None:
+                  mem = {line.split(':')[0]: int(line.split()[1]) for line in pathlib.Path('/proc/meminfo').read_text().splitlines()}
+                  processes = []
+                  for path in pathlib.Path('/proc').glob('[0-9]*/stat'):
+                      try:
+                          text = path.read_text()
+                          fields = text[text.rfind(')') + 2:].split()
+                          if int(fields[2]) == child.pid:
+                              rss = int(fields[21]) * os.sysconf('SC_PAGE_SIZE') // 1024
+                              processes.append({'pid': int(path.parent.name), 'name': text[text.find('(') + 1:text.rfind(')')], 'rss_kib': rss})
+                      except (OSError, ValueError, IndexError):
+                          continue
+                  rss = sum(p['rss_kib'] for p in processes)
+                  peak = max(peak, rss)
+                  row = {'elapsed_s': round(time.monotonic() - started, 1), 'rss_kib': rss, 'available_kib': mem['MemAvailable'], 'total_kib': mem['MemTotal'], 'processes': processes}
+                  rows.append(row)
+                  log.write(json.dumps(row) + '\n')
+                  log.flush()
+                  print('RESOURCE', json.dumps(row), flush=True)
+                  if rss > 8 * 1024 * 1024 or mem['MemAvailable'] < 2 * 1024 * 1024:
+                      guard = 'resource guard: compiler process group exceeded 8 GiB or host available memory fell below 2 GiB'
+                  elif row['elapsed_s'] > 11 * 60:
+                      guard = 'diagnostic command exceeded 11 minutes'
+                  if guard:
+                      print('GUARD', guard, flush=True)
+                      os.killpg(child.pid, signal.SIGTERM)
+                      try:
+                          child.wait(timeout=10)
+                      except subprocess.TimeoutExpired:
+                          os.killpg(child.pid, signal.SIGKILL)
+                      break
+                  time.sleep(2)
+          status = child.wait()
+          thread.join(timeout=10)
+          report = {'head': head, 'command': command, 'returncode': status, 'guard': guard, 'peak_process_group_rss_kib': peak, 'elapsed_s': round(time.monotonic() - started, 1)}
+          (root/'result.json').write_text(json.dumps(report, indent=2))
+          print(json.dumps(report, indent=2), flush=True)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'w') as summary:
+              summary.write('```json\n' + json.dumps(report, indent=2) + '\n```\n')
+          raise SystemExit(1 if guard or status else 0)
+          PY
+      - name: Preserve bounded compiler evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-resource-${{ matrix.case }}
-          path: /tmp/r5-resources
+          name: r5-bounded-math-${{ matrix.version }}
+          path: /tmp/r5-bounded
           retention-days: 1
