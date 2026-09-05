@@ -5,110 +5,68 @@ on:
     paths: [.github/workflows/r5-ci-diagnostics.yml]
 permissions:
   contents: read
-  actions: write
-concurrency:
-  group: r5-e1-infrastructure-retry
-  cancel-in-progress: false
+  actions: read
+  checks: read
 jobs:
-  retry-interrupted-jobs:
+  snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 125
+    timeout-minutes: 8
     steps:
-      - name: Wait for the pinned run and retry verified interruptions once
+      - name: Collect final exact-head failures
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 -u - <<'PY'
-          import collections, json, os, pathlib, re, subprocess, time
-
+          import collections, concurrent.futures, json, os, pathlib, re, subprocess
           repo = 'mech-lang/mech'
           run_id = 33986289473
           expected_head = 'e1bdb6363188751565a5c1b4de984e3e49d1a04b'
-          known_interruptions = {
-              101364863284, 101364863555, 101364863631,
-              101364863776, 101364863791, 101364863886,
-          }
-          derived_gates = {'PR gate', 'Requested full validation / cargo'}
-          root = pathlib.Path('/tmp/r5-retry')
+          root = pathlib.Path('/tmp/r5-final')
           root.mkdir(exist_ok=True)
-
-          def api(path, method='GET', raw=False):
-              command = ['gh', 'api', '--allow-escape-sequences', '--method', method,
-                         f'repos/{repo}/{path}']
-              result = subprocess.run(command, text=True, capture_output=True, timeout=60)
+          def api(path, raw=False):
+              result = subprocess.run(['gh', 'api', '--allow-escape-sequences', f'repos/{repo}/{path}'], text=True, capture_output=True, timeout=60)
               if result.returncode:
-                  raise RuntimeError(result.stderr.strip())
-              return result.stdout if raw else (json.loads(result.stdout) if result.stdout.strip() else {})
-
-          def check_head():
-              current = api('git/ref/heads/codex/v0.4-r5-memory-planner')['object']['sha']
-              if current != expected_head:
-                  raise RuntimeError(f'PR branch changed to {current}; refusing to retry stale checks')
-
-          def jobs():
-              result = []
-              for page in range(1, 11):
-                  data = api(f'actions/runs/{run_id}/jobs?filter=latest&per_page=100&page={page}')
-                  batch = data['jobs']
-                  result.extend(batch)
-                  if len(batch) < 100:
-                      return result
-              raise RuntimeError('Unexpected job population; refusing a partial qualification snapshot')
-
-          deadline = time.monotonic() + 120 * 60
-          while True:
-              check_head()
-              run = api(f'actions/runs/{run_id}')
-              if run['head_sha'] != expected_head:
-                  raise RuntimeError('Run commit does not match the reviewed product head')
-              if run['run_attempt'] != 1:
-                  print('Another actor already requested a retry; no duplicate request submitted')
-                  raise SystemExit(0)
-              current_jobs = jobs()
-              (root / 'jobs.json').write_text(json.dumps(current_jobs, indent=2))
-              counts = collections.Counter(j['conclusion'] or j['status'] for j in current_jobs)
-              print(time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), dict(counts), flush=True)
-              if run['status'] == 'completed':
+                  return {'fetch_error': result.stderr.strip()}
+              return result.stdout if raw else json.loads(result.stdout)
+          run = api(f'actions/runs/{run_id}')
+          assert run['head_sha'] == expected_head, run
+          (root/'run.json').write_text(json.dumps(run, indent=2))
+          jobs = []
+          for page in range(1, 11):
+              batch = api(f'actions/runs/{run_id}/jobs?filter=latest&per_page=100&page={page}')['jobs']
+              jobs.extend(batch)
+              if len(batch) < 100:
                   break
-              if time.monotonic() >= deadline:
-                  raise RuntimeError('Original CI run is still active; no cancellation or retry attempted')
-              time.sleep(60)
-
-          failed = [j for j in current_jobs if j['conclusion'] in ('failure', 'cancelled', 'timed_out')]
-          if not failed:
-              print('No failed jobs remain; no retry necessary')
-              raise SystemExit(0)
-          for job in failed:
-              if job['name'] in derived_gates:
-                  continue
-              if job['id'] not in known_interruptions:
-                  raise RuntimeError(f"New failure requires inspection: {job['id']} {job['name']}")
-              log = re.sub(r'\x1b\[[0-9;]*m', '', api(f"actions/jobs/{job['id']}/logs", raw=True))
-              (root / f"{job['id']}.log").write_text(log)
-              if 'runner has received a shutdown signal' not in log or 'exit code 143' not in log:
-                  raise RuntimeError(f"Job {job['id']} no longer matches the inspected runner interruption")
-              if re.search(r'error\[E\d+\]|test .*FAILED|panicked at|test result: FAILED', log):
-                  raise RuntimeError(f"Job {job['id']} contains a code/test failure; refusing automatic retry")
-              print(f"Verified interruption: {job['id']} {job['name']}", flush=True)
-
-          check_head()
-          latest = api(f'actions/runs/{run_id}')
-          if latest['status'] != 'completed' or latest['run_attempt'] != 1:
-              raise RuntimeError('Run changed before retry; no duplicate request submitted')
-          api(f'actions/runs/{run_id}/rerun-failed-jobs', method='POST', raw=True)
-          receipt = {'run_id': run_id, 'head_sha': expected_head, 'requested_retry': True,
-                     'failed_jobs': [{'id': j['id'], 'name': j['name']} for j in failed]}
-          (root / 'retry-receipt.json').write_text(json.dumps(receipt, indent=2))
-          print(json.dumps(receipt, indent=2))
-          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
-              summary.write(f'Requested one failed-jobs retry for run {run_id} at `{expected_head}`.\n\n')
-              summary.write('Successful jobs are preserved. No product source, test scope, or limits changed.\n')
+          else:
+              raise RuntimeError('Refusing an incomplete jobs snapshot')
+          (root/'jobs.json').write_text(json.dumps(jobs, indent=2))
+          failed = [j for j in jobs if j['conclusion'] not in ('success', 'skipped')]
+          def capture(job):
+              ident = job['id']
+              checks = api(f'check-runs/{ident}')
+              annotations = api(f'check-runs/{ident}/annotations?per_page=100')
+              (root/f'{ident}-check.json').write_text(json.dumps(checks, indent=2))
+              (root/f'{ident}-annotations.json').write_text(json.dumps(annotations, indent=2))
+              log = api(f'actions/jobs/{ident}/logs', raw=True)
+              if not isinstance(log, str):
+                  log = json.dumps(log)
+              log = re.sub(r'\x1b\[[0-9;]*m', '', log)
+              (root/f'{ident}.log').write_text(log)
+              return f"{ident} {job['name']} [{job['conclusion']}]\n" + json.dumps(checks.get('output', checks), indent=2) + '\n' + json.dumps(annotations, indent=2) + '\n' + '\n'.join(log.splitlines()[-80:])
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              reports = list(pool.map(capture, failed))
+          text = '\n\n'.join(reports)
+          (root/'failures.txt').write_text(text)
+          print(dict(collections.Counter(j['conclusion'] or j['status'] for j in jobs)))
+          print(text)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'w') as summary:
+              summary.write(f'Final failure snapshot for run {run_id} at `{expected_head}`. No retry requested.\n\n')
+              summary.write(text)
           PY
-      - name: Preserve the retry decision and evidence
+      - name: Preserve failure evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-exact-head-retry-evidence
-          path: /tmp/r5-retry
+          name: r5-final-failure-evidence
+          path: /tmp/r5-final
           retention-days: 1
-          overwrite: true
