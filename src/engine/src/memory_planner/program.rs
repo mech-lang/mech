@@ -661,6 +661,16 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
             allocation_target.limits,
         ));
     }
+    budget_violations.extend(aggregate_budget_violations(
+        &allocations,
+        &calls,
+        &template.transfers,
+        default_target.limits,
+        &target_overrides
+            .iter()
+            .map(|(space, target)| (*space, target.limits))
+            .collect(),
+    )?);
     budget_violations.sort();
     budget_violations.dedup();
     Ok(ProgramMemoryPlan {
@@ -911,6 +921,13 @@ pub(crate) fn attach_resident_call_memory_template(
             plan.budget_limits,
         ));
     }
+    violations.extend(aggregate_budget_violations(
+        &plan.allocations,
+        &plan.calls,
+        &plan.transfers,
+        plan.budget_limits,
+        &BTreeMap::new(),
+    )?);
     violations.sort();
     violations.dedup();
     plan.budget_violations = violations.into_boxed_slice();
@@ -1328,11 +1345,14 @@ fn program_peak(
             }
             MemoryLifetime::Transaction { first, last } => {
                 transaction_intervals.push((first, last, allocation.capacity_bytes));
+                turn_intervals.push((first, last, allocation.capacity_bytes));
             }
             // Transfer descriptors are the single authority for transfer
             // demand. Their backing allocations are placed but not charged
             // a second time here.
-            MemoryLifetime::Transfer { .. } => {}
+            MemoryLifetime::Transfer { first, last } => {
+                turn_intervals.push((first, last, allocation.capacity_bytes));
+            }
         }
     }
     demand.turn_peak_bytes = closed_interval_peak(&turn_intervals)?;
@@ -1375,6 +1395,67 @@ fn program_peak(
         )?;
     }
     Ok(demand)
+}
+
+/// Memory caps constrain simultaneous allocations in a memory space, not each
+/// allocation independently. Comparison/compute/output limits are per call;
+/// retain that existing scope rather than inventing a program execution quota.
+fn aggregate_budget_violations(
+    allocations: &[AllocationPlan],
+    calls: &[CallMemoryPlan],
+    transfers: &[TransferPlan],
+    default_limits: mech_core::MemoryBudgetLimits,
+    overrides: &BTreeMap<MemorySpace, mech_core::MemoryBudgetLimits>,
+) -> Result<Vec<mech_core::MemoryBudgetViolation>, MemoryPlanError> {
+    let spaces = allocations
+        .iter()
+        .map(|a| a.space)
+        .chain(transfers.iter().flat_map(|t| [t.source, t.destination]))
+        .collect::<BTreeSet<_>>();
+    let mut violations = Vec::new();
+    for space in spaces {
+        let objects = allocations
+            .iter()
+            .filter(|a| a.space == space)
+            .cloned()
+            .collect::<Vec<_>>();
+        let scoped_transfers = transfers
+            .iter()
+            .filter(|t| t.source == space || t.destination == space)
+            .cloned()
+            .collect::<Vec<_>>();
+        let mut demand = program_peak(&objects, &[], &scoped_transfers)?;
+        // Per-call peaks may include a conservative pre-materialization bound.
+        // Such a bound is useful only for calls entirely within this space.
+        for call in calls.iter().filter(|call| {
+            call.input_storage
+                .iter()
+                .chain(call.output_storage.iter())
+                .all(|storage| storage.space == space)
+        }) {
+            demand.turn_peak_bytes = demand.turn_peak_bytes.max(call.demand.turn_peak_bytes);
+        }
+        if matches!(space, MemorySpace::Device { .. }) {
+            demand.storage_bindings = u32::try_from(
+                objects
+                    .iter()
+                    .filter(|a| a.role == AllocationRole::FixedStorage)
+                    .count(),
+            )
+            .map_err(|_| MemoryPlanError::ArithmeticOverflow {
+                field: "program binding count",
+            })?;
+        }
+        let limits = overrides.get(&space).copied().unwrap_or(default_limits);
+        let owner = objects
+            .first()
+            .map(|a| a.owner.clone())
+            .unwrap_or(MemoryObjectOwner::Transfer { ordinal: 0 });
+        violations.extend(mech_core::evaluate_memory_budget(
+            owner, demand, 0, 0, limits,
+        ));
+    }
+    Ok(violations)
 }
 
 fn closed_interval_peak(

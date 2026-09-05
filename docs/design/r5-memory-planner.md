@@ -273,3 +273,29 @@ and the R1 through R5 architecture contracts and exact-head CI are green.
 Given the same semantic program, selected implementations, target profile, and
 activation/turn facts, the plan must be independent of pointers, cell
 allocation order, catalog insertion order, and process identity.
+
+## Review correction: live turn evidence and complete scratch geometry
+
+Resident execution now measures borrowed input values and the separately retained
+published output immediately before entering a node's turn-planning scope.
+String retained capacity and logical encoded length are distinct. Canonical
+Snapshot measurements use the bounded shared traversal and retain current
+cardinality and node count. Resolved selector populations are recorded as region
+facts rather than substituted with `WholeValue`.
+
+A concrete kernel preflight refines the candidate before receiving its existing
+materialization permit. Published-output footprints remain separate: equality
+work covers the old value and the new candidate independently. Where only the
+candidate's retained footprint is available before construction, its complete
+retained size is the conservative encoded-size bound; it is not reported as a
+measurement of an already-created candidate.
+
+Implementation clone, solve, pivot/index, and canonical draft/finalization
+requirements now have allocation identities, layouts, lifetimes and placements.
+Temporary-byte demand is derived from these records, not only a scratch counter.
+Their turn-dependent sizes are re-derived and re-placed when live facts change.
+
+Aggregate memory admission composes overlapping temporary and transaction
+lifetimes per memory space, and checks transfer/binding totals while preserving
+existing per-call compute, comparison and output limit scopes. It does not add
+new execution quotas or implement managed allocation/reuse.

@@ -175,12 +175,27 @@ pub fn plan_call_memory(
         &mut arena_offsets,
         &mut next_object,
     )?;
-    let demand = derive_call_demand(
+    let scratch_bytes = derive_scratch_allocations(
+        &request,
+        &requirements,
+        &inputs,
+        &outputs,
+        &mut allocations,
+        &mut arena_offsets,
+        &mut next_object,
+    )?;
+    let mut demand = derive_call_demand(
         &request,
         &requirements,
         &inputs,
         &outputs,
         transaction_bytes,
+    )?;
+    // Scratch is physical plan data, not a second demand-only estimate.
+    demand.turn_peak_bytes = checked_add(
+        demand.turn_peak_bytes,
+        scratch_bytes,
+        "call scratch allocations",
     )?;
     let output_bytes = outputs.iter().try_fold(0_u64, |total, output| {
         total
@@ -1125,6 +1140,156 @@ fn derive_transactions(
     Ok((transactions, bytes))
 }
 
+/// Describe every implementation temporary before deriving its byte demand.
+/// IDs and ordinals are call-local until the program planner remaps the call.
+#[cfg(feature = "functions")]
+fn derive_scratch_allocations(
+    request: &CallMemoryPlanningRequest<'_>,
+    requirements: &crate::OperationMemoryRequirements,
+    inputs: &[PortMemoryPlan],
+    outputs: &[PortMemoryPlan],
+    allocations: &mut Vec<AllocationPlan>,
+    offsets: &mut BTreeMap<MemoryArenaId, u64>,
+    next_object: &mut u32,
+) -> Result<u64, MemoryPlanError> {
+    let mut ordinal = 0_usize;
+    let mut bytes = 0_u64;
+    let mut scratch = |role, size, alignment, space| -> Result<(), MemoryPlanError> {
+        let id = MemoryObjectId::new(*next_object);
+        *next_object = checked_next_object(*next_object)?;
+        allocations.push(AllocationPlan {
+            id,
+            owner: MemoryObjectOwner::NodeScratch {
+                node: crate::NodeId::new(0),
+                ordinal: checked_u16(ordinal, "call scratch ordinal")?,
+            },
+            role,
+            space,
+            current_bytes: size,
+            capacity_bytes: size,
+            alignment,
+            lifetime: MemoryLifetime::Turn {
+                first: super::MemoryPlanPoint::new(0),
+                last: super::MemoryPlanPoint::new(0),
+            },
+            placement: allocate_offset(offsets, arena_for_space(space), size, alignment)?,
+            reuse_group: None,
+        });
+        ordinal += 1;
+        bytes = checked_add(bytes, size, "implementation scratch bytes")?;
+        Ok(())
+    };
+    for output in &requirements.outputs {
+        if let Some(OutputConstruction::ReadModifyWrite { base_input, .. }) = output.construction {
+            let input = inputs
+                .get(base_input as usize)
+                .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
+            scratch(
+                AllocationRole::Scratch,
+                value_current_bytes(&input.value)?,
+                input.value.slot.alignment,
+                request.input_storage[base_input as usize].space,
+            )?;
+        }
+    }
+    match request.implementation_memory {
+        ImplementationMemoryClass::NoAdditionalScratch => {}
+        ImplementationMemoryClass::CloneInput { input } => {
+            let port = inputs
+                .get(input as usize)
+                .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
+            scratch(
+                AllocationRole::Scratch,
+                value_current_bytes(&port.value)?,
+                port.value.slot.alignment,
+                request.input_storage[input as usize].space,
+            )?;
+        }
+        ImplementationMemoryClass::MatrixSolve => {
+            let [coefficients, _rhs] = inputs else {
+                return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
+            };
+            let [rows, columns] = coefficients.value.axes.as_ref() else {
+                return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
+            };
+            if rows.current != columns.current {
+                return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
+            }
+            let [solution] = outputs else {
+                return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
+            };
+            let space = request.input_storage[0].space;
+            scratch(
+                AllocationRole::Scratch,
+                value_current_bytes(&coefficients.value)?,
+                coefficients.value.slot.alignment,
+                space,
+            )?;
+            scratch(
+                AllocationRole::Scratch,
+                value_required_bytes(&solution.value)?,
+                solution.value.slot.alignment,
+                request.output_storage[0].space,
+            )?;
+            let index = target_slot_layout(
+                request.target,
+                PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Index),
+            )?;
+            let pivot_bytes = rows
+                .current
+                .checked_mul(align_up(index.bytes, index.alignment)?)
+                .ok_or(MemoryPlanError::ArithmeticOverflow {
+                    field: "matrix solve pivot bytes",
+                })?;
+            scratch(
+                AllocationRole::OrderedIndex,
+                pivot_bytes,
+                index.alignment,
+                space,
+            )?;
+        }
+        ImplementationMemoryClass::CanonicalFinalize
+        | ImplementationMemoryClass::CanonicalSortUnique => {
+            for (ordinal, output) in outputs.iter().enumerate() {
+                let footprint =
+                    known_footprint(request.output_witnesses[ordinal])?.unwrap_or_default();
+                // A serialized footprint is not a retained footprint. Both the
+                // draft and finalized candidate must fit the larger bound.
+                let size = value_required_bytes(&output.value)?.max(footprint.encoded_bytes);
+                let space = request.output_storage[ordinal].space;
+                scratch(
+                    AllocationRole::Scratch,
+                    size,
+                    output.value.slot.alignment,
+                    space,
+                )?;
+                scratch(
+                    AllocationRole::Scratch,
+                    size,
+                    output.value.slot.alignment,
+                    space,
+                )?;
+                if request.implementation_memory == ImplementationMemoryClass::CanonicalSortUnique {
+                    let index = target_slot_layout(
+                        request.target,
+                        PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Index),
+                    )?;
+                    let size = output
+                        .value
+                        .capacity_elements
+                        .required
+                        .checked_mul(align_up(index.bytes, index.alignment)?)
+                        .ok_or(MemoryPlanError::ArithmeticOverflow {
+                            field: "canonical index bytes",
+                        })?;
+                    scratch(AllocationRole::OrderedIndex, size, index.alignment, space)?;
+                }
+            }
+        }
+    }
+    Ok(bytes)
+}
+
 #[cfg(feature = "functions")]
 fn derive_call_demand(
     request: &CallMemoryPlanningRequest<'_>,
@@ -1184,8 +1349,6 @@ fn derive_call_demand(
                 .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
             let cloned = value_current_bytes(&input.value)?;
             demand.cloned_bytes = checked_add(demand.cloned_bytes, cloned, "rmw clone bytes")?;
-            demand.turn_peak_bytes =
-                checked_add(demand.turn_peak_bytes, cloned, "rmw temporary bytes")?;
         }
         match requirement.change_detection {
             None
@@ -1225,8 +1388,6 @@ fn apply_implementation_demand(
                 .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
             let bytes = value_current_bytes(&input.value)?;
             demand.cloned_bytes = checked_add(demand.cloned_bytes, bytes, "input clone bytes")?;
-            demand.turn_peak_bytes =
-                checked_add(demand.turn_peak_bytes, bytes, "input clone temporary bytes")?;
         }
         ImplementationMemoryClass::MatrixSolve => {
             let [coefficients, rhs] = inputs else {
@@ -1240,34 +1401,10 @@ fn apply_implementation_demand(
             }
             let rhs_columns = rhs.value.axes.get(1).map_or(1, |axis| axis.current);
             let coefficient_bytes = value_current_bytes(&coefficients.value)?;
-            let solution_bytes = outputs
-                .first()
-                .map(|output| value_required_bytes(&output.value))
-                .transpose()?
-                .unwrap_or(0);
-            let pivot_stride = target_slot_layout(
-                request.target,
-                PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Index),
-            )?
-            .bytes;
-            let pivot_bytes = rows.current.checked_mul(pivot_stride).ok_or(
-                MemoryPlanError::ArithmeticOverflow {
-                    field: "matrix solve pivot bytes",
-                },
-            )?;
             demand.cloned_bytes = checked_add(
                 demand.cloned_bytes,
                 coefficient_bytes,
                 "matrix solve coefficient clone",
-            )?;
-            demand.turn_peak_bytes = checked_add(
-                demand.turn_peak_bytes,
-                checked_add(
-                    coefficient_bytes,
-                    checked_add(solution_bytes, pivot_bytes, "matrix solve stage and pivot")?,
-                    "matrix solve scratch",
-                )?,
-                "matrix solve turn peak",
             )?;
             let square = rows.current.checked_mul(rows.current).ok_or(
                 MemoryPlanError::ArithmeticOverflow {
@@ -1309,11 +1446,6 @@ fn apply_implementation_demand(
                 contribution.retained_nodes,
                 "retained nodes",
             )?;
-            demand.turn_peak_bytes = checked_add(
-                demand.turn_peak_bytes,
-                contribution.temporary_bytes,
-                "canonical temporary bytes",
-            )?;
         }
     }
     Ok(())
@@ -1322,7 +1454,6 @@ fn apply_implementation_demand(
 #[cfg(feature = "functions")]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 struct FootprintDemandContribution {
-    temporary_bytes: u64,
     retained_nodes: u64,
     comparison: u64,
     canonicalization: u64,
@@ -1332,24 +1463,34 @@ struct FootprintDemandContribution {
 fn semantic_hash_comparison_work(
     footprint: CurrentMemoryFootprint,
 ) -> Result<u64, MemoryPlanError> {
-    let one_side = checked_add(
-        checked_add(
-            footprint.schema_bytes,
-            footprint.encoded_bytes,
-            "semantic hash bytes",
-        )?,
-        footprint.shape_parameter_count.checked_mul(8).ok_or(
-            MemoryPlanError::ArithmeticOverflow {
-                field: "semantic hash shape bytes",
-            },
-        )?,
-        "semantic hash shape work",
-    )?;
-    one_side
-        .checked_mul(2)
+    publication_comparison_work(footprint, footprint)
+}
+
+/// Work for distinct retained and candidate values; neither side is inferred
+/// from the other when a payload grows or shrinks between turns.
+#[cfg(feature = "functions")]
+pub fn publication_comparison_work(
+    current: CurrentMemoryFootprint,
+    candidate: CurrentMemoryFootprint,
+) -> Result<u64, MemoryPlanError> {
+    let shape = current
+        .shape_parameter_count
+        .max(candidate.shape_parameter_count)
+        .checked_mul(8)
         .ok_or(MemoryPlanError::ArithmeticOverflow {
-            field: "semantic hash current and candidate",
-        })
+            field: "publication shape work",
+        })?;
+    [
+        current.schema_bytes,
+        candidate.schema_bytes,
+        current.encoded_bytes,
+        candidate.encoded_bytes,
+        shape,
+    ]
+    .into_iter()
+    .try_fold(0_u64, |sum, amount| {
+        checked_add(sum, amount, "publication comparison work")
+    })
 }
 
 #[cfg(feature = "functions")]
@@ -1370,11 +1511,6 @@ fn canonical_footprint_demand(
         .checked_mul(2)
         .ok_or(MemoryPlanError::ArithmeticOverflow {
             field: "canonical draft and finalization work",
-        })?;
-    let temporary_bytes = encoded
-        .checked_mul(2)
-        .ok_or(MemoryPlanError::ArithmeticOverflow {
-            field: "canonical draft and candidate bytes",
         })?;
     let comparison = if implementation == ImplementationMemoryClass::CanonicalSortUnique {
         let entries = outputs
@@ -1401,7 +1537,6 @@ fn canonical_footprint_demand(
         0
     };
     Ok(FootprintDemandContribution {
-        temporary_bytes,
         retained_nodes: nodes,
         comparison,
         canonicalization,
@@ -1454,6 +1589,17 @@ pub fn resolve_deferred_call_memory(
         };
         *witnesses
             .get_mut(usize::from(deferred.port))
+            .ok_or(MemoryPlanError::DescriptorArityMismatch)? =
+            MemoryFootprintWitness::Known(footprint);
+    }
+
+    for (&(direction, port), &footprint) in resolved {
+        let witnesses = match direction {
+            PortDirection::Input => &mut input_witnesses,
+            PortDirection::Output => &mut output_witnesses,
+        };
+        *witnesses
+            .get_mut(usize::from(port))
             .ok_or(MemoryPlanError::DescriptorArityMismatch)? =
             MemoryFootprintWitness::Known(footprint);
     }

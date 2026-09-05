@@ -374,19 +374,25 @@ fn call_transaction_identity_selects_published_and_mutated_state_stages() {
     );
     let turn = plan_turn_memory(&program, node, &TurnMemoryFacts::default()).unwrap();
     assert_eq!(turn.transactions.len(), 1);
-    assert_eq!(turn.allocations.len(), 1);
-    assert!(matches!(
-        turn.allocations[0].lifetime,
-        MemoryLifetime::Transaction { .. }
-    ));
+    // The live turn now retains its port storage as well as the stage.
+    let stages = turn
+        .allocations
+        .iter()
+        .filter(|a| a.role == AllocationRole::TransactionStage)
+        .collect::<Vec<_>>();
+    assert_eq!(stages.len(), 1);
+    let stage = stages[0];
+    assert!(matches!(stage.lifetime, MemoryLifetime::Transaction { .. }));
     assert_eq!(
-        turn.allocations[0].capacity_bytes,
-        target.primitives.string_header.bytes + 9,
+        stage.capacity_bytes,
+        target.primitives.string_header.bytes + 9
     );
-    assert_eq!(
-        turn.arenas[0].capacity_bytes,
-        turn.allocations[0].capacity_bytes
-    );
+    let arena = turn
+        .arenas
+        .iter()
+        .find(|a| a.id == stage.placement.arena)
+        .unwrap();
+    assert!(stage.placement.offset + stage.capacity_bytes <= arena.capacity_bytes);
 
     // State cells can be written by several RMW nodes, so the value
     // declaration does not identify every turn producer. The remapped call
@@ -655,4 +661,98 @@ fn current_footprints_are_explicit_values_not_allocation_identity() {
     });
     let right = left;
     assert_eq!(left, right);
+}
+
+fn empty_template() -> ProgramMemoryPlanTemplate {
+    ProgramMemoryPlanTemplate {
+        values: Box::new([]),
+        call_nodes: Box::new([]),
+        call_sites: Box::new([]),
+        calls: Box::new([]),
+        allocations: Box::new([]),
+        transfers: Box::new([]),
+    }
+}
+
+#[test]
+fn program_budget_checks_overlapping_allocations_not_each_allocation_alone() {
+    let mut target = TargetMemoryProfile::current_resident_cpu().unwrap();
+    target.limits.max_temporary_bytes = Some(16 * 1024 * 1024);
+    let mut template = empty_template();
+    template.allocations = vec![
+        allocation(0, 9 * 1024 * 1024, 9 * 1024 * 1024),
+        allocation(1, 9 * 1024 * 1024, 9 * 1024 * 1024),
+    ]
+    .into();
+    let plan =
+        instantiate_program_memory_plan(&template, &target, &ActivationMemoryFacts::default())
+            .unwrap();
+    assert_eq!(plan.peak.turn_peak_bytes, 18 * 1024 * 1024);
+    assert!(plan.budget_violations.iter().any(|v| v.dimension
+        == mech_core::MemoryBudgetDimension::TemporaryBytes
+        && v.required == 18 * 1024 * 1024));
+    template.allocations[1].lifetime = MemoryLifetime::Turn {
+        first: MemoryPlanPoint::new(2),
+        last: MemoryPlanPoint::new(3),
+    };
+    let plan =
+        instantiate_program_memory_plan(&template, &target, &ActivationMemoryFacts::default())
+            .unwrap();
+    assert_eq!(plan.peak.turn_peak_bytes, 9 * 1024 * 1024);
+    assert!(plan.budget_violations.is_empty());
+}
+
+#[test]
+fn transaction_staging_and_scratch_share_the_temporary_peak() {
+    let mut target = TargetMemoryProfile::current_resident_cpu().unwrap();
+    target.limits.max_temporary_bytes = Some(16 * 1024 * 1024);
+    let mut template = empty_template();
+    let mut stage = allocation(1, 9 * 1024 * 1024, 9 * 1024 * 1024);
+    stage.role = AllocationRole::TransactionStage;
+    stage.lifetime = MemoryLifetime::Transaction {
+        first: MemoryPlanPoint::new(0),
+        last: MemoryPlanPoint::new(1),
+    };
+    template.allocations = vec![allocation(0, 9 * 1024 * 1024, 9 * 1024 * 1024), stage].into();
+    let plan =
+        instantiate_program_memory_plan(&template, &target, &ActivationMemoryFacts::default())
+            .unwrap();
+    assert_eq!(plan.peak.transaction_peak_bytes, 9 * 1024 * 1024);
+    assert_eq!(plan.peak.turn_peak_bytes, 18 * 1024 * 1024);
+    assert!(
+        plan.budget_violations
+            .iter()
+            .any(|v| v.dimension == mech_core::MemoryBudgetDimension::TemporaryBytes)
+    );
+}
+
+#[test]
+fn aggregate_transfer_limit_counts_every_boundary_in_its_memory_space() {
+    let mut target = TargetMemoryProfile::current_direct_host().unwrap();
+    target.limits.max_transfer_bytes = Some(100);
+    let mut template = empty_template();
+    template.transfers = (0..2)
+        .map(|i| TransferPlan {
+            slot: CellSlotId::new(i),
+            direction: TransferDirection::Upload,
+            source: MemorySpace::Host,
+            destination: MemorySpace::Device { region: 0 },
+            current_bytes: 60,
+            capacity_bytes: 60,
+            lifetime: MemoryLifetime::Transfer {
+                first: MemoryPlanPoint::new(0),
+                last: MemoryPlanPoint::new(1),
+            },
+            consumer: Some(NodeId::new(i)),
+            interface_name: None,
+        })
+        .collect::<Vec<_>>()
+        .into();
+    let plan =
+        instantiate_program_memory_plan(&template, &target, &ActivationMemoryFacts::default())
+            .unwrap();
+    assert_eq!(plan.peak.transfer_bytes, 120);
+    assert!(plan.budget_violations.iter().any(|v| v.dimension
+        == mech_core::MemoryBudgetDimension::TransferBytes
+        && v.required == 120));
 }

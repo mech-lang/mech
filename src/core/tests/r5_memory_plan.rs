@@ -938,6 +938,24 @@ fn matrix_solve_and_indexed_mutation_have_explicit_scratch_and_regions() {
     );
     assert_ne!(plan.demand.work.compute, 0);
     assert_ne!(plan.demand.cloned_bytes, 0);
+    let scratch = plan
+        .allocations
+        .iter()
+        .filter(|a| matches!(a.owner, mech_core::MemoryObjectOwner::NodeScratch { .. }))
+        .collect::<Vec<_>>();
+    assert_eq!(scratch.len(), 3);
+    assert_eq!(
+        scratch.iter().map(|a| a.capacity_bytes).collect::<Vec<_>>(),
+        vec![32, 16, 16]
+    );
+    assert_eq!(scratch[2].role, mech_core::AllocationRole::OrderedIndex);
+    for pair in scratch.windows(2) {
+        assert!(pair[0].placement.offset + pair[0].capacity_bytes <= pair[1].placement.offset);
+    }
+    assert_eq!(
+        plan.demand.turn_peak_bytes,
+        plan.demand.transaction_peak_bytes + 64
+    );
 
     let indexed_operation = ResolvedOperationDescriptor::from_name(
         "test/r5-indexed-mutation",
@@ -994,4 +1012,64 @@ fn matrix_solve_and_indexed_mutation_have_explicit_scratch_and_regions() {
         }
     ));
     assert_ne!(indexed.demand.cloned_bytes, 0);
+}
+
+#[test]
+fn implementation_scratch_records_are_the_source_of_temporary_byte_demand() {
+    for (class, count) in [
+        (ImplementationMemoryClass::CloneInput { input: 0 }, 1),
+        (ImplementationMemoryClass::CanonicalFinalize, 2),
+        (ImplementationMemoryClass::CanonicalSortUnique, 3),
+    ] {
+        let plan = scalar_call_plan(
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::AlwaysChanged,
+            class,
+            MemoryLifetime::Activation,
+        )
+        .unwrap();
+        let scratch = plan
+            .allocations
+            .iter()
+            .filter(|a| matches!(a.owner, mech_core::MemoryObjectOwner::NodeScratch { .. }))
+            .collect::<Vec<_>>();
+        assert_eq!(scratch.len(), count);
+        let bytes: u64 = scratch.iter().map(|a| a.capacity_bytes).sum();
+        assert_eq!(
+            plan.demand.turn_peak_bytes,
+            plan.demand.transaction_peak_bytes + bytes
+        );
+        assert!(
+            scratch
+                .iter()
+                .all(|a| matches!(a.lifetime, MemoryLifetime::Turn { .. }))
+        );
+    }
+}
+
+#[test]
+fn publication_comparison_keeps_old_and_candidate_sizes_distinct() {
+    let old = CurrentMemoryFootprint {
+        encoded_bytes: 1000,
+        schema_bytes: 10,
+        shape_parameter_count: 2,
+        ..CurrentMemoryFootprint::default()
+    };
+    let next = CurrentMemoryFootprint {
+        encoded_bytes: 5,
+        schema_bytes: 10,
+        shape_parameter_count: 2,
+        ..CurrentMemoryFootprint::default()
+    };
+    assert_eq!(
+        mech_core::publication_comparison_work(old, next).unwrap(),
+        1041
+    );
+    assert_eq!(
+        mech_core::publication_comparison_work(next, old).unwrap(),
+        1041
+    );
 }

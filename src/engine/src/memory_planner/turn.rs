@@ -1,7 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-#[cfg(feature = "resident-artifact")]
-use mech_core::PortMemoryPlan;
 use mech_core::{
     AllocationPlan, ArenaPlan, CurrentMemoryFootprint, MemoryBudgetLimits, MemoryBudgetViolation,
     MemoryObjectOwner, MemoryPlanError, NodeId, PortDirection, RegionAccessPlan, ResourceDemand,
@@ -14,6 +12,8 @@ use super::{ProgramMemoryPlan, checked_demand_add, place_allocations};
 pub struct TurnMemoryFacts {
     pub resolved_regions: BTreeMap<(NodeId, u16), RegionAccessPlan>,
     pub resolved_footprints: BTreeMap<(NodeId, PortDirection, u16), CurrentMemoryFootprint>,
+    /// The value retained until publication, distinct from the candidate.
+    pub published_footprints: BTreeMap<(NodeId, u16), CurrentMemoryFootprint>,
     pub additional_demand: ResourceDemand,
     /// A complete concrete executor estimate for this turn. Each component
     /// replaces a weaker declaration by maximum rather than being added to
@@ -24,6 +24,10 @@ pub struct TurnMemoryFacts {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TurnMemoryPlan {
     pub node: NodeId,
+    /// Concrete facts are retained so admission can refine the candidate
+    /// without falling back to activation-time input footprints.
+    pub facts: TurnMemoryFacts,
+    pub call: Option<mech_core::CallMemoryPlan>,
     pub allocations: Box<[AllocationPlan]>,
     pub arenas: Box<[ArenaPlan]>,
     pub transactions: Box<[TransactionRequirement]>,
@@ -67,11 +71,26 @@ pub fn plan_turn_memory(
         .filter(|allocation| transaction_objects.contains(&allocation.id))
         .map(|allocation| allocation.owner.clone())
         .collect::<BTreeSet<_>>();
+    let port_objects = plan
+        .call_for_node(node)
+        .into_iter()
+        .flat_map(|call| call.inputs.iter().chain(call.outputs.iter()))
+        .map(|port| port.object)
+        .collect::<BTreeSet<_>>();
+    let port_owners = plan
+        .allocations
+        .iter()
+        .filter(|a| port_objects.contains(&a.id))
+        .map(|a| a.owner.clone())
+        .collect::<BTreeSet<_>>();
     let mut allocations = plan
         .allocations
         .iter()
         .filter(|allocation| {
             owner_node(&allocation.owner) == Some(node)
+                || port_objects.contains(&allocation.id)
+                || (allocation.role == mech_core::AllocationRole::VariablePayload
+                    && port_owners.contains(&allocation.owner))
                 || transaction_objects.contains(&allocation.id)
                 || (allocation.role == mech_core::AllocationRole::TransactionStage
                     && transaction_owners.contains(&allocation.owner))
@@ -81,6 +100,7 @@ pub fn plan_turn_memory(
     let mut transactions = Vec::new();
     let mut demand = facts.additional_demand;
     let mut output_bytes = 0_u64;
+    let mut turn_call = None;
     if let Some(call) = plan.call_for_node(node) {
         let resolved = facts
             .resolved_footprints
@@ -89,7 +109,15 @@ pub fn plan_turn_memory(
                 (fact_node == node).then_some(((direction, port), footprint))
             })
             .collect::<BTreeMap<_, _>>();
-        let resolved_call = mech_core::resolve_deferred_call_memory(call, &resolved)?;
+        let mut template = call.clone();
+        for (ordinal, region) in template.output_regions.iter_mut().enumerate() {
+            if let Some(actual) = facts.resolved_regions.get(&(node, ordinal as u16)) {
+                *region = actual.clone();
+            }
+        }
+        let mut resolved_call = derive_turn_call(&template, &resolved)?;
+        adjust_publication_comparison(&mut resolved_call, node, facts)?;
+        refresh_turn_allocations(&mut allocations, call, &resolved_call, node, facts)?;
         demand = checked_demand_add(demand, resolved_call.demand)?;
         transactions.extend(call_transactions.iter().copied());
         for deferred in &call.deferred_witnesses {
@@ -183,6 +211,7 @@ pub fn plan_turn_memory(
                     field: "complete turn output bytes",
                 })?;
         }
+        turn_call = Some(scope_turn_call(resolved_call, call, &allocations));
     }
     transactions.extend(value_transactions);
     transactions.sort_by_key(transaction_key);
@@ -197,6 +226,7 @@ pub fn plan_turn_memory(
         )?;
     }
     let arenas = place_allocations(&mut allocations)?;
+    demand.turn_peak_bytes = demand.turn_peak_bytes.max(turn_storage_peak(&allocations)?);
     let mut budget_violations = plan
         .budget_violations
         .iter()
@@ -220,6 +250,8 @@ pub fn plan_turn_memory(
     budget_violations.dedup();
     Ok(TurnMemoryPlan {
         node,
+        facts: facts.clone(),
+        call: turn_call,
         allocations: allocations.into_boxed_slice(),
         arenas,
         transactions: transactions.into_boxed_slice(),
@@ -239,7 +271,67 @@ pub fn plan_turn_memory(
 pub(crate) fn apply_observed_turn_demand(
     mut plan: TurnMemoryPlan,
     observed: ResourceDemand,
+    final_output: Option<CurrentMemoryFootprint>,
 ) -> Result<TurnMemoryPlan, MemoryPlanError> {
+    if let Some(call) = plan.call.clone() {
+        if call.outputs.len() == 1
+            && (observed.persistent_bytes != 0
+                || observed.output_elements != 0
+                || final_output.is_some())
+        {
+            let old = plan
+                .facts
+                .resolved_footprints
+                .get(&(plan.node, PortDirection::Output, 0))
+                .copied()
+                .unwrap_or_default();
+            let fixed = call.outputs[0].value.current_address_span_bytes;
+            let retained = final_output
+                .map(|f| {
+                    f.fixed_bytes
+                        .checked_add(f.payload_bytes)
+                        .ok_or(MemoryPlanError::TargetAddressOverflow)
+                })
+                .transpose()?
+                .unwrap_or(observed.persistent_bytes);
+            let candidate = CurrentMemoryFootprint {
+                logical_elements: final_output
+                    .map_or(observed.output_elements, |f| f.logical_elements),
+                fixed_bytes: fixed,
+                payload_bytes: retained.saturating_sub(fixed),
+                // Resident preflight reports complete retained bytes. This is
+                // a conservative encoded-size bound until a finalized value
+                // exists; unlike the published side, it is not a live value.
+                encoded_bytes: retained,
+                retained_nodes: final_output.map_or(observed.retained_nodes, |f| f.retained_nodes),
+                schema_bytes: old.schema_bytes,
+                shape_parameter_count: old.shape_parameter_count,
+            };
+            plan.facts
+                .resolved_footprints
+                .insert((plan.node, PortDirection::Output, 0), candidate);
+            let resolved = plan
+                .facts
+                .resolved_footprints
+                .iter()
+                .filter_map(|(&(node, direction, port), &f)| {
+                    (node == plan.node).then_some(((direction, port), f))
+                })
+                .collect();
+            let mut complete = derive_turn_call(&call, &resolved)?;
+            adjust_publication_comparison(&mut complete, plan.node, &plan.facts)?;
+            refresh_turn_allocations(
+                &mut plan.allocations,
+                &call,
+                &complete,
+                plan.node,
+                &plan.facts,
+            )?;
+            plan.demand = checked_demand_add(complete.demand, plan.facts.additional_demand)?;
+            plan.call = Some(scope_turn_call(complete, &call, &plan.allocations));
+        }
+    }
+    let observed = checked_demand_add(observed, plan.facts.additional_demand)?;
     plan.demand = demand_max(plan.demand, observed);
     plan.output_bytes = plan.output_bytes.max(observed.persistent_bytes);
     grow_transaction_stage_total(
@@ -248,6 +340,10 @@ pub(crate) fn apply_observed_turn_demand(
         observed.persistent_bytes,
     )?;
     plan.arenas = place_allocations(&mut plan.allocations)?;
+    plan.demand.turn_peak_bytes = plan
+        .demand
+        .turn_peak_bytes
+        .max(turn_storage_peak(&plan.allocations)?);
     plan.storage_buffer_bytes = plan
         .allocations
         .iter()
@@ -266,95 +362,187 @@ pub(crate) fn apply_observed_turn_demand(
         plan.budget_limits,
     )
     .into_vec();
-    violations.extend(plan.budget_violations);
+    // The scoped plan can still contain a provisional candidate. Admission
+    // evaluates the complete replacement, not obsolete candidate violations.
     violations.sort();
     violations.dedup();
     plan.budget_violations = violations.into_boxed_slice();
     Ok(plan)
 }
 
-/// Produces the real node-scoped plan used by Resident execution. Current
-/// program allocations provide already-admitted retained footprints; the
-/// operation's concrete candidate estimate is reconciled immediately before
-/// its first materialization.
+/// The runtime must supply live borrowed facts. No footprint can be recovered
+/// from an activation allocation plan after a value has changed.
 #[cfg(feature = "resident-artifact")]
 pub(crate) fn plan_current_resident_turn(
     plan: &ProgramMemoryPlan,
     node: NodeId,
+    facts: &TurnMemoryFacts,
 ) -> Result<TurnMemoryPlan, MemoryPlanError> {
-    let mut facts = TurnMemoryFacts::default();
-    if let Some(call) = plan.call_for_node(node) {
-        for deferred in &call.deferred_witnesses {
-            let port = match deferred.direction {
-                PortDirection::Input => call.inputs.get(usize::from(deferred.port)),
-                PortDirection::Output => call.outputs.get(usize::from(deferred.port)),
-            }
-            .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
-            facts.resolved_footprints.insert(
-                (node, deferred.direction, deferred.port),
-                current_port_footprint(plan, port)?,
-            );
+    plan_turn_memory(plan, node, facts)
+}
+
+/// Call derivation uses a same-candidate publication estimate. A turn must
+/// first replace that estimate with the distinct old/candidate evidence before
+/// evaluating policy budgets. Semantic bounds, addressability, and checked
+/// arithmetic remain enforced by the core planner throughout.
+fn derive_turn_call(
+    template: &mech_core::CallMemoryPlan,
+    resolved: &BTreeMap<(PortDirection, u16), CurrentMemoryFootprint>,
+) -> Result<mech_core::CallMemoryPlan, MemoryPlanError> {
+    let mut derivation = template.clone();
+    derivation.target.limits = MemoryBudgetLimits::default();
+    let mut call = mech_core::resolve_deferred_call_memory(&derivation, resolved)?;
+    call.target = template.target.clone();
+    Ok(call)
+}
+
+fn scope_turn_call(
+    mut resolved: mech_core::CallMemoryPlan,
+    original: &mech_core::CallMemoryPlan,
+    allocations: &[AllocationPlan],
+) -> mech_core::CallMemoryPlan {
+    for (port, global) in resolved
+        .inputs
+        .iter_mut()
+        .zip(&original.inputs)
+        .chain(resolved.outputs.iter_mut().zip(&original.outputs))
+    {
+        port.object = global.object;
+    }
+    resolved.transactions = original.transactions.clone();
+    resolved.allocations = allocations.into();
+    resolved
+}
+
+fn adjust_publication_comparison(
+    call: &mut mech_core::CallMemoryPlan,
+    node: NodeId,
+    facts: &TurnMemoryFacts,
+) -> Result<(), MemoryPlanError> {
+    let requirements = call
+        .bound_call
+        .operation_descriptor()
+        .contract
+        .memory_requirements(call.inputs.len())
+        .map_err(|_| MemoryPlanError::DescriptorMismatch)?;
+    for (ordinal, output) in requirements.outputs.iter().enumerate() {
+        if output.change_detection != Some(mech_core::ChangeDetectionPolicy::SemanticHash) {
+            continue;
         }
-        for (ordinal, output) in call.outputs.iter().enumerate() {
-            if matches!(output.region, RegionAccessPlan::Deferred(_)) {
-                facts.resolved_regions.insert(
-                    (
-                        node,
-                        u16::try_from(ordinal).map_err(|_| {
-                            MemoryPlanError::ArithmeticOverflow {
-                                field: "resident turn output ordinal",
-                            }
-                        })?,
-                    ),
-                    RegionAccessPlan::WholeValue,
-                );
+        let Some(current) = facts.published_footprints.get(&(node, ordinal as u16)) else {
+            continue;
+        };
+        let mech_core::MemoryFootprintWitness::Known(candidate) = call.output_witnesses[ordinal]
+        else {
+            return Err(MemoryPlanError::MissingFootprintWitness {
+                stage: mech_core::MemoryWitnessStage::Turn,
+            });
+        };
+        let previous = mech_core::publication_comparison_work(candidate, candidate)?;
+        let replacement = mech_core::publication_comparison_work(*current, candidate)?;
+        call.demand.work.comparison = call
+            .demand
+            .work
+            .comparison
+            .checked_sub(previous)
+            .and_then(|work| work.checked_add(replacement))
+            .ok_or(MemoryPlanError::ArithmeticOverflow {
+                field: "live publication comparison",
+            })?;
+    }
+    Ok(())
+}
+
+/// Refresh stable global objects from a freshly derived call-local plan.
+/// Scratch IDs are matched by their declared ordinal, never by allocation order.
+fn refresh_turn_allocations(
+    allocations: &mut [AllocationPlan],
+    original: &mech_core::CallMemoryPlan,
+    resolved: &mech_core::CallMemoryPlan,
+    node: NodeId,
+    facts: &TurnMemoryFacts,
+) -> Result<(), MemoryPlanError> {
+    for (direction, old_ports, new_ports) in [
+        (PortDirection::Input, &original.inputs, &resolved.inputs),
+        (PortDirection::Output, &original.outputs, &resolved.outputs),
+    ] {
+        for (ordinal, (old, new)) in old_ports.iter().zip(new_ports.iter()).enumerate() {
+            let current = if direction == PortDirection::Output {
+                facts.published_footprints.get(&(node, ordinal as u16))
+            } else {
+                facts
+                    .resolved_footprints
+                    .get(&(node, direction, ordinal as u16))
+            };
+            let Some(current) = current else {
+                continue;
+            };
+            let fixed = allocations
+                .iter_mut()
+                .find(|a| a.id == old.object)
+                .ok_or(MemoryPlanError::DescriptorMismatch)?;
+            let owner = fixed.owner.clone();
+            fixed.current_bytes = new.value.current_address_span_bytes;
+            fixed.capacity_bytes = fixed.capacity_bytes.max(fixed.current_bytes);
+            if let Some(payload) = allocations
+                .iter_mut()
+                .find(|a| a.owner == owner && a.role == mech_core::AllocationRole::VariablePayload)
+            {
+                payload.current_bytes = current.payload_bytes;
+                payload.capacity_bytes = payload.capacity_bytes.max(current.payload_bytes);
             }
         }
     }
-    plan_turn_memory(plan, node, &facts)
+    for local in resolved
+        .allocations
+        .iter()
+        .filter(|a| matches!(a.owner, MemoryObjectOwner::NodeScratch { .. }))
+    {
+        let MemoryObjectOwner::NodeScratch { ordinal, .. } = local.owner else {
+            unreachable!()
+        };
+        let global = allocations
+            .iter_mut()
+            .find(|a| a.owner == MemoryObjectOwner::NodeScratch { node, ordinal })
+            .ok_or(MemoryPlanError::DescriptorMismatch)?;
+        global.current_bytes = local.current_bytes;
+        global.capacity_bytes = local.capacity_bytes;
+        global.alignment = local.alignment;
+    }
+    Ok(())
 }
 
-#[cfg(feature = "resident-artifact")]
-fn current_port_footprint(
-    plan: &ProgramMemoryPlan,
-    port: &PortMemoryPlan,
-) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
-    let fixed = plan
-        .allocations
-        .iter()
-        .find(|allocation| allocation.id == port.object)
-        .ok_or(MemoryPlanError::DescriptorMismatch)?;
-    let payload_bytes = plan
-        .allocations
-        .iter()
-        .filter(|allocation| {
-            allocation.owner == fixed.owner
-                && allocation.role == mech_core::AllocationRole::VariablePayload
-        })
-        .try_fold(0_u64, |total, allocation| {
-            total
-                .checked_add(allocation.current_bytes)
-                .ok_or(MemoryPlanError::ArithmeticOverflow {
-                    field: "resident current payload bytes",
-                })
-        })?;
-    let retained_nodes = plan
-        .values
-        .iter()
-        .find(|value| value.object == port.object)
-        .map_or(0, |value| value.layout.payload.current_nodes);
-    Ok(CurrentMemoryFootprint {
-        logical_elements: port.value.current_elements,
-        fixed_bytes: fixed.current_bytes,
-        payload_bytes,
-        encoded_bytes: fixed.current_bytes.checked_add(payload_bytes).ok_or(
-            MemoryPlanError::ArithmeticOverflow {
-                field: "resident current encoded bytes",
-            },
-        )?,
-        retained_nodes,
-        ..CurrentMemoryFootprint::default()
-    })
+fn turn_storage_peak(allocations: &[AllocationPlan]) -> Result<u64, MemoryPlanError> {
+    let mut events = BTreeMap::<mech_core::MemoryPlanPoint, (u64, u64)>::new();
+    for allocation in allocations {
+        let (first, last) = match allocation.lifetime {
+            mech_core::MemoryLifetime::Turn { first, last }
+            | mech_core::MemoryLifetime::Transaction { first, last }
+            | mech_core::MemoryLifetime::Transfer { first, last } => (first, last),
+            _ => continue,
+        };
+        let start = events.entry(first).or_default();
+        start.0 = start
+            .0
+            .checked_add(allocation.capacity_bytes)
+            .ok_or(MemoryPlanError::TargetAddressOverflow)?;
+        let end = events.entry(last).or_default();
+        end.1 = end
+            .1
+            .checked_add(allocation.capacity_bytes)
+            .ok_or(MemoryPlanError::TargetAddressOverflow)?;
+    }
+    let (mut live, mut peak) = (0_u64, 0_u64);
+    for (starts, ends) in events.into_values() {
+        live = live
+            .checked_add(starts)
+            .ok_or(MemoryPlanError::TargetAddressOverflow)?;
+        peak = peak.max(live);
+        live = live
+            .checked_sub(ends)
+            .ok_or(MemoryPlanError::LifetimeOrderInvalid)?;
+    }
+    Ok(peak)
 }
 
 fn demand_max(left: ResourceDemand, right: ResourceDemand) -> ResourceDemand {

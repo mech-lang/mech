@@ -31,6 +31,7 @@ REQUIRED = (
     "src/engine/src/memory_planner/audit.rs",
     "src/engine/src/resident/budget.rs",
     "src/engine/src/resident/general/execution.rs",
+    "src/engine/src/resident/general/live.rs",
     "src/engine/src/resident/general/mod.rs",
     "src/engine/src/resident/matrix_literal.rs",
     "src/engine/src/resident/numeric.rs",
@@ -451,6 +452,16 @@ def failures(root: Path) -> list[str]:
             found.append(f"core call-demand resolution is incomplete: {required}")
     if "output_regions: request.regions.into()" not in derive:
         found.append("core call-demand resolution is incomplete: output_regions")
+    if "derive_scratch_allocations(" not in derive or "AllocationRole::OrderedIndex" not in derive:
+        found.append("implementation scratch has no physical allocation records")
+    if program.count("aggregate_budget_violations(") < 3:
+        found.append("program and Resident attachment omit aggregate budget evaluation")
+    if "current_port_footprint(" in turn:
+        found.append("resident turn facts are reconstructed from activation estimates")
+    live = rust_code(sources.get("src/engine/src/resident/general/live.rs", "").split("#[cfg(test)]", 1)[0])
+    for required in ("visit_canonical_data_work", "published_footprints", "selected_region", "value.capacity()"):
+        if required not in live:
+            found.append(f"live Resident measurement is incomplete: {required}")
     if resident.count("attach_resident_call_memory_template") < 2:
         found.append("resident call plans bypass global identity and placement")
     resident_execution = rust_code(

@@ -297,13 +297,10 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
 
     def test_28_deferred_call_demand_resolution_fails(self):
         root = self.fixture()
-        self.replace(
-            root,
-            "src/engine/src/memory_planner/turn.rs",
-            "mech_core::resolve_deferred_call_memory(call, &resolved)?",
-            "call.demand",
-        )
-        self.assert_failure(root, "deferred budget closure")
+        path = "src/engine/src/memory_planner/turn.rs"
+        source = (root / path).read_text().replace("resolve_deferred_call_memory", "lost_deferred_resolution")
+        self.write(root, path, source)
+        self.assert_failure(root, "turn planning omits deferred budget closure: resolve_deferred_call_memory")
 
     def test_29_turn_replacement_fails(self):
         root = self.fixture()
@@ -418,6 +415,31 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
             "admit_dense_transpose_layout(request.output.kind, request.output.shape)?;\n        return bound(\n            transpose_dense,",
         )
         self.assert_failure(root, "manufactures an execution permit")
+
+
+    def test_41_scratch_must_have_physical_records(self):
+        root = self.fixture()
+        path = "src/core/src/memory_plan/derive.rs"
+        source = (root / path).read_text().replace("derive_scratch_allocations(", "lost_scratch(")
+        self.write(root, path, source)
+        self.assert_failure(root, "implementation scratch has no physical allocation records")
+
+    def test_42_aggregate_budget_evaluation_is_mandatory(self):
+        root = self.fixture()
+        path = "src/engine/src/memory_planner/program.rs"
+        source = (root / path).read_text().replace("aggregate_budget_violations(", "lost_aggregate(")
+        self.write(root, path, source)
+        self.assert_failure(root, "omit aggregate budget evaluation")
+
+    def test_43_stale_resident_turn_measurement_is_forbidden(self):
+        root = self.fixture()
+        self.append(root, "src/engine/src/memory_planner/turn.rs", "\nfn current_port_footprint() {}\n")
+        self.assert_failure(root, "reconstructed from activation estimates")
+
+    def test_44_live_measurements_must_keep_published_values(self):
+        root = self.fixture()
+        self.replace(root, "src/engine/src/resident/general/live.rs", "published_footprints", "lost_published")
+        self.assert_failure(root, "live Resident measurement is incomplete: published_footprints")
 
 
 if __name__ == "__main__":

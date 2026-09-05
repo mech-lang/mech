@@ -1,6 +1,7 @@
 //! Schema-driven activation for the pre-launch dense numeric resident profile.
 
 mod execution;
+mod live;
 
 pub use execution::*;
 
@@ -3435,9 +3436,36 @@ fn execute_activation_graph(
                 node: step.artifact_node,
             });
         }
+        let call = plan.memory_plan.call_for_node(step.artifact_node).ok_or(
+            ResidentActivationError::ActivationKernel {
+                node: step.artifact_node,
+            },
+        )?;
+        let borrowed = step
+            .sources
+            .iter()
+            .map(|source| {
+                let region = match source {
+                    ArtifactSource::Constant(constant) => {
+                        plan.constant_regions[constant.get() as usize]
+                    }
+                    ArtifactSource::Slot(slot) => plan.slots[slot.get() as usize].region,
+                };
+                arena.read(region)
+            })
+            .collect::<Vec<_>>();
+        let facts = live::facts(
+            call,
+            step.artifact_node,
+            &borrowed,
+            arena.read(step.write),
+            &plan.schemas,
+        )
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
         let turn_plan = crate::memory_planner::plan_current_resident_turn(
             &plan.memory_plan,
             step.artifact_node,
+            &facts,
         )
         .map_err(|_| ResidentActivationError::ActivationKernel {
             node: step.artifact_node,

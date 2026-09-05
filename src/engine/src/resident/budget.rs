@@ -233,10 +233,33 @@ impl KernelCostEstimate {
         self.demand.retained_nodes = amount;
     }
 
-    fn turn_plan(self) -> Result<TurnMemoryPlan, ResidentKernelError> {
+    fn turn_plan(
+        self,
+        final_output: Option<PublishedOutputFootprint>,
+    ) -> Result<TurnMemoryPlan, ResidentKernelError> {
         let active = with_active_turn_plans(|plans| plans.last().cloned());
         if let Some(active) = active {
-            return apply_observed_turn_demand(active, self.demand)
+            let fixed = active
+                .call
+                .as_ref()
+                .and_then(|call| call.outputs.first())
+                .map_or(0, |output| output.value.current_address_span_bytes);
+            let final_output = final_output
+                .map(|output| {
+                    Ok(mech_core::CurrentMemoryFootprint {
+                        logical_elements: output.elements,
+                        fixed_bytes: fixed,
+                        payload_bytes: output
+                            .retained_bytes
+                            .checked_sub(fixed)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        encoded_bytes: output.retained_bytes,
+                        retained_nodes: output.retained_nodes,
+                        ..mech_core::CurrentMemoryFootprint::default()
+                    })
+                })
+                .transpose()?;
+            return apply_observed_turn_demand(active, self.demand, final_output)
                 .map_err(|_| ResidentKernelError::InvalidShape);
         }
         #[cfg(test)]
@@ -250,7 +273,7 @@ impl KernelCostEstimate {
     }
 
     fn checked(self) -> Result<TurnMemoryPlan, ResidentKernelError> {
-        let plan = self.turn_plan()?;
+        let plan = self.turn_plan(None)?;
         if !plan.budget_violations.is_empty() {
             return Err(ResidentKernelError::InvalidShape);
         }
@@ -383,10 +406,11 @@ impl<P> PreparedMutationPlan<P> {
     }
 
     pub(crate) fn admit(self) -> Result<AdmittedMutationPlan<P>, ResidentKernelError> {
-        let _final_output = self.final_output;
         Ok(AdmittedMutationPlan {
             operation: self.operation,
-            _permit: self.cost.permit()?,
+            _permit: ResidentBudgetPermit::from_turn_plan(
+                self.cost.turn_plan(Some(self.final_output))?,
+            )?,
         })
     }
 }

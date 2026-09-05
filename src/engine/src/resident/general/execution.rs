@@ -259,20 +259,62 @@ impl ReactiveInstance {
     fn with_kernel_turn_plan<T>(
         &mut self,
         node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
         execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
     ) -> Result<T, ResidentExecutionError> {
         let index = node_index.get() as usize;
-        let artifact_node = if let Some(nodes) = &self.plan.pure_kernel_steps {
-            nodes[index].artifact_node
+        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
+            &nodes[index]
         } else {
             let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
                 unreachable!("external steps are staged by the dispatcher")
             };
-            node.artifact_node
+            node
         };
+        let artifact_node = node.artifact_node;
+        let fail = || ResidentExecutionError::Kernel {
+            node: artifact_node,
+            error: ResidentKernelError::InvalidShape,
+        };
+        let output_location = match node.write.storage {
+            ResidentStorageClass::State => ResidentReadLocation::State {
+                slot: node.write.slot,
+                region: node.write.region,
+            },
+            ResidentStorageClass::Scratch => ResidentReadLocation::Scratch(node.write.region),
+            ResidentStorageClass::Input => ResidentReadLocation::Input(node.write.region),
+            ResidentStorageClass::Constant => ResidentReadLocation::Constant(node.write.region),
+        };
+        let current = self
+            .read_location(output_location, before_epoch)
+            .ok_or_else(fail)?;
+        let call = self
+            .plan
+            .memory_plan
+            .call_for_node(artifact_node)
+            .ok_or_else(fail)?;
+        let base = match node.construction {
+            OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
+            _ => None,
+        };
+        let mut reads = self.plan.reads[node.reads.start as usize..node.reads.end as usize].iter();
+        let inputs = (0..call.inputs.len())
+            .map(|ordinal| {
+                let location = if Some(ordinal) == base {
+                    output_location
+                } else {
+                    *reads.next().ok_or_else(fail)?
+                };
+                self.read_location(location, working_epoch).ok_or_else(fail)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let facts = super::live::facts(call, artifact_node, &inputs, current, &self.plan.schemas)
+            .map_err(|_| fail())?;
         let turn_plan = crate::memory_planner::plan_current_resident_turn(
             &self.plan.memory_plan,
             artifact_node,
+            &facts,
         )
         .map_err(|_| ResidentExecutionError::Kernel {
             node: artifact_node,
@@ -1037,7 +1079,7 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         change_is_observed: bool,
     ) -> Result<bool, ResidentExecutionError> {
-        self.with_kernel_turn_plan(node_index, |this| {
+        self.with_kernel_turn_plan(node_index, before_epoch, working_epoch, |this| {
             this.execute_kernel_without_summary_planned(
                 node_index,
                 before_epoch,
@@ -1237,7 +1279,7 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
-        self.with_kernel_turn_plan(node_index, |this| {
+        self.with_kernel_turn_plan(node_index, before_epoch, working_epoch, |this| {
             this.execute_kernel_planned(node_index, before_epoch, working_epoch, probe)
         })
     }
