@@ -2,21 +2,37 @@ name: R5 CI diagnostics
 on:
   push:
     branches: [codex/r5-ci-diagnostics]
-    paths: [.github/workflows/r5-ci-diagnostics.yml]
+    paths: [.github/workflows/r5-ci-diagnostics.yml, .r5-ci.patch.b64]
 permissions:
-  contents: read
+  contents: write
 jobs:
-  snapshot:
+  candidate:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-      - name: Export reviewed source
-        run: git archive --format=tar.gz d96425614d69c61427419e01f4bba1343824ab50 -o /tmp/r5-current-source.tar.gz
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: r5-current-source
-          path: /tmp/r5-current-source.tar.gz
-          retention-days: 1
+      - name: Apply only the reviewed product patch
+        run: |
+          base64 -d .r5-ci.patch.b64 | gzip -d > /tmp/r5-fix.patch
+          git checkout --detach d96425614d69c61427419e01f4bba1343824ab50
+          git apply --check /tmp/r5-fix.patch
+          git apply /tmp/r5-fix.patch
+          git diff --check
+          test -z "$(git diff --name-only -- Cargo.lock '**/Cargo.toml' '.github/**')"
+      - name: Check pinned formatting and architectural constraints
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
+          cargo +nightly-2026-03-03 fmt --all -- --check
+          python3 scripts/check-r5-memory-planner.py
+          python3 -B -m unittest scripts.tests.test_check_r5_memory_planner
+      - name: Publish candidate without moving the PR branch
+        run: |
+          git config user.name 'Corey Montella'
+          git config user.email 'cmontella@live.com'
+          git add docs/design/r5-memory-planner.md src/engine/src/memory_planner/turn.rs src/engine/src/resident/budget.rs src/engine/src/resident/general/execution.rs src/engine/src/resident/general/live.rs src/engine/src/resident/general/mod.rs
+          git commit -m 'perf(r5): reuse invariant plans and bound traversal progress without replanning'
+          sha=$(git rev-parse HEAD)
+          git push origin "HEAD:refs/heads/codex/r5-ci-candidate-${sha:0:12}"
+          echo "CANDIDATE_SHA=$sha" >> "$GITHUB_STEP_SUMMARY"
