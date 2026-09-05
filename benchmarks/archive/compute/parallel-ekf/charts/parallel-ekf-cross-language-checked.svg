@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1561" viewBox="0 0 1700 1561">
-<rect width="100%" height="100%" fill="#080c14"/>
+<rect x="0" y="0" width="1700" height="1561" fill="#080c14"/>
 <defs>
 <pattern id="gpu-mech" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#f4c430"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>
 <pattern id="gpu-rust" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#dea584"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>
