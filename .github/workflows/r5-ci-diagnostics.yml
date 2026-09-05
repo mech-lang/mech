@@ -5,68 +5,65 @@ on:
     paths: [.github/workflows/r5-ci-diagnostics.yml]
 permissions:
   contents: read
-  actions: read
-  checks: read
 jobs:
-  snapshot:
+  resource-reproduction:
+    name: Resource reproduction (${{ matrix.case }})
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: math-owner
+            command: python3 scripts/check-native-linkage-coverage.py owners mech-math
+          - case: nbody
+            command: python3 scripts/check-r1-artifact-closure.py nbody
+          - case: rational-surface
+            command: python3 scripts/check-native-linkage-coverage.py surface extended-math-shard-rational
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_TERM_COLOR: never
     steps:
-      - name: Collect final exact-head failures
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: e1bdb6363188751565a5c1b4de984e3e49d1a04b
+      - name: Install the pinned compiler
         run: |
-          python3 -u - <<'PY'
-          import collections, concurrent.futures, json, os, pathlib, re, subprocess
-          repo = 'mech-lang/mech'
-          run_id = 33986289473
-          expected_head = 'e1bdb6363188751565a5c1b4de984e3e49d1a04b'
-          root = pathlib.Path('/tmp/r5-final')
-          root.mkdir(exist_ok=True)
-          def api(path, raw=False):
-              result = subprocess.run(['gh', 'api', '--allow-escape-sequences', f'repos/{repo}/{path}'], text=True, capture_output=True, timeout=60)
-              if result.returncode:
-                  return {'fetch_error': result.stderr.strip()}
-              return result.stdout if raw else json.loads(result.stdout)
-          run = api(f'actions/runs/{run_id}')
-          assert run['head_sha'] == expected_head, run
-          (root/'run.json').write_text(json.dumps(run, indent=2))
-          jobs = []
-          for page in range(1, 11):
-              batch = api(f'actions/runs/{run_id}/jobs?filter=latest&per_page=100&page={page}')['jobs']
-              jobs.extend(batch)
-              if len(batch) < 100:
-                  break
-          else:
-              raise RuntimeError('Refusing an incomplete jobs snapshot')
-          (root/'jobs.json').write_text(json.dumps(jobs, indent=2))
-          failed = [j for j in jobs if j['conclusion'] not in ('success', 'skipped')]
-          def capture(job):
-              ident = job['id']
-              checks = api(f'check-runs/{ident}')
-              annotations = api(f'check-runs/{ident}/annotations?per_page=100')
-              (root/f'{ident}-check.json').write_text(json.dumps(checks, indent=2))
-              (root/f'{ident}-annotations.json').write_text(json.dumps(annotations, indent=2))
-              log = api(f'actions/jobs/{ident}/logs', raw=True)
-              if not isinstance(log, str):
-                  log = json.dumps(log)
-              log = re.sub(r'\x1b\[[0-9;]*m', '', log)
-              (root/f'{ident}.log').write_text(log)
-              return f"{ident} {job['name']} [{job['conclusion']}]\n" + json.dumps(checks.get('output', checks), indent=2) + '\n' + json.dumps(annotations, indent=2) + '\n' + '\n'.join(log.splitlines()[-80:])
-          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
-              reports = list(pool.map(capture, failed))
-          text = '\n\n'.join(reports)
-          (root/'failures.txt').write_text(text)
-          print(dict(collections.Counter(j['conclusion'] or j['status'] for j in jobs)))
-          print(text)
-          with open(os.environ['GITHUB_STEP_SUMMARY'], 'w') as summary:
-              summary.write(f'Final failure snapshot for run {run_id} at `{expected_head}`. No retry requested.\n\n')
-              summary.write(text)
-          PY
-      - name: Preserve failure evidence
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+      - name: Run the unchanged failing profile and measure resources
+        env:
+          COMMAND: ${{ matrix.command }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/r5-resources
+          git rev-parse HEAD | tee /tmp/r5-resources/HEAD
+          rustc -Vv | tee /tmp/r5-resources/compiler.txt
+          (
+            while true; do
+              date -u +%FT%TZ
+              free -m
+              ps -eo pid,ppid,rss,pcpu,comm --sort=-rss | head -12 || true
+              sleep 15
+            done
+          ) > /tmp/r5-resources/memory.log &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true; wait "$monitor" 2>/dev/null || true' EXIT
+          set +e
+          /usr/bin/time -v -o /tmp/r5-resources/time.txt bash -c "$COMMAND" 2>&1 | tee /tmp/r5-resources/command.log
+          status=${PIPESTATUS[0]}
+          set -e
+          cat /tmp/r5-resources/time.txt
+          printf '%s\n' "$status" > /tmp/r5-resources/exit-status
+          df -h > /tmp/r5-resources/disk.txt
+          exit "$status"
+      - name: Preserve resource evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-final-failure-evidence
-          path: /tmp/r5-final
+          name: r5-resource-${{ matrix.case }}
+          path: /tmp/r5-resources
           retention-days: 1
