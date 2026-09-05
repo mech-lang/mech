@@ -16,8 +16,8 @@ use mech_compute::{
 use mech_core::{MResult, MechError, MechErrorKind, Program};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
-    ComputeHostFactory, ComputeHostStateSnapshotHandle, ComputeLowerer, CpuScalarBackendFactory,
-    ElementwiseKernel, FixedShapeKernel, GpuKernelPlanSource, lower_elementwise_compute_program,
+    ComputeHostFactory, ComputeHostStateSnapshotHandle, CpuScalarBackendFactory, ElementwiseKernel,
+    FixedShapeKernel, GpuKernelPlanSource, configured_compute_backend_request, emit_compute_kernel,
 };
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
@@ -63,10 +63,19 @@ impl WasmMixedComputeProject {
         let parse_started = Instant::now();
         let tree = mech_syntax::parse(source.trim()).map_err(js_error)?;
         let parsing = milliseconds(parse_started);
+        let backend_request =
+            configured_compute_backend_request_for_document(&document, backend_override)
+                .map_err(js_error)?;
         let pointer_index = configured_host_index(&document, "pointer").map_err(js_error)?;
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
-        let prepared = compile_named_compute_region(&document, &tree, parsing, pointer.clone())
-            .map_err(js_error)?;
+        let prepared = compile_named_compute_region(
+            &document,
+            &tree,
+            parsing,
+            pointer.clone(),
+            &backend_request,
+        )
+        .map_err(js_error)?;
         let outputs = BrowserOutputHandle::default();
         let prepared = prepare_browser_compute_runtime(
             &document,
@@ -460,6 +469,7 @@ fn compile_named_compute_region(
     tree: &Program,
     parsing: f64,
     pointer: PointerInputHandle,
+    backend_request: &BackendRequest,
 ) -> MResult<PreparedComputeRegion> {
     let compiler_started = Instant::now();
     let mut builder = RuntimeBuilder::new()
@@ -479,7 +489,7 @@ fn compile_named_compute_region(
     }
     let mut compiler = builder.build_compiler()?;
     let catalog_setup = milliseconds(compiler_started);
-    prepare_compute_region(&mut compiler, tree, parsing, catalog_setup)
+    prepare_compute_region(&mut compiler, tree, parsing, catalog_setup, backend_request)
 }
 
 pub(crate) fn prepare_compute_region(
@@ -487,6 +497,7 @@ pub(crate) fn prepare_compute_region(
     tree: &Program,
     parsing: f64,
     catalog_setup: f64,
+    backend_request: &BackendRequest,
 ) -> MResult<PreparedComputeRegion> {
     let artifact_started = Instant::now();
     let mixed = compiler.compile_mixed_tree(tree)?;
@@ -501,20 +512,20 @@ pub(crate) fn prepare_compute_region(
             .iter()
             .map(|(name, value)| (name.clone(), value_elements(value))),
     );
-    let kernel = match lower_elementwise_compute_program(&mixed.compute.artifact) {
-        Ok(program) => PreparedGpuKernel::Elementwise(
-            ElementwiseKernel::from_compute_program(&program)
-                .map_err(|failure| mixed_error(format!("elementwise lowering failed: {failure}")))?,
-        ),
-        Err(elementwise_failure) => PreparedGpuKernel::FixedShape(
-            ComputeLowerer
-                .compile_broadcast(&mixed.compute.artifact, &activation_values)
-                .map_err(|fixed_failure| {
-                    mixed_error(format!(
-                        "compute lowering failed for both portable kernels; elementwise: {elementwise_failure}; fixed-shape: {fixed_failure}",
-                    ))
-                })?,
-        ),
+    let emitted = emit_compute_kernel(&mixed.compute.artifact, &activation_values, backend_request)
+        .map_err(|failure| mixed_error(format!("compute kernel emission failed: {failure}")))?;
+    let kernel = if emitted.is_fixed_shape() {
+        PreparedGpuKernel::FixedShape(
+            FixedShapeKernel::from_compute_program(emitted.compute_program()).map_err(
+                |failure| mixed_error(format!("fixed-shape lowering failed: {failure}")),
+            )?,
+        )
+    } else {
+        PreparedGpuKernel::Elementwise(
+            ElementwiseKernel::from_compute_program(emitted.compute_program()).map_err(
+                |failure| mixed_error(format!("elementwise lowering failed: {failure}")),
+            )?,
+        )
     };
     let program = kernel.compute_program().clone();
     let gpu_lowering = milliseconds(lowering_started);
@@ -572,6 +583,19 @@ fn configured_host_index(document: &MechConfigDocument, provider: &str) -> MResu
         )));
     }
     Ok(hosts[0].0)
+}
+
+pub(crate) fn configured_compute_backend_request_for_document(
+    document: &MechConfigDocument,
+    backend_override: &str,
+) -> MResult<BackendRequest> {
+    let compute_index = configured_host_index(document, "compute")?;
+    if !backend_override.trim().is_empty() {
+        return BackendRequest::parse(backend_override.trim())
+            .map_err(|failure| mixed_error(failure.to_string()));
+    }
+    configured_compute_backend_request(&document.hosts[compute_index].settings)
+        .map_err(|failure| mixed_error(format!("invalid compute host settings: {failure:?}")))
 }
 
 pub(crate) fn initializer_values(
@@ -2221,7 +2245,10 @@ state
         let tree = mech_syntax::parse(source).unwrap();
         let pointer_index = configured_host_index(&document, "pointer").unwrap();
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
-        let prepared = compile_named_compute_region(&document, &tree, 0.0, pointer).unwrap();
+        let backend_request =
+            configured_compute_backend_request_for_document(&document, "").unwrap();
+        let prepared =
+            compile_named_compute_region(&document, &tree, 0.0, pointer, &backend_request).unwrap();
         (document, prepared)
     }
 
@@ -2306,7 +2333,10 @@ state
         let pointer_index = configured_host_index(&document, "pointer").unwrap();
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
         let tree = mech_syntax::parse(SERVED_SOURCE).unwrap();
-        let prepared = compile_named_compute_region(&document, &tree, 0.0, pointer).unwrap();
+        let backend_request =
+            configured_compute_backend_request_for_document(&document, "").unwrap();
+        let prepared =
+            compile_named_compute_region(&document, &tree, 0.0, pointer, &backend_request).unwrap();
         let inputs = initializer_values(&prepared.program, &prepared.initializers).unwrap();
 
         assert_eq!(prepared.region, "particle-field");
@@ -2331,6 +2361,16 @@ state
         assert_eq!(kernel.physical_inputs(&inputs).unwrap()[0].elements, 1_000);
         assert_eq!(kernel.physical_states()[0].elements, 2_000);
         assert!(kernel.wgsl().contains("state_write_"));
+    }
+
+    #[test]
+    fn browser_compiler_honors_a_configured_cpu_fixed_shape_request() {
+        let config = CONFIG.replace("backend: \"auto\"", "backend: \"cpu\"");
+        let (_document, prepared) = compile_fixture(&config, SOURCE);
+        assert!(
+            matches!(prepared.kernel, PreparedGpuKernel::FixedShape(_)),
+            "configured cpu requests must emit the compiler-owned fixed-shape form"
+        );
     }
 
     #[test]

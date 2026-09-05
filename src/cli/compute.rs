@@ -4,7 +4,7 @@ use mech_compute::{BackendRequest, ComputePlatform, ComputeValue};
 use mech_core::{MResult, MechError, MechErrorKind};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
-    ComputeHostFactory, ComputeLowerer, lower_elementwise_compute_program,
+    ComputeHostFactory, configured_compute_backend_request, emit_compute_kernel,
     native_compute_backend_registry,
 };
 use mech_runtime::{FileSourceResolver, RuntimeHostFactory, SourceRequest};
@@ -100,6 +100,8 @@ fn compile_compute_application(
     .build_compiler()?;
     let mixed = compile(&mut compiler)?;
 
+    let backend_request = configured_backend_request(plan)?;
+
     let mut activation_values =
         initializer_values(&mixed.compute.interface, &mixed.compute.initializers)?;
     activation_values.extend(
@@ -108,21 +110,23 @@ fn compile_compute_application(
             .iter()
             .map(|(name, value)| (name.clone(), value_elements(value))),
     );
-    let program = match lower_elementwise_compute_program(&mixed.compute.artifact) {
-        Ok(program) => program,
-        Err(elementwise_failure) => ComputeLowerer
-            .compile_broadcast(&mixed.compute.artifact, &activation_values)
-            .map(|kernel| kernel.compute_program().clone())
-            .map_err(|fixed_failure| {
-                compute_cli_error(
-                    "lower_compute_region",
-                    format!(
-                        "region `{}` is not supported by the native compute backends; elementwise: {elementwise_failure}; fixed-shape: {fixed_failure}",
-                        mixed.compute.declaration.name,
-                    ),
-                )
-            })?,
-    };
+    let program = emit_compute_kernel(
+        &mixed.compute.artifact,
+        &activation_values,
+        &backend_request,
+    )
+    .map_err(|error| {
+        compute_cli_error(
+            "lower_compute_region",
+            format!(
+                "region `{}` could not emit a kernel for backend `{}`: {error}",
+                mixed.compute.declaration.name,
+                backend_request_name(&backend_request),
+            ),
+        )
+    })?
+    .compute_program()
+    .clone();
     let mut factory = ComputeHostFactory::new(
         mixed.compute.declaration.name.clone(),
         mixed.compute.declaration.placement,
@@ -146,6 +150,45 @@ fn compile_compute_application(
         coordinator: mixed.coordinator.into_artifact(),
         factory: Box::new(factory),
     })
+}
+
+fn configured_backend_request(plan: &RunExecutionPlan) -> MResult<BackendRequest> {
+    let host = plan
+        .configured_hosts
+        .iter()
+        .find(|host| host.provider == "compute")
+        .ok_or_else(|| {
+            compute_cli_error(
+                "select_compute_backend",
+                "the application has no configured compute host",
+            )
+        })?;
+    let configured = configured_compute_backend_request(&host.settings).map_err(|error| {
+        compute_cli_error(
+            "select_compute_backend",
+            format!("invalid configured compute settings: {error:?}"),
+        )
+    })?;
+    plan.backend_override
+        .as_deref()
+        .map(BackendRequest::parse)
+        .transpose()
+        .map_err(|error| {
+            compute_cli_error(
+                "select_compute_backend",
+                format!("invalid backend override: {error}"),
+            )
+        })
+        .map(|override_request| override_request.unwrap_or(configured))
+}
+
+fn backend_request_name(request: &BackendRequest) -> &str {
+    match request {
+        BackendRequest::Auto => "auto",
+        BackendRequest::Cpu => "cpu",
+        BackendRequest::Gpu => "gpu",
+        BackendRequest::Exact(id) => id.as_str(),
+    }
 }
 
 fn initializer_values(

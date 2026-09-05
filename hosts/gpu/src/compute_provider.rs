@@ -1314,6 +1314,13 @@ pub fn validate_compute_host_settings(settings: &ConfigValue) -> MResult<()> {
     configured_compute_settings(settings).map(|_| ())
 }
 
+/// Validates compute-host settings and returns the configured backend request.
+/// Product integrations use this before lowering so source planning and host
+/// installation observe the same configuration contract.
+pub fn configured_compute_backend_request(settings: &ConfigValue) -> MResult<BackendRequest> {
+    configured_compute_settings(settings).map(|settings| settings.backend)
+}
+
 struct ConfiguredComputeSettings {
     region: String,
     backend: BackendRequest,

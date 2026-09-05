@@ -77,11 +77,12 @@ requires the mixed multi-kernel scheduler. The provider rejects that case
 instead of fusing across explicit boundaries.
 
 The stable v0.4 product backends are `cpu-scalar` and `wgpu`. `auto`, `cpu`,
-`gpu`, `cpu-scalar`, and `wgpu` are stable application selectors. The backend
-library also contains `cpu-simd`, `cpu-jit`, and fixed-shape wgpu prototypes,
-but the mixed-application compiler does not yet produce their fixed-shape
-kernel form. Those implementations are experimental library and benchmark
-paths, not generally selectable v0.4 application backends.
+`gpu`, `cpu-scalar`, and `wgpu` are stable application selectors. Native
+`mech run` also accepts `cpu-simd` and `cpu-jit`; those requests select the
+compiler's fixed-shape kernel emission before backend resolution and fail
+explicitly when the region cannot be represented by that form. Browser
+`serve` keeps the stable selector set. Automatic dual-form planning remains a
+separate optimization: `auto` still emits the portable elementwise form first.
 
 ## Mixed runtime integration
 
@@ -93,9 +94,10 @@ paths, not generally selectable v0.4 application backends.
    metadata in immutable `ProgramArtifact`s;
 3. the v0.4 runtime compiler returns an activation-only artifact product, so
    browser and native hosts do not retain a duplicate bytecode container;
-4. the native or browser product integration passes the compiler-owned compute
-   artifact to `mech_gpu::lower_elementwise_compute_program`, the current
-   elementwise artifact-to-program adapter;
+4. the product integration selects a lowering from the compiler-owned compute
+   artifact: `lower_elementwise_compute_program` for the portable path, or
+   `ComputeLowerer::compile_broadcast` for an explicitly requested native
+   fixed-shape backend;
 5. `mech-compute` owns the resulting typed interface, neutral compute IR,
    placement contracts, and backend registry contracts;
 6. the concrete backend bundle implements CPU and wgpu compilation and keeps

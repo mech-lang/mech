@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::{mem, sync::Arc};
+use std::{mem, sync::Arc, thread};
 
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, MemFlags, UserFuncName, Value,
@@ -19,9 +19,10 @@ use super::{
 
 type NativeTurn = unsafe extern "C" fn(
     input_pointers: *const *const f32,
-    state_pointers: *const *const f32,
+    state_pointers: *const *mut f32,
     next_state_pointers: *const *mut f32,
-    instances: usize,
+    start: usize,
+    end: usize,
 ) -> u64;
 
 struct NativeKernel {
@@ -35,8 +36,9 @@ pub struct BatchedJitCpuSession {
     inputs: BTreeMap<CellSlotId, Vec<f32>>,
     state: BTreeMap<CellSlotId, Vec<f32>>,
     next_state: BTreeMap<CellSlotId, Vec<f32>>,
+    state_snapshot: BTreeMap<CellSlotId, Vec<f32>>,
     input_pointers: Vec<*const f32>,
-    state_pointers: Vec<*const f32>,
+    state_pointers: Vec<*mut f32>,
     next_state_pointers: Vec<*mut f32>,
     faults: BatchedFaultRecorder,
 }
@@ -47,28 +49,55 @@ impl FixedShapeKernel {
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
         let inputs = self.expand_inputs(inputs)?;
-        let state = self.initial_state();
+        let inputs = self
+            .inputs
+            .iter()
+            .map(|input| {
+                (
+                    input.slot,
+                    to_soa(
+                        &inputs[&input.slot],
+                        input.shape.elements(),
+                        self.instances as usize,
+                    ),
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        let state_snapshot = self.initial_state();
+        let state = state_snapshot
+            .iter()
+            .map(|(slot, values)| {
+                let elements = self
+                    .states
+                    .iter()
+                    .find(|state| state.slot == *slot)
+                    .map(|state| state.shape.elements())
+                    .expect("state slot has a fixed shape");
+                (*slot, to_soa(values, elements, self.instances as usize))
+            })
+            .collect::<BTreeMap<_, _>>();
         let next_state = state
             .iter()
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
         let kernel = NativeKernel::compile(self)?;
-        let input_pointers = self
-            .inputs
-            .iter()
-            .map(|input| inputs[&input.slot].as_ptr())
-            .collect();
         let mut session = BatchedJitCpuSession {
             program: Arc::new(self.clone()),
             kernel,
             inputs,
             state,
             next_state,
-            input_pointers,
-            state_pointers: Vec::with_capacity(self.states.len()),
-            next_state_pointers: Vec::with_capacity(self.states.len()),
+            state_snapshot,
+            input_pointers: Vec::new(),
+            state_pointers: Vec::with_capacity(
+                self.states.iter().map(|state| state.shape.elements()).sum(),
+            ),
+            next_state_pointers: Vec::with_capacity(
+                self.states.iter().map(|state| state.shape.elements()).sum(),
+            ),
             faults: BatchedFaultRecorder::default(),
         };
+        session.refresh_input_pointers();
         session.refresh_state_pointers();
         Ok(session)
     }
@@ -86,15 +115,16 @@ impl BatchedJitCpuSession {
                 .iter()
                 .find(|input| input.name == *name)
                 .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
-            self.inputs
-                .insert(input.slot, self.program.expand_input(input, values)?);
+            self.inputs.insert(
+                input.slot,
+                to_soa(
+                    &self.program.expand_input(input, values)?,
+                    input.shape.elements(),
+                    self.program.instances as usize,
+                ),
+            );
         }
-        self.input_pointers = self
-            .program
-            .inputs
-            .iter()
-            .map(|input| self.inputs[&input.slot].as_ptr())
-            .collect();
+        self.refresh_input_pointers();
         Ok(())
     }
 
@@ -104,16 +134,16 @@ impl BatchedJitCpuSession {
         }
         for _ in 0..turns {
             let attempted_turn = self.faults.next_turn();
-            self.refresh_state_pointers();
-            // SAFETY: The generated function uses the exact ABI below. All pointer
-            // tables and their backing f32 buffers remain live for the call, and
-            // every generated access is bounded by the admitted fixed shapes and
-            // the program's instance count.
+            // SAFETY: The generated function uses the exact ABI below. The flat
+            // pointer tables and their backing SoA f32 buffers remain live for
+            // the call, and every generated access is bounded by the admitted
+            // fixed shapes and the program's instance count.
             let packed_fault = unsafe {
                 (self.kernel.turn)(
                     self.input_pointers.as_ptr(),
                     self.state_pointers.as_ptr(),
                     self.next_state_pointers.as_ptr(),
+                    0,
                     self.program.instances as usize,
                 )
             };
@@ -124,12 +154,80 @@ impl BatchedJitCpuSession {
                 return Err(self.faults.record(fault));
             }
             mem::swap(&mut self.state, &mut self.next_state);
+            // The backing vectors never move during a resident session. Swap
+            // the already-materialized pointer tables along with the logical
+            // ping-pong state instead of rebuilding them on every turn.
+            mem::swap(&mut self.state_pointers, &mut self.next_state_pointers);
         }
+        self.refresh_state_snapshot();
+        Ok(())
+    }
+
+    /// Executes the same generated turn function over disjoint instance
+    /// ranges. The kernel owns no shared scratch state, so workers can write
+    /// directly into separate lanes of the component-major buffers. A fault
+    /// still rejects the complete turn; only the lowest failing instance is
+    /// reported to keep diagnostics deterministic.
+    pub fn dispatch_turns_parallel(
+        &mut self,
+        turns: u32,
+        workers: usize,
+    ) -> Result<(), BatchedExecutionError> {
+        if workers <= 1 {
+            return self.dispatch_turns(turns);
+        }
+        if turns == 0 {
+            return Err(BatchedExecutionError::ZeroTurns);
+        }
+        let instances = self.program.instances as usize;
+        let workers = workers.min(instances);
+        for _ in 0..turns {
+            let attempted_turn = self.faults.next_turn();
+            let turn = self.kernel.turn;
+            let input_table = self.input_pointers.as_ptr() as usize;
+            let state_table = self.state_pointers.as_ptr() as usize;
+            let next_state_table = self.next_state_pointers.as_ptr() as usize;
+            let mut packed_fault = 0;
+            // The tables are read-only during this scope. Each worker receives
+            // a disjoint [start, end) range and therefore writes disjoint
+            // elements in every component buffer.
+            thread::scope(|scope| {
+                let mut handles = Vec::with_capacity(workers);
+                for worker in 0..workers {
+                    let start = instances * worker / workers;
+                    let end = instances * (worker + 1) / workers;
+                    handles.push(scope.spawn(move || unsafe {
+                        turn(
+                            input_table as *const *const f32,
+                            state_table as *const *mut f32,
+                            next_state_table as *const *mut f32,
+                            start,
+                            end,
+                        )
+                    }));
+                }
+                for handle in handles {
+                    let fault = handle.join().expect("generated JIT worker must not panic");
+                    if fault != 0 && (packed_fault == 0 || (fault >> 8) < (packed_fault >> 8)) {
+                        packed_fault = fault;
+                    }
+                }
+            });
+            if let Some(fault) = self
+                .program
+                .failed_packed_constraint(packed_fault, attempted_turn)
+            {
+                return Err(self.faults.record(fault));
+            }
+            mem::swap(&mut self.state, &mut self.next_state);
+            mem::swap(&mut self.state_pointers, &mut self.next_state_pointers);
+        }
+        self.refresh_state_snapshot();
         Ok(())
     }
 
     pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
-        &self.state
+        &self.state_snapshot
     }
 
     pub const fn fault_count(&self) -> u64 {
@@ -144,15 +242,66 @@ impl BatchedJitCpuSession {
         self.faults.last_fault.as_ref()
     }
 
+    fn refresh_input_pointers(&mut self) {
+        self.input_pointers.clear();
+        for input in &self.program.inputs {
+            let values = &self.inputs[&input.slot];
+            for component in 0..input.shape.elements() {
+                self.input_pointers
+                    .push(values[component * self.program.instances as usize..].as_ptr());
+            }
+        }
+    }
+
     fn refresh_state_pointers(&mut self) {
         self.state_pointers.clear();
         self.next_state_pointers.clear();
         for state in &self.program.states {
-            self.state_pointers.push(self.state[&state.slot].as_ptr());
-            self.next_state_pointers
-                .push(self.next_state.get_mut(&state.slot).unwrap().as_mut_ptr());
+            let values = &self.state[&state.slot];
+            let next_values = self.next_state.get_mut(&state.slot).unwrap();
+            for component in 0..state.shape.elements() {
+                self.state_pointers.push(
+                    values[component * self.program.instances as usize..].as_ptr() as *mut f32,
+                );
+                self.next_state_pointers
+                    .push(next_values[component * self.program.instances as usize..].as_mut_ptr());
+            }
         }
     }
+
+    fn refresh_state_snapshot(&mut self) {
+        for state in &self.program.states {
+            let values = &self.state[&state.slot];
+            self.state_snapshot.insert(
+                state.slot,
+                from_soa(
+                    values,
+                    state.shape.elements(),
+                    self.program.instances as usize,
+                ),
+            );
+        }
+    }
+}
+
+fn to_soa(values: &[f32], elements: usize, instances: usize) -> Vec<f32> {
+    let mut result = vec![0.0; values.len()];
+    for instance in 0..instances {
+        for component in 0..elements {
+            result[component * instances + instance] = values[instance * elements + component];
+        }
+    }
+    result
+}
+
+fn from_soa(values: &[f32], elements: usize, instances: usize) -> Vec<f32> {
+    let mut result = vec![0.0; values.len()];
+    for instance in 0..instances {
+        for component in 0..elements {
+            result[instance * elements + component] = values[component * instances + instance];
+        }
+    }
+    result
 }
 
 impl NativeKernel {
@@ -199,7 +348,7 @@ impl NativeKernel {
 
         let pointer_type = module.target_config().pointer_type();
         let mut signature = module.make_signature();
-        for _ in 0..4 {
+        for _ in 0..5 {
             signature.params.push(AbiParam::new(pointer_type));
         }
         signature.returns.push(AbiParam::new(types::I64));
@@ -229,10 +378,25 @@ impl NativeKernel {
             let input_table = parameters[0];
             let state_table = parameters[1];
             let next_state_table = parameters[2];
-            let instances = parameters[3];
+            let start = parameters[3];
+            let end = parameters[4];
             let pointer_bytes = i32::try_from(pointer_type.bytes()).unwrap();
             let flags = MemFlags::trusted();
-            let input_bases = (0..program.inputs.len())
+            let input_component_offsets =
+                component_offsets(program.inputs.iter().map(|input| input.shape.elements()));
+            let state_component_offsets =
+                component_offsets(program.states.iter().map(|state| state.shape.elements()));
+            let input_component_count: usize = program
+                .inputs
+                .iter()
+                .map(|input| input.shape.elements())
+                .sum();
+            let state_component_count: usize = program
+                .states
+                .iter()
+                .map(|state| state.shape.elements())
+                .sum();
+            let input_bases = (0..input_component_count)
                 .map(|index| {
                     builder.ins().load(
                         pointer_type,
@@ -242,7 +406,7 @@ impl NativeKernel {
                     )
                 })
                 .collect::<Vec<_>>();
-            let state_bases = (0..program.states.len())
+            let state_bases = (0..state_component_count)
                 .map(|index| {
                     builder.ins().load(
                         pointer_type,
@@ -252,7 +416,7 @@ impl NativeKernel {
                     )
                 })
                 .collect::<Vec<_>>();
-            let next_state_bases = (0..program.states.len())
+            let next_state_bases = (0..state_component_count)
                 .map(|index| {
                     builder.ins().load(
                         pointer_type,
@@ -262,14 +426,11 @@ impl NativeKernel {
                     )
                 })
                 .collect::<Vec<_>>();
-            let zero = builder.ins().iconst(pointer_type, 0);
-            builder.ins().jump(header, &[zero.into()]);
+            builder.ins().jump(header, &[start.into()]);
 
             builder.switch_to_block(header);
             let instance = builder.block_params(header)[0];
-            let has_instance = builder
-                .ins()
-                .icmp(IntCC::UnsignedLessThan, instance, instances);
+            let has_instance = builder.ins().icmp(IntCC::UnsignedLessThan, instance, end);
             builder.ins().brif(has_instance, body, &[], exit, &[]);
 
             builder.switch_to_block(body);
@@ -291,10 +452,8 @@ impl NativeKernel {
                 for component in 0..input.shape.elements() {
                     registers[offset + component] = Some(NativeRegister::F32(load_component(
                         &mut builder,
-                        input_bases[index],
+                        input_bases[input_component_offsets[index] + component],
                         instance,
-                        input.shape.elements(),
-                        component,
                         pointer_type,
                     )));
                 }
@@ -304,10 +463,8 @@ impl NativeKernel {
                 for component in 0..state.shape.elements() {
                     registers[offset + component] = Some(NativeRegister::F32(load_component(
                         &mut builder,
-                        state_bases[index],
+                        state_bases[state_component_offsets[index] + component],
                         instance,
-                        state.shape.elements(),
-                        component,
                         pointer_type,
                     )));
                 }
@@ -335,10 +492,8 @@ impl NativeKernel {
                     let value = lower_numeric_operand(&mut builder, *source, &registers)?;
                     store_component(
                         &mut builder,
-                        next_state_bases[index],
+                        next_state_bases[state_component_offsets[index] + component],
                         instance,
-                        state.shape.elements(),
-                        component,
                         pointer_type,
                         value,
                     );
@@ -490,9 +645,23 @@ fn lower_computation(
         ScalarComputation::SumProducts(terms) => {
             let mut sum = builder.ins().f32const(0.0);
             for (left, right) in terms {
+                let left_is_one = super::is_one_operand(*left);
+                let right_is_one = super::is_one_operand(*right);
+                let left_is_negative_one = super::is_negative_one_operand(*left);
+                let right_is_negative_one = super::is_negative_one_operand(*right);
                 let left = lower_numeric_operand(builder, *left, registers)?;
                 let right = lower_numeric_operand(builder, *right, registers)?;
-                sum = builder.ins().fma(left, right, sum);
+                if left_is_one {
+                    sum = builder.ins().fadd(sum, right);
+                } else if right_is_one {
+                    sum = builder.ins().fadd(sum, left);
+                } else if left_is_negative_one {
+                    sum = builder.ins().fsub(sum, right);
+                } else if right_is_negative_one {
+                    sum = builder.ins().fsub(sum, left);
+                } else {
+                    sum = builder.ins().fma(left, right, sum);
+                }
             }
             NativeRegister::F32(sum)
         }
@@ -638,15 +807,23 @@ fn call_math(
     builder.inst_results(call)[0]
 }
 
+fn component_offsets(elements: impl IntoIterator<Item = usize>) -> Vec<usize> {
+    let mut offsets = Vec::new();
+    let mut offset = 0;
+    for count in elements {
+        offsets.push(offset);
+        offset += count;
+    }
+    offsets
+}
+
 fn load_component(
     builder: &mut FunctionBuilder<'_>,
     base: Value,
     instance: Value,
-    elements: usize,
-    component: usize,
     pointer_type: cranelift_codegen::ir::Type,
 ) -> Value {
-    let address = component_address(builder, base, instance, elements, component, pointer_type);
+    let address = component_address(builder, base, instance, pointer_type);
     builder
         .ins()
         .load(types::F32, MemFlags::trusted(), address, 0)
@@ -656,12 +833,10 @@ fn store_component(
     builder: &mut FunctionBuilder<'_>,
     base: Value,
     instance: Value,
-    elements: usize,
-    component: usize,
     pointer_type: cranelift_codegen::ir::Type,
     value: Value,
 ) {
-    let address = component_address(builder, base, instance, elements, component, pointer_type);
+    let address = component_address(builder, base, instance, pointer_type);
     builder.ins().store(MemFlags::trusted(), value, address, 0);
 }
 
@@ -669,19 +844,11 @@ fn component_address(
     builder: &mut FunctionBuilder<'_>,
     base: Value,
     instance: Value,
-    elements: usize,
-    component: usize,
     pointer_type: cranelift_codegen::ir::Type,
 ) -> Value {
-    let element = builder
-        .ins()
-        .imul_imm(instance, i64::try_from(elements).unwrap());
-    let element = builder
-        .ins()
-        .iadd_imm(element, i64::try_from(component).unwrap());
     let byte_offset = builder
         .ins()
-        .imul_imm(element, i64::from(types::F32.bytes()));
+        .imul_imm(instance, i64::from(types::F32.bytes()));
     debug_assert_eq!(builder.func.dfg.value_type(byte_offset), pointer_type);
     builder.ins().iadd(base, byte_offset)
 }

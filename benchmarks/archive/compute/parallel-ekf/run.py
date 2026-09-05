@@ -76,13 +76,40 @@ def main() -> None:
         type=Path,
         default=ROOT / "target/release/examples/parallel_ekf_benchmark",
     )
+    parser.add_argument(
+        "--mech-metal-only",
+        action="store_true",
+        help="run the Mech backend lane through direct Metal without creating a WGPU session",
+    )
     parser.add_argument("--python", default=sys.executable)
+    parser.add_argument(
+        "--julia-source",
+        type=Path,
+        default=HERE / "julia_mojo_style.jl",
+        help="Julia control source (defaults to the revised fixed-shape SoA lane)",
+    )
+    parser.add_argument(
+        "--taichi-source",
+        type=Path,
+        help="optional Taichi control source; use a Python environment with Taichi installed",
+    )
+    parser.add_argument(
+        "--taichi-backend", choices=("cpu", "gpu"), default="cpu"
+    )
+    parser.add_argument("--taichi-threads", type=int, default=8)
+    parser.add_argument("--taichi-sync-each-turn", action="store_true")
+    parser.add_argument(
+        "--mojo",
+        help="path to the Mojo compiler; when supplied, include the compiled Mojo scalar lane",
+    )
     parser.add_argument(
         "--evidence-output",
         type=Path,
         help="write commands, metadata, warmups, and every measured stdout as JSON",
     )
     args = parser.parse_args()
+    if args.mech_metal_only and platform.system() != "Darwin":
+        raise RuntimeError("--mech-metal-only requires a macOS build with the metal-native feature")
     environment = os.environ.copy()
     for name in (
         "OMP_NUM_THREADS",
@@ -97,6 +124,7 @@ def main() -> None:
         "luajit": shutil.which("luajit"),
         "rustc": shutil.which("rustc"),
     }
+    mojo = args.mojo or shutil.which("mojo")
     missing = [name for name, path in required.items() if path is None]
     if missing:
         raise RuntimeError(f"missing benchmark tools: {', '.join(missing)}")
@@ -124,6 +152,27 @@ def main() -> None:
             environment,
         )
         common = [str(args.scalar_instances), str(args.scalar_turns)]
+        mojo_binary = None
+        if mojo is not None:
+            mojo_binary = Path(temporary) / "mojo-scalar"
+            output(
+                [
+                    mojo,
+                    "build",
+                    "-O3",
+                    "--fp-mode",
+                    "contract=off",
+                    str(HERE / "mojo_scalar.mojo"),
+                    "-o",
+                    str(mojo_binary),
+                ],
+                environment,
+            )
+        julia_lane_name = (
+            "Julia fixed-shape SoA"
+            if args.julia_source.name == "julia_mojo_style.jl"
+            else "Julia scalar outer loop"
+        )
         language_commands = {
             "Mech scalar": None,
             "Rust optimized fixed-shape": [str(rust_binary), *common],
@@ -132,10 +181,10 @@ def main() -> None:
                 str(HERE / "numpy_scalar.py"),
                 *common,
             ],
-            "Julia scalar outer loop": [
+            julia_lane_name: [
                 required["julia"],
                 "--startup-file=no",
-                str(HERE / "julia_scalar.jl"),
+                str(args.julia_source),
                 *common,
             ],
             "LuaJIT scalar outer loop": [
@@ -144,13 +193,44 @@ def main() -> None:
                 *common,
             ],
         }
-        scalar_mech_outputs = sample(
-            [str(args.mech_binary), *common, str(max(20, args.scalar_turns)), "120"],
-            args.samples,
-            environment,
-            evidence_runs,
-            "mech_scalar_settings",
-        )
+        if mojo_binary is not None:
+            language_commands["Mojo fixed-shape scalar (unchecked)"] = [
+                str(mojo_binary),
+                *common,
+                "unchecked",
+            ]
+            language_commands["Mojo fixed-shape scalar (checked)"] = [
+                str(mojo_binary),
+                *common,
+                "checked",
+            ]
+        if args.taichi_source is not None:
+            taichi_command = [
+                args.python,
+                str(args.taichi_source),
+                "--backend",
+                args.taichi_backend,
+                "--instances",
+                str(args.scalar_instances),
+                "--turns",
+                str(args.scalar_turns),
+                "--samples",
+                "1",
+                "--threads",
+                str(max(0, args.taichi_threads)),
+            ]
+            if args.taichi_sync_each_turn:
+                taichi_command.append("--sync-each-turn")
+            language_commands["Taichi fixed-shape SoA"] = taichi_command
+        scalar_mech_outputs = []
+        if not args.mech_metal_only:
+            scalar_mech_outputs = sample(
+                [str(args.mech_binary), *common, str(max(20, args.scalar_turns)), "120"],
+                args.samples,
+                environment,
+                evidence_runs,
+                "mech_scalar_settings",
+            )
         backend_mech_outputs = sample(
             [
                 str(args.mech_binary),
@@ -160,33 +240,37 @@ def main() -> None:
                 "120",
             ],
             args.samples,
-            environment,
+            {
+                **environment,
+                **({"MECH_METAL_ONLY": "1"} if args.mech_metal_only else {}),
+            },
             evidence_runs,
             "mech_backend_settings",
         )
         scalar = {}
-        scalar["Mech scalar"] = (
-            statistics.median(
-                number(text, r"Mech scalar throughput: ([0-9.]+) million")
-                for text in scalar_mech_outputs
+        if not args.mech_metal_only:
+            scalar["Mech scalar"] = (
+                statistics.median(
+                    number(text, r"Mech scalar throughput: ([0-9.]+) million")
+                    for text in scalar_mech_outputs
+                )
+                * 1e6,
+                statistics.median(
+                    number(text, r"Mech scalar checksum: ([0-9.eE+-]+)")
+                    for text in scalar_mech_outputs
+                ),
             )
-            * 1e6,
-            statistics.median(
-                number(text, r"Mech scalar checksum: ([0-9.eE+-]+)")
-                for text in scalar_mech_outputs
-            ),
-        )
-        scalar["Mech Cranelift JIT"] = (
-            statistics.median(
-                number(text, r"Mech Cranelift JIT throughput: ([0-9.]+) million")
-                for text in scalar_mech_outputs
+            scalar["Mech Cranelift JIT"] = (
+                statistics.median(
+                    number(text, r"Mech Cranelift JIT throughput: ([0-9.]+) million")
+                    for text in scalar_mech_outputs
+                )
+                * 1e6,
+                statistics.median(
+                    number(text, r"Mech Cranelift JIT checksum: ([0-9.eE+-]+)")
+                    for text in scalar_mech_outputs
+                ),
             )
-            * 1e6,
-            statistics.median(
-                number(text, r"Mech Cranelift JIT checksum: ([0-9.eE+-]+)")
-                for text in scalar_mech_outputs
-            ),
-        )
         for lane, command in language_commands.items():
             if command is not None:
                 count = (
@@ -200,28 +284,46 @@ def main() -> None:
             if abs(checksum - reference) > 0.1:
                 raise RuntimeError(f"{lane} checksum {checksum} differs from Rust {reference}")
 
-        backend = {
-            "Mech scalar": statistics.median(
-                number(text, r"Mech scalar throughput: ([0-9.]+) million")
-                for text in backend_mech_outputs
-            ),
-            "Mech Cranelift JIT": statistics.median(
-                number(text, r"Mech Cranelift JIT throughput: ([0-9.]+) million")
-                for text in backend_mech_outputs
-            ),
-            "Mech SIMD (4xf32)": statistics.median(
-                number(text, r"Mech SIMD throughput: ([0-9.]+) million")
-                for text in backend_mech_outputs
-            ),
-            "Mech GPU, one submission/turn": statistics.median(
-                number(text, r"GPU single-submit throughput: ([0-9.]+) million")
-                for text in backend_mech_outputs
-            ),
-            "Mech GPU, checked repeated turns": statistics.median(
-                number(text, r"GPU checked repeated throughput: ([0-9.]+) million")
-                for text in backend_mech_outputs
-            ),
-        }
+        if args.mech_metal_only:
+            backend = {
+                "Mech direct Metal checked": statistics.median(
+                    number(
+                        text,
+                        r"Mech direct Metal checked throughput: ([0-9.]+) million",
+                    )
+                    for text in backend_mech_outputs
+                ),
+                "Mech direct Metal unchecked": statistics.median(
+                    number(
+                        text,
+                        r"Mech direct Metal unchecked throughput: ([0-9.]+) million",
+                    )
+                    for text in backend_mech_outputs
+                ),
+            }
+        else:
+            backend = {
+                "Mech scalar": statistics.median(
+                    number(text, r"Mech scalar throughput: ([0-9.]+) million")
+                    for text in backend_mech_outputs
+                ),
+                "Mech Cranelift JIT": statistics.median(
+                    number(text, r"Mech Cranelift JIT throughput: ([0-9.]+) million")
+                    for text in backend_mech_outputs
+                ),
+                "Mech SIMD (4xf32)": statistics.median(
+                    number(text, r"Mech SIMD throughput: ([0-9.]+) million")
+                    for text in backend_mech_outputs
+                ),
+                "Mech GPU, one submission/turn": statistics.median(
+                    number(text, r"GPU single-submit throughput: ([0-9.]+) million")
+                    for text in backend_mech_outputs
+                ),
+                "Mech GPU, checked repeated turns": statistics.median(
+                    number(text, r"GPU checked repeated throughput: ([0-9.]+) million")
+                    for text in backend_mech_outputs
+                ),
+            }
         print("| Mech backend | Million EKF-turns/s |")
         print("| --- | ---: |")
         for lane, throughput in backend.items():
@@ -244,6 +346,8 @@ def main() -> None:
                 "julia": [required["julia"], "--version"],
                 "luajit": [required["luajit"], "-v"],
             }
+            if mojo is not None:
+                metadata_commands["mojo"] = [mojo, "--version"]
             evidence = {
                 "schema_version": 1,
                 "generated_at": datetime.datetime.now().astimezone().isoformat(),
@@ -256,6 +360,7 @@ def main() -> None:
                     "scalar_turns": args.scalar_turns,
                     "backend_instances": args.backend_instances,
                     "backend_cpu_turns": args.backend_cpu_turns,
+                    "mech_metal_only": args.mech_metal_only,
                     "samples": args.samples,
                     "luajit_samples": args.luajit_samples,
                     "thread_environment": {

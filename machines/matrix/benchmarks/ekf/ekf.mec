@@ -1,0 +1,62 @@
++> math
+
+@input := bench://ekf-runtime{:read(pulse), :read(linear-velocity), :read(angular-velocity), :read(bearing)}
+
+pulse := @input/pulse
+linear-velocity := @input/linear-velocity
+angular-velocity := @input/angular-velocity
+bearing := @input/bearing
+
+dt := 0.1
+landmark-x := 140.0
+landmark-y := 12.0
+process-noise := [0.01, 0.0; 0.0, 0.0025]
+measurement-noise := 0.25
+identity := [1.0, 0.0, 0.0; 0.0, 1.0, 0.0; 0.0, 0.0, 1.0]
+basis-x := [1.0; 0.0; 0.0]
+basis-y := [0.0; 1.0; 0.0]
+basis-theta := [0.0; 0.0; 1.0]
+
+~state-x := 55.0
+~state-y := 25.0
+~state-theta := 0.4
+~covariance := [100.0, 0.0, 0.0; 0.0, 100.0, 0.0; 0.0, 0.0, 0.15]
+state := [state-x, state-y, state-theta]
+
+~> pulse {
+  sin-theta := math/sin(state-theta)
+  cos-theta := math/cos(state-theta)
+  distance := linear-velocity * dt
+
+  predicted-x := state-x + distance * cos-theta
+  predicted-y := state-y + distance * sin-theta
+  predicted-theta := state-theta + angular-velocity * dt
+  predicted-state := [predicted-x, predicted-y, predicted-theta]
+  motion-jacobian := [1.0, 0.0, -distance * sin-theta; 0.0, 1.0, distance * cos-theta; 0.0, 0.0, 1.0]
+  control-jacobian := [cos-theta * dt, 0.0; sin-theta * dt, 0.0; 0.0, dt]
+  predicted-covariance := motion-jacobian ** covariance ** motion-jacobian' + control-jacobian ** process-noise ** control-jacobian'
+
+  delta-x := landmark-x - predicted-x
+  delta-y := landmark-y - predicted-y
+  squared-range := delta-x * delta-x + delta-y * delta-y
+  predicted-bearing := math/atan2(delta-y, delta-x) - predicted-theta
+  raw-innovation := bearing - predicted-bearing
+  innovation := math/atan2(math/sin(raw-innovation), math/cos(raw-innovation))
+  observation-jacobian := [delta-y / squared-range, -delta-x / squared-range, -1.0]
+  projected-observation := observation-jacobian ** predicted-covariance
+  innovation-variance := projected-observation · observation-jacobian + measurement-noise
+  gain := predicted-covariance ** observation-jacobian' / innovation-variance
+
+  corrected-x := predicted-x + (gain · basis-x) * innovation
+  corrected-y := predicted-y + (gain · basis-y) * innovation
+  corrected-theta := predicted-theta + (gain · basis-theta) * innovation
+  correction := identity - gain ** observation-jacobian
+  corrected-covariance := correction ** predicted-covariance ** correction' + (gain ** gain') * measurement-noise
+
+  state-x = corrected-x
+  state-y = corrected-y
+  state-theta = corrected-theta
+  covariance = corrected-covariance
+}
+
+state

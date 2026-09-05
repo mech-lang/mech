@@ -9,9 +9,9 @@ use std::{
 };
 
 use mech_compute::{
-    BinaryOperation, ComputeKernel, ComputeProgram, ConcatenationAxis, ConcatenationInput,
-    ElementwiseInstruction, ElementwiseIr, ElementwiseLowering, ElementwiseOperation,
-    ElementwiseStateStorage, ElementwiseStoragePlan, UnaryOperation,
+    BackendRequest, BinaryOperation, ComputeKernel, ComputeProgram, ConcatenationAxis,
+    ConcatenationInput, ElementwiseInstruction, ElementwiseIr, ElementwiseLowering,
+    ElementwiseOperation, ElementwiseStateStorage, ElementwiseStoragePlan, UnaryOperation,
     build_compute_region_interface, display_operation, elementwise_lowering, plan_compute_artifact,
     turn_required_nodes,
 };
@@ -789,6 +789,103 @@ pub fn lower_elementwise_compute_program(
     Compiler::new(artifact)
         .compile()
         .map(|program| program.compute_program().clone())
+}
+
+/// The compiler-owned kernel form selected for a compute region.
+///
+/// This is deliberately still a neutral [`ComputeProgram`]. Backend-specific
+/// compilation happens only after this boundary, so native and browser hosts
+/// cannot accidentally execute a handwritten substitute for the Mech source.
+#[derive(Clone, Debug)]
+pub enum LoweredComputeKernel {
+    Elementwise(ComputeProgram),
+    FixedShape(ComputeProgram),
+}
+
+impl LoweredComputeKernel {
+    pub fn compute_program(&self) -> &ComputeProgram {
+        match self {
+            Self::Elementwise(program) | Self::FixedShape(program) => program,
+        }
+    }
+
+    pub const fn is_fixed_shape(&self) -> bool {
+        matches!(self, Self::FixedShape(_))
+    }
+}
+
+/// The source was valid, but neither neutral kernel representation admitted
+/// the requested operation set.
+#[derive(Debug)]
+pub enum ComputeKernelEmissionError {
+    FixedShape(GpuAdmissionError),
+    Both {
+        elementwise: GpuAdmissionError,
+        fixed_shape: GpuAdmissionError,
+    },
+}
+
+impl fmt::Display for ComputeKernelEmissionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FixedShape(error) => write!(formatter, "fixed-shape lowering failed: {error}"),
+            Self::Both {
+                elementwise,
+                fixed_shape,
+            } => write!(
+                formatter,
+                "elementwise lowering failed: {elementwise}; fixed-shape lowering failed: {fixed_shape}"
+            ),
+        }
+    }
+}
+
+impl Error for ComputeKernelEmissionError {}
+
+/// Emits the neutral kernel form required by a backend request.
+///
+/// Portable requests use elementwise lowering first. Explicit fixed-shape
+/// native requests (`cpu-simd` and `cpu-jit`) use broadcast lowering first so
+/// they can execute the actual source graph through the resident executor.
+/// The `cpu` class request also prefers fixed shape, but may fall back to the
+/// portable form because it permits the scalar backend. Other requests retain
+/// the portable-first policy and fall back to fixed shape for matrix or other
+/// operations that need it.
+pub fn emit_compute_kernel(
+    artifact: &ProgramArtifact,
+    inputs: &BTreeMap<String, Vec<f32>>,
+    request: &BackendRequest,
+) -> Result<LoweredComputeKernel, ComputeKernelEmissionError> {
+    let fixed_first = matches!(request, BackendRequest::Cpu)
+        || matches!(request, BackendRequest::Exact(id) if matches!(id.as_str(), "cpu-simd" | "cpu-jit"));
+
+    if fixed_first {
+        match ComputeLowerer.compile_broadcast(artifact, inputs) {
+            Ok(kernel) => Ok(LoweredComputeKernel::FixedShape(
+                kernel.compute_program().clone(),
+            )),
+            Err(fixed_shape) if matches!(request, BackendRequest::Cpu) => {
+                lower_elementwise_compute_program(artifact)
+                    .map(LoweredComputeKernel::Elementwise)
+                    .map_err(|elementwise| ComputeKernelEmissionError::Both {
+                        elementwise,
+                        fixed_shape,
+                    })
+            }
+            Err(fixed_shape) => Err(ComputeKernelEmissionError::FixedShape(fixed_shape)),
+        }
+    } else {
+        match lower_elementwise_compute_program(artifact) {
+            Ok(program) => Ok(LoweredComputeKernel::Elementwise(program)),
+            Err(elementwise) => ComputeLowerer
+                .compile_broadcast(artifact, inputs)
+                .map(|kernel| LoweredComputeKernel::FixedShape(kernel.compute_program().clone()))
+                .map_err(|fixed_shape| ComputeKernelEmissionError::Both {
+                    elementwise,
+                    fixed_shape,
+                }),
+        }
+    }
 }
 
 impl ComputeLowerer {

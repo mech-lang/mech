@@ -14,7 +14,8 @@ use mech_engine::{
 };
 use mech_gpu::{
     BatchedExecutionError, ComputeLowerer, FixedShapeKernel, GpuExecutionBindingRole,
-    GpuExecutionPlan, GpuKernelPlanSource, GpuPlanKernelKind, native_compute_backend_registry,
+    GpuExecutionPlan, GpuKernelPlanSource, GpuPlanKernelKind, LoweredComputeKernel,
+    emit_compute_kernel, native_compute_backend_registry,
 };
 use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
@@ -474,6 +475,26 @@ fn source_program_from(
         .compile_broadcast(&artifact, &inputs)
         .expect("generic fixed-shape operations must lower");
     (program, inputs)
+}
+
+#[test]
+fn compiler_emits_fixed_shape_kernels_for_explicit_native_requests() {
+    let tree = source_tree(8);
+    let driver = evaluate_driver(&tree);
+    let artifact = compile_compute(&tree, &driver);
+    let inputs = source_inputs(&driver, &artifact);
+
+    for backend in ["cpu-simd", "cpu-jit"] {
+        let request = BackendRequest::parse(backend).unwrap();
+        let emitted = emit_compute_kernel(&artifact, &inputs, &request)
+            .unwrap_or_else(|error| panic!("{backend} emission failed: {error}"));
+        assert!(emitted.is_fixed_shape(), "{backend} must emit fixed shape");
+        assert!(matches!(emitted, LoweredComputeKernel::FixedShape(_)));
+        assert!(matches!(
+            emitted.compute_program().kernel(),
+            mech_compute::ComputeKernel::FixedShape(_)
+        ));
+    }
 }
 
 #[test]
@@ -1141,6 +1162,19 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
             jit.last_fault().unwrap().constraint_name.as_ref(),
             "finite-candidate!"
         );
+
+        let mut jit_parallel = program.prepare_jit_cpu(&inputs).unwrap();
+        let jit_parallel_published = jit_parallel.state().clone();
+        assert!(matches!(
+            jit_parallel.dispatch_turns_parallel(1, 4).unwrap_err(),
+            BatchedExecutionError::Integrity(_)
+        ));
+        assert_eq!(jit_parallel.state(), &jit_parallel_published);
+        assert_eq!(jit_parallel.fault_count(), 1);
+        assert_eq!(
+            jit_parallel.last_fault().unwrap().constraint_name.as_ref(),
+            "finite-candidate!"
+        );
     }
 }
 
@@ -1205,6 +1239,28 @@ fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
         gpu.last_fault().unwrap().constraint_name.as_ref(),
         "finite-candidate!"
     );
+}
+
+#[cfg(all(feature = "metal-native", target_os = "macos"))]
+#[test]
+fn checked_metal_rejects_candidate_and_keeps_published_estimate() {
+    let (program, mut inputs) = source_program(32);
+    inputs
+        .get_mut("bearing")
+        .unwrap()
+        .iter_mut()
+        .for_each(|value| *value = f32::NAN);
+    let mut metal = program
+        .prepare_metal(&inputs)
+        .expect("Metal session must prepare on the test machine");
+    let before = metal.read_published_state().unwrap();
+    let error = metal.dispatch_turns(1).unwrap_err();
+    let BatchedExecutionError::Integrity(fault) = error else {
+        panic!("expected a direct Metal integrity fault");
+    };
+    assert_eq!(fault.constraint_name.as_ref(), "finite-candidate!");
+    let after = metal.read_published_state().unwrap();
+    assert_eq!(after, before);
 }
 
 fn assert_close(expected: &[f32], actual: &[f32], tolerance: f32) {

@@ -116,9 +116,10 @@ compute_backends_native = [
       "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native", "mech-gpu/jit",
       "mech-runtime/compute",
       "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
-      "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
+      "f32", "i64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
       "math_add", "math_sub", "math_mul", "math_div", "math_mod", "math_sin", "math_cos",
-      "math_ceil", "math_floor",
+      "math_neg", "math_sqrt", "math_atan2", "math_ceil", "math_floor",
+      "matrix_dot", "matrix_matmul", "matrix_transpose", "matrix_solve",
       "mech-stdlib/native-plan",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",

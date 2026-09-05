@@ -48,8 +48,8 @@ use serde::Deserialize;
 use crate::host::WasmBrowserDomBackend;
 #[cfg(feature = "browser_compute")]
 use crate::mixed_compute::{
-    BrowserComputeBridge, BrowserComputePurpose, prepare_browser_compute_runtime,
-    prepare_compute_region,
+    BrowserComputeBridge, BrowserComputePurpose, configured_compute_backend_request_for_document,
+    prepare_browser_compute_runtime, prepare_compute_region,
 };
 
 #[wasm_bindgen]
@@ -703,8 +703,15 @@ fn build_document_repl_runtime_for_tree(
                 let compiler_started = web_time::Instant::now();
                 let mut compiler = planning.build_compiler()?;
                 let catalog_setup = compiler_started.elapsed().as_secs_f64() * 1_000.0;
-                let prepared =
-                    prepare_compute_region(&mut compiler, &candidate_tree, 0.0, catalog_setup)?;
+                let backend_request =
+                    configured_compute_backend_request_for_document(&document, "")?;
+                let prepared = prepare_compute_region(
+                    &mut compiler,
+                    &candidate_tree,
+                    0.0,
+                    catalog_setup,
+                    &backend_request,
+                )?;
                 Some(prepare_browser_compute_runtime(
                     &document,
                     prepared,
@@ -4411,9 +4418,19 @@ rows := |id<string> x<f64>|
             }
             let mut compiler = planning.build_compiler().unwrap();
             let tree = mech_syntax::parser::parse(&source).unwrap();
-            let prepared =
-                crate::mixed_compute::prepare_compute_region(&mut compiler, &tree, 0.0, 0.0)
-                    .unwrap();
+            let backend_request =
+                crate::mixed_compute::configured_compute_backend_request_for_document(
+                    &document, "",
+                )
+                .unwrap();
+            let prepared = crate::mixed_compute::prepare_compute_region(
+                &mut compiler,
+                &tree,
+                0.0,
+                0.0,
+                &backend_request,
+            )
+            .unwrap();
             let command =
                 crate::mixed_compute::ComputeCommandHandle::new(prepared.region.clone(), 1);
             let registry = crate::mixed_compute::browser_compute_backend_registry(

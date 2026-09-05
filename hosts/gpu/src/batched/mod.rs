@@ -28,6 +28,10 @@ use super::{
 mod jit;
 #[cfg(feature = "jit")]
 pub use jit::*;
+#[cfg(all(feature = "metal-native", target_os = "macos"))]
+mod metal;
+#[cfg(all(feature = "metal-native", target_os = "macos"))]
+pub use metal::*;
 
 const SIMD_LANES: usize = 4;
 const FIXED_SHAPE_INTEGRITY_WORDS: usize = 2;
@@ -105,6 +109,18 @@ fn evaluate_scalar_computation_simd(computation: &ScalarComputation, registers: 
         }
         ScalarComputation::SumProducts(terms) => {
             terms.iter().fold(f32x4::ZERO, |sum, (left, right)| {
+                if is_one_operand(*left) {
+                    return sum + evaluate_operand_simd(*right, registers);
+                }
+                if is_one_operand(*right) {
+                    return sum + evaluate_operand_simd(*left, registers);
+                }
+                if is_negative_one_operand(*left) {
+                    return sum - evaluate_operand_simd(*right, registers);
+                }
+                if is_negative_one_operand(*right) {
+                    return sum - evaluate_operand_simd(*left, registers);
+                }
                 evaluate_operand_simd(*left, registers)
                     .mul_add(evaluate_operand_simd(*right, registers), sum)
             })
@@ -264,18 +280,44 @@ fn scalar_computation_wgsl(computation: &ScalarComputation) -> String {
                 .collect::<Vec<_>>();
             super::wgsl_elementwise_expression(*operation, &inputs)
         }
-        ScalarComputation::SumProducts(terms) => terms
-            .iter()
-            .map(|(left, right)| {
-                format!(
-                    "({} * {})",
-                    scalar_operand_wgsl(*left),
-                    scalar_operand_wgsl(*right)
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(" + "),
+        ScalarComputation::SumProducts(terms) => scalar_sum_products_wgsl(terms),
     }
+}
+
+/// Emits one product in a sum without carrying compile-time identity factors
+/// into the device shader. Zero products are intentionally retained: in IEEE
+/// arithmetic `0 * NaN` and `0 * Inf` are not zero, and dropping them could
+/// hide a non-finite candidate from an integrity predicate.
+fn scalar_sum_products_wgsl(terms: &[(ScalarOperand, ScalarOperand)]) -> String {
+    // The benchmark has an opt-in no-contraction control so a native Metal
+    // comparison can match a reference compiled with floating-point
+    // contraction disabled. Normal Mech code generation keeps FMA enabled.
+    let use_fma = std::env::var_os("MECH_AUDIT_DISABLE_FMA").is_none();
+    let mut expression = "0.0".to_owned();
+    for (left, right) in terms {
+        if is_one_operand(*left) {
+            expression = format!("({expression}) + ({})", scalar_operand_wgsl(*right));
+        } else if is_one_operand(*right) {
+            expression = format!("({expression}) + ({})", scalar_operand_wgsl(*left));
+        } else if is_negative_one_operand(*left) {
+            expression = format!("({expression}) - ({})", scalar_operand_wgsl(*right));
+        } else if is_negative_one_operand(*right) {
+            expression = format!("({expression}) - ({})", scalar_operand_wgsl(*left));
+        } else if use_fma {
+            expression = format!(
+                "fma({}, {}, {expression})",
+                scalar_operand_wgsl(*left),
+                scalar_operand_wgsl(*right)
+            );
+        } else {
+            expression = format!(
+                "({}) * ({}) + ({expression})",
+                scalar_operand_wgsl(*left),
+                scalar_operand_wgsl(*right)
+            );
+        }
+    }
+    expression
 }
 
 fn collect_operand_register(operand: ScalarOperand, registers: &mut BTreeSet<usize>) {
@@ -656,6 +698,8 @@ impl FixedShapeKernel {
             &inputs,
             &states,
             &constraints,
+            false,
+            None,
         );
         Ok(Self {
             instances: storage.instances,
@@ -670,6 +714,32 @@ impl FixedShapeKernel {
 
     pub fn compute_program(&self) -> &ComputeProgram {
         &self.compute
+    }
+
+    /// Creates an explicitly unchecked copy of this fixed-shape program.
+    ///
+    /// This is intended for benchmark/control lanes and callers that have
+    /// independently established their validity policy. The default program
+    /// retains every declared integrity constraint; selecting this method is
+    /// the opt-in operation that removes candidate validation and rollback
+    /// fault reporting from the generated kernel.
+    pub fn without_integrity_constraints(&self) -> Result<Self, GpuAdmissionError> {
+        if self.constraints.is_empty() {
+            return Ok(self.clone());
+        }
+        let mut storage = self
+            .compute
+            .fixed_shape_storage()
+            .expect("fixed-shape kernel has storage")
+            .clone();
+        storage.constraints = Vec::new().into_boxed_slice();
+        let compute = ComputeProgram::new(
+            self.compute.interface().clone(),
+            self.compute.plan().clone(),
+            self.compute.kernel().clone(),
+        )
+        .with_fixed_shape_storage(storage);
+        Self::from_compute_program(&compute)
     }
 
     fn fixed_ir(&self) -> &FixedShapeIr {
@@ -689,6 +759,26 @@ impl FixedShapeKernel {
 
     pub fn wgsl(&self) -> &str {
         &self.wgsl
+    }
+
+    /// Emits the same generic kernel with component-major resident buffers.
+    /// Native GPU sessions use this layout to make each component load/store
+    /// contiguous across lanes, while the public/browser plan remains in the
+    /// canonical instance-major layout for compatibility.
+    pub(crate) fn component_major_wgsl(&self, broadcast_inputs: &BTreeSet<CellSlotId>) -> String {
+        let ComputeKernel::FixedShape(ir) = self.compute.kernel() else {
+            unreachable!("fixed-shape batch contains an elementwise kernel")
+        };
+        generate_wgsl(
+            self.instances,
+            &self.register_offsets,
+            &ir.instructions,
+            &self.inputs,
+            &self.states,
+            &self.constraints,
+            true,
+            Some(broadcast_inputs),
+        )
     }
 
     pub fn inputs(&self) -> impl Iterator<Item = (&str, usize)> {
@@ -1293,6 +1383,7 @@ impl<'a> BatchCompiler<'a> {
         self.collect_slots();
         self.collect_inputs();
         self.lower_nodes();
+        self.optimize_scalar_ir();
         let missing_state_updates = self
             .states
             .values()
@@ -1899,7 +1990,7 @@ impl<'a> BatchCompiler<'a> {
                 ))
             })
             .collect::<Result<Vec<_>, String>>()?;
-        self.emit(output, 0, ScalarComputation::SumProducts(terms));
+        self.emit_sum_products(output, 0, terms);
         Ok(())
     }
 
@@ -1931,11 +2022,7 @@ impl<'a> BatchCompiler<'a> {
                         ))
                     })
                     .collect::<Result<Vec<_>, String>>()?;
-                self.emit(
-                    output,
-                    result.index(row, column),
-                    ScalarComputation::SumProducts(terms),
-                );
+                self.emit_sum_products(output, result.index(row, column), terms);
             }
         }
         Ok(())
@@ -2111,6 +2198,71 @@ impl<'a> BatchCompiler<'a> {
             output: self.register_offsets[&slot] + component,
             computation,
         });
+    }
+
+    /// Emits a product sum after removing only identities that are valid for
+    /// all IEEE inputs. Zero products stay in the scalar IR because `0 * NaN`
+    /// and `0 * Inf` must remain observable to checked publication predicates.
+    fn emit_sum_products(
+        &mut self,
+        slot: CellSlotId,
+        component: usize,
+        terms: Vec<(ScalarOperand, ScalarOperand)>,
+    ) {
+        let computation = simplify_sum_products(terms);
+        self.emit(slot, component, computation);
+    }
+
+    /// Propagates constants through the scalarized graph before backend code
+    /// generation. Composite packing, transpose, and identity matrices often
+    /// introduce copy instructions around literal zero/one values; resolving
+    /// those aliases lets the same sparse product simplification reach every
+    /// backend without special-casing a particular source program.
+    fn optimize_scalar_ir(&mut self) {
+        let mut replacements = BTreeMap::new();
+        for instruction in &mut self.instructions {
+            let computation = std::mem::replace(
+                &mut instruction.computation,
+                ScalarComputation::Copy(ScalarOperand::Constant(0.0)),
+            );
+            let mut computation = rewrite_scalar_computation(computation, &replacements);
+            if let ScalarComputation::Elementwise {
+                operation: ElementwiseOperation::Binary(BinaryOperation::Multiply),
+                inputs,
+            } = &mut computation
+                && inputs.len() == 2
+            {
+                let left_key = scalar_operand_sort_key(inputs[0]);
+                let right_key = scalar_operand_sort_key(inputs[1]);
+                if left_key > right_key {
+                    inputs.swap(0, 1);
+                }
+            } else if let ScalarComputation::SumProducts(terms) = &mut computation
+                && terms.len() == 1
+            {
+                let left_key = scalar_operand_sort_key(terms[0].0);
+                let right_key = scalar_operand_sort_key(terms[0].1);
+                if left_key > right_key {
+                    terms[0] = (terms[0].1, terms[0].0);
+                }
+            }
+            let output = instruction.output;
+            if let ScalarComputation::Copy(input) = computation {
+                replacements.insert(output, input);
+            } else if let Some(value) = scalar_computation_constant(&computation) {
+                replacements.insert(output, ScalarOperand::Constant(value));
+            } else {
+                replacements.remove(&output);
+            }
+            instruction.computation = computation;
+        }
+        for state in self.states.values_mut() {
+            if let Some(update) = &mut state.update {
+                for operand in update {
+                    *operand = rewrite_scalar_operand(*operand, &replacements);
+                }
+            }
+        }
     }
 
     fn emit_temporary_binary(
@@ -2340,6 +2492,225 @@ impl<'a> BatchCompiler<'a> {
             operation,
             detail: detail.into(),
         });
+    }
+}
+
+fn is_constant_operand(operand: ScalarOperand, value: f32) -> bool {
+    matches!(operand, ScalarOperand::Constant(actual) if actual == value)
+}
+
+fn is_zero_operand(operand: ScalarOperand) -> bool {
+    is_constant_operand(operand, 0.0)
+}
+
+fn is_one_operand(operand: ScalarOperand) -> bool {
+    is_constant_operand(operand, 1.0)
+}
+
+fn is_negative_one_operand(operand: ScalarOperand) -> bool {
+    is_constant_operand(operand, -1.0)
+}
+
+fn scalar_operand_sort_key(operand: ScalarOperand) -> (u8, u64) {
+    match operand {
+        ScalarOperand::Register(register) => (0, register as u64),
+        ScalarOperand::Constant(value) => (1, u64::from(value.to_bits())),
+    }
+}
+
+fn simplify_elementwise(
+    operation: ElementwiseOperation,
+    inputs: Vec<ScalarOperand>,
+) -> ScalarComputation {
+    let [left, right] = inputs.as_slice() else {
+        if matches!(operation, ElementwiseOperation::Identity) && inputs.len() == 1 {
+            return ScalarComputation::Copy(inputs[0]);
+        }
+        return ScalarComputation::Elementwise { operation, inputs };
+    };
+    match operation {
+        ElementwiseOperation::Binary(BinaryOperation::Add) if is_zero_operand(*left) => {
+            ScalarComputation::Copy(*right)
+        }
+        ElementwiseOperation::Binary(BinaryOperation::Add) if is_zero_operand(*right) => {
+            ScalarComputation::Copy(*left)
+        }
+        ElementwiseOperation::Binary(BinaryOperation::Subtract) if is_zero_operand(*right) => {
+            ScalarComputation::Copy(*left)
+        }
+        ElementwiseOperation::Binary(BinaryOperation::Subtract) if is_zero_operand(*left) => {
+            ScalarComputation::Negate(*right)
+        }
+        ElementwiseOperation::Binary(BinaryOperation::Multiply) if is_one_operand(*left) => {
+            ScalarComputation::Copy(*right)
+        }
+        ElementwiseOperation::Binary(BinaryOperation::Multiply) if is_one_operand(*right) => {
+            ScalarComputation::Copy(*left)
+        }
+        ElementwiseOperation::Binary(BinaryOperation::Multiply)
+            if is_negative_one_operand(*left) =>
+        {
+            ScalarComputation::Negate(*right)
+        }
+        ElementwiseOperation::Binary(BinaryOperation::Multiply)
+            if is_negative_one_operand(*right) =>
+        {
+            ScalarComputation::Negate(*left)
+        }
+        ElementwiseOperation::Binary(BinaryOperation::Divide) if is_one_operand(*right) => {
+            ScalarComputation::Copy(*left)
+        }
+        ElementwiseOperation::Identity => ScalarComputation::Copy(*left),
+        _ => ScalarComputation::Elementwise { operation, inputs },
+    }
+}
+
+fn simplify_sum_products(terms: Vec<(ScalarOperand, ScalarOperand)>) -> ScalarComputation {
+    match terms.as_slice() {
+        [] => ScalarComputation::Copy(ScalarOperand::Constant(0.0)),
+        [(left, right)] if is_one_operand(*left) => ScalarComputation::Copy(*right),
+        [(left, right)] if is_one_operand(*right) => ScalarComputation::Copy(*left),
+        [(left, right)] if is_negative_one_operand(*left) => ScalarComputation::Negate(*right),
+        [(left, right)] if is_negative_one_operand(*right) => ScalarComputation::Negate(*left),
+        _ => ScalarComputation::SumProducts(terms),
+    }
+}
+
+fn rewrite_scalar_operand(
+    operand: ScalarOperand,
+    replacements: &BTreeMap<usize, ScalarOperand>,
+) -> ScalarOperand {
+    let mut operand = operand;
+    let mut seen = BTreeSet::new();
+    while let ScalarOperand::Register(register) = operand {
+        if !seen.insert(register) {
+            break;
+        }
+        let Some(replacement) = replacements.get(&register).copied() else {
+            break;
+        };
+        operand = replacement;
+    }
+    operand
+}
+
+fn rewrite_scalar_computation(
+    computation: ScalarComputation,
+    replacements: &BTreeMap<usize, ScalarOperand>,
+) -> ScalarComputation {
+    let computation = match computation {
+        ScalarComputation::Copy(input) => {
+            ScalarComputation::Copy(rewrite_scalar_operand(input, replacements))
+        }
+        ScalarComputation::Negate(input) => {
+            let input = rewrite_scalar_operand(input, replacements);
+            match input {
+                ScalarOperand::Register(register) => {
+                    ScalarComputation::Negate(ScalarOperand::Register(register))
+                }
+                ScalarOperand::Constant(value) => {
+                    ScalarComputation::Copy(ScalarOperand::Constant(-value))
+                }
+            }
+        }
+        ScalarComputation::Absolute(input) => {
+            ScalarComputation::Absolute(rewrite_scalar_operand(input, replacements))
+        }
+        ScalarComputation::IsFinite(input) => {
+            ScalarComputation::IsFinite(rewrite_scalar_operand(input, replacements))
+        }
+        ScalarComputation::Compare {
+            operation,
+            left,
+            right,
+        } => ScalarComputation::Compare {
+            operation,
+            left: rewrite_scalar_operand(left, replacements),
+            right: rewrite_scalar_operand(right, replacements),
+        },
+        ScalarComputation::Logic { operation, inputs } => ScalarComputation::Logic {
+            operation,
+            inputs: inputs
+                .into_iter()
+                .map(|input| rewrite_scalar_operand(input, replacements))
+                .collect(),
+        },
+        ScalarComputation::Elementwise { operation, inputs } => simplify_elementwise(
+            operation,
+            inputs
+                .into_iter()
+                .map(|input| rewrite_scalar_operand(input, replacements))
+                .collect(),
+        ),
+        ScalarComputation::SumProducts(terms) => simplify_sum_products(
+            terms
+                .into_iter()
+                .map(|(left, right)| {
+                    (
+                        rewrite_scalar_operand(left, replacements),
+                        rewrite_scalar_operand(right, replacements),
+                    )
+                })
+                .collect(),
+        ),
+    };
+    if scalar_computation_constant(&computation).is_some() {
+        ScalarComputation::Copy(ScalarOperand::Constant(
+            scalar_computation_constant(&computation).unwrap(),
+        ))
+    } else {
+        computation
+    }
+}
+
+fn scalar_computation_constant(computation: &ScalarComputation) -> Option<f32> {
+    let constant = |operand: ScalarOperand| match operand {
+        ScalarOperand::Constant(value) => Some(value),
+        ScalarOperand::Register(_) => None,
+    };
+    match computation {
+        ScalarComputation::Copy(input) => constant(*input),
+        ScalarComputation::Negate(input) => constant(*input).map(|value| -value),
+        ScalarComputation::Absolute(input) => constant(*input).map(f32::abs),
+        ScalarComputation::IsFinite(input) => {
+            constant(*input).map(|value| if value.is_finite() { 1.0 } else { 0.0 })
+        }
+        ScalarComputation::Compare {
+            operation,
+            left,
+            right,
+        } => Some(if operation.apply(constant(*left)?, constant(*right)?) {
+            1.0
+        } else {
+            0.0
+        }),
+        ScalarComputation::Logic { operation, inputs } => {
+            let left = constant(*inputs.first()?)? != 0.0;
+            let right = inputs
+                .get(1)
+                .and_then(|input| constant(*input))
+                .map(|value| value != 0.0);
+            Some(if operation.apply(left, right) {
+                1.0
+            } else {
+                0.0
+            })
+        }
+        ScalarComputation::Elementwise { operation, inputs } => {
+            let values = inputs
+                .iter()
+                .copied()
+                .map(constant)
+                .collect::<Option<Vec<_>>>()?;
+            Some(operation.apply(&values))
+        }
+        ScalarComputation::SumProducts(terms) => {
+            let mut sum = 0.0_f32;
+            for (left, right) in terms {
+                sum = constant(*left)?.mul_add(constant(*right)?, sum);
+            }
+            Some(sum)
+        }
     }
 }
 
@@ -2573,6 +2944,8 @@ fn generate_wgsl(
     inputs: &[BatchedInput],
     states: &[BatchedState],
     constraints: &[BatchedConstraint],
+    component_major: bool,
+    broadcast_inputs: Option<&BTreeSet<CellSlotId>>,
 ) -> String {
     let mut shader = String::from("// Generic fixed-shape Mech batch kernel.\n");
     for input in inputs {
@@ -2610,24 +2983,34 @@ fn generate_wgsl(
     for input in inputs {
         let offset = register_offsets[&input.slot];
         for component in 0..input.shape.elements() {
+            let index = if component_major
+                && broadcast_inputs.is_some_and(|inputs| inputs.contains(&input.slot))
+            {
+                format!("{component}u")
+            } else if component_major {
+                format!("{component}u * {instances}u + index")
+            } else {
+                format!("index * {}u + {component}u", input.shape.elements())
+            };
             shader.push_str(&format!(
-                "  let r{} = input_{}[index * {}u + {}u];\n",
+                "  let r{} = input_{}[{index}];\n",
                 offset + component,
                 input.slot.get(),
-                input.shape.elements(),
-                component
             ));
         }
     }
     for state in states {
         let offset = register_offsets[&state.slot];
         for component in 0..state.shape.elements() {
+            let index = if component_major {
+                format!("{component}u * {instances}u + index")
+            } else {
+                format!("index * {}u + {component}u", state.shape.elements())
+            };
             shader.push_str(&format!(
-                "  let r{} = state_read_{}[index * {}u + {}u];\n",
+                "  let r{} = state_read_{}[{index}];\n",
                 offset + component,
                 state.slot.get(),
-                state.shape.elements(),
-                component
             ));
         }
     }
@@ -2653,17 +3036,42 @@ fn generate_wgsl(
     }
     for state in states {
         for (component, source) in state.update.iter().enumerate() {
+            let index = if component_major {
+                format!("{component}u * {instances}u + index")
+            } else {
+                format!("index * {}u + {component}u", state.shape.elements())
+            };
             shader.push_str(&format!(
-                "  state_write_{}[index * {}u + {}u] = {};\n",
+                "  state_write_{}[{index}] = {};\n",
                 state.slot.get(),
-                state.shape.elements(),
-                component,
                 scalar_operand_wgsl(*source)
             ));
         }
     }
     shader.push_str("}\n");
     shader
+}
+
+fn component_major_values(values: &[f32], elements: usize, instances: usize) -> Vec<f32> {
+    debug_assert_eq!(values.len(), elements * instances);
+    let mut result = vec![0.0; values.len()];
+    for instance in 0..instances {
+        for component in 0..elements {
+            result[component * instances + instance] = values[instance * elements + component];
+        }
+    }
+    result
+}
+
+fn instance_major_values(values: &[f32], elements: usize, instances: usize) -> Vec<f32> {
+    debug_assert_eq!(values.len(), elements * instances);
+    let mut result = vec![0.0; values.len()];
+    for instance in 0..instances {
+        for component in 0..elements {
+            result[instance * elements + component] = values[component * instances + instance];
+        }
+    }
+    result
 }
 
 #[cfg(feature = "native")]
@@ -2679,10 +3087,9 @@ mod native {
 
     use super::{
         BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, FixedShapeKernel,
+        component_major_values, instance_major_values,
     };
-    use crate::{
-        GpuBindingAccess, GpuExecutionBindingRole, GpuPlanConstraint, GpuPlanInitialValues,
-    };
+    use crate::{GpuBindingAccess, GpuExecutionBindingRole, GpuPlanConstraint};
 
     const GPU_FAULT_WORDS: usize = 2;
 
@@ -2700,6 +3107,7 @@ mod native {
         constraints: Box<[GpuPlanConstraint]>,
         integrity_fault: Option<Arc<wgpu::Buffer>>,
         integrity_readback: Option<wgpu::Buffer>,
+        instances: usize,
         workgroups: u32,
         next_group: usize,
         last_output_group: Option<usize>,
@@ -2727,6 +3135,17 @@ mod native {
             &self,
             inputs: &BTreeMap<String, Vec<f32>>,
         ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
+            let expanded_inputs = self.expand_inputs(inputs)?;
+            let broadcast_inputs = self
+                .inputs
+                .iter()
+                .filter(|input| {
+                    inputs
+                        .get(&input.name)
+                        .is_some_and(|values| values.len() == input.shape.elements())
+                })
+                .map(|input| input.slot)
+                .collect::<BTreeSet<_>>();
             let execution_plan = crate::GpuExecutionPlan::build(
                 crate::GpuKernelPlanSource::FixedShape(self),
                 inputs,
@@ -2785,18 +3204,32 @@ mod native {
                 .iter()
                 .filter(|binding| binding.role == GpuExecutionBindingRole::Input)
             {
-                let Some(GpuPlanInitialValues::F32(values)) = &binding.initial_values else {
-                    return Err(BatchedExecutionError::Native(format!(
-                        "GPU input `{}` has no f32 initializer",
-                        binding.name
-                    )));
-                };
+                let elements = self
+                    .inputs
+                    .iter()
+                    .find(|input| input.slot.get() == binding.slot)
+                    .map(|input| input.shape.elements())
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU input `{}` has no fixed-shape declaration",
+                            binding.name
+                        ))
+                    })?;
+                let values = expanded_inputs
+                    .get(&CellSlotId::new(binding.slot))
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU input `{}` has no expanded values",
+                            binding.name
+                        ))
+                    })?;
+                let values = component_major_values(values, elements, self.instances as usize);
                 input_buffers.insert(
                     CellSlotId::new(binding.slot),
                     Arc::new(
                         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                             label: Some(&binding.name),
-                            contents: bytemuck::cast_slice(values),
+                            contents: bytemuck::cast_slice(&values),
                             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
                         }),
                     ),
@@ -2806,10 +3239,15 @@ mod native {
             let mut state_buffers = BTreeMap::new();
             for state in &execution_plan.states {
                 let slot = CellSlotId::new(state.slot);
+                let values = component_major_values(
+                    &state.initial_values,
+                    state.elements_per_instance as usize,
+                    self.instances as usize,
+                );
                 let initial = Arc::new(device.create_buffer_init(
                     &wgpu::util::BufferInitDescriptor {
                         label: Some("Mech fixed-shape initial state"),
-                        contents: bytemuck::cast_slice(&state.initial_values),
+                        contents: bytemuck::cast_slice(&values),
                         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                     },
                 ));
@@ -2903,7 +3341,9 @@ mod native {
             });
             let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Scalarized Mech fixed-shape batch"),
-                source: wgpu::ShaderSource::Wgsl(execution_plan.wgsl.clone().into()),
+                source: wgpu::ShaderSource::Wgsl(
+                    self.component_major_wgsl(&broadcast_inputs).into(),
+                ),
             });
             let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Mech fixed-shape batch pipeline layout"),
@@ -2956,6 +3396,7 @@ mod native {
                 constraints: execution_plan.constraints.into_boxed_slice(),
                 integrity_fault,
                 integrity_readback,
+                instances: self.instances as usize,
                 workgroups: workgroup_count,
                 next_group: 0,
                 last_output_group: None,
@@ -2981,6 +3422,11 @@ mod native {
                     .find(|input| input.name == *name)
                     .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
                 let values = program.expand_input(input, values)?;
+                let values = component_major_values(
+                    &values,
+                    input.shape.elements(),
+                    program.instances as usize,
+                );
                 self.queue.write_buffer(
                     &self.input_buffers[&input.slot],
                     0,
@@ -3172,27 +3618,42 @@ mod native {
                 if selected.is_some_and(|selected| !selected.contains(slot)) {
                     continue;
                 }
-                let elements = if sample_instance.is_some() {
-                    self.output_elements_per_instance[slot]
+                let sample = sample_instance.is_some();
+                let elements_per_instance = self.output_elements_per_instance[slot];
+                let elements = if sample {
+                    elements_per_instance
                 } else {
                     self.output_elements[slot]
                 };
                 let size = (elements * std::mem::size_of::<f32>()) as u64;
-                let source_offset =
-                    sample_instance.map_or(0, |instance| u64::from(instance) * size);
-                if source_offset.saturating_add(size) > buffer.size() {
-                    return Err(BatchedExecutionError::Native(format!(
-                        "sample instance {} exceeds the resident batch for slot {slot:?}",
-                        sample_instance.expect("sample instance is present"),
-                    )));
-                }
                 let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech fixed-shape batch readback"),
                     size,
                     usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                     mapped_at_creation: false,
                 });
-                encoder.copy_buffer_to_buffer(buffer, source_offset, &readback, 0, size);
+                if let Some(instance) = sample_instance {
+                    if usize::try_from(instance).unwrap_or(usize::MAX) >= self.instances {
+                        return Err(BatchedExecutionError::Native(format!(
+                            "sample instance {instance} exceeds the resident batch for slot {slot:?}"
+                        )));
+                    }
+                    for component in 0..elements_per_instance {
+                        let source_offset =
+                            ((component * self.instances + usize::try_from(instance).unwrap())
+                                * std::mem::size_of::<f32>()) as u64;
+                        let destination_offset = (component * std::mem::size_of::<f32>()) as u64;
+                        encoder.copy_buffer_to_buffer(
+                            buffer,
+                            source_offset,
+                            &readback,
+                            destination_offset,
+                            std::mem::size_of::<f32>() as u64,
+                        );
+                    }
+                } else {
+                    encoder.copy_buffer_to_buffer(buffer, 0, &readback, 0, size);
+                }
                 readbacks.push((*slot, readback));
             }
             self.queue.submit(Some(encoder.finish()));
@@ -3210,7 +3671,14 @@ mod native {
                     .map_err(|_| BatchedExecutionError::Native("map channel closed".to_owned()))?
                     .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
                 let mapped = slice.get_mapped_range();
-                state.insert(slot, bytemuck::cast_slice::<u8, f32>(&mapped).to_vec());
+                let values = bytemuck::cast_slice::<u8, f32>(&mapped).to_vec();
+                let elements_per_instance = self.output_elements_per_instance[&slot];
+                let values = if sample_instance.is_some() {
+                    values
+                } else {
+                    instance_major_values(&values, elements_per_instance, self.instances)
+                };
+                state.insert(slot, values);
                 drop(mapped);
                 readback.unmap();
             }
@@ -3236,3 +3704,24 @@ mod native {
 
 #[cfg(feature = "native")]
 pub use native::*;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ieee_sensitive_zero_products_are_not_folded_away() {
+        let dynamic = ScalarOperand::Register(7);
+        assert!(matches!(
+            simplify_elementwise(
+                ElementwiseOperation::Binary(BinaryOperation::Multiply),
+                vec![ScalarOperand::Constant(0.0), dynamic],
+            ),
+            ScalarComputation::Elementwise { .. }
+        ));
+        assert!(matches!(
+            simplify_sum_products(vec![(ScalarOperand::Constant(0.0), dynamic)]),
+            ScalarComputation::SumProducts(_)
+        ));
+    }
+}

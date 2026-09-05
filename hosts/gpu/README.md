@@ -25,16 +25,38 @@ Mixed Mech source
 ```
 
 The stable mixed-application backends are `cpu-scalar` and `wgpu`. Stable
-product selectors are `auto`, `cpu`, `gpu`, `cpu-scalar`, and `wgpu`. The
-browser and native products use the same registry and session interfaces with
-platform-specific adapters. An exact backend request never falls back. `@cpu`
-and `@gpu` are hard class requirements; `@compute` accepts any compatible
-backend.
+product selectors are `auto`, `cpu`, `gpu`, `cpu-scalar`, and `wgpu`. Native
+`mech run` additionally accepts `cpu-simd` and `cpu-jit`: selecting either
+requests the compiler-owned fixed-shape kernel form before backend resolution.
+The browser product keeps the stable selector set because those native
+executors are not available in WASM. The browser and native products use the
+same registry and session interfaces with platform-specific adapters. An exact
+backend request never falls back. `@cpu` and `@gpu` are hard class
+requirements; `@compute` accepts any compatible backend.
 
-The backend library also contains `cpu-simd`, `cpu-jit`, and fixed-shape wgpu
-implementations for tests and benchmarks. The shipping mixed-application
-compiler currently emits the elementwise kernel form, not the fixed-shape form
-those prototypes require, so they are not stable v0.4 application backends.
+The backend library also contains fixed-shape SIMD, Cranelift JIT, and wgpu
+implementations. Native source compilation emits that form when a fixed-shape
+backend is explicitly selected. The compiler rejects a program that cannot be
+lowered to the requested form instead of silently running a different kernel.
+`auto` and the browser product continue to use the portable elementwise form;
+automatic dual-form planning is a separate optimization.
+
+On macOS, the opt-in `metal-native` feature exposes a direct Metal resident
+session for native-kernel measurements. It translates the same generated
+scalar IR to Metal Shading Language and uses a Metal command encoder directly;
+it does not create a WGPU device. The EKF benchmark selects that lane with
+`MECH_METAL_ONLY=1`:
+
+```text
+cargo build -p mech-gpu --release --features native,jit,metal-native \
+  --example parallel_ekf_benchmark
+MECH_METAL_ONLY=1 ./target/release/examples/parallel_ekf_benchmark \
+  500000 40 1 40
+```
+
+This is a macOS benchmark lane, not a replacement for the portable `gpu`
+selector. WGPU remains the cross-platform path for Windows and macOS browser
+or native applications.
 
 The current product scope is one configured compute host, one executable
 region, fixed-shape `f32` values, persistent state, declaration defaults, live
@@ -85,9 +107,10 @@ compute://<instance>/kernel/last-fault
 
 `mech run` and `mech serve` always use the ordinary resident runtime.
 `--backend auto|cpu|gpu|cpu-scalar|wgpu` overrides configured stable product
-selection; it does not select an alternate application executor. Experimental
-backend IDs may exist in feature-enabled registries, but normal mixed source
-does not lower to their required kernel form.
+selection. Native `mech run --backend cpu-simd|cpu-jit` selects the fixed-shape
+compiler path and then runs through the same resident host, transaction, input,
+fault, and publication machinery. Those two selectors are intentionally not
+offered by browser `serve`.
 
 ## Validation
 

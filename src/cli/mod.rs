@@ -44,6 +44,20 @@ pub(crate) fn rounds_per_step_value_parser() -> clap::builder::RangedU64ValuePar
 pub(crate) const STABLE_COMPUTE_BACKEND_SELECTORS: [&str; 5] =
     ["auto", "cpu", "gpu", "cpu-scalar", "wgpu"];
 
+/// Native `run` also exposes the fixed-shape SIMD and Cranelift executors.
+/// Browser serving keeps the stable selector list because those executors are
+/// not available in the browser product.
+#[cfg(feature = "run")]
+pub(crate) const NATIVE_COMPUTE_BACKEND_SELECTORS: [&str; 7] = [
+    "auto",
+    "cpu",
+    "gpu",
+    "cpu-scalar",
+    "cpu-simd",
+    "cpu-jit",
+    "wgpu",
+];
+
 #[cfg(all(
     test,
     any(
