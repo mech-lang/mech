@@ -6,91 +6,9 @@ on:
 permissions:
   contents: read
 jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: e1bdb6363188751565a5c1b4de984e3e49d1a04b
-          persist-credentials: false
-      - name: Preserve exact patch blobs without changing refs
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 -u - <<'PY'
-          import hashlib, json, pathlib, re, subprocess
-          root = pathlib.Path('/tmp/r5-candidates')
-          root.mkdir(exist_ok=True)
-          fixture = pathlib.Path('tests/fixtures/d2-contract-generator/src/main.rs')
-          text = fixture.read_text()
-          for name, function in [('zero-input-state', 'bind_zero_input_state'), ('reported-copy', 'bind_reported_copy'), ('always-copy', 'bind_always_copy'), ('state-copy', 'bind_reported_copy')]:
-              old = f'.insert_resident_factory(["test"], "{name}", {function})'
-              assert text.count(old) == 1, name
-              text = text.replace(old, f'.insert_resident_factory(\n            ["test"],\n            "{name}",\n            mech_core::ImplementationMemoryClass::NoAdditionalScratch,\n            {function},\n        )')
-          fixture.write_text(text)
-          workflow = pathlib.Path('.github/workflows/ci-full.yml')
-          text = workflow.read_text()
-          keys = ('CARGO_BUILD_JOBS', 'CARGO_INCREMENTAL', 'CARGO_PROFILE_DEV_DEBUG', 'CARGO_PROFILE_TEST_DEBUG')
-          for name in ('r1-artifact-closure', 'architecture-contracts', 'cargo-features', 'function-system-contracts', 'bytecode-v1-determinism', 'native-linkage-owners', 'native-linkage-surfaces'):
-              match = re.search(r'(?ms)^  ' + re.escape(name) + r':\n.*?(?=^  [a-z0-9][a-z0-9-]*:\n|\Z)', text)
-              assert match, name
-              block = match.group()
-              added = ''.join(f'      {key}: "{1 if key == "CARGO_BUILD_JOBS" else 0}"\n' for key in keys if not re.search(r'^      ' + key + ':', block, re.M))
-              if '    env:\n' in block:
-                  loc = re.search(r'(?ms)^    env:\n.*?(?=^    [a-z][a-z-]*:)', block)
-                  assert loc, name
-                  block = block[:loc.end()] + added + block[loc.end():]
-              else:
-                  loc = re.search(r'^    runs-on:.*\n', block, re.M)
-                  assert loc, name
-                  block = block[:loc.end()] + '    env:\n' + added + block[loc.end():]
-              text = text[:match.start()] + block + text[match.end():]
-          workflow.write_text(text)
-          expected = {str(fixture): 'fb7084f3a4a248842096768986b253f9cca2c31a1c75035d23070a04d656a334', str(workflow): '5def0b46b4683e6d6076effdeb6169927c109c4eb2e1f41af5088ca57ba34a3c'}
-          for name, digest in expected.items():
-              assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() == digest, name
-          subprocess.run(['git', 'diff', '--check'], check=True)
-          subprocess.run(['python3', '-B', '-m', 'unittest', 'tests/ci/test_ci_full_contract.py'], check=True)
-          (root/'fix.patch').write_text(subprocess.check_output(['git', 'diff'], text=True))
-          entries = []
-          for path in (fixture, workflow):
-              result = subprocess.run(['gh', 'api', 'repos/mech-lang/mech/git/blobs', '--method', 'POST', '--input', '-'], input=json.dumps({'content': path.read_text(), 'encoding': 'utf-8'}), text=True, capture_output=True)
-              if result.returncode:
-                  print(result.stderr, flush=True)
-                  print(result.stdout, flush=True)
-                  raise SystemExit(result.returncode)
-              blob = json.loads(result.stdout)
-              entries.append({'path': str(path), 'mode': '100644', 'type': 'blob', 'sha': blob['sha']})
-          receipt = {'parent': 'e1bdb6363188751565a5c1b4de984e3e49d1a04b', 'base_tree': '62c9f0004e018154b7d2aa2f1ffac9062eeca9f8', 'tree_elements': entries, 'sha256': expected, 'branch_refs_changed': False}
-          (root/'receipt.json').write_text(json.dumps(receipt, indent=2))
-          print(json.dumps(receipt, indent=2))
-          PY
-      - name: Preserve patch and blob identities
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: r5-candidate-patches
-          path: /tmp/r5-candidates
-          retention-days: 1
-  qualify:
-    name: Candidate qualification (${{ matrix.case }})
+  source-contracts:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - case: nbody
-            command: python3 scripts/check-r1-artifact-closure.py nbody
-          - case: source-contracts
-            command: bash scripts/check-function-system-contracts.sh source
-          - case: bytecode-determinism
-            command: cargo +nightly-2026-03-03 run --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml -- --check
-          - case: math-alias-experiment
-            command: python3 scripts/check-native-linkage-coverage.py owners mech-math
     env:
       CARGO_BUILD_JOBS: "1"
       CARGO_INCREMENTAL: "0"
@@ -100,67 +18,29 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: e1bdb6363188751565a5c1b4de984e3e49d1a04b
+          ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
           persist-credentials: false
-      - name: Apply the exact fixture candidate
-        env:
-          CASE: ${{ matrix.case }}
+      - name: Install required qualification tools
         run: |
-          python3 - <<'PY'
-          import hashlib, os, pathlib
-          fixture = pathlib.Path('tests/fixtures/d2-contract-generator/src/main.rs')
-          text = fixture.read_text()
-          for name, function in [('zero-input-state', 'bind_zero_input_state'), ('reported-copy', 'bind_reported_copy'), ('always-copy', 'bind_always_copy'), ('state-copy', 'bind_reported_copy')]:
-              old = f'.insert_resident_factory(["test"], "{name}", {function})'
-              assert text.count(old) == 1, name
-              text = text.replace(old, f'.insert_resident_factory(\n            ["test"],\n            "{name}",\n            mech_core::ImplementationMemoryClass::NoAdditionalScratch,\n            {function},\n        )')
-          fixture.write_text(text)
-          assert hashlib.sha256(fixture.read_bytes()).hexdigest() == 'fb7084f3a4a248842096768986b253f9cca2c31a1c75035d23070a04d656a334'
-          if os.environ['CASE'] == 'math-alias-experiment':
-              core = pathlib.Path('src/core/src/function/catalog.rs')
-              text = core.read_text()
-              start = text.index('macro_rules! declare_native_runtime_factory {')
-              end = text.index('\nfn invalid_export_error', start)
-              macro = text[start:end]
-              old = '        #[cfg($cfg)]\n        pub(crate) fn $registration('
-              assert macro.count(old) == 2
-              macro = macro.replace(old, '        #[cfg($cfg)]\n        #[cfg(any(feature = "native-plan", not(feature = "native-link")))]\n        pub(crate) fn $registration(')
-              old = '        #[doc(hidden)]\n        #[cfg(feature = "native-link")]'
-              assert macro.count(old) == 2
-              macro = macro.replace(old, '        #[cfg($cfg)]\n        #[cfg(all(feature = "native-link", not(feature = "native-plan")))]\n        pub(crate) use $installer as $registration;\n\n' + old)
-              core.write_text(text[:start] + macro + text[end:])
-              assert hashlib.sha256(core.read_bytes()).hexdigest() == 'dacd277c1be1f9b157f6e5b37097056e6f3ac6c48afa2b3cf275d2fce002612c'
-          PY
-          git diff --check
-      - name: Install the pinned compiler
-        run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Prefetch independent bytecode generators
-        if: matrix.case == 'bytecode-determinism'
-        run: |
-          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml
-          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-source-generator/Cargo.toml
-          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-fixed-generator/Cargo.toml
-      - name: Execute qualification
-        env:
-          COMMAND: ${{ matrix.command }}
-          CASE: ${{ matrix.case }}
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Run the complete source compatibility slice
         run: |
           set -euo pipefail
-          mkdir -p /tmp/r5-qualification
-          git rev-parse HEAD | tee /tmp/r5-qualification/HEAD
-          git diff > /tmp/r5-qualification/candidate.patch
-          if [ "$CASE" = math-alias-experiment ]; then ulimit -v 12582912; fi
+          mkdir -p /tmp/r5-source
+          git rev-parse HEAD | tee /tmp/r5-source/HEAD
           set +e
-          /usr/bin/time -v -o /tmp/r5-qualification/time.txt bash -c "$COMMAND" 2>&1 | tee /tmp/r5-qualification/command.log
+          /usr/bin/time -v -o /tmp/r5-source/time.txt bash scripts/check-function-system-contracts.sh source 2>&1 | tee /tmp/r5-source/command.log
           status=${PIPESTATUS[0]}
           set -e
-          cat /tmp/r5-qualification/time.txt
-          echo "$status" > /tmp/r5-qualification/exit-status
+          cat /tmp/r5-source/time.txt
+          echo "$status" > /tmp/r5-source/exit-status
           exit "$status"
       - name: Preserve qualification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-qualification-${{ matrix.case }}
-          path: /tmp/r5-qualification
+          name: r5-repaired-source-contracts
+          path: /tmp/r5-source
           retention-days: 1
