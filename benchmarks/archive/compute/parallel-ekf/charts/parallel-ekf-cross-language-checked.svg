@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1615" viewBox="0 0 1700 1615">
-<rect x="0" y="0" width="1700" height="1615" fill="#080c14"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1592" viewBox="0 0 1700 1592">
+<rect x="0" y="0" width="1700" height="1592" fill="#080c14"/>
 <defs>
 <pattern id="gpu-mech" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#f4c430"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>
 <pattern id="gpu-rust" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#dea584"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>
@@ -227,48 +227,48 @@
 <text x="534" y="901" text-anchor="end" class="label">Rust packed SIMD, checked</text>
 <rect x="550" y="887" width="573.9" height="19" rx="3" fill="#dea584" opacity="0.9"/>
 <text x="1131.9" y="901" class="value">25.65</text>
-<text x="534" y="932" text-anchor="end" class="label">Mojo fixed-shape scalar, checked</text>
-<rect x="550" y="918" width="564.5" height="19" rx="3" fill="#ff7a1a" opacity="0.9"/>
-<text x="1122.5" y="932" class="value">22.57</text>
-<text x="534" y="963" text-anchor="end" class="label">Mojo textbook fixed matrix, checked</text>
-<rect x="550" y="949" width="560.0" height="19" rx="3" fill="#ff7a1a" opacity="0.9"/>
-<text x="1110.0" y="963" class="value">21.21</text>
-<text x="534" y="994" text-anchor="end" class="label">Rust optimized fixed-shape, checked</text>
-<rect x="550" y="980" width="555.7" height="19" rx="3" fill="#dea584" opacity="0.9"/>
-<text x="1113.7" y="994" class="value">20.01</text>
-<text x="534" y="1025" text-anchor="end" class="label">Futhark multicore, 1 worker (10k x 20)</text>
-<rect x="550" y="1011" width="554.2" height="19" rx="3" fill="#5f021f" opacity="0.9"/>
-<text x="1112.2" y="1025" class="value">19.61</text>
-<text x="534" y="1056" text-anchor="end" class="label">Julia fixed-shape, checked</text>
-<rect x="550" y="1042" width="550.6" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="1108.6" y="1056" class="value">18.67</text>
-<text x="534" y="1087" text-anchor="end" class="label">Mech Cranelift JIT</text>
-<rect x="550" y="1073" width="542.1" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="1100.1" y="1087" class="value">16.61</text>
-<text x="534" y="1118" text-anchor="end" class="label">NumPy vectorized fixed-shape, checked</text>
-<rect x="550" y="1104" width="509.7" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="1067.7" y="1118" class="value">10.67</text>
-<text x="534" y="1149" text-anchor="end" class="label">Mech SIMD</text>
-<rect x="550" y="1135" width="440.9" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="998.9" y="1149" class="value">4.16</text>
-<text x="534" y="1180" text-anchor="end" class="label">Halide JIT SIMD 8 workers, checked</text>
-<rect x="550" y="1166" width="423.3" height="19" rx="3" fill="#BD5E9E" opacity="0.9"/>
-<text x="981.3" y="1180" class="value">3.27</text>
-<text x="534" y="1211" text-anchor="end" class="label">Julia generic, checked</text>
-<rect x="550" y="1197" width="418.7" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
-<text x="976.7" y="1211" class="value">3.07</text>
-<text x="534" y="1242" text-anchor="end" class="label">Halide</text>
-<rect x="550" y="1228" width="409.5" height="19" rx="3" fill="#BD5E9E" opacity="0.9"/>
-<text x="967.5" y="1242" class="value">2.71</text>
-<text x="534" y="1273" text-anchor="end" class="label">PyPy optimized scalar (10k x 20)</text>
-<rect x="550" y="1259" width="369.7" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
-<text x="927.7" y="1273" class="value">1.57</text>
-<text x="534" y="1304" text-anchor="end" class="label">LuaJIT fixed-shape flat, checked</text>
-<rect x="550" y="1290" width="353.6" height="19" rx="3" fill="#000080" opacity="0.9"/>
-<text x="911.6" y="1304" class="value">1.26</text>
-<text x="534" y="1335" text-anchor="end" class="label">Mech scalar, checked</text>
-<rect x="550" y="1321" width="330.6" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
-<text x="888.6" y="1335" class="value">0.92</text>
+<text x="534" y="932" text-anchor="end" class="label">Mojo textbook fixed matrix, checked</text>
+<rect x="550" y="918" width="560.0" height="19" rx="3" fill="#ff7a1a" opacity="0.9"/>
+<text x="1118.0" y="932" class="value">21.21</text>
+<text x="534" y="963" text-anchor="end" class="label">Rust optimized fixed-shape, checked</text>
+<rect x="550" y="949" width="555.7" height="19" rx="3" fill="#dea584" opacity="0.9"/>
+<text x="1113.7" y="963" class="value">20.01</text>
+<text x="534" y="994" text-anchor="end" class="label">Futhark multicore, 1 worker (10k x 20)</text>
+<rect x="550" y="980" width="554.2" height="19" rx="3" fill="#5f021f" opacity="0.9"/>
+<text x="1112.2" y="994" class="value">19.61</text>
+<text x="534" y="1025" text-anchor="end" class="label">Julia fixed-shape, checked</text>
+<rect x="550" y="1011" width="550.6" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="1108.6" y="1025" class="value">18.67</text>
+<text x="534" y="1056" text-anchor="end" class="label">Mech Cranelift JIT</text>
+<rect x="550" y="1042" width="542.1" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="1100.1" y="1056" class="value">16.61</text>
+<text x="534" y="1087" text-anchor="end" class="label">NumPy vectorized fixed-shape, checked</text>
+<rect x="550" y="1073" width="509.7" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="1067.7" y="1087" class="value">10.67</text>
+<text x="534" y="1118" text-anchor="end" class="label">Mech SIMD</text>
+<rect x="550" y="1104" width="440.9" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="998.9" y="1118" class="value">4.16</text>
+<text x="534" y="1149" text-anchor="end" class="label">Halide JIT SIMD 8 workers, checked</text>
+<rect x="550" y="1135" width="423.3" height="19" rx="3" fill="#BD5E9E" opacity="0.9"/>
+<text x="981.3" y="1149" class="value">3.27</text>
+<text x="534" y="1180" text-anchor="end" class="label">Julia generic, checked</text>
+<rect x="550" y="1166" width="418.7" height="19" rx="3" fill="#9558b2" opacity="0.9"/>
+<text x="976.7" y="1180" class="value">3.07</text>
+<text x="534" y="1211" text-anchor="end" class="label">Halide</text>
+<rect x="550" y="1197" width="409.5" height="19" rx="3" fill="#BD5E9E" opacity="0.9"/>
+<text x="967.5" y="1211" class="value">2.71</text>
+<text x="534" y="1242" text-anchor="end" class="label">PyPy optimized scalar (10k x 20)</text>
+<rect x="550" y="1228" width="369.7" height="19" rx="3" fill="#4d77cf" opacity="0.9"/>
+<text x="927.7" y="1242" class="value">1.57</text>
+<text x="534" y="1273" text-anchor="end" class="label">LuaJIT fixed-shape flat, checked</text>
+<rect x="550" y="1259" width="353.6" height="19" rx="3" fill="#000080" opacity="0.9"/>
+<text x="911.6" y="1273" class="value">1.26</text>
+<text x="534" y="1304" text-anchor="end" class="label">Mech scalar, checked</text>
+<rect x="550" y="1290" width="330.6" height="19" rx="3" fill="#f4c430" opacity="0.9"/>
+<text x="888.6" y="1304" class="value">0.92</text>
+<text x="534" y="1335" text-anchor="end" class="label">Mojo textbook dynamic matrix, checked</text>
+<rect x="550" y="1321" width="297.6" height="19" rx="3" fill="#ff7a1a" opacity="0.9"/>
+<text x="855.6" y="1335" class="value">0.59</text>
 <text x="534" y="1366" text-anchor="end" class="label">Lua PUC advanced</text>
 <rect x="550" y="1352" width="296.8" height="19" rx="3" fill="#000080" opacity="0.9"/>
 <text x="854.8" y="1366" class="value">0.58</text>
