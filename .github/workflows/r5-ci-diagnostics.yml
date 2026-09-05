@@ -2,23 +2,24 @@ name: R5 CI diagnostics
 on:
   push:
     branches: [codex/r5-ci-diagnostics]
-    paths: [.github/workflows/r5-ci-diagnostics.yml, .r5-ci.patch.b64]
+    paths: [.github/workflows/r5-ci-diagnostics.yml, .r5-ci.patch.b64, .r5-ci-extra.patch]
 permissions:
   contents: write
 jobs:
   candidate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-      - name: Apply only the reviewed product patch
+      - name: Apply only the reviewed product patches
         run: |
           base64 -d .r5-ci.patch.b64 | gzip -d > /tmp/r5-fix.patch
+          cp .r5-ci-extra.patch /tmp/r5-extra.patch
           git checkout --detach d96425614d69c61427419e01f4bba1343824ab50
-          git apply --check /tmp/r5-fix.patch
-          git apply /tmp/r5-fix.patch
+          git apply --check /tmp/r5-fix.patch /tmp/r5-extra.patch
+          git apply /tmp/r5-fix.patch /tmp/r5-extra.patch
           git diff --check
           test -z "$(git diff --name-only -- Cargo.lock '**/Cargo.toml' '.github/**')"
       - name: Check pinned formatting and architectural constraints
@@ -31,7 +32,7 @@ jobs:
         run: |
           git config user.name 'Corey Montella'
           git config user.email 'cmontella@live.com'
-          git add docs/design/r5-memory-planner.md src/engine/src/memory_planner/turn.rs src/engine/src/resident/budget.rs src/engine/src/resident/general/execution.rs src/engine/src/resident/general/live.rs src/engine/src/resident/general/mod.rs
+          git add docs/design/r5-memory-planner.md scripts/check-r5-memory-planner.py scripts/tests/test_check_r5_memory_planner.py src/engine/src/memory_planner/turn.rs src/engine/src/resident/budget.rs src/engine/src/resident/general/execution.rs src/engine/src/resident/general/live.rs src/engine/src/resident/general/mod.rs
           git commit -m 'perf(r5): reuse invariant plans and bound traversal progress without replanning'
           sha=$(git rev-parse HEAD)
           git push origin "HEAD:refs/heads/codex/r5-ci-candidate-${sha:0:12}"
