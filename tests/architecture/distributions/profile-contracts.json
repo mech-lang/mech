@@ -45,12 +45,12 @@
     },
     {
       "profile_name": "full-runtime",
-      "catalog_factory_count": 9034,
+      "catalog_factory_count": 9109,
       "source_specializer_count": 0,
       "intrinsic_count": 0,
       "prelude_count": 0,
       "module_export_count": 0,
-      "runtime_surface_digest": "7b65693331db60373463203d5be3f169aaf931b3de3bcb4eae5d29c0940b883a",
+      "runtime_surface_digest": "76dc951b7c313d6afa49f9742b52f94f87ef460d03f85bb6e365fd8f9bc3f980",
       "digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
       "required_packages": [
         "mech-combinatorics",
@@ -108,12 +108,12 @@
     },
     {
       "profile_name": "full-source",
-      "catalog_factory_count": 12780,
+      "catalog_factory_count": 15087,
       "source_specializer_count": 120,
-      "intrinsic_count": 10,
+      "intrinsic_count": 13,
       "prelude_count": 52,
       "module_export_count": 51,
-      "runtime_surface_digest": "5b6f4a205cfd5ea9460951de6daf0cf19d6763ca75da814e8c4b8395b8fbc531",
+      "runtime_surface_digest": "07bc9dc494bcce69aabdd147f0eadcb61a5247de8413525136aa7e314668a0e1",
       "digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
       "required_packages": [
         "mech-combinatorics",
@@ -172,12 +172,12 @@
     },
     {
       "profile_name": "full-compiler",
-      "catalog_factory_count": 12832,
+      "catalog_factory_count": 15091,
       "source_specializer_count": 120,
-      "intrinsic_count": 10,
+      "intrinsic_count": 13,
       "prelude_count": 52,
       "module_export_count": 51,
-      "runtime_surface_digest": "59367cacc70cfabe1e19de87f6caa3feeb293a87c2154eb6afa0da8e3d637cf7",
+      "runtime_surface_digest": "90b1dcb9d7e80d7aa1c0d4ed725d326c5e8d7b77bf6b10cf2598791b339ac9bc",
       "digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
       "required_packages": [
         "mech-bytecode",

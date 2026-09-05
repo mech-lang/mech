@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the descriptive, shadow-only R2 type-memory boundary."""
+"""Enforce the permanent R2 type-memory boundary and its R4 authority use."""
 
 from __future__ import annotations
 
@@ -238,6 +238,7 @@ def _step_containing(block: str, marker: str) -> str:
 
 def failures(root: Path) -> list[str]:
     root = root.resolve()
+    r4_active = (root / "scripts/check-r4-type-cutover.py").is_file()
     found: list[str] = []
     sources = {relative: _read(root, relative, found) for relative in REQUIRED}
     lib = rust_code(sources["src/core/src/lib.rs"])
@@ -351,7 +352,12 @@ def failures(root: Path) -> list[str]:
     if normalized not in ("self.same_storage(other)", "self.same_storage(other);", "returnself.same_storage(other);"):
         found.append("same_cell must delegate exactly to same_storage")
     validation = extract_item_body(value_cell, re.compile(r"\bfn\s+validate_storage_contract\s*\([^)]*\)")) or ""
-    _require(validation, r"\bcheck_schema_storage_compatibility\b", "ValueCell shadow validation bypasses the safe schema checker", found)
+    if r4_active:
+        _require(validation, r"\bvalidate_storage_compatibility\b", "ValueCell authoritative validation bypasses the safe storage bridge", found)
+        bridge = extract_item_body(cell_source, re.compile(r"\bfn\s+validate_storage_compatibility\s*\([^)]*\)")) or ""
+        _require(bridge, r"\bcheck_schema_storage_compatibility\b", "ValueCell safe storage bridge bypasses the schema checker", found)
+    else:
+        _require(validation, r"\bcheck_schema_storage_compatibility\b", "ValueCell shadow validation bypasses the safe schema checker", found)
 
     for marker in ("PortMemoryRequirement", "OperationMemoryRequirements"):
         _require(operation, rf"\b{marker}\b", f"operation requirements lost {marker}", found)
@@ -363,12 +369,19 @@ def failures(root: Path) -> list[str]:
     for policy in ("AccessMode", "DeliveryMode", "OutputConstruction", "AliasPolicy", "ChangeDetectionPolicy"):
         _require(port, rf"\b{policy}\b", f"derived port requirement lost {policy}", found)
 
+    r4_call_allowance = {
+        ("validate_storage_contract", "src/core/src/cell_binding.rs"): 5,
+        ("check_operation_memory_contract", "src/core/src/function/catalog.rs"): 1,
+        ("check_operation_memory_contract", "src/core/src/function/specialization.rs"): 2,
+    }
     for method, expected_definitions in (("validate_storage_contract", 1), ("check_operation_memory_contract", 1)):
         definitions = sum(len(re.findall(rf"\bfn\s+{method}\s*\(", code)) for _, code in production)
         if definitions != expected_definitions:
             found.append(f"shadow method {method} must have exactly one production definition")
         for relative, code in production:
-            if re.search(rf"(?:\.|::)\s*{method}\b", code):
+            calls = len(re.findall(rf"(?:\.|::)\s*{method}\b", code))
+            allowed_calls = r4_call_allowance.get((method, relative), 0) if r4_active else 0
+            if calls > allowed_calls:
                 found.append(f"{relative}: production call or function-item reference to {method}")
     for relative, code in production:
         for match in re.finditer(r"\bcheck_port_storage_compatibility\b", code):
@@ -378,9 +391,16 @@ def failures(root: Path) -> list[str]:
             if not allowed:
                 found.append(f"{relative}: unauthorized production use of check_port_storage_compatibility")
         schema_checks = len(re.findall(r"\bcheck_schema_storage_compatibility\b", code))
-        allowed_schema_checks = (len(re.findall(r"\bfn\s+check_schema_storage_compatibility\b", code))
-            if relative == "src/core/src/memory_contract/storage_capability.rs" else
-            validation.count("check_schema_storage_compatibility") if relative == "src/core/src/cell_binding.rs" else 0)
+        allowed_schema_checks = len(re.findall(r"\bfn\s+check_schema_storage_compatibility\b", code)) \
+            if relative == "src/core/src/memory_contract/storage_capability.rs" else 0
+        if r4_active:
+            allowed_schema_checks += {
+                "src/core/src/cell_binding.rs": 1,
+                "src/core/src/function/catalog.rs": 2,
+                "src/core/src/function/specialization.rs": 1,
+            }.get(relative, 0)
+        elif relative == "src/core/src/cell_binding.rs":
+            allowed_schema_checks += validation.count("check_schema_storage_compatibility")
         if schema_checks > allowed_schema_checks:
             found.append(f"{relative}: unauthorized production use of check_schema_storage_compatibility")
 
@@ -392,11 +412,22 @@ def failures(root: Path) -> list[str]:
             found.append(f"operation alias checker uses forbidden identity {forbidden_alias}")
 
     conformance = sources["src/core/tests/type_memory_boundary.rs"]
-    for marker in CONFORMANCE + ("SemanticAddressingUnsupported", "DynamicAxisUnsupported", "same_logical_cell", "same_storage", "snapshot_eq"):
+    expected_conformance = tuple(
+        "inferred_vector_fixed_axes_are_authoritative_after_r4"
+        if r4_active and marker == "inferred_vector_fixed_axis_mismatches_remain_owned_by_r4"
+        else marker
+        for marker in CONFORMANCE
+    )
+    for marker in expected_conformance + ("SemanticAddressingUnsupported", "DynamicAxisUnsupported", "same_logical_cell", "same_storage", "snapshot_eq"):
         if marker not in conformance:
             found.append(f"conformance suite is missing marker {marker}")
     design = sources["docs/design/type-memory-boundary.md"]
-    for marker in ("Status: R2 complete", "shadow-only", "RowDVector", "DVector", "DynamicAxisUnsupported", "R3", "R4", "R5", "R6"):
+    design_markers = (
+        ("Status: R2 complete", "authoritative", "RowDVector", "DVector", "R3", "R4", "R5", "R6")
+        if r4_active else
+        ("Status: R2 complete", "shadow-only", "RowDVector", "DVector", "DynamicAxisUnsupported", "R3", "R4", "R5", "R6")
+    )
+    for marker in design_markers:
         if marker not in design:
             found.append(f"type-memory documentation is missing {marker}")
     readme = re.sub(r"\s+", " ", sources["README.md"])
@@ -404,7 +435,12 @@ def failures(root: Path) -> list[str]:
     if sentence not in readme:
         found.append("README does not mark R2 complete")
     roadmap = sources["docs/design/ROADMAP.mec"]
-    for marker in ("Type–memory boundary: complete", "Next endgame phase: R3"):
+    roadmap_markers = (
+        ("Type–memory boundary: complete", "R4 authority cutover are complete", "R5 is")
+        if r4_active else
+        ("Type–memory boundary: complete", "Next endgame phase: R3")
+    )
+    for marker in roadmap_markers:
         if marker not in roadmap:
             found.append(f"ROADMAP is missing {marker}")
     endgame = re.sub(r"\s+", " ", sources["docs/design/v0.4-endgame.md"])

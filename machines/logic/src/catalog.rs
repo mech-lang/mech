@@ -1,10 +1,10 @@
-use mech_core::{FunctionCatalogBuilder, MResult};
-#[cfg(feature = "not")]
-use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
-#[cfg(feature = "source")]
-use mech_core::{FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use mech_core::CanonicalFunctionSpecializer;
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(feature = "source")]
+use mech_core::{FunctionExport, FunctionExposure};
+#[cfg(feature = "not")]
+use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -56,6 +56,7 @@ macro_rules! declare_logic_native_factory {
                 name: concat!(stringify!($operation), stringify!($suffix), "<bool>"),
                 factory_type: crate::$module::[<$operation $suffix>],
                 contract: mech_core::__mech_elementwise_binop_contract!($suffix),
+                operations: [mech_core::OperationId::from_name(concat!("logic/", $operation_feature))],
                 package: "mech-logic",
                 crate_name: "mech_logic",
                 installer_path: concat!(
@@ -79,6 +80,7 @@ macro_rules! declare_logic_native_factory {
                 name: concat!(stringify!($operation), stringify!($suffix), "<bool>"),
                 factory_type: crate::$module::[<$operation $suffix>],
                 contract: mech_core::__mech_elementwise_binop_contract!($suffix),
+                operations: [mech_core::OperationId::from_name(concat!("logic/", $operation_feature))],
                 package: "mech-logic",
                 crate_name: "mech_logic",
                 installer_path: concat!(
@@ -138,6 +140,7 @@ mech_core::declare_native_runtime_factory! {
     name: "NotS<bool>",
     factory_type: crate::not::NotS<bool>,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    operations: [mech_core::OperationId::from_name("logic/not")],
     package: "mech-logic",
     crate_name: "mech_logic",
     installer_path: "mech_logic::__mech_native::install_logic_not_s",

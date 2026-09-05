@@ -198,9 +198,12 @@ macro_rules! impl_canonical_registered_math_unop_specializer {
                     .with_compiler_loc());
                 }
                 let input = invocation.input(0).expect("validated unary math input");
-                context.bind_runtime_factory_derived_output(
-                    $factory_prefix,
-                    None,
+                let output_extents = input.cell()?.resolved_descriptor()?.current_extents()
+                    .map_err(MechError::from)?;
+                context.bind_resolved_runtime(
+                    mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+                    mech_core::ExecutionTarget::DirectRuntime,
+                    vec![output_extents].into_boxed_slice(),
                     &[input],
                 )
             }
@@ -233,14 +236,55 @@ macro_rules! impl_canonical_registered_math_binop_specializer {
                 }
                 let first = invocation.input(0).expect("validated binary math lhs");
                 let second = invocation.input(1).expect("validated binary math rhs");
-                context.bind_runtime_factory_derived_output(
-                    $factory_prefix,
-                    None,
+                let output_extents = $crate::semantic_broadcast_extents(&[first, second])?;
+                context.bind_resolved_runtime(
+                    mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+                    mech_core::ExecutionTarget::DirectRuntime,
+                    vec![output_extents].into_boxed_slice(),
                     &[first, second],
                 )
             }
         }
     };
+}
+
+#[cfg(feature = "source")]
+pub fn semantic_broadcast_extents(
+    inputs: &[&SpecializationInput],
+) -> MResult<Box<[u64]>> {
+    let mut result: Option<[u64; 2]> = None;
+    for input in inputs {
+        let extents = input
+            .cell()?
+            .resolved_descriptor()?
+            .current_extents()
+            .map_err(MechError::from)?;
+        if !extents.is_empty() {
+            let [rows, columns] = extents.as_ref() else {
+                return Err(MechError::new(
+                    GenericError { msg: "numeric broadcasting requires scalar or rank-two inputs".into() },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            result = Some(match result {
+                None => [*rows, *columns],
+                Some([left_rows, left_columns]) => {
+                    let axis = |left: u64, right: u64| {
+                        if left == right { Some(left) } else if left == 1 { Some(right) } else if right == 1 { Some(left) } else { None }
+                    };
+                    [
+                        axis(left_rows, *rows).ok_or_else(|| MechError::new(DimensionMismatch { dims: vec![left_rows as usize, left_columns as usize, *rows as usize, *columns as usize] }, None).with_compiler_loc())?,
+                        axis(left_columns, *columns).ok_or_else(|| MechError::new(DimensionMismatch { dims: vec![left_rows as usize, left_columns as usize, *rows as usize, *columns as usize] }, None).with_compiler_loc())?,
+                    ]
+                }
+            });
+        }
+    }
+    Ok(result.map_or_else(
+        || Vec::<u64>::new().into_boxed_slice(),
+        |shape| shape.into_iter().collect::<Vec<_>>().into_boxed_slice(),
+    ))
 }
 
 #[macro_export]
@@ -280,116 +324,6 @@ macro_rules! impl_math_unop {
       impl_unop!([<$fxn_name $type:camel VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
     }}}
 
-#[cfg(all(
-    feature = "source",
-    any(
-        feature = "acos",
-        feature = "acosh",
-        feature = "acot",
-        feature = "acsc",
-        feature = "asec",
-        feature = "asin",
-        feature = "asinh",
-        feature = "atan",
-        feature = "atanh",
-        feature = "cbrt",
-        feature = "ceil",
-        feature = "cos",
-        feature = "cosh",
-        feature = "cot",
-        feature = "csc",
-        feature = "erf",
-        feature = "erfc",
-        feature = "floor",
-        feature = "j0",
-        feature = "j1",
-        feature = "lgamma",
-        feature = "log",
-        feature = "log1p",
-        feature = "log10",
-        feature = "log2",
-        feature = "rint",
-        feature = "round",
-        feature = "roundeven",
-        feature = "sec",
-        feature = "sin",
-        feature = "sinh",
-        feature = "sqrt",
-        feature = "tan",
-        feature = "tanh",
-        feature = "tgamma",
-        feature = "trunc",
-        feature = "y0",
-        feature = "y1"
-    )
-))]
-fn specialize_math_unary_factory<F>(input: &SpecializationInput) -> MResult<SpecializedFunction>
-where
-    F: MechFunctionFactory,
-{
-    let invocation = FunctionInvocation::unary(
-        input.cell()?.detached_clone()?,
-        input.cell()?.clone(),
-    );
-    let implementation = F::new_invocation(invocation.clone())?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        implementation,
-        invocation,
-    )))
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __try_math_float_unary_scalar {
-    ($input:ident, $lib:ident, $scalar:ident) => {{
-        macro_rules! try_suffix {
-            ($suffix:ident) => {
-                mech_core::paste::paste! {
-                    if let RuntimeFunctionInputs::Unary(expected) =
-                        <[<$lib $scalar:camel $suffix>] as MechFunctionFactory>::SIGNATURE.inputs
-                        && $input.representation() == Some(expected)
-                    {
-                        return $crate::specialize_math_unary_factory::<
-                            [<$lib $scalar:camel $suffix>]
-                        >($input);
-                    }
-                }
-            };
-        }
-        try_suffix!(S);
-        #[cfg(feature = "matrix1")]
-        try_suffix!(M1);
-        #[cfg(feature = "matrix2")]
-        try_suffix!(M2);
-        #[cfg(feature = "matrix3")]
-        try_suffix!(M3);
-        #[cfg(feature = "matrix4")]
-        try_suffix!(M4);
-        #[cfg(feature = "matrix2x3")]
-        try_suffix!(M2x3);
-        #[cfg(feature = "matrix3x2")]
-        try_suffix!(M3x2);
-        #[cfg(feature = "matrixd")]
-        try_suffix!(MD);
-        #[cfg(feature = "row_vector2")]
-        try_suffix!(R2);
-        #[cfg(feature = "row_vector3")]
-        try_suffix!(R3);
-        #[cfg(feature = "row_vector4")]
-        try_suffix!(R4);
-        #[cfg(feature = "row_vectord")]
-        try_suffix!(RD);
-        #[cfg(feature = "vector2")]
-        try_suffix!(V2);
-        #[cfg(feature = "vector3")]
-        try_suffix!(V3);
-        #[cfg(feature = "vector4")]
-        try_suffix!(V4);
-        #[cfg(feature = "vectord")]
-        try_suffix!(VD);
-    }};
-}
-
 #[macro_export]
 macro_rules! impl_canonical_math_float_unop_specializer {
     ($specializer:ident, $lib:ident, $operation:literal) => {
@@ -401,7 +335,7 @@ macro_rules! impl_canonical_math_float_unop_specializer {
             fn specialize_invocation(
                 &self,
                 specialization: &SpecializationInvocation,
-                _context: &mut SpecializationContext<'_>,
+                context: &mut SpecializationContext<'_>,
             ) -> MResult<SpecializedFunction> {
                 if specialization.len() != 1 {
                     return Err(MechError::new(
@@ -414,120 +348,16 @@ macro_rules! impl_canonical_math_float_unop_specializer {
                     .with_compiler_loc());
                 }
                 let input = specialization.input(0).expect("validated unary input");
-                #[cfg(feature = "f32")]
-                $crate::__try_math_float_unary_scalar!(input, $lib, f32);
-                #[cfg(feature = "f64")]
-                $crate::__try_math_float_unary_scalar!(input, $lib, f64);
-                Err(MechError::new(
-                    FunctionArgumentTypeMismatch {
-                        role: FunctionArgumentRole::Input(0),
-                        expected: concat!("supported floating input for ", $operation).into(),
-                        found: format!("{:?}", input.representation()),
-                    },
-                    None,
+                let extents = $crate::semantic_broadcast_extents(&[input])?;
+                context.bind_resolved_runtime(
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+                    ExecutionTarget::DirectRuntime,
+                    vec![extents].into_boxed_slice(),
+                    &[input],
                 )
-                .with_compiler_loc())
             }
         }
     };
-}
-
-#[cfg(all(
-    feature = "source",
-    any(
-        feature = "copysign",
-        feature = "fdim",
-        feature = "fmod",
-        feature = "nextafter",
-        feature = "remainder",
-        feature = "atan2",
-        feature = "jn",
-        feature = "yn"
-    )
-))]
-fn specialize_math_binary_factory<F>(
-    first: &SpecializationInput,
-    second: &SpecializationInput,
-) -> MResult<SpecializedFunction>
-where
-    F: MechFunctionFactory,
-{
-    let invocation = FunctionInvocation::binary(
-        first.cell()?.detached_clone()?,
-        first.cell()?.clone(),
-        second.cell()?.clone(),
-    );
-    let implementation = F::new_invocation(invocation.clone())?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        implementation,
-        invocation,
-    )))
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __try_math_same_type_binary_scalar {
-    ($first:ident, $second:ident, $prefix:ident, $scalar:ident) => {{
-        macro_rules! try_suffix {
-            () => {
-                mech_core::paste::paste! {
-                    if let RuntimeFunctionInputs::Binary(expected_first, expected_second) =
-                        <[<$prefix $scalar:camel>] as MechFunctionFactory>::SIGNATURE.inputs
-                        && $first.representation() == Some(expected_first)
-                        && $second.representation() == Some(expected_second)
-                    {
-                        return $crate::specialize_math_binary_factory::<
-                            [<$prefix $scalar:camel>]
-                        >($first, $second);
-                    }
-                }
-            };
-            ($suffix:ident) => {
-                mech_core::paste::paste! {
-                    if let RuntimeFunctionInputs::Binary(expected_first, expected_second) =
-                        <[<$prefix $suffix $scalar:camel>] as MechFunctionFactory>::SIGNATURE.inputs
-                        && $first.representation() == Some(expected_first)
-                        && $second.representation() == Some(expected_second)
-                    {
-                        return $crate::specialize_math_binary_factory::<
-                            [<$prefix $suffix $scalar:camel>]
-                        >($first, $second);
-                    }
-                }
-            };
-        }
-        try_suffix!();
-        #[cfg(feature = "matrix1")]
-        try_suffix!(M1);
-        #[cfg(feature = "matrix2")]
-        try_suffix!(M2);
-        #[cfg(feature = "matrix3")]
-        try_suffix!(M3);
-        #[cfg(feature = "matrix4")]
-        try_suffix!(M4);
-        #[cfg(feature = "matrix2x3")]
-        try_suffix!(M2x3);
-        #[cfg(feature = "matrix3x2")]
-        try_suffix!(M3x2);
-        #[cfg(feature = "matrixd")]
-        try_suffix!(MD);
-        #[cfg(feature = "row_vector2")]
-        try_suffix!(R2);
-        #[cfg(feature = "row_vector3")]
-        try_suffix!(R3);
-        #[cfg(feature = "row_vector4")]
-        try_suffix!(R4);
-        #[cfg(feature = "row_vectord")]
-        try_suffix!(RD);
-        #[cfg(feature = "vector2")]
-        try_suffix!(V2);
-        #[cfg(feature = "vector3")]
-        try_suffix!(V3);
-        #[cfg(feature = "vector4")]
-        try_suffix!(V4);
-        #[cfg(feature = "vectord")]
-        try_suffix!(VD);
-    }};
 }
 
 #[macro_export]
@@ -541,7 +371,7 @@ macro_rules! impl_canonical_math_same_type_binop_specializer {
             fn specialize_invocation(
                 &self,
                 specialization: &SpecializationInvocation,
-                _context: &mut SpecializationContext<'_>,
+                context: &mut SpecializationContext<'_>,
             ) -> MResult<SpecializedFunction> {
                 if specialization.len() != 2 {
                     return Err(MechError::new(
@@ -555,23 +385,13 @@ macro_rules! impl_canonical_math_same_type_binop_specializer {
                 }
                 let first = specialization.input(0).expect("validated first input");
                 let second = specialization.input(1).expect("validated second input");
-                #[cfg(feature = "f32")]
-                $crate::__try_math_same_type_binary_scalar!(first, second, $prefix, f32);
-                #[cfg(feature = "f64")]
-                $crate::__try_math_same_type_binary_scalar!(first, second, $prefix, f64);
-                Err(MechError::new(
-                    FunctionArgumentTypeMismatch {
-                        role: FunctionArgumentRole::Input(0),
-                        expected: concat!("matching floating inputs for ", $operation).into(),
-                        found: format!(
-                            "{:?} and {:?}",
-                            first.representation(),
-                            second.representation(),
-                        ),
-                    },
-                    None,
+                let extents = $crate::semantic_broadcast_extents(&[first, second])?;
+                context.bind_resolved_runtime(
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+                    ExecutionTarget::DirectRuntime,
+                    vec![extents].into_boxed_slice(),
+                    &[first, second],
                 )
-                .with_compiler_loc())
             }
         }
     };

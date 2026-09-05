@@ -7,7 +7,7 @@ use mech_core::{
 };
 use std::sync::LazyLock;
 
-static RESOURCE_OBSERVATION_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub(crate) static RESOURCE_OBSERVATION_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(Box::new([])),
         outputs: vec![OutputPortPolicy {
@@ -76,7 +76,7 @@ impl ExternalResourceReadFunction {
     }
 
     fn apply_read_result(&self, result: Value) -> MResult<()> {
-        self.output.replace(&result)?;
+        super::install_external_value(&self.output, result)?;
         *self.initialized.borrow_mut() = 1;
         Ok(())
     }

@@ -30,6 +30,12 @@
     "constraints",
     "compute_regions"
   ],
+  "artifact_internal_sidecars": [
+    {
+      "field": "slot_shape_hints",
+      "read_accessor": "slot_shape_hint"
+    }
+  ],
   "forbidden_artifact_tokens": [
     "LegacyValue",
     "ReactiveInstanceId",

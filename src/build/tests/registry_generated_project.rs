@@ -35,6 +35,8 @@ fn registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch() {
     let workspace = workspace_root();
     let request = NativeBuildRequest {
         bytecode: LITERAL_F64.to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
         runtime_config: None,
         target: None,
         profile: NativeBuildProfile::Debug,
@@ -93,6 +95,8 @@ fn live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure() {
     let runtime_config = synthetic_live_runtime_config();
     let request = NativeBuildRequest {
         bytecode: SYNTHETIC_LIVE_READ.to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
         runtime_config: Some(runtime_config),
         target: None,
         profile: NativeBuildProfile::Debug,

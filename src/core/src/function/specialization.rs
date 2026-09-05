@@ -1,14 +1,25 @@
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, rc::Rc, string::String, vec::Vec};
+use alloc::{
+    boxed::Box,
+    format,
+    rc::Rc,
+    string::{String, ToString},
+    vec::Vec,
+};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, rc::Rc, string::String, vec::Vec};
 
 use crate::{
-    ConversionPlan, DimensionExpr, FunctionCatalog, FunctionInstance, FunctionInvocation,
-    FunctionPortBacking, FunctionValueRepresentation, MResult, MechError, MechErrorKind,
-    MechFunctionFactory, Ref, ResolvedType, RuntimeFunctionInputs, Schema, SchemaBody, SchemaKey,
-    SchemaTable, SchemaTableBuilder, ShapeInstance, Value, ValueCell,
+    ConversionPlan, DimensionExpr, ExecutionTarget, FunctionCatalog, FunctionInstance,
+    FunctionInvocation, FunctionPortBacking, FunctionValueRepresentation, MResult, MechError,
+    MechErrorKind, MechFunctionFactory, OperationContractDeclaration, OperationId, Ref,
+    ResolvedOperationContract, ResolvedOutputSchemaRule, ResolvedType, ResolvedValueDescriptor,
+    RuntimeBindingSelector, RuntimeFunctionEntry, RuntimeFunctionId, RuntimeFunctionInputs,
+    RuntimeOperationBindingMismatch, Schema, SchemaBody, SchemaKey, SchemaTable,
+    SchemaTableBuilder, ShapeInstance, TypeConstraintFailure, TypeResolutionError, Value,
+    ValueCell,
 };
+use core::cell::RefCell;
 
 #[cfg(feature = "matrix")]
 use crate::{FunctionArgumentRole, matrix::Matrix};
@@ -23,6 +34,103 @@ pub enum SpecializationInput {
     Cell(ValueCell),
     Absent,
     MatrixAllSelection,
+}
+
+fn specialization_input_descriptors(
+    inputs: &[&SpecializationInput],
+) -> MResult<Box<[ResolvedValueDescriptor]>> {
+    inputs
+        .iter()
+        .map(|input| input.cell()?.resolved_descriptor())
+        .collect::<MResult<Vec<_>>>()
+        .map(Vec::into_boxed_slice)
+}
+
+fn specialization_input_representations(
+    inputs: &[&SpecializationInput],
+) -> MResult<Box<[FunctionValueRepresentation]>> {
+    inputs
+        .iter()
+        .map(|input| {
+            input
+                .representation()
+                .ok_or_else(|| control_input_error("non-value", "runtime factory representation"))
+        })
+        .collect::<MResult<Vec<_>>>()
+        .map(Vec::into_boxed_slice)
+}
+
+fn specialization_input_cells(inputs: &[&SpecializationInput]) -> MResult<Box<[ValueCell]>> {
+    inputs
+        .iter()
+        .map(|input| input.cell().cloned())
+        .collect::<MResult<Vec<_>>>()
+        .map(Vec::into_boxed_slice)
+}
+
+fn validate_resolved_inputs(
+    call: &ResolvedCall,
+    inputs: &[ResolvedValueDescriptor],
+) -> MResult<()> {
+    validate_bound_descriptors(&call.converted_inputs, inputs, "input")
+}
+
+fn validate_binding_selector(call: &ResolvedCall, selector: RuntimeBindingSelector) -> MResult<()> {
+    if matches!(selector, RuntimeBindingSelector::Operation(operation) if operation == call.operation.id)
+    {
+        Ok(())
+    } else {
+        Err(MechError::new(
+            RuntimeOperationBindingMismatch {
+                operation: Some(call.operation.id),
+                reason: "a resolved source call must bind through its exact operation ID".into(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+enum StorageSpecificity {
+    ErasedCanonical,
+    FullyDynamicMatrix,
+    InvariantAxisDynamicMatrix,
+    FixedShapeMatrix,
+    ExactScalarOrAggregate,
+}
+
+fn storage_specificity(representation: FunctionValueRepresentation) -> StorageSpecificity {
+    use crate::{FunctionMatrixRepresentation as Matrix, FunctionMatrixStoragePattern as Storage};
+    match representation {
+        FunctionValueRepresentation::AnyValue => StorageSpecificity::ErasedCanonical,
+        FunctionValueRepresentation::Matrix {
+            storage: Storage::Exact(Matrix::MatrixD),
+            ..
+        } => StorageSpecificity::FullyDynamicMatrix,
+        FunctionValueRepresentation::Matrix {
+            storage: Storage::Exact(Matrix::RowVectorD | Matrix::VectorD),
+            ..
+        } => StorageSpecificity::InvariantAxisDynamicMatrix,
+        FunctionValueRepresentation::Matrix {
+            storage: Storage::Exact(_),
+            ..
+        } => StorageSpecificity::FixedShapeMatrix,
+        FunctionValueRepresentation::Matrix {
+            storage: Storage::AnyStorage,
+            ..
+        } => StorageSpecificity::ErasedCanonical,
+        _ => StorageSpecificity::ExactScalarOrAggregate,
+    }
+}
+
+const fn execution_profile(target: ExecutionTarget) -> &'static str {
+    match target {
+        ExecutionTarget::DirectRuntime => "direct runtime",
+        ExecutionTarget::ResidentCpu => "resident CPU",
+        ExecutionTarget::Native => "native",
+        ExecutionTarget::GpuBatch => "GPU batch",
+    }
 }
 
 impl SpecializationInput {
@@ -111,12 +219,337 @@ pub struct SpecializationInvocation {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResolvedOperationDescriptor {
+    pub id: OperationId,
+    pub canonical_name: Box<str>,
+    pub contract: OperationContractDeclaration,
+}
+
+impl ResolvedOperationDescriptor {
+    pub fn new(
+        id: OperationId,
+        canonical_name: impl Into<Box<str>>,
+        contract: OperationContractDeclaration,
+    ) -> MResult<Self> {
+        let canonical_name = canonical_name.into();
+        if canonical_name.is_empty() || OperationId::from_name(&canonical_name) != id {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(id),
+                    reason: format!(
+                        "canonical operation name {canonical_name:?} does not match operation ID 0x{:016x}",
+                        id.raw(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(Self {
+            id,
+            canonical_name,
+            contract,
+        })
+    }
+
+    pub fn from_name(
+        canonical_name: impl Into<Box<str>>,
+        contract: OperationContractDeclaration,
+    ) -> MResult<Self> {
+        let canonical_name = canonical_name.into();
+        Self::new(
+            OperationId::from_name(&canonical_name),
+            canonical_name,
+            contract,
+        )
+    }
+
+    pub fn from_resolved_contract(
+        canonical_name: impl Into<Box<str>>,
+        contract: &ResolvedOperationContract,
+    ) -> MResult<Self> {
+        let declaration = match contract {
+            ResolvedOperationContract::Declared(contract) => OperationContractDeclaration {
+                inputs: crate::InputPortLayout::Fixed(
+                    contract
+                        .inputs
+                        .iter()
+                        .map(|input| crate::InputPortPolicy {
+                            access: input.access,
+                            delivery: input.delivery,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+                outputs: contract
+                    .outputs
+                    .iter()
+                    .map(|output| crate::OutputPortPolicy {
+                        access: output.access,
+                        delivery: output.delivery,
+                        construction: output.construction.clone(),
+                        alias: output.alias,
+                        change_detection: output.change_detection,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                interaction: contract.interaction.clone(),
+            },
+        };
+        Self::from_name(canonical_name, declaration)
+    }
+
+    pub fn validate(&self) -> MResult<()> {
+        Self::new(self.id, self.canonical_name.clone(), self.contract.clone()).map(|_| ())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedCall {
+    pub operation: ResolvedOperationDescriptor,
     pub overload_id: u32,
     pub original_inputs: Box<[ResolvedType]>,
     pub converted_inputs: Box<[ResolvedType]>,
     pub input_conversions: Box<[ConversionPlan]>,
     pub outputs: Box<[ResolvedType]>,
+    pub output_schema_rules: Box<[ResolvedOutputSchemaRule]>,
+}
+
+impl ResolvedCall {
+    pub fn validate(&self) -> MResult<()> {
+        self.operation.validate()?;
+        if self.original_inputs.len() != self.input_conversions.len()
+            || self.converted_inputs.len() != self.input_conversions.len()
+            || self.outputs.len() != self.output_schema_rules.len()
+        {
+            return Err(MechError::from(TypeResolutionError::incompatible(
+                "resolved call",
+                TypeConstraintFailure::InvalidScheme {
+                    reason: "resolved call vector lengths are inconsistent".into(),
+                },
+            )));
+        }
+        for ((original, converted), plan) in self
+            .original_inputs
+            .iter()
+            .zip(&self.converted_inputs)
+            .zip(&self.input_conversions)
+        {
+            if !crate::exact_type_equal(original, &plan.source)
+                || !crate::exact_type_equal(converted, &plan.target)
+            {
+                return Err(MechError::from(TypeResolutionError::incompatible(
+                    "resolved call",
+                    TypeConstraintFailure::InvalidScheme {
+                        reason: "conversion endpoints do not match resolved inputs".into(),
+                    },
+                )));
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BoundCallOrigin {
+    ResolvedOverload(u32),
+    ArtifactOperation,
+    SyntaxDirected,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BoundImplementationId {
+    Runtime(RuntimeFunctionId),
+    Resident(crate::ResidentOperationKey),
+}
+
+/// Immutable certificate joining semantic resolution to one physical runtime
+/// implementation. It contains no allocation or lifetime policy.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BoundCall {
+    operation: ResolvedOperationDescriptor,
+    origin: BoundCallOrigin,
+    inputs: Box<[ResolvedValueDescriptor]>,
+    outputs: Box<[ResolvedValueDescriptor]>,
+    implementation: BoundImplementationId,
+    target: ExecutionTarget,
+}
+
+impl BoundCall {
+    pub fn from_resolved_call(
+        call: &ResolvedCall,
+        inputs: Box<[ResolvedValueDescriptor]>,
+        outputs: Box<[ResolvedValueDescriptor]>,
+        runtime_function: RuntimeFunctionId,
+        target: ExecutionTarget,
+    ) -> MResult<Self> {
+        call.validate()?;
+        validate_bound_descriptors(&call.converted_inputs, &inputs, "input")?;
+        validate_bound_descriptors(&call.outputs, &outputs, "output")?;
+        Ok(Self {
+            operation: call.operation.clone(),
+            origin: BoundCallOrigin::ResolvedOverload(call.overload_id),
+            inputs,
+            outputs,
+            implementation: BoundImplementationId::Runtime(runtime_function),
+            target,
+        })
+    }
+
+    pub fn syntax_directed(
+        operation: ResolvedOperationDescriptor,
+        inputs: Box<[ResolvedValueDescriptor]>,
+        outputs: Box<[ResolvedValueDescriptor]>,
+        runtime_function: RuntimeFunctionId,
+        target: ExecutionTarget,
+    ) -> MResult<Self> {
+        Ok(Self {
+            operation,
+            origin: BoundCallOrigin::SyntaxDirected,
+            inputs,
+            outputs,
+            implementation: BoundImplementationId::Runtime(runtime_function),
+            target,
+        })
+    }
+
+    pub fn artifact_operation(
+        operation: ResolvedOperationDescriptor,
+        inputs: Box<[ResolvedValueDescriptor]>,
+        outputs: Box<[ResolvedValueDescriptor]>,
+        resident_operation: crate::ResidentOperationKey,
+    ) -> MResult<Self> {
+        let canonical_name = format!(
+            "{}/{}",
+            resident_operation.module_path.join("/"),
+            resident_operation.operation_name
+        );
+        if canonical_name != operation.canonical_name.as_ref() {
+            return Err(MechError::new(
+                crate::RuntimeOperationBindingMismatch {
+                    operation: Some(operation.id),
+                    reason: format!(
+                        "resident operation {canonical_name:?} does not match the artifact operation"
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(Self {
+            operation,
+            origin: BoundCallOrigin::ArtifactOperation,
+            inputs,
+            outputs,
+            implementation: BoundImplementationId::Resident(resident_operation),
+            target: ExecutionTarget::ResidentCpu,
+        })
+    }
+
+    pub const fn operation(&self) -> OperationId {
+        self.operation.id
+    }
+
+    pub const fn operation_descriptor(&self) -> &ResolvedOperationDescriptor {
+        &self.operation
+    }
+
+    pub fn resolve_operation_contract(
+        &mut self,
+        contract: &OperationContractDeclaration,
+    ) -> MResult<()> {
+        self.operation.contract = contract.clone();
+        self.operation.validate()
+    }
+
+    pub const fn origin(&self) -> &BoundCallOrigin {
+        &self.origin
+    }
+
+    pub fn inputs(&self) -> &[ResolvedValueDescriptor] {
+        &self.inputs
+    }
+
+    pub fn outputs(&self) -> &[ResolvedValueDescriptor] {
+        &self.outputs
+    }
+
+    pub const fn implementation(&self) -> &BoundImplementationId {
+        &self.implementation
+    }
+
+    pub const fn runtime_function(&self) -> Option<RuntimeFunctionId> {
+        match &self.implementation {
+            BoundImplementationId::Runtime(function) => Some(*function),
+            BoundImplementationId::Resident(_) => None,
+        }
+    }
+
+    pub const fn resident_operation(&self) -> Option<&crate::ResidentOperationKey> {
+        match &self.implementation {
+            BoundImplementationId::Runtime(_) => None,
+            BoundImplementationId::Resident(operation) => Some(operation),
+        }
+    }
+
+    pub const fn target(&self) -> ExecutionTarget {
+        self.target
+    }
+}
+
+fn validate_bound_descriptors(
+    expected: &[ResolvedType],
+    actual: &[ResolvedValueDescriptor],
+    category: &'static str,
+) -> MResult<()> {
+    if expected.len() != actual.len() {
+        return Err(MechError::new(
+            ResolvedValueDescriptorMismatch {
+                category,
+                index: expected.len().min(actual.len()),
+                expected: format!("{} descriptors", expected.len()),
+                actual: format!("{} descriptors", actual.len()),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    for (index, (expected, actual)) in expected.iter().zip(actual).enumerate() {
+        if !crate::exact_type_equal(expected, actual.resolved_type()) {
+            return Err(MechError::new(
+                ResolvedValueDescriptorMismatch {
+                    category,
+                    index,
+                    expected: expected.semantic_name(),
+                    actual: actual.resolved_type().semantic_name(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+    }
+    Ok(())
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResolvedValueDescriptorMismatch {
+    pub category: &'static str,
+    pub index: usize,
+    pub expected: String,
+    pub actual: String,
+}
+
+impl MechErrorKind for ResolvedValueDescriptorMismatch {
+    fn name(&self) -> &str {
+        "ResolvedValueDescriptorMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "bound {} descriptor {} expected {}, received {}",
+            self.category, self.index, self.expected, self.actual
+        )
+    }
 }
 
 impl SpecializationInvocation {
@@ -157,7 +590,9 @@ impl SpecializationInvocation {
 pub struct SpecializationContext<'a> {
     schemas: Rc<SchemaTable>,
     catalog: Option<&'a FunctionCatalog>,
-    semantic_operation: Option<String>,
+    selected_operation: Option<OperationId>,
+    diagnostic_operation: Option<String>,
+    syntax_operation: RefCell<Option<ResolvedOperationDescriptor>>,
     resolved_call: Option<ResolvedCall>,
 }
 
@@ -166,7 +601,9 @@ impl<'a> SpecializationContext<'a> {
         Self {
             schemas,
             catalog: None,
-            semantic_operation: None,
+            selected_operation: None,
+            diagnostic_operation: None,
+            syntax_operation: RefCell::new(None),
             resolved_call: None,
         }
     }
@@ -175,7 +612,9 @@ impl<'a> SpecializationContext<'a> {
         Self {
             schemas,
             catalog: Some(catalog),
-            semantic_operation: None,
+            selected_operation: None,
+            diagnostic_operation: None,
+            syntax_operation: RefCell::new(None),
             resolved_call: None,
         }
     }
@@ -202,25 +641,105 @@ impl<'a> SpecializationContext<'a> {
         Ok(Self {
             schemas,
             catalog,
-            semantic_operation: None,
+            selected_operation: None,
+            diagnostic_operation: None,
+            syntax_operation: RefCell::new(None),
             resolved_call: None,
         })
+    }
+
+    pub fn for_syntax_directed_invocation(
+        invocation: &SpecializationInvocation,
+        catalog: Option<&'a FunctionCatalog>,
+        operation: ResolvedOperationDescriptor,
+    ) -> MResult<Self> {
+        let mut context = Self::for_invocation(invocation, catalog)?;
+        operation.validate()?;
+        context.selected_operation = Some(operation.id);
+        context.diagnostic_operation = Some(operation.canonical_name.to_string());
+        *context.syntax_operation.borrow_mut() = Some(operation);
+        Ok(context)
     }
 
     pub fn for_resolved_invocation(
         invocation: &SpecializationInvocation,
         catalog: Option<&'a FunctionCatalog>,
-        semantic_operation: impl Into<String>,
+        selected_operation: OperationId,
+        diagnostic_operation: impl Into<String>,
         resolved_call: ResolvedCall,
     ) -> MResult<Self> {
+        if resolved_call.operation.id != selected_operation {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(selected_operation),
+                    reason: format!(
+                        "selected specializer operation 0x{:016x} differs from resolved operation 0x{:016x}",
+                        selected_operation.raw(),
+                        resolved_call.operation.id.raw(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        resolved_call.validate()?;
         let mut context = Self::for_invocation(invocation, catalog)?;
-        context.semantic_operation = Some(semantic_operation.into());
+        context.selected_operation = Some(selected_operation);
+        context.diagnostic_operation = Some(diagnostic_operation.into());
+        *context.syntax_operation.borrow_mut() = None;
         context.resolved_call = Some(resolved_call);
         Ok(context)
     }
 
     pub fn schemas(&self) -> &SchemaTable {
         self.schemas.as_ref()
+    }
+
+    /// Resolves a syntax-directed operation's invocation-specific memory
+    /// declaration before any physical implementation is certified.
+    pub fn resolve_syntax_operation_contract(
+        &self,
+        contract: &OperationContractDeclaration,
+    ) -> MResult<()> {
+        let diagnostic_operation = self.diagnostic_operation_name();
+        let mut syntax_operation = self.syntax_operation.borrow_mut();
+        let descriptor = syntax_operation.as_mut().ok_or_else(|| {
+            MechError::new(
+                SpecializationSemanticCallUnavailable {
+                    semantic_operation: diagnostic_operation,
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        descriptor.contract = contract.clone();
+        descriptor.validate()
+    }
+
+    /// Resolves an invocation-specific syntax operation whose semantic
+    /// identity, as well as its memory contract, depends on the parsed
+    /// selector form. The finalized identity is recorded before an
+    /// implementation is certified and later artifact lowering consumes it
+    /// verbatim.
+    pub fn resolve_syntax_operation(
+        &mut self,
+        canonical_name: impl Into<Box<str>>,
+        contract: &OperationContractDeclaration,
+    ) -> MResult<()> {
+        if self.resolved_call.is_some() {
+            return Err(MechError::new(
+                SpecializationSemanticCallUnavailable {
+                    semantic_operation: self.diagnostic_operation_name(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let descriptor = ResolvedOperationDescriptor::from_name(canonical_name, contract.clone())?;
+        self.selected_operation = Some(descriptor.id);
+        self.diagnostic_operation = Some(descriptor.canonical_name.to_string());
+        *self.syntax_operation.borrow_mut() = Some(descriptor);
+        Ok(())
     }
 
     pub fn catalog(&self) -> Option<&FunctionCatalog> {
@@ -232,7 +751,7 @@ impl<'a> SpecializationContext<'a> {
             MechError::new(
                 SpecializationSemanticCallUnavailable {
                     semantic_operation: self
-                        .semantic_operation
+                        .diagnostic_operation
                         .clone()
                         .unwrap_or_else(|| "named operation".into()),
                 },
@@ -307,6 +826,100 @@ impl<'a> SpecializationContext<'a> {
         ValueCell::from_runtime_value(value, self.schemas.clone())
     }
 
+    /// Certifies an implementation selected by syntax-directed lowering or by
+    /// an operation-specific specializer that does not use the runtime
+    /// catalog. The canonical cells must already carry their final semantic
+    /// descriptors; this method only records and validates them.
+    pub fn certify_instance(
+        &self,
+        instance: FunctionInstance,
+        runtime_function: RuntimeFunctionId,
+        target: ExecutionTarget,
+    ) -> MResult<SpecializedFunction> {
+        let inputs = instance
+            .inputs()
+            .iter()
+            .map(ValueCell::resolved_descriptor)
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
+        self.certify_instance_with_descriptors(instance, runtime_function, target, inputs)
+    }
+
+    /// Certifies a lowered implementation whose semantic inputs were folded
+    /// into an immutable runtime value during specialization.
+    pub fn certify_instance_for_inputs(
+        &self,
+        instance: FunctionInstance,
+        runtime_function: RuntimeFunctionId,
+        target: ExecutionTarget,
+        inputs: &[&SpecializationInput],
+    ) -> MResult<SpecializedFunction> {
+        let inputs = specialization_input_descriptors(inputs)?;
+        self.certify_instance_with_descriptors(instance, runtime_function, target, inputs)
+    }
+
+    fn certify_instance_with_descriptors(
+        &self,
+        instance: FunctionInstance,
+        runtime_function: RuntimeFunctionId,
+        target: ExecutionTarget,
+        inputs: Box<[ResolvedValueDescriptor]>,
+    ) -> MResult<SpecializedFunction> {
+        let operation = self.selected_operation.ok_or_else(|| {
+            MechError::new(
+                SpecializationSemanticCallUnavailable {
+                    semantic_operation: self.diagnostic_operation_name(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let operation_descriptor = if let Some(call) = self.resolved_call.as_ref() {
+            call.operation.clone()
+        } else {
+            self.syntax_operation.borrow().clone().ok_or_else(|| {
+                MechError::new(
+                    SpecializationSemanticCallUnavailable {
+                        semantic_operation: format!(
+                            "{} has no authoritative operation-memory contract",
+                            self.diagnostic_operation_name()
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?
+        };
+        if operation_descriptor.id != operation {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(operation),
+                    reason:
+                        "specialization semantic descriptor disagrees with the selected operation"
+                            .into(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        instance
+            .invocation()
+            .check_operation_memory_contract(&operation_descriptor.contract)?;
+        let outputs = vec![instance.output().resolved_descriptor()?].into_boxed_slice();
+        let bound_call = if let Some(call) = self.resolved_call.as_ref() {
+            BoundCall::from_resolved_call(call, inputs, outputs, runtime_function, target)?
+        } else {
+            BoundCall::syntax_directed(
+                operation_descriptor,
+                inputs,
+                outputs,
+                runtime_function,
+                target,
+            )?
+        };
+        Ok(SpecializedFunction::new(instance, bound_call))
+    }
+
     fn semantic_binding_inputs(&self) -> MResult<Box<[String]>> {
         Ok(self
             .resolved_call()?
@@ -317,456 +930,257 @@ impl<'a> SpecializationContext<'a> {
             .into_boxed_slice())
     }
 
-    /// Selects and binds one exact runtime factory from canonical input and
-    /// output representations.
-    ///
-    /// This is the shared source/runtime seam for operation families whose
-    /// concrete factories are already registered in the catalog. The caller
-    /// derives output representation and extent from operation semantics;
-    /// this method never projects a cell through an erased universal value.
-    pub fn bind_runtime_factory(
+    pub fn resolved_output_descriptor(
         &self,
-        name_prefix: &str,
-        output_representation: FunctionValueRepresentation,
-        output_dimensions: Option<(usize, usize)>,
+        output_index: usize,
+        current_extents: Box<[u64]>,
         inputs: &[&SpecializationInput],
-    ) -> MResult<SpecializedFunction> {
-        let resolved_output = self.resolved_output(0)?;
-        let semantic_operation = self
-            .semantic_operation
-            .clone()
-            .unwrap_or_else(|| name_prefix.into());
-        let semantic_output = resolved_output.semantic_name();
-        let semantic_inputs = self.semantic_binding_inputs()?;
-        let catalog = self.catalog.ok_or_else(|| {
-            MechError::new(
-                SpecializationRuntimeCatalogUnavailable {
-                    semantic_operation: semantic_operation.clone(),
-                    semantic_inputs: semantic_inputs.clone(),
-                    semantic_output: semantic_output.clone(),
-                    execution_profile: "direct runtime",
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-        let input_representations = inputs
-            .iter()
-            .map(|input| {
-                input.representation().ok_or_else(|| {
-                    control_input_error("non-value", "runtime factory representation")
-                })
-            })
-            .collect::<MResult<Vec<_>>>()?;
-        let mut candidates = catalog.runtime_entries().filter(|entry| {
-            entry.name.starts_with(name_prefix)
-                && entry.signature().output == output_representation
-                && representation_supports_resolved_type(entry.signature().output, resolved_output)
-                && runtime_inputs_match(entry.signature().inputs, input_representations.as_slice())
-        });
-        let entry = candidates.next().ok_or_else(|| {
-            MechError::new(
-                SpecializationRuntimeFactoryUnavailable {
-                    semantic_operation: semantic_operation.clone(),
-                    semantic_inputs: semantic_inputs.clone(),
-                    semantic_output: semantic_output.clone(),
-                    execution_profile: "direct runtime",
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-        if candidates.next().is_some() {
-            return Err(MechError::new(
-                SpecializationRuntimeFactoryAmbiguous {
-                    semantic_operation: semantic_operation.clone(),
-                    semantic_inputs: semantic_inputs.clone(),
-                    semantic_output: semantic_output.clone(),
-                    execution_profile: "direct runtime",
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let output =
-            ValueCell::default_for_representation(output_representation, output_dimensions)?
-                .with_resolved_output_type(resolved_output)?;
-        let input_cells = inputs
-            .iter()
-            .map(|input| input.cell().cloned())
-            .collect::<MResult<Vec<_>>>()?
-            .into_boxed_slice();
-        let invocation =
-            invocation_for_runtime_inputs(entry.signature().inputs, output, input_cells)?;
-        Ok(SpecializedFunction::new(entry.bind_invocation(invocation)?))
+    ) -> MResult<ResolvedValueDescriptor> {
+        let call = self.resolved_call()?;
+        let resolved = call
+            .outputs
+            .get(output_index)
+            .ok_or_else(|| resolved_call_index_error(self, "output", output_index))?;
+        let rule = call
+            .output_schema_rules
+            .get(output_index)
+            .ok_or_else(|| resolved_call_index_error(self, "output schema rule", output_index))?;
+        let inputs = specialization_input_descriptors(inputs)?;
+        crate::materialize_resolved_output(resolved, rule, &inputs, current_extents)
+            .map_err(MechError::from)
     }
 
-    /// Selects a runtime factory by canonical inputs and lets the registered
-    /// signature determine the exact output storage. Fixed output storage is
-    /// preferred over a dynamic fallback when both represent the same logical
-    /// extent (for example row-vector by column-vector multiplication).
-    pub fn bind_runtime_factory_derived_output(
+    pub fn bind_resolved_runtime(
         &self,
-        name_prefix: &str,
-        output_dimensions: Option<(usize, usize)>,
+        selector: RuntimeBindingSelector,
+        target: ExecutionTarget,
+        output_extents: Box<[Box<[u64]>]>,
         inputs: &[&SpecializationInput],
     ) -> MResult<SpecializedFunction> {
-        let resolved_output = self.resolved_output(0)?;
-        let semantic_operation = self
-            .semantic_operation
-            .clone()
-            .unwrap_or_else(|| name_prefix.into());
-        let semantic_output = resolved_output.semantic_name();
-        let semantic_inputs = self.semantic_binding_inputs()?;
-        let catalog = self.catalog.ok_or_else(|| {
-            MechError::new(
-                SpecializationRuntimeCatalogUnavailable {
-                    semantic_operation: semantic_operation.clone(),
-                    semantic_inputs: semantic_inputs.clone(),
-                    semantic_output: semantic_output.clone(),
-                    execution_profile: "direct runtime",
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-        let input_representations = inputs
-            .iter()
-            .map(|input| {
-                input.representation().ok_or_else(|| {
-                    control_input_error("non-value", "runtime factory representation")
-                })
-            })
-            .collect::<MResult<Vec<_>>>()?;
-        let mut candidates = catalog
-            .runtime_entries()
-            .filter(|entry| {
-                entry.name.starts_with(name_prefix)
-                    && representation_supports_resolved_type(
-                        entry.signature().output,
-                        resolved_output,
-                    )
-                    && runtime_inputs_match(
-                        entry.signature().inputs,
-                        input_representations.as_slice(),
-                    )
-            })
-            .map(|entry| (runtime_output_rank(entry.signature().output), entry))
-            .collect::<Vec<_>>();
-        candidates.sort_by_key(|(rank, entry)| (*rank, entry.id));
-        let Some((best_rank, entry)) = candidates.into_iter().next() else {
-            return Err(MechError::new(
-                SpecializationRuntimeFactoryUnavailable {
-                    semantic_operation: semantic_operation.clone(),
-                    semantic_inputs: semantic_inputs.clone(),
-                    semantic_output: semantic_output.clone(),
-                    execution_profile: "direct runtime",
-                },
-                None,
-            )
-            .with_compiler_loc());
-        };
-        let competing = catalog.runtime_entries().find(|candidate| {
-            candidate.id != entry.id
-                && candidate.name.starts_with(name_prefix)
-                && representation_supports_resolved_type(
-                    candidate.signature().output,
-                    resolved_output,
-                )
-                && runtime_inputs_match(
-                    candidate.signature().inputs,
-                    input_representations.as_slice(),
-                )
-                && runtime_output_rank(candidate.signature().output) == best_rank
-        });
-        if competing.is_some() {
-            return Err(MechError::new(
-                SpecializationRuntimeFactoryAmbiguous {
-                    semantic_operation: semantic_operation.clone(),
-                    semantic_inputs: semantic_inputs.clone(),
-                    semantic_output: semantic_output.clone(),
-                    execution_profile: "direct runtime",
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let dimensions = output_dimensions
-            .or_else(|| inferred_output_dimensions(entry.signature().output, inputs));
-        let output = ValueCell::default_for_representation(entry.signature().output, dimensions)?
-            .with_resolved_output_type(resolved_output)?;
-        let input_cells = inputs
-            .iter()
-            .map(|input| input.cell().cloned())
-            .collect::<MResult<Vec<_>>>()?
-            .into_boxed_slice();
-        let invocation =
-            invocation_for_runtime_inputs(entry.signature().inputs, output, input_cells)?;
-        Ok(SpecializedFunction::new(entry.bind_invocation(invocation)?))
-    }
-
-    /// Selects a registered runtime factory while retaining an existing
-    /// canonical output cell as the authoritative read-modify-write target.
-    ///
-    /// Assignment specialization uses this path so the output is never
-    /// projected into, or reconstructed from, an erased universal value.
-    pub fn bind_runtime_factory_existing_output(
-        &self,
-        name_prefix: &str,
-        output: &SpecializationInput,
-        inputs: &[&SpecializationInput],
-    ) -> MResult<SpecializedFunction> {
-        let resolved_output = self.resolved_output(0)?;
-        let semantic_operation = self
-            .semantic_operation
-            .clone()
-            .unwrap_or_else(|| name_prefix.into());
-        let semantic_output = resolved_output.semantic_name();
-        let semantic_inputs = self.semantic_binding_inputs()?;
-        let catalog = self.catalog.ok_or_else(|| {
-            MechError::new(
-                SpecializationRuntimeCatalogUnavailable {
-                    semantic_operation: semantic_operation.clone(),
-                    semantic_inputs: semantic_inputs.clone(),
-                    semantic_output: semantic_output.clone(),
-                    execution_profile: "direct runtime",
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-        let output_representation = output.representation().ok_or_else(|| {
-            control_input_error("non-value", "runtime factory output representation")
-        })?;
-        let live_output = output.cell()?.resolved_type()?;
-        if !crate::exact_type_equal(&live_output, resolved_output) {
-            return Err(MechError::from(crate::TypeResolutionError::incompatible(
-                self.semantic_operation
-                    .clone()
-                    .unwrap_or_else(|| name_prefix.into()),
-                crate::TypeConstraintFailure::OutputTypeMismatch {
-                    expected: resolved_output.semantic_name(),
-                    actual: live_output.semantic_name(),
+        let call = self.resolved_call()?;
+        validate_binding_selector(call, selector)?;
+        let input_descriptors = specialization_input_descriptors(inputs)?;
+        validate_resolved_inputs(call, &input_descriptors)?;
+        if call.outputs.len() != 1 || output_extents.len() != 1 {
+            return Err(MechError::from(TypeResolutionError::incompatible(
+                self.diagnostic_operation_name(),
+                TypeConstraintFailure::InvalidScheme {
+                    reason: format!(
+                        "runtime invocation requires one output; resolved {} outputs and received {} extent lists",
+                        call.outputs.len(),
+                        output_extents.len(),
+                    ),
                 },
             )));
         }
-        let input_representations = inputs
-            .iter()
-            .map(|input| {
-                input.representation().ok_or_else(|| {
-                    control_input_error("non-value", "runtime factory representation")
-                })
-            })
-            .collect::<MResult<Vec<_>>>()?;
-        let mut candidates = catalog.runtime_entries().filter(|entry| {
-            entry.name.starts_with(name_prefix)
-                && entry.signature().output == output_representation
-                && runtime_inputs_match(entry.signature().inputs, input_representations.as_slice())
-        });
-        let entry = candidates.next().ok_or_else(|| {
-            MechError::new(
-                SpecializationRuntimeFactoryUnavailable {
-                    semantic_operation: semantic_operation.clone(),
-                    semantic_inputs: semantic_inputs.clone(),
-                    semantic_output: semantic_output.clone(),
-                    execution_profile: "direct runtime",
+        let output_descriptor = crate::materialize_resolved_output(
+            &call.outputs[0],
+            &call.output_schema_rules[0],
+            &input_descriptors,
+            output_extents[0].clone(),
+        )
+        .map_err(MechError::from)?;
+        let input_representations = specialization_input_representations(inputs)?;
+        let (entry, rejections) = self.select_runtime_candidate(
+            selector,
+            target,
+            &input_representations,
+            &output_descriptor,
+            None,
+        )?;
+        let output =
+            ValueCell::allocate_for_descriptor(&output_descriptor, entry.signature().output)?;
+        let input_cells = specialization_input_cells(inputs)?;
+        let invocation =
+            invocation_for_runtime_inputs(entry.signature().inputs, output, input_cells)?;
+        let instance = entry.bind_resolved_invocation(call.operation.id, target, invocation)?;
+        let bound_call = BoundCall::from_resolved_call(
+            call,
+            input_descriptors,
+            vec![output_descriptor].into_boxed_slice(),
+            entry.id,
+            target,
+        )?;
+        let _ = rejections;
+        Ok(SpecializedFunction::new(instance, bound_call))
+    }
+
+    pub fn bind_resolved_runtime_existing_output(
+        &self,
+        selector: RuntimeBindingSelector,
+        target: ExecutionTarget,
+        output: &SpecializationInput,
+        inputs: &[&SpecializationInput],
+    ) -> MResult<SpecializedFunction> {
+        let call = self.resolved_call()?;
+        validate_binding_selector(call, selector)?;
+        if call.outputs.len() != 1 {
+            return Err(MechError::from(TypeResolutionError::incompatible(
+                self.diagnostic_operation_name(),
+                TypeConstraintFailure::InvalidScheme {
+                    reason: format!(
+                        "existing-output invocation requires one output, resolved {}",
+                        call.outputs.len()
+                    ),
                 },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-        if candidates.next().is_some() {
+            )));
+        }
+        let output_cell = output.cell()?;
+        let output_descriptor = output_cell.resolved_descriptor()?;
+        let runtime_input_descriptors = specialization_input_descriptors(inputs)?;
+        let input_descriptors = core::iter::once(output_descriptor.clone())
+            .chain(runtime_input_descriptors.iter().cloned())
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        validate_resolved_inputs(call, &input_descriptors)?;
+        let current_extents = output_descriptor
+            .current_extents()
+            .map_err(MechError::from)?;
+        let expected_output = crate::materialize_resolved_output(
+            &call.outputs[0],
+            &call.output_schema_rules[0],
+            &input_descriptors,
+            current_extents,
+        )
+        .map_err(MechError::from)?;
+        if output_descriptor != expected_output {
             return Err(MechError::new(
-                SpecializationRuntimeFactoryAmbiguous {
-                    semantic_operation: semantic_operation.clone(),
-                    semantic_inputs: semantic_inputs.clone(),
-                    semantic_output: semantic_output.clone(),
-                    execution_profile: "direct runtime",
+                ResolvedValueDescriptorMismatch {
+                    category: "output",
+                    index: 0,
+                    expected: format!("{expected_output:?}"),
+                    actual: format!("{output_descriptor:?}"),
                 },
                 None,
             )
             .with_compiler_loc());
         }
-        let output = output.cell()?.clone();
-        let input_cells = inputs
-            .iter()
-            .map(|input| input.cell().cloned())
-            .collect::<MResult<Vec<_>>>()?
-            .into_boxed_slice();
-        let invocation =
-            invocation_for_runtime_inputs(entry.signature().inputs, output, input_cells)?;
-        Ok(SpecializedFunction::new(entry.bind_invocation(invocation)?))
+        output_cell.validate_descriptor(&expected_output)?;
+        let input_representations = specialization_input_representations(inputs)?;
+        let output_representation = output_cell.representation();
+        let (entry, _) = self.select_runtime_candidate(
+            selector,
+            target,
+            &input_representations,
+            &output_descriptor,
+            Some(output_representation),
+        )?;
+        let input_cells = specialization_input_cells(inputs)?;
+        let invocation = invocation_for_runtime_inputs(
+            entry.signature().inputs,
+            output_cell.clone(),
+            input_cells,
+        )?;
+        let instance = entry.bind_resolved_invocation(call.operation.id, target, invocation)?;
+        let bound_call = BoundCall::from_resolved_call(
+            call,
+            input_descriptors,
+            vec![output_descriptor].into_boxed_slice(),
+            entry.id,
+            target,
+        )?;
+        Ok(SpecializedFunction::new(instance, bound_call))
     }
-}
 
-fn inferred_output_dimensions(
-    representation: FunctionValueRepresentation,
-    _inputs: &[&SpecializationInput],
-) -> Option<(usize, usize)> {
-    let FunctionValueRepresentation::Matrix { storage, .. } = representation else {
-        return None;
-    };
-    let exact = match storage {
-        crate::FunctionMatrixStoragePattern::Exact(storage) => storage,
-        crate::FunctionMatrixStoragePattern::AnyStorage => return None,
-    };
-    match exact {
-        crate::FunctionMatrixRepresentation::Matrix1 => return Some((1, 1)),
-        crate::FunctionMatrixRepresentation::Matrix2 => return Some((2, 2)),
-        crate::FunctionMatrixRepresentation::Matrix3 => return Some((3, 3)),
-        crate::FunctionMatrixRepresentation::Matrix4 => return Some((4, 4)),
-        crate::FunctionMatrixRepresentation::Matrix2x3 => return Some((2, 3)),
-        crate::FunctionMatrixRepresentation::Matrix3x2 => return Some((3, 2)),
-        crate::FunctionMatrixRepresentation::RowVector2 => return Some((1, 2)),
-        crate::FunctionMatrixRepresentation::RowVector3 => return Some((1, 3)),
-        crate::FunctionMatrixRepresentation::RowVector4 => return Some((1, 4)),
-        crate::FunctionMatrixRepresentation::Vector2 => return Some((2, 1)),
-        crate::FunctionMatrixRepresentation::Vector3 => return Some((3, 1)),
-        crate::FunctionMatrixRepresentation::Vector4 => return Some((4, 1)),
-        crate::FunctionMatrixRepresentation::RowVectorD
-        | crate::FunctionMatrixRepresentation::VectorD
-        | crate::FunctionMatrixRepresentation::MatrixD => {}
-    }
-    #[cfg(feature = "matrix")]
-    {
-        let descriptors = _inputs
-            .iter()
-            .filter_map(|input| input.matrix_descriptor().ok().flatten())
-            .collect::<Vec<_>>();
-        if descriptors.is_empty() {
-            return None;
-        }
-        return match exact {
-            crate::FunctionMatrixRepresentation::RowVectorD => descriptors
-                .iter()
-                .map(|value| value.cols)
-                .max()
-                .map(|cols| (1, cols)),
-            crate::FunctionMatrixRepresentation::VectorD => descriptors
-                .iter()
-                .map(|value| value.rows)
-                .max()
-                .map(|rows| (rows, 1)),
-            crate::FunctionMatrixRepresentation::MatrixD => Some((
-                descriptors.iter().map(|value| value.rows).max()?,
-                descriptors.iter().map(|value| value.cols).max()?,
-            )),
-            _ => unreachable!("fixed matrix outputs return above"),
-        };
-    }
-    #[cfg(not(feature = "matrix"))]
-    None
-}
-
-fn runtime_output_rank(representation: FunctionValueRepresentation) -> u8 {
-    match representation {
-        FunctionValueRepresentation::Matrix {
-            storage:
-                crate::FunctionMatrixStoragePattern::Exact(
-                    crate::FunctionMatrixRepresentation::RowVectorD
-                    | crate::FunctionMatrixRepresentation::VectorD
-                    | crate::FunctionMatrixRepresentation::MatrixD,
-                ),
-            ..
-        } => 1,
-        _ => 0,
-    }
-}
-
-fn representation_supports_resolved_type(
-    representation: FunctionValueRepresentation,
-    resolved: &ResolvedType,
-) -> bool {
-    use crate::{BuiltinScalarKind as Scalar, FunctionMatrixElement as Element, KindExpr};
-    use FunctionValueRepresentation as Representation;
-
-    match (representation, resolved.kind()) {
-        (Representation::AnyValue, _) | (_, KindExpr::Wildcard) => true,
-        (Representation::U8, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U8),
-        (Representation::U16, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::U16)
-        }
-        (Representation::U32, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::U32)
-        }
-        (Representation::U64, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::U64)
-        }
-        (Representation::U128, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::U128)
-        }
-        (Representation::I8, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I8),
-        (Representation::I16, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::I16)
-        }
-        (Representation::I32, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::I32)
-        }
-        (Representation::I64, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::I64)
-        }
-        (Representation::I128, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::I128)
-        }
-        (Representation::F32, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::F32)
-        }
-        (Representation::F64, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::F64)
-        }
-        (Representation::C64, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::C64)
-        }
-        (Representation::R64, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::R64)
-        }
-        (Representation::String, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::String)
-        }
-        (Representation::Bool, KindExpr::Named(id)) => {
-            Scalar::from_kind_id(*id) == Some(Scalar::Bool)
-        }
-        (Representation::Id, KindExpr::Id) | (Representation::Index, KindExpr::Index) => true,
-        (Representation::Atom, KindExpr::Atom(_)) | (Representation::Enum, KindExpr::Enum(_)) => {
-            true
-        }
-        (Representation::Record, KindExpr::Record(_))
-        | (Representation::Map, KindExpr::Map { .. })
-        | (Representation::Set, KindExpr::Set { .. })
-        | (Representation::Table, KindExpr::Table { .. })
-        | (Representation::Tuple, KindExpr::Tuple(_))
-        | (Representation::Kind, KindExpr::TypeOf(_)) => true,
-        (
-            Representation::Matrix { element, .. },
-            KindExpr::Matrix {
-                element: resolved_element,
-                ..
-            },
-        ) => match (element, resolved_element.as_ref()) {
-            (Element::Value, _) => true,
-            (Element::Index, KindExpr::Index) => true,
-            (Element::Bool, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::Bool),
-            (Element::String, KindExpr::Named(id)) => {
-                Scalar::from_kind_id(*id) == Some(Scalar::String)
+    fn select_runtime_candidate(
+        &self,
+        selector: RuntimeBindingSelector,
+        target: ExecutionTarget,
+        input_representations: &[FunctionValueRepresentation],
+        output: &ResolvedValueDescriptor,
+        existing_output: Option<FunctionValueRepresentation>,
+    ) -> MResult<(&RuntimeFunctionEntry, Box<[RuntimeCandidateRejection]>)> {
+        let catalog = self.catalog.ok_or_else(|| {
+            MechError::new(
+                SpecializationRuntimeCatalogUnavailable {
+                    semantic_operation: self.diagnostic_operation_name(),
+                    semantic_inputs: self.semantic_binding_inputs().unwrap_or_default(),
+                    semantic_output: output.resolved_type().semantic_name(),
+                    execution_profile: execution_profile(target),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let mut eligible = Vec::new();
+        let mut rejected = Vec::new();
+        for entry in catalog.runtime_entries_for_binding(selector, target) {
+            let reason = if !runtime_inputs_match(entry.signature().inputs, input_representations) {
+                Some("physical input signature mismatch".into())
+            } else if existing_output
+                .is_some_and(|actual| !entry.signature().output.matches(actual))
+            {
+                Some("existing output backing does not match the physical output signature".into())
+            } else {
+                let capabilities =
+                    crate::runtime_storage::actual_backing_capabilities(entry.signature().output);
+                crate::check_schema_storage_compatibility(
+                    output.schema(),
+                    output.shape(),
+                    &capabilities,
+                )
+                .err()
+                .map(|error| format!("output storage is incompatible: {error:?}"))
+            };
+            if let Some(reason) = reason {
+                rejected.push(RuntimeCandidateRejection {
+                    function: entry.id,
+                    name: entry.name.clone(),
+                    reason,
+                });
+            } else {
+                eligible.push((storage_specificity(entry.signature().output), entry));
             }
-            (Element::U8, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U8),
-            (Element::U16, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U16),
-            (Element::U32, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U32),
-            (Element::U64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U64),
-            (Element::U128, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::U128),
-            (Element::I8, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I8),
-            (Element::I16, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I16),
-            (Element::I32, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I32),
-            (Element::I64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I64),
-            (Element::I128, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::I128),
-            (Element::F32, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::F32),
-            (Element::F64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::F64),
-            (Element::C64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::C64),
-            (Element::R64, KindExpr::Named(id)) => Scalar::from_kind_id(*id) == Some(Scalar::R64),
-            _ => false,
-        },
-        (Representation::Empty, KindExpr::Tuple(elements)) => elements.is_empty(),
-        _ => false,
+        }
+        let Some(best_specificity) = eligible.iter().map(|(specificity, _)| *specificity).max()
+        else {
+            return Err(MechError::new(
+                SpecializationRuntimeFactoryUnavailable {
+                    operation: self.resolved_call()?.operation.id,
+                    semantic_operation: self.diagnostic_operation_name(),
+                    semantic_inputs: self.semantic_binding_inputs()?,
+                    semantic_outputs: vec![output.resolved_type().semantic_name()]
+                        .into_boxed_slice(),
+                    target,
+                    candidates: rejected.into_boxed_slice(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+        let tied = eligible
+            .into_iter()
+            .filter(|(specificity, _)| *specificity == best_specificity)
+            .map(|(_, entry)| entry)
+            .collect::<Vec<_>>();
+        if tied.len() != 1 {
+            return Err(MechError::new(
+                SpecializationRuntimeFactoryAmbiguous {
+                    operation: self.resolved_call()?.operation.id,
+                    semantic_operation: self.diagnostic_operation_name(),
+                    target,
+                    candidates: tied
+                        .iter()
+                        .map(|entry| (entry.id, entry.name.clone()))
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok((tied[0], rejected.into_boxed_slice()))
+    }
+
+    fn diagnostic_operation_name(&self) -> String {
+        self.diagnostic_operation.clone().unwrap_or_else(|| {
+            format!(
+                "operation 0x{:016x}",
+                self.resolved_call
+                    .as_ref()
+                    .map_or(0, |call| call.operation.id.raw())
+            )
+        })
     }
 }
 
@@ -855,11 +1269,15 @@ fn invocation_for_runtime_inputs(
 
 pub struct SpecializedFunction {
     instance: FunctionInstance,
+    bound_call: BoundCall,
 }
 
 impl SpecializedFunction {
-    pub fn new(instance: FunctionInstance) -> Self {
-        Self { instance }
+    pub fn new(instance: FunctionInstance, bound_call: BoundCall) -> Self {
+        Self {
+            instance,
+            bound_call,
+        }
     }
 
     pub fn instance(&self) -> &FunctionInstance {
@@ -870,13 +1288,43 @@ impl SpecializedFunction {
         self.instance.output()
     }
 
-    pub fn into_instance(self) -> FunctionInstance {
-        self.instance
+    pub fn bound_call(&self) -> &BoundCall {
+        &self.bound_call
+    }
+
+    pub fn into_parts(self) -> (FunctionInstance, BoundCall) {
+        (self.instance, self.bound_call)
+    }
+
+    pub fn syntax_directed(
+        instance: FunctionInstance,
+        operation: ResolvedOperationDescriptor,
+        runtime_function: RuntimeFunctionId,
+        target: ExecutionTarget,
+    ) -> MResult<Self> {
+        operation.validate()?;
+        instance
+            .invocation()
+            .check_operation_memory_contract(&operation.contract)?;
+        let inputs = instance
+            .inputs()
+            .iter()
+            .map(ValueCell::resolved_descriptor)
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
+        let outputs = vec![instance.output().resolved_descriptor()?].into_boxed_slice();
+        let bound_call =
+            BoundCall::syntax_directed(operation, inputs, outputs, runtime_function, target)?;
+        Ok(Self::new(instance, bound_call))
     }
 
     /// Binds a canonical output and canonical source inputs directly to a
     /// runtime factory while preserving the factory's declared arity.
-    pub fn bind_factory<F>(output: ValueCell, inputs: Box<[ValueCell]>) -> MResult<Self>
+    pub fn bind_factory<F>(
+        output: ValueCell,
+        inputs: Box<[ValueCell]>,
+        bound_call: BoundCall,
+    ) -> MResult<Self>
     where
         F: MechFunctionFactory,
     {
@@ -923,16 +1371,10 @@ impl SpecializedFunction {
             }
         };
         let implementation = F::new_invocation(invocation.clone())?;
-        Ok(Self::new(FunctionInstance::new(implementation, invocation)))
-    }
-
-    pub fn with_semantic_operation(self, operation: impl Into<Box<str>>) -> Self {
-        Self::new(self.instance.with_semantic_operation(operation))
-    }
-
-    #[doc(hidden)]
-    pub fn into_legacy_implementation(self) -> Box<dyn crate::MechFunction> {
-        self.instance.into_implementation()
+        Ok(Self::new(
+            FunctionInstance::new(implementation, invocation),
+            bound_call,
+        ))
     }
 }
 
@@ -969,18 +1411,27 @@ pub struct SpecializationRuntimeCatalogUnavailable {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SpecializationRuntimeFactoryUnavailable {
+    pub operation: OperationId,
     pub semantic_operation: String,
     pub semantic_inputs: Box<[String]>,
-    pub semantic_output: String,
-    pub execution_profile: &'static str,
+    pub semantic_outputs: Box<[String]>,
+    pub target: ExecutionTarget,
+    pub candidates: Box<[RuntimeCandidateRejection]>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SpecializationRuntimeFactoryAmbiguous {
+    pub operation: OperationId,
     pub semantic_operation: String,
-    pub semantic_inputs: Box<[String]>,
-    pub semantic_output: String,
-    pub execution_profile: &'static str,
+    pub target: ExecutionTarget,
+    pub candidates: Box<[(RuntimeFunctionId, String)]>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RuntimeCandidateRejection {
+    pub function: RuntimeFunctionId,
+    pub name: String,
+    pub reason: String,
 }
 
 impl MechErrorKind for SpecializationUnknownSchema {
@@ -1045,11 +1496,13 @@ impl MechErrorKind for SpecializationRuntimeFactoryUnavailable {
 
     fn message(&self) -> String {
         format!(
-            "semantic operation `{}` with inputs {:?} and output {} is unavailable for the {} execution profile",
+            "semantic operation `{}` (0x{:016x}) has no {:?} execution implementation for ({}) -> ({}); {} candidates were rejected",
             self.semantic_operation,
-            self.semantic_inputs,
-            self.semantic_output,
-            self.execution_profile,
+            self.operation.raw(),
+            self.target,
+            self.semantic_inputs.join(", "),
+            self.semantic_outputs.join(", "),
+            self.candidates.len(),
         )
     }
 }
@@ -1061,11 +1514,11 @@ impl MechErrorKind for SpecializationRuntimeFactoryAmbiguous {
 
     fn message(&self) -> String {
         format!(
-            "semantic operation `{}` with inputs {:?} and output {} has more than one binding for the {} execution profile",
+            "semantic operation `{}` (0x{:016x}) has {} equally specific {:?} execution implementations",
             self.semantic_operation,
-            self.semantic_inputs,
-            self.semantic_output,
-            self.execution_profile,
+            self.operation.raw(),
+            self.candidates.len(),
+            self.target,
         )
     }
 }
@@ -1102,7 +1555,7 @@ fn resolved_call_index_error(
     MechError::new(
         SpecializationResolvedCallIndexUnavailable {
             semantic_operation: context
-                .semantic_operation
+                .diagnostic_operation
                 .clone()
                 .unwrap_or_else(|| "named operation".into()),
             category,

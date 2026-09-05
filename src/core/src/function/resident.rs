@@ -1,6 +1,8 @@
 use core::any::Any;
 
-use crate::{ResolvedOperationContract, SchemaId, SchemaKey, SchemaTable, ShapeInstance, Value};
+use crate::{
+    BoundCall, ResolvedOperationContract, SchemaId, SchemaKey, SchemaTable, ShapeInstance, Value,
+};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, string::String, sync::Arc};
@@ -114,6 +116,11 @@ pub struct ResidentKernelBindRequest<'a> {
     pub schemas: &'a SchemaTable,
     pub inputs: &'a [ResidentPortLayout],
     pub output: ResidentPortLayout,
+}
+
+#[derive(Clone, Debug)]
+pub struct ResidentBuildContext {
+    pub bound_call: BoundCall,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -315,6 +322,7 @@ pub struct BoundResidentKernel {
     snapshot_output: Option<ResidentSnapshotOutput>,
     snapshot_schemas: Option<SchemaTable>,
     retained_state: Option<Arc<dyn Any + Send + Sync>>,
+    bound_call: Option<BoundCall>,
 }
 
 #[derive(Clone, Debug)]
@@ -335,6 +343,7 @@ impl core::fmt::Debug for BoundResidentKernel {
             .field("snapshot_output", &self.snapshot_output)
             .field("snapshot_schemas", &self.snapshot_schemas.is_some())
             .field("retained_state", &self.retained_state.is_some())
+            .field("bound_call", &self.bound_call)
             .finish()
     }
 }
@@ -347,6 +356,7 @@ impl BoundResidentKernel {
             snapshot_output: None,
             snapshot_schemas: None,
             retained_state: None,
+            bound_call: None,
         }
     }
 
@@ -357,6 +367,7 @@ impl BoundResidentKernel {
             snapshot_output: None,
             snapshot_schemas: None,
             retained_state: None,
+            bound_call: None,
         }
     }
 
@@ -367,6 +378,7 @@ impl BoundResidentKernel {
             snapshot_output: None,
             snapshot_schemas: None,
             retained_state: None,
+            bound_call: None,
         }
     }
 
@@ -377,6 +389,7 @@ impl BoundResidentKernel {
             snapshot_output: None,
             snapshot_schemas: None,
             retained_state: None,
+            bound_call: None,
         }
     }
 
@@ -387,6 +400,7 @@ impl BoundResidentKernel {
             snapshot_output: None,
             snapshot_schemas: None,
             retained_state: None,
+            bound_call: None,
         }
     }
 
@@ -400,6 +414,7 @@ impl BoundResidentKernel {
             snapshot_output: None,
             snapshot_schemas: None,
             retained_state: None,
+            bound_call: None,
         }
     }
 
@@ -413,6 +428,7 @@ impl BoundResidentKernel {
             snapshot_output: None,
             snapshot_schemas: None,
             retained_state: None,
+            bound_call: None,
         }
     }
 
@@ -426,6 +442,7 @@ impl BoundResidentKernel {
             snapshot_output: None,
             snapshot_schemas: None,
             retained_state: None,
+            bound_call: None,
         }
     }
 
@@ -439,12 +456,22 @@ impl BoundResidentKernel {
             snapshot_output: None,
             snapshot_schemas: None,
             retained_state: None,
+            bound_call: None,
         }
     }
 
     pub fn with_snapshot_output(mut self, output: ResidentSnapshotOutput) -> Self {
         self.snapshot_output = Some(output);
         self
+    }
+
+    pub fn with_bound_call(mut self, bound_call: BoundCall) -> Self {
+        self.bound_call = Some(bound_call);
+        self
+    }
+
+    pub fn bound_call(&self) -> Option<&BoundCall> {
+        self.bound_call.as_ref()
     }
 
     pub fn snapshot_output(&self) -> Option<&ResidentSnapshotOutput> {

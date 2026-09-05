@@ -224,7 +224,7 @@ fn generated_resident_capability_matrix_survives_bytecode_and_exact_binding() ->
             "runtime-factory availability must not infer artifact target support: {capability:?}",
         );
         match capability.operation_binding {
-            RuntimeOperationBinding::CompilerResolved | RuntimeOperationBinding::Fixed(_) => {}
+            RuntimeOperationBinding::CompilerResolved(_) | RuntimeOperationBinding::Fixed(_) => {}
         }
     }
     let mut witnessed_modes = [false; 7];

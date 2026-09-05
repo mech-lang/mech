@@ -114,6 +114,8 @@ class ImpactClassifierTests(unittest.TestCase):
             "scripts/tests/test_check_r2_type_memory_boundary.py",
             "scripts/check-r3-type-system.py",
             "scripts/tests/test_check_r3_type_system.py",
+            "scripts/check-r4-type-cutover.py",
+            "scripts/tests/test_check_r4_type_cutover.py",
             "tests/architecture/program-artifact/v1.json",
         ):
             with self.subTest(path=path):

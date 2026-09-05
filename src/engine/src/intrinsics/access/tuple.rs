@@ -38,6 +38,7 @@ mech_core::declare_native_runtime_factory! {
     name: "TupleAccessElement",
     factory_type: TupleAccessElement,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("TupleAccessElement"),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_tuple_access_element",
     extra_cargo_features: ["access"],

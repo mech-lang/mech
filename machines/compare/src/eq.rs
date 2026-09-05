@@ -123,6 +123,10 @@ impl MechFunctionFactory for AtomEq {
         let out: Ref<bool> = out.try_ref()?;
         Ok(Box::new(AtomEq { lhs, rhs, out }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_COMPARE_SCALAR_CONTRACT)
+    }
 }
 #[cfg(feature = "atom")]
 impl MechFunctionImpl for AtomEq {
@@ -178,6 +182,10 @@ impl MechFunctionFactory for TableEq {
         let rhs = rhs.value();
         let out: Ref<bool> = out.try_ref()?;
         Ok(Box::new(TableEq { lhs, rhs, out }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_COMPARE_SCALAR_CONTRACT)
     }
 }
 #[cfg(feature = "table")]
@@ -236,39 +244,13 @@ impl CanonicalFunctionSpecializer for CompareEqual {
         let lhs = specialization.input(0).expect("validated comparison lhs");
         let rhs = specialization.input(1).expect("validated comparison rhs");
 
-        #[cfg(feature = "atom")]
-        if lhs.representation() == Some(FunctionValueRepresentation::Atom)
-            && rhs.representation() == Some(FunctionValueRepresentation::Atom)
-        {
-            return SpecializedFunction::bind_factory::<AtomEq>(
-                ValueCell::from_exact(false)?,
-                vec![lhs.cell()?.clone(), rhs.cell()?.clone()].into_boxed_slice(),
-            );
-        }
-        #[cfg(feature = "table")]
-        if lhs.representation() == Some(FunctionValueRepresentation::Table)
-            && rhs.representation() == Some(FunctionValueRepresentation::Table)
-        {
-            return SpecializedFunction::bind_factory::<TableEq>(
-                ValueCell::from_exact(false)?,
-                vec![lhs.cell()?.clone(), rhs.cell()?.clone()].into_boxed_slice(),
-            );
-        }
-
-        try_compare_binary_factories!(eq, lhs, rhs, context, EQ);
-        Err(MechError::new(
-            FunctionArgumentTypeMismatch {
-                role: FunctionArgumentRole::Input(0),
-                expected: "matching supported comparison inputs".into(),
-                found: format!(
-                    "{:?} and {:?}",
-                    lhs.representation(),
-                    rhs.representation(),
-                ),
-            },
-            None,
+        let extents = crate::semantic_compare_extents(&[lhs, rhs])?;
+        context.bind_resolved_runtime(
+            RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            ExecutionTarget::DirectRuntime,
+            vec![extents].into_boxed_slice(),
+            &[lhs, rhs],
         )
-        .with_compiler_loc())
     }
 }
 
@@ -339,7 +321,10 @@ mod invocation_port_tests {
         ))
         .unwrap();
         function.solve_result().unwrap();
-        assert!(matches!(output.snapshot().unwrap().data(), ValueData::Bool(true)));
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::Bool(true)
+        ));
         assert!(output.same_cell(&alias));
         assert_eq!(
             function.reactive_output_cell_ids(),
@@ -354,7 +339,10 @@ mod invocation_port_tests {
             Ok(())
         })
         .unwrap();
-        assert!(matches!(output.snapshot().unwrap().data(), ValueData::Bool(true)));
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::Bool(true)
+        ));
     }
 
     #[test]
@@ -398,17 +386,21 @@ mod invocation_port_tests {
 
     #[test]
     fn comparison_rejects_wrong_exact_types_and_layouts() {
-        assert!(EQSS::<f64>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact(false).unwrap(),
-            ValueCell::from_exact(1.0_f64).unwrap(),
-            ValueCell::from_exact(1_usize).unwrap(),
-        ))
-        .is_err());
-        assert!(EQSS::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact(false).unwrap(),
-            ValueCell::from_exact(1.0_f64).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            EQSS::<f64>::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact(false).unwrap(),
+                ValueCell::from_exact(1.0_f64).unwrap(),
+                ValueCell::from_exact(1_usize).unwrap(),
+            ))
+            .is_err()
+        );
+        assert!(
+            EQSS::<f64>::new_invocation(FunctionInvocation::unary(
+                ValueCell::from_exact(false).unwrap(),
+                ValueCell::from_exact(1.0_f64).unwrap(),
+            ))
+            .is_err()
+        );
     }
 
     #[test]

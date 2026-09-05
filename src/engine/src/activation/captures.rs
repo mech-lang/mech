@@ -1,7 +1,10 @@
 use super::ActivationPatternCaptureKindUnsupported;
 use crate::{
-    DimensionExpr, FloatWidth, FunctionInstance, FunctionInvocation, IntegerWidth, MResult,
-    MechError, MechFunction, PatternBindingSink, PatternMatch, Plan, ReactiveNodeId, SchemaBody,
+    AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExecutionTarget,
+    ExternalInteraction, FloatWidth, FunctionInstance, FunctionInvocation, InputPortLayout,
+    InputPortPolicy, IntegerWidth, MResult, MechError, MechFunction, OperationContractDeclaration,
+    OutputConstruction, OutputPortPolicy, PatternBindingSink, PatternMatch, Plan, ReactiveNodeId,
+    ResolvedOperationDescriptor, RuntimeFunctionId, SchemaBody, ShapeRule, SpecializedFunction,
     ValueCell, ValueCellSnapshotFailure, ValueDataDraft,
 };
 use mech_core::snapshot::{
@@ -91,10 +94,39 @@ pub(super) fn register_node(
     output: ValueCell,
     inputs: Vec<ValueCell>,
 ) -> MResult<ReactiveNodeId> {
-    plan.register_instance(FunctionInstance::new(
+    let contract = OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                inputs.len()
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    };
+    let instance = FunctionInstance::new(
         implementation,
         FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
-    ))
+    );
+    plan.register_specialized(SpecializedFunction::syntax_directed(
+        instance,
+        ResolvedOperationDescriptor::from_name("activation/pattern-node", contract)?,
+        RuntimeFunctionId::from_name("ActivationPatternNode"),
+        ExecutionTarget::DirectRuntime,
+    )?)
 }
 
 #[derive(Clone)]

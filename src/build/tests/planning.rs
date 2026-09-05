@@ -13,13 +13,16 @@ use mech_build::{
 };
 #[cfg(not(feature = "full-hosts"))]
 use mech_build::{NativeHostLinkage, NativeTargetFamily};
+#[cfg(not(feature = "full-hosts"))]
+use mech_core::Value;
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
     EncodedConstant, ExecutionHostFunctionRequest, FunctionCatalog, FunctionCatalogBuilder,
     FunctionInvocation, FunctionRuntimeType, FunctionValueRepresentation, MResult, MatrixStorage,
     MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
-    NativeFunctionLinkage, Ref, Register, RuntimeFunctionContract, RuntimeFunctionSignature,
-    RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, hash_str, write_bytecode,
+    NativeFunctionLinkage, Ref, Register, RuntimeFamilyId, RuntimeFunctionContract,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, hash_str,
+    write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use sha2::{Digest, Sha256};
@@ -193,6 +196,8 @@ fn empty_catalog() -> Arc<FunctionCatalog> {
 fn request(bytecode: &[u8]) -> NativeBuildRequest {
     NativeBuildRequest {
         bytecode: bytecode.to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
         runtime_config: None,
         target: None,
         profile: NativeBuildProfile::Debug,
@@ -549,6 +554,7 @@ fn known_runtime_ids_without_native_metadata_fail_before_generation() {
         .insert_runtime_factory::<PlanningFunction>(
             NAME,
             RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            RuntimeFamilyId::from_name(NAME),
         )
         .unwrap();
     let bytecode = runtime_nullary_bytecode(hash_str(NAME));
@@ -573,6 +579,7 @@ fn malicious_runtime_type_mismatch_fails_before_native_analysis() {
                 installer_path: "mech_test::__mech_native::install",
                 cargo_features: vec!["native-link", "runtime"],
             },
+            RuntimeFamilyId::from_name(NAME),
         )
         .unwrap();
     let bytecode = runtime_nullary_bytecode_with_constant(
@@ -639,6 +646,7 @@ fn malicious_matrix_relations_and_aliases_fail_without_materializing_a_project()
                     installer_path,
                     cargo_features: vec!["native-link", "runtime"],
                 },
+                RuntimeFamilyId::from_name(name),
             )
             .unwrap();
     }

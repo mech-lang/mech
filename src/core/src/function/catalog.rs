@@ -2,7 +2,7 @@
 use alloc::{
     boxed::Box,
     collections::{BTreeMap, BTreeSet},
-    string::String,
+    string::{String, ToString},
     sync::Arc,
     vec,
     vec::Vec,
@@ -20,9 +20,9 @@ use crate::{
     FunctionInstance, FunctionInvocation, GuardFunctionSafety, InputKindScheme, KindScheme,
     MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
     OperationContractDeclaration, ResidentKernelFactory, ResidentKernelFactoryEntry,
-    ResidentOperationKey, RuntimeFunctionContract, RuntimeFunctionSignature,
-    RuntimeOutputAliasPolicy, SourceSchemeTemplate, SpecializationContext,
-    SpecializationInvocation, SpecializedFunction, hash_str,
+    ResidentOperationKey, ResolvedOutputSchemaRule, RuntimeFunctionContract,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SourceSchemeTemplate,
+    SpecializationContext, SpecializationInvocation, SpecializedFunction, hash_str,
 };
 
 #[cfg(feature = "native-plan")]
@@ -51,6 +51,24 @@ impl OperationId {
 pub struct RuntimeFunctionId(u64);
 
 impl RuntimeFunctionId {
+    pub fn from_name(name: &str) -> Self {
+        Self(hash_str(name))
+    }
+
+    pub const fn from_raw(raw: u64) -> Self {
+        Self(raw)
+    }
+
+    pub const fn raw(self) -> u64 {
+        self.0
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct RuntimeFamilyId(u64);
+
+impl RuntimeFamilyId {
     pub fn from_name(name: &str) -> Self {
         Self(hash_str(name))
     }
@@ -118,7 +136,7 @@ impl ExecutionTargetSet {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeExecutionCapability {
     pub runtime_factory: RuntimeFunctionId,
     pub operation_binding: RuntimeOperationBinding,
@@ -129,10 +147,45 @@ pub struct RuntimeExecutionCapability {
 /// Declares whether a concrete runtime factory owns one fixed semantic
 /// identity or receives the identity selected by the source compiler. This is
 /// explicit capability data; absence never implies target support.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum RuntimeOperationBinding {
-    CompilerResolved,
-    Fixed(OperationId),
+    Fixed(Box<[OperationId]>),
+    CompilerResolved(RuntimeFamilyId),
+}
+
+impl RuntimeOperationBinding {
+    pub fn fixed(operations: impl IntoIterator<Item = OperationId>) -> MResult<Self> {
+        let mut operations = operations.into_iter().collect::<Vec<_>>();
+        operations.sort_unstable();
+        operations.dedup();
+        if operations.is_empty() {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: None,
+                    reason: "a fixed runtime binding must declare at least one operation".into(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(Self::Fixed(operations.into_boxed_slice()))
+    }
+
+    pub fn permits(&self, operation: OperationId) -> bool {
+        match self {
+            Self::Fixed(operations) => operations.binary_search(&operation).is_ok(),
+            // A compiler family is selected by its explicit stable family ID
+            // before the concrete runtime entry is certified. The certificate
+            // retains the already-resolved semantic operation separately.
+            Self::CompilerResolved(_) => true,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeBindingSelector {
+    Operation(OperationId),
+    CompilerFamily(RuntimeFamilyId),
 }
 
 type RuntimeFunctionInvocationFactory = fn(FunctionInvocation) -> MResult<Box<dyn MechFunction>>;
@@ -202,7 +255,7 @@ pub struct RuntimeFunctionEntry {
     invocation_factory: RuntimeFunctionInvocationFactory,
     signature: RuntimeFunctionSignature,
     contract: RuntimeFunctionContract,
-    semantic_contract: Option<&'static OperationContractDeclaration>,
+    operation_contracts: BTreeMap<OperationId, RuntimeOperationContractAuthority>,
     operation_binding: RuntimeOperationBinding,
     execution_targets: ExecutionTargetSet,
 
@@ -218,13 +271,18 @@ impl Clone for RuntimeFunctionEntry {
             invocation_factory: self.invocation_factory,
             signature: self.signature,
             contract: self.contract,
-            semantic_contract: self.semantic_contract,
-            operation_binding: self.operation_binding,
+            operation_contracts: self.operation_contracts.clone(),
+            operation_binding: self.operation_binding.clone(),
             execution_targets: self.execution_targets,
             #[cfg(feature = "native-plan")]
             native_linkage: self.native_linkage.clone(),
         }
     }
+}
+
+#[derive(Clone, Copy)]
+enum RuntimeOperationContractAuthority {
+    Static(&'static OperationContractDeclaration),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -262,17 +320,41 @@ impl RuntimeFunctionEntry {
         self.contract.output_alias
     }
 
-    pub const fn semantic_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        self.semantic_contract
+    pub fn semantic_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        let mut contracts = self.operation_contracts.values().filter_map(|authority| {
+            let RuntimeOperationContractAuthority::Static(contract) = authority;
+            Some(*contract)
+        });
+        let first = contracts.next()?;
+        contracts
+            .all(|contract| core::ptr::eq(contract, first))
+            .then_some(first)
     }
 
-    pub const fn execution_capability(&self) -> RuntimeExecutionCapability {
+    pub fn operation_contract(
+        &self,
+        operation: OperationId,
+    ) -> Option<&'static OperationContractDeclaration> {
+        match self.operation_contracts.get(&operation)? {
+            RuntimeOperationContractAuthority::Static(contract) => Some(*contract),
+        }
+    }
+
+    pub fn execution_capability(&self) -> RuntimeExecutionCapability {
         RuntimeExecutionCapability {
             runtime_factory: self.id,
-            operation_binding: self.operation_binding,
+            operation_binding: self.operation_binding.clone(),
             signature: self.signature,
             targets: self.execution_targets,
         }
+    }
+
+    pub fn operation_binding(&self) -> &RuntimeOperationBinding {
+        &self.operation_binding
+    }
+
+    pub const fn supports_target(&self, target: ExecutionTarget) -> bool {
+        self.execution_targets.contains(target)
     }
 
     fn wrap_contract_error(&self, error: MechError) -> MechError {
@@ -302,15 +384,72 @@ impl RuntimeFunctionEntry {
         Ok(())
     }
 
-    pub fn instantiate_invocation(
+    pub fn bind_resolved_invocation(
         &self,
+        operation: OperationId,
+        target: ExecutionTarget,
         invocation: FunctionInvocation,
-    ) -> MResult<Box<dyn MechFunction>> {
-        self.bind_invocation(invocation)
-            .map(FunctionInstance::into_implementation)
+    ) -> MResult<FunctionInstance> {
+        if !self.operation_binding.permits(operation) {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(operation),
+                    reason: format!(
+                        "runtime function {} does not declare the selected operation",
+                        self.name
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        if !self.execution_targets.contains(target) {
+            return Err(MechError::new(
+                RuntimeExecutionTargetUnsupported {
+                    function: self.id,
+                    target,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let invocation = invocation.normalize_for_signature(self.signature);
+        invocation
+            .validate_signature(self.signature)
+            .map_err(|error| self.wrap_contract_error(error))?;
+        invocation
+            .validate_contract(self.contract)
+            .map_err(|error| self.wrap_contract_error(error))?;
+        let authority = match &self.operation_binding {
+            RuntimeOperationBinding::Fixed(_) => self.operation_contracts.get(&operation),
+            RuntimeOperationBinding::CompilerResolved(_) => None,
+        }
+        .ok_or_else(|| {
+            MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(operation),
+                    reason: format!(
+                        "runtime function {} has no authoritative operation contract",
+                        self.name
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let operation_contract = match authority {
+            RuntimeOperationContractAuthority::Static(contract) => *contract,
+        };
+        invocation
+            .check_operation_memory_contract(operation_contract)
+            .map_err(|error| self.wrap_contract_error(error))?;
+        self.construct_validated_physical_invocation(invocation)
     }
 
-    pub fn bind_invocation(&self, invocation: FunctionInvocation) -> MResult<FunctionInstance> {
+    fn construct_validated_physical_invocation(
+        &self,
+        invocation: FunctionInvocation,
+    ) -> MResult<FunctionInstance> {
         let invocation = invocation.normalize_for_signature(self.signature);
         invocation
             .validate_signature(self.signature)
@@ -324,12 +463,99 @@ impl RuntimeFunctionEntry {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RuntimeOperationBindingMismatch {
+    pub operation: Option<OperationId>,
+    pub reason: String,
+}
+
+impl MechErrorKind for RuntimeOperationBindingMismatch {
+    fn name(&self) -> &str {
+        "RuntimeOperationBindingMismatch"
+    }
+
+    fn message(&self) -> String {
+        self.reason.clone()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RuntimeExecutionTargetUnsupported {
+    pub function: RuntimeFunctionId,
+    pub target: ExecutionTarget,
+}
+
+impl MechErrorKind for RuntimeExecutionTargetUnsupported {
+    fn name(&self) -> &str {
+        "RuntimeExecutionTargetUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "runtime function 0x{:016x} does not support {:?}",
+            self.function.raw(),
+            self.target
+        )
+    }
+}
+
 #[derive(Clone)]
 pub struct FunctionSpecializerEntry {
-    pub operation: OperationId,
-    pub canonical_name: String,
+    pub operation: crate::ResolvedOperationDescriptor,
+    operation_contracts: Box<[OperationContractDeclaration]>,
     pub type_authority: SourceTypeAuthority,
     pub specializer: Arc<dyn CanonicalFunctionSpecializer>,
+}
+
+impl FunctionSpecializerEntry {
+    pub fn resolved_operation(
+        &self,
+        input_count: usize,
+        outputs: &[crate::ResolvedType],
+    ) -> MResult<crate::ResolvedOperationDescriptor> {
+        let output_is_matrix = outputs
+            .first()
+            .is_some_and(|output| matches!(output.kind(), crate::KindExpr::Matrix { .. }));
+        let mut candidates = self
+            .operation_contracts
+            .iter()
+            .filter(|contract| {
+                contract.inputs.resolve(input_count).is_ok()
+                    && contract.outputs.len() == outputs.len()
+            })
+            .collect::<Vec<_>>();
+        candidates.sort_by_key(|contract| {
+            let output = contract.outputs.first();
+            let matrix_specific = output_is_matrix
+                && output.is_some_and(|output| {
+                    output.change_detection != crate::ChangeDetectionPolicy::ExactScalar
+                });
+            let scalar_specific = !output_is_matrix
+                && output.is_some_and(|output| {
+                    output.change_detection == crate::ChangeDetectionPolicy::ExactScalar
+                });
+            (matrix_specific, scalar_specific)
+        });
+        let contract = candidates.last().copied().ok_or_else(|| {
+            MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(self.operation.id),
+                    reason: format!(
+                        "semantic operation {} has no contract for {input_count} inputs and {} outputs",
+                        self.operation.canonical_name,
+                        outputs.len(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        crate::ResolvedOperationDescriptor::new(
+            self.operation.id,
+            self.operation.canonical_name.clone(),
+            contract.clone(),
+        )
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -344,6 +570,7 @@ pub struct FunctionTypeOverload {
     pub id: u32,
     pub input_layout: Box<[SourceInputKind]>,
     pub scheme: KindScheme,
+    pub output_schema_rules: Box<[ResolvedOutputSchemaRule]>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -365,6 +592,11 @@ impl FunctionTypeDeclaration {
                 FunctionTypeOverload {
                     id: index as u32,
                     input_layout: vec![SourceInputKind::Value; value_count].into_boxed_slice(),
+                    output_schema_rules: vec![
+                        ResolvedOutputSchemaRule::FromResolvedType;
+                        scheme.outputs().len()
+                    ]
+                    .into_boxed_slice(),
                     scheme,
                 }
             })
@@ -389,6 +621,30 @@ impl FunctionTypeDeclaration {
         }
         self
     }
+
+    pub fn with_output_schema_rules(
+        mut self,
+        rules: Box<[ResolvedOutputSchemaRule]>,
+    ) -> MResult<Self> {
+        for overload in &mut self.overloads {
+            if overload.scheme.outputs().len() != rules.len() {
+                return Err(MechError::new(
+                    FunctionCatalogInvalidTypeDeclaration {
+                        canonical_name: String::from("resolved output schema rules"),
+                        reason: format!(
+                            "{} semantic outputs have {} schema rules",
+                            overload.scheme.outputs().len(),
+                            rules.len(),
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            overload.output_schema_rules = rules.clone();
+        }
+        Ok(self)
+    }
 }
 
 pub fn maintained_source_type_declaration(
@@ -407,7 +663,22 @@ pub fn maintained_source_type_declaration(
         )
         .with_compiler_loc());
     };
-    let declaration = FunctionTypeDeclaration::from_schemes(schemes);
+    let mut declaration = FunctionTypeDeclaration::from_schemes(schemes);
+    let output_rule = match canonical_name {
+        "matrix/transpose" => Some(ResolvedOutputSchemaRule::TransposeOfInput(0)),
+        "set/cartesian-product" => Some(ResolvedOutputSchemaRule::DynamicSetCartesianProduct),
+        "set/powerset" => Some(ResolvedOutputSchemaRule::DynamicSetPowerset),
+        "set/difference"
+        | "set/insert"
+        | "set/intersection"
+        | "set/remove"
+        | "set/symmetric-difference"
+        | "set/union" => Some(ResolvedOutputSchemaRule::FromInput(0)),
+        _ => None,
+    };
+    if let Some(rule) = output_rule {
+        declaration = declaration.with_output_schema_rules(vec![rule].into_boxed_slice())?;
+    }
     if canonical_name.ends_with("/range-all") {
         Ok(declaration.with_layout(
             vec![
@@ -482,6 +753,86 @@ impl FunctionCatalog {
 
     pub fn runtime_entries(&self) -> impl ExactSizeIterator<Item = &RuntimeFunctionEntry> + '_ {
         self.runtime_factories.values()
+    }
+
+    pub fn runtime_entries_for_binding(
+        &self,
+        selector: RuntimeBindingSelector,
+        target: ExecutionTarget,
+    ) -> impl Iterator<Item = &RuntimeFunctionEntry> {
+        self.runtime_factories.values().filter(move |entry| {
+            if !entry.execution_targets.contains(target) {
+                return false;
+            }
+            match (selector, &entry.operation_binding) {
+                (
+                    RuntimeBindingSelector::Operation(operation),
+                    RuntimeOperationBinding::Fixed(operations),
+                ) => operations.binary_search(&operation).is_ok(),
+                (
+                    RuntimeBindingSelector::CompilerFamily(expected),
+                    RuntimeOperationBinding::CompilerResolved(actual),
+                ) => expected == *actual,
+                _ => false,
+            }
+        })
+    }
+
+    /// Revalidates one immutable semantic binding before a lower execution
+    /// target performs ABI, linkage, or feature analysis.
+    pub fn validate_bound_call_for_target(
+        &self,
+        binding: &crate::BoundCall,
+        target: ExecutionTarget,
+    ) -> MResult<&RuntimeFunctionEntry> {
+        let runtime_function = binding.runtime_function().ok_or_else(|| {
+            MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(binding.operation()),
+                    reason: "resident implementation cannot be used as a runtime factory".into(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let entry = self.runtime_entry(runtime_function).ok_or_else(|| {
+            MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(binding.operation()),
+                    reason: format!(
+                        "bound runtime function 0x{:016x} is not registered",
+                        runtime_function.raw(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        if !entry.operation_binding().permits(binding.operation()) {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(binding.operation()),
+                    reason: format!(
+                        "runtime function {} does not declare the bound operation",
+                        entry.name,
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        if !entry.supports_target(target) {
+            return Err(MechError::new(
+                RuntimeExecutionTargetUnsupported {
+                    function: entry.id,
+                    target,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        validate_bound_physical_signature(entry.signature(), binding)?;
+        Ok(entry)
     }
 
     pub fn runtime_execution_capabilities(
@@ -596,6 +947,73 @@ impl FunctionCatalog {
     }
 }
 
+fn validate_bound_physical_signature(
+    signature: RuntimeFunctionSignature,
+    binding: &crate::BoundCall,
+) -> MResult<()> {
+    let inputs = match signature.inputs {
+        crate::RuntimeFunctionInputs::Nullary => Vec::new(),
+        crate::RuntimeFunctionInputs::Unary(first) => vec![first],
+        crate::RuntimeFunctionInputs::Binary(first, second) => vec![first, second],
+        crate::RuntimeFunctionInputs::Ternary(first, second, third) => {
+            vec![first, second, third]
+        }
+        crate::RuntimeFunctionInputs::Quaternary(first, second, third, fourth) => {
+            vec![first, second, third, fourth]
+        }
+        crate::RuntimeFunctionInputs::Variadic { element } => {
+            vec![element; binding.inputs().len()]
+        }
+    };
+    if inputs.len() != binding.inputs().len() || binding.outputs().len() != 1 {
+        return Err(MechError::new(
+            RuntimeOperationBindingMismatch {
+                operation: Some(binding.operation()),
+                reason: "bound descriptor arity differs from the physical runtime signature".into(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    for (ordinal, (representation, descriptor)) in
+        inputs.into_iter().zip(binding.inputs()).enumerate()
+    {
+        let capabilities = crate::runtime_storage::actual_backing_capabilities(representation);
+        crate::check_schema_storage_compatibility(
+            descriptor.schema(),
+            descriptor.shape(),
+            &capabilities,
+        )
+        .map_err(|error| {
+            MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(binding.operation()),
+                    reason: format!(
+                        "input {ordinal} is incompatible with the physical runtime signature: {error:?}",
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    }
+    let output = &binding.outputs()[0];
+    let capabilities = crate::runtime_storage::actual_backing_capabilities(signature.output);
+    crate::check_schema_storage_compatibility(output.schema(), output.shape(), &capabilities)
+        .map_err(|error| {
+            MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(binding.operation()),
+                    reason: format!(
+                        "output is incompatible with the physical runtime signature: {error:?}",
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })
+}
+
 impl Default for FunctionCatalog {
     fn default() -> Self {
         Self::empty()
@@ -662,6 +1080,32 @@ impl MechErrorKind for FunctionCatalogDuplicateRuntimeFactory {
             "runtime factory {:?} is already registered at ID 0x{:016x}",
             self.name,
             self.id.raw(),
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionCatalogDuplicateRuntimeCapability {
+    pub operation: OperationId,
+    pub target: ExecutionTarget,
+    pub signature: RuntimeFunctionSignature,
+    pub existing_name: String,
+    pub incoming_name: String,
+}
+
+impl MechErrorKind for FunctionCatalogDuplicateRuntimeCapability {
+    fn name(&self) -> &str {
+        "FunctionCatalogDuplicateRuntimeCapability"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "runtime factories {:?} and {:?} declare the same {:?} capability for operation 0x{:016x} with signature {:?}",
+            self.existing_name,
+            self.incoming_name,
+            self.target,
+            self.operation.raw(),
+            self.signature,
         )
     }
 }
@@ -901,6 +1345,7 @@ impl FunctionCatalogBuilder {
         &mut self,
         name: impl Into<String>,
         contract: RuntimeFunctionContract,
+        compiler_family: RuntimeFamilyId,
     ) -> MResult<()>
     where
         F: MechFunctionFactory,
@@ -913,8 +1358,56 @@ impl FunctionCatalogBuilder {
             invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
-            semantic_contract: None,
-            operation_binding: RuntimeOperationBinding::CompilerResolved,
+            operation_contracts: BTreeMap::new(),
+            operation_binding: RuntimeOperationBinding::CompilerResolved(compiler_family),
+            execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
+            #[cfg(feature = "native-plan")]
+            native_linkage: None,
+        })
+    }
+
+    pub fn insert_runtime_factory_for_operations<F>(
+        &mut self,
+        name: impl Into<String>,
+        contract: RuntimeFunctionContract,
+        operations: impl IntoIterator<Item = OperationId>,
+    ) -> MResult<()>
+    where
+        F: MechFunctionFactory,
+    {
+        let name = name.into();
+        let id = RuntimeFunctionId::from_name(&name);
+        let operations = operations.into_iter().collect::<Vec<_>>();
+        let semantic_contract = F::declared_operation_contract().ok_or_else(|| {
+            MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: operations.first().copied(),
+                    reason: format!(
+                        "fixed runtime function {name} has no authoritative operation contract"
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let operation_contracts = operations
+            .iter()
+            .copied()
+            .map(|operation| {
+                (
+                    operation,
+                    RuntimeOperationContractAuthority::Static(semantic_contract),
+                )
+            })
+            .collect();
+        self.insert_runtime_entry(RuntimeFunctionEntry {
+            id,
+            name,
+            invocation_factory: F::new_invocation,
+            signature: F::SIGNATURE,
+            contract,
+            operation_contracts,
+            operation_binding: RuntimeOperationBinding::fixed(operations)?,
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
             #[cfg(feature = "native-plan")]
             native_linkage: None,
@@ -978,8 +1471,13 @@ impl FunctionCatalogBuilder {
             invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
-            semantic_contract: Some(semantic_contract),
-            operation_binding: RuntimeOperationBinding::Fixed(semantic_operation),
+            operation_contracts: [(
+                semantic_operation,
+                RuntimeOperationContractAuthority::Static(semantic_contract),
+            )]
+            .into_iter()
+            .collect(),
+            operation_binding: RuntimeOperationBinding::fixed([semantic_operation])?,
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME,
             #[cfg(feature = "native-plan")]
             native_linkage: None,
@@ -992,6 +1490,7 @@ impl FunctionCatalogBuilder {
         name: impl Into<String>,
         contract: RuntimeFunctionContract,
         linkage: NativeFunctionLinkage,
+        compiler_family: RuntimeFamilyId,
     ) -> MResult<()>
     where
         F: MechFunctionFactory,
@@ -1004,8 +1503,57 @@ impl FunctionCatalogBuilder {
             invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
-            semantic_contract: None,
-            operation_binding: RuntimeOperationBinding::CompilerResolved,
+            operation_contracts: BTreeMap::new(),
+            operation_binding: RuntimeOperationBinding::CompilerResolved(compiler_family),
+            execution_targets: ExecutionTargetSet::DIRECT_RUNTIME.with(ExecutionTarget::Native),
+            native_linkage: Some(linkage),
+        })
+    }
+
+    #[cfg(feature = "native-plan")]
+    pub fn insert_runtime_factory_with_linkage_for_operations<F>(
+        &mut self,
+        name: impl Into<String>,
+        contract: RuntimeFunctionContract,
+        linkage: NativeFunctionLinkage,
+        operations: impl IntoIterator<Item = OperationId>,
+    ) -> MResult<()>
+    where
+        F: MechFunctionFactory,
+    {
+        let name = name.into();
+        let id = RuntimeFunctionId::from_name(&name);
+        let operations = operations.into_iter().collect::<Vec<_>>();
+        let semantic_contract = F::declared_operation_contract().ok_or_else(|| {
+            MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: operations.first().copied(),
+                    reason: format!(
+                        "fixed runtime function {name} has no authoritative operation contract"
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let operation_contracts = operations
+            .iter()
+            .copied()
+            .map(|operation| {
+                (
+                    operation,
+                    RuntimeOperationContractAuthority::Static(semantic_contract),
+                )
+            })
+            .collect();
+        self.insert_runtime_entry(RuntimeFunctionEntry {
+            id,
+            name,
+            invocation_factory: F::new_invocation,
+            signature: F::SIGNATURE,
+            contract,
+            operation_contracts,
+            operation_binding: RuntimeOperationBinding::fixed(operations)?,
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME.with(ExecutionTarget::Native),
             native_linkage: Some(linkage),
         })
@@ -1031,8 +1579,13 @@ impl FunctionCatalogBuilder {
             invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
-            semantic_contract: Some(semantic_contract),
-            operation_binding: RuntimeOperationBinding::Fixed(semantic_operation),
+            operation_contracts: [(
+                semantic_operation,
+                RuntimeOperationContractAuthority::Static(semantic_contract),
+            )]
+            .into_iter()
+            .collect(),
+            operation_binding: RuntimeOperationBinding::fixed([semantic_operation])?,
             execution_targets: ExecutionTargetSet::DIRECT_RUNTIME.with(ExecutionTarget::Native),
             native_linkage: Some(linkage),
         })
@@ -1046,9 +1599,35 @@ impl FunctionCatalogBuilder {
     ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
+        let contracts = self.registered_operation_contracts(operation, &canonical_name)?;
         self.insert_specializer_entry(FunctionSpecializerEntry {
-            operation,
-            canonical_name,
+            operation: crate::ResolvedOperationDescriptor::new(
+                operation,
+                canonical_name,
+                contracts[0].clone(),
+            )?,
+            operation_contracts: contracts,
+            type_authority: SourceTypeAuthority::Schemes(type_declaration),
+            specializer,
+        })
+    }
+
+    pub fn insert_canonical_specializer_with_contract(
+        &mut self,
+        canonical_name: impl Into<String>,
+        type_declaration: FunctionTypeDeclaration,
+        contract: OperationContractDeclaration,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
+    ) -> MResult<OperationId> {
+        let canonical_name = canonical_name.into();
+        let operation = OperationId::from_name(&canonical_name);
+        self.insert_specializer_entry(FunctionSpecializerEntry {
+            operation: crate::ResolvedOperationDescriptor::new(
+                operation,
+                canonical_name,
+                contract.clone(),
+            )?,
+            operation_contracts: vec![contract].into_boxed_slice(),
             type_authority: SourceTypeAuthority::Schemes(type_declaration),
             specializer,
         })
@@ -1057,28 +1636,61 @@ impl FunctionCatalogBuilder {
     pub fn insert_canonical_intrinsic_specializer(
         &mut self,
         canonical_name: impl Into<String>,
+        contract: OperationContractDeclaration,
         specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
         self.insert_intrinsic_specializer_entry(FunctionSpecializerEntry {
-            operation,
-            canonical_name,
+            operation: crate::ResolvedOperationDescriptor::new(
+                operation,
+                canonical_name,
+                contract.clone(),
+            )?,
+            operation_contracts: vec![contract].into_boxed_slice(),
             type_authority: SourceTypeAuthority::SyntaxDirectedIntrinsic,
             specializer,
         })
+    }
+
+    fn registered_operation_contracts(
+        &self,
+        operation: OperationId,
+        canonical_name: &str,
+    ) -> MResult<Box<[OperationContractDeclaration]>> {
+        let mut contracts = self
+            .runtime_factories
+            .values()
+            .filter_map(|entry| entry.operation_contract(operation))
+            .cloned()
+            .collect::<Vec<_>>();
+        contracts.sort();
+        contracts.dedup();
+        if contracts.is_empty() {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(operation),
+                    reason: format!(
+                        "source operation {canonical_name} has no catalog-declared operation contract"
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(contracts.into_boxed_slice())
     }
 
     pub fn insert_export(&mut self, export: FunctionExport) -> MResult<()> {
         validate_export(&export)?;
 
         if let Some(existing) = self.specializers.get(&export.operation)
-            && existing.canonical_name != export.canonical_name
+            && existing.operation.canonical_name.as_ref() != export.canonical_name
         {
             return Err(MechError::new(
                 FunctionCatalogOperationIdCollision {
                     operation: export.operation,
-                    existing_name: existing.canonical_name.clone(),
+                    existing_name: existing.operation.canonical_name.to_string(),
                     incoming_name: export.canonical_name.clone(),
                 },
                 None,
@@ -1144,11 +1756,11 @@ impl FunctionCatalogBuilder {
 
             for export in exports {
                 validate_export(export)?;
-                if specializer.canonical_name != export.canonical_name {
+                if specializer.operation.canonical_name.as_ref() != export.canonical_name {
                     return Err(MechError::new(
                         FunctionCatalogOperationIdCollision {
                             operation: *operation,
-                            existing_name: specializer.canonical_name.clone(),
+                            existing_name: specializer.operation.canonical_name.to_string(),
                             incoming_name: export.canonical_name.clone(),
                         },
                         None,
@@ -1214,6 +1826,61 @@ impl FunctionCatalogBuilder {
             validate_native_linkage(entry.id, &entry.name, linkage)?;
         }
 
+        if let RuntimeOperationBinding::Fixed(operations) = &entry.operation_binding
+            && (operations.len() != entry.operation_contracts.len()
+                || operations
+                    .iter()
+                    .any(|operation| !entry.operation_contracts.contains_key(operation)))
+        {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: None,
+                    reason: format!(
+                        "runtime function {} does not carry one authoritative contract for every fixed operation",
+                        entry.name
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+
+        if let RuntimeOperationBinding::Fixed(incoming_operations) = &entry.operation_binding {
+            for existing in self.runtime_factories.values() {
+                let RuntimeOperationBinding::Fixed(existing_operations) =
+                    &existing.operation_binding
+                else {
+                    continue;
+                };
+                if existing.signature != entry.signature {
+                    continue;
+                }
+                for operation in incoming_operations
+                    .iter()
+                    .copied()
+                    .filter(|operation| existing_operations.binary_search(operation).is_ok())
+                {
+                    if let Some(target) = entry
+                        .execution_targets
+                        .iter()
+                        .find(|target| existing.execution_targets.contains(*target))
+                    {
+                        return Err(MechError::new(
+                            FunctionCatalogDuplicateRuntimeCapability {
+                                operation,
+                                target,
+                                signature: entry.signature,
+                                existing_name: existing.name.clone(),
+                                incoming_name: entry.name.clone(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                }
+            }
+        }
+
         if let Some(existing) = self.runtime_factories.get(&entry.id) {
             let kind = if existing.name == entry.name {
                 MechError::new(
@@ -1244,12 +1911,13 @@ impl FunctionCatalogBuilder {
         &mut self,
         entry: FunctionSpecializerEntry,
     ) -> MResult<OperationId> {
-        if entry.canonical_name.is_empty() {
+        entry.operation.validate()?;
+        if entry.operation.canonical_name.is_empty() {
             return Err(MechError::new(
                 FunctionCatalogInvalidName {
                     category: "function operation",
-                    name: entry.canonical_name,
-                    id: entry.operation.raw(),
+                    name: entry.operation.canonical_name.to_string(),
+                    id: entry.operation.id.raw(),
                 },
                 None,
             )
@@ -1258,31 +1926,31 @@ impl FunctionCatalogBuilder {
 
         let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
             return Err(invalid_type_declaration(
-                &entry.canonical_name,
+                &entry.operation.canonical_name,
                 "named source operations must be scheme-authoritative",
             ));
         };
-        validate_type_declaration(&entry.canonical_name, declaration)?;
+        validate_type_declaration(&entry.operation.canonical_name, declaration)?;
 
         if let Some(existing) = self
             .specializers
-            .get(&entry.operation)
-            .or_else(|| self.intrinsic_specializers.get(&entry.operation))
+            .get(&entry.operation.id)
+            .or_else(|| self.intrinsic_specializers.get(&entry.operation.id))
         {
-            let kind = if existing.canonical_name == entry.canonical_name {
+            let kind = if existing.operation.canonical_name == entry.operation.canonical_name {
                 MechError::new(
                     FunctionCatalogDuplicateSpecializer {
-                        operation: entry.operation,
-                        canonical_name: entry.canonical_name,
+                        operation: entry.operation.id,
+                        canonical_name: entry.operation.canonical_name.to_string(),
                     },
                     None,
                 )
             } else {
                 MechError::new(
                     FunctionCatalogOperationIdCollision {
-                        operation: entry.operation,
-                        existing_name: existing.canonical_name.clone(),
-                        incoming_name: entry.canonical_name,
+                        operation: entry.operation.id,
+                        existing_name: existing.operation.canonical_name.to_string(),
+                        incoming_name: entry.operation.canonical_name.to_string(),
                     },
                     None,
                 )
@@ -1290,7 +1958,7 @@ impl FunctionCatalogBuilder {
             return Err(kind.with_compiler_loc());
         }
 
-        let operation = entry.operation;
+        let operation = entry.operation.id;
         self.specializers.insert(operation, entry);
         Ok(operation)
     }
@@ -1299,12 +1967,13 @@ impl FunctionCatalogBuilder {
         &mut self,
         entry: FunctionSpecializerEntry,
     ) -> MResult<OperationId> {
-        if entry.canonical_name.is_empty() {
+        entry.operation.validate()?;
+        if entry.operation.canonical_name.is_empty() {
             return Err(MechError::new(
                 FunctionCatalogInvalidName {
                     category: "function intrinsic",
-                    name: entry.canonical_name,
-                    id: entry.operation.raw(),
+                    name: entry.operation.canonical_name.to_string(),
+                    id: entry.operation.id.raw(),
                 },
                 None,
             )
@@ -1316,30 +1985,30 @@ impl FunctionCatalogBuilder {
             SourceTypeAuthority::SyntaxDirectedIntrinsic
         ) {
             return Err(invalid_type_declaration(
-                &entry.canonical_name,
+                &entry.operation.canonical_name,
                 "parser-only intrinsics must be explicitly syntax-directed",
             ));
         }
 
         if let Some(existing) = self
             .intrinsic_specializers
-            .get(&entry.operation)
-            .or_else(|| self.specializers.get(&entry.operation))
+            .get(&entry.operation.id)
+            .or_else(|| self.specializers.get(&entry.operation.id))
         {
-            let kind = if existing.canonical_name == entry.canonical_name {
+            let kind = if existing.operation.canonical_name == entry.operation.canonical_name {
                 MechError::new(
                     FunctionCatalogDuplicateSpecializer {
-                        operation: entry.operation,
-                        canonical_name: entry.canonical_name,
+                        operation: entry.operation.id,
+                        canonical_name: entry.operation.canonical_name.to_string(),
                     },
                     None,
                 )
             } else {
                 MechError::new(
                     FunctionCatalogOperationIdCollision {
-                        operation: entry.operation,
-                        existing_name: existing.canonical_name.clone(),
-                        incoming_name: entry.canonical_name,
+                        operation: entry.operation.id,
+                        existing_name: existing.operation.canonical_name.to_string(),
+                        incoming_name: entry.operation.canonical_name.to_string(),
                     },
                     None,
                 )
@@ -1347,7 +2016,7 @@ impl FunctionCatalogBuilder {
             return Err(kind.with_compiler_loc());
         }
 
-        let operation = entry.operation;
+        let operation = entry.operation.id;
         self.intrinsic_specializers.insert(operation, entry);
         Ok(operation)
     }
@@ -1403,6 +2072,17 @@ fn validate_type_declaration(
                 format!(
                     "overload {} has {value_slots} Value slots but its scheme has {expected_values} inputs",
                     overload.id,
+                ),
+            ));
+        }
+        if overload.output_schema_rules.len() != overload.scheme.outputs().len() {
+            return Err(invalid_type_declaration(
+                canonical_name,
+                format!(
+                    "overload {} has {} outputs but {} output schema rules",
+                    overload.id,
+                    overload.scheme.outputs().len(),
+                    overload.output_schema_rules.len(),
                 ),
             ));
         }
@@ -1644,6 +2324,7 @@ macro_rules! declare_native_runtime_factory {
         name: $name:expr,
         factory_type: $factory:ty,
         contract: $contract:expr,
+        compiler_family: $compiler_family:expr,
 
         package: $package:literal,
         crate_name: $crate_name:literal,
@@ -1666,12 +2347,17 @@ macro_rules! declare_native_runtime_factory {
                         $installer_path,
                         &[$($cargo_feature),*],
                     )?,
+                    $compiler_family,
                 );
             }
 
             #[cfg(not(feature = "native-plan"))]
             {
-                builder.insert_runtime_factory::<$factory>($name, $contract)
+                builder.insert_runtime_factory::<$factory>(
+                    $name,
+                    $contract,
+                    $compiler_family,
+                )
             }
         }
 
@@ -1681,7 +2367,71 @@ macro_rules! declare_native_runtime_factory {
         pub fn $installer(
             builder: &mut $crate::FunctionCatalogBuilder,
         ) -> $crate::MResult<()> {
-            builder.insert_runtime_factory::<$factory>($name, $contract)
+            builder.insert_runtime_factory::<$factory>(
+                $name,
+                $contract,
+                $compiler_family,
+            )
+        }
+    };
+
+    (
+        cfg: $cfg:meta,
+
+        registration: $registration:ident,
+        installer: $installer:ident,
+
+        name: $name:expr,
+        factory_type: $factory:ty,
+        contract: $contract:expr,
+        operations: $operations:expr,
+
+        package: $package:literal,
+        crate_name: $crate_name:literal,
+        installer_path: $installer_path:expr,
+
+        extra_cargo_features: [$($cargo_feature:expr),* $(,)?],
+    ) => {
+        #[cfg($cfg)]
+        pub(crate) fn $registration(
+            builder: &mut $crate::FunctionCatalogBuilder,
+        ) -> $crate::MResult<()> {
+            #[cfg(feature = "native-plan")]
+            {
+                return builder.insert_runtime_factory_with_linkage_for_operations::<$factory>(
+                    $name,
+                    $contract,
+                    $crate::NativeFunctionLinkage::for_factory::<$factory>(
+                        $package,
+                        $crate_name,
+                        $installer_path,
+                        &[$($cargo_feature),*],
+                    )?,
+                    $operations,
+                );
+            }
+
+            #[cfg(not(feature = "native-plan"))]
+            {
+                builder.insert_runtime_factory_for_operations::<$factory>(
+                    $name,
+                    $contract,
+                    $operations,
+                )
+            }
+        }
+
+        #[doc(hidden)]
+        #[cfg(feature = "native-link")]
+        #[cfg($cfg)]
+        pub fn $installer(
+            builder: &mut $crate::FunctionCatalogBuilder,
+        ) -> $crate::MResult<()> {
+            builder.insert_runtime_factory_for_operations::<$factory>(
+                $name,
+                $contract,
+                $operations,
+            )
         }
     };
 

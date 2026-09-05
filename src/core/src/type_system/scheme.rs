@@ -214,12 +214,16 @@ pub fn promoted_binary_elementwise() -> Result<Vec<KindScheme>, SemanticModelErr
     }
     schemes.push(make(
         3,
-        6,
+        4,
         vec![
             matrix(kind(0), dim(0), dim(1)),
             matrix(kind(1), dim(2), dim(3)),
         ],
-        vec![matrix(kind(2), dim(4), dim(5))],
+        vec![matrix(
+            kind(2),
+            DimensionExpr::Max(vec![dim(0), dim(2)].into_boxed_slice()),
+            DimensionExpr::Max(vec![dim(1), dim(3)].into_boxed_slice()),
+        )],
         vec![
             KindConstraint::Satisfies {
                 kind: kind(0),

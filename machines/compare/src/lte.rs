@@ -102,9 +102,4 @@ macro_rules! lte_row_mat_op {
 
 impl_compare_fxns!(LTE);
 
-impl_canonical_numeric_compare_specializer!(
-    CompareLessThanEqual,
-    lte,
-    LTE,
-    "compare/lte"
-);
+impl_canonical_numeric_compare_specializer!(CompareLessThanEqual, lte, LTE, "compare/lte");

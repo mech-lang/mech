@@ -102,9 +102,4 @@ macro_rules! gte_row_mat_op {
 
 impl_compare_fxns!(GTE);
 
-impl_canonical_numeric_compare_specializer!(
-    CompareGreaterThanEqual,
-    gte,
-    GTE,
-    "compare/gte"
-);
+impl_canonical_numeric_compare_specializer!(CompareGreaterThanEqual, gte, GTE, "compare/gte");

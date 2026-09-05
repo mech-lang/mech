@@ -340,6 +340,14 @@ macro_rules! impl_unop {
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some($semantic_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ));)?
+                contract
+            }
+
             fn new_invocation(
                 invocation: FunctionInvocation,
             ) -> MResult<Box<dyn MechFunction>> {
@@ -1531,7 +1539,7 @@ macro_rules! __mech_elementwise_binop_contract {
         )
     };
     (MDMD) => {
-        $crate::RuntimeFunctionContract::same_shape(
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
             $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
         )
     };
@@ -1799,7 +1807,7 @@ macro_rules! __mech_elementwise_binop_contract {
 #[macro_export]
 macro_rules! __mech_declare_native_binop_runtime_factory {
     (
-        ($cfg:meta; $package:literal; $crate_name:literal; [$($base_feature:literal),* $(,)?]),
+        ($cfg:meta; $package:literal; $crate_name:literal; $canonical_operation:literal; [$($base_feature:literal),* $(,)?]),
         $lib:ident,
         $suffix:ident,
         [$($_shape_feature:literal),* $(,)?],
@@ -1815,6 +1823,7 @@ macro_rules! __mech_declare_native_binop_runtime_factory {
                 name: concat!(stringify!($lib), stringify!($suffix), "<", $scalar_name, ">"),
                 factory_type: [<$lib $suffix>]<$scalar>,
                 contract: $crate::__mech_elementwise_binop_contract!($suffix),
+                operations: [$crate::OperationId::from_name($canonical_operation)],
                 package: $package,
                 crate_name: $crate_name,
                 installer_path: concat!(
@@ -1838,6 +1847,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_for_scalar {
         package: $package:literal,
         crate_name: $crate_name:literal,
         operation: $operation:ident,
+        canonical_operation: $canonical_operation:literal,
         operation_feature: $operation_feature:literal,
         additional_features: [$($additional_feature:literal),* $(,)?],
         scalar: ($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident),
@@ -1848,6 +1858,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_for_scalar {
                 all(feature = $operation_feature, feature = $scalar_feature);
                 $package;
                 $crate_name;
+                $canonical_operation;
                 [
                     $operation_feature,
                 ]
@@ -1870,6 +1881,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_each {
         package: $package:literal,
         crate_name: $crate_name:literal,
         operation: $operation:ident,
+        canonical_operation: $canonical_operation:literal,
         operation_feature: $operation_feature:literal,
         additional_features: [$($additional_feature:literal),* $(,)?],
         scalars:
@@ -1881,6 +1893,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_each {
             package: $package,
             crate_name: $crate_name,
             operation: $operation,
+            canonical_operation: $canonical_operation,
             operation_feature: $operation_feature,
             additional_features: [$($additional_feature),*],
             scalar: ($scalar_feature, $scalar, $scalar_name, $scalar_token),
@@ -1889,6 +1902,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_each {
             package: $package,
             crate_name: $crate_name,
             operation: $operation,
+            canonical_operation: $canonical_operation,
             operation_feature: $operation_feature,
             additional_features: [$($additional_feature),*],
             scalars: $(( $remaining_feature, $remaining_scalar, $remaining_name, $remaining_token )),*,
@@ -1898,6 +1912,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_each {
         package: $package:literal,
         crate_name: $crate_name:literal,
         operation: $operation:ident,
+        canonical_operation: $canonical_operation:literal,
         operation_feature: $operation_feature:literal,
         additional_features: [$($additional_feature:literal),* $(,)?],
         scalars:,
@@ -1911,6 +1926,7 @@ macro_rules! declare_native_binop_runtime_factories {
         package: $package:literal,
         crate_name: $crate_name:literal,
         operation: $operation:ident,
+        canonical_operation: $canonical_operation:literal,
         operation_feature: $operation_feature:literal,
         additional_features: [$($additional_feature:literal),* $(,)?],
         scalars: $(
@@ -1921,6 +1937,7 @@ macro_rules! declare_native_binop_runtime_factories {
             package: $package,
             crate_name: $crate_name,
             operation: $operation,
+            canonical_operation: $canonical_operation,
             operation_feature: $operation_feature,
             additional_features: [$($additional_feature),*],
             scalars: $(($scalar_feature, $scalar, $scalar_name, $scalar_token)),+,
@@ -2029,6 +2046,13 @@ macro_rules! __mech_install_binop_runtime_factory {
                     ">"
                 ),
                 $crate::__mech_elementwise_binop_contract!($suffix),
+                $crate::RuntimeFamilyId::from_name(concat!(
+                    stringify!($lib),
+                    stringify!($suffix),
+                    "<",
+                    $scalar_name,
+                    ">"
+                )),
             )?;
         }
     };
@@ -2251,6 +2275,7 @@ macro_rules! __mech_install_unop_runtime_factory {
             $builder.insert_runtime_factory::<[<$lib $scalar:camel $suffix>]>(
                 stringify!([<$lib $scalar:camel $suffix>]),
                 $crate::__mech_elementwise_unop_contract!($suffix),
+                $crate::RuntimeFamilyId::from_name(stringify!([<$lib $scalar:camel $suffix>])),
             )?;
         }
     };
@@ -2333,6 +2358,12 @@ macro_rules! __mech_install_typed_runtime_factory {
         $builder.insert_runtime_factory::<$factory<$scalar>>(
             concat!(stringify!($factory), "<", $scalar_name, ">"),
             $contract,
+            $crate::RuntimeFamilyId::from_name(concat!(
+                stringify!($factory),
+                "<",
+                $scalar_name,
+                ">"
+            )),
         )?;
     };
 }

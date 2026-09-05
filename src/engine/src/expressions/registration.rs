@@ -19,14 +19,14 @@ pub(super) fn register_initialized_expression_function(
     plan: &Plan,
     specialized: SpecializedFunction,
 ) -> MResult<crate::ValueCell> {
-    let instance = specialized.into_instance();
+    let instance = specialized.instance();
     if !plan.activation_registration_active()
         && instance.implementation().initial_solve_policy() == crate::InitialSolvePolicy::Solve
     {
         instance.solve_result()?;
     }
     let output = instance.output().clone();
-    plan.register_instance(instance)?;
+    plan.register_specialized(specialized)?;
     Ok(output)
 }
 
@@ -74,7 +74,7 @@ pub(super) fn register_expression_function_batch(
     functions: Vec<SpecializedFunction>,
 ) -> MResult<()> {
     for specialized in functions {
-        plan.register_instance(specialized.into_instance())?;
+        plan.register_specialized(specialized)?;
     }
     Ok(())
 }

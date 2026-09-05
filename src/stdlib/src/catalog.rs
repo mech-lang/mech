@@ -145,7 +145,11 @@ pub fn build_source_catalog() -> MResult<FunctionCatalog> {
         mech_engine::install_intrinsic_resident(&mut builder)?;
     }
     #[cfg(not(feature = "native-plan"))]
-    install_runtime(&mut builder)?;
+    {
+        install_runtime(&mut builder)?;
+        #[cfg(feature = "semantic-compiler")]
+        mech_engine::install_intrinsic_compiler_runtime(&mut builder)?;
+    }
     install_source(&mut builder)?;
     builder.build()
 }
@@ -285,7 +289,7 @@ mod tests {
             .stack_size(64 * 1024 * 1024)
             .spawn(|| {
                 let runtime = runtime_catalog();
-                assert_eq!(runtime.runtime_factory_count(), 9_022);
+                assert_eq!(runtime.runtime_factory_count(), 9_110);
                 let runtime_entries = runtime
                     .runtime_entries()
                     .map(|entry| (entry.id, entry.name.clone()))
@@ -297,64 +301,19 @@ mod tests {
                         ))
                         .is_some()
                 );
-
                 let native_plan = native_plan_catalog();
-                assert_eq!(native_plan.runtime_factory_count(), 9_119);
+                assert_eq!(native_plan.runtime_factory_count(), 9_163);
                 assert!(!Arc::ptr_eq(&runtime, &native_plan));
                 let native_plan_entries = native_plan
                     .runtime_entries()
                     .map(|entry| (entry.id, entry.name.clone()))
                     .collect::<Vec<_>>();
                 let mut expected_native_plan_only = [
-                    "AddM1MD<i8>",
-                    "AddM1MD<i16>",
-                    "AddM1MD<i32>",
-                    "AddM1MD<i64>",
-                    "AddM1MD<i128>",
-                    "AddM1MD<u8>",
-                    "AddM1MD<u16>",
-                    "AddM1MD<u32>",
-                    "AddM1MD<u64>",
-                    "AddM1MD<u128>",
-                    "AddM1MD<f32>",
-                    "AddM1MD<f64>",
-                    "AddM1MD<rational>",
-                    "AddM1MD<complex>",
-                    "AddMDM1<i8>",
-                    "AddMDM1<i16>",
-                    "AddMDM1<i32>",
-                    "AddMDM1<i64>",
-                    "AddMDM1<i128>",
-                    "AddMDM1<u8>",
-                    "AddMDM1<u16>",
-                    "AddMDM1<u32>",
-                    "AddMDM1<u64>",
-                    "AddMDM1<u128>",
-                    "AddMDM1<f32>",
-                    "AddMDM1<f64>",
-                    "AddMDM1<rational>",
-                    "AddMDM1<complex>",
                     "HorizontalConcatenateFourArgs<f64>",
                     "HorizontalConcatenateNArgs<f64>",
                     "RecordAccessField",
                     "RecordAccessSwizzle",
                     "TableAccessSwizzle",
-                    "VariableDefineMatrix<u8Matrix1>",
-                    "VariableDefineMatrix<u16Matrix1>",
-                    "VariableDefineMatrix<u32Matrix1>",
-                    "VariableDefineMatrix<u64Matrix1>",
-                    "VariableDefineMatrix<u128Matrix1>",
-                    "VariableDefineMatrix<i8Matrix1>",
-                    "VariableDefineMatrix<i16Matrix1>",
-                    "VariableDefineMatrix<i32Matrix1>",
-                    "VariableDefineMatrix<i64Matrix1>",
-                    "VariableDefineMatrix<i128Matrix1>",
-                    "VariableDefineMatrix<f32Matrix1>",
-                    "VariableDefineMatrix<f64Matrix1>",
-                    "VariableDefineMatrix<rationalMatrix1>",
-                    "VariableDefineMatrix<complexMatrix1>",
-                    "VariableDefineMatrix<boolMatrix1>",
-                    "VariableDefineMatrix<stringMatrix1>",
                 ]
                 .into_iter()
                 .map(str::to_string)

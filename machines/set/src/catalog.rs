@@ -378,14 +378,8 @@ fn validate_set_membership(
 ) -> MResult<()> {
     require_bool_output(output, contract)?;
     let inputs = expect_arity(inputs, 2, contract)?;
-    let element = inputs[0].closed_schema_body()?;
-    let set_element = set_element(&inputs[1], contract, "set input")?;
-    if element != set_element {
-        return Err(set_contract_error(
-            contract,
-            format!("candidate schema {element:?} differs from set element {set_element:?}"),
-        ));
-    }
+    inputs[0].closed_schema_body()?;
+    set_element(&inputs[1], contract, "set input")?;
     Ok(())
 }
 
@@ -550,29 +544,29 @@ set_mutation_validator!(validate_set_remove, "set_remove");
 
 macro_rules! for_each_set_runtime_factory {
     ($callback:ident) => {
-        $callback!(feature = "cartesian_product"; register_set_cartesian_product_fxn; install_set_cartesian_product_fxn; "SetCartesianProductFxn"; crate::operations::cartesian_product::SetCartesianProductFxn; ["cartesian_product"]; RuntimeFunctionContract::canonical_custom("set_cartesian_product", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_cartesian_product));
-        $callback!(feature = "difference"; register_set_difference_fxn; install_set_difference_fxn; "SetDifferenceFxn"; crate::operations::difference::SetDifferenceFxn; ["difference"]; RuntimeFunctionContract::canonical_custom("set_difference", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_difference));
-        $callback!(feature = "disjoint"; register_set_disjoint_fxn; install_set_disjoint_fxn; "SetDisjointFxn"; crate::relations::disjoint::SetDisjointFxn; ["disjoint"]; RuntimeFunctionContract::canonical_custom("set_disjoint", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_disjoint));
-        $callback!(feature = "element_of"; register_set_element_of_fxn; install_set_element_of_fxn; "SetElementOfFxn"; crate::membership::element_of::SetElementOfFxn; ["element_of"]; RuntimeFunctionContract::canonical_custom("set_element_of", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_element_of));
-        $callback!(feature = "equals"; register_set_equals_fxn; install_set_equals_fxn; "SetEqualsFxn"; crate::relations::equals::SetEqualsFxn; ["equals"]; RuntimeFunctionContract::canonical_custom("set_equals", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_equals));
-        $callback!(feature = "insert"; register_set_insert_fxn; install_set_insert_fxn; "SetInsertFxn"; crate::modify::insert::SetInsertFxn; ["insert"]; RuntimeFunctionContract::canonical_custom("set_insert", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_insert));
-        $callback!(feature = "intersection"; register_set_intersection_fxn; install_set_intersection_fxn; "SetIntersectionFxn"; crate::operations::intersection::SetIntersectionFxn; ["intersection"]; RuntimeFunctionContract::canonical_custom("set_intersection", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_intersection));
-        $callback!(feature = "not_element_of"; register_set_not_element_of_fxn; install_set_not_element_of_fxn; "SetNotElementOfFxn"; crate::membership::not_element_of::SetNotElementOfFxn; ["not_element_of"]; RuntimeFunctionContract::canonical_custom("set_not_element_of", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_not_element_of));
-        $callback!(feature = "not_equals"; register_set_not_equals_fxn; install_set_not_equals_fxn; "SetNotEqualsFxn"; crate::relations::not_equals::SetNotEqualsFxn; ["not_equals"]; RuntimeFunctionContract::canonical_custom("set_not_equals", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_not_equals));
-        $callback!(feature = "powerset"; register_set_powerset_fxn; install_set_powerset_fxn; "SetPowersetFxn"; crate::operations::powerset::SetPowersetFxn; ["powerset"]; RuntimeFunctionContract::canonical_custom("set_powerset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_powerset));
-        $callback!(feature = "proper_subset"; register_set_proper_subset_fxn; install_set_proper_subset_fxn; "SetProperSubsetFxn"; crate::relations::proper_subset::SetProperSubsetFxn; ["proper_subset"]; RuntimeFunctionContract::canonical_custom("set_proper_subset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_proper_subset));
-        $callback!(feature = "proper_superset"; register_set_proper_superset_fxn; install_set_proper_superset_fxn; "SetProperSupersetFxn"; crate::relations::proper_superset::SetProperSupersetFxn; ["proper_superset"]; RuntimeFunctionContract::canonical_custom("set_proper_superset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_proper_superset));
-        $callback!(feature = "remove"; register_set_remove_fxn; install_set_remove_fxn; "SetRemoveFxn"; crate::modify::remove::SetRemoveFxn; ["remove"]; RuntimeFunctionContract::canonical_custom("set_remove", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_remove));
-        $callback!(all(feature = "size", feature = "u64"); register_set_size_fxn; install_set_size_fxn; "SetSizeFxn"; crate::setdata::size::SetSizeFxn; ["size"]; RuntimeFunctionContract::canonical_custom("set_size", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_size));
-        $callback!(feature = "subset"; register_set_subset_fxn; install_set_subset_fxn; "SetSubsetFxn"; crate::relations::subset::SetSubsetFxn; ["subset"]; RuntimeFunctionContract::canonical_custom("set_subset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_subset));
-        $callback!(feature = "superset"; register_set_superset_fxn; install_set_superset_fxn; "SetSupersetFxn"; crate::relations::superset::SetSupersetFxn; ["superset"]; RuntimeFunctionContract::canonical_custom("set_superset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_superset));
-        $callback!(feature = "symmetric_difference"; register_set_symmetric_difference_fxn; install_set_symmetric_difference_fxn; "SetSymDifferenceFxn"; crate::operations::symmetric_difference::SetSymDifferenceFxn; ["symmetric_difference"]; RuntimeFunctionContract::canonical_custom("set_symmetric_difference", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_symmetric_difference));
-        $callback!(feature = "union"; register_set_union_fxn; install_set_union_fxn; "SetUnionFxn"; crate::operations::union::SetUnionFxn; ["union"]; RuntimeFunctionContract::canonical_custom("set_union", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_union));
+        $callback!(feature = "cartesian_product"; "set/cartesian-product"; register_set_cartesian_product_fxn; install_set_cartesian_product_fxn; "SetCartesianProductFxn"; crate::operations::cartesian_product::SetCartesianProductFxn; ["cartesian_product"]; RuntimeFunctionContract::canonical_custom("set_cartesian_product", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_cartesian_product));
+        $callback!(feature = "difference"; "set/difference"; register_set_difference_fxn; install_set_difference_fxn; "SetDifferenceFxn"; crate::operations::difference::SetDifferenceFxn; ["difference"]; RuntimeFunctionContract::canonical_custom("set_difference", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_difference));
+        $callback!(feature = "disjoint"; "set/disjoint"; register_set_disjoint_fxn; install_set_disjoint_fxn; "SetDisjointFxn"; crate::relations::disjoint::SetDisjointFxn; ["disjoint"]; RuntimeFunctionContract::canonical_custom("set_disjoint", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_disjoint));
+        $callback!(feature = "element_of"; "set/element-of"; register_set_element_of_fxn; install_set_element_of_fxn; "SetElementOfFxn"; crate::membership::element_of::SetElementOfFxn; ["element_of"]; RuntimeFunctionContract::canonical_custom("set_element_of", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_element_of));
+        $callback!(feature = "equals"; "set/equals"; register_set_equals_fxn; install_set_equals_fxn; "SetEqualsFxn"; crate::relations::equals::SetEqualsFxn; ["equals"]; RuntimeFunctionContract::canonical_custom("set_equals", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_equals));
+        $callback!(feature = "insert"; "set/insert"; register_set_insert_fxn; install_set_insert_fxn; "SetInsertFxn"; crate::modify::insert::SetInsertFxn; ["insert"]; RuntimeFunctionContract::canonical_custom("set_insert", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_insert));
+        $callback!(feature = "intersection"; "set/intersection"; register_set_intersection_fxn; install_set_intersection_fxn; "SetIntersectionFxn"; crate::operations::intersection::SetIntersectionFxn; ["intersection"]; RuntimeFunctionContract::canonical_custom("set_intersection", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_intersection));
+        $callback!(feature = "not_element_of"; "set/not-element-of"; register_set_not_element_of_fxn; install_set_not_element_of_fxn; "SetNotElementOfFxn"; crate::membership::not_element_of::SetNotElementOfFxn; ["not_element_of"]; RuntimeFunctionContract::canonical_custom("set_not_element_of", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_not_element_of));
+        $callback!(feature = "not_equals"; "set/not_equals"; register_set_not_equals_fxn; install_set_not_equals_fxn; "SetNotEqualsFxn"; crate::relations::not_equals::SetNotEqualsFxn; ["not_equals"]; RuntimeFunctionContract::canonical_custom("set_not_equals", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_not_equals));
+        $callback!(feature = "powerset"; "set/powerset"; register_set_powerset_fxn; install_set_powerset_fxn; "SetPowersetFxn"; crate::operations::powerset::SetPowersetFxn; ["powerset"]; RuntimeFunctionContract::canonical_custom("set_powerset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_powerset));
+        $callback!(feature = "proper_subset"; "set/proper_subset"; register_set_proper_subset_fxn; install_set_proper_subset_fxn; "SetProperSubsetFxn"; crate::relations::proper_subset::SetProperSubsetFxn; ["proper_subset"]; RuntimeFunctionContract::canonical_custom("set_proper_subset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_proper_subset));
+        $callback!(feature = "proper_superset"; "set/proper-superset"; register_set_proper_superset_fxn; install_set_proper_superset_fxn; "SetProperSupersetFxn"; crate::relations::proper_superset::SetProperSupersetFxn; ["proper_superset"]; RuntimeFunctionContract::canonical_custom("set_proper_superset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_proper_superset));
+        $callback!(feature = "remove"; "set/remove"; register_set_remove_fxn; install_set_remove_fxn; "SetRemoveFxn"; crate::modify::remove::SetRemoveFxn; ["remove"]; RuntimeFunctionContract::canonical_custom("set_remove", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_remove));
+        $callback!(all(feature = "size", feature = "u64"); "set/size"; register_set_size_fxn; install_set_size_fxn; "SetSizeFxn"; crate::setdata::size::SetSizeFxn; ["size"]; RuntimeFunctionContract::canonical_custom("set_size", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_size));
+        $callback!(feature = "subset"; "set/subset"; register_set_subset_fxn; install_set_subset_fxn; "SetSubsetFxn"; crate::relations::subset::SetSubsetFxn; ["subset"]; RuntimeFunctionContract::canonical_custom("set_subset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_subset));
+        $callback!(feature = "superset"; "set/superset"; register_set_superset_fxn; install_set_superset_fxn; "SetSupersetFxn"; crate::relations::superset::SetSupersetFxn; ["superset"]; RuntimeFunctionContract::canonical_custom("set_superset", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_superset));
+        $callback!(feature = "symmetric_difference"; "set/symmetric-difference"; register_set_symmetric_difference_fxn; install_set_symmetric_difference_fxn; "SetSymDifferenceFxn"; crate::operations::symmetric_difference::SetSymDifferenceFxn; ["symmetric_difference"]; RuntimeFunctionContract::canonical_custom("set_symmetric_difference", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_symmetric_difference));
+        $callback!(feature = "union"; "set/union"; register_set_union_fxn; install_set_union_fxn; "SetUnionFxn"; crate::operations::union::SetUnionFxn; ["union"]; RuntimeFunctionContract::canonical_custom("set_union", RuntimeOutputAliasPolicy::DisallowInputAlias, validate_set_union));
     };
 }
 
 macro_rules! declare_set_runtime_factory {
-    ($cfg:meta; $registration:ident; $installer:ident; $name:literal; $factory:path; [$($feature:literal),* $(,)?]; $contract:expr) => {
+    ($cfg:meta; $operation:literal; $registration:ident; $installer:ident; $name:literal; $factory:path; [$($feature:literal),* $(,)?]; $contract:expr) => {
         mech_core::declare_native_runtime_factory! {
             cfg: $cfg,
             registration: $registration,
@@ -580,6 +574,7 @@ macro_rules! declare_set_runtime_factory {
             name: $name,
             factory_type: $factory,
             contract: $contract,
+            operations: [mech_core::OperationId::from_name($operation)],
             package: "mech-set",
             crate_name: "mech_set",
             installer_path: concat!("mech_set::__mech_native::", stringify!($installer)),
@@ -615,7 +610,7 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     let _ = builder;
 
     macro_rules! register_set_runtime_factory {
-        ($cfg:meta; $registration:ident; $_installer:ident; $_name:literal; $_factory:path; [$($_feature:literal),* $(,)?]; $_contract:expr) => {
+        ($cfg:meta; $_operation:literal; $registration:ident; $_installer:ident; $_name:literal; $_factory:path; [$($_feature:literal),* $(,)?]; $_contract:expr) => {
             #[cfg($cfg)]
             $registration(builder)?;
         };
@@ -629,7 +624,7 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
     macro_rules! export_set_runtime_factory {
-        ($cfg:meta; $_registration:ident; $installer:ident; $_name:literal; $_factory:path; [$($_feature:literal),* $(,)?]; $_contract:expr) => {
+        ($cfg:meta; $_operation:literal; $_registration:ident; $installer:ident; $_name:literal; $_factory:path; [$($_feature:literal),* $(,)?]; $_contract:expr) => {
             #[cfg($cfg)]
             pub use super::$installer;
         };
@@ -740,7 +735,7 @@ mod tests {
     }
 
     #[test]
-    fn installed_set_contracts_reject_schema_mismatches_and_wrong_outputs() {
+    fn installed_set_contracts_enforce_operation_schema_rules() {
         let mut builder = FunctionCatalogBuilder::new();
         install_runtime(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
@@ -774,14 +769,13 @@ mod tests {
 
         for name in ["SetElementOfFxn", "SetNotElementOfFxn"] {
             let membership = runtime_entry(&catalog, name);
-            let error = membership
+            membership
                 .validate_invocation(&FunctionInvocation::binary(
                     ValueCell::from_exact(false).unwrap(),
                     ValueCell::from_exact(1_u16).unwrap(),
                     empty_set(u8_body.clone()),
                 ))
-                .unwrap_err();
-            assert!(error.kind_message().contains("candidate schema"));
+                .expect("membership permits a differently typed candidate as a non-member");
         }
 
         for name in ["SetInsertFxn", "SetRemoveFxn"] {

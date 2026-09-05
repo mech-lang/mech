@@ -85,6 +85,10 @@ where
         T::REPRESENTATION,
     );
 
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_EXCLUSIVE_INCREMENT_RANGE_CONTRACT)
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, from, step, to) = invocation.expect_ternary()?;
         let output_value = out.value();
@@ -101,7 +105,6 @@ where
             phantom: PhantomData::default(),
         }))
     }
-
 }
 impl<T, R1, C1, S1> MechFunctionImpl for RangeIncrementExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
@@ -137,10 +140,8 @@ where
             false,
         )?;
         let output_len = elements.len();
-        self.output_value.replace_matrix_drafts(
-            vec![1, output_len as u64].into_boxed_slice(),
-            elements,
-        )
+        self.output_value
+            .replace_matrix_drafts(vec![1, output_len as u64].into_boxed_slice(), elements)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_EXCLUSIVE_INCREMENT_RANGE_CONTRACT)
@@ -224,8 +225,7 @@ impl CanonicalFunctionSpecializer for RangeIncrementExclusive {
                 if from.representation() == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
                     && step.representation()
                         == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
-                    && to.representation()
-                        == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
+                    && to.representation() == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
                 {
                     bind_dynamic_ternary_range!(
                         RangeIncrementExclusiveScalar,

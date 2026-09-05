@@ -113,11 +113,7 @@ impl_matmul!(MatMulR2M2x3, RowVector2<T>, Matrix2x3<T>, RowVector3<T>);
 #[cfg(all(feature = "row_vector2", feature = "matrixd", feature = "row_vectord"))]
 impl_matmul!(MatMulR2MD, RowVector2<T>, DMatrix<T>, RowDVector<T>);
 
-#[cfg(all(
-    feature = "row_vectord",
-    feature = "vectord",
-    feature = "matrix1"
-))]
+#[cfg(all(feature = "row_vectord", feature = "vectord", feature = "matrix1"))]
 impl_matmul!(MatMulRDVD, RowDVector<T>, DVector<T>, Matrix1<T>);
 #[cfg(all(
     feature = "row_vectord",
@@ -242,7 +238,16 @@ impl CanonicalFunctionSpecializer for MatrixMatMul {
                 .with_compiler_loc());
             }
         };
-        context.bind_runtime_factory_derived_output("MatMul", dimensions, &[lhs, rhs])
+        let output_extents: Box<[u64]> = dimensions.map_or_else(
+            || Vec::<u64>::new().into_boxed_slice(),
+            |(rows, columns)| vec![rows as u64, columns as u64].into_boxed_slice(),
+        );
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![output_extents].into_boxed_slice(),
+            &[lhs, rhs],
+        )
     }
 }
 
@@ -353,21 +358,16 @@ mod canonical_port_tests {
         let out = Ref::new(original.clone());
         let function = MatMulMDMD::<f64>::new_invocation(FunctionInvocation::binary(
             ValueCell::from_exact_matrix_ref(out.clone(), 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(
-                Ref::new(DMatrix::from_element(2, 3, 2.0_f64)),
-                2,
-                3,
-            )
-            .unwrap(),
-            ValueCell::from_exact_matrix_ref(
-                Ref::new(DMatrix::from_element(2, 2, 3.0_f64)),
-                2,
-                2,
-            )
-            .unwrap(),
+            ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::from_element(2, 3, 2.0_f64)), 2, 3)
+                .unwrap(),
+            ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::from_element(2, 2, 3.0_f64)), 2, 2)
+                .unwrap(),
         ))
         .unwrap();
-        assert_eq!(function.solve_result().unwrap_err().kind_name(), "DimensionMismatch");
+        assert_eq!(
+            function.solve_result().unwrap_err().kind_name(),
+            "DimensionMismatch"
+        );
         assert_eq!(*out.borrow(), original);
     }
 }

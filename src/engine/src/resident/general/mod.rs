@@ -9,14 +9,15 @@ use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirementId, BoundResidentKernel, CellSlotId,
+    AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel, CellSlotId,
     ChangeDetectionPolicy, ConstantId, DeliveryMode, DimensionExpr, DimensionLifetime,
     ExecutionTarget, ExecutionTargetSet, ExternalInteraction, FunctionCatalog, InputId,
     InstanceEpoch, IntegrityConstraintId, LayoutGeneration, NodeId, ObservationReplayPolicy,
-    OutputConstruction, PlanGeneration, ProgramRevision, ReactiveInstanceId,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs, ResidentPortLayout,
-    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, SchemaBody, SchemaId,
-    SchemaKey, ShapeInstance, SlotIndex, Value,
+    OutputConstruction, PlanGeneration, ProgramRevision, ReactiveInstanceId, ResidentBuildContext,
+    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs, ResidentOperationKey,
+    ResidentPortLayout, ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedRangeMode, ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance,
+    ShapeRule, SlotIndex, Value,
 };
 use sha2::{Digest, Sha256};
 
@@ -350,6 +351,7 @@ impl ActivatedPlan {
 struct ActivatedOnceNode {
     artifact_node: NodeId,
     sources: Box<[ArtifactSource]>,
+    base_input: Option<usize>,
     storage: ResidentStorageClass,
     write: ResidentRegion,
     kernel: BoundResidentKernel,
@@ -1128,8 +1130,9 @@ pub fn preflight_activation(
 ) -> Result<ResidentActivationPreflight, ResidentActivationError> {
     preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
-    let layout = build_layout(artifact, facts, &classification)?;
-    let facts_fingerprint = activation_facts_fingerprint(facts);
+    let facts = complete_activation_shape_facts(artifact, facts, &classification)?;
+    let layout = build_layout(artifact, &facts, &classification)?;
+    let facts_fingerprint = activation_facts_fingerprint(&facts);
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
     let (plan, _, _, _, _) = build_plan(
         artifact,
@@ -1290,8 +1293,9 @@ fn activate_internal(
 ) -> Result<ReactiveInstance, ResidentActivationError> {
     preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
-    let layout = build_layout(artifact, facts, &classification)?;
-    let facts_fingerprint = activation_facts_fingerprint(facts);
+    let facts = complete_activation_shape_facts(artifact, facts, &classification)?;
+    let layout = build_layout(artifact, &facts, &classification)?;
+    let facts_fingerprint = activation_facts_fingerprint(&facts);
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
     let (plan, input_sizes, state_sizes, scratch_sizes, activation_sizes) = build_plan(
         artifact,
@@ -1500,13 +1504,20 @@ fn classify_nodes(
                 };
                 let output_slot = node_output_slot(artifact, node.node)?;
                 let output_role = artifact.slots()[output_slot.get() as usize].role;
-                if output_role != SlotRole::Derived
-                    || !matches!(
-                        output.construction,
-                        OutputConstruction::FullWrite { .. } | OutputConstruction::Build { .. }
-                    )
-                    || output.alias != AliasPolicy::NoAlias
-                {
+                let construction_supported = match output.construction {
+                    OutputConstruction::FullWrite { .. } | OutputConstruction::Build { .. } => {
+                        output.access == AccessMode::Write && output.alias == AliasPolicy::NoAlias
+                    }
+                    OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                        output.access == AccessMode::ReadWrite
+                            && output.alias == (AliasPolicy::MayAlias { input: base_input })
+                            && node_inputs(artifact, node.node)?
+                                .get(base_input as usize)
+                                .is_some()
+                    }
+                    _ => false,
+                };
+                if output_role != SlotRole::Derived || !construction_supported {
                     return Err(ResidentActivationError::UnsupportedConstruction {
                         node: node.node,
                     });
@@ -1577,6 +1588,446 @@ fn operation_requires_activation_fixed_range_shape(operation: &OperationReferenc
         )
 }
 
+fn source_extents(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+) -> Result<Box<[u64]>, ResidentActivationError> {
+    let (schema_id, shape) = match source {
+        ArtifactSource::Constant(constant) => {
+            let value = artifact
+                .constants()
+                .get(constant)
+                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            (value.schema(), value.shape().clone())
+        }
+        ArtifactSource::Slot(slot) => {
+            let declaration = &artifact.slots()[slot.get() as usize];
+            (declaration.schema, slot_shape(artifact, slot, facts)?)
+        }
+    };
+    let schema = artifact
+        .schemas()
+        .entry(schema_id)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?
+        .schema();
+    match schema.body() {
+        SchemaBody::Matrix { dimensions, .. } => dimensions
+            .iter()
+            .map(|dimension| evaluate_dimension(dimension, shape.parameter_values()))
+            .collect::<Result<Vec<_>, _>>()
+            .map(Vec::into_boxed_slice),
+        _ => Ok(Box::new([])),
+    }
+}
+
+fn matrix_shape_for_extents(
+    schema: &mech_core::Schema,
+    extents: &[u64],
+) -> Result<ShapeInstance, ResidentActivationError> {
+    mech_core::shape_for_resolved_extents(schema, extents)
+        .map_err(|_| ResidentActivationError::RegionSizeOverflow)
+}
+
+fn complete_activation_shape_facts(
+    artifact: &ProgramArtifact,
+    supplied: &ActivationFacts,
+    classes: &[NodeClass],
+) -> Result<ActivationFacts, ResidentActivationError> {
+    let mut facts = supplied.clone();
+    for node in artifact.nodes() {
+        let class = classes[node.node.get() as usize];
+        if matches!(class, NodeClass::Observation | NodeClass::External) {
+            continue;
+        }
+        let output = node_output_slot(artifact, node.node)?;
+        if facts.slot_shapes.contains_key(&output) {
+            continue;
+        }
+        if node.operation.module_path.as_ref() == ["access"]
+            && node.operation.operation_name == "index"
+        {
+            let inputs = node_inputs(artifact, node.node)?;
+            let [source] = inputs.as_slice() else {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            };
+            let extents = source_extents(artifact, *source, &facts)?;
+            let declaration = &artifact.slots()[output.get() as usize];
+            let output_schema = artifact
+                .schemas()
+                .entry(declaration.schema)
+                .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
+                .schema();
+            let output_shape = matrix_shape_for_extents(output_schema, &extents)
+                .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+            facts.slot_shapes.insert(output, output_shape);
+            continue;
+        }
+        let inputs = node_inputs(artifact, node.node)?;
+        if node.operation.module_path.as_ref() == ["matrix"]
+            && matches!(
+                node.operation.operation_name.as_str(),
+                "comprehension" | "horzcat" | "vertcat"
+            )
+        {
+            if inputs.is_empty() {
+                if node.operation.operation_name == "comprehension" {
+                    let declaration = &artifact.slots()[output.get() as usize];
+                    let schema = artifact
+                        .schemas()
+                        .entry(declaration.schema)
+                        .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
+                        .schema();
+                    let shape = matrix_shape_for_extents(schema, &[0, 0])
+                        .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+                    facts.slot_shapes.insert(output, shape);
+                }
+                continue;
+            }
+            let vertical = node.operation.operation_name == "vertcat";
+            let mut common = None;
+            let mut varying = 0_u64;
+            for input in inputs.iter().copied() {
+                let extents = source_extents(artifact, input, &facts)?;
+                let (rows, columns) = match extents.as_ref() {
+                    [] => (1, 1),
+                    [rows, columns] => (*rows, *columns),
+                    _ => {
+                        return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                    }
+                };
+                let (candidate_common, candidate_varying) = if vertical {
+                    (columns, rows)
+                } else {
+                    (rows, columns)
+                };
+                if common.is_some_and(|common| common != candidate_common) {
+                    return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                }
+                common = Some(candidate_common);
+                varying = varying
+                    .checked_add(candidate_varying)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            }
+            let common = common.expect("non-empty concatenation has a common extent");
+            let extents = if vertical {
+                [varying, common]
+            } else {
+                [common, varying]
+            };
+            let declaration = &artifact.slots()[output.get() as usize];
+            let schema = artifact
+                .schemas()
+                .entry(declaration.schema)
+                .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
+                .schema();
+            let output_extents = if matches!(schema.body(), SchemaBody::Matrix { .. }) {
+                extents.as_slice()
+            } else {
+                &[]
+            };
+            let shape = matrix_shape_for_extents(schema, output_extents)
+                .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+            facts.slot_shapes.insert(output, shape);
+            continue;
+        }
+        if node.operation.module_path.as_ref() == ["access"]
+            && let Some(mode) = node
+                .operation
+                .resolved_selection_mode(inputs.len().saturating_sub(1))
+            && !matches!(mode, ResolvedSelectionMode::LinearScalar)
+        {
+            let Some(source) = inputs.first().copied() else {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            };
+            let source_dimensions = source_extents(artifact, source, &facts)?;
+            let [source_rows, source_columns] = source_dimensions.as_ref() else {
+                continue;
+            };
+            let selector_count = |source: ArtifactSource| {
+                source_extents(artifact, source, &facts).and_then(|extents| {
+                    if extents.is_empty() {
+                        Ok(1)
+                    } else {
+                        extents.iter().try_fold(1_u64, |total, extent| {
+                            total
+                                .checked_mul(*extent)
+                                .ok_or(ResidentActivationError::RegionSizeOverflow)
+                        })
+                    }
+                })
+            };
+            let extents = match mode {
+                ResolvedSelectionMode::Whole => vec![*source_rows, *source_columns],
+                ResolvedSelectionMode::LinearGather => {
+                    let [selector] = &inputs[1..] else {
+                        return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                    };
+                    vec![selector_count(*selector)?, 1]
+                }
+                ResolvedSelectionMode::Rows => {
+                    let [selector] = &inputs[1..] else {
+                        return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                    };
+                    vec![selector_count(*selector)?, *source_columns]
+                }
+                ResolvedSelectionMode::Columns => {
+                    let [selector] = &inputs[1..] else {
+                        return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                    };
+                    vec![*source_rows, selector_count(*selector)?]
+                }
+                ResolvedSelectionMode::Rectangle => {
+                    let [rows, columns] = &inputs[1..] else {
+                        return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                    };
+                    vec![selector_count(*rows)?, selector_count(*columns)?]
+                }
+                ResolvedSelectionMode::LinearScalar
+                | ResolvedSelectionMode::Field { .. }
+                | ResolvedSelectionMode::TableColumn { .. }
+                | ResolvedSelectionMode::MapKey => continue,
+            };
+            let declaration = &artifact.slots()[output.get() as usize];
+            let schema = artifact
+                .schemas()
+                .entry(declaration.schema)
+                .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
+                .schema();
+            let output_extents = if matches!(schema.body(), SchemaBody::Matrix { .. }) {
+                extents.as_slice()
+            } else {
+                &[]
+            };
+            let shape = matrix_shape_for_extents(schema, output_extents)
+                .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+            facts.slot_shapes.insert(output, shape);
+            continue;
+        }
+        if node.operation.module_path.as_ref() == ["matrix"]
+            && node.operation.operation_name == "transpose"
+        {
+            let [source] = inputs.as_slice() else {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            };
+            let source_dimensions = source_extents(artifact, *source, &facts)?;
+            let [rows, columns] = source_dimensions.as_ref() else {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            };
+            let declaration = &artifact.slots()[output.get() as usize];
+            let schema = artifact
+                .schemas()
+                .entry(declaration.schema)
+                .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
+                .schema();
+            let shape = matrix_shape_for_extents(schema, &[*columns, *rows])
+                .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+            facts.slot_shapes.insert(output, shape);
+            continue;
+        }
+        let is_n_choose_k = node.operation.module_path.as_ref() == ["combinatorics"]
+            && node.operation.operation_name == "n-choose-k";
+        let n_choose_k_declares_its_output = is_n_choose_k
+            && artifact
+                .contracts()
+                .get(node.contract)
+                .is_some_and(|contract| {
+                    matches!(
+                        contract,
+                        mech_core::ResolvedOperationContract::Declared(contract)
+                            if matches!(
+                                contract.outputs.as_ref(),
+                                [output]
+                                    if matches!(
+                                        output.construction,
+                                        OutputConstruction::FullWrite {
+                                            shape: ShapeRule::Declared,
+                                        }
+                                    )
+                            )
+                    )
+                });
+        if matches!(
+            node.operation.module_path.as_ref(),
+            [module] if matches!(module.as_str(), "math" | "compare" | "logic")
+        ) || n_choose_k_declares_its_output
+        {
+            let matrix_inputs = inputs
+                .iter()
+                .copied()
+                .map(|source| source_extents(artifact, source, &facts))
+                .collect::<Result<Vec<_>, _>>()?
+                .into_iter()
+                .filter(|extents| !extents.is_empty())
+                .collect::<Vec<_>>();
+            if !matrix_inputs.is_empty() {
+                let mut rows = 1_u64;
+                let mut columns = 1_u64;
+                for extents in &matrix_inputs {
+                    let [candidate_rows, candidate_columns] = extents.as_ref() else {
+                        return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                    };
+                    rows = rows.max(*candidate_rows);
+                    columns = columns.max(*candidate_columns);
+                }
+                let declaration = &artifact.slots()[output.get() as usize];
+                let schema = artifact
+                    .schemas()
+                    .entry(declaration.schema)
+                    .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
+                    .schema();
+                if matches!(schema.body(), SchemaBody::Matrix { .. }) {
+                    let shape = matrix_shape_for_extents(schema, &[rows, columns])
+                        .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+                    facts.slot_shapes.insert(output, shape);
+                }
+            }
+            continue;
+        }
+        if let Some(mode) = node.operation.resolved_reduction_mode() {
+            let [source] = inputs.as_slice() else {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            };
+            let input_extents = source_extents(artifact, *source, &facts)?;
+            let [rows, columns] = input_extents.as_ref() else {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            };
+            let extents = match mode {
+                mech_core::ResolvedReductionMode::Columns => [*rows, 1],
+                mech_core::ResolvedReductionMode::Rows => [1, *columns],
+            };
+            let declaration = &artifact.slots()[output.get() as usize];
+            let schema = artifact
+                .schemas()
+                .entry(declaration.schema)
+                .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
+                .schema();
+            let shape = matrix_shape_for_extents(schema, &extents)
+                .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+            facts.slot_shapes.insert(output, shape);
+            continue;
+        }
+        if is_n_choose_k {
+            if class != NodeClass::Activation {
+                continue;
+            }
+            let declaration = &artifact.slots()[output.get() as usize];
+            let schema = artifact
+                .schemas()
+                .entry(declaration.schema)
+                .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
+                .schema();
+            if !matches!(schema.body(), SchemaBody::Matrix { .. }) {
+                continue;
+            }
+            let inputs = node_inputs(artifact, node.node)?;
+            let [values_source, selection_source] = inputs.as_slice() else {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            };
+            let available = match values_source {
+                ArtifactSource::Constant(constant) => {
+                    let value = artifact
+                        .constants()
+                        .get(*constant)
+                        .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+                    match value.data() {
+                        mech_core::ValueData::Matrix(matrix) => matrix.elements().len(),
+                        _ => 1,
+                    }
+                }
+                ArtifactSource::Slot(slot) => {
+                    let declaration = &artifact.slots()[slot.get() as usize];
+                    let schema = artifact
+                        .schemas()
+                        .entry(declaration.schema)
+                        .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?
+                        .schema();
+                    let shape = slot_shape(artifact, *slot, &facts)?;
+                    match schema.body() {
+                        SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => {
+                            let rows =
+                                evaluate_dimension(&dimensions[0], shape.parameter_values())?;
+                            let columns =
+                                evaluate_dimension(&dimensions[1], shape.parameter_values())?;
+                            usize::try_from(rows)
+                                .ok()
+                                .and_then(|rows| {
+                                    usize::try_from(columns)
+                                        .ok()
+                                        .and_then(|columns| rows.checked_mul(columns))
+                                })
+                                .ok_or(ResidentActivationError::RegionSizeOverflow)?
+                        }
+                        _ => 1,
+                    }
+                }
+            };
+            let ArtifactSource::Constant(selection) = selection_source else {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            };
+            let selection = artifact
+                .constants()
+                .get(*selection)
+                .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+            let requested = crate::resident::numeric::canonical_n_choose_k_cardinality(selection)
+                .filter(|requested| *requested != 0 && *requested <= available)
+                .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+            let combinations =
+                crate::resident::numeric::checked_combination_count(available, requested)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            if schema.dimension_parameters().len() == 2 {
+                let shape = schema
+                    .instantiate_shape(
+                        vec![requested as u64, combinations as u64].into_boxed_slice(),
+                    )
+                    .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+                facts.slot_shapes.insert(output, shape);
+            }
+            continue;
+        }
+        let Some(mode) = node.operation.resolved_range_mode() else {
+            continue;
+        };
+        if class != NodeClass::Activation {
+            continue;
+        }
+        let inputs = node_inputs(artifact, node.node)?;
+        let values = inputs
+            .iter()
+            .map(|source| match source {
+                ArtifactSource::Constant(constant) => artifact
+                    .constants()
+                    .get(*constant)
+                    .ok_or(ResidentActivationError::InvalidDependency { node: node.node }),
+                ArtifactSource::Slot(_) => {
+                    Err(ResidentActivationError::InvalidDependency { node: node.node })
+                }
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let (inclusive, incremented) = match mode {
+            ResolvedRangeMode::Exclusive => (false, false),
+            ResolvedRangeMode::ExclusiveIncrement => (false, true),
+            ResolvedRangeMode::Inclusive => (true, false),
+            ResolvedRangeMode::InclusiveIncrement => (true, true),
+        };
+        let count =
+            crate::resident::numeric::canonical_range_cardinality(&values, inclusive, incremented)
+                .filter(|count| *count != 0)
+                .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+        let declaration = &artifact.slots()[output.get() as usize];
+        let schema = artifact
+            .schemas()
+            .entry(declaration.schema)
+            .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
+            .schema();
+        let shape = schema
+            .instantiate_shape(vec![count as u64].into_boxed_slice())
+            .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+        facts.slot_shapes.insert(output, shape);
+    }
+    Ok(facts)
+}
+
 struct LayoutBuild {
     slots: Box<[ResolvedSlot]>,
     constant_regions: Box<[ResidentRegion]>,
@@ -1638,7 +2089,10 @@ fn build_layout(
             SlotRole::Output => ResidentStorageClass::State,
         };
         let shape = slot_shape(artifact, declaration.slot, facts)?;
-        let (kind, resident_shape) = schema_layout(artifact, declaration.schema, &shape)?;
+        let activation_fixed =
+            slot_has_activation_fixed_shape(artifact, declaration.slot, facts, classes);
+        let (kind, resident_shape) =
+            schema_layout(artifact, declaration.schema, &shape, activation_fixed)?;
         let len = resident_shape
             .len()
             .ok_or(ResidentActivationError::RegionSizeOverflow)?;
@@ -1697,6 +2151,16 @@ fn slot_shape(
             .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
     }
+    if let Some(shape) = artifact.slot_shape_hint(slot) {
+        let schema = artifact
+            .schemas()
+            .entry(declaration.schema)
+            .expect("validated slot schema")
+            .schema();
+        return schema
+            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
+    }
     let schema = artifact
         .schemas()
         .entry(declaration.schema)
@@ -1707,20 +2171,75 @@ fn slot_shape(
             .instantiate_shape(Box::new([]))
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
     }
+    // Snapshot-backed aggregate outputs carry their canonical shape inside
+    // the published value. Their arena is one scalar snapshot cell, so a
+    // durable artifact may start turn-varying parameters at their declared
+    // lower bounds without serializing compilation-instance shape hints.
+    let requires_dense_matrix_shape = matches!(
+        schema.body(),
+        SchemaBody::Matrix { element, dimensions }
+            if dimensions.len() == 2 && dense_resident_kind(element).is_some()
+    );
+    if !requires_dense_matrix_shape {
+        return mech_core::shape_for_declared_lower_bounds(schema)
+            .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
+    }
     Err(ResidentActivationError::UnresolvedShape { slot })
+}
+
+fn slot_has_activation_fixed_shape(
+    artifact: &ProgramArtifact,
+    slot: CellSlotId,
+    facts: &ActivationFacts,
+    classes: &[NodeClass],
+) -> bool {
+    if facts.slot_shapes.contains_key(&slot) || artifact.slot_shape_hint(slot).is_some() {
+        return true;
+    }
+    let declaration = &artifact.slots()[slot.get() as usize];
+    // Resident state is seeded once and its validated turn producer is a
+    // read-modify-write of that same slot. The initializer therefore fixes
+    // the arena shape for the resident execution even when the source schema
+    // expresses the dimensions with turn-lifetime parameters.
+    if declaration.role == SlotRole::State && declaration.initializer.is_some() {
+        return true;
+    }
+    match declaration.producer {
+        ProducerReference::NodeOutput { node, .. } => {
+            classes[node.get() as usize] == NodeClass::Activation
+        }
+        ProducerReference::Output {
+            source: ArtifactSource::Slot(source),
+            ..
+        } => slot_has_activation_fixed_shape(artifact, source, facts, classes),
+        _ => false,
+    }
 }
 
 fn value_layout(
     artifact: &ProgramArtifact,
     value: &Value,
 ) -> Result<(ResidentValueKind, ResidentShape), ResidentActivationError> {
-    schema_layout(artifact, value.schema(), value.shape())
+    // A constant's concrete shape is immutable even when its semantic schema
+    // originated from a turn-lifetime dynamic backing.
+    schema_layout(artifact, value.schema(), value.shape(), true)
+}
+
+fn dense_resident_kind(body: &SchemaBody) -> Option<ResidentValueKind> {
+    match body {
+        SchemaBody::Bool => Some(ResidentValueKind::Bool),
+        SchemaBody::Index => Some(ResidentValueKind::Index),
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => Some(ResidentValueKind::F64),
+        SchemaBody::String => Some(ResidentValueKind::String),
+        _ => None,
+    }
 }
 
 fn schema_layout(
     artifact: &ProgramArtifact,
     schema: SchemaId,
     shape: &ShapeInstance,
+    has_activation_shape_fact: bool,
 ) -> Result<(ResidentValueKind, ResidentShape), ResidentActivationError> {
     let schema_entry = artifact.schemas().entry(schema).unwrap();
     if schema_entry
@@ -1728,28 +2247,22 @@ fn schema_layout(
         .dimension_parameters()
         .iter()
         .any(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
+        && !has_activation_shape_fact
     {
         return Err(ResidentActivationError::TurnDimension { schema });
     }
-    let kind = |body: &SchemaBody| match body {
-        SchemaBody::Bool => Some(ResidentValueKind::Bool),
-        SchemaBody::Index => Some(ResidentValueKind::Index),
-        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => Some(ResidentValueKind::F64),
-        SchemaBody::String => Some(ResidentValueKind::String),
-        _ => None,
-    };
     match schema_entry.schema().body() {
         body @ (SchemaBody::Bool
         | SchemaBody::Index
         | SchemaBody::String
         | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)) => {
-            Ok((kind(body).unwrap(), ResidentShape::SCALAR))
+            Ok((dense_resident_kind(body).unwrap(), ResidentShape::SCALAR))
         }
         SchemaBody::Matrix {
             element,
             dimensions,
-        } if dimensions.len() == 2 && kind(element).is_some() => {
-            let kind = kind(element).expect("guarded resident matrix element kind");
+        } if dimensions.len() == 2 && dense_resident_kind(element).is_some() => {
+            let kind = dense_resident_kind(element).expect("guarded resident matrix element kind");
             let rows = evaluate_dimension(&dimensions[0], shape.parameter_values())?;
             let columns = evaluate_dimension(&dimensions[1], shape.parameter_values())?;
             Ok((
@@ -1910,15 +2423,97 @@ fn build_plan(
             .map(|source| source_port_layout(artifact, &layout, *source, static_selectors))
             .collect::<Result<Vec<_>, _>>()?;
         let output_layout = slot_port_layout(output);
+        let canonical_operation = node.operation.canonical_name();
+        let input_descriptors = input_layouts
+            .iter()
+            .map(|layout| {
+                artifact
+                    .schemas()
+                    .get(layout.schema_id)
+                    .cloned()
+                    .ok_or(ResidentActivationError::KernelBind {
+                        node: node.node,
+                        error: ResidentKernelBindError::InvalidParameters,
+                    })
+                    .and_then(|schema| {
+                        mech_core::ResolvedValueDescriptor::from_schema(
+                            schema,
+                            layout.shape_instance.clone(),
+                        )
+                        .map_err(|_| ResidentActivationError::KernelBind {
+                            node: node.node,
+                            error: ResidentKernelBindError::InvalidParameters,
+                        })
+                    })
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_boxed_slice();
+        let output_descriptor = artifact
+            .schemas()
+            .get(output_layout.schema_id)
+            .cloned()
+            .ok_or(ResidentActivationError::KernelBind {
+                node: node.node,
+                error: ResidentKernelBindError::InvalidParameters,
+            })
+            .and_then(|schema| {
+                mech_core::ResolvedValueDescriptor::from_schema(
+                    schema,
+                    output_layout.shape_instance.clone(),
+                )
+                .map_err(|_| ResidentActivationError::KernelBind {
+                    node: node.node,
+                    error: ResidentKernelBindError::InvalidParameters,
+                })
+            })?;
+        let resident_entry =
+            catalog.resident_factory(&node.operation.module_path, &node.operation.operation_name);
+        let resident_operation = resident_entry.map_or_else(
+            || {
+                ResidentOperationKey::new(
+                    node.operation.module_path.clone(),
+                    node.operation.operation_name.clone(),
+                )
+            },
+            |entry| Some(entry.key.clone()),
+        );
+        let resident_operation = resident_operation.ok_or(ResidentActivationError::KernelBind {
+            node: node.node,
+            error: ResidentKernelBindError::InvalidParameters,
+        })?;
+        let semantic_operation = mech_core::ResolvedOperationDescriptor::from_resolved_contract(
+            canonical_operation,
+            artifact
+                .contracts()
+                .get(node.contract)
+                .ok_or(ResidentActivationError::KernelBind {
+                    node: node.node,
+                    error: ResidentKernelBindError::InvalidParameters,
+                })?,
+        )
+        .map_err(|_| ResidentActivationError::KernelBind {
+            node: node.node,
+            error: ResidentKernelBindError::InvalidParameters,
+        })?;
+        let resident_context = ResidentBuildContext {
+            bound_call: BoundCall::artifact_operation(
+                semantic_operation,
+                input_descriptors,
+                vec![output_descriptor].into_boxed_slice(),
+                resident_operation,
+            )
+            .map_err(|_| ResidentActivationError::KernelBind {
+                node: node.node,
+                error: ResidentKernelBindError::InvalidParameters,
+            })?,
+        };
         let bind_request = ResidentKernelBindRequest {
             contract: artifact.contracts().get(node.contract).unwrap(),
             schemas: artifact.schemas(),
             inputs: &input_layouts,
             output: output_layout,
         };
-        let kernel = if let Some(factory) =
-            catalog.resident_factory(&node.operation.module_path, &node.operation.operation_name)
-        {
+        let kernel = if let Some(factory) = resident_entry {
             (factory.factory)(&bind_request)
         } else {
             #[cfg(feature = "dynamic-modules")]
@@ -1938,11 +2533,13 @@ fn build_plan(
         .map_err(|error| ResidentActivationError::KernelBind {
             node: node.node,
             error,
-        })?;
+        })?
+        .with_bound_call(resident_context.bound_call);
         if class == NodeClass::Activation {
             activation_steps.push(ActivatedOnceNode {
                 artifact_node: node.node,
                 sources: input_sources.into_boxed_slice(),
+                base_input: base,
                 storage: output.storage,
                 write: output.region,
                 kernel,
@@ -2273,8 +2870,27 @@ fn execute_activation_graph(
             .iter()
             .map(|source| owned_activation_input(plan, arena, *source))
             .collect::<Result<Vec<_>, _>>()?;
+        if let Some(base_input) = step.base_input {
+            let source =
+                inputs
+                    .get(base_input)
+                    .ok_or(ResidentActivationError::InvalidDependency {
+                        node: step.artifact_node,
+                    })?;
+            copy_owned_activation_value(source, arena.write(step.write)).map_err(|_| {
+                ResidentActivationError::ActivationKernel {
+                    node: step.artifact_node,
+                }
+            })?;
+        }
         step.kernel
-            .execute(&OwnedActivationInputs(&inputs), arena.write(step.write))
+            .execute(
+                &OwnedActivationInputs {
+                    values: &inputs,
+                    omitted: step.base_input,
+                },
+                arena.write(step.write),
+            )
             .map_err(|_| ResidentActivationError::ActivationKernel {
                 node: step.artifact_node,
             })?;
@@ -2385,16 +3001,58 @@ impl OwnedResidentValue {
     }
 }
 
-struct OwnedActivationInputs<'a>(&'a [OwnedResidentValue]);
+struct OwnedActivationInputs<'a> {
+    values: &'a [OwnedResidentValue],
+    omitted: Option<usize>,
+}
 
 impl ResidentKernelInputs for OwnedActivationInputs<'_> {
     fn len(&self) -> usize {
-        self.0.len()
+        self.values.len() - usize::from(self.omitted.is_some())
     }
 
     fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
-        self.0.get(index).map(OwnedResidentValue::as_ref)
+        let index = self
+            .omitted
+            .filter(|omitted| index >= *omitted)
+            .map_or(index, |_| index + 1);
+        self.values.get(index).map(OwnedResidentValue::as_ref)
     }
+}
+
+fn copy_owned_activation_value(
+    source: &OwnedResidentValue,
+    output: ResidentValueMut<'_>,
+) -> Result<(), ()> {
+    match (source, output) {
+        (OwnedResidentValue::Bool(source), ResidentValueMut::Bool(output))
+            if source.len() == output.len() =>
+        {
+            output.copy_from_slice(source);
+        }
+        (OwnedResidentValue::Index(source), ResidentValueMut::Index(output))
+            if source.len() == output.len() =>
+        {
+            output.copy_from_slice(source);
+        }
+        (OwnedResidentValue::F64(source), ResidentValueMut::F64(output))
+            if source.len() == output.len() =>
+        {
+            output.copy_from_slice(source);
+        }
+        (OwnedResidentValue::String(source), ResidentValueMut::String(output))
+            if source.len() == output.len() =>
+        {
+            output.clone_from_slice(source);
+        }
+        (OwnedResidentValue::Snapshot(source), ResidentValueMut::Snapshot(output))
+            if source.len() == output.len() =>
+        {
+            output.clone_from_slice(source);
+        }
+        _ => return Err(()),
+    }
+    Ok(())
 }
 
 fn owned_activation_input(

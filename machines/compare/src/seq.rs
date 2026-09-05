@@ -44,6 +44,12 @@ impl MechFunctionFactory for StrictEqValue {
             out: out.try_ref()?,
         }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(crate::compare_full_write_contract(
+            FunctionValueRepresentation::Bool,
+        ))
+    }
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -65,7 +71,7 @@ impl CanonicalFunctionSpecializer for CompareStrictEqual {
     fn specialize_invocation(
         &self,
         specialization: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if specialization.len() != 2 {
             return Err(MechError::new(
@@ -77,17 +83,14 @@ impl CanonicalFunctionSpecializer for CompareStrictEqual {
             )
             .with_compiler_loc());
         }
-        let output = ValueCell::from_exact(false)?;
-        let invocation = FunctionInvocation::binary(
-            output,
-            specialization.input(0).expect("validated lhs").cell()?.clone(),
-            specialization.input(1).expect("validated rhs").cell()?.clone(),
-        );
-        let implementation = StrictEqValue::new_invocation(invocation.clone())?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            implementation,
-            invocation,
-        )))
+        let lhs = specialization.input(0).expect("validated lhs");
+        let rhs = specialization.input(1).expect("validated rhs");
+        context.bind_resolved_runtime(
+            RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            ExecutionTarget::DirectRuntime,
+            vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
+            &[lhs, rhs],
+        )
     }
 }
 
@@ -149,14 +152,10 @@ mod canonical_strict_equality_tests {
         .solve_result()
         .unwrap();
         let (not_equal, not_equal_cell) = bool_output();
-        StrictNotEqValue::new_invocation(FunctionInvocation::binary(
-            not_equal_cell,
-            lhs,
-            rhs,
-        ))
-        .unwrap()
-        .solve_result()
-        .unwrap();
+        StrictNotEqValue::new_invocation(FunctionInvocation::binary(not_equal_cell, lhs, rhs))
+            .unwrap()
+            .solve_result()
+            .unwrap();
         let results = (*equal.borrow(), *not_equal.borrow());
         results
     }
@@ -166,9 +165,8 @@ mod canonical_strict_equality_tests {
         let scalar = || value_cell(SchemaBody::Index, ValueDataDraft::Index(7));
         assert_eq!(strict_results(scalar(), scalar()), (true, false));
 
-        let tuple_body = SchemaBody::Tuple(
-            vec![SchemaBody::Index, SchemaBody::Bool].into_boxed_slice(),
-        );
+        let tuple_body =
+            SchemaBody::Tuple(vec![SchemaBody::Index, SchemaBody::Bool].into_boxed_slice());
         let tuple_data = ValueDataDraft::Tuple(
             vec![ValueDataDraft::Index(7), ValueDataDraft::Bool(true)].into_boxed_slice(),
         );

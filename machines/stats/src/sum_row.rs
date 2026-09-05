@@ -4,32 +4,28 @@ use num_traits::*;
 // Stats Sum Row -----------------------------------------------------------
 
 macro_rules! sum_row_op {
-    ($arg:expr, $out:expr) => {
-        {
-            for column in 0..($arg).ncols() {
-                let mut sum = T::zero();
-                for row in 0..($arg).nrows() {
-                    sum = checked_sum_add(sum, ($arg)[(row, column)])?;
-                }
-                ($out)[column] = sum;
+    ($arg:expr, $out:expr) => {{
+        for column in 0..($arg).ncols() {
+            let mut sum = T::zero();
+            for row in 0..($arg).nrows() {
+                sum = checked_sum_add(sum, ($arg)[(row, column)])?;
             }
-            Ok::<(), MechError>(())
+            ($out)[column] = sum;
         }
-    };
+        Ok::<(), MechError>(())
+    }};
 }
 
 #[cfg(all(feature = "vectord", feature = "matrixd", not(feature = "matrix1")))]
 macro_rules! sum_row_op2 {
-    ($arg:expr, $out:expr) => {
-        {
-            let mut sum = T::zero();
-            for value in ($arg).iter().copied() {
-                sum = checked_sum_add(sum, value)?;
-            }
-            ($out)[(0, 0)] = sum;
-            Ok::<(), MechError>(())
+    ($arg:expr, $out:expr) => {{
+        let mut sum = T::zero();
+        for value in ($arg).iter().copied() {
+            sum = checked_sum_add(sum, value)?;
         }
-    };
+        ($out)[(0, 0)] = sum;
+        Ok::<(), MechError>(())
+    }};
 }
 
 #[cfg(all(feature = "matrix1", feature = "matrix1"))]
@@ -97,9 +93,10 @@ impl CanonicalFunctionSpecializer for StatsSumRow {
             )
             .with_compiler_loc()
         })?;
-        context.bind_runtime_factory_derived_output(
-            "StatsSumRow",
-            Some((1, shape.cols)),
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![vec![1_u64, shape.cols as u64].into_boxed_slice()].into_boxed_slice(),
             &[input],
         )
     }

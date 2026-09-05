@@ -8,9 +8,9 @@ use crate::{
     CardinalitySpec, DimensionExpr, FloatWidth, FunctionMatrixElement,
     FunctionMatrixRepresentation, FunctionMatrixStoragePattern, FunctionRuntimeType,
     FunctionValueRepresentation, IntegerWidth, MResult, MechError, MechErrorKind, Ref,
-    ResolvedType, SchemaBody, SchemaId, SchemaKey, SchemaTable, ShapeInstance, SnapshotValueError,
-    TypeConstraintFailure, TypeResolutionError, Value, ValueData, ValueDataDraft, ValueDraft,
-    exact_type_equal,
+    ResolvedType, Schema, SchemaBody, SchemaId, SchemaKey, SchemaTable, SchemaTableBuilder,
+    ShapeInstance, SnapshotValueError, TypeConstraintFailure, TypeResolutionError, Value,
+    ValueData, ValueDataDraft, ValueDraft,
 };
 use core::{any::Any, any::type_name, cell, fmt};
 
@@ -21,9 +21,9 @@ use crate::snapshot::SnapshotValidationContext;
 #[cfg(all(feature = "no_std", feature = "string"))]
 use alloc::string::ToString;
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, collections::BTreeSet, rc::Rc, string::String, vec::Vec};
+use alloc::{boxed::Box, rc::Rc, string::String, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, collections::BTreeSet, rc::Rc, string::String, vec::Vec};
+use std::{boxed::Box, rc::Rc, string::String, vec::Vec};
 
 /// Stable logical identity of a canonical mutable cell.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -208,6 +208,44 @@ pub struct ValueCell {
 }
 
 impl ValueCell {
+    pub fn resolved_descriptor(&self) -> MResult<crate::ResolvedValueDescriptor> {
+        let schemas = self.schema_table();
+        let schema = schemas
+            .find_by_key(self.schema_key())
+            .and_then(|id| schemas.get(id))
+            .cloned()
+            .ok_or_else(|| {
+                MechError::from(TypeResolutionError::incompatible(
+                    "value cell descriptor",
+                    TypeConstraintFailure::InvalidScheme {
+                        reason: "the cell schema is absent from its canonical schema table".into(),
+                    },
+                ))
+            })?;
+        let shape = self
+            .binding
+            .shape
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
+            .clone();
+        crate::ResolvedValueDescriptor::from_schema(schema, shape).map_err(MechError::from)
+    }
+
+    pub fn validate_descriptor(&self, expected: &crate::ResolvedValueDescriptor) -> MResult<()> {
+        let actual = self.resolved_descriptor()?;
+        if actual != *expected {
+            return Err(MechError::new(
+                ExternalCellDescriptorMismatch {
+                    expected: expected.resolved_type().semantic_name(),
+                    actual: actual.resolved_type().semantic_name(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        self.validate_storage_contract()
+    }
+
     /// Resolves this cell through its own canonical schema and current shape.
     /// The pure type system never imports physical cell or storage types.
     pub fn resolved_type(&self) -> MResult<ResolvedType> {
@@ -310,7 +348,7 @@ impl ValueCell {
     /// authority for storage representation while the operation supplies the
     /// resolved logical matrix dimensions. No erased universal value or
     /// mutable universal handle is involved in output construction.
-    pub fn default_for_representation(
+    pub(crate) fn allocate_backing_for_representation(
         representation: FunctionValueRepresentation,
         _matrix_dimensions: Option<(usize, usize)>,
     ) -> MResult<Self> {
@@ -423,67 +461,98 @@ impl ValueCell {
         .with_compiler_loc())
     }
 
-    /// Rebinds a newly constructed runtime output to the semantic schema
-    /// selected before physical factory binding. Exact typed matrix backing is
-    /// retained; canonical aggregate backing is rebuilt in the new schema.
-    #[doc(hidden)]
-    pub fn with_resolved_output_type(self, resolved: &ResolvedType) -> MResult<Self> {
-        if exact_type_equal(resolved, &self.resolved_type()?) {
-            return Ok(self);
+    #[cfg(all(test, feature = "f64", feature = "matrixd"))]
+    fn test_backing_for_representation(
+        representation: FunctionValueRepresentation,
+        matrix_dimensions: Option<(usize, usize)>,
+    ) -> MResult<Self> {
+        Self::allocate_backing_for_representation(representation, matrix_dimensions)
+    }
+
+    pub fn allocate_for_descriptor(
+        descriptor: &crate::ResolvedValueDescriptor,
+        representation: FunctionValueRepresentation,
+    ) -> MResult<Self> {
+        let capabilities = crate::runtime_storage::actual_backing_capabilities(representation);
+        validate_storage_compatibility(descriptor.schema(), descriptor.shape(), &capabilities)?;
+        if capabilities.topology == crate::StorageTopology::CanonicalValue {
+            let data = initial_data_for_descriptor(descriptor)?;
+            return Self::from_resolved_descriptor_data(descriptor, data);
         }
-        let template = self
-            .binding
-            .schemas
-            .get(self.binding.schema)
-            .expect("value-cell schema remains present")
-            .body();
-        let draft = schema_draft_for_resolved_type(resolved, template)?;
-        let data = self
-            .snapshot()?
-            .canonical_data_draft()
-            .map_err(snapshot_failure)?;
-        let current_extents = self.current_top_level_extents()?;
-        let (schema, shape, schemas) = merged_resolved_output_schema(
-            draft,
-            &data,
-            &current_extents,
-            core::slice::from_ref(&self),
-        )?;
-        let rebound = if matches!(
-            self.representation(),
-            FunctionValueRepresentation::Matrix { .. }
-        ) {
-            Self {
-                binding: CellBinding {
-                    identity: self.binding.identity,
-                    schema,
-                    schema_key: schemas
-                        .entry(schema)
-                        .expect("resolved output schema was inserted")
-                        .key(),
-                    shape: Rc::new(cell::RefCell::new(shape)),
-                    schemas,
-                    storage: self.binding.storage,
-                    compiler_children: self.binding.compiler_children,
-                },
-            }
+        let extents = descriptor.current_extents().map_err(MechError::from)?;
+        let dimensions = if matches!(representation, FunctionValueRepresentation::Matrix { .. }) {
+            let [rows, columns] = extents.as_ref() else {
+                return Err(MechError::new(
+                    ValueCellOutputConstructionUnsupported {
+                        representation,
+                        reason: format!(
+                            "matrix output descriptor has {} current extents",
+                            extents.len()
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            Some((
+                usize::try_from(*rows).map_err(|_| {
+                    MechError::new(
+                        ValueCellOutputConstructionUnsupported {
+                            representation,
+                            reason: format!("row extent {rows} exceeds the host index range"),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+                usize::try_from(*columns).map_err(|_| {
+                    MechError::new(
+                        ValueCellOutputConstructionUnsupported {
+                            representation,
+                            reason: format!("column extent {columns} exceeds the host index range"),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+            ))
         } else {
-            let value = finalize_draft(schema, &shape, schemas.as_ref(), data)?;
-            Self::from_runtime_value(value, schemas)?
+            None
         };
-        rebound.snapshot()?;
-        let actual = rebound.resolved_type()?;
-        if exact_type_equal(resolved, &actual) {
-            Ok(rebound)
-        } else {
-            Err(MechError::from(TypeResolutionError::incompatible(
-                "resolved runtime output",
-                TypeConstraintFailure::OutputTypeMismatch {
-                    expected: resolved.semantic_name(),
-                    actual: actual.semantic_name(),
+        let allocated = Self::allocate_backing_for_representation(representation, dimensions)?;
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(descriptor.schema().clone())
+            .map_err(MechError::from)?;
+        let build = builder.finish().map_err(MechError::from)?;
+        let schema = build.resolve(handle).map_err(MechError::from)?;
+        let CellBinding {
+            identity, storage, ..
+        } = allocated.binding;
+        let cell = Self {
+            binding: CellBinding {
+                identity,
+                schema,
+                schema_key: descriptor.schema().key(),
+                shape: Rc::new(cell::RefCell::new(descriptor.shape().clone())),
+                schemas: Rc::new(build.table),
+                storage,
+                compiler_children: None,
+            },
+        };
+        cell.validate_storage_contract()?;
+        cell.snapshot()?;
+        if cell.resolved_descriptor()? != *descriptor {
+            return Err(MechError::new(
+                ExternalCellDescriptorMismatch {
+                    expected: descriptor.resolved_type().semantic_name(),
+                    actual: cell.resolved_type()?.semantic_name(),
                 },
-            )))
+                None,
+            )
+            .with_compiler_loc());
         }
+        Ok(cell)
     }
 
     pub fn from_ref<T>(
@@ -513,16 +582,17 @@ impl ValueCell {
                 compiler_children: None,
             },
         };
+        cell.validate_storage_contract()?;
         cell.snapshot()?;
         Ok(cell)
     }
 
     pub fn from_value(value: Value, schemas: Rc<SchemaTable>) -> MResult<Self> {
         let value = rebind_value(value, schemas.as_ref())?;
-        Ok(Self::from_bound_value(value, schemas))
+        Self::from_bound_value(value, schemas)
     }
 
-    fn from_bound_value(value: Value, schemas: Rc<SchemaTable>) -> Self {
+    fn from_bound_value(value: Value, schemas: Rc<SchemaTable>) -> MResult<Self> {
         let schema = value.schema();
         let schema_key = value.schema_key();
         let shape = value.shape().clone();
@@ -533,7 +603,7 @@ impl ValueCell {
         );
         let reference = Ref::new(value);
         let identity = reference.reactive_cell_id();
-        Self {
+        let cell = Self {
             binding: CellBinding {
                 identity,
                 schema,
@@ -543,7 +613,10 @@ impl ValueCell {
                 storage: Rc::new(ExactCellStorage { reference }),
                 compiler_children: None,
             },
-        }
+        };
+        cell.validate_storage_contract()?;
+        cell.snapshot()?;
+        Ok(cell)
     }
 
     /// Creates a mutable cell from a detached canonical value and the schema
@@ -642,13 +715,32 @@ impl ValueCell {
         {
             return Ok(cell);
         }
-        Ok(Self::from_bound_value(value, schemas))
+        Self::from_bound_value(value, schemas)
     }
 
     /// Constructs a standalone canonical cell from a closed schema body and
     /// matching canonical data draft.
     pub fn from_schema_data(body: SchemaBody, data: ValueDataDraft) -> MResult<Self> {
         Self::from_inferred_value_data(body, data)
+    }
+
+    /// Constructs canonical storage from an already validated semantic
+    /// descriptor. The descriptor is checked again after finalization so
+    /// callers cannot attach resolved type metadata to incompatible data.
+    pub fn from_resolved_descriptor_data(
+        descriptor: &crate::ResolvedValueDescriptor,
+        data: ValueDataDraft,
+    ) -> MResult<Self> {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(descriptor.schema().clone())
+            .map_err(MechError::from)?;
+        let build = builder.finish().map_err(MechError::from)?;
+        let schema = build.resolve(handle).map_err(MechError::from)?;
+        let value = finalize_draft(schema, descriptor.shape(), &build.table, data)?;
+        let cell = Self::from_runtime_value(value, Rc::new(build.table))?;
+        cell.validate_descriptor(descriptor)?;
+        Ok(cell)
     }
 
     /// Constructs a detached heterogeneous tuple from canonical child cells.
@@ -1117,7 +1209,7 @@ impl ValueCell {
             }
             _ => {}
         }
-        Ok(Self::from_bound_value(value, schemas))
+        Self::from_bound_value(value, schemas)
     }
 
     pub(crate) fn from_inferred_ref<T>(
@@ -1127,25 +1219,31 @@ impl ValueCell {
     where
         T: CanonicalCellBacking,
     {
-        if let (
-            FunctionValueRepresentation::Matrix {
-                element,
-                storage:
-                    FunctionMatrixStoragePattern::Exact(
-                        FunctionMatrixRepresentation::RowVectorD
-                        | FunctionMatrixRepresentation::VectorD
-                        | FunctionMatrixRepresentation::MatrixD,
-                    ),
-            },
-            Some((rows, columns)),
-        ) = (T::REPRESENTATION, matrix_extents)
+        if let (FunctionValueRepresentation::Matrix { element, storage }, Some((rows, columns))) =
+            (T::REPRESENTATION, matrix_extents)
+            && let FunctionMatrixStoragePattern::Exact(storage) = storage
+            && matches!(
+                storage,
+                FunctionMatrixRepresentation::RowVectorD
+                    | FunctionMatrixRepresentation::VectorD
+                    | FunctionMatrixRepresentation::MatrixD
+            )
         {
             let element = schema_body_for_matrix_element(element)
                 .ok_or_else(|| backing_mismatch::<T>(T::REPRESENTATION))?;
-            let (schema, shape, schemas) = dynamic_matrix_schema(
-                element,
-                vec![rows as u64, columns as u64].into_boxed_slice(),
-            )?;
+            let (schema, shape, schemas) = match storage {
+                FunctionMatrixRepresentation::RowVectorD => {
+                    dynamic_row_vector_schema(element, rows as u64, columns as u64)?
+                }
+                FunctionMatrixRepresentation::VectorD => {
+                    dynamic_column_vector_schema(element, rows as u64, columns as u64)?
+                }
+                FunctionMatrixRepresentation::MatrixD => dynamic_matrix_schema(
+                    element,
+                    vec![rows as u64, columns as u64].into_boxed_slice(),
+                )?,
+                _ => unreachable!("dynamic matrix representations were matched above"),
+            };
             return Self::from_ref(reference, schema, shape, schemas);
         }
         let body = schema_body_for_representation(T::REPRESENTATION, matrix_extents)
@@ -1224,7 +1322,7 @@ impl ValueCell {
         self.binding.storage.capabilities()
     }
 
-    /// Performs the opt-in shadow check without changing construction or execution.
+    /// Rechecks the mandatory schema/storage compatibility invariant.
     pub fn validate_storage_contract(&self) -> MResult<()> {
         let schema = self
             .binding
@@ -1241,22 +1339,7 @@ impl ValueCell {
             .try_borrow()
             .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
             .clone();
-        crate::check_schema_storage_compatibility(
-            schema,
-            &shape,
-            &self.binding.storage.capabilities(),
-        )
-        .map_err(|error| match error {
-            crate::SchemaStorageCompatibilityError::Semantic(error) => error.into(),
-            crate::SchemaStorageCompatibilityError::Storage(reason) => MechError::new(
-                ValueCellStorageContractViolation {
-                    schema: self.binding.schema_key,
-                    reason,
-                },
-                None,
-            )
-            .with_compiler_loc(),
-        })
+        validate_storage_compatibility(schema, &shape, &self.binding.storage.capabilities())
     }
 
     /// Describes whether this cell's schema permits its resolved extents to
@@ -1289,7 +1372,7 @@ impl ValueCell {
             .try_borrow()
             .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
             .clone();
-        Ok(Self {
+        let cell = Self {
             binding: CellBinding {
                 identity: detached.identity,
                 schema: self.binding.schema,
@@ -1299,7 +1382,10 @@ impl ValueCell {
                 storage: detached.storage,
                 compiler_children: None,
             },
-        })
+        };
+        cell.validate_storage_contract()?;
+        cell.snapshot()?;
+        Ok(cell)
     }
 
     pub fn replace(&self, value: &Value) -> MResult<()> {
@@ -1564,7 +1650,13 @@ impl ValueCell {
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
-        let shape = output_shape_for_data(schema, &data, &[])?;
+        let current_shape = self
+            .binding
+            .shape
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
+            .clone();
+        let shape = output_shape_for_data(schema, &data, &[], Some(&current_shape))?;
         ValueDraft {
             schema: self.binding.schema,
             shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
@@ -1661,6 +1753,176 @@ impl ValueCell {
     }
 }
 
+fn initial_data_for_descriptor(
+    descriptor: &crate::ResolvedValueDescriptor,
+) -> MResult<ValueDataDraft> {
+    initial_data_for_schema(descriptor.schema().body(), descriptor.shape())
+}
+
+fn initial_data_for_schema(schema: &SchemaBody, shape: &ShapeInstance) -> MResult<ValueDataDraft> {
+    use crate::snapshot::{Complex32Bits, Complex64Bits, F32Bits, F64Bits};
+    Ok(match schema {
+        SchemaBody::Dynamic => ValueDataDraft::Dynamic(None),
+        SchemaBody::Bool => ValueDataDraft::Bool(false),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W8) => ValueDataDraft::U8(0),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W16) => ValueDataDraft::U16(0),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W32) => ValueDataDraft::U32(0),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W64) => ValueDataDraft::U64(0),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W128) => ValueDataDraft::U128(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W8) => ValueDataDraft::I8(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W16) => ValueDataDraft::I16(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W32) => ValueDataDraft::I32(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W64) => ValueDataDraft::I64(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W128) => ValueDataDraft::I128(0),
+        SchemaBody::FloatingPoint(crate::FloatWidth::W32) => {
+            ValueDataDraft::F32(F32Bits::from_f32(0.0))
+        }
+        SchemaBody::FloatingPoint(crate::FloatWidth::W64) => {
+            ValueDataDraft::F64(F64Bits::from_f64(0.0))
+        }
+        SchemaBody::Complex(crate::FloatWidth::W32) => ValueDataDraft::Complex32(
+            Complex32Bits::new(F32Bits::from_f32(0.0), F32Bits::from_f32(0.0)),
+        ),
+        SchemaBody::Complex(crate::FloatWidth::W64) => ValueDataDraft::Complex64(
+            Complex64Bits::new(F64Bits::from_f64(0.0), F64Bits::from_f64(0.0)),
+        ),
+        SchemaBody::Rational64 => ValueDataDraft::Rational64 {
+            numerator: 0,
+            denominator: 1,
+        },
+        SchemaBody::String => ValueDataDraft::String(String::new()),
+        SchemaBody::Id => ValueDataDraft::Id(0),
+        SchemaBody::Index => ValueDataDraft::Index(1),
+        SchemaBody::Atom(_) => ValueDataDraft::Atom,
+        SchemaBody::Enum { variants, .. } => {
+            let variant = variants.first().ok_or_else(|| {
+                MechError::new(
+                    ValueCellOutputConstructionUnsupported {
+                        representation: FunctionValueRepresentation::Enum,
+                        reason: "an enum output has no variant".into(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            ValueDataDraft::Enum(crate::snapshot::EnumDraft {
+                ordinal: 0,
+                payload: variant
+                    .payload
+                    .as_ref()
+                    .map(|payload| initial_data_for_schema(payload, shape).map(Box::new))
+                    .transpose()?,
+            })
+        }
+        SchemaBody::Option(_) => ValueDataDraft::Option(crate::snapshot::OptionDraft {
+            present: false,
+            value: None,
+        }),
+        SchemaBody::Tuple(elements) => ValueDataDraft::Tuple(
+            elements
+                .iter()
+                .map(|element| initial_data_for_schema(element, shape))
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+        ),
+        SchemaBody::Record(fields) => ValueDataDraft::Record(
+            fields
+                .iter()
+                .map(|field| {
+                    Ok(crate::snapshot::NamedValueDraft {
+                        name: field.name.clone(),
+                        value: initial_data_for_schema(&field.schema, shape)?,
+                    })
+                })
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+        ),
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => {
+            let element_count = dimensions.iter().try_fold(1_u64, |count, dimension| {
+                count
+                    .checked_mul(
+                        shape
+                            .resolve_dimension(dimension)
+                            .map_err(MechError::from)?,
+                    )
+                    .ok_or_else(|| MechError::from(crate::SemanticModelError::DimensionOverflowV1))
+            })?;
+            let element_count = usize::try_from(element_count)
+                .map_err(|_| MechError::from(crate::SemanticModelError::DimensionOverflowV1))?;
+            let initial = initial_data_for_schema(element, shape)?;
+            ValueDataDraft::Matrix(vec![initial; element_count].into_boxed_slice())
+        }
+        SchemaBody::Table { columns, rows } => {
+            let row_count = exact_or_empty_extent(rows, shape)?;
+            ValueDataDraft::Table(
+                columns
+                    .iter()
+                    .map(|column| {
+                        Ok(crate::snapshot::TableColumnDraft {
+                            name: column.name.clone(),
+                            values: vec![
+                                initial_data_for_schema(&column.schema, shape)?;
+                                row_count
+                            ]
+                            .into_boxed_slice(),
+                        })
+                    })
+                    .collect::<MResult<Vec<_>>>()?
+                    .into_boxed_slice(),
+            )
+        }
+        SchemaBody::Set { cardinality, .. } => {
+            require_empty_collection_extent(cardinality, shape, "set")?;
+            ValueDataDraft::Set(Box::new([]))
+        }
+        SchemaBody::Map { cardinality, .. } => {
+            require_empty_collection_extent(cardinality, shape, "map")?;
+            ValueDataDraft::Map(Box::new([]))
+        }
+        SchemaBody::ReifiedType => ValueDataDraft::Type(crate::snapshot::ReifiedTypeDraft::Kind {
+            kind: crate::KindExpr::Hole,
+            dimension_parameters: Box::new([]),
+        }),
+    })
+}
+
+fn exact_or_empty_extent(extent: &CardinalitySpec, shape: &ShapeInstance) -> MResult<usize> {
+    match extent {
+        CardinalitySpec::Exact(expression) => usize::try_from(
+            shape
+                .resolve_dimension(expression)
+                .map_err(MechError::from)?,
+        )
+        .map_err(|_| MechError::from(crate::SemanticModelError::DimensionOverflowV1)),
+        CardinalitySpec::Dynamic { .. } => Ok(0),
+    }
+}
+
+fn require_empty_collection_extent(
+    extent: &CardinalitySpec,
+    shape: &ShapeInstance,
+    family: &'static str,
+) -> MResult<()> {
+    let count = exact_or_empty_extent(extent, shape)?;
+    if count == 0 {
+        Ok(())
+    } else {
+        Err(MechError::new(
+            ValueCellOutputConstructionUnsupported {
+                representation: FunctionValueRepresentation::AnyValue,
+                reason: format!(
+                    "an exact {family} output with {count} entries requires operation-provided data"
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
 fn canonical_cell_draft(cell: &ValueCell) -> MResult<ValueDataDraft> {
     cell.snapshot()?
         .canonical_data_draft()
@@ -1721,409 +1983,37 @@ fn merged_schema<'a>(
     Ok((schema, shape, Rc::new(build.table)))
 }
 
-fn schema_draft_for_resolved_type(
-    resolved: &ResolvedType,
-    template: &SchemaBody,
-) -> MResult<crate::SchemaDraft> {
-    let mut dynamic_parameters = BTreeSet::new();
-    collect_dynamic_extent_parameters(resolved.kind(), template, &mut dynamic_parameters)?;
-    let mut old_to_new = vec![None; resolved.dimension_parameters().len()];
-    let mut next = 0_u32;
-    for old in 0..resolved.dimension_parameters().len() {
-        if !dynamic_parameters.contains(&crate::DimensionParameterId::new(old as u32)) {
-            old_to_new[old] = Some(crate::DimensionParameterId::new(next));
-            next = next.checked_add(1).ok_or_else(|| {
-                MechError::from(crate::SemanticModelError::IdentityExhausted {
-                    identity: crate::SemanticIdentityKind::DimensionParameterId,
-                })
-            })?;
-        }
-    }
-    let declarations = resolved
-        .dimension_parameters()
-        .iter()
-        .filter(|declaration| !dynamic_parameters.contains(&declaration.id))
-        .map(|declaration| {
-            let id = old_to_new[declaration.id.get() as usize].ok_or_else(|| {
-                MechError::from(crate::SemanticModelError::UnknownDimensionParameterV1 {
-                    id: declaration.id,
-                })
-            })?;
-            Ok(crate::DimensionParameterDeclaration {
-                id,
-                origin: declaration.origin,
-                lifetime: declaration.lifetime,
-                lower_bound: crate::rewrite_dimension_references(
-                    &declaration.lower_bound,
-                    &old_to_new,
-                )?,
-                upper_bound: declaration
-                    .upper_bound
-                    .as_ref()
-                    .map(|bound| crate::rewrite_dimension_references(bound, &old_to_new))
-                    .transpose()?,
-            })
-        })
-        .collect::<MResult<Vec<_>>>()?
-        .into_boxed_slice();
-    let body = resolved_schema_body(
-        resolved.kind(),
-        template,
-        resolved.dimension_parameters(),
-        &old_to_new,
-    )?;
-    Ok(crate::SchemaDraft {
-        dimension_parameters: declarations,
-        body,
-    })
-}
-
-fn collect_dynamic_extent_parameters(
-    kind: &crate::KindExpr,
-    template: &SchemaBody,
-    parameters: &mut BTreeSet<crate::DimensionParameterId>,
-) -> MResult<()> {
-    match (kind, template) {
-        (
-            crate::KindExpr::Matrix { element, .. },
-            SchemaBody::Matrix {
-                element: template, ..
-            },
-        )
-        | (crate::KindExpr::Option(element), SchemaBody::Option(template)) => {
-            collect_dynamic_extent_parameters(element, template, parameters)?;
-        }
-        (crate::KindExpr::Tuple(elements), SchemaBody::Tuple(templates)) => {
-            if elements.len() != templates.len() {
-                return Err(resolved_output_structure_error(kind, template));
-            }
-            for (element, template) in elements.iter().zip(templates) {
-                collect_dynamic_extent_parameters(element, template, parameters)?;
-            }
-        }
-        (crate::KindExpr::Record(fields), SchemaBody::Record(templates)) => {
-            if fields.len() != templates.len() {
-                return Err(resolved_output_structure_error(kind, template));
-            }
-            for (field, template) in fields.iter().zip(templates) {
-                if field.name != template.name {
-                    return Err(resolved_output_structure_error(kind, &template.schema));
-                }
-                collect_dynamic_extent_parameters(&field.kind, &template.schema, parameters)?;
-            }
-        }
-        (
-            crate::KindExpr::Table {
-                columns: fields,
-                rows,
-            },
-            SchemaBody::Table {
-                columns: templates,
-                rows: extent,
-            },
-        ) => {
-            if fields.len() != templates.len() {
-                return Err(resolved_output_structure_error(kind, template));
-            }
-            for (field, template) in fields.iter().zip(templates) {
-                if field.name != template.name {
-                    return Err(resolved_output_structure_error(kind, &template.schema));
-                }
-                collect_dynamic_extent_parameters(&field.kind, &template.schema, parameters)?;
-            }
-            collect_dynamic_extent_parameter(rows, extent, parameters)?;
-        }
-        (
-            crate::KindExpr::Set {
-                element,
-                cardinality,
-            },
-            SchemaBody::Set {
-                element: template,
-                cardinality: extent,
-            },
-        ) => {
-            collect_dynamic_extent_parameters(element, template, parameters)?;
-            collect_dynamic_extent_parameter(cardinality, extent, parameters)?;
-        }
-        (
-            crate::KindExpr::Map {
-                key,
-                value,
-                cardinality,
-            },
-            SchemaBody::Map {
-                key: key_template,
-                value: value_template,
-                cardinality: extent,
-            },
-        ) => {
-            collect_dynamic_extent_parameters(key, key_template, parameters)?;
-            collect_dynamic_extent_parameters(value, value_template, parameters)?;
-            collect_dynamic_extent_parameter(cardinality, extent, parameters)?;
-        }
-        _ => {}
-    }
-    Ok(())
-}
-
-fn collect_dynamic_extent_parameter(
-    dimension: &DimensionExpr,
-    extent: &CardinalitySpec,
-    parameters: &mut BTreeSet<crate::DimensionParameterId>,
-) -> MResult<()> {
-    if matches!(extent, CardinalitySpec::Dynamic { .. }) {
-        let DimensionExpr::Parameter(parameter) = dimension else {
-            return Err(MechError::from(TypeResolutionError::incompatible(
-                "resolved runtime output",
-                TypeConstraintFailure::InvalidDynamicFixedExtent {
-                    expected: "one dynamic extent parameter".into(),
-                    actual: format!("{dimension:?}"),
-                },
-            )));
-        };
-        parameters.insert(*parameter);
-    }
-    Ok(())
-}
-
-fn resolved_schema_body(
-    kind: &crate::KindExpr,
-    template: &SchemaBody,
-    declarations: &[crate::DimensionParameterDeclaration],
-    old_to_new: &[Option<crate::DimensionParameterId>],
-) -> MResult<SchemaBody> {
-    let body = match (kind, template) {
-        (
-            crate::KindExpr::Matrix {
-                element,
-                dimensions,
-            },
-            SchemaBody::Matrix {
-                element: template, ..
-            },
-        ) => SchemaBody::Matrix {
-            element: Box::new(resolved_schema_body(
-                element,
-                template,
-                declarations,
-                old_to_new,
-            )?),
-            dimensions: dimensions
-                .iter()
-                .map(|dimension| crate::rewrite_dimension_references(dimension, old_to_new))
-                .collect::<Result<Vec<_>, _>>()?
-                .into_boxed_slice(),
-        },
-        (crate::KindExpr::Option(element), SchemaBody::Option(template)) => {
-            SchemaBody::Option(Box::new(resolved_schema_body(
-                element,
-                template,
-                declarations,
-                old_to_new,
-            )?))
-        }
-        (crate::KindExpr::Tuple(elements), SchemaBody::Tuple(templates))
-            if elements.len() == templates.len() =>
-        {
-            SchemaBody::Tuple(
-                elements
-                    .iter()
-                    .zip(templates)
-                    .map(|(element, template)| {
-                        resolved_schema_body(element, template, declarations, old_to_new)
-                    })
-                    .collect::<MResult<Vec<_>>>()?
-                    .into_boxed_slice(),
-            )
-        }
-        (crate::KindExpr::Record(fields), SchemaBody::Record(templates))
-            if fields.len() == templates.len() =>
-        {
-            SchemaBody::Record(resolved_fields(
-                fields,
-                templates,
-                declarations,
-                old_to_new,
-            )?)
-        }
-        (
-            crate::KindExpr::Table { columns, rows },
-            SchemaBody::Table {
-                columns: templates,
-                rows: extent,
-            },
-        ) if columns.len() == templates.len() => SchemaBody::Table {
-            columns: resolved_fields(columns, templates, declarations, old_to_new)?,
-            rows: resolved_extent(rows, extent, declarations, old_to_new)?,
-        },
-        (
-            crate::KindExpr::Set {
-                element,
-                cardinality,
-            },
-            SchemaBody::Set {
-                element: template,
-                cardinality: extent,
-            },
-        ) => SchemaBody::Set {
-            element: Box::new(resolved_schema_body(
-                element,
-                template,
-                declarations,
-                old_to_new,
-            )?),
-            cardinality: resolved_extent(cardinality, extent, declarations, old_to_new)?,
-        },
-        (
-            crate::KindExpr::Map {
-                key,
-                value,
-                cardinality,
-            },
-            SchemaBody::Map {
-                key: key_template,
-                value: value_template,
-                cardinality: extent,
-            },
-        ) => SchemaBody::Map {
-            key: Box::new(resolved_schema_body(
-                key,
-                key_template,
-                declarations,
-                old_to_new,
-            )?),
-            value: Box::new(resolved_schema_body(
-                value,
-                value_template,
-                declarations,
-                old_to_new,
-            )?),
-            cardinality: resolved_extent(cardinality, extent, declarations, old_to_new)?,
-        },
-        (crate::KindExpr::TypeOf(_), SchemaBody::ReifiedType) => SchemaBody::ReifiedType,
-        _ => template.clone(),
-    };
-    Ok(body)
-}
-
-fn resolved_fields(
-    fields: &[crate::KindField],
-    templates: &[crate::SchemaField],
-    declarations: &[crate::DimensionParameterDeclaration],
-    old_to_new: &[Option<crate::DimensionParameterId>],
-) -> MResult<Box<[crate::SchemaField]>> {
-    fields
-        .iter()
-        .zip(templates)
-        .map(|(field, template)| {
-            if field.name != template.name {
-                return Err(resolved_output_structure_error(
-                    &field.kind,
-                    &template.schema,
-                ));
-            }
-            Ok(crate::SchemaField {
-                name: field.name.clone(),
-                schema: resolved_schema_body(
-                    &field.kind,
-                    &template.schema,
-                    declarations,
-                    old_to_new,
-                )?,
-            })
-        })
-        .collect::<MResult<Vec<_>>>()
-        .map(Vec::into_boxed_slice)
-}
-
-fn resolved_extent(
-    dimension: &DimensionExpr,
-    template: &CardinalitySpec,
-    declarations: &[crate::DimensionParameterDeclaration],
-    old_to_new: &[Option<crate::DimensionParameterId>],
-) -> MResult<CardinalitySpec> {
-    match template {
-        CardinalitySpec::Exact(_) => Ok(CardinalitySpec::Exact(
-            crate::rewrite_dimension_references(dimension, old_to_new)?,
-        )),
-        CardinalitySpec::Dynamic { .. } => {
-            let DimensionExpr::Parameter(parameter) = dimension else {
-                return Err(MechError::from(TypeResolutionError::incompatible(
-                    "resolved runtime output",
-                    TypeConstraintFailure::InvalidDynamicFixedExtent {
-                        expected: "one dynamic extent parameter".into(),
-                        actual: format!("{dimension:?}"),
-                    },
-                )));
-            };
-            let declaration = declarations.get(parameter.get() as usize).ok_or_else(|| {
-                MechError::from(crate::SemanticModelError::UnknownDimensionParameterV1 {
-                    id: *parameter,
-                })
-            })?;
-            Ok(CardinalitySpec::Dynamic {
-                upper_bound: declaration
-                    .upper_bound
-                    .as_ref()
-                    .map(|bound| crate::rewrite_dimension_references(bound, old_to_new))
-                    .transpose()?,
-            })
-        }
-    }
-}
-
-fn resolved_output_structure_error(kind: &crate::KindExpr, template: &SchemaBody) -> MechError {
-    MechError::from(TypeResolutionError::incompatible(
-        "resolved runtime output",
-        TypeConstraintFailure::StructuralMismatch {
-            expected: crate::semantic_kind_name(kind),
-            actual: format!("{template:?}"),
-        },
-    ))
-}
-
-fn merged_resolved_output_schema(
-    draft: crate::SchemaDraft,
-    data: &ValueDataDraft,
-    current_extents: &[u64],
-    cells: &[ValueCell],
-) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
-    let schema = draft
-        .finalize()
-        .map_err(|error| snapshot_failure(error.into()))?;
-    let shape = output_shape_for_data(&schema, data, current_extents)?;
-    let mut builder = crate::SchemaTableBuilder::new();
-    let handle = builder.insert(schema)?;
-    for cell in cells {
-        for entry in cell.binding.schemas.entries() {
-            builder.insert(entry.schema().clone())?;
-        }
-    }
-    let build = builder.finish()?;
-    let schema = build.resolve(handle)?;
-    Ok((schema, shape, Rc::new(build.table)))
-}
-
+#[cfg(feature = "functions")]
 fn output_shape_for_data(
     schema: &crate::Schema,
     data: &ValueDataDraft,
     current_extents: &[u64],
+    seed: Option<&ShapeInstance>,
 ) -> MResult<ShapeInstance> {
     if matches!(schema.body(), SchemaBody::Matrix { .. }) {
-        return matrix_shape_for_extents(schema, current_extents, None);
+        return matrix_shape_for_extents(schema, current_extents, seed);
     }
-    let mut values = vec![0; schema.dimension_parameters().len()];
-    for (index, parameter) in schema.dimension_parameters().iter().enumerate() {
-        values[index] = crate::evaluate_dimension(parameter.lower_bound(), &values[..index])
-            .map_err(MechError::from)?;
-    }
+    let mut values = if let Some(seed) = seed {
+        schema
+            .instantiate_shape(seed.parameter_values().to_vec().into_boxed_slice())
+            .map_err(MechError::from)?
+            .parameter_values()
+            .to_vec()
+    } else {
+        let mut values = vec![0; schema.dimension_parameters().len()];
+        for (index, parameter) in schema.dimension_parameters().iter().enumerate() {
+            values[index] = crate::evaluate_dimension(parameter.lower_bound(), &values[..index])
+                .map_err(MechError::from)?;
+        }
+        values
+    };
     assign_data_extent_witness(schema.body(), data, &mut values)?;
     schema
         .instantiate_shape(values.into_boxed_slice())
         .map_err(MechError::from)
 }
 
+#[cfg(feature = "functions")]
 fn assign_data_extent_witness(
     schema: &SchemaBody,
     data: &ValueDataDraft,
@@ -2196,6 +2086,7 @@ fn assign_data_extent_witness(
     Ok(())
 }
 
+#[cfg(feature = "functions")]
 fn assign_extent_witness(
     extent: &CardinalitySpec,
     cardinality: u64,
@@ -2795,6 +2686,10 @@ fn dynamic_matrix_cell(
     let [rows, columns] = dimensions.as_ref() else {
         return Ok(None);
     };
+    #[cfg(feature = "row_vectord")]
+    let row_axis_is_invariant_one = matches!(rows, DimensionExpr::Constant(1));
+    #[cfg(feature = "vectord")]
+    let column_axis_is_invariant_one = matches!(columns, DimensionExpr::Constant(1));
     let (Ok(rows), Ok(columns)) = (
         shape
             .resolve_dimension(rows)
@@ -2812,13 +2707,13 @@ fn dynamic_matrix_cell(
     macro_rules! matrix {
         ($values:expr) => {{
             #[cfg(feature = "row_vectord")]
-            if !preserve_dynamic_rank && rows == 1 {
+            if row_axis_is_invariant_one {
                 let backing = crate::RowDVector::from_row_slice($values);
                 return ValueCell::from_ref(Ref::new(backing), schema, shape.clone(), schemas)
                     .map(Some);
             }
             #[cfg(feature = "vectord")]
-            if !preserve_dynamic_rank && columns == 1 {
+            if column_axis_is_invariant_one {
                 let backing = crate::DVector::from_column_slice($values);
                 return ValueCell::from_ref(Ref::new(backing), schema, shape.clone(), schemas)
                     .map(Some);
@@ -3013,6 +2908,25 @@ pub struct ValueCellStorageContractViolation {
     pub reason: crate::StorageCompatibilityError,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExternalCellDescriptorMismatch {
+    pub expected: String,
+    pub actual: String,
+}
+
+impl MechErrorKind for ExternalCellDescriptorMismatch {
+    fn name(&self) -> &str {
+        "ExternalCellDescriptorMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "external cell descriptor expected {}, received {}",
+            self.expected, self.actual
+        )
+    }
+}
+
 impl MechErrorKind for ValueCellStorageContractViolation {
     fn name(&self) -> &str {
         "ValueCellStorageContractViolation"
@@ -3047,6 +2961,26 @@ impl MechErrorKind for ValueCellSnapshotFailure {
     fn message(&self) -> String {
         format!("canonical value cell snapshot failed: {:?}", self.error)
     }
+}
+
+fn validate_storage_compatibility(
+    schema: &Schema,
+    shape: &ShapeInstance,
+    capabilities: &crate::StorageCapabilityDescriptor,
+) -> MResult<()> {
+    crate::check_schema_storage_compatibility(schema, shape, capabilities).map_err(|error| {
+        match error {
+            crate::SchemaStorageCompatibilityError::Semantic(error) => error.into(),
+            crate::SchemaStorageCompatibilityError::Storage(reason) => MechError::new(
+                ValueCellStorageContractViolation {
+                    schema: schema.key(),
+                    reason,
+                },
+                None,
+            )
+            .with_compiler_loc(),
+        }
+    })
 }
 
 pub(crate) fn borrow_conflict(access: CellAccess) -> MechError {
@@ -4058,6 +3992,89 @@ fn dynamic_matrix_schema(
     Ok((schema, shape, Rc::new(build.table)))
 }
 
+fn dynamic_row_vector_schema(
+    element: SchemaBody,
+    rows: u64,
+    columns: u64,
+) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
+    if rows != 1 {
+        return Err(MechError::new(
+            ValueCellShapeMismatch {
+                expected: vec![1, columns].into_boxed_slice(),
+                actual: vec![rows, columns].into_boxed_slice(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    dynamic_vector_schema(
+        element,
+        vec![
+            DimensionExpr::Constant(1),
+            DimensionExpr::Parameter(crate::DimensionParameterId::new(0)),
+        ]
+        .into_boxed_slice(),
+        columns,
+    )
+}
+
+fn dynamic_column_vector_schema(
+    element: SchemaBody,
+    rows: u64,
+    columns: u64,
+) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
+    if columns != 1 {
+        return Err(MechError::new(
+            ValueCellShapeMismatch {
+                expected: vec![rows, 1].into_boxed_slice(),
+                actual: vec![rows, columns].into_boxed_slice(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    dynamic_vector_schema(
+        element,
+        vec![
+            DimensionExpr::Parameter(crate::DimensionParameterId::new(0)),
+            DimensionExpr::Constant(1),
+        ]
+        .into_boxed_slice(),
+        rows,
+    )
+}
+
+fn dynamic_vector_schema(
+    element: SchemaBody,
+    dimensions: Box<[DimensionExpr]>,
+    current: u64,
+) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
+    let schema = crate::SchemaDraft {
+        dimension_parameters: vec![crate::DimensionParameterDeclaration {
+            id: crate::DimensionParameterId::new(0),
+            origin: crate::DimensionParameterOrigin::Inferred,
+            lifetime: crate::DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        }]
+        .into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions,
+        },
+    }
+    .finalize()
+    .map_err(|error| snapshot_failure(error.into()))?;
+    let shape = schema
+        .instantiate_shape(vec![current].into_boxed_slice())
+        .map_err(|error| snapshot_failure(error.into()))?;
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder.insert(schema).map_err(MechError::from)?;
+    let build = builder.finish().map_err(MechError::from)?;
+    let schema = build.resolve(handle).map_err(MechError::from)?;
+    Ok((schema, shape, Rc::new(build.table)))
+}
+
 fn standalone_schema(body: SchemaBody) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
     let schema = crate::SchemaDraft {
         dimension_parameters: Vec::new().into_boxed_slice(),
@@ -4406,10 +4423,11 @@ mod tests {
     #[test]
     fn declared_output_representations_construct_exact_canonical_backings() {
         let scalar =
-            ValueCell::default_for_representation(FunctionValueRepresentation::F64, None).unwrap();
+            ValueCell::test_backing_for_representation(FunctionValueRepresentation::F64, None)
+                .unwrap();
         assert_eq!(*scalar.try_ref::<f64>().unwrap().borrow(), 0.0);
 
-        let fixed = ValueCell::default_for_representation(
+        let fixed = ValueCell::test_backing_for_representation(
             <crate::Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
             Some((2, 2)),
         )
@@ -4419,7 +4437,7 @@ mod tests {
             crate::Matrix2::zeros(),
         );
 
-        let dynamic = ValueCell::default_for_representation(
+        let dynamic = ValueCell::test_backing_for_representation(
             <crate::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
             Some((2, 3)),
         )
@@ -4433,7 +4451,7 @@ mod tests {
             (2, 3),
         );
 
-        let error = ValueCell::default_for_representation(
+        let error = ValueCell::test_backing_for_representation(
             <crate::Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
             Some((2, 3)),
         )
@@ -4458,7 +4476,7 @@ mod tests {
                 .as_slice(),
             &[1.0, 2.0, 3.0],
         );
-        assert_eq!(cell.snapshot().unwrap().shape().parameter_values(), &[3, 1]);
+        assert_eq!(cell.current_top_level_extents().unwrap().as_ref(), &[3, 1]);
     }
 
     #[cfg(feature = "f64")]
@@ -4647,7 +4665,7 @@ mod tests {
     #[cfg(all(feature = "f64", feature = "matrixd"))]
     #[test]
     fn concrete_matrix_shapes_rebind_between_dynamic_and_fixed_schema_definitions() {
-        let source = ValueCell::default_for_representation(
+        let source = ValueCell::test_backing_for_representation(
             <crate::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
             Some((4, 1)),
         )
@@ -4967,6 +4985,69 @@ mod tests {
             bounded.kind_message().contains("Cardinality"),
             "{bounded:?}"
         );
+    }
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn rebuilding_a_dynamic_collection_preserves_its_bound_shape_witnesses() {
+        let dimensions = [
+            DimensionParameterDeclaration {
+                id: crate::DimensionParameterId::new(0),
+                origin: crate::DimensionParameterOrigin::Inferred,
+                lifetime: crate::DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+            DimensionParameterDeclaration {
+                id: crate::DimensionParameterId::new(1),
+                origin: crate::DimensionParameterOrigin::Inferred,
+                lifetime: crate::DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+        ];
+        let schema = test_schema(
+            SchemaBody::Set {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                cardinality: CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Add(
+                        vec![
+                            DimensionExpr::Parameter(crate::DimensionParameterId::new(0)),
+                            DimensionExpr::Parameter(crate::DimensionParameterId::new(1)),
+                        ]
+                        .into_boxed_slice(),
+                    )),
+                },
+            },
+            dimensions.into(),
+            &[2, 2],
+        );
+        let value = finalize_draft(
+            schema.id,
+            &schema.shape,
+            &schema.schemas,
+            ValueDataDraft::Set(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(2)].into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let cell = ValueCell::from_runtime_value(value, schema.schemas).unwrap();
+        let descriptor = cell.resolved_descriptor().unwrap();
+
+        let next = cell
+            .rebuild_set_drafts(
+                vec![
+                    ValueDataDraft::U8(1),
+                    ValueDataDraft::U8(2),
+                    ValueDataDraft::U8(3),
+                ]
+                .into_boxed_slice(),
+            )
+            .unwrap();
+        cell.replace(&next).unwrap();
+
+        assert_eq!(cell.shape().parameter_values(), &[2, 2]);
+        assert_eq!(cell.resolved_descriptor().unwrap(), descriptor);
     }
 
     #[cfg(feature = "u8")]

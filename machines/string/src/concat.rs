@@ -110,54 +110,6 @@ macro_rules! concat_row_mat_op {
 impl_string_fxns!(Concat);
 
 #[cfg(feature = "source")]
-fn specialize_concat_factory<F>(
-    lhs: &SpecializationInput,
-    rhs: &SpecializationInput,
-) -> MResult<SpecializedFunction>
-where
-    F: MechFunctionFactory,
-{
-    let output = [lhs, rhs]
-        .into_iter()
-        .find(|input| input.representation() == Some(F::SIGNATURE.output))
-        .ok_or_else(|| {
-            MechError::new(
-                FunctionArgumentTypeMismatch {
-                    role: FunctionArgumentRole::Output,
-                    expected: format!("input template matching {:?}", F::SIGNATURE.output),
-                    found: format!("{:?} and {:?}", lhs.representation(), rhs.representation()),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?
-        .cell()?
-        .detached_clone()?;
-    SpecializedFunction::bind_factory::<F>(
-        output,
-        vec![lhs.cell()?.clone(), rhs.cell()?.clone()].into_boxed_slice(),
-    )
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __try_string_concat_factory {
-    (($lhs:ident, $rhs:ident), $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
-        mech_core::paste::paste! {
-            if let RuntimeFunctionInputs::Binary(expected_lhs, expected_rhs) =
-                <$crate::[<$lib $suffix>]<$scalar> as MechFunctionFactory>::SIGNATURE.inputs
-                && $lhs.representation() == Some(expected_lhs)
-                && $rhs.representation() == Some(expected_rhs)
-            {
-                return $crate::concat::specialize_concat_factory::<
-                    $crate::[<$lib $suffix>]<$scalar>
-                >($lhs, $rhs);
-            }
-        }
-    };
-}
-
-#[cfg(feature = "source")]
 pub struct StringConcat;
 
 #[cfg(feature = "source")]
@@ -165,7 +117,7 @@ impl CanonicalFunctionSpecializer for StringConcat {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 2 {
             return Err(MechError::new(
@@ -179,23 +131,27 @@ impl CanonicalFunctionSpecializer for StringConcat {
         }
         let lhs = invocation.input(0).expect("validated concat lhs");
         let rhs = invocation.input(1).expect("validated concat rhs");
-        mech_core::for_each_canonical_binop_factory!(
-            crate::__try_string_concat_factory,
-            (lhs, rhs),
-            Concat,
-            String,
-            "string",
-            string
-        );
-        Err(MechError::new(
-            FunctionArgumentTypeMismatch {
-                role: FunctionArgumentRole::Input(0),
-                expected: "supported String scalar or matrix inputs".into(),
-                found: format!("{:?} and {:?}", lhs.representation(), rhs.representation()),
-            },
-            None,
+        let extents = [lhs, rhs]
+            .into_iter()
+            .map(|input| {
+                input
+                    .cell()?
+                    .resolved_descriptor()?
+                    .current_extents()
+                    .map_err(MechError::from)
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        let output_extents = extents
+            .iter()
+            .find(|extent| !extent.is_empty())
+            .cloned()
+            .unwrap_or_else(|| Box::new([]));
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![output_extents].into_boxed_slice(),
+            &[lhs, rhs],
         )
-        .with_compiler_loc())
     }
 }
 
@@ -239,17 +195,21 @@ mod scalar_port_tests {
         .unwrap();
         assert_eq!(string_value(&output), "left-right");
 
-        assert!(ConcatSS::<String>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact(String::new()).unwrap(),
-            ValueCell::from_exact("wrong-layout".to_string()).unwrap(),
-        ))
-        .is_err());
-        assert!(ConcatSS::<String>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact(String::new()).unwrap(),
-            ValueCell::from_exact("left".to_string()).unwrap(),
-            ValueCell::from_exact(1_usize).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            ConcatSS::<String>::new_invocation(FunctionInvocation::unary(
+                ValueCell::from_exact(String::new()).unwrap(),
+                ValueCell::from_exact("wrong-layout".to_string()).unwrap(),
+            ))
+            .is_err()
+        );
+        assert!(
+            ConcatSS::<String>::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact(String::new()).unwrap(),
+                ValueCell::from_exact("left".to_string()).unwrap(),
+                ValueCell::from_exact(1_usize).unwrap(),
+            ))
+            .is_err()
+        );
     }
 
     #[cfg(feature = "source")]
@@ -266,7 +226,8 @@ mod scalar_port_tests {
         let function = StringConcat {}
             .specialize_invocation(&invocation, &mut context)
             .unwrap()
-            .into_instance();
+            .into_parts()
+            .0;
         function.solve_result().unwrap();
         assert!(matches!(
             function.output().snapshot().unwrap().data(),
@@ -309,22 +270,24 @@ mod fixed_matrix_port_tests {
         );
 
         let wrong = Ref::new(DMatrix::from_element(2, 2, "x".to_string()));
-        assert!(ConcatM2M2::<String>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact_matrix_ref(
-                Ref::new(Matrix2::from_element(String::new())),
-                2,
-                2,
-            )
-            .unwrap(),
-            ValueCell::from_exact_matrix_ref(wrong, 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(
-                Ref::new(Matrix2::from_element("y".to_string())),
-                2,
-                2,
-            )
-            .unwrap(),
-        ))
-        .is_err());
+        assert!(
+            ConcatM2M2::<String>::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact_matrix_ref(
+                    Ref::new(Matrix2::from_element(String::new())),
+                    2,
+                    2,
+                )
+                .unwrap(),
+                ValueCell::from_exact_matrix_ref(wrong, 2, 2).unwrap(),
+                ValueCell::from_exact_matrix_ref(
+                    Ref::new(Matrix2::from_element("y".to_string())),
+                    2,
+                    2,
+                )
+                .unwrap(),
+            ))
+            .is_err()
+        );
     }
 }
 
@@ -353,7 +316,10 @@ mod dynamic_matrix_port_tests {
     fn dynamic_broadcast_orientation_and_shape_rollback_are_canonical() {
         let matrix_ref = Ref::new(matrix(&["a", "b", "c", "d"]));
         let vector = Ref::new(DVector::from_vec(vec!["v1".to_string(), "v2".to_string()]));
-        let row = Ref::new(RowDVector::from_vec(vec!["r1".to_string(), "r2".to_string()]));
+        let row = Ref::new(RowDVector::from_vec(vec![
+            "r1".to_string(),
+            "r2".to_string(),
+        ]));
 
         let vector_out = Ref::new(DMatrix::from_element(2, 2, String::new()));
         let vector_cell = ValueCell::from_exact_matrix_ref(vector_out.clone(), 2, 2).unwrap();

@@ -1,4 +1,8 @@
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::collections::BTreeMap;
 use core::ops::Range;
+#[cfg(not(all(feature = "no_std", not(feature = "std"))))]
+use std::collections::BTreeMap;
 
 use mech_core::{
     AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
@@ -7,8 +11,8 @@ use mech_core::{
     OperationContractError, OperationContractId, OperationContractTable,
     OperationContractTableBuilder, OutputId, PortDirection, ProgramRevision, ResolvedInputPort,
     ResolvedOperationContract, ResolvedOutputPort, ResolvedRangeMode, ResolvedReductionMode,
-    ResolvedSelectionMode, SchemaId, SchemaTable, SemanticModelError, SnapshotValueError,
-    validate_declaration,
+    ResolvedSelectionMode, SchemaId, SchemaTable, SemanticModelError, ShapeInstance,
+    SnapshotValueError, validate_declaration,
 };
 
 use super::CompilerIrError;
@@ -28,6 +32,13 @@ pub struct OperationReference {
 }
 
 impl OperationReference {
+    pub fn canonical_name(&self) -> String {
+        if self.module_path.is_empty() {
+            return self.operation_name.clone();
+        }
+        format!("{}/{}", self.module_path.join("/"), self.operation_name)
+    }
+
     fn module_is(&self, expected: &[&str]) -> bool {
         self.module_path.len() == expected.len()
             && self
@@ -284,6 +295,9 @@ pub struct ProgramArtifact {
     outputs: Box<[OutputDeclaration]>,
     constraints: Box<[IntegrityConstraintDeclaration]>,
     compute_regions: Box<[ComputeRegionDeclaration]>,
+    // Current-process compiler planning evidence. This is intentionally not
+    // part of ProgramArtifactDraft, ProgramRevision, or bytecode-v1 encoding.
+    slot_shape_hints: BTreeMap<CellSlotId, ShapeInstance>,
 }
 
 impl ProgramArtifact {
@@ -341,11 +355,44 @@ impl ProgramArtifact {
         &self.compute_regions
     }
 
+    /// Returns the compiler-proven current shape for a parameterized slot.
+    ///
+    /// These hints are non-wire planning sidecars. Durable artifacts recover
+    /// state shapes from their initializers and receive live input shapes at
+    /// activation instead of serializing one compilation instance as schema.
+    pub fn slot_shape_hint(&self, slot: CellSlotId) -> Option<&ShapeInstance> {
+        self.slot_shape_hints.get(&slot)
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    pub(crate) fn with_slot_shape_hints(
+        mut self,
+        hints: BTreeMap<CellSlotId, ShapeInstance>,
+    ) -> Result<Self, ArtifactBuildError> {
+        for (slot, shape) in &hints {
+            let declaration = self
+                .slots
+                .get(slot.get() as usize)
+                .filter(|declaration| declaration.slot == *slot)
+                .ok_or(ArtifactBuildError::UnknownSlot { slot: *slot })?;
+            let schema =
+                self.schemas
+                    .get(declaration.schema)
+                    .ok_or(ArtifactBuildError::UnknownSchema {
+                        schema: declaration.schema,
+                    })?;
+            schema.instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())?;
+        }
+        self.slot_shape_hints = hints;
+        Ok(self)
+    }
+
     #[cfg(feature = "semantic-compiler")]
     pub(crate) fn with_compute_regions(
         self,
         compute_regions: Box<[ComputeRegionDeclaration]>,
     ) -> Result<Self, ArtifactBuildError> {
+        let shape_hints = self.slot_shape_hints;
         ProgramArtifactDraft {
             schemas: self.schemas,
             constants: self.constants,
@@ -359,7 +406,8 @@ impl ProgramArtifact {
             constraints: self.constraints,
             compute_regions,
         }
-        .finalize()
+        .finalize()?
+        .with_slot_shape_hints(shape_hints)
     }
 }
 
@@ -395,6 +443,7 @@ impl ProgramArtifactDraft {
             outputs: self.outputs,
             constraints: self.constraints,
             compute_regions: self.compute_regions,
+            slot_shape_hints: BTreeMap::new(),
         })
     }
 }
@@ -546,6 +595,14 @@ pub enum ArtifactBuildError {
         table: &'static str,
         expected: usize,
         actual: usize,
+    },
+    CompiledTypeBindingMismatch {
+        instruction: u32,
+        reason: String,
+    },
+    CompiledRegisterDescriptorMismatch {
+        register: u32,
+        reason: String,
     },
     MissingOperationContract {
         node: NodeId,

@@ -48,27 +48,33 @@ macro_rules! fmodf_vec_op {
 macro_rules! impl_two_arg_fxn {
     ($struct_name:ident, $kind1:ty, $kind2:ty, $out_kind:ty, $op:ident) => {
         #[derive(Debug)]
-        struct $struct_name {
+        pub(crate) struct $struct_name {
             arg1: Ref<$kind1>,
             arg2: Ref<$kind2>,
             out: Ref<$out_kind>,
         }
-    impl MechFunctionFactory for $struct_name {
-      const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
-        <$out_kind as FunctionRuntimeType>::REPRESENTATION,
-        <$kind1 as FunctionRuntimeType>::REPRESENTATION,
-        <$kind2 as FunctionRuntimeType>::REPRESENTATION,
-      );
+        impl MechFunctionFactory for $struct_name {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                <$kind1 as FunctionRuntimeType>::REPRESENTATION,
+                <$kind2 as FunctionRuntimeType>::REPRESENTATION,
+            );
 
-      fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg1, arg2) = invocation.expect_binary()?;
-        Ok(Box::new(Self {
-          arg1: arg1.try_ref()?,
-          arg2: arg2.try_ref()?,
-          out: out.try_ref()?,
-        }))
-      }
-    }
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2) = invocation.expect_binary()?;
+                Ok(Box::new(Self {
+                    arg1: arg1.try_ref()?,
+                    arg2: arg2.try_ref()?,
+                    out: out.try_ref()?,
+                }))
+            }
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(crate::ops::arithmetic_full_write_contract(
+                    <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
+        }
         impl MechFunctionImpl for $struct_name {
             fn solve_result(&self) -> MResult<()> {
                 let arg1_ptr = self.arg1.as_ptr();
@@ -88,7 +94,6 @@ macro_rules! impl_two_arg_fxn {
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
-
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))

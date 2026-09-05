@@ -201,14 +201,20 @@ impl CanonicalFunctionSpecializer for SetComprehensionDefine {
                 .with_compiler_loc());
             }
         }
-        let output = ValueCell::empty_dynamic_set(element)?
-            .with_resolved_output_type(context.resolved_output(0)?)?;
+        let semantic_inputs = invocation.inputs().iter().collect::<Vec<_>>();
+        let descriptor =
+            context.resolved_output_descriptor(0, vec![0].into_boxed_slice(), &semantic_inputs)?;
+        let output = ValueCell::allocate_for_descriptor(
+            &descriptor,
+            mech_core::FunctionValueRepresentation::Set,
+        )?;
         let invocation = FunctionInvocation::variadic(output, arguments.into_boxed_slice());
         let implementation = ValueSetComprehension::new_invocation(invocation.clone())?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            implementation,
-            invocation,
-        )))
+        context.certify_instance(
+            FunctionInstance::new(implementation, invocation),
+            mech_core::RuntimeFunctionId::from_name("set/comprehension"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 #[cfg(feature = "matrix_comprehensions")]
@@ -218,7 +224,7 @@ impl CanonicalFunctionSpecializer for MatrixComprehensionDefine {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         let arguments = invocation
             .inputs()
@@ -228,10 +234,11 @@ impl CanonicalFunctionSpecializer for MatrixComprehensionDefine {
         let output = crate::intrinsics::constructors::matrix_comprehension_output(&arguments)?;
         let invocation = FunctionInvocation::variadic(output, arguments.into_boxed_slice());
         let implementation = ValueMatrixComprehension::new_invocation(invocation.clone())?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            implementation,
-            invocation,
-        )))
+        context.certify_instance(
+            FunctionInstance::new(implementation, invocation),
+            mech_core::RuntimeFunctionId::from_name("matrix/comprehension"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 #[cfg(feature = "set_comprehensions")]
@@ -280,11 +287,16 @@ pub fn matrix_comprehension(
             ValueCell::dynamic_matrix(element_schema, vec![0, 0].into_boxed_slice(), Box::new([]))?;
         let invocation = FunctionInvocation::variadic(output.clone(), Box::new([]));
         let implementation = ValueMatrixComprehension::new_invocation(invocation.clone())?;
-        return execute_function_instance(
-            p,
-            &plan,
+        let specialized = SpecializedFunction::syntax_directed(
             FunctionInstance::new(implementation, invocation),
-        );
+            mech_core::ResolvedOperationDescriptor::from_name(
+                "matrix/comprehension",
+                crate::intrinsics::constructors::PURE_MATRIX_COMPREHENSION_CONTRACT.clone(),
+            )?,
+            mech_core::RuntimeFunctionId::from_name("matrix/comprehension"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )?;
+        return execute_function_instance(p, &plan, specialized);
     }
     execute_catalog_operation(p, &plan, "matrix/comprehension", values)
 }

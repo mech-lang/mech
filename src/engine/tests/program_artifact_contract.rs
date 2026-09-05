@@ -3,19 +3,23 @@
 use mech_engine::*;
 
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BytecodeInstruction,
-    BytecodeProgram, CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle,
-    ConstantStoreBuilder, DeliveryMode, DimensionExpr, DimensionLifetime,
-    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, EffectContract,
-    EffectDeliveryPolicy, EncodedConstant, ExecutionResourceRequest, ExternalInteraction,
-    FloatWidth, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr,
-    NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
+    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BoundCall,
+    BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram, CanonicalNominalPath,
+    ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder, DeliveryMode, DimensionExpr,
+    DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+    DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy, EncodedConstant,
+    ExecutionResourceRequest, ExecutionTarget, ExternalInteraction, FloatWidth, FunctionInvocation,
+    FunctionValueRepresentation, IdempotencyRequirement, InputPortLayout, InputPortPolicy,
+    IntegerWidth, KindExpr, MResult, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+    MechFunctionImpl, NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
     OperationContractDeclaration, OperationContractError, OperationContractId,
     OperationContractTable, OperationContractTableBuilder, OutputConstruction, OutputPortPolicy,
-    RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort,
-    ResourceDelivery, ResourceIntent, RuntimeType, SchemaBody, SchemaDraft, SchemaField,
-    SchemaHandle, SchemaTableBuilder, ShapeContractReference, ShapeRule, Value, ValueCell,
-    ValueData, ValueDataDraft, ValueDraft, compile_value_cell_matrix_literal_register,
+    RegionPolicy, Register, ResolvedInputPort, ResolvedOperationContract,
+    ResolvedOperationDescriptor, ResolvedOutputPort, ResourceDelivery, ResourceIntent,
+    RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
+    RuntimeType, SchemaBody, SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder,
+    ShapeContractReference, ShapeRule, Value, ValueCell, ValueData, ValueDataDraft, ValueDraft,
+    compile_value_cell_matrix_literal_register,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
         MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SequenceView,
@@ -24,6 +28,66 @@ use mech_core::{
     write_bytecode_with_artifact,
 };
 use std::collections::{BTreeMap, BTreeSet};
+
+struct ArtifactFixtureUnary;
+struct ArtifactFixtureFunction;
+
+impl MechFunctionFactory for ArtifactFixtureUnary {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        FunctionValueRepresentation::F64,
+        FunctionValueRepresentation::F64,
+    );
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&ARTIFACT_FIXTURE_CONTRACT)
+    }
+
+    fn new_invocation(_invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        Ok(Box::new(ArtifactFixtureFunction))
+    }
+}
+
+impl MechFunctionImpl for ArtifactFixtureFunction {
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&ARTIFACT_FIXTURE_CONTRACT)
+    }
+
+    fn to_string(&self) -> String {
+        "ArtifactFixtureFunction".to_owned()
+    }
+}
+
+impl MechFunctionCompiler for ArtifactFixtureFunction {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
+
+static ARTIFACT_FIXTURE_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::AlwaysChanged,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[derive(Clone, Copy)]
 struct Schemas {
@@ -1089,6 +1153,7 @@ fn compiled_scalar_artifact_fixture(
     first_type: RuntimeType,
     first_schema: Option<SchemaBody>,
 ) -> CompiledBytecode {
+    let first_is_f64 = matches!(&first_type, RuntimeType::F64);
     let first = match first_type {
         RuntimeType::Empty => EncodedConstant {
             runtime_type: RuntimeType::Empty,
@@ -1106,6 +1171,10 @@ fn compiled_scalar_artifact_fixture(
     if matches!(first.runtime_type, RuntimeType::Empty) {
         absent_registers.insert(0);
     }
+    let f64_descriptor = ValueCell::from_exact(0.0_f64)
+        .unwrap()
+        .resolved_descriptor()
+        .unwrap();
     CompiledBytecode {
         program: BytecodeProgram {
             register_count: 2,
@@ -1138,9 +1207,14 @@ fn compiled_scalar_artifact_fixture(
         instruction_contracts: vec![None, None, None],
         instruction_operations: vec![None, None, None],
         instruction_source_nodes: vec![None, None, None],
+        instruction_type_bindings: vec![None, None, None],
         register_schemas: vec![
             first_schema,
             Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        ],
+        register_type_descriptors: vec![
+            first_is_f64.then_some(f64_descriptor.clone()),
+            Some(f64_descriptor),
         ],
         absent_registers,
         register_collection_cardinalities: vec![None, None],
@@ -1161,13 +1235,23 @@ fn compiled_assign_artifact_fixture(
         RuntimeType::F64 => Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
         ref other => panic!("unsupported assignment fixture type {other:?}"),
     };
+    let operation =
+        ResolvedOperationDescriptor::from_name("assign/value", ARTIFACT_FIXTURE_CONTRACT.clone())
+            .unwrap();
     let mut builder = FunctionCatalogBuilder::new();
-    install_intrinsic_runtime(&mut builder).unwrap();
+    builder
+        .insert_runtime_factory_with_semantic_contract::<ArtifactFixtureUnary>(
+            "ArtifactFixtureUnary",
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            operation.id,
+            &ARTIFACT_FIXTURE_CONTRACT,
+        )
+        .unwrap();
     let catalog = builder.build().unwrap();
     let function = catalog
         .runtime_entries()
-        .find(|entry| entry.name == "Assign<f64>")
-        .expect("the full compiler profile installs scalar assignment")
+        .find(|entry| entry.name == "ArtifactFixtureUnary")
+        .expect("the fixture installs its typed unary runtime")
         .id
         .raw();
     let mut compiled = compiled_scalar_artifact_fixture(first_type, first_schema);
@@ -1185,11 +1269,27 @@ fn compiled_assign_artifact_fixture(
             CompiledNodeKind::Combinational,
         )),
     );
-    compiled.instruction_contracts.insert(2, None);
+    compiled
+        .instruction_contracts
+        .insert(2, Some(ARTIFACT_FIXTURE_CONTRACT.clone()));
     compiled
         .instruction_operations
         .insert(2, Some("assign/value".to_owned()));
     compiled.instruction_source_nodes.insert(2, Some(0));
+    let f64_descriptor = ValueCell::from_exact(0.0_f64)
+        .unwrap()
+        .resolved_descriptor()
+        .unwrap();
+    let runtime_function = RuntimeFunctionId::from_raw(function);
+    let binding = BoundCall::syntax_directed(
+        operation,
+        vec![f64_descriptor.clone()].into_boxed_slice(),
+        vec![f64_descriptor].into_boxed_slice(),
+        runtime_function,
+        ExecutionTarget::DirectRuntime,
+    )
+    .unwrap();
+    compiled.instruction_type_bindings.insert(2, Some(binding));
     (compiled, catalog)
 }
 
@@ -1197,11 +1297,12 @@ fn compiled_assign_artifact_fixture(
 fn malformed_compiled_scalar_metadata_fails_closed() {
     let (mut missing_kind, catalog) = compiled_assign_artifact_fixture(RuntimeType::F64);
     missing_kind.register_schemas[1] = None;
+    missing_kind.register_type_descriptors[1] = None;
     let missing_kind = compile_executable_program_artifact(&missing_kind, &catalog);
     assert!(
         matches!(
             &missing_kind,
-            Err(ArtifactBuildError::MissingRegisterKind { register: 1, .. })
+            Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
         ),
         "unexpected missing-kind result: {missing_kind:?}"
     );
@@ -1211,11 +1312,7 @@ fn malformed_compiled_scalar_metadata_fails_closed() {
     assert!(
         matches!(
             &missing_source,
-            Err(ArtifactBuildError::MissingRegisterSource {
-                register: 0,
-                role: "input",
-                ..
-            })
+            Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
         ),
         "unexpected missing-source result: {missing_source:?}"
     );
@@ -1241,6 +1338,9 @@ fn malformed_compiled_scalar_metadata_fails_closed() {
         .instruction_source_nodes
         .insert(2, None);
     wrong_integrity_kind
+        .instruction_type_bindings
+        .insert(2, None);
+    wrong_integrity_kind
         .integrity_constraints
         .push(CompiledIntegrityConstraint {
             name: "constraint-0".to_owned(),
@@ -1255,6 +1355,59 @@ fn malformed_compiled_scalar_metadata_fails_closed() {
         ),
         "unexpected integrity-kind result: {wrong_integrity_kind:?}"
     );
+}
+
+#[test]
+fn executable_nodes_require_complete_semantic_type_certificates() {
+    let (compiled, catalog) = compiled_assign_artifact_fixture(RuntimeType::F64);
+
+    let mut missing = compiled.clone();
+    missing.instruction_type_bindings[2] = None;
+    assert!(matches!(
+        compile_executable_program_artifact(&missing, &catalog),
+        Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
+    ));
+
+    let original = compiled.instruction_type_bindings[2]
+        .as_ref()
+        .expect("fixture runtime has a semantic binding");
+    let runtime = original
+        .runtime_function()
+        .expect("fixture is bound to a runtime implementation");
+    let operation = original.operation_descriptor().clone();
+    let descriptor = original.outputs()[0].clone();
+
+    let mut wrong_inputs = compiled.clone();
+    wrong_inputs.instruction_type_bindings[2] = Some(
+        BoundCall::syntax_directed(
+            operation.clone(),
+            Box::new([]),
+            vec![descriptor.clone()].into_boxed_slice(),
+            runtime,
+            ExecutionTarget::DirectRuntime,
+        )
+        .unwrap(),
+    );
+    assert!(matches!(
+        compile_executable_program_artifact(&wrong_inputs, &catalog),
+        Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
+    ));
+
+    let mut wrong_outputs = compiled;
+    wrong_outputs.instruction_type_bindings[2] = Some(
+        BoundCall::syntax_directed(
+            operation,
+            vec![descriptor].into_boxed_slice(),
+            Box::new([]),
+            runtime,
+            ExecutionTarget::DirectRuntime,
+        )
+        .unwrap(),
+    );
+    assert!(matches!(
+        compile_executable_program_artifact(&wrong_outputs, &catalog),
+        Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
+    ));
 }
 
 #[test]

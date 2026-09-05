@@ -1,8 +1,8 @@
 use crate::*;
 use std::sync::LazyLock;
 
-static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
-    OperationContractDeclaration {
+static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![InputPortPolicy {
                 access: AccessMode::Read,
@@ -21,8 +21,7 @@ static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLoc
         }]
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
-    }
-});
+    });
 
 // Transpose ------------------------------------------------------------------
 
@@ -55,15 +54,16 @@ macro_rules! impl_transpose {
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_TRANSPOSE_CONTRACT)
+            }
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg) = invocation.expect_unary()?;
                 let arg: Ref<$arg_type> = arg.try_ref()?;
                 let out: Ref<$out_type> = out.try_ref()?;
                 Ok(Box::new($struct_name { arg, out }))
             }
-
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -97,7 +97,11 @@ macro_rules! impl_transpose {
             T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_unop!(name, self.out, self.arg, ctx);
             }
         }
@@ -214,23 +218,24 @@ mod canonical_port_tests {
 
     #[test]
     fn transpose_rejects_wrong_storage_and_layout() {
-        let output = ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::zeros()), 2, 2)
-            .unwrap();
-        let wrong = ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::<f64>::zeros(2, 2)), 2, 2)
-            .unwrap();
-        assert!(TransposeM2::<f64>::new_invocation(FunctionInvocation::unary(
-            output.clone(),
-            wrong,
-        ))
-        .is_err());
-        let arg = ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::identity()), 2, 2)
-            .unwrap();
-        assert!(TransposeM2::<f64>::new_invocation(FunctionInvocation::binary(
-            output,
-            arg.clone(),
-            arg,
-        ))
-        .is_err());
+        let output =
+            ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::zeros()), 2, 2).unwrap();
+        let wrong =
+            ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::<f64>::zeros(2, 2)), 2, 2).unwrap();
+        assert!(
+            TransposeM2::<f64>::new_invocation(FunctionInvocation::unary(output.clone(), wrong,))
+                .is_err()
+        );
+        let arg =
+            ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::identity()), 2, 2).unwrap();
+        assert!(
+            TransposeM2::<f64>::new_invocation(FunctionInvocation::binary(
+                output,
+                arg.clone(),
+                arg,
+            ))
+            .is_err()
+        );
     }
 }
 
@@ -266,8 +271,9 @@ impl CanonicalFunctionSpecializer for MatrixTranspose {
             )
             .with_compiler_loc()
         })?;
-        let FunctionValueRepresentation::Matrix { element, storage } =
-            input.representation().expect("matrix descriptor has representation")
+        let FunctionValueRepresentation::Matrix { element, storage } = input
+            .representation()
+            .expect("matrix descriptor has representation")
         else {
             unreachable!("matrix descriptor requires matrix representation")
         };
@@ -278,16 +284,36 @@ impl CanonicalFunctionSpecializer for MatrixTranspose {
                     FunctionMatrixRepresentation::Matrix2 => FunctionMatrixRepresentation::Matrix2,
                     FunctionMatrixRepresentation::Matrix3 => FunctionMatrixRepresentation::Matrix3,
                     FunctionMatrixRepresentation::Matrix4 => FunctionMatrixRepresentation::Matrix4,
-                    FunctionMatrixRepresentation::Matrix2x3 => FunctionMatrixRepresentation::Matrix3x2,
-                    FunctionMatrixRepresentation::Matrix3x2 => FunctionMatrixRepresentation::Matrix2x3,
-                    FunctionMatrixRepresentation::RowVector2 => FunctionMatrixRepresentation::Vector2,
-                    FunctionMatrixRepresentation::RowVector3 => FunctionMatrixRepresentation::Vector3,
-                    FunctionMatrixRepresentation::RowVector4 => FunctionMatrixRepresentation::Vector4,
-                    FunctionMatrixRepresentation::RowVectorD => FunctionMatrixRepresentation::VectorD,
-                    FunctionMatrixRepresentation::Vector2 => FunctionMatrixRepresentation::RowVector2,
-                    FunctionMatrixRepresentation::Vector3 => FunctionMatrixRepresentation::RowVector3,
-                    FunctionMatrixRepresentation::Vector4 => FunctionMatrixRepresentation::RowVector4,
-                    FunctionMatrixRepresentation::VectorD => FunctionMatrixRepresentation::RowVectorD,
+                    FunctionMatrixRepresentation::Matrix2x3 => {
+                        FunctionMatrixRepresentation::Matrix3x2
+                    }
+                    FunctionMatrixRepresentation::Matrix3x2 => {
+                        FunctionMatrixRepresentation::Matrix2x3
+                    }
+                    FunctionMatrixRepresentation::RowVector2 => {
+                        FunctionMatrixRepresentation::Vector2
+                    }
+                    FunctionMatrixRepresentation::RowVector3 => {
+                        FunctionMatrixRepresentation::Vector3
+                    }
+                    FunctionMatrixRepresentation::RowVector4 => {
+                        FunctionMatrixRepresentation::Vector4
+                    }
+                    FunctionMatrixRepresentation::RowVectorD => {
+                        FunctionMatrixRepresentation::VectorD
+                    }
+                    FunctionMatrixRepresentation::Vector2 => {
+                        FunctionMatrixRepresentation::RowVector2
+                    }
+                    FunctionMatrixRepresentation::Vector3 => {
+                        FunctionMatrixRepresentation::RowVector3
+                    }
+                    FunctionMatrixRepresentation::Vector4 => {
+                        FunctionMatrixRepresentation::RowVector4
+                    }
+                    FunctionMatrixRepresentation::VectorD => {
+                        FunctionMatrixRepresentation::RowVectorD
+                    }
                     FunctionMatrixRepresentation::MatrixD => FunctionMatrixRepresentation::MatrixD,
                 })
             }
@@ -303,10 +329,12 @@ impl CanonicalFunctionSpecializer for MatrixTranspose {
                 .with_compiler_loc());
             }
         };
-        context.bind_runtime_factory(
-            "Transpose",
-            FunctionValueRepresentation::Matrix { element, storage },
-            Some((descriptor.cols, descriptor.rows)),
+        let _ = (element, storage);
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![vec![descriptor.cols as u64, descriptor.rows as u64].into_boxed_slice()]
+                .into_boxed_slice(),
             &[input],
         )
     }

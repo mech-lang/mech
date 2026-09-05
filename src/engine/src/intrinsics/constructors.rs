@@ -1,5 +1,7 @@
 use crate::intrinsics::*;
 #[cfg(any(
+    feature = "set",
+    feature = "set_comprehensions",
     feature = "matrix_comprehensions",
     feature = "matrix_horzcat",
     feature = "matrix_vertcat"
@@ -7,7 +9,7 @@ use crate::intrinsics::*;
 use std::sync::LazyLock;
 
 #[cfg(feature = "matrix_comprehensions")]
-static PURE_MATRIX_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub(crate) static PURE_MATRIX_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Variadic {
             prefix: Box::new([]),
@@ -64,12 +66,66 @@ fn matrix_concatenation_contract(contract_name: &str) -> OperationContractDeclar
 }
 
 #[cfg(feature = "matrix_horzcat")]
-static PURE_MATRIX_HORZCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub(crate) static PURE_MATRIX_HORZCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| matrix_concatenation_contract("horizontal-output"));
 
 #[cfg(feature = "matrix_vertcat")]
-static PURE_MATRIX_VERTCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub(crate) static PURE_MATRIX_VERTCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| matrix_concatenation_contract("vertical-output"));
+
+#[cfg(feature = "set")]
+pub(crate) static PURE_SET_DEFINE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 0,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["set".to_owned()].into_boxed_slice(),
+                    contract_name: "define-output".to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
+
+#[cfg(feature = "set_comprehensions")]
+pub(crate) static PURE_SET_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 0,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["set".to_owned()].into_boxed_slice(),
+                    contract_name: "comprehension-output".to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[cfg(any(
     feature = "set_comprehensions",
@@ -105,14 +161,27 @@ impl CanonicalFunctionSpecializer for SetDefine {
         invocation: &SpecializationInvocation,
         context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        let output = crate::structures::canonical_set_from_inputs(invocation.inputs().to_vec())?
-            .with_resolved_output_type(context.resolved_output(0)?)?;
-        let invocation = FunctionInvocation::nullary(output);
-        let implementation = ValueSet::new_invocation(invocation.clone())?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            implementation,
-            invocation,
-        )))
+        let inputs = invocation.inputs().iter().collect::<Vec<_>>();
+        let descriptor = context.resolved_output_descriptor(
+            0,
+            vec![inputs.len() as u64].into_boxed_slice(),
+            &inputs,
+        )?;
+        let draft = crate::structures::canonical_set_from_inputs(invocation.inputs().to_vec())?
+            .snapshot()?
+            .canonical_data_draft()
+            .map_err(|error| {
+                MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+            })?;
+        let output = ValueCell::from_resolved_descriptor_data(&descriptor, draft)?;
+        let runtime_invocation = FunctionInvocation::nullary(output);
+        let implementation = ValueSet::new_invocation(runtime_invocation.clone())?;
+        context.certify_instance_for_inputs(
+            FunctionInstance::new(implementation, runtime_invocation),
+            mech_core::RuntimeFunctionId::from_name("ValueSet"),
+            mech_core::ExecutionTarget::DirectRuntime,
+            &inputs,
+        )
     }
 }
 
@@ -159,6 +228,10 @@ impl MechFunctionFactory for ValueSet {
             ));
         };
         Ok(Box::new(Self { output }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_DEFINE_CONTRACT)
     }
 }
 
@@ -245,6 +318,10 @@ impl MechFunctionFactory for ValueSetComprehension {
             ));
         };
         Ok(Box::new(Self { arguments, output }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_COMPREHENSION_CONTRACT)
     }
 }
 
@@ -586,10 +663,15 @@ impl<const VERTICAL: bool> ValueMatrixConcatenation<VERTICAL> {
             arguments: invocation.inputs().map(FunctionInputPort::value).collect(),
             output: invocation.output().value(),
         };
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(implementation),
-            invocation,
-        )))
+        context.certify_instance(
+            FunctionInstance::new(Box::new(implementation), invocation),
+            mech_core::RuntimeFunctionId::from_name(if VERTICAL {
+                "matrix/vertcat"
+            } else {
+                "matrix/horzcat"
+            }),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 
@@ -609,6 +691,19 @@ impl<const VERTICAL: bool> MechFunctionFactory for ValueMatrixConcatenation<VERT
             )));
         };
         Ok(Box::new(Self { arguments, output }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        if VERTICAL {
+            #[cfg(feature = "matrix_vertcat")]
+            return Some(&PURE_MATRIX_VERTCAT_CONTRACT);
+            #[cfg(not(feature = "matrix_vertcat"))]
+            unreachable!();
+        }
+        #[cfg(feature = "matrix_horzcat")]
+        return Some(&PURE_MATRIX_HORZCAT_CONTRACT);
+        #[cfg(not(feature = "matrix_horzcat"))]
+        unreachable!();
     }
 }
 
@@ -678,22 +773,26 @@ impl MechFunctionFactory for ValueMatrixComprehension {
         };
         Ok(Box::new(Self { arguments, output }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_COMPREHENSION_CONTRACT)
+    }
 }
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueMatrixComprehension {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = self.output.compile_register(context)?;
-        let mut arguments = self
+        let arguments = self
             .arguments
             .iter()
             .map(|argument| argument.compile_register(context))
             .collect::<MResult<Vec<_>>>()?;
         if arguments.is_empty() {
-            let seed = self.output.cell().detached_clone()?;
-            arguments.push(compile_value_cell_register(&seed, context)?);
+            context.emit_nullop(hash_str("matrix/comprehension"), output);
+        } else {
+            context.emit_varop(hash_str("matrix/comprehension"), output, arguments);
         }
-        context.emit_varop(hash_str("matrix/comprehension"), output, arguments);
         Ok(output)
     }
 }

@@ -50,12 +50,56 @@ impl ConfigCompiler {
     }
 
     fn compile_statement(&self, statement: &Statement) -> MResult<ConfigItem> {
-        if let Statement::VariableDefine(def) = statement {
-            return self.compile_let(def).map(ConfigItem::Let);
+        match statement {
+            Statement::VariableDefine(def) => self.compile_let(def).map(ConfigItem::Let),
+            Statement::ImportDeclaration(_) => Err(ConfigProfileViolation::error(
+                "imports are not allowed in Mech config",
+            )),
+            Statement::ExportDeclaration(_) => Err(ConfigProfileViolation::error(
+                "exports are not allowed in Mech config",
+            )),
+            Statement::ContextDeclaration(_) => Err(ConfigProfileViolation::error(
+                "context declarations are not allowed in Mech config",
+            )),
+            Statement::FsmDeclare(_) => Err(ConfigProfileViolation::error(
+                "state machines are not allowed in Mech config",
+            )),
+            Statement::OpAssign(_) => Err(ConfigProfileViolation::error(
+                "op assignment is not allowed in Mech config",
+            )),
+            Statement::VariableAssign(_) => Err(ConfigProfileViolation::error(
+                "assignment is not allowed in Mech config",
+            )),
+            Statement::ContextSend(_) => Err(ConfigProfileViolation::error(
+                "context sends are not allowed in Mech config",
+            )),
+            #[cfg(feature = "invariant_define")]
+            Statement::InvariantDefine(_) => Err(ConfigProfileViolation::error(
+                "invariants are not allowed in Mech config",
+            )),
+            Statement::TupleDestructure(_) => Err(ConfigProfileViolation::error(
+                "tuple destructuring is not allowed in Mech config",
+            )),
+            Statement::KindDefine(_) => Err(ConfigProfileViolation::error(
+                "kind definitions are not allowed in Mech config v1",
+            )),
+            Statement::EnumDefine(_) => Err(ConfigProfileViolation::error(
+                "enum definitions are not allowed in Mech config v1",
+            )),
+            Statement::SplitTable | Statement::FlattenTable => Err(ConfigProfileViolation::error(
+                "table mutation transforms are not allowed in Mech config",
+            )),
+            // Feature unification can expose a core statement variant that
+            // this runtime profile does not enable locally. Config remains
+            // deny-by-default for every such statement.
+            #[allow(
+                unreachable_patterns,
+                reason = "dependency feature unification can expose statement variants disabled in this runtime profile"
+            )]
+            _ => Err(ConfigProfileViolation::error(
+                "this statement is not allowed in Mech config v1",
+            )),
         }
-        Err(ConfigProfileViolation::error(
-            "this statement is not allowed in Mech config v1",
-        ))
     }
 
     fn compile_let(&self, def: &VariableDefine) -> MResult<ConfigLet> {

@@ -621,6 +621,10 @@ where
             _marker: PhantomData,
         }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT)
+    }
 }
 impl<T, R1, C1, S1> MechFunctionImpl for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
 where

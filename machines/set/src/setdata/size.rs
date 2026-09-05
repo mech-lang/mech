@@ -21,6 +21,10 @@ impl MechFunctionFactory for SetSizeFxn {
             out: out.try_ref()?,
         }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_SIZE_CONTRACT)
+    }
 }
 
 impl MechFunctionImpl for SetSizeFxn {
@@ -60,8 +64,8 @@ impl CanonicalFunctionSpecializer for SetSize {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        specialize_u64::<SetSizeFxn>(invocation)
+        specialize_u64::<SetSizeFxn>(invocation, context)
     }
 }

@@ -100,6 +100,41 @@ fn structurally_valid_noncanonical_dimensions_are_rejected() {}
         failures = CHECKER.validate_model(source, manifest)
         self.assertTrue(any("must be private" in failure for failure in failures))
 
+    def test_declared_nonwire_sidecar_is_accepted(self) -> None:
+        manifest = {
+            "artifact_fields": ["revision"],
+            "artifact_internal_sidecars": [
+                {"field": "shape_hints", "read_accessor": "shape_hint"}
+            ],
+            "forbidden_artifact_tokens": [],
+        }
+        source = """
+pub struct ProgramArtifact {
+    revision: u64,
+    shape_hints: Vec<u64>,
+}
+impl ProgramArtifact {
+    pub fn revision(&self) {}
+    pub fn shape_hint(&self, slot: usize) { let _ = slot; }
+}
+"""
+        self.assertEqual(CHECKER.validate_model(source, manifest), [])
+
+    def test_unlisted_nonwire_sidecar_is_rejected(self) -> None:
+        manifest = {
+            "artifact_fields": ["revision"],
+            "forbidden_artifact_tokens": [],
+        }
+        source = """
+pub struct ProgramArtifact {
+    revision: u64,
+    shape_hints: Vec<u64>,
+}
+impl ProgramArtifact { pub fn revision(&self) {} }
+"""
+        failures = CHECKER.validate_model(source, manifest)
+        self.assertTrue(any("fields changed" in failure for failure in failures))
+
 
 if __name__ == "__main__":
     unittest.main()

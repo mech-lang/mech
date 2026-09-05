@@ -1224,12 +1224,25 @@ impl TypeConstraintEnvironment {
             .into_iter()
             .map(|kind| KindPredicateEvidence::new(kind.clone(), self.known_predicates(kind)))
             .collect::<Vec<_>>();
-        ResolvedType::new_with_evidence(
-            output,
-            self.dimensions.clone().into_boxed_slice(),
-            evidence,
-        )
-        .map_err(|error| error.with_origin(self.origin.clone()))
+        let dimensions = self
+            .dimensions
+            .iter()
+            .map(|declaration| {
+                Ok(DimensionParameterDeclaration {
+                    id: declaration.id,
+                    origin: declaration.origin,
+                    lifetime: declaration.lifetime,
+                    lower_bound: self.substitute_dimension(&declaration.lower_bound)?,
+                    upper_bound: declaration
+                        .upper_bound
+                        .as_ref()
+                        .map(|upper| self.substitute_dimension(upper))
+                        .transpose()?,
+                })
+            })
+            .collect::<Result<Vec<_>, TypeResolutionError>>()?;
+        ResolvedType::new_with_evidence(output, dimensions.into_boxed_slice(), evidence)
+            .map_err(|error| error.with_origin(self.origin.clone()))
     }
 
     fn substitute_kind(&self, kind: &KindExpr) -> Result<KindExpr, TypeResolutionError> {

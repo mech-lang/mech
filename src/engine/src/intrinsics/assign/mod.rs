@@ -35,7 +35,7 @@ pub use self::tuple::*;
 
 // x = 1 ----------------------------------------------------------------------
 
-static PURE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+pub(crate) static PURE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
     std::sync::LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![InputPortPolicy {
@@ -88,39 +88,45 @@ fn indexed_state_register_contract(
 }
 
 #[cfg(feature = "semantic-compiler")]
-static PURE_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| {
-        indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 0 })
-    });
+pub(crate) static PURE_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| {
+    indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 0 })
+});
 
 #[cfg(feature = "semantic-compiler")]
-static PURE_ROW_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| {
-        indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 0 })
-    });
+pub(crate) static PURE_ROW_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| {
+    indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 0 })
+});
 
 #[cfg(feature = "semantic-compiler")]
-static PURE_COLUMN_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+pub(crate) static PURE_COLUMN_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
 > = std::sync::LazyLock::new(|| {
     indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 1 })
 });
 
 #[cfg(feature = "semantic-compiler")]
-static PURE_RECTANGULAR_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| indexed_state_register_contract(4, RegionPolicy::RectangularRegion));
+pub(crate) static PURE_RECTANGULAR_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| {
+    indexed_state_register_contract(4, RegionPolicy::RectangularRegion)
+});
 
 #[cfg(feature = "semantic-compiler")]
-static PURE_WHOLE_VALUE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| indexed_state_register_contract(2, RegionPolicy::WholeValue));
+pub(crate) static PURE_WHOLE_VALUE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| indexed_state_register_contract(2, RegionPolicy::WholeValue));
 
 #[cfg(feature = "semantic-compiler")]
-static PURE_COLLECTION_ENTRY_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+pub(crate) static PURE_COLLECTION_ENTRY_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
 > = std::sync::LazyLock::new(|| indexed_state_register_contract(3, RegionPolicy::CollectionEntry));
 
 #[cfg(feature = "semantic-compiler")]
-static PURE_SINGLE_ELEMENT_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
+pub(crate) static PURE_SINGLE_ELEMENT_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
 > = std::sync::LazyLock::new(|| indexed_state_register_contract(3, RegionPolicy::SingleElement));
 
@@ -131,27 +137,27 @@ pub(crate) fn install_frozen_ekf_state_runtime(
     builder.insert_runtime_factory_with_semantic_contract::<Assign<DVector<f64>>>(
         "Assign<f64DVector>",
         RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
-        mech_core::OperationId::from_name("core/assign"),
+        mech_core::OperationId::from_name("assign"),
         &PURE_STATE_REGISTER_CONTRACT,
     )?;
     builder.insert_runtime_factory_with_semantic_contract::<Assign<DMatrix<f64>>>(
         "Assign<f64DMatrix>",
         RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
-        mech_core::OperationId::from_name("core/assign"),
+        mech_core::OperationId::from_name("assign"),
         &PURE_STATE_REGISTER_CONTRACT,
     )?;
     #[cfg(feature = "vector3")]
     builder.insert_runtime_factory_with_semantic_contract::<Assign<Vector3<f64>>>(
         "Assign<f64Vector3>",
         RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
-        mech_core::OperationId::from_name("core/assign"),
+        mech_core::OperationId::from_name("assign"),
         &PURE_STATE_REGISTER_CONTRACT,
     )?;
     #[cfg(feature = "matrix3")]
     builder.insert_runtime_factory_with_semantic_contract::<Assign<Matrix3<f64>>>(
         "Assign<f64Matrix3>",
         RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
-        mech_core::OperationId::from_name("core/assign"),
+        mech_core::OperationId::from_name("assign"),
         &PURE_STATE_REGISTER_CONTRACT,
     )?;
     Ok(())
@@ -258,6 +264,10 @@ where
             sink: sink.try_ref()?,
             source: source.try_ref()?,
         }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_STATE_REGISTER_CONTRACT)
     }
 }
 impl<T> MechFunctionImpl for Assign<T>
@@ -982,7 +992,7 @@ impl MechFunctionCompiler for AssignCanonicalSelection {
         arguments.push(output);
         arguments.push(source);
         arguments.extend(selectors);
-        context.emit_varop(hash_str(self.selection_kind.operation()), output, arguments);
+        context.emit_varop(hash_str("AssignCanonicalSelection"), output, arguments);
         Ok(output)
     }
 }
@@ -990,6 +1000,7 @@ impl MechFunctionCompiler for AssignCanonicalSelection {
 #[cfg(feature = "semantic-compiler")]
 fn canonical_indexed_assignment(
     invocation: &SpecializationInvocation,
+    context: &mut SpecializationContext<'_>,
 ) -> MResult<SpecializedFunction> {
     let sink = invocation
         .input(0)
@@ -1057,10 +1068,15 @@ fn canonical_indexed_assignment(
         selection_kind,
     };
     implementation.next_value()?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        Box::new(implementation),
-        FunctionInvocation::variadic(sink, inputs),
-    )))
+    context.resolve_syntax_operation(selection_kind.operation(), selection_kind.contract())?;
+    context.certify_instance(
+        FunctionInstance::new(
+            Box::new(implementation),
+            FunctionInvocation::variadic(sink, inputs),
+        ),
+        mech_core::RuntimeFunctionId::from_name("AssignCanonicalSelection"),
+        mech_core::ExecutionTarget::DirectRuntime,
+    )
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -1083,19 +1099,26 @@ impl CanonicalFunctionSpecializer for AssignValue {
         let sink = invocation.input(0).expect("validated assignment sink");
         let source = invocation.input(1).expect("validated assignment source");
         if invocation.len() > 2 {
-            return canonical_indexed_assignment(invocation);
+            return canonical_indexed_assignment(invocation, context);
         }
-        let _ = context;
         let sink = sink.cell()?.clone();
         let source = source.cell()?.clone();
         sink.preflight_replace()?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(AssignCanonicalCell {
-                sink: sink.clone(),
-                source: source.clone(),
-            }),
-            FunctionInvocation::unary(sink, source),
-        )))
+        let runtime_function = mech_core::RuntimeFunctionId::from_name(
+            &canonical_assignment_runtime_name(sink.representation())?,
+        );
+        context.resolve_syntax_operation_contract(&PURE_STATE_REGISTER_CONTRACT)?;
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(AssignCanonicalCell {
+                    sink: sink.clone(),
+                    source: source.clone(),
+                }),
+                FunctionInvocation::unary(sink, source),
+            ),
+            runtime_function,
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 
@@ -1106,9 +1129,9 @@ impl CanonicalFunctionSpecializer for AssignColumn {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        canonical_indexed_assignment(invocation)
+        canonical_indexed_assignment(invocation, context)
     }
 }
 
@@ -1265,7 +1288,7 @@ impl CanonicalFunctionSpecializer for AddAssignValue {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 2 {
             return Err(MechError::new(
@@ -1292,10 +1315,15 @@ impl CanonicalFunctionSpecializer for AddAssignValue {
             source: source.clone(),
         };
         implementation.next_value()?;
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(implementation),
-            FunctionInvocation::unary(sink, source),
-        )))
+        context.resolve_syntax_operation_contract(&PURE_STATE_REGISTER_CONTRACT)?;
+        context.certify_instance(
+            FunctionInstance::new(
+                Box::new(implementation),
+                FunctionInvocation::unary(sink, source),
+            ),
+            mech_core::RuntimeFunctionId::from_name("AddAssignCanonicalTable"),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
     }
 }
 

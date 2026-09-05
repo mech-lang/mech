@@ -537,6 +537,7 @@ macro_rules! declare_assign_scalar_factory {
                 name: concat!("Assign<", $runtime_name, ">"),
                 factory_type: Assign<$scalar>,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!("Assign<", $runtime_name, ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::", stringify!([<install_assign_ $installer_token>])),
                 extra_cargo_features: ["assign"],
@@ -554,6 +555,7 @@ mech_core::declare_native_runtime_factory! {
     name: "Assign<index>",
     factory_type: Assign<usize>,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("Assign<index>"),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_assign_index",
     extra_cargo_features: ["assign"],
@@ -615,6 +617,7 @@ macro_rules! declare_assign_value_matrix_shape {
                 contract: RuntimeFunctionContract::same_shape(
                     RuntimeOutputAliasPolicy::AllowInputAlias,
                 ),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!("Assign<", $runtime_name, stringify!($shape), ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!(
                     "mech_engine::__mech_native::",
@@ -652,7 +655,10 @@ declare_assign_value_matrix_for_scalar!(String, string, "string", "string");
 declare_assign_value_matrix_for_scalar!(R64, r64, "rational", "r64");
 declare_assign_value_matrix_for_scalar!(C64, c64, "complex", "c64");
 
-#[cfg(all(feature = "native-plan", feature = "matrix"))]
+#[cfg(all(
+    any(feature = "native-plan", feature = "semantic-compiler"),
+    feature = "matrix"
+))]
 macro_rules! register_assign_value_matrix_shape {
     (($builder:ident; $scalar_token:ident), $shape:ident, $_shape_feature:literal) => {
         mech_core::paste::paste! {
@@ -661,7 +667,10 @@ macro_rules! register_assign_value_matrix_shape {
     };
 }
 
-#[cfg(all(feature = "native-plan", feature = "matrix"))]
+#[cfg(all(
+    any(feature = "native-plan", feature = "semantic-compiler"),
+    feature = "matrix"
+))]
 macro_rules! register_assign_value_matrix_for_scalar {
     ($builder:ident, $scalar_token:ident, $scalar_feature:literal) => {
         #[cfg(feature = $scalar_feature)]
@@ -728,6 +737,7 @@ macro_rules! declare_matrix_assign_factory {
                     $output_alias,
                     assign_layout_validator!($layout),
                 ),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($fxn_name), "<", $scalar_name, $(stringify!($shape)),*, ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!(
                     "mech_engine::__mech_native::",
@@ -2677,34 +2687,46 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-/// Installs whole-register matrix assignment factories used by compiled
-/// source programs. The frozen interpreter catalog continues to use the
-/// legacy slice-assignment surface; these exact storage-shaped entries exist
-/// only so native planning can link compiler-emitted stable assignments.
-#[cfg(feature = "native-plan")]
-pub(crate) fn install_native_plan(
-    #[cfg(feature = "matrix")] builder: &mut FunctionCatalogBuilder,
-    #[cfg(not(feature = "matrix"))] _: &mut FunctionCatalogBuilder,
-) -> MResult<()> {
+/// Installs whole-register matrix assignment factories emitted by the source
+/// compiler. Runtime-only catalogs remain unchanged; compiler and native-plan
+/// catalogs both close the exact storage-shaped bytecode surface.
+#[cfg(all(
+    any(feature = "native-plan", feature = "semantic-compiler"),
+    feature = "matrix"
+))]
+fn install_compiled_matrix_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register_assign_value_matrix_for_scalar!(builder, u8, "u8");
+    register_assign_value_matrix_for_scalar!(builder, u16, "u16");
+    register_assign_value_matrix_for_scalar!(builder, u32, "u32");
+    register_assign_value_matrix_for_scalar!(builder, u64, "u64");
+    register_assign_value_matrix_for_scalar!(builder, u128, "u128");
+    register_assign_value_matrix_for_scalar!(builder, i8, "i8");
+    register_assign_value_matrix_for_scalar!(builder, i16, "i16");
+    register_assign_value_matrix_for_scalar!(builder, i32, "i32");
+    register_assign_value_matrix_for_scalar!(builder, i64, "i64");
+    register_assign_value_matrix_for_scalar!(builder, i128, "i128");
+    register_assign_value_matrix_for_scalar!(builder, f32, "f32");
+    register_assign_value_matrix_for_scalar!(builder, f64, "f64");
+    register_assign_value_matrix_for_scalar!(builder, bool, "bool");
+    register_assign_value_matrix_for_scalar!(builder, string, "string");
+    register_assign_value_matrix_for_scalar!(builder, r64, "r64");
+    register_assign_value_matrix_for_scalar!(builder, c64, "c64");
+    Ok(())
+}
+
+#[cfg(feature = "semantic-compiler")]
+pub(crate) fn install_compiler_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix")]
-    {
-        register_assign_value_matrix_for_scalar!(builder, u8, "u8");
-        register_assign_value_matrix_for_scalar!(builder, u16, "u16");
-        register_assign_value_matrix_for_scalar!(builder, u32, "u32");
-        register_assign_value_matrix_for_scalar!(builder, u64, "u64");
-        register_assign_value_matrix_for_scalar!(builder, u128, "u128");
-        register_assign_value_matrix_for_scalar!(builder, i8, "i8");
-        register_assign_value_matrix_for_scalar!(builder, i16, "i16");
-        register_assign_value_matrix_for_scalar!(builder, i32, "i32");
-        register_assign_value_matrix_for_scalar!(builder, i64, "i64");
-        register_assign_value_matrix_for_scalar!(builder, i128, "i128");
-        register_assign_value_matrix_for_scalar!(builder, f32, "f32");
-        register_assign_value_matrix_for_scalar!(builder, f64, "f64");
-        register_assign_value_matrix_for_scalar!(builder, bool, "bool");
-        register_assign_value_matrix_for_scalar!(builder, string, "string");
-        register_assign_value_matrix_for_scalar!(builder, r64, "r64");
-        register_assign_value_matrix_for_scalar!(builder, c64, "c64");
-    }
+    install_compiled_matrix_runtime(builder)?;
+    let _ = builder;
+    Ok(())
+}
+
+#[cfg(feature = "native-plan")]
+pub(crate) fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "matrix")]
+    install_compiled_matrix_runtime(builder)?;
+    let _ = builder;
     Ok(())
 }
 

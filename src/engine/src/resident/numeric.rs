@@ -892,8 +892,23 @@ fn bind_hold_state(
     let [input] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    if input.schema_id != request.output.schema_id
-        || input.schema_key != request.output.schema_key
+    let input_schema = request
+        .schemas
+        .get(input.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let schema_compatible = input_schema.key() == output_schema.key()
+        || matches!(
+            (input_schema.body(), output_schema.body()),
+            (
+                SchemaBody::Matrix { element: input, .. },
+                SchemaBody::Matrix { element: output, .. },
+            ) if input == output
+        );
+    if !schema_compatible
         || input.kind != request.output.kind
         || input.shape != request.output.shape
     {
@@ -1947,7 +1962,7 @@ fn bind_strict_comparison(
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    if !strict_inputs_share_identity(&request.inputs[0], &request.inputs[1]) {
+    if !strict_inputs_share_identity(request) {
         return bound(mismatch_executor, Vec::<u64>::new().into_boxed_slice());
     }
     let kernel = bound(executor, Vec::<u64>::new().into_boxed_slice())?;
@@ -1962,11 +1977,26 @@ fn bind_strict_comparison(
     }
 }
 
-fn strict_inputs_share_identity(
-    left: &mech_core::ResidentPortLayout,
-    right: &mech_core::ResidentPortLayout,
-) -> bool {
-    left.schema_id == right.schema_id && left.kind == right.kind && left.shape == right.shape
+fn strict_inputs_share_identity(request: &ResidentKernelBindRequest<'_>) -> bool {
+    let [left, right] = request.inputs else {
+        return false;
+    };
+    if left.kind != right.kind || left.shape != right.shape {
+        return false;
+    }
+    if left.schema_id == right.schema_id {
+        return true;
+    }
+    matches!(
+        (
+            request.schemas.get(left.schema_id).map(|schema| schema.body()),
+            request.schemas.get(right.schema_id).map(|schema| schema.body()),
+        ),
+        (
+            Some(SchemaBody::Matrix { element: left, .. }),
+            Some(SchemaBody::Matrix { element: right, .. }),
+        ) if left == right
+    )
 }
 
 fn bind_strict_equal(
@@ -3914,7 +3944,7 @@ fn bind_snapshot_n_choose_k_matrix(
     .with_snapshot_schemas(request.schemas.clone()))
 }
 
-fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
+pub(super) fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
     if k > n {
         return None;
     }
@@ -9385,6 +9415,18 @@ fn snapshot_range_size(
     }
 }
 
+pub(super) fn canonical_range_cardinality(
+    values: &[&mech_core::Value],
+    inclusive: bool,
+    incremented: bool,
+) -> Option<usize> {
+    let numbers = values
+        .iter()
+        .map(|value| snapshot_range_number(value.data()))
+        .collect::<Option<Vec<_>>>()?;
+    snapshot_range_size(&numbers, inclusive, incremented)
+}
+
 fn range_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -9678,6 +9720,11 @@ fn canonical_n_choose_k_selection(data: &ValueData) -> Option<(u128, Option<u128
         }
         _ => return None,
     })
+}
+
+pub(super) fn canonical_n_choose_k_cardinality(value: &mech_core::Value) -> Option<usize> {
+    let (selection, _) = canonical_n_choose_k_selection(value.data())?;
+    usize::try_from(selection).ok()
 }
 
 fn numeric_from_u128(

@@ -28,18 +28,16 @@ use num_traits::*;
     all(feature = "matrixd", feature = "row_vectord")
 ))]
 macro_rules! sum_column_op {
-    ($arg:expr, $out:expr) => {
-        {
-            for row in 0..($arg).nrows() {
-                let mut sum = T::zero();
-                for column in 0..($arg).ncols() {
-                    sum = checked_sum_add(sum, ($arg)[(row, column)])?;
-                }
-                ($out)[row] = sum;
+    ($arg:expr, $out:expr) => {{
+        for row in 0..($arg).nrows() {
+            let mut sum = T::zero();
+            for column in 0..($arg).ncols() {
+                sum = checked_sum_add(sum, ($arg)[(row, column)])?;
             }
-            Ok::<(), MechError>(())
+            ($out)[row] = sum;
         }
-    };
+        Ok::<(), MechError>(())
+    }};
 }
 
 #[cfg(all(feature = "matrix1", feature = "matrix1"))]
@@ -107,13 +105,16 @@ where
         <RowDVector<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_STATS_REDUCTION_CONTRACT)
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg) = invocation.expect_unary()?;
         let arg: Ref<RowDVector<T>> = arg.try_ref()?;
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(StatsSumColumnRD2 { arg, out }))
     }
-
 }
 #[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
 impl<T> MechFunctionImpl for StatsSumColumnRD2<T>
@@ -150,6 +151,9 @@ where
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_STATS_REDUCTION_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -162,7 +166,11 @@ where
     T: CanonicalMatrixElementBacking + CompileConst + ConstElem + FunctionRuntimeType,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!(StatsSumColumnRD2), <T as FunctionRuntimeType>::REPRESENTATION);
+        let name = format!(
+            "{}<{}>",
+            stringify!(StatsSumColumnRD2),
+            <T as FunctionRuntimeType>::REPRESENTATION
+        );
         compile_unop!(name, self.out, self.arg, ctx);
     }
 }
@@ -198,9 +206,10 @@ impl CanonicalFunctionSpecializer for StatsSumColumn {
             )
             .with_compiler_loc()
         })?;
-        context.bind_runtime_factory_derived_output(
-            "StatsSumColumn",
-            Some((shape.rows, 1)),
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![vec![shape.rows as u64, 1_u64].into_boxed_slice()].into_boxed_slice(),
             &[input],
         )
     }
@@ -314,11 +323,13 @@ mod canonical_port_tests {
     fn column_sum_rejects_wrong_exact_storage_and_binary_layout() {
         let out = Ref::new(Vector2::<f64>::zeros());
         let wrong_arg = Ref::new(DMatrix::<f64>::zeros(2, 2));
-        assert!(StatsSumColumnM2::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
-            ValueCell::from_exact_matrix_ref(wrong_arg, 2, 2).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            StatsSumColumnM2::<f64>::new_invocation(FunctionInvocation::unary(
+                ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
+                ValueCell::from_exact_matrix_ref(wrong_arg, 2, 2).unwrap(),
+            ))
+            .is_err()
+        );
 
         let fixed_arg = Ref::new(Matrix2::<f64>::zeros());
         let input = ValueCell::from_exact_matrix_ref(fixed_arg, 2, 2).unwrap();

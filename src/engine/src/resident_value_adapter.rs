@@ -3,7 +3,8 @@
 use mech_core::snapshot::{F64Bits, SequenceView, SnapshotValidationContext};
 use mech_core::{
     GenericError, MResult, MechError, ResidentShape, ResidentValueMut, ResidentValueRef,
-    SchemaBody, SchemaId, ShapeInstance, Value, ValueData, ValueDataDraft, ValueDraft,
+    SchemaBody, SchemaDraft, SchemaId, SchemaTableBuilder, ShapeInstance, Value, ValueData,
+    ValueDataDraft, ValueDraft,
 };
 
 use crate::resident::general::{
@@ -145,7 +146,7 @@ pub(crate) fn materialize_resident_value(
             ));
         }
     };
-    ValueDraft {
+    let value = ValueDraft {
         schema,
         shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
         data,
@@ -158,7 +159,57 @@ pub(crate) fn materialize_resident_value(
             },
             None,
         )
-    })
+    })?;
+    close_materialized_schema(value)
+}
+
+/// External resident payloads are detached values. Close their semantic
+/// schema to the current shape so consumers never need the artifact's live
+/// dimension environment to interpret the snapshot.
+fn close_materialized_schema(value: Value) -> MResult<Value> {
+    let schemas = value.schemas().ok_or_else(|| {
+        resident_materialization_error(format!(
+            "schema {:?} has no detached schema table",
+            value.schema()
+        ))
+    })?;
+    let schema = value
+        .validate_against(&schemas)
+        .map_err(|error| resident_materialization_error(format!("{error:?}")))?;
+    let closed_body = schema.closed_body(value.shape())?;
+    if schema.dimension_parameters().is_empty() && schema.body() == &closed_body {
+        return Ok(value);
+    }
+
+    let closed = SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body: closed_body,
+    }
+    .finalize()?;
+    let mut builder = SchemaTableBuilder::new();
+    for entry in schemas.entries() {
+        builder.insert(entry.schema().clone())?;
+    }
+    let closed_handle = builder.insert(closed)?;
+    let build = builder.finish()?;
+    let closed_schema = build.resolve(closed_handle)?;
+    let closed_shape = build
+        .table
+        .get(closed_schema)
+        .expect("newly inserted closed schema remains present")
+        .instantiate_shape(Box::new([]))?;
+    value
+        .rebind(closed_schema, &closed_shape, &build.table)
+        .map_err(|error| resident_materialization_error(format!("{error:?}")))
+}
+
+fn resident_materialization_error(reason: String) -> MechError {
+    MechError::new(
+        GenericError {
+            msg: format!("resident value materialization failed: {reason}"),
+        },
+        None,
+    )
 }
 
 pub(crate) fn write_value(

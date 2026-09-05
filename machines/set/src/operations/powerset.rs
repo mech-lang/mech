@@ -74,14 +74,16 @@ impl MechFunctionFactory for SetPowersetFxn {
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::Set,
     );
-    const OUTPUT_SCHEMA_RULE: FunctionOutputSchemaRule =
-        FunctionOutputSchemaRule::DynamicSetPowerset;
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, input) = invocation.expect_unary()?;
         Ok(Box::new(Self {
             input: SetInput::canonical(input)?,
             out: SetOutput::canonical(out)?,
         }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_UNARY_CONTRACT)
     }
 }
 

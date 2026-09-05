@@ -2,18 +2,6 @@
 use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
-#[cfg(all(feature = "dot", feature = "matrix"))]
-use mech_core::{SchemaBody, ValueCell, function_shape_contract_violation};
-#[cfg(any(
-    feature = "dot",
-    feature = "matmul",
-    feature = "solve",
-    feature = "transpose"
-))]
-use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
-use mech_core::{
-    FunctionCatalogBuilder, MResult,
-};
 #[cfg(all(
     feature = "source",
     any(
@@ -24,6 +12,16 @@ use mech_core::{
     )
 ))]
 use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(any(
+    feature = "dot",
+    feature = "matmul",
+    feature = "solve",
+    feature = "transpose"
+))]
+use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
+#[cfg(all(feature = "dot", feature = "matrix"))]
+use mech_core::{SchemaBody, ValueCell, function_shape_contract_violation};
 #[cfg(all(
     feature = "source",
     any(
@@ -174,6 +172,7 @@ macro_rules! declare_matrix_numeric_factory {
                 name: concat!(stringify!($factory), "<", $scalar_feature, ">"),
                 factory_type: crate::$module::$factory<$scalar>,
                 contract: matrix_numeric_runtime_contract!($module, $factory),
+                operations: [mech_core::OperationId::from_name(concat!("matrix/", $operation))],
                 package: "mech-matrix", crate_name: "mech_matrix",
                 installer_path: concat!("mech_matrix::__mech_native::", stringify!([<install_ $module:snake _ $factory:snake _ $token>])),
                 extra_cargo_features: [$operation],
@@ -431,6 +430,7 @@ macro_rules! declare_matrix_transpose_factory {
             name: concat!(stringify!($factory), "<", $name, ">"),
             factory_type: crate::transpose::$factory<$scalar>,
             contract: RuntimeFunctionContract::transpose(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            operations: [mech_core::OperationId::from_name("matrix/transpose")],
             package: "mech-matrix", crate_name: "mech_matrix",
             installer_path: concat!("mech_matrix::__mech_native::", stringify!([<install_transpose_ $factory:snake _ $token>])),
             extra_cargo_features: ["transpose"],
@@ -510,6 +510,7 @@ mech_core::declare_native_runtime_factory! {
     name: "MatrixSolveMDVD<f32>",
     factory_type: crate::solve::MatrixSolveMDVD<f32>,
     contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    operations: [mech_core::OperationId::from_name("matrix/solve")],
     package: "mech-matrix", crate_name: "mech_matrix",
     installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdvd_f32",
     extra_cargo_features: ["solve"],
@@ -522,6 +523,7 @@ mech_core::declare_native_runtime_factory! {
     name: "MatrixSolveMDVD<f64>",
     factory_type: crate::solve::MatrixSolveMDVD<f64>,
     contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    operations: [mech_core::OperationId::from_name("matrix/solve")],
     package: "mech-matrix", crate_name: "mech_matrix",
     installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdvd_f64",
     extra_cargo_features: ["solve"],
@@ -534,6 +536,7 @@ mech_core::declare_native_runtime_factory! {
     name: "MatrixSolveMDMD<f32>",
     factory_type: crate::solve::MatrixSolveMDMD<f32>,
     contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    operations: [mech_core::OperationId::from_name("matrix/solve")],
     package: "mech-matrix", crate_name: "mech_matrix",
     installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdmd_f32",
     extra_cargo_features: ["solve"],
@@ -546,6 +549,7 @@ mech_core::declare_native_runtime_factory! {
     name: "MatrixSolveMDMD<f64>",
     factory_type: crate::solve::MatrixSolveMDMD<f64>,
     contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    operations: [mech_core::OperationId::from_name("matrix/solve")],
     package: "mech-matrix", crate_name: "mech_matrix",
     installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdmd_f64",
     extra_cargo_features: ["solve"],
@@ -620,11 +624,7 @@ fn install_matmul_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(all(feature = "row_vector2", feature = "matrixd", feature = "row_vectord"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulR2MD);
 
-    #[cfg(all(
-        feature = "row_vectord",
-        feature = "vectord",
-        feature = "matrix1"
-    ))]
+    #[cfg(all(feature = "row_vectord", feature = "vectord", feature = "matrix1"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulRDVD);
     #[cfg(all(
         feature = "row_vectord",
@@ -838,6 +838,10 @@ pub mod __mech_native {
     export_matrix_transpose_family!(TransposeR3; ["row_vector3", "vector3"]);
     #[cfg(feature = "transpose")]
     export_matrix_transpose_family!(TransposeR4; ["row_vector4", "vector4"]);
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f32"))]
+    pub use super::install_matrix_solve_mdmd_f32;
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f64"))]
+    pub use super::install_matrix_solve_mdmd_f64;
     #[cfg(all(
         feature = "solve",
         feature = "matrixd",
@@ -852,10 +856,6 @@ pub mod __mech_native {
         feature = "f64"
     ))]
     pub use super::install_matrix_solve_mdvd_f64;
-    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f32"))]
-    pub use super::install_matrix_solve_mdmd_f32;
-    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f64"))]
-    pub use super::install_matrix_solve_mdmd_f64;
 }
 
 #[cfg(all(test, feature = "source"))]
@@ -1006,9 +1006,7 @@ mod runtime_signature_tests {
         install_runtime(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
         let entry = catalog
-            .runtime_entry(mech_core::RuntimeFunctionId::from_name(
-                "MatMulRDVDMD<f64>",
-            ))
+            .runtime_entry(mech_core::RuntimeFunctionId::from_name("MatMulRDVDMD<f64>"))
             .unwrap();
         assert_eq!(entry.signature(), expected);
     }

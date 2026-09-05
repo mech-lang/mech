@@ -6,10 +6,21 @@ pub use host_call::*;
 pub use resource_read::*;
 pub use resource_write::*;
 
+use mech_core::{MResult, Value, ValueCell};
+
+/// Installs one host/resource result only after its semantic descriptor and
+/// current storage satisfy the declaration already owned by the stable cell.
+pub(super) fn install_external_value(output: &ValueCell, value: Value) -> MResult<()> {
+    let expected = output.resolved_descriptor()?;
+    let candidate = ValueCell::from_snapshot(value.clone())?;
+    candidate.validate_descriptor(&expected)?;
+    output.replace(&value)
+}
+
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{
-    BytecodeCompilerContext, MResult, Register, ValueCell,
-    compile_runtime_produced_value_cell_register, compile_value_cell_register,
+    BytecodeCompilerContext, Register, compile_runtime_produced_value_cell_register,
+    compile_value_cell_register,
 };
 
 #[cfg(feature = "semantic-compiler")]

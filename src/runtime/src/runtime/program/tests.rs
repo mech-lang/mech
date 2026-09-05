@@ -1656,7 +1656,11 @@ fn compiled_conversion_executes_after_bytecode_round_trip() {
         "value := [3.9 4.1]\nanswer := value<[i32]>\nanswer",
         "value<[i32]> := [3<i32> 4<i32>]\nanswer := value<[f64]>\nanswer",
     ] {
-        let product = compiler.compile_source(source_text).unwrap();
+        let product = compiler
+            .compile_source(source_text)
+            .unwrap_or_else(|error| {
+                panic!("compiled conversion failed for {source_text}: {error:?}")
+            });
         assert!(
             product.artifact().nodes().iter().any(|node| {
                 node.operation.module_path.as_ref() == ["convert"]

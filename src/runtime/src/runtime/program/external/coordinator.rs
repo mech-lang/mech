@@ -2022,11 +2022,14 @@ fn materialize_effects(
                 )
             })?;
         let value = prepared.materialize_effect_payload(intent.ordinal)?;
+        let value_schemas = value
+            .schemas()
+            .ok_or_else(|| invalid_value("effect payload lost its schema table".to_owned()))?;
         let payload_hash = value
-            .value_hash(artifact.schemas())
+            .value_hash(&value_schemas)
             .map_err(|error| invalid_value(format!("effect payload hash failed: {error:?}")))?;
         let retained_bytes = value
-            .canonical_payload_bytes(artifact.schemas())
+            .canonical_payload_bytes(&value_schemas)
             .map_err(|error| invalid_value(format!("effect payload encoding failed: {error:?}")))?
             .len()
             + core::mem::size_of::<ResidentOutboxPayload>();

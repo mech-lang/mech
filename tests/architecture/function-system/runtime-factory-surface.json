@@ -36194,51 +36194,6 @@
       "owner": "mech-math"
     },
     {
-      "name": "NegateV<c64>",
-      "id_hex": "00ae2dac97691937",
-      "owner": "mech-math"
-    },
-    {
-      "name": "NegateV<f32>",
-      "id_hex": "003ed389704ba140",
-      "owner": "mech-math"
-    },
-    {
-      "name": "NegateV<f64>",
-      "id_hex": "00c79e9682d5e606",
-      "owner": "mech-math"
-    },
-    {
-      "name": "NegateV<i128>",
-      "id_hex": "00d4d64aaf2d8374",
-      "owner": "mech-math"
-    },
-    {
-      "name": "NegateV<i16>",
-      "id_hex": "00d623bf457de9f1",
-      "owner": "mech-math"
-    },
-    {
-      "name": "NegateV<i32>",
-      "id_hex": "00b739172f8942b2",
-      "owner": "mech-math"
-    },
-    {
-      "name": "NegateV<i64>",
-      "id_hex": "00e8ce54df653ff9",
-      "owner": "mech-math"
-    },
-    {
-      "name": "NegateV<i8>",
-      "id_hex": "009a6a900c76df7a",
-      "owner": "mech-math"
-    },
-    {
-      "name": "NegateV<r64>",
-      "id_hex": "00725a2c1c6a5666",
-      "owner": "mech-math"
-    },
-    {
       "name": "NotS<bool>",
       "id_hex": "00694317be076887",
       "owner": "mech-logic"
@@ -45172,6 +45127,426 @@
       "name": "set/define",
       "id_hex": "0022bb5370115b0c",
       "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "NextafterRDF64",
+      "id_hex": "0000251104298eb7",
+      "owner": "mech-math"
+    },
+    {
+      "name": "CopysignMDF64",
+      "id_hex": "0001dfcbc94aa930",
+      "owner": "mech-math"
+    },
+    {
+      "name": "CopysignRDF64",
+      "id_hex": "0004cab3828da71d",
+      "owner": "mech-math"
+    },
+    {
+      "name": "RemainderMDF64",
+      "id_hex": "0007a1bbc02c1dfb",
+      "owner": "mech-math"
+    },
+    {
+      "name": "JnVDF64",
+      "id_hex": "000c33845f8b2ad8",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i32VD>",
+      "id_hex": "001c853bed64286d",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i64VD>",
+      "id_hex": "00222b765345ff03",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FmodVDF64",
+      "id_hex": "00225f6d9124859f",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FdimRDF32",
+      "id_hex": "0025da310f791b94",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<f32VD>",
+      "id_hex": "0025dea3658ed374",
+      "owner": "mech-math"
+    },
+    {
+      "name": "YnRDF32",
+      "id_hex": "00292346db01ab08",
+      "owner": "mech-math"
+    },
+    {
+      "name": "YnVDF32",
+      "id_hex": "002cdef9a8afd3b6",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i16RD>",
+      "id_hex": "002cdeff5426c17d",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FdimMDF64",
+      "id_hex": "002ee0e75dcf8cce",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FmodVDF32",
+      "id_hex": "00304c2142296e1e",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i128RD>",
+      "id_hex": "00306cda5a8fc3e2",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FdimRDF64",
+      "id_hex": "00353588948205c1",
+      "owner": "mech-math"
+    },
+    {
+      "name": "CopysignMDF32",
+      "id_hex": "00382f98252e54a4",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FdimVDF32",
+      "id_hex": "003e461917925c4c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<f64RD>",
+      "id_hex": "0050dfc6bda04138",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FmodF32",
+      "id_hex": "0054c7f799b546c6",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i32MD>",
+      "id_hex": "00562289cc4f518c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "RemainderMDF32",
+      "id_hex": "005631b4776326e5",
+      "owner": "mech-math"
+    },
+    {
+      "name": "JnVDF32",
+      "id_hex": "005a98830f9eaeb2",
+      "owner": "mech-math"
+    },
+    {
+      "name": "YnF64",
+      "id_hex": "005b1e023e53bff8",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NextafterF64",
+      "id_hex": "005c24e19643fbd1",
+      "owner": "mech-math"
+    },
+    {
+      "name": "RemainderVDF32",
+      "id_hex": "005db9270695de90",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i128MD>",
+      "id_hex": "005edf9ef51fc39c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "RemainderRDF32",
+      "id_hex": "0061a729fe187e6c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FmodMDF64",
+      "id_hex": "006334200ce123c2",
+      "owner": "mech-math"
+    },
+    {
+      "name": "CopysignVDF32",
+      "id_hex": "00645ae11487db72",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i8MD>",
+      "id_hex": "00646aed34335a05",
+      "owner": "mech-math"
+    },
+    {
+      "name": "YnMDF32",
+      "id_hex": "0065537c0aaffc1a",
+      "owner": "mech-math"
+    },
+    {
+      "name": "CopysignRDF32",
+      "id_hex": "006905791ad3c35f",
+      "owner": "mech-math"
+    },
+    {
+      "name": "JnF64",
+      "id_hex": "006f46a63ad26014",
+      "owner": "mech-math"
+    },
+    {
+      "name": "RemainderF32",
+      "id_hex": "007115e83a464eb6",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i16MD>",
+      "id_hex": "0072e434d5ce119c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "YnF32",
+      "id_hex": "0075477ea51441c2",
+      "owner": "mech-math"
+    },
+    {
+      "name": "RemainderF64",
+      "id_hex": "0077909b4eebd85d",
+      "owner": "mech-math"
+    },
+    {
+      "name": "CopysignVDF64",
+      "id_hex": "00800d38c10e44bf",
+      "owner": "mech-math"
+    },
+    {
+      "name": "YnMDF64",
+      "id_hex": "0080cfcd550137a2",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<c64MD>",
+      "id_hex": "0082631d1d5e0c52",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<c64RD>",
+      "id_hex": "00830256cfd68fea",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FmodF64",
+      "id_hex": "0086a190282280d5",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<f64VD>",
+      "id_hex": "00897bfeb8576f4c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FdimVDF64",
+      "id_hex": "0089eaf7f4b7bbe5",
+      "owner": "mech-math"
+    },
+    {
+      "name": "JnRDF32",
+      "id_hex": "008da198ac549331",
+      "owner": "mech-math"
+    },
+    {
+      "name": "JnMDF32",
+      "id_hex": "008e311a30a5878c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NextafterVDF32",
+      "id_hex": "008ff6c3af1acfe0",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NextafterF32",
+      "id_hex": "0090672d6924866a",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<c64VD>",
+      "id_hex": "00950fcd7408b013",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i128VD>",
+      "id_hex": "009a8600142a76a8",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<r64RD>",
+      "id_hex": "00a0133b00ba9798",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FdimF32",
+      "id_hex": "00a2bc9c310e802c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<f64MD>",
+      "id_hex": "00a39e9096b6a6e7",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<f32MD>",
+      "id_hex": "00aa52eec3625da6",
+      "owner": "mech-math"
+    },
+    {
+      "name": "CopysignF32",
+      "id_hex": "00ac646c863c00e2",
+      "owner": "mech-math"
+    },
+    {
+      "name": "YnRDF64",
+      "id_hex": "00bb10ed10ed414b",
+      "owner": "mech-math"
+    },
+    {
+      "name": "RemainderVDF64",
+      "id_hex": "00bea14d57d24757",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NextafterMDF32",
+      "id_hex": "00bf19025e0a68c2",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i64MD>",
+      "id_hex": "00c056fa384f30f7",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NextafterRDF32",
+      "id_hex": "00c3a6fb6dc6c945",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FdimF64",
+      "id_hex": "00c727a8e44513c0",
+      "owner": "mech-math"
+    },
+    {
+      "name": "RemainderRDF64",
+      "id_hex": "00c7345be81ea12f",
+      "owner": "mech-math"
+    },
+    {
+      "name": "YnVDF64",
+      "id_hex": "00c8d082ba7ce72e",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i8VD>",
+      "id_hex": "00cd76f42748d2a1",
+      "owner": "mech-math"
+    },
+    {
+      "name": "JnF32",
+      "id_hex": "00cf25c38ec65bd3",
+      "owner": "mech-math"
+    },
+    {
+      "name": "JnRDF64",
+      "id_hex": "00cf5f74e4f56afa",
+      "owner": "mech-math"
+    },
+    {
+      "name": "CopysignF64",
+      "id_hex": "00d0906110278cff",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i16VD>",
+      "id_hex": "00d200baf2bb8d2e",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i8RD>",
+      "id_hex": "00d3051c3c15e497",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<r64MD>",
+      "id_hex": "00d30ba1cbcfcb86",
+      "owner": "mech-math"
+    },
+    {
+      "name": "JnMDF64",
+      "id_hex": "00d39499ef3e8f93",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i64RD>",
+      "id_hex": "00d3f6f0877d3a27",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FmodMDF32",
+      "id_hex": "00d622d89b30efb5",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<f32RD>",
+      "id_hex": "00da167fdd166dcd",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<i32RD>",
+      "id_hex": "00db7081c48cb4a5",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NextafterVDF64",
+      "id_hex": "00df35cc421110c1",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FdimMDF32",
+      "id_hex": "00e0f9942df7e09c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FmodRDF32",
+      "id_hex": "00e3caa3705639b7",
+      "owner": "mech-math"
+    },
+    {
+      "name": "FmodRDF64",
+      "id_hex": "00e67b44fb279e6c",
+      "owner": "mech-math"
+    },
+    {
+      "name": "NegateV<r64VD>",
+      "id_hex": "00e944e4e0c84048",
+      "owner": "mech-math"
+    },
+    {
+      "name": "access/index",
+      "id_hex": "00f02b3238931ff6",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "NextafterMDF64",
+      "id_hex": "00ff0b1d015a8510",
+      "owner": "mech-math"
     }
   ]
 }

@@ -118,42 +118,15 @@ macro_rules! bind_dynamic_binary_range {
     ($factory:ident, $scalar:ty, $first:expr, $second:expr, $inclusive:expr, $context:expr) => {{
         let inputs = vec![$first.cell()?.clone(), $second.cell()?.clone()].into_boxed_slice();
         let size = $crate::catalog::canonical_range_size(&inputs, $inclusive, false)?;
-        let initial = *$first.try_ref::<$scalar>()?.borrow();
-        #[cfg(feature = "row_vectord")]
-        {
-            let output_ref = mech_core::Ref::new(nalgebra::RowDVector::<$scalar>::from_element(
-                size, initial,
-            ));
-            let output = mech_core::ValueCell::from_exact_matrix_ref(
-                output_ref,
-                1,
-                size,
-            )?
-            .with_resolved_output_type($context.resolved_output(0)?)?;
-            return mech_core::SpecializedFunction::bind_factory::<
-                $factory<$scalar, nalgebra::RowDVector<$scalar>>,
-            >(output, inputs);
-        }
-        #[cfg(all(not(feature = "row_vectord"), feature = "matrixd"))]
-        {
-            let output_ref = mech_core::Ref::new(nalgebra::DMatrix::<$scalar>::from_element(
-                1, size, initial,
-            ));
-            let output = mech_core::ValueCell::from_exact_matrix_ref(
-                output_ref,
-                1,
-                size,
-            )?
-            .with_resolved_output_type($context.resolved_output(0)?)?;
-            return mech_core::SpecializedFunction::bind_factory::<
-                $factory<$scalar, nalgebra::DMatrix<$scalar>>,
-            >(output, inputs);
-        }
-        #[cfg(all(not(feature = "matrixd"), not(feature = "row_vectord")))]
-        return Err(mech_core::function_shape_contract_violation(
-            "range_construction",
-            "source range construction requires a dynamic row or matrix backing",
-        ));
+        let semantic_inputs = [$first, $second];
+        return $context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(
+                $context.resolved_call()?.operation.id,
+            ),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![vec![1, size as u64].into_boxed_slice()].into_boxed_slice(),
+            &semantic_inputs,
+        )
     }};
 }
 
@@ -169,42 +142,15 @@ macro_rules! bind_dynamic_ternary_range {
         ]
         .into_boxed_slice();
         let size = $crate::catalog::canonical_range_size(&inputs, $inclusive, true)?;
-        let initial = *$first.try_ref::<$scalar>()?.borrow();
-        #[cfg(feature = "row_vectord")]
-        {
-            let output_ref = mech_core::Ref::new(nalgebra::RowDVector::<$scalar>::from_element(
-                size, initial,
-            ));
-            let output = mech_core::ValueCell::from_exact_matrix_ref(
-                output_ref,
-                1,
-                size,
-            )?
-            .with_resolved_output_type($context.resolved_output(0)?)?;
-            return mech_core::SpecializedFunction::bind_factory::<
-                $factory<$scalar, nalgebra::RowDVector<$scalar>>,
-            >(output, inputs);
-        }
-        #[cfg(all(not(feature = "row_vectord"), feature = "matrixd"))]
-        {
-            let output_ref = mech_core::Ref::new(nalgebra::DMatrix::<$scalar>::from_element(
-                1, size, initial,
-            ));
-            let output = mech_core::ValueCell::from_exact_matrix_ref(
-                output_ref,
-                1,
-                size,
-            )?
-            .with_resolved_output_type($context.resolved_output(0)?)?;
-            return mech_core::SpecializedFunction::bind_factory::<
-                $factory<$scalar, nalgebra::DMatrix<$scalar>>,
-            >(output, inputs);
-        }
-        #[cfg(all(not(feature = "matrixd"), not(feature = "row_vectord")))]
-        return Err(mech_core::function_shape_contract_violation(
-            "range_construction",
-            "source range construction requires a dynamic row or matrix backing",
-        ));
+        let semantic_inputs = [$first, $step, $last];
+        return $context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(
+                $context.resolved_call()?.operation.id,
+            ),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![vec![1, size as u64].into_boxed_slice()].into_boxed_slice(),
+            &semantic_inputs,
+        )
     }};
 }
 

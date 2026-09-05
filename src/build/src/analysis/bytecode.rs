@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
 use mech_core::{
-    FunctionCatalog, MResult, NativeFunctionLinkage, ParsedProgram, RuntimeFunctionEntry,
-    RuntimeFunctionId, hash_str,
+    BoundCall, ExecutionTarget, FunctionCatalog, MResult, NativeFunctionLinkage, ParsedProgram,
+    RuntimeFunctionEntry, RuntimeFunctionId, hash_str,
 };
 
 use crate::{
@@ -11,14 +11,108 @@ use crate::{
 };
 
 /// Resolves the exact native linkage for every runtime instruction in a
-/// validated bytecode program.
+/// validated bytecode program. Compiler semantic sidecars carry both the
+/// bindings and a parallel requirement bit, so source operations are checked
+/// while non-semantic compiler markers remain explicitly unbound.
 ///
 /// IDs are sorted and deduplicated before catalog lookup, so repeated calls to
 /// one runtime factory result in one planned installer.
 pub(crate) fn analyze_runtime_functions(
     program: &ParsedProgram,
     catalog: &FunctionCatalog,
+    instruction_type_bindings: Option<&[Option<BoundCall>]>,
+    instruction_type_binding_requirements: Option<&[bool]>,
 ) -> MResult<Vec<PlannedRuntimeFunction>> {
+    match (
+        instruction_type_bindings,
+        instruction_type_binding_requirements,
+    ) {
+        (None, None) => {}
+        (Some(instruction_type_bindings), Some(instruction_type_binding_requirements)) => {
+            if instruction_type_bindings.len() != program.instructions.len() {
+                return Err(native_build_error(
+                    NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                        reason: format!(
+                            "semantic binding count {} does not match instruction count {}",
+                            instruction_type_bindings.len(),
+                            program.instructions.len(),
+                        ),
+                    },
+                    None,
+                ));
+            }
+            if instruction_type_binding_requirements.len() != program.instructions.len() {
+                return Err(native_build_error(
+                    NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                        reason: format!(
+                            "semantic binding requirement count {} does not match instruction count {}",
+                            instruction_type_binding_requirements.len(),
+                            program.instructions.len(),
+                        ),
+                    },
+                    None,
+                ));
+            }
+            for (index, instruction) in program.instructions.iter().enumerate() {
+                let Some(runtime) = instruction.runtime_function() else {
+                    continue;
+                };
+                if !instruction_type_binding_requirements[index] {
+                    if instruction_type_bindings[index].is_some() {
+                        return Err(native_build_error(
+                            NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                                reason: format!(
+                                    "compiler-owned runtime instruction {index} unexpectedly has a semantic type binding"
+                                ),
+                            },
+                            None,
+                        ));
+                    }
+                    continue;
+                }
+                let binding = instruction_type_bindings[index].as_ref().ok_or_else(|| {
+                    native_build_error(
+                        NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                            reason: format!(
+                                "runtime instruction {index} has no semantic type binding"
+                            ),
+                        },
+                        None,
+                    )
+                })?;
+                if binding.runtime_function().map(RuntimeFunctionId::raw) != Some(runtime) {
+                    return Err(native_build_error(
+                        NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                            reason: format!(
+                                "runtime instruction {index} does not match its selected implementation"
+                            ),
+                        },
+                        None,
+                    ));
+                }
+                catalog
+                    .validate_bound_call_for_target(binding, ExecutionTarget::Native)
+                    .map_err(|error| {
+                        native_build_error(
+                            NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                                reason: error.simple_message(),
+                            },
+                            None,
+                        )
+                    })?;
+            }
+        }
+        _ => {
+            return Err(native_build_error(
+                NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                    reason:
+                        "semantic binding certificates and requirements must be provided together"
+                            .to_owned(),
+                },
+                None,
+            ));
+        }
+    }
     analyze_runtime_function_ids(
         program
             .instructions
@@ -185,18 +279,44 @@ fn is_cargo_feature_name(name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use mech_core::{
-        FunctionCatalogBuilder, FunctionInvocation, FunctionValueRepresentation, MechFunction,
-        MechFunctionFactory, NativeFunctionLinkage, RuntimeFunctionContract,
-        RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
+        AccessMode, AliasPolicy, BoundCall, BytecodeInstruction, BytecodeProgram,
+        ChangeDetectionPolicy, DeliveryMode, EncodedConstant, ExecutionTarget, ExternalInteraction,
+        FunctionCatalogBuilder, FunctionInvocation, FunctionValueRepresentation, InputPortLayout,
+        MechFunction, MechFunctionFactory, NativeFunctionLinkage, OperationContractDeclaration,
+        OperationId, OutputConstruction, OutputPortPolicy, ResolvedOperationDescriptor,
+        RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType,
+        ShapeRule, ValueCell, write_bytecode,
     };
+    use std::collections::{BTreeMap, BTreeSet};
+    use std::sync::LazyLock;
 
     use super::*;
 
     struct UnusedFactory;
 
+    static NULLARY_F64_CONTRACT: LazyLock<OperationContractDeclaration> =
+        LazyLock::new(|| OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(Box::new([])),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        });
+
     impl MechFunctionFactory for UnusedFactory {
         const SIGNATURE: RuntimeFunctionSignature =
             RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Empty);
+
+        fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+            Some(&NULLARY_F64_CONTRACT)
+        }
 
         fn new_invocation(_invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
             panic!("factory must not run during native planning")
@@ -216,6 +336,7 @@ mod tests {
                     installer_path: "mech_b::__mech_native::install_b",
                     cargo_features: vec!["native-link", "runtime"],
                 },
+                mech_core::RuntimeFamilyId::from_name("B"),
             )
             .unwrap();
         builder
@@ -228,6 +349,7 @@ mod tests {
                     installer_path: "mech_a::__mech_native::install_a",
                     cargo_features: vec!["native-link", "runtime"],
                 },
+                mech_core::RuntimeFamilyId::from_name("A"),
             )
             .unwrap();
         let catalog = builder.build().unwrap();
@@ -256,6 +378,7 @@ mod tests {
             .insert_runtime_factory::<UnusedFactory>(
                 "KnownButUnlinked",
                 RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                mech_core::RuntimeFamilyId::from_name("KnownButUnlinked"),
             )
             .unwrap();
         let catalog = builder.build().unwrap();
@@ -263,5 +386,111 @@ mod tests {
         let error =
             analyze_runtime_function_ids([hash_str("KnownButUnlinked")], &catalog).unwrap_err();
         assert_eq!(error.kind_name(), "NativeRuntimeFunctionLinkageMissing");
+    }
+
+    fn typed_native_fixture() -> (ParsedProgram, FunctionCatalog, RuntimeFunctionId) {
+        const NAME: &str = "TypedNativeF64";
+        let expected_operation = OperationId::from_name("test/native-expected");
+        let runtime = RuntimeFunctionId::from_name(NAME);
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_runtime_factory_with_linkage_for_operations::<UnusedFactory>(
+                NAME,
+                RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                NativeFunctionLinkage {
+                    package: "mech-test",
+                    crate_name: "mech_test",
+                    installer_path: "mech_test::__mech_native::install_typed",
+                    cargo_features: vec!["native-link", "runtime"],
+                },
+                [expected_operation],
+            )
+            .unwrap();
+        let catalog = builder.build().unwrap();
+        let bytes = write_bytecode(&BytecodeProgram {
+            register_count: 1,
+            constants: vec![EncodedConstant {
+                runtime_type: RuntimeType::F64,
+                alignment: core::mem::align_of::<f64>() as u8,
+                bytes: 0.0_f64.to_le_bytes().to_vec(),
+            }],
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::RuntimeNullary {
+                    function: runtime.raw(),
+                    dst: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        })
+        .unwrap();
+        let program = ParsedProgram::from_bytes(&bytes).unwrap();
+        (program, catalog, runtime)
+    }
+
+    #[test]
+    fn typed_native_analysis_allows_compiler_owned_runtime_instructions_without_bindings() {
+        let (program, catalog, _) = typed_native_fixture();
+
+        let planned = analyze_runtime_functions(
+            &program,
+            &catalog,
+            Some(&[None, None, None]),
+            Some(&[false, false, false]),
+        )
+        .unwrap();
+
+        assert_eq!(planned.len(), 1);
+    }
+
+    #[test]
+    fn typed_native_analysis_rejects_a_source_runtime_without_a_binding() {
+        let (program, catalog, _) = typed_native_fixture();
+
+        let error = analyze_runtime_functions(
+            &program,
+            &catalog,
+            Some(&[None, None, None]),
+            Some(&[false, true, false]),
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "NativeRuntimeFunctionBindingInvalid");
+    }
+
+    #[test]
+    fn typed_native_analysis_rejects_a_valid_runtime_with_the_wrong_operation() {
+        let (program, catalog, runtime) = typed_native_fixture();
+        let descriptor = ValueCell::from_exact(0.0_f64)
+            .unwrap()
+            .resolved_descriptor()
+            .unwrap();
+        let wrong = BoundCall::syntax_directed(
+            ResolvedOperationDescriptor::from_name(
+                "test/native-wrong",
+                NULLARY_F64_CONTRACT.clone(),
+            )
+            .unwrap(),
+            Box::new([]),
+            vec![descriptor].into_boxed_slice(),
+            runtime,
+            ExecutionTarget::DirectRuntime,
+        )
+        .unwrap();
+        let error = analyze_runtime_functions(
+            &program,
+            &catalog,
+            Some(&[None, Some(wrong), None]),
+            Some(&[false, true, false]),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeRuntimeFunctionBindingInvalid");
     }
 }

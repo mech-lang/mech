@@ -72,16 +72,19 @@ macro_rules! impl_two_arg_fxn {
                 <$kind2 as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(crate::ops::arithmetic_full_write_contract(
+                    <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2) = invocation.expect_binary()?;
                 let arg1: Ref<$kind1> = arg1.try_ref()?;
                 let arg2: Ref<$kind2> = arg2.try_ref()?;
                 let out: Ref<$out_kind> = out.try_ref()?;
                 Ok(Box::new($struct_name { arg1, arg2, out }))
             }
-
         }
         impl MechFunctionImpl for $struct_name {
             fn solve_result(&self) -> MResult<()> {

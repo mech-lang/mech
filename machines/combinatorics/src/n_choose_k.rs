@@ -200,7 +200,6 @@ impl RuntimeNChooseK for R64 {
     }
 }
 
-
 #[cfg(feature = "rational")]
 impl NChooseKSelection for R64 {
     fn selection_count(self) -> Option<u128> {
@@ -220,7 +219,6 @@ impl RuntimeNChooseK for C64 {
         Some(crate::kernels::n_choose_k::scalar(self, k))
     }
 }
-
 
 #[cfg(feature = "complex")]
 impl NChooseKSelection for C64 {
@@ -296,10 +294,7 @@ fn canonical_scalar_selection(value: &ValueData) -> Option<(u128, Option<u128>)>
         #[cfg(feature = "f32")]
         ValueData::F32(value) => {
             let value = value.to_f32();
-            if !value.is_finite()
-                || value < 0.0
-                || value.fract() != 0.0
-                || value > u128::MAX as f32
+            if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value > u128::MAX as f32
             {
                 return None;
             }
@@ -308,10 +303,7 @@ fn canonical_scalar_selection(value: &ValueData) -> Option<(u128, Option<u128>)>
         #[cfg(feature = "f64")]
         ValueData::F64(value) => {
             let value = value.to_f64();
-            if !value.is_finite()
-                || value < 0.0
-                || value.fract() != 0.0
-                || value > u128::MAX as f64
+            if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value > u128::MAX as f64
             {
                 return None;
             }
@@ -444,7 +436,11 @@ pub(crate) fn validate_canonical_n_choose_k_matrix_contract(
         ));
     }
     let dimensions = |dimensions: &[DimensionExpr]| -> MResult<(usize, usize)> {
-        let [DimensionExpr::Constant(rows), DimensionExpr::Constant(columns)] = dimensions else {
+        let [
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ] = dimensions
+        else {
             return Err(function_shape_contract_violation(
                 contract,
                 "matrix dimensions must be resolved",
@@ -485,9 +481,7 @@ pub(crate) fn validate_canonical_n_choose_k_matrix_contract(
     {
         return Err(function_shape_contract_violation(
             contract,
-            format!(
-                "output is {output_rows}x{output_columns}, expected {k}x{combinations}"
-            ),
+            format!("output is {output_rows}x{output_columns}, expected {k}x{combinations}"),
         ));
     }
     Ok(())
@@ -616,6 +610,9 @@ where
         Ok(Box::new(Self { n, k, out }))
     }
 
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_N_CHOOSE_K_SCALAR_CONTRACT)
+    }
 }
 impl<T> MechFunctionImpl for NChooseK<T>
 where
@@ -768,6 +765,9 @@ where
         }))
     }
 
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_N_CHOOSE_K_MATRIX_CONTRACT)
+    }
 }
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
 impl<T> MechFunctionImpl for NChooseKMatrix<T>
@@ -830,7 +830,10 @@ where
     T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("NChooseKMatrix<{}>", <T as FunctionRuntimeType>::REPRESENTATION);
+        let name = format!(
+            "NChooseKMatrix<{}>",
+            <T as FunctionRuntimeType>::REPRESENTATION
+        );
         let out = compile_register!(self.out, ctx);
         let n = compile_register_mat!(self.n, ctx);
         let k = compile_register_brrw!(self.k, ctx);
@@ -839,35 +842,11 @@ where
     }
 }
 #[cfg(feature = "source")]
-fn specialize_n_choose_k_scalar<T>(
-    n: &SpecializationInput,
-    k: &SpecializationInput,
-    resolved_output: &ResolvedType,
-) -> MResult<SpecializedFunction>
-where
-    T: FunctionStateBacking,
-    NChooseK<T>: MechFunctionFactory,
-{
-    let invocation = FunctionInvocation::binary(
-        n.cell()?
-            .detached_clone()?
-            .with_resolved_output_type(resolved_output)?,
-        n.cell()?.clone(),
-        k.cell()?.clone(),
-    );
-    let implementation = NChooseK::<T>::new_invocation(invocation.clone())?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        implementation,
-        invocation,
-    )))
-}
-
 #[cfg(all(feature = "source", feature = "matrix", feature = "matrixd"))]
-fn specialize_n_choose_k_matrix<T>(
+fn n_choose_k_matrix_extents<T>(
     n: &SpecializationInput,
     k: &SpecializationInput,
-    resolved_output: &ResolvedType,
-) -> MResult<SpecializedFunction>
+) -> MResult<Box<[u64]>>
 where
     T: Copy
         + Debug
@@ -901,35 +880,52 @@ where
         .and_then(|value| usize::try_from(value).ok())
         .ok_or_else(invalid_matrix_selection_value)?;
     let output = n_choose_k_matrix_result(&matrix, requested)?;
-    let (rows, columns) = (output.nrows(), output.ncols());
-    let output = ValueCell::from_exact_matrix_ref(Ref::new(output), rows, columns)?
-        .with_resolved_output_type(resolved_output)?;
-    let invocation = FunctionInvocation::binary(output, n.cell()?.clone(), k.cell()?.clone());
-    let implementation = NChooseKMatrix::<T>::new_invocation(invocation.clone())?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        implementation,
-        invocation,
-    )))
+    Ok(vec![output.nrows() as u64, output.ncols() as u64].into_boxed_slice())
 }
 
 #[cfg(feature = "source")]
 macro_rules! try_n_choose_k_type {
-    ($n:ident, $k:ident, $type:ty, $resolved_output:expr) => {{
+    ($context:ident, $n:ident, $k:ident, $type:ty) => {{
         let scalar = <NChooseK<$type> as MechFunctionFactory>::SIGNATURE;
         if let RuntimeFunctionInputs::Binary(expected_n, expected_k) = scalar.inputs
-            && expected_n.matches($n.representation().unwrap_or(FunctionValueRepresentation::Empty))
-            && expected_k.matches($k.representation().unwrap_or(FunctionValueRepresentation::Empty))
+            && expected_n.matches(
+                $n.representation()
+                    .unwrap_or(FunctionValueRepresentation::Empty),
+            )
+            && expected_k.matches(
+                $k.representation()
+                    .unwrap_or(FunctionValueRepresentation::Empty),
+            )
         {
-            return specialize_n_choose_k_scalar::<$type>($n, $k, $resolved_output);
+            return $context.bind_resolved_runtime(
+                mech_core::RuntimeBindingSelector::Operation($context.resolved_call()?.operation.id),
+                mech_core::ExecutionTarget::DirectRuntime,
+                vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
+                &[$n, $k],
+            );
         }
         #[cfg(all(feature = "matrix", feature = "matrixd"))]
         {
             let matrix = <NChooseKMatrix<$type> as MechFunctionFactory>::SIGNATURE;
             if let RuntimeFunctionInputs::Binary(expected_n, expected_k) = matrix.inputs
-                && expected_n.matches($n.representation().unwrap_or(FunctionValueRepresentation::Empty))
-                && expected_k.matches($k.representation().unwrap_or(FunctionValueRepresentation::Empty))
+                && expected_n.matches(
+                    $n.representation()
+                        .unwrap_or(FunctionValueRepresentation::Empty),
+                )
+                && expected_k.matches(
+                    $k.representation()
+                        .unwrap_or(FunctionValueRepresentation::Empty),
+                )
             {
-                return specialize_n_choose_k_matrix::<$type>($n, $k, $resolved_output);
+                let extents = n_choose_k_matrix_extents::<$type>($n, $k)?;
+                return $context.bind_resolved_runtime(
+                    mech_core::RuntimeBindingSelector::Operation(
+                        $context.resolved_call()?.operation.id,
+                    ),
+                    mech_core::ExecutionTarget::DirectRuntime,
+                    vec![extents].into_boxed_slice(),
+                    &[$n, $k],
+                );
             }
         }
     }};
@@ -957,44 +953,39 @@ impl CanonicalFunctionSpecializer for CombinatoricsNChooseK {
         }
         let n = invocation.input(0).expect("validated n-choose-k input");
         let k = invocation.input(1).expect("validated n-choose-k selection");
-        let resolved_output = context.resolved_output(0)?;
         #[cfg(feature = "u8")]
-        try_n_choose_k_type!(n, k, u8, resolved_output);
+        try_n_choose_k_type!(context, n, k, u8);
         #[cfg(feature = "u16")]
-        try_n_choose_k_type!(n, k, u16, resolved_output);
+        try_n_choose_k_type!(context, n, k, u16);
         #[cfg(feature = "u32")]
-        try_n_choose_k_type!(n, k, u32, resolved_output);
+        try_n_choose_k_type!(context, n, k, u32);
         #[cfg(feature = "u64")]
-        try_n_choose_k_type!(n, k, u64, resolved_output);
+        try_n_choose_k_type!(context, n, k, u64);
         #[cfg(feature = "u128")]
-        try_n_choose_k_type!(n, k, u128, resolved_output);
+        try_n_choose_k_type!(context, n, k, u128);
         #[cfg(feature = "i8")]
-        try_n_choose_k_type!(n, k, i8, resolved_output);
+        try_n_choose_k_type!(context, n, k, i8);
         #[cfg(feature = "i16")]
-        try_n_choose_k_type!(n, k, i16, resolved_output);
+        try_n_choose_k_type!(context, n, k, i16);
         #[cfg(feature = "i32")]
-        try_n_choose_k_type!(n, k, i32, resolved_output);
+        try_n_choose_k_type!(context, n, k, i32);
         #[cfg(feature = "i64")]
-        try_n_choose_k_type!(n, k, i64, resolved_output);
+        try_n_choose_k_type!(context, n, k, i64);
         #[cfg(feature = "i128")]
-        try_n_choose_k_type!(n, k, i128, resolved_output);
+        try_n_choose_k_type!(context, n, k, i128);
         #[cfg(feature = "f32")]
-        try_n_choose_k_type!(n, k, f32, resolved_output);
+        try_n_choose_k_type!(context, n, k, f32);
         #[cfg(feature = "f64")]
-        try_n_choose_k_type!(n, k, f64, resolved_output);
+        try_n_choose_k_type!(context, n, k, f64);
         #[cfg(feature = "rational")]
-        try_n_choose_k_type!(n, k, R64, resolved_output);
+        try_n_choose_k_type!(context, n, k, R64);
         #[cfg(feature = "complex")]
-        try_n_choose_k_type!(n, k, C64, resolved_output);
+        try_n_choose_k_type!(context, n, k, C64);
         Err(MechError::new(
             FunctionArgumentTypeMismatch {
                 role: FunctionArgumentRole::Input(0),
                 expected: "matching scalar or matrix n-choose-k inputs".into(),
-                found: format!(
-                    "{:?} and {:?}",
-                    n.representation(),
-                    k.representation(),
-                ),
+                found: format!("{:?} and {:?}", n.representation(), k.representation(),),
             },
             None,
         )
@@ -1046,17 +1037,21 @@ mod canonical_scalar_tests {
         .unwrap();
         assert_eq!(f64_value(&output), 10.0);
 
-        assert!(NChooseK::<f64>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact(0.0_f64).unwrap(),
-            ValueCell::from_exact(5.0_f64).unwrap(),
-            ValueCell::from_exact(2_usize).unwrap(),
-        ))
-        .is_err());
-        assert!(NChooseK::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact(0.0_f64).unwrap(),
-            ValueCell::from_exact(5.0_f64).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            NChooseK::<f64>::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact(0.0_f64).unwrap(),
+                ValueCell::from_exact(5.0_f64).unwrap(),
+                ValueCell::from_exact(2_usize).unwrap(),
+            ))
+            .is_err()
+        );
+        assert!(
+            NChooseK::<f64>::new_invocation(FunctionInvocation::unary(
+                ValueCell::from_exact(0.0_f64).unwrap(),
+                ValueCell::from_exact(5.0_f64).unwrap(),
+            ))
+            .is_err()
+        );
     }
 }
 
@@ -1101,11 +1096,13 @@ mod canonical_matrix_tests {
         assert!(out.same_handle(&out_alias));
         assert_eq!(out.borrow().shape(), (2, 6));
 
-        assert!(NChooseKMatrix::<f64>::new_invocation(FunctionInvocation::binary(
-            output,
-            ValueCell::from_exact(4.0_f64).unwrap(),
-            ValueCell::from_exact(2.0_f64).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            NChooseKMatrix::<f64>::new_invocation(FunctionInvocation::binary(
+                output,
+                ValueCell::from_exact(4.0_f64).unwrap(),
+                ValueCell::from_exact(2.0_f64).unwrap(),
+            ))
+            .is_err()
+        );
     }
 }

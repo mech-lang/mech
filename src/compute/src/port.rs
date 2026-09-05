@@ -1,12 +1,15 @@
 use std::{collections::BTreeSet, error::Error, fmt, sync::Arc};
 
-use mech_core::{CellSlotId, DimensionExpr, FloatWidth, NodeId, SchemaBody, SchemaId};
+use mech_core::{CellSlotId, FloatWidth, NodeId, SchemaBody, SchemaId};
 use mech_engine::{
     ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, ProducerReference,
     ProgramArtifact, SlotRole,
 };
 
-use crate::{ComputeAdmissionError, ComputeDiagnostic, ComputeDiagnosticCode, turn_required_nodes};
+use crate::{
+    ComputeAdmissionError, ComputeDiagnostic, ComputeDiagnosticCode,
+    resolve_compute_slot_dimensions, turn_required_nodes,
+};
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ComputePortId(u32);
@@ -412,6 +415,7 @@ pub fn build_compute_region_interface(
     artifact: &ProgramArtifact,
     region: Option<&ComputeRegionDeclaration>,
 ) -> Result<ComputeRegionInterface, ComputeAdmissionError> {
+    let slot_dimensions = resolve_compute_slot_dimensions(artifact);
     let nodes = region
         .map(|region| region.nodes.iter().copied().collect::<BTreeSet<_>>())
         .unwrap_or_else(|| turn_required_nodes(artifact));
@@ -451,6 +455,7 @@ pub fn build_compute_region_interface(
                 input.name.clone().into_boxed_str(),
                 input.slot,
                 artifact.slots()[input.slot.get() as usize].schema,
+                slot_dimensions.get(&input.slot).map(Box::as_ref),
                 &mut diagnostics,
             );
             next_id += 1;
@@ -467,6 +472,7 @@ pub fn build_compute_region_interface(
                 format!("state-{}", slot.get()).into_boxed_str(),
                 *slot,
                 schema,
+                slot_dimensions.get(slot).map(Box::as_ref),
                 &mut diagnostics,
             );
             next_id += 1;
@@ -503,6 +509,7 @@ pub fn build_compute_region_interface(
                 name.into_boxed_str(),
                 slot,
                 schema,
+                slot_dimensions.get(&slot).map(Box::as_ref),
                 &mut diagnostics,
             );
             next_id += 1;
@@ -604,23 +611,16 @@ fn port_from_schema(
     name: Box<str>,
     slot: CellSlotId,
     schema: SchemaId,
+    resolved_dimensions: Option<&[u64]>,
     diagnostics: &mut Vec<ComputeDiagnostic>,
 ) -> Option<ComputePort> {
     let body = artifact.schemas().get(schema).map(|schema| schema.body());
     let dimensions = match body {
         Some(SchemaBody::FloatingPoint(FloatWidth::W32)) => Vec::new(),
-        Some(SchemaBody::Matrix {
-            element,
-            dimensions,
-        }) if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) => {
-            let dimensions = dimensions
-                .iter()
-                .map(|dimension| match dimension {
-                    DimensionExpr::Constant(extent) => Ok(*extent),
-                    _ => Err(()),
-                })
-                .collect::<Result<Vec<_>, _>>();
-            let Ok(dimensions) = dimensions else {
+        Some(SchemaBody::Matrix { element, .. })
+            if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) =>
+        {
+            let Some(dimensions) = resolved_dimensions else {
                 diagnostics.push(ComputeDiagnostic {
                     code: ComputeDiagnosticCode::DynamicShapeUnsupported,
                     node: producer_node(artifact, slot),
@@ -629,7 +629,7 @@ fn port_from_schema(
                 });
                 return None;
             };
-            dimensions
+            dimensions.to_vec()
         }
         _ => {
             diagnostics.push(ComputeDiagnostic {

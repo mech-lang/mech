@@ -122,115 +122,47 @@ pub(crate) fn specialize_dynamic_set<F>(
 where
     F: MechFunctionFactory,
 {
-    let inputs = specialization_cells(invocation)?;
-    let element = match F::OUTPUT_SCHEMA_RULE {
-        FunctionOutputSchemaRule::Declared => {
-            return Err(MechError::new(
-                GenericError {
-                    msg:
-                        "dynamic set specialization requires an operation-owned output schema rule"
-                            .into(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        FunctionOutputSchemaRule::DynamicSetLikeInput(index) => set_element_schema(
-            inputs
-                .get(index)
-                .ok_or_else(|| incorrect_arity(index + 1, inputs.len()))?,
-        )?,
-        FunctionOutputSchemaRule::DynamicSetCartesianProduct => {
-            if inputs.len() != 2 {
-                return Err(incorrect_arity(2, inputs.len()));
-            }
-            SchemaBody::Tuple(
-                vec![
-                    set_element_schema(&inputs[0])?,
-                    set_element_schema(&inputs[1])?,
-                ]
-                .into_boxed_slice(),
-            )
-        }
-        FunctionOutputSchemaRule::DynamicSetPowerset => {
-            if inputs.len() != 1 {
-                return Err(incorrect_arity(1, inputs.len()));
-            }
-            let SchemaBody::Set {
-                element,
-                cardinality,
-            } = inputs[0].closed_schema_body()?
-            else {
-                return Err(argument_type_mismatch(
-                    FunctionArgumentRole::Input(0),
-                    inputs[0].representation(),
-                ));
-            };
-            let upper_bound = match cardinality {
-                CardinalitySpec::Exact(cardinality) => Some(cardinality),
-                CardinalitySpec::Dynamic { upper_bound } => upper_bound,
-            };
-            SchemaBody::Set {
-                element,
-                cardinality: CardinalitySpec::Dynamic { upper_bound },
-            }
-        }
-    };
-    let output = ValueCell::empty_dynamic_set(element)?
-        .with_resolved_output_type(context.resolved_output(0)?)?;
-    SpecializedFunction::bind_factory::<F>(output, inputs.into_boxed_slice())
+    let inputs = invocation.inputs().iter().collect::<Vec<_>>();
+    context.bind_resolved_runtime(
+        RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+        ExecutionTarget::DirectRuntime,
+        vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
+        &inputs,
+    )
 }
 
 #[cfg(feature = "source")]
 pub(crate) fn specialize_bool<F>(
     invocation: &SpecializationInvocation,
+    context: &mut SpecializationContext<'_>,
 ) -> MResult<SpecializedFunction>
 where
     F: MechFunctionFactory,
 {
-    SpecializedFunction::bind_factory::<F>(
-        ValueCell::from_exact(false)?,
-        specialization_cells(invocation)?.into_boxed_slice(),
+    let inputs = invocation.inputs().iter().collect::<Vec<_>>();
+    context.bind_resolved_runtime(
+        RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+        ExecutionTarget::DirectRuntime,
+        vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
+        &inputs,
     )
 }
 
 #[cfg(all(feature = "source", feature = "u64"))]
 pub(crate) fn specialize_u64<F>(
     invocation: &SpecializationInvocation,
+    context: &mut SpecializationContext<'_>,
 ) -> MResult<SpecializedFunction>
 where
     F: MechFunctionFactory,
 {
-    SpecializedFunction::bind_factory::<F>(
-        ValueCell::from_exact(0_u64)?,
-        specialization_cells(invocation)?.into_boxed_slice(),
+    let inputs = invocation.inputs().iter().collect::<Vec<_>>();
+    context.bind_resolved_runtime(
+        RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+        ExecutionTarget::DirectRuntime,
+        vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
+        &inputs,
     )
-}
-
-#[cfg(feature = "source")]
-fn specialization_cells(invocation: &SpecializationInvocation) -> MResult<Vec<ValueCell>> {
-    invocation
-        .inputs()
-        .iter()
-        .map(|input| input.cell().cloned())
-        .collect()
-}
-
-#[cfg(feature = "source")]
-fn set_element_schema(cell: &ValueCell) -> MResult<SchemaBody> {
-    let body = cell.closed_schema_body()?;
-    let SchemaBody::Set { element, .. } = body else {
-        return Err(argument_type_mismatch(
-            FunctionArgumentRole::Input(0),
-            cell.representation(),
-        ));
-    };
-    Ok(*element)
-}
-
-#[cfg(feature = "source")]
-fn incorrect_arity(expected: usize, found: usize) -> MechError {
-    MechError::new(IncorrectNumberOfArguments { expected, found }, None).with_compiler_loc()
 }
 
 fn argument_type_mismatch(
@@ -275,6 +207,10 @@ macro_rules! define_set_relation {
                     out: out.try_ref()?,
                 }))
             }
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_SET_PREDICATE_CONTRACT)
+            }
         }
 
         impl MechFunctionImpl for $function {
@@ -315,9 +251,9 @@ macro_rules! define_set_relation {
             fn specialize_invocation(
                 &self,
                 invocation: &SpecializationInvocation,
-                _context: &mut SpecializationContext<'_>,
+                context: &mut SpecializationContext<'_>,
             ) -> MResult<SpecializedFunction> {
-                crate::canonical::specialize_bool::<$function>(invocation)
+                crate::canonical::specialize_bool::<$function>(invocation, context)
             }
         }
     };
@@ -352,6 +288,10 @@ macro_rules! define_set_membership {
                     set: SetInput::canonical(set)?,
                     out: out.try_ref()?,
                 }))
+            }
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_SET_PREDICATE_CONTRACT)
             }
         }
 
@@ -397,9 +337,9 @@ macro_rules! define_set_membership {
             fn specialize_invocation(
                 &self,
                 invocation: &SpecializationInvocation,
-                _context: &mut SpecializationContext<'_>,
+                context: &mut SpecializationContext<'_>,
             ) -> MResult<SpecializedFunction> {
-                crate::canonical::specialize_bool::<$function>(invocation)
+                crate::canonical::specialize_bool::<$function>(invocation, context)
             }
         }
     };

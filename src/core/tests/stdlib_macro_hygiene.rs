@@ -1,10 +1,7 @@
 #![cfg(all(feature = "functions", feature = "f64"))]
 
 use mech_core::*;
-use nalgebra::{
-    DMatrix, DVector, Matrix1, Matrix2, Matrix2x3, Matrix3, Matrix3x2, Matrix4, RowDVector,
-    RowVector2, RowVector3, RowVector4, Vector2, Vector3, Vector4,
-};
+use nalgebra::*;
 use std::marker::PhantomData;
 
 macro_rules! define_probe_family {

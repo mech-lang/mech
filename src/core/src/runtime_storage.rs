@@ -188,36 +188,40 @@ fn opaque() -> StorageCapabilityDescriptor {
     }
 }
 
+fn canonical_value() -> StorageCapabilityDescriptor {
+    StorageCapabilityDescriptor {
+        topology: StorageTopology::CanonicalValue,
+        extent: StorageExtentCapability::Any,
+        addressing: StorageAddressingCapabilities {
+            whole_value: true,
+            positional: PositionalAddressingCapability::AnyRank,
+            named_members: true,
+            keyed_members: true,
+            arbitrary_regions: true,
+        },
+        canonicalization: StorageCanonicalizationCapabilities {
+            self_describing: true,
+            recursive: true,
+            tagged: true,
+            ordered_keys: true,
+            unique_keys: true,
+        },
+        access: StorageAccessCapabilities {
+            region_mutable: true,
+            ..STANDARD_ACCESS
+        },
+        ownership: STANDARD_OWNERSHIP,
+        publication: ATOMIC_PUBLICATION,
+        accounting: StorageAccountingCapability::CanonicalSnapshot,
+    }
+}
+
 pub(crate) fn actual_backing_capabilities(
     representation: FunctionValueRepresentation,
 ) -> StorageCapabilityDescriptor {
     use FunctionValueRepresentation::*;
     match representation {
-        AnyValue => StorageCapabilityDescriptor {
-            topology: StorageTopology::CanonicalValue,
-            extent: StorageExtentCapability::Any,
-            addressing: StorageAddressingCapabilities {
-                whole_value: true,
-                positional: PositionalAddressingCapability::AnyRank,
-                named_members: true,
-                keyed_members: true,
-                arbitrary_regions: true,
-            },
-            canonicalization: StorageCanonicalizationCapabilities {
-                self_describing: true,
-                recursive: true,
-                tagged: true,
-                ordered_keys: true,
-                unique_keys: true,
-            },
-            access: StorageAccessCapabilities {
-                region_mutable: true,
-                ..STANDARD_ACCESS
-            },
-            ownership: STANDARD_OWNERSHIP,
-            publication: ATOMIC_PUBLICATION,
-            accounting: StorageAccountingCapability::CanonicalSnapshot,
-        },
+        AnyValue | Enum | Record | Map | Set | Table | Tuple | Kind => canonical_value(),
         U8 => scalar(ScalarMemoryKind::Unsigned(IntegerWidth::W8)),
         U16 => scalar(ScalarMemoryKind::Unsigned(IntegerWidth::W16)),
         U32 => scalar(ScalarMemoryKind::Unsigned(IntegerWidth::W32)),
@@ -257,13 +261,6 @@ pub(crate) fn actual_backing_capabilities(
             ..
         }
         | Empty
-        | Enum
-        | Record
-        | Map
-        | Set
-        | Table
-        | Tuple
-        | Kind
         | MutableValueCell => opaque(),
     }
 }
@@ -280,13 +277,6 @@ mod tests {
         );
         for representation in [
             FunctionValueRepresentation::Empty,
-            FunctionValueRepresentation::Enum,
-            FunctionValueRepresentation::Record,
-            FunctionValueRepresentation::Map,
-            FunctionValueRepresentation::Set,
-            FunctionValueRepresentation::Table,
-            FunctionValueRepresentation::Tuple,
-            FunctionValueRepresentation::Kind,
             FunctionValueRepresentation::MutableValueCell,
             FunctionValueRepresentation::Matrix {
                 element: FunctionMatrixElement::F64,
@@ -296,6 +286,21 @@ mod tests {
             assert_eq!(
                 actual_backing_capabilities(representation).topology,
                 StorageTopology::Opaque
+            );
+        }
+        for representation in [
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::Enum,
+            FunctionValueRepresentation::Record,
+            FunctionValueRepresentation::Map,
+            FunctionValueRepresentation::Set,
+            FunctionValueRepresentation::Table,
+            FunctionValueRepresentation::Tuple,
+            FunctionValueRepresentation::Kind,
+        ] {
+            assert_eq!(
+                actual_backing_capabilities(representation).topology,
+                StorageTopology::CanonicalValue
             );
         }
     }

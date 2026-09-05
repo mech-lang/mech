@@ -3559,25 +3559,30 @@ Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layou
             "!document.documentElement.dataset.mechPagePositionRestore",
             "the mobile canonical restore reaching a stable mapping",
         )
+        # Linux and macOS can settle to different raw pixels after responsive
+        # font reflow. This owner-transition case requires substantial visible
+        # progress; the delayed-anchor case below retains the exact-point proof.
         mobile_expected = evaluate_json(f"""
 (() => {{
   const shell = document.querySelector('.content-shell');
   let origin = 0;
   for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
   return {{
-    y: origin + {desktop_position['y']},
     origin,
     windowY: window.scrollY,
+    contentY: Math.max(0, Math.round(window.scrollY - origin)),
     maximum: Math.max(0, document.documentElement.scrollHeight - innerHeight),
   }};
 }})()
 """)
         if (
             mobile_expected is None or
-            abs(mobile_expected["windowY"] - mobile_expected["y"]) > 2
+            mobile_expected["contentY"] < desktop_position["y"] / 2 or
+            mobile_expected["contentY"] > desktop_position["y"] * 1.5 or
+            mobile_expected["windowY"] > mobile_expected["maximum"] + 2
         ):
             fail(
-                "desktop content-shell offset did not translate onto the mobile window: "
+                "responsive restore did not preserve canonical visible progress: "
                 f"desktop={desktop_position!r}, mobile={mobile_expected!r}"
             )
         if mobile_expected["origin"] <= desktop_position["origin"] + 20:
@@ -3601,6 +3606,7 @@ document.addEventListener('DOMContentLoaded', () => {{
   document.body.append(temporaryRange);
   window.__MECH_DELAYED_SHELL__ = {{ shell, parent, next, temporaryRange }};
   document.documentElement.dataset.mechDelayedShell = 'missing';
+  window.scrollTo(0, 0);
 }}, {{ once: true }});
 """},
             session_id,
@@ -3609,10 +3615,17 @@ document.addEventListener('DOMContentLoaded', () => {{
         wait_for(
             "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
             "document.documentElement?.dataset.mechDelayedShell === 'missing' && "
-            "document.documentElement?.dataset.mechPagePositionRestore === 'waiting-anchor' && "
-            f"Math.max(0, document.documentElement.scrollHeight - innerHeight) >= {desktop_position['y']}",
-            "an observed canonical restore attempt waiting on a missing reachable anchor",
+            "Boolean(window.__MECH_DELAYED_SHELL__) && "
+            "!document.querySelector('.content-shell')",
+            "the canonical content anchor remaining absent after document startup",
             timeout=45,
+        )
+        evaluate("window.__MECH_DELAYED_SHELL__.probeStartedAt = performance.now()")
+        wait_for(
+            "!document.querySelector('.content-shell') && "
+            "performance.now() - window.__MECH_DELAYED_SHELL__.probeStartedAt >= 360 && "
+            "Math.abs(window.scrollY) <= 2",
+            "canonical restoration deferring while its content anchor is absent",
         )
         if delayed_shell_script:
             devtools.call(

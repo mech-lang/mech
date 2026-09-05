@@ -51,17 +51,25 @@ def validate_model(source: str, manifest: dict[str, object]) -> list[str]:
     body = struct_body(source, "ProgramArtifact")
     if body is None:
         return ["ProgramArtifact declaration is missing"]
-    expected = list(manifest["artifact_fields"])
+    durable_fields = list(manifest["artifact_fields"])
     if "requirements: super::ApplicationRequirementTable" in body:
-        expected.insert(expected.index("contracts") + 1, "requirements")
+        durable_fields.insert(durable_fields.index("contracts") + 1, "requirements")
+    sidecars = list(manifest.get("artifact_internal_sidecars", []))
+    expected = durable_fields + [sidecar["field"] for sidecar in sidecars]
     actual = declared_fields(body)
     if actual != expected:
         failures.append(f"ProgramArtifact fields changed: expected {expected}, found {actual}")
     if public_fields(body):
         failures.append("finalized ProgramArtifact fields must be private")
-    for field in expected:
+    for field in durable_fields:
         if re.search(rf"pub\s+(?:const\s+)?fn\s+{re.escape(field)}\s*\(&self\)", source) is None:
             failures.append(f"ProgramArtifact read-only accessor {field}() is missing")
+    for sidecar in sidecars:
+        accessor = sidecar["read_accessor"]
+        if re.search(rf"pub\s+(?:const\s+)?fn\s+{re.escape(accessor)}\s*\(", source) is None:
+            failures.append(
+                f"ProgramArtifact internal sidecar accessor {accessor}() is missing"
+            )
     if re.search(r"pub\s+(?:const\s+)?fn\s+\w+_mut\s*\(", source):
         failures.append("finalized ProgramArtifact exposes a mutable accessor")
     for token in manifest["forbidden_artifact_tokens"]:
@@ -72,7 +80,7 @@ def validate_model(source: str, manifest: dict[str, object]) -> list[str]:
     if "Deserialize" in derive:
         failures.append("ProgramArtifact must not derive unchecked Deserialize")
     node = struct_body(source, "NodeDeclaration") or ""
-    if "requirements" in expected and "requirement: Option<ApplicationRequirementId>" not in node:
+    if "requirements" in durable_fields and "requirement: Option<ApplicationRequirementId>" not in node:
         failures.append("D3 artifact requirement table lacks per-node requirement identity")
     for token in manifest["forbidden_artifact_tokens"]:
         if token in node:
@@ -244,8 +252,7 @@ def run(root: Path = ROOT) -> list[str]:
             failures.append(f"ordinary-source artifact proof is missing {required}")
     for required in (
         "IntegrityConstraintSchemaMismatch",
-        "MissingRegisterKind",
-        "MissingRegisterSource",
+        "CompiledTypeBindingMismatch",
     ):
         if required not in test:
             failures.append(f"malformed artifact regression proof is missing {required}")

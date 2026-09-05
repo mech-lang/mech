@@ -16,8 +16,6 @@ impl MechFunctionFactory for SetUnionFxn {
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::Set,
     );
-    const OUTPUT_SCHEMA_RULE: FunctionOutputSchemaRule =
-        FunctionOutputSchemaRule::DynamicSetLikeInput(0);
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, lhs, rhs) = invocation.expect_binary()?;
@@ -26,6 +24,10 @@ impl MechFunctionFactory for SetUnionFxn {
             rhs: SetInput::canonical(rhs)?,
             out: SetOutput::canonical(out)?,
         }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_BINARY_CONTRACT)
     }
 }
 

@@ -43,7 +43,10 @@ mod scalar {
             function.solve_result().unwrap();
             assert_eq!(value(&sink), $expected);
             assert!(sink.same_cell(&alias));
-            assert_eq!(function.reactive_output_cell_ids(), vec![sink.reactive_cell_id()]);
+            assert_eq!(
+                function.reactive_output_cell_ids(),
+                vec![sink.reactive_cell_id()]
+            );
         }};
     }
 
@@ -86,7 +89,10 @@ mod scalar {
         ))
         .unwrap();
         assert_eq!(function.reactive_node_kind(), ReactiveNodeKind::Register);
-        assert_eq!(function.transaction_state_ports().unwrap().unwrap().len(), 1);
+        assert_eq!(
+            function.transaction_state_ports().unwrap().unwrap().len(),
+            1
+        );
 
         let commit = function.stage_register().unwrap();
         assert_eq!(commit.output_cells(), &[sink.reactive_cell_id()]);
@@ -152,15 +158,14 @@ mod indexed {
         let alias = sink.clone();
         let output = ValueCell::from_exact_matrix_ref(sink.clone(), 3, 1).unwrap();
         let indexes = Ref::new(DVector::from_vec(vec![1_usize, 3]));
-        let function =
-            AddAssign1DRS::<f64, DVector<f64>, DVector<usize>>::new_invocation(
-                FunctionInvocation::binary(
-                    output.clone(),
-                    ValueCell::from_exact(10.0_f64).unwrap(),
-                    ValueCell::from_exact_matrix_ref(indexes.clone(), 2, 1).unwrap(),
-                ),
-            )
-            .unwrap();
+        let function = AddAssign1DRS::<f64, DVector<f64>, DVector<usize>>::new_invocation(
+            FunctionInvocation::binary(
+                output.clone(),
+                ValueCell::from_exact(10.0_f64).unwrap(),
+                ValueCell::from_exact_matrix_ref(indexes.clone(), 2, 1).unwrap(),
+            ),
+        )
+        .unwrap();
         function.solve_result().unwrap();
         assert_eq!(sink.borrow().as_slice(), &[11.0, 2.0, 13.0]);
 
@@ -193,8 +198,8 @@ mod indexed {
 ))]
 mod indexed_all_ops {
     use super::super::{
-        add_assign::AddAssign1DRS, div_assign::DivAssign1DRS,
-        mul_assign::MulAssign1DRS, sub_assign::SubAssign1DRS,
+        add_assign::AddAssign1DRS, div_assign::DivAssign1DRS, mul_assign::MulAssign1DRS,
+        sub_assign::SubAssign1DRS,
     };
     use mech_core::{FunctionInvocation, MechFunctionFactory, Ref, ValueCell};
     use nalgebra::DVector;
@@ -258,7 +263,10 @@ mod dynamic_whole_matrix {
         )
         .unwrap();
         function.solve_result().unwrap();
-        assert_eq!(*sink.borrow(), DMatrix::from_row_slice(2, 2, &[11.0, 12.0, 13.0, 14.0]));
+        assert_eq!(
+            *sink.borrow(),
+            DMatrix::from_row_slice(2, 2, &[11.0, 12.0, 13.0, 14.0])
+        );
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
             participant.capture_function_state(function.as_ref())?;
@@ -288,9 +296,10 @@ mod dynamic_whole_matrix {
     fn whole_matrix_assignment_allows_source_output_alias_without_partial_reads() {
         let sink = Ref::new(DMatrix::from_row_slice(1, 2, &[2.0_f64, 3.0]));
         let cell = ValueCell::from_exact_matrix_ref(sink.clone(), 1, 2).unwrap();
-        AddAssignVV::<f64, DMatrix<f64>, DMatrix<f64>>::new_invocation(
-            FunctionInvocation::unary(cell.clone(), cell),
-        )
+        AddAssignVV::<f64, DMatrix<f64>, DMatrix<f64>>::new_invocation(FunctionInvocation::unary(
+            cell.clone(),
+            cell,
+        ))
         .unwrap()
         .solve_result()
         .unwrap();
@@ -400,14 +409,15 @@ mod checked_indexed_integer {
         let sink = Ref::new(DVector::from_vec(vec![1_u8, u8::MAX]));
         let source = Ref::new(DVector::from_vec(vec![1_u8, 1]));
         let indexes = Ref::new(DVector::from_vec(vec![1_usize, 2]));
-        let function = AddAssign1DRV::<u8, DVector<u8>, DVector<u8>, DVector<usize>>::new_invocation(
-            FunctionInvocation::binary(
-                ValueCell::from_exact_matrix_ref(sink.clone(), 2, 1).unwrap(),
-                ValueCell::from_exact_matrix_ref(source, 2, 1).unwrap(),
-                ValueCell::from_exact_matrix_ref(indexes.clone(), 2, 1).unwrap(),
-            ),
-        )
-        .unwrap();
+        let function =
+            AddAssign1DRV::<u8, DVector<u8>, DVector<u8>, DVector<usize>>::new_invocation(
+                FunctionInvocation::binary(
+                    ValueCell::from_exact_matrix_ref(sink.clone(), 2, 1).unwrap(),
+                    ValueCell::from_exact_matrix_ref(source, 2, 1).unwrap(),
+                    ValueCell::from_exact_matrix_ref(indexes.clone(), 2, 1).unwrap(),
+                ),
+            )
+            .unwrap();
         assert!(function.solve_result().is_err());
         assert_eq!(sink.borrow().as_slice(), &[1, u8::MAX]);
 

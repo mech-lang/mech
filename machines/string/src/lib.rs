@@ -19,9 +19,7 @@ static PURE_STRING_BINARY_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
 static PURE_STRING_BINARY_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| string_binary_contract(ChangeDetectionPolicy::KernelReported));
 
-fn string_binary_contract(
-    change_detection: ChangeDetectionPolicy,
-) -> OperationContractDeclaration {
+fn string_binary_contract(change_detection: ChangeDetectionPolicy) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![
@@ -90,7 +88,6 @@ use nalgebra::Vector3;
 #[cfg(feature = "vector4")]
 use nalgebra::Vector4;
 
-
 #[cfg(feature = "runtime")]
 pub mod catalog;
 #[cfg(feature = "runtime")]
@@ -142,6 +139,12 @@ macro_rules! impl_string_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some($crate::string_binary_full_write_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
                 let lhs: Ref<$arg1_type> = lhs.try_ref()?;
@@ -149,7 +152,6 @@ macro_rules! impl_string_binop {
                 let out: Ref<$out_type> = out.try_ref()?;
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
-
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -186,7 +188,11 @@ macro_rules! impl_string_binop {
             T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }

@@ -7,7 +7,7 @@ use mech_core::{
 };
 use std::sync::LazyLock;
 
-static RESOURCE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub(crate) static RESOURCE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![InputPortPolicy {

@@ -1,15 +1,15 @@
 pub use crate::*;
 #[cfg(feature = "abs")]
 pub mod abs;
-#[cfg(all(feature = "copysign", feature = "source"))]
+#[cfg(feature = "copysign")]
 pub mod copysign;
-#[cfg(all(feature = "fdim", feature = "source"))]
+#[cfg(feature = "fdim")]
 pub mod fdim;
-#[cfg(all(feature = "fmod", feature = "source"))]
+#[cfg(feature = "fmod")]
 pub mod fmod;
-#[cfg(all(feature = "nextafter", feature = "source"))]
+#[cfg(feature = "nextafter")]
 pub mod nextafter;
-#[cfg(all(feature = "remainder", feature = "source"))]
+#[cfg(feature = "remainder")]
 pub mod remainder;
 
 #[cfg(all(feature = "abs", feature = "source"))]

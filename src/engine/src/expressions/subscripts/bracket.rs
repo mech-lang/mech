@@ -27,6 +27,31 @@ fn selector_is_scalar(selector: &SpecializationInput) -> MResult<bool> {
 }
 
 fn operation_for(selectors: &[SpecializationInput]) -> MResult<&'static str> {
+    if matches!(
+        selectors,
+        [
+            SpecializationInput::MatrixAllSelection,
+            SpecializationInput::Cell(_)
+        ]
+    ) {
+        return Ok("access/columns");
+    }
+    if matches!(
+        selectors,
+        [
+            SpecializationInput::Cell(_),
+            SpecializationInput::MatrixAllSelection
+        ]
+    ) {
+        return Ok("access/rows");
+    }
+    if selectors.len() == 2
+        && selectors
+            .iter()
+            .any(|selector| !selector_is_scalar(selector).unwrap_or(false))
+    {
+        return Ok("access/rectangle");
+    }
     if selectors
         .iter()
         .all(|selector| selector_is_scalar(selector).unwrap_or(false))

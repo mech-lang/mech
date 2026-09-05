@@ -3,7 +3,7 @@ use crate::intrinsics::*;
 use mech_core::snapshot::{OptionDraft, TableColumnDraft};
 use std::sync::LazyLock;
 
-static PURE_TABLE_JOIN_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub(crate) static PURE_TABLE_JOIN_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![
@@ -394,6 +394,10 @@ macro_rules! table_join_factory {
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 TableJoinFxn::from_invocation(invocation, JoinMode::$mode)
             }
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_TABLE_JOIN_CONTRACT)
+            }
         }
     };
 }
@@ -416,6 +420,7 @@ macro_rules! table_join_native_factory {
             contract: RuntimeFunctionContract::no_matrix(
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
             ),
+            compiler_family: mech_core::RuntimeFamilyId::from_name($name),
             package: "mech-engine",
             crate_name: "mech_engine",
             installer_path: concat!("mech_engine::__mech_native::", stringify!($installer)),
@@ -559,7 +564,7 @@ macro_rules! table_join_specializer {
             fn specialize_invocation(
                 &self,
                 invocation: &SpecializationInvocation,
-                _: &mut SpecializationContext<'_>,
+                context: &mut SpecializationContext<'_>,
             ) -> MResult<SpecializedFunction> {
                 if invocation.len() != 2 {
                     return Err(MechError::new(
@@ -575,10 +580,17 @@ macro_rules! table_join_specializer {
                 let rhs = invocation.input(1).expect("validated rhs").cell()?.clone();
                 let output = joined_table(&lhs, &rhs, JoinMode::$mode)?;
                 let bound = FunctionInvocation::binary(output, lhs, rhs);
-                Ok(SpecializedFunction::new(FunctionInstance::new(
-                    TableJoinFxn::from_invocation(bound.clone(), JoinMode::$mode)?,
-                    bound,
-                )))
+                context.certify_instance(
+                    FunctionInstance::new(
+                        TableJoinFxn::from_invocation(bound.clone(), JoinMode::$mode)?,
+                        bound,
+                    ),
+                    mech_core::RuntimeFunctionId::from_name(concat!(
+                        "TableJoin",
+                        stringify!($mode)
+                    )),
+                    mech_core::ExecutionTarget::DirectRuntime,
+                )
             }
         }
     };

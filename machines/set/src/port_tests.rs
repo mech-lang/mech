@@ -45,7 +45,8 @@ mod dynamic_outputs {
         specializer
             .specialize_invocation(&invocation, &mut context)
             .unwrap()
-            .into_instance()
+            .into_parts()
+            .0
     }
 
     fn replace_set(cell: &ValueCell, values: &[u64]) {

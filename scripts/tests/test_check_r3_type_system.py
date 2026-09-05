@@ -164,22 +164,26 @@ class R3TypeSystemCheckerTests(unittest.TestCase):
 
     def test_16_runtime_binding_requires_resolved_output(self):
         root = self.fixture()
-        self.replace(
+        path = "src/core/src/function/specialization.rs"
+        self.write(
             root,
-            "src/core/src/function/specialization.rs",
-            "let resolved_output = self.resolved_output(0)?;",
-            "let output_type = ();",
+            path,
+            (root / path).read_text()
+            + "\nimpl SpecializationContext<'_> { fn bind_runtime_factory(&self) {} }\n",
         )
         self.assert_failure(root, "can bind without an existing ResolvedCall")
 
     def test_17_output_allocation_probe_fails(self):
         root = self.fixture()
         path = "src/core/src/function/specialization.rs"
-        self.replace(
+        self.write(
             root,
             path,
-            "        let mut candidates = catalog.runtime_entries()",
-            "        let _probe = ValueCell::default_for_representation(output_representation, output_dimensions);\n        let mut candidates = catalog.runtime_entries()",
+            (root / path).read_text()
+            + "\nimpl SpecializationContext<'_> { fn bind_runtime_factory(&self) {\n"
+            + "let _ = self.resolved_output(0);\n"
+            + "let _probe = ValueCell::default_for_representation(output_representation, output_dimensions);\n"
+            + "let candidates = catalog.runtime_entries();\n} }\n",
         )
         self.assert_failure(root, "output allocation as overload probing")
 
@@ -219,7 +223,7 @@ class R3TypeSystemCheckerTests(unittest.TestCase):
                 path.write_text(path.read_text().replace(marker, "missing", 1), encoding="utf-8")
         self.assert_failure(root, "conformance suite is missing")
         root = self.fixture()
-        self.replace(root, "docs/design/type-system-v1.md", "Status: R3 complete", "Status: R3 in progress")
+        self.replace(root, "docs/design/type-system-v1.md", "Status: R3 semantic solver complete", "Status: R3 in progress")
         self.assert_failure(root, "type-system design is missing")
         root = self.fixture()
         self.replace(root, ".github/workflows/ci.yml", "python3 scripts/check-r3-type-system.py", "true")
@@ -297,8 +301,8 @@ class R3TypeSystemCheckerTests(unittest.TestCase):
         self.replace(
             root,
             "src/core/src/function/specialization.rs",
-            "is unavailable for the {} execution profile",
-            "has no runtime factory for representation F64 in the {} execution profile",
+            "execution implementation",
+            "runtime factory for representation F64",
         )
         self.assert_failure(root, "diagnostics expose physical binding details")
 

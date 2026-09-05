@@ -7,8 +7,8 @@ use nalgebra::{
 use std::marker::PhantomData;
 use std::sync::LazyLock;
 
-static PURE_INCLUSIVE_RANGE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
-    OperationContractDeclaration {
+static PURE_INCLUSIVE_RANGE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![
                 InputPortPolicy {
@@ -36,8 +36,7 @@ static PURE_INCLUSIVE_RANGE_CONTRACT: LazyLock<OperationContractDeclaration> = L
         }]
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
-    }
-});
+    });
 
 // Inclusive ------------------------------------------------------------------
 
@@ -94,6 +93,9 @@ where
         }))
     }
 
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_INCLUSIVE_RANGE_CONTRACT)
+    }
 }
 impl<T, R1, C1, S1> MechFunctionImpl for RangeInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
@@ -122,17 +124,11 @@ where
         Ok(Some(vec![self.output_value.state_port()]))
     }
     fn solve_result(&self) -> MResult<()> {
-        let elements = crate::canonical_range_drafts(
-            *self.from.borrow(),
-            None,
-            *self.to.borrow(),
-            true,
-        )?;
+        let elements =
+            crate::canonical_range_drafts(*self.from.borrow(), None, *self.to.borrow(), true)?;
         let output_len = elements.len();
-        self.output_value.replace_matrix_drafts(
-            vec![1, output_len as u64].into_boxed_slice(),
-            elements,
-        )
+        self.output_value
+            .replace_matrix_drafts(vec![1, output_len as u64].into_boxed_slice(), elements)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_INCLUSIVE_RANGE_CONTRACT)
@@ -244,8 +240,7 @@ impl CanonicalFunctionSpecializer for RangeInclusive {
             ($scalar:ty, $feature:literal) => {
                 #[cfg(feature = $feature)]
                 if from.representation() == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
-                    && to.representation()
-                        == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
+                    && to.representation() == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
                 {
                     bind_dynamic_binary_range!(
                         RangeInclusiveScalar,

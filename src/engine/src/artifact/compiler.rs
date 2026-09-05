@@ -25,11 +25,11 @@ use crate::{
 };
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeInstruction, ChangeDetectionPolicy,
-    ConstantHandle, ConstantStoreBuilder, DeliveryMode, DimensionExpr, ExternalInteraction,
-    FunctionCatalog, InputPortLayout, InputPortPolicy, OperationContractError, OutputConstruction,
-    OutputPortPolicy, Register, RuntimeType, SchemaBody, SchemaDraft, SchemaHandle,
-    SchemaTableBuilder, ShapeRule, Value,
+    AccessMode, AliasPolicy, ApplicationRequirement, BoundCallOrigin, BytecodeInstruction,
+    ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder, DeliveryMode, ExecutionTarget,
+    ExternalInteraction, FunctionCatalog, InputPortLayout, InputPortPolicy, OperationContractError,
+    OutputConstruction, OutputPortPolicy, Register, RuntimeType, SchemaBody, SchemaDraft,
+    SchemaHandle, SchemaTableBuilder, ShapeInstance, ShapeRule, Value,
 };
 
 #[cfg(feature = "semantic-compiler")]
@@ -185,11 +185,12 @@ pub fn resolve_compiled_external_contracts(
     compiled: &mut CompiledBytecode,
     resolver: &dyn ExternalRequirementContractResolver,
 ) -> MResult<()> {
-    for (instruction, contract) in compiled
+    for ((instruction, contract), binding) in compiled
         .program
         .instructions
         .iter()
         .zip(&mut compiled.instruction_contracts)
+        .zip(&mut compiled.instruction_type_bindings)
     {
         let requirement = match instruction {
             BytecodeInstruction::HostCall { requirement, .. }
@@ -211,7 +212,17 @@ pub fn resolve_compiled_external_contracts(
                 )
             })?;
         if let Some(resolved) = resolver.resolve_external_contract(requirement)? {
-            *contract = Some(resolved);
+            *contract = Some(resolved.clone());
+            let binding = binding.as_mut().ok_or_else(|| {
+                mech_core::MechError::new(
+                    mech_core::GenericError {
+                        msg: "compiled external instruction has no bound semantic certificate"
+                            .to_owned(),
+                    },
+                    None,
+                )
+            })?;
+            binding.resolve_operation_contract(resolved)?;
         }
     }
     Ok(())
@@ -826,24 +837,30 @@ fn validate_compiled_matrix_literals(
                 "CompositePack matrix template is not rank two",
             ));
         };
-        let Some(Some(SchemaBody::Matrix {
-            element: output_element,
-            dimensions: output_dimensions,
-        })) = compiled.register_schemas.get(output as usize)
+        let Some(Some(output_descriptor)) = compiled.register_type_descriptors.get(output as usize)
         else {
             return Err(matrix_literal_mismatch(
                 output,
-                "output register schema is not a matrix",
+                "output register has no resolved descriptor",
             ));
         };
-        let [
-            DimensionExpr::Constant(output_rows),
-            DimensionExpr::Constant(output_columns),
-        ] = output_dimensions.as_ref()
+        let SchemaBody::Matrix {
+            element: output_element,
+            ..
+        } = output_descriptor.schema().body()
         else {
             return Err(matrix_literal_mismatch(
                 output,
-                "output register matrix schema does not have concrete rank-two dimensions",
+                "output register descriptor is not a matrix",
+            ));
+        };
+        let output_extents = output_descriptor.current_extents().map_err(|_| {
+            matrix_literal_mismatch(output, "output register matrix shape is invalid")
+        })?;
+        let [output_rows, output_columns] = output_extents.as_ref() else {
+            return Err(matrix_literal_mismatch(
+                output,
+                "output register matrix descriptor is not rank two",
             ));
         };
         let expected_template_element = mech_core::bytecode_kind_from_schema(output_element)?;
@@ -863,7 +880,14 @@ fn validate_compiled_matrix_literals(
             matrix_literal_mismatch(output, "matrix literal column count exceeds usize")
         })?;
         if [*template_rows, *template_columns] != [literal_rows, literal_columns]
-            || [*output_rows as usize, *output_columns as usize] != [literal_rows, literal_columns]
+            || [
+                usize::try_from(*output_rows).map_err(|_| {
+                    matrix_literal_mismatch(output, "matrix row extent exceeds usize")
+                })?,
+                usize::try_from(*output_columns).map_err(|_| {
+                    matrix_literal_mismatch(output, "matrix column extent exceeds usize")
+                })?,
+            ] != [literal_rows, literal_columns]
         {
             return Err(matrix_literal_mismatch(
                 output,
@@ -1068,9 +1092,19 @@ fn compile_executable_program_artifact_from_semantics(
         compiled.instruction_source_nodes.len(),
     )?;
     validate_compiled_metadata_length(
+        "instruction_type_bindings",
+        compiled.program.instructions.len(),
+        compiled.instruction_type_bindings.len(),
+    )?;
+    validate_compiled_metadata_length(
         "register_schemas",
         compiled.program.register_count as usize,
         compiled.register_schemas.len(),
+    )?;
+    validate_compiled_metadata_length(
+        "register_type_descriptors",
+        compiled.program.register_count as usize,
+        compiled.register_type_descriptors.len(),
     )?;
     validate_compiled_metadata_length(
         "register_collection_cardinalities",
@@ -1083,6 +1117,7 @@ fn compile_executable_program_artifact_from_semantics(
         compiled.register_state_initializers.len(),
     )?;
     validate_compiled_instruction_roles(compiled, catalog)?;
+    validate_compiled_type_sidecars(compiled, catalog)?;
 
     let canonical_constants = mech_core::decode_encoded_constants(&compiled.program.constants)?;
     let matrix_literal_instructions = validate_compiled_matrix_literals(compiled)?;
@@ -1094,7 +1129,29 @@ fn compile_executable_program_artifact_from_semantics(
 
     let mut schema_builder = SchemaTableBuilder::new();
     let mut pending_register_schemas = Vec::with_capacity(compiled.register_schemas.len());
-    for (register, body) in compiled.register_schemas.iter().enumerate() {
+    for (register, (body, descriptor)) in compiled
+        .register_schemas
+        .iter()
+        .zip(&compiled.register_type_descriptors)
+        .enumerate()
+    {
+        if let Some(descriptor) = descriptor {
+            if body
+                .as_ref()
+                .is_some_and(|body| body != descriptor.schema().body())
+            {
+                return Err(ArtifactBuildError::CompiledRegisterDescriptorMismatch {
+                    register: checked_u32(register, "bytecode register")?,
+                    reason: "canonical register schema differs from its resolved descriptor"
+                        .to_owned(),
+                });
+            }
+            pending_register_schemas.push(Some(PendingRegisterSchema {
+                handle: schema_builder.insert(descriptor.schema().clone())?,
+                contains_reference: false,
+            }));
+            continue;
+        }
         if let Some(body) = body.clone() {
             let schema = SchemaDraft {
                 dimension_parameters: Box::new([]),
@@ -1217,7 +1274,7 @@ fn compile_executable_program_artifact_from_semantics(
         });
     }
 
-    let mut pending_constants = BTreeSet::<(u32, SchemaId)>::new();
+    let mut pending_constants = BTreeMap::<(u32, SchemaId), Option<ShapeInstance>>::new();
     for instruction in &compiled.program.instructions {
         let (register, constant) = match instruction {
             BytecodeInstruction::ConstLoad { dst, constant } => (*dst, *constant),
@@ -1261,7 +1318,17 @@ fn compile_executable_program_artifact_from_semantics(
                 index: constant,
             },
         )?;
-        pending_constants.insert((constant, schema));
+        let shape = compiled.register_type_descriptors[register_index]
+            .as_ref()
+            .map(|descriptor| descriptor.shape().clone());
+        if let Some(existing) = pending_constants.insert((constant, schema), shape.clone())
+            && existing != shape
+        {
+            return Err(ArtifactBuildError::CompiledRegisterDescriptorMismatch {
+                register,
+                reason: "one encoded constant is bound to conflicting semantic shapes".to_owned(),
+            });
+        }
     }
     for (register, constant) in compiled.register_state_initializers.iter().enumerate() {
         let Some(constant) = constant else {
@@ -1279,18 +1346,26 @@ fn compile_executable_program_artifact_from_semantics(
                 index: *constant,
             },
         )?;
-        pending_constants.insert((*constant, schema));
+        let shape = compiled.register_type_descriptors[register]
+            .as_ref()
+            .map(|descriptor| descriptor.shape().clone());
+        if let Some(existing) = pending_constants.insert((*constant, schema), shape.clone())
+            && existing != shape
+        {
+            return Err(ArtifactBuildError::CompiledRegisterDescriptorMismatch {
+                register: register as u32,
+                reason: "one state initializer is bound to conflicting semantic shapes".to_owned(),
+            });
+        }
     }
 
     let mut constant_builder = ConstantStoreBuilder::new(&schemas);
     let mut constant_handles = BTreeMap::<(u32, SchemaId), ConstantHandle>::new();
-    for (constant, schema) in pending_constants {
-        let value = canonical_constants[constant as usize].rebind(
+    for ((constant, schema), shape) in pending_constants {
+        let source = &canonical_constants[constant as usize];
+        let value = source.rebind(
             schema,
-            &schemas
-                .get(schema)
-                .expect("registered artifact schema remains present")
-                .instantiate_shape(Box::new([]))?,
+            shape.as_ref().unwrap_or_else(|| source.shape()),
             &schemas,
         )?;
         constant_handles.insert((constant, schema), constant_builder.insert(value)?);
@@ -1344,9 +1419,24 @@ fn compile_executable_program_artifact_from_semantics(
                     register: literal.output,
                 },
             )?;
+            let shape_values = compiled.register_type_descriptors[literal.output as usize]
+                .as_ref()
+                .ok_or(ArtifactBuildError::CompiledTypeBindingMismatch {
+                    instruction: checked_u32(instruction, "instruction")?,
+                    reason: "constant matrix output has no resolved descriptor".to_owned(),
+                })?
+                .shape()
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice();
             folded_matrix_values.insert(
                 literal.output,
-                ir.resolve_constant(schema, &schemas, &base_constant_store)?,
+                ir.resolve_constant_with_shape(
+                    schema,
+                    shape_values,
+                    &schemas,
+                    &base_constant_store,
+                )?,
             );
         }
         register_matrix_literals.insert(literal.output, source_literal);
@@ -1765,10 +1855,13 @@ fn compile_executable_program_artifact_from_semantics(
                         });
                     }
                 };
+                let semantic_operation = compiled.instruction_type_bindings[instruction_index]
+                    .as_ref()
+                    .map(|binding| binding.operation_descriptor().canonical_name.as_ref());
                 let semantics = instruction_semantics(
                     instruction_id,
                     instruction,
-                    compiled.instruction_operations[instruction_id as usize].as_deref(),
+                    semantic_operation,
                     &compiled.program.requirements,
                 )?
                 .ok_or(ArtifactBuildError::UnexpectedInstructionRole {
@@ -1824,12 +1917,14 @@ fn compile_executable_program_artifact_from_semantics(
                 {
                     continue;
                 }
-                let declaration = compiled.instruction_contracts[instruction_index].or_else(|| {
-                    instruction
-                        .runtime_function()
-                        .and_then(|function| catalog.runtime_entry_by_raw(function))
-                        .and_then(|entry| entry.semantic_contract())
-                });
+                let declaration = compiled.instruction_type_bindings[instruction_index]
+                    .as_ref()
+                    .map(|binding| &binding.operation_descriptor().contract)
+                    .or_else(|| {
+                        matches!(instruction, BytecodeInstruction::CompositePack { .. })
+                            .then(|| compiled.instruction_contracts[instruction_index].as_ref())
+                            .flatten()
+                    });
                 let declaration = declaration.filter(|declaration| {
                     semantics.requirement.is_none_or(|requirement| {
                         compiled
@@ -2117,6 +2212,7 @@ fn compile_executable_program_artifact_from_semantics(
         outputs,
         constraints,
         &mut node_matrix_literals,
+        &mut registers,
     )?;
     let constant_store = prune_unused_constants(
         &schemas,
@@ -2155,6 +2251,8 @@ fn compile_executable_program_artifact_from_semantics(
         &node_contract_refs,
         &node_matrix_literals,
     )?;
+    let shape_hints = compiled_slot_shape_hints(compiled, &registers, &artifact)?;
+    let artifact = artifact.with_slot_shape_hints(shape_hints)?;
     let compute_regions = compiled
         .compute_regions
         .iter()
@@ -2301,6 +2399,7 @@ fn prune_unused_inputs(
     mut outputs: Vec<SourceOutput>,
     mut constraints: Vec<SourceIntegrityConstraint>,
     node_matrix_literals: &mut [Option<SourceMatrixLiteral>],
+    registers: &mut [Option<RegisterSemantic>],
 ) -> Result<
     (
         Vec<SourceInput>,
@@ -2365,7 +2464,94 @@ fn prune_unused_inputs(
             remap_value(source);
         }
     }
+    for register in registers {
+        let Some(semantic) = register.as_mut() else {
+            continue;
+        };
+        let SourceValue::Input(input) = semantic.source else {
+            continue;
+        };
+        let Some(input) = remap[input as usize] else {
+            *register = None;
+            continue;
+        };
+        semantic.source = SourceValue::Input(input);
+    }
     Ok((retained, nodes, outputs, constraints))
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn compiled_slot_shape_hints(
+    compiled: &CompiledBytecode,
+    registers: &[Option<RegisterSemantic>],
+    artifact: &ProgramArtifact,
+) -> Result<BTreeMap<CellSlotId, ShapeInstance>, ArtifactBuildError> {
+    let state_slots = artifact
+        .slots()
+        .iter()
+        .filter(|slot| slot.role == SlotRole::State)
+        .map(|slot| slot.slot)
+        .collect::<Vec<_>>();
+    let mut hints = BTreeMap::new();
+    for (register, (semantic, descriptor)) in registers
+        .iter()
+        .zip(&compiled.register_type_descriptors)
+        .enumerate()
+    {
+        let (Some(semantic), Some(descriptor)) = (semantic, descriptor) else {
+            continue;
+        };
+        let slot = match semantic.source {
+            SourceValue::Constant(_) => continue,
+            SourceValue::Input(input) => artifact
+                .inputs()
+                .get(input as usize)
+                .map(|input| input.slot)
+                .ok_or(ArtifactBuildError::SourceGraphReferenceOutOfRange {
+                    reference: "input",
+                    index: input,
+                })?,
+            SourceValue::State(state) => *state_slots.get(state as usize).ok_or(
+                ArtifactBuildError::SourceGraphReferenceOutOfRange {
+                    reference: "state",
+                    index: state,
+                },
+            )?,
+            SourceValue::NodeOutput {
+                node,
+                output_ordinal,
+            } => artifact
+                .nodes()
+                .get(node as usize)
+                .ok_or(ArtifactBuildError::SourceGraphReferenceOutOfRange {
+                    reference: "node output",
+                    index: node,
+                })?
+                .output_bindings
+                .clone()
+                .find_map(|binding| match artifact.bindings().get(binding as usize) {
+                    Some(BindingDeclaration::Output {
+                        port_ordinal,
+                        target,
+                        ..
+                    }) if *port_ordinal == output_ordinal => Some(*target),
+                    _ => None,
+                })
+                .ok_or(ArtifactBuildError::SourceGraphReferenceOutOfRange {
+                    reference: "node output",
+                    index: node,
+                })?,
+        };
+        if let Some(existing) = hints.insert(slot, descriptor.shape().clone())
+            && existing != *descriptor.shape()
+        {
+            return Err(ArtifactBuildError::CompiledRegisterDescriptorMismatch {
+                register: checked_u32(register, "bytecode register")?,
+                reason: format!("slot {} has conflicting current shapes", slot.get()),
+            });
+        }
+    }
+    Ok(hints)
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -2409,6 +2595,174 @@ fn validate_compiled_metadata_length(
             expected,
             actual,
         });
+    }
+    Ok(())
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn validate_compiled_type_sidecars(
+    compiled: &CompiledBytecode,
+    catalog: &FunctionCatalog,
+) -> Result<(), ArtifactBuildError> {
+    for (index, (instruction, binding)) in compiled
+        .program
+        .instructions
+        .iter()
+        .zip(&compiled.instruction_type_bindings)
+        .enumerate()
+    {
+        let instruction_index = checked_u32(index, "instruction")?;
+        let Some(binding) = binding else {
+            if matches!(
+                compiled.instruction_roles[index],
+                Some(CompiledInstructionRole::Node(_))
+            ) && !matches!(instruction, BytecodeInstruction::CompositePack { .. })
+            {
+                return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                    instruction: instruction_index,
+                    reason: "executable source-plan node has no semantic type binding".to_owned(),
+                });
+            }
+            continue;
+        };
+        binding.operation_descriptor().validate().map_err(|error| {
+            ArtifactBuildError::CompiledTypeBindingMismatch {
+                instruction: instruction_index,
+                reason: error.simple_message(),
+            }
+        })?;
+        let operation = binding.operation_descriptor().canonical_name.as_ref();
+        if compiled.instruction_operations[index].as_deref() != Some(operation) {
+            return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                instruction: instruction_index,
+                reason: "compiler operation sidecar disagrees with the bound semantic certificate"
+                    .to_owned(),
+            });
+        }
+        if compiled.instruction_contracts[index].as_ref()
+            != Some(&binding.operation_descriptor().contract)
+        {
+            return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                instruction: instruction_index,
+                reason: "compiler contract sidecar disagrees with the bound semantic certificate"
+                    .to_owned(),
+            });
+        }
+        if let Some(runtime) = instruction.runtime_function() {
+            let Some(bound_runtime) = binding.runtime_function() else {
+                return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                    instruction: instruction_index,
+                    reason: "runtime bytecode is bound to a non-runtime implementation".to_owned(),
+                });
+            };
+            if runtime != bound_runtime.raw() {
+                return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                    instruction: instruction_index,
+                    reason: format!(
+                        "bytecode runtime ID 0x{runtime:016x} differs from selected bound runtime 0x{:016x} for semantic operation {operation}",
+                        bound_runtime.raw(),
+                    ),
+                });
+            }
+            match catalog.runtime_entry(bound_runtime) {
+                Some(entry) => {
+                    if !entry.operation_binding().permits(binding.operation()) {
+                        return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                            instruction: instruction_index,
+                            reason: "selected runtime does not permit the bound semantic operation"
+                                .to_owned(),
+                        });
+                    }
+                    if !entry.supports_target(binding.target()) {
+                        return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                            instruction: instruction_index,
+                            reason: "selected runtime does not support the bound execution target"
+                                .to_owned(),
+                        });
+                    }
+                }
+                None if matches!(binding.origin(), BoundCallOrigin::SyntaxDirected)
+                    && binding.target() == ExecutionTarget::DirectRuntime =>
+                {
+                    // Syntax-directed compiler nodes carry their concrete
+                    // implementation identity in the BoundCall and emit that
+                    // same identity. They do not claim catalog/native
+                    // availability unless a registered entry exists.
+                }
+                None => {
+                    return Err(ArtifactBuildError::UnknownRuntimeFunction { function: runtime });
+                }
+            }
+        }
+
+        let semantics = instruction_semantics(
+            instruction_index,
+            instruction,
+            compiled.instruction_operations[index].as_deref(),
+            &compiled.program.requirements,
+        )?;
+        let input_registers = match semantics.as_ref() {
+            Some(semantics) => {
+                semantic_input_registers(semantics, Some(&binding.operation_descriptor().contract))?
+            }
+            None => instruction_input_registers(instruction),
+        };
+        if input_registers.len() != binding.inputs().len() {
+            return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                instruction: instruction_index,
+                reason: format!(
+                    "instruction has {} inputs but its semantic binding declares {}",
+                    input_registers.len(),
+                    binding.inputs().len(),
+                ),
+            });
+        }
+        for (ordinal, (register, expected)) in
+            input_registers.iter().zip(binding.inputs()).enumerate()
+        {
+            let actual = compiled
+                .register_type_descriptors
+                .get(*register as usize)
+                .and_then(Option::as_ref)
+                .ok_or_else(|| ArtifactBuildError::CompiledTypeBindingMismatch {
+                    instruction: instruction_index,
+                    reason: format!("input {ordinal} has no resolved register descriptor"),
+                })?;
+            if !actual.has_same_type_contract(expected) {
+                return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                    instruction: instruction_index,
+                    reason: format!("input {ordinal} differs from the bound descriptor"),
+                });
+            }
+        }
+
+        if binding.outputs().len() != 1 {
+            return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                instruction: instruction_index,
+                reason: format!(
+                    "executable instruction requires one output but its semantic binding declares {}",
+                    binding.outputs().len(),
+                ),
+            });
+        }
+        if let Some(register) = instruction_destination(instruction)
+            && !compiled.absent_registers.contains(&register)
+        {
+            let actual = compiled
+                .register_type_descriptors
+                .get(register as usize)
+                .and_then(Option::as_ref)
+                .ok_or_else(|| ArtifactBuildError::CompiledTypeBindingMismatch {
+                    instruction: instruction_index,
+                    reason: "output has no resolved register descriptor".to_owned(),
+                })?;
+            if !actual.has_same_type_contract(&binding.outputs()[0]) {
+                return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                    instruction: instruction_index,
+                    reason: "output differs from the bound descriptor".to_owned(),
+                });
+            }
+        }
     }
     Ok(())
 }

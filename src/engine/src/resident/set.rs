@@ -977,13 +977,14 @@ fn finalize_snapshot_with_work_budget(
     if let Some(budget) = budget.as_ref() {
         context = context.with_canonicalization_budget(budget);
     }
+    let schema = schemas
+        .get(metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let shape = mech_core::shape_for_value_data(schema, &data, &[], None)
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
     ValueDraft {
         schema: metadata.schema,
-        shape_values: metadata
-            .shape
-            .parameter_values()
-            .to_vec()
-            .into_boxed_slice(),
+        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
         data,
     }
     .finalize(&context)

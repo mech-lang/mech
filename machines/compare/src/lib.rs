@@ -46,6 +46,79 @@ use nalgebra::Vector4;
 
 use std::sync::LazyLock;
 
+#[cfg(feature = "source")]
+pub(crate) fn semantic_compare_extents(inputs: &[&SpecializationInput]) -> MResult<Box<[u64]>> {
+    let mut result: Option<[u64; 2]> = None;
+    for input in inputs {
+        let extents = input
+            .cell()?
+            .resolved_descriptor()?
+            .current_extents()
+            .map_err(MechError::from)?;
+        if !extents.is_empty() {
+            let [rows, columns] = extents.as_ref() else {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "comparison requires scalar or rank-two inputs".into(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            result = Some(match result {
+                None => [*rows, *columns],
+                Some([left_rows, left_columns]) => {
+                    let axis = |left: u64, right: u64| {
+                        if left == right {
+                            Some(left)
+                        } else if left == 1 {
+                            Some(right)
+                        } else if right == 1 {
+                            Some(left)
+                        } else {
+                            None
+                        }
+                    };
+                    [
+                        axis(left_rows, *rows).ok_or_else(|| {
+                            MechError::new(
+                                DimensionMismatch {
+                                    dims: vec![
+                                        left_rows as usize,
+                                        left_columns as usize,
+                                        *rows as usize,
+                                        *columns as usize,
+                                    ],
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()
+                        })?,
+                        axis(left_columns, *columns).ok_or_else(|| {
+                            MechError::new(
+                                DimensionMismatch {
+                                    dims: vec![
+                                        left_rows as usize,
+                                        left_columns as usize,
+                                        *rows as usize,
+                                        *columns as usize,
+                                    ],
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()
+                        })?,
+                    ]
+                }
+            });
+        }
+    }
+    Ok(result.map_or_else(
+        || Vec::<u64>::new().into_boxed_slice(),
+        |shape| shape.into_iter().collect::<Vec<_>>().into_boxed_slice(),
+    ))
+}
+
 static PURE_COMPARE_SCALAR_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_compare_contract(ChangeDetectionPolicy::ExactScalar));
 static PURE_COMPARE_MATRIX_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -89,275 +162,6 @@ fn compare_full_write_contract(
     }
 }
 
-#[cfg(feature = "source")]
-fn compare_boolean_output(
-    representation: FunctionValueRepresentation,
-    first: &SpecializationInput,
-    second: &SpecializationInput,
-) -> MResult<ValueCell> {
-    let FunctionValueRepresentation::Matrix {
-        element: FunctionMatrixElement::Bool,
-        storage: FunctionMatrixStoragePattern::Exact(storage),
-    } = representation
-    else {
-        if representation == FunctionValueRepresentation::Bool {
-            return ValueCell::from_exact(false);
-        }
-        return Err(MechError::new(
-            FunctionArgumentTypeMismatch {
-                role: FunctionArgumentRole::Output,
-                expected: "Boolean scalar or exact Boolean matrix output".into(),
-                found: format!("{representation:?}"),
-            },
-            None,
-        )
-        .with_compiler_loc());
-    };
-
-    let template = [first, second]
-        .into_iter()
-        .find(|input| {
-            matches!(
-                input.representation(),
-                Some(FunctionValueRepresentation::Matrix {
-                    storage: FunctionMatrixStoragePattern::Exact(found),
-                    ..
-                }) if found == storage
-            )
-        })
-        .ok_or_else(|| {
-            MechError::new(
-                FunctionArgumentTypeMismatch {
-                    role: FunctionArgumentRole::Output,
-                    expected: format!("matrix template with {storage:?} storage"),
-                    found: format!(
-                        "inputs {:?} and {:?}",
-                        first.representation(),
-                        second.representation(),
-                    ),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-    let descriptor = template.matrix_descriptor()?.ok_or_else(|| {
-        MechError::new(
-            FunctionArgumentTypeMismatch {
-                role: FunctionArgumentRole::Output,
-                expected: format!("matrix dimensions for {storage:?}"),
-                found: format!("{:?}", template.representation()),
-            },
-            None,
-        )
-        .with_compiler_loc()
-    })?;
-    let (rows, columns) = (descriptor.rows, descriptor.cols);
-
-    #[allow(
-        unused_macros,
-        reason = "fixed matrix constructors are feature-selected below"
-    )]
-    macro_rules! fixed {
-        ($matrix:ident) => {
-            ValueCell::from_exact_matrix_ref(
-                Ref::new($matrix::<bool>::from_element(false)),
-                rows,
-                columns,
-            )
-        };
-    }
-    #[allow(
-        unreachable_patterns,
-        reason = "the fallback is reachable only in narrow matrix feature profiles"
-    )]
-    match storage {
-        #[cfg(feature = "matrix1")]
-        FunctionMatrixRepresentation::Matrix1 => fixed!(Matrix1),
-        #[cfg(feature = "matrix2")]
-        FunctionMatrixRepresentation::Matrix2 => fixed!(Matrix2),
-        #[cfg(feature = "matrix3")]
-        FunctionMatrixRepresentation::Matrix3 => fixed!(Matrix3),
-        #[cfg(feature = "matrix4")]
-        FunctionMatrixRepresentation::Matrix4 => fixed!(Matrix4),
-        #[cfg(feature = "matrix2x3")]
-        FunctionMatrixRepresentation::Matrix2x3 => fixed!(Matrix2x3),
-        #[cfg(feature = "matrix3x2")]
-        FunctionMatrixRepresentation::Matrix3x2 => fixed!(Matrix3x2),
-        #[cfg(feature = "row_vector2")]
-        FunctionMatrixRepresentation::RowVector2 => fixed!(RowVector2),
-        #[cfg(feature = "row_vector3")]
-        FunctionMatrixRepresentation::RowVector3 => fixed!(RowVector3),
-        #[cfg(feature = "row_vector4")]
-        FunctionMatrixRepresentation::RowVector4 => fixed!(RowVector4),
-        #[cfg(feature = "vector2")]
-        FunctionMatrixRepresentation::Vector2 => fixed!(Vector2),
-        #[cfg(feature = "vector3")]
-        FunctionMatrixRepresentation::Vector3 => fixed!(Vector3),
-        #[cfg(feature = "vector4")]
-        FunctionMatrixRepresentation::Vector4 => fixed!(Vector4),
-        #[cfg(feature = "row_vectord")]
-        FunctionMatrixRepresentation::RowVectorD => ValueCell::from_exact_matrix_ref(
-            Ref::new(RowDVector::<bool>::from_element(columns, false)),
-            rows,
-            columns,
-        ),
-        #[cfg(feature = "vectord")]
-        FunctionMatrixRepresentation::VectorD => ValueCell::from_exact_matrix_ref(
-            Ref::new(DVector::<bool>::from_element(rows, false)),
-            rows,
-            columns,
-        ),
-        #[cfg(feature = "matrixd")]
-        FunctionMatrixRepresentation::MatrixD => ValueCell::from_exact_matrix_ref(
-            Ref::new(DMatrix::<bool>::from_element(rows, columns, false)),
-            rows,
-            columns,
-        ),
-        _ => Err(MechError::new(
-            FunctionArgumentTypeMismatch {
-                role: FunctionArgumentRole::Output,
-                expected: "enabled exact Boolean matrix storage".into(),
-                found: format!("{storage:?}"),
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
-}
-
-#[cfg(feature = "source")]
-fn specialize_compare_binary_factory<F>(
-    first: &SpecializationInput,
-    second: &SpecializationInput,
-    resolved_output: &ResolvedType,
-) -> MResult<SpecializedFunction>
-where
-    F: MechFunctionFactory,
-{
-    let output = match F::SIGNATURE.output {
-        FunctionValueRepresentation::Bool
-        | FunctionValueRepresentation::Matrix {
-            element: FunctionMatrixElement::Bool,
-            ..
-        } => compare_boolean_output(F::SIGNATURE.output, first, second)?,
-        representation => [first, second]
-            .into_iter()
-            .find(|input| input.representation() == Some(representation))
-            .ok_or_else(|| {
-                MechError::new(
-                    FunctionArgumentTypeMismatch {
-                        role: FunctionArgumentRole::Output,
-                        expected: format!("input template matching {representation:?}"),
-                        found: format!(
-                            "inputs {:?} and {:?}",
-                            first.representation(),
-                            second.representation(),
-                        ),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })?
-            .cell()?
-            .detached_clone()?,
-    }
-    .with_resolved_output_type(resolved_output)?;
-    SpecializedFunction::bind_factory::<F>(
-        output,
-        vec![first.cell()?.clone(), second.cell()?.clone()].into_boxed_slice(),
-    )
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __try_compare_binary_factory {
-    (($module:ident, $first:ident, $second:ident, $context:ident), $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
-        mech_core::paste::paste! {
-            if let RuntimeFunctionInputs::Binary(expected_first, expected_second) =
-                <$crate::$module::[<$lib $suffix>]<$scalar> as MechFunctionFactory>::SIGNATURE.inputs
-                && $first.representation() == Some(expected_first)
-                && $second.representation() == Some(expected_second)
-            {
-                return $crate::specialize_compare_binary_factory::<
-                    $crate::$module::[<$lib $suffix>]<$scalar>
-                >($first, $second, $context.resolved_output(0)?);
-            }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! try_compare_binary_factories {
-    ($module:ident, $first:ident, $second:ident, $context:ident, $lib:ident) => {{
-        #[cfg(feature = "bool")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, bool, "bool", bool);
-        #[cfg(feature = "string")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, String, "string", string);
-        #[cfg(feature = "u8")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u8, "u8", u8);
-        #[cfg(feature = "u16")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u16, "u16", u16);
-        #[cfg(feature = "u32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u32, "u32", u32);
-        #[cfg(feature = "u64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u64, "u64", u64);
-        #[cfg(feature = "u128")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u128, "u128", u128);
-        #[cfg(feature = "i8")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i8, "i8", i8);
-        #[cfg(feature = "i16")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i16, "i16", i16);
-        #[cfg(feature = "i32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i32, "i32", i32);
-        #[cfg(feature = "i64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i64, "i64", i64);
-        #[cfg(feature = "i128")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i128, "i128", i128);
-        #[cfg(feature = "f32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, f32, "f32", f32);
-        #[cfg(feature = "f64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, f64, "f64", f64);
-        #[cfg(feature = "rational")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, R64, "r64", r64);
-        #[cfg(feature = "complex")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, C64, "c64", c64);
-    }};
-}
-
-#[macro_export]
-macro_rules! try_numeric_compare_binary_factories {
-    ($module:ident, $first:ident, $second:ident, $context:ident, $lib:ident) => {{
-        #[cfg(feature = "u8")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u8, "u8", u8);
-        #[cfg(feature = "u16")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u16, "u16", u16);
-        #[cfg(feature = "u32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u32, "u32", u32);
-        #[cfg(feature = "u64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u64, "u64", u64);
-        #[cfg(feature = "u128")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, u128, "u128", u128);
-        #[cfg(feature = "i8")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i8, "i8", i8);
-        #[cfg(feature = "i16")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i16, "i16", i16);
-        #[cfg(feature = "i32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i32, "i32", i32);
-        #[cfg(feature = "i64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i64, "i64", i64);
-        #[cfg(feature = "i128")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, i128, "i128", i128);
-        #[cfg(feature = "f32")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, f32, "f32", f32);
-        #[cfg(feature = "f64")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, f64, "f64", f64);
-        #[cfg(feature = "rational")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, R64, "r64", r64);
-        #[cfg(feature = "complex")]
-        mech_core::for_each_canonical_binop_factory!($crate::__try_compare_binary_factory, ($module, $first, $second, $context), $lib, C64, "c64", c64);
-    }};
-}
-
 #[macro_export]
 macro_rules! impl_canonical_numeric_compare_specializer {
     ($specializer:ident, $module:ident, $lib:ident, $operation:literal) => {
@@ -383,20 +187,13 @@ macro_rules! impl_canonical_numeric_compare_specializer {
                 }
                 let first = specialization.input(0).expect("validated comparison lhs");
                 let second = specialization.input(1).expect("validated comparison rhs");
-                $crate::try_numeric_compare_binary_factories!($module, first, second, context, $lib);
-                Err(MechError::new(
-                    FunctionArgumentTypeMismatch {
-                        role: FunctionArgumentRole::Input(0),
-                        expected: concat!("matching numeric inputs for ", $operation).into(),
-                        found: format!(
-                            "{:?} and {:?}",
-                            first.representation(),
-                            second.representation(),
-                        ),
-                    },
-                    None,
+                let extents = $crate::semantic_compare_extents(&[first, second])?;
+                context.bind_resolved_runtime(
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+                    ExecutionTarget::DirectRuntime,
+                    vec![extents].into_boxed_slice(),
+                    &[first, second],
                 )
-                .with_compiler_loc())
             }
         }
     };
@@ -497,16 +294,19 @@ macro_rules! impl_compare_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(compare_full_write_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
                 let lhs: Ref<$arg1_type> = lhs.try_ref()?;
                 let rhs: Ref<$arg2_type> = rhs.try_ref()?;
                 let out: Ref<$out_type> = out.try_ref()?;
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
-
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -544,7 +344,11 @@ macro_rules! impl_compare_binop {
             T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }

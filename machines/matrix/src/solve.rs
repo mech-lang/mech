@@ -2,8 +2,8 @@ use crate::*;
 use nalgebra::ComplexField;
 use num_traits::{One, Zero};
 
-static PURE_MATRIX_SOLVE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
-    OperationContractDeclaration {
+static PURE_MATRIX_SOLVE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![
                 InputPortPolicy {
@@ -28,8 +28,7 @@ static PURE_MATRIX_SOLVE_CONTRACT: LazyLock<OperationContractDeclaration> = Lazy
         }]
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
-    }
-});
+    });
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MatrixSolveSingular;
@@ -115,16 +114,17 @@ macro_rules! impl_binop_solve {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_MATRIX_SOLVE_CONTRACT)
+            }
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
                 let lhs: Ref<$arg1_type> = lhs.try_ref()?;
                 let rhs: Ref<$arg2_type> = rhs.try_ref()?;
                 let out: Ref<$out_type> = out.try_ref()?;
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
-
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
@@ -165,9 +165,7 @@ macro_rules! impl_binop_solve {
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
             }
-            fn semantic_operation_contract(
-                &self,
-            ) -> Option<&'static OperationContractDeclaration> {
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_MATRIX_SOLVE_CONTRACT)
             }
             fn to_string(&self) -> String {
@@ -180,7 +178,11 @@ macro_rules! impl_binop_solve {
             T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
@@ -190,9 +192,11 @@ macro_rules! impl_binop_solve {
 macro_rules! solve_op {
     ($a:expr, $b:expr, $out:expr) => {
         unsafe {
-            let solution = (*$a).clone().lu().solve(&*$b).ok_or_else(|| {
-                MechError::new(MatrixSolveSingular, None).with_compiler_loc()
-            })?;
+            let solution = (*$a)
+                .clone()
+                .lu()
+                .solve(&*$b)
+                .ok_or_else(|| MechError::new(MatrixSolveSingular, None).with_compiler_loc())?;
             *$out = solution;
         }
     };
@@ -286,22 +290,22 @@ mod canonical_port_tests {
     fn solve_rejects_wrong_rhs_representation_and_layout() {
         let lhs = ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::<f64>::identity(2, 2)), 2, 2)
             .unwrap();
-        let wrong_rhs = ValueCell::from_exact_matrix_ref(
-            Ref::new(DMatrix::<f64>::identity(2, 2)),
-            2,
-            2,
-        )
-        .unwrap();
-        let output = ValueCell::from_exact_matrix_ref(Ref::new(DVector::<f64>::zeros(2)), 2, 1)
-            .unwrap();
-        assert!(MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::binary(
-            output.clone(),
-            lhs.clone(),
-            wrong_rhs,
-        ))
-        .is_err());
-        assert!(MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::unary(output, lhs))
-            .is_err());
+        let wrong_rhs =
+            ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::<f64>::identity(2, 2)), 2, 2)
+                .unwrap();
+        let output =
+            ValueCell::from_exact_matrix_ref(Ref::new(DVector::<f64>::zeros(2)), 2, 1).unwrap();
+        assert!(
+            MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::binary(
+                output.clone(),
+                lhs.clone(),
+                wrong_rhs,
+            ))
+            .is_err()
+        );
+        assert!(
+            MatrixSolveMDVD::<f64>::new_invocation(FunctionInvocation::unary(output, lhs)).is_err()
+        );
     }
 }
 
@@ -315,8 +319,7 @@ mod fixed_port_tests {
         let out = Ref::new(Matrix2x3::<f64>::zeros());
         MatrixSolveM2M2x3::<f64>::new_invocation(FunctionInvocation::binary(
             ValueCell::from_exact_matrix_ref(out.clone(), 2, 3).unwrap(),
-            ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::identity()), 2, 2)
-                .unwrap(),
+            ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::<f64>::identity()), 2, 2).unwrap(),
             ValueCell::from_exact_matrix_ref(rhs.clone(), 2, 3).unwrap(),
         ))
         .unwrap()
@@ -387,9 +390,11 @@ impl CanonicalFunctionSpecializer for MatrixSolve {
             )
             .with_compiler_loc());
         }
-        context.bind_runtime_factory_derived_output(
-            "MatrixSolve",
-            Some((rhs_shape.rows, rhs_shape.cols)),
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![vec![rhs_shape.rows as u64, rhs_shape.cols as u64].into_boxed_slice()]
+                .into_boxed_slice(),
             &[lhs, rhs],
         )
     }

@@ -39,6 +39,9 @@ where
         }))
     }
 
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(crate::ops::unary_full_write_contract(O::REPRESENTATION))
+    }
 }
 impl<O> MechFunctionImpl for NegateV<O>
 where
@@ -125,6 +128,9 @@ where
         }))
     }
 
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(crate::ops::unary_full_write_contract(O::REPRESENTATION))
+    }
 }
 impl<O> MechFunctionImpl for NegateS<O>
 where
@@ -193,11 +199,9 @@ mod canonical_port_tests {
     fn negation_uses_exact_ports_and_rejects_overflow_atomically() {
         let input = ValueCell::from_exact(7_i8).unwrap();
         let output = ValueCell::from_exact(0_i8).unwrap();
-        let function = NegateS::<i8>::new_invocation(FunctionInvocation::unary(
-            output.clone(),
-            input.clone(),
-        ))
-        .unwrap();
+        let function =
+            NegateS::<i8>::new_invocation(FunctionInvocation::unary(output.clone(), input.clone()))
+                .unwrap();
         function.solve_result().unwrap();
         assert_eq!(i8_value(&output), -7);
 

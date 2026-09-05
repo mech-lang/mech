@@ -16,8 +16,6 @@ impl MechFunctionFactory for SetRemoveFxn {
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::AnyValue,
     );
-    const OUTPUT_SCHEMA_RULE: FunctionOutputSchemaRule =
-        FunctionOutputSchemaRule::DynamicSetLikeInput(0);
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, set, element) = invocation.expect_binary()?;
@@ -26,6 +24,10 @@ impl MechFunctionFactory for SetRemoveFxn {
             arg2: ArbitraryInput::canonical(element),
             out: SetOutput::canonical(out)?,
         }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_UPDATE_CONTRACT)
     }
 }
 

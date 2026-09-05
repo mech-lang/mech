@@ -13,6 +13,13 @@ pub fn install_intrinsic_runtime(builder: &mut FunctionCatalogBuilder) -> MResul
     crate::intrinsics::catalog::install_runtime(builder)
 }
 
+/// Installs compiler-emitted engine factories into a source compiler catalog
+/// without expanding the runtime-only distribution surface.
+#[cfg(feature = "semantic-compiler")]
+pub fn install_intrinsic_compiler_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    crate::intrinsics::catalog::install_compiler_runtime(builder)
+}
+
 /// Installs the prebound dense-numeric resident factory surface. This is kept
 /// separate from direct runtime construction and source specialization.
 pub fn install_intrinsic_resident(

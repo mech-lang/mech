@@ -177,17 +177,15 @@ impl MechErrorKind for UserFunctionIdCollision {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum FunctionOutputSchemaRule {
-    Declared,
-    DynamicSetLikeInput(usize),
-    DynamicSetCartesianProduct,
-    DynamicSetPowerset,
-}
-
 pub trait MechFunctionFactory {
     const SIGNATURE: RuntimeFunctionSignature;
-    const OUTPUT_SCHEMA_RULE: FunctionOutputSchemaRule = FunctionOutputSchemaRule::Declared;
+
+    /// Semantic memory contract declared by a statically registered runtime
+    /// implementation. Fixed operation bindings must provide this authority
+    /// before their constructor can be called.
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        None
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>>
     where
@@ -607,10 +605,6 @@ impl FunctionInstance {
             with_semantic_operation(operation, implementation),
             invocation,
         )
-    }
-
-    pub(crate) fn into_implementation(self) -> Box<dyn MechFunction> {
-        self.implementation
     }
 }
 
@@ -1245,7 +1239,10 @@ pub struct ReactiveDependency {
 
 enum ReactivePlanFunctionStorage {
     Direct(Box<dyn MechFunction>),
-    Bound(FunctionInstance),
+    Bound {
+        instance: FunctionInstance,
+        bound_call: Option<BoundCall>,
+    },
 }
 
 pub struct ReactivePlanFunction {
@@ -1263,7 +1260,20 @@ impl ReactivePlanFunction {
 
     fn new_instance(instance: FunctionInstance) -> Self {
         Self {
-            storage: ReactivePlanFunctionStorage::Bound(instance),
+            storage: ReactivePlanFunctionStorage::Bound {
+                instance,
+                bound_call: None,
+            },
+            identity: Rc::new(()),
+        }
+    }
+
+    fn new_specialized(instance: FunctionInstance, bound_call: BoundCall) -> Self {
+        Self {
+            storage: ReactivePlanFunctionStorage::Bound {
+                instance,
+                bound_call: Some(bound_call),
+            },
             identity: Rc::new(()),
         }
     }
@@ -1271,14 +1281,21 @@ impl ReactivePlanFunction {
     pub fn as_ref(&self) -> &(dyn MechFunction + 'static) {
         match &self.storage {
             ReactivePlanFunctionStorage::Direct(function) => function.as_ref(),
-            ReactivePlanFunctionStorage::Bound(instance) => instance.implementation(),
+            ReactivePlanFunctionStorage::Bound { instance, .. } => instance.implementation(),
         }
     }
 
     pub fn instance(&self) -> Option<&FunctionInstance> {
         match &self.storage {
             ReactivePlanFunctionStorage::Direct(_) => None,
-            ReactivePlanFunctionStorage::Bound(instance) => Some(instance),
+            ReactivePlanFunctionStorage::Bound { instance, .. } => Some(instance),
+        }
+    }
+
+    pub fn bound_call(&self) -> Option<&BoundCall> {
+        match &self.storage {
+            ReactivePlanFunctionStorage::Direct(_) => None,
+            ReactivePlanFunctionStorage::Bound { bound_call, .. } => bound_call.as_ref(),
         }
     }
 
@@ -1287,7 +1304,7 @@ impl ReactivePlanFunction {
             ReactivePlanFunctionStorage::Direct(function) => {
                 journal.capture_primary_and_retained_function_state(function.as_ref())
             }
-            ReactivePlanFunctionStorage::Bound(instance) => {
+            ReactivePlanFunctionStorage::Bound { instance, .. } => {
                 journal.capture_function_instance(instance)
             }
         }
@@ -1306,7 +1323,7 @@ impl core::ops::DerefMut for ReactivePlanFunction {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match &mut self.storage {
             ReactivePlanFunctionStorage::Direct(function) => function.as_mut(),
-            ReactivePlanFunctionStorage::Bound(instance) => instance.implementation_mut(),
+            ReactivePlanFunctionStorage::Bound { instance, .. } => instance.implementation_mut(),
         }
     }
 }
@@ -1896,7 +1913,9 @@ impl ReactivePlan {
                         .capture_into(journal)?;
                     function.capture_retained_state(journal)?;
                 }
-                ReactivePlanFunctionStorage::Bound(instance) => instance.capture_state(journal)?,
+                ReactivePlanFunctionStorage::Bound { instance, .. } => {
+                    instance.capture_state(journal)?
+                }
             }
         }
         Ok(())
@@ -1931,6 +1950,24 @@ impl ReactivePlan {
     pub fn register_instance_with_activation(
         &mut self,
         instance: FunctionInstance,
+        activation: Option<&ActivationRegistrationScope>,
+    ) -> MResult<ReactiveNodeId> {
+        self.register_bound_with_activation(instance, None, activation)
+    }
+
+    pub fn register_specialized_with_activation(
+        &mut self,
+        specialized: SpecializedFunction,
+        activation: Option<&ActivationRegistrationScope>,
+    ) -> MResult<ReactiveNodeId> {
+        let (instance, bound_call) = specialized.into_parts();
+        self.register_bound_with_activation(instance, Some(bound_call), activation)
+    }
+
+    fn register_bound_with_activation(
+        &mut self,
+        instance: FunctionInstance,
+        bound_call: Option<BoundCall>,
         activation: Option<&ActivationRegistrationScope>,
     ) -> MResult<ReactiveNodeId> {
         let node_id = self.nodes.len();
@@ -2045,7 +2082,10 @@ impl ReactivePlan {
             inputs,
             outputs,
             kind: node_kind,
-            function: ReactivePlanFunction::new_instance(instance),
+            function: match bound_call {
+                Some(bound_call) => ReactivePlanFunction::new_specialized(instance, bound_call),
+                None => ReactivePlanFunction::new_instance(instance),
+            },
         };
 
         self.nodes.push(node);
@@ -2635,6 +2675,38 @@ impl Plan {
             .0
             .borrow_mut()
             .register_instance_with_activation(instance, scope.as_ref())?;
+        if scope.is_some() && kind == ReactiveNodeKind::Combinational {
+            if let Some(active) = self.1.borrow_mut().last_mut() {
+                for cell in outputs {
+                    if !sampled_cells.contains(&cell)
+                        && !active.local_combinational_cells.contains(&cell)
+                    {
+                        active.local_combinational_cells.push(cell);
+                    }
+                }
+            }
+        }
+        Ok(node)
+    }
+
+    pub fn register_specialized(
+        &self,
+        specialized: SpecializedFunction,
+    ) -> MResult<ReactiveNodeId> {
+        let scope = self.1.borrow().last().cloned();
+        let kind = specialized.instance().implementation().reactive_node_kind();
+        let outputs = specialized.instance().reactive_output_cell_ids();
+        let sampled_cells = self
+            .0
+            .borrow()
+            .activation_sampled_cells
+            .last()
+            .cloned()
+            .unwrap_or_default();
+        let node = self
+            .0
+            .borrow_mut()
+            .register_specialized_with_activation(specialized, scope.as_ref())?;
         if scope.is_some() && kind == ReactiveNodeKind::Combinational {
             if let Some(active) = self.1.borrow_mut().last_mut() {
                 for cell in outputs {

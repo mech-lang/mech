@@ -90,11 +90,13 @@ fn canonical_access_contract(input_count: usize, shape: ShapeRule) -> OperationC
 static PURE_CANONICAL_ACCESS_COPY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
     std::sync::LazyLock::new(|| canonical_access_contract(1, ShapeRule::SameAsInput { input: 0 }));
 #[cfg(feature = "semantic-compiler")]
-static PURE_CANONICAL_ACCESS_BINARY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| canonical_access_contract(2, ShapeRule::Declared));
+pub(crate) static PURE_CANONICAL_ACCESS_BINARY_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| canonical_access_contract(2, ShapeRule::Declared));
 #[cfg(feature = "semantic-compiler")]
-static PURE_CANONICAL_ACCESS_TERNARY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| canonical_access_contract(3, ShapeRule::Declared));
+pub(crate) static PURE_CANONICAL_ACCESS_TERNARY_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| canonical_access_contract(3, ShapeRule::Declared));
 #[cfg(feature = "native-plan")]
 use crate::{
     MechFunctionFactory, RuntimeFunctionContract, RuntimeFunctionSignature,
@@ -162,6 +164,7 @@ macro_rules! declare_structural_access_alias {
             contract: RuntimeFunctionContract::same_shape(
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
             ),
+            compiler_family: mech_core::RuntimeFamilyId::from_name($name),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: $path,
             extra_cargo_features: ["access"],
@@ -362,7 +365,7 @@ impl MechFunctionCompiler for CanonicalAccess {
                 .map(|selector| compile_value_cell_register(selector, context))
                 .collect::<MResult<Vec<_>>>()?,
         );
-        context.emit_varop(hash_str(self.semantic_name()), output, arguments);
+        context.emit_varop(hash_str(self.name), output, arguments);
         Ok(output)
     }
 }
@@ -372,6 +375,16 @@ fn canonical_access_result(
     source: &ValueCell,
     selectors: &[CanonicalAccessSelector],
 ) -> MResult<ValueCell> {
+    if selectors.len() == 2
+        && selectors
+            .iter()
+            .all(|selector| matches!(selector, CanonicalAccessSelector::All))
+    {
+        // Whole-value assignment preserves the source's canonical semantic
+        // schema and current shape. Reconstructing it through a DMatrix would
+        // replace fixed source dimensions with turn-lifetime physical ones.
+        return source.detached_clone();
+    }
     match source.closed_schema_body()? {
         SchemaBody::Tuple(_) if selectors.len() == 1 => {
             let values = source
@@ -525,7 +538,13 @@ fn canonical_access_result(
                 if selectors[0].is_scalar() {
                     return values[0].detached_clone();
                 }
-                return ValueCell::dynamic_matrix_from_cells(values.len(), 1, &values);
+                return canonical_matrix_access_result(
+                    element.as_ref().clone(),
+                    values.len(),
+                    1,
+                    &values,
+                    selectors,
+                );
             }
             let selected_rows = canonical_indices(&selectors[0], rows)?;
             let selected_columns = canonical_indices(&selectors[1], columns)?;
@@ -540,11 +559,12 @@ fn canonical_access_result(
                         .map(|column| elements[*row * columns + *column].clone())
                 })
                 .collect::<Vec<_>>();
-            let _ = element;
-            ValueCell::dynamic_matrix_from_cells(
+            canonical_matrix_access_result(
+                element.as_ref().clone(),
                 selected_rows.len(),
                 selected_columns.len(),
                 &values,
+                selectors,
             )
         }
         schema => Err(MechError::new(
@@ -558,8 +578,46 @@ fn canonical_access_result(
 }
 
 #[cfg(feature = "semantic-compiler")]
+fn canonical_matrix_access_result(
+    element: SchemaBody,
+    rows: usize,
+    columns: usize,
+    values: &[ValueCell],
+    selectors: &[CanonicalAccessSelector],
+) -> MResult<ValueCell> {
+    let fixed_extents = selectors.iter().all(|selector| match selector {
+        CanonicalAccessSelector::All => true,
+        CanonicalAccessSelector::Cell(cell) => matches!(
+            cell.extent_evolution(),
+            mech_core::ExtentEvolution::Fixed | mech_core::ExtentEvolution::ActivationFixed
+        ),
+    });
+    if !fixed_extents {
+        return ValueCell::dynamic_matrix_from_cells(rows, columns, values);
+    }
+    ValueCell::from_schema_data(
+        SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                DimensionExpr::Constant(rows as u64),
+                DimensionExpr::Constant(columns as u64),
+            ]
+            .into_boxed_slice(),
+        },
+        ValueDataDraft::Matrix(
+            values
+                .iter()
+                .map(canonical_draft)
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+        ),
+    )
+}
+
+#[cfg(feature = "semantic-compiler")]
 fn canonical_access(
     invocation: &SpecializationInvocation,
+    context: &SpecializationContext<'_>,
     fallback_name: &'static str,
 ) -> MResult<SpecializedFunction> {
     if !(2..=3).contains(&invocation.len()) {
@@ -598,15 +656,26 @@ fn canonical_access(
         }))
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        Box::new(CanonicalAccess {
-            source,
-            selectors,
-            output: output.clone(),
-            name,
-        }),
-        FunctionInvocation::variadic(output, inputs),
-    )))
+    let contract = match inputs.len() {
+        1 => &*PURE_CANONICAL_ACCESS_COPY_CONTRACT,
+        2 => &*PURE_CANONICAL_ACCESS_BINARY_CONTRACT,
+        3 => &*PURE_CANONICAL_ACCESS_TERNARY_CONTRACT,
+        _ => unreachable!("canonical access supports at most two concrete selectors"),
+    };
+    context.resolve_syntax_operation_contract(contract)?;
+    context.certify_instance(
+        FunctionInstance::new(
+            Box::new(CanonicalAccess {
+                source,
+                selectors,
+                output: output.clone(),
+                name,
+            }),
+            FunctionInvocation::variadic(output, inputs),
+        ),
+        mech_core::RuntimeFunctionId::from_name(name),
+        mech_core::ExecutionTarget::DirectRuntime,
+    )
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -670,7 +739,10 @@ impl MechFunctionCompiler for CanonicalSwizzle {
 }
 
 #[cfg(feature = "semantic-compiler")]
-fn canonical_swizzle(invocation: &SpecializationInvocation) -> MResult<SpecializedFunction> {
+fn canonical_swizzle(
+    invocation: &SpecializationInvocation,
+    context: &SpecializationContext<'_>,
+) -> MResult<SpecializedFunction> {
     if invocation.len() < 2 {
         return Err(MechError::new(
             IncorrectNumberOfArguments {
@@ -705,13 +777,18 @@ fn canonical_swizzle(invocation: &SpecializationInvocation) -> MResult<Specializ
         .cloned()
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        Box::new(CanonicalSwizzle {
-            output: output.clone(),
-            ..implementation
-        }),
-        FunctionInvocation::variadic(output, inputs),
-    )))
+    context.resolve_syntax_operation_contract(&PURE_CANONICAL_ACCESS_BINARY_CONTRACT)?;
+    context.certify_instance(
+        FunctionInstance::new(
+            Box::new(CanonicalSwizzle {
+                output: output.clone(),
+                ..implementation
+            }),
+            FunctionInvocation::variadic(output, inputs),
+        ),
+        mech_core::RuntimeFunctionId::from_name("CanonicalSwizzle"),
+        mech_core::ExecutionTarget::DirectRuntime,
+    )
 }
 
 #[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
@@ -719,7 +796,7 @@ fn canonical_matrix_access(
     invocation: &SpecializationInvocation,
     _context: &mut SpecializationContext<'_>,
 ) -> MResult<SpecializedFunction> {
-    canonical_access(invocation, "MatrixAccessCanonical")
+    canonical_access(invocation, _context, "MatrixAccessCanonical")
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -738,7 +815,7 @@ impl CanonicalFunctionSpecializer for AccessScalar {
         }) {
             return canonical_matrix_access(invocation, context);
         }
-        canonical_access(invocation, "CanonicalScalarAccess")
+        canonical_access(invocation, context, "CanonicalScalarAccess")
     }
 }
 pub struct AccessRange {}
@@ -758,7 +835,7 @@ impl CanonicalFunctionSpecializer for AccessRange {
         }) {
             return canonical_matrix_access(invocation, context);
         }
-        canonical_access(invocation, "CanonicalRangeAccess")
+        canonical_access(invocation, context, "CanonicalRangeAccess")
     }
 }
 pub struct AccessSwizzle {}
@@ -767,9 +844,9 @@ impl CanonicalFunctionSpecializer for AccessSwizzle {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        canonical_swizzle(invocation)
+        canonical_swizzle(invocation, context)
     }
 }
 
@@ -783,9 +860,9 @@ impl CanonicalFunctionSpecializer for AccessColumn {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        canonical_access(invocation, "CanonicalColumnAccess")
+        canonical_access(invocation, context, "CanonicalColumnAccess")
     }
 }
 

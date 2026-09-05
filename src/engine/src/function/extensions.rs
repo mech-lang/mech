@@ -1,6 +1,11 @@
 #[cfg(all(feature = "no_std", not(feature = "std")))]
-use alloc::{collections::BTreeMap, string::String, sync::Arc};
-use mech_core::{CanonicalFunctionSpecializer, MResult, MechError, MechErrorKind, hash_str};
+use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec};
+use mech_core::{
+    AccessMode, AliasPolicy, CanonicalFunctionSpecializer, ChangeDetectionPolicy, DeliveryMode,
+    ExternalInteraction, InputPortLayout, InputPortPolicy, MResult, MechError, MechErrorKind,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
+    ResolvedOperationDescriptor, ShapeRule, hash_str,
+};
 #[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::collections::BTreeMap;
 #[cfg(any(not(feature = "no_std"), feature = "std"))]
@@ -26,7 +31,32 @@ impl ExtensionFunctionId {
 pub struct FunctionExtensionEntry {
     pub id: ExtensionFunctionId,
     pub canonical_name: String,
+    pub operation: ResolvedOperationDescriptor,
     pub specializer: Arc<dyn CanonicalFunctionSpecializer>,
+}
+
+fn default_extension_contract() -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 0,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
 }
 
 impl FunctionExtensionEntry {
@@ -35,9 +65,15 @@ impl FunctionExtensionEntry {
         specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> Self {
         let canonical_name = canonical_name.into();
+        let operation = ResolvedOperationDescriptor::from_name(
+            canonical_name.clone(),
+            default_extension_contract(),
+        )
+        .expect("an extension operation descriptor is constructed from its canonical name");
         Self {
             id: ExtensionFunctionId::from_name(&canonical_name),
             canonical_name,
+            operation,
             specializer,
         }
     }
@@ -352,6 +388,11 @@ mod tests {
             FunctionExtensionEntry {
                 id,
                 canonical_name: String::from("first"),
+                operation: ResolvedOperationDescriptor::from_name(
+                    "first",
+                    default_extension_contract(),
+                )
+                .unwrap(),
                 specializer: specializer(),
             },
         );
@@ -359,6 +400,11 @@ mod tests {
         let error = match extensions.insert_or_replace(FunctionExtensionEntry {
             id,
             canonical_name: String::from("second"),
+            operation: ResolvedOperationDescriptor::from_name(
+                "second",
+                default_extension_contract(),
+            )
+            .unwrap(),
             specializer: specializer(),
         }) {
             Ok(_) => panic!("colliding extension name unexpectedly replaced the entry"),

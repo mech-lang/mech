@@ -1,15 +1,14 @@
 //! Semantic admission and normalization for the frozen EKF artifact.
 
-use mech_core::snapshot::SequenceView;
+use mech_core::snapshot::{F64Bits, SequenceView};
 use mech_core::{
-    AccessMode, AliasPolicy, BuiltinScalarKind, CellSlotId, ChangeDetectionPolicy, ConstantId,
-    DeliveryMode, DimensionExpr, ExecutionHostFunctionRequest, ExecutionResourceRequest,
-    ExternalInteraction, FloatWidth, KindExpr, MResult, MechError, MechErrorKind,
-    MechExecutionServices, NodeId, ObservationReplayPolicy, OperationContractId,
-    OutputConstruction, OutputId, ProgramRevision, ResolvedOperationContract, ResourceDelivery,
-    ResourceIntent, SchemaBody, SchemaId, ShapeRule, ValueCell, ValueData,
+    AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, ConstantId, DeliveryMode,
+    DimensionExpr, ExecutionHostFunctionRequest, ExecutionResourceRequest, ExternalInteraction,
+    FloatWidth, MResult, MechError, MechErrorKind, MechExecutionServices, NodeId,
+    ObservationReplayPolicy, OperationContractId, OutputConstruction, OutputId, ProgramRevision,
+    ResolvedOperationContract, ResolvedValueDescriptor, ResourceDelivery, ResourceIntent,
+    SchemaBody, SchemaDraft, SchemaId, ShapeRule, ValueCell, ValueData, ValueDataDraft,
 };
-use nalgebra::DVector;
 
 use crate::{
     ArtifactSource, CompilerPlanningConfig, CompilerPlanningProgram, ProgramArtifact,
@@ -933,22 +932,32 @@ impl FrozenEkfCompilationServices {
 
     pub fn from_frames(frame: [f64; 4], planning_frame: [f64; 4]) -> Self {
         let frame_value = |values: [f64; 4]| {
-            ValueCell::from_exact_matrix_ref(
-                mech_core::Ref::new(DVector::from_vec(values.to_vec())),
-                4,
-                1,
+            let schema = SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![DimensionExpr::Constant(4), DimensionExpr::Constant(1)]
+                        .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .expect("the frozen EKF frame schema is valid");
+            let shape = schema
+                .instantiate_shape(Box::new([]))
+                .expect("the frozen EKF frame has no dynamic shape parameters");
+            let descriptor = ResolvedValueDescriptor::from_schema(schema, shape)
+                .expect("the frozen EKF frame descriptor is closed");
+            ValueCell::from_resolved_descriptor_data(
+                &descriptor,
+                ValueDataDraft::Matrix(
+                    values
+                        .into_iter()
+                        .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
             )
-            .and_then(|value| {
-                value.with_resolved_output_type(&mech_core::ResolvedType::new(
-                    KindExpr::Matrix {
-                        element: Box::new(BuiltinScalarKind::F64.kind_expr()),
-                        dimensions: vec![DimensionExpr::Constant(4), DimensionExpr::Constant(1)]
-                            .into_boxed_slice(),
-                    },
-                    Box::new([]),
-                )?)
-            })
-            .expect("the frozen EKF frame is a canonical four-element vector")
+            .expect("the frozen EKF frame has canonical descriptor-backed data")
         };
         Self {
             frame: frame_value(frame),

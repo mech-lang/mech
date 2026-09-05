@@ -202,21 +202,12 @@ macro_rules! impl_unchecked_matrix_arithmetic {
 impl_unchecked_matrix_arithmetic!(f32);
 #[cfg(all(any(feature = "dot", feature = "matmul"), feature = "f64"))]
 impl_unchecked_matrix_arithmetic!(f64);
-#[cfg(all(
-    any(feature = "dot", feature = "matmul"),
-    feature = "rational"
-))]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "rational"))]
 impl_unchecked_matrix_arithmetic!(mech_core::R64);
-#[cfg(all(
-    any(feature = "dot", feature = "matmul"),
-    feature = "complex"
-))]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "complex"))]
 impl_unchecked_matrix_arithmetic!(mech_core::C64);
 
-#[cfg(all(
-    any(feature = "dot", feature = "matmul"),
-    feature = "matrix"
-))]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "matrix"))]
 fn checked_matrix_add<T: RuntimeMatrixArithmetic>(
     lhs: T,
     rhs: T,
@@ -298,9 +289,7 @@ fn pure_product_contract(matrix: bool) -> OperationContractDeclaration {
 }
 
 #[cfg(any(feature = "dot", feature = "matmul"))]
-fn product_contract(
-    output: FunctionValueRepresentation,
-) -> &'static OperationContractDeclaration {
+fn product_contract(output: FunctionValueRepresentation) -> &'static OperationContractDeclaration {
     match output {
         #[cfg(feature = "matmul")]
         FunctionValueRepresentation::Matrix { .. } => &PURE_MATRIX_PRODUCT_CONTRACT,
@@ -347,6 +336,10 @@ macro_rules! impl_checked_matrix_binop {
                 <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                matrix_semantic_contract!($out_type $(, $semantic_contract)?)
+            }
 
             fn new_invocation(
                 invocation: FunctionInvocation,

@@ -132,6 +132,23 @@ class FullWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(target, full)
 
+    def test_r4_type_cutover_is_unwaived_and_full_conformance_is_owned(self):
+        r3 = "python3 scripts/check-r3-type-system.py"
+        r4 = "python3 scripts/check-r4-type-cutover.py"
+        unit = "scripts/tests/test_check_r4_type_cutover.py"
+        for block in (
+            job_block(CI, "static-contracts"),
+            job_block(FULL, "architecture-contracts"),
+        ):
+            self.assertIn(r3, block)
+            self.assertIn(r4, block)
+            self.assertLess(block.index(r3), block.index(r4))
+            self.assertIn(unit, block)
+            self.assertNotIn("continue-on-error", block)
+        full = job_block(FULL, "architecture-contracts")
+        self.assertIn("Execute the complete R4 conformance boundary", full)
+        self.assertGreaterEqual(full.count("--test r4_type_cutover"), 3)
+
     def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):
         block = job_block(FULL, "architecture-contracts")
         fetch = "cargo +nightly-2026-03-03 fetch --locked"

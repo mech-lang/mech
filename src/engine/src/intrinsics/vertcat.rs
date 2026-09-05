@@ -343,6 +343,10 @@ where
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, out }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateTwoArgs<T>
@@ -428,6 +432,10 @@ where
         let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "matrixd")]
@@ -526,6 +534,10 @@ where
             out,
         }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateFourArgs<T>
@@ -614,6 +626,10 @@ where
         let out: Ref<DMatrix<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, out }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateNArgs<T>
@@ -675,6 +691,7 @@ mech_core::declare_native_runtime_factory! {
     name: "VerticalConcatenateNArgs<f64>",
     factory_type: VerticalConcatenateNArgs<f64>,
     contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("VerticalConcatenateNArgs<f64>"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -832,6 +849,10 @@ where
         let out: Ref<DVector<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, out }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVD2<T>
@@ -918,6 +939,10 @@ where
         let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
         let out: Ref<DVector<T>> = out.try_ref()?;
         Ok(Box::new(Self { e0, e1, e2, out }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "vectord")]
@@ -1015,6 +1040,10 @@ where
             e3,
             out,
         }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "vectord")]
@@ -1117,6 +1146,10 @@ where
             out,
         }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVDN<T>
@@ -1211,6 +1244,10 @@ where
             #[cfg(feature = "semantic-compiler")]
             out,
         }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "matrix1")]
@@ -1659,6 +1696,7 @@ mech_core::declare_native_runtime_factory! {
     name: "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>",
     factory_type: VerticalConcatenateR2R2<f64>,
     contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -2048,6 +2086,7 @@ macro_rules! declare_vertcat_scalar {
             name: concat!(stringify!($factory), "<", $name, ">"),
             factory_type: $factory<$scalar>,
             contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($factory), "<", $name, ">")),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
             extra_cargo_features: ["matrix_vertcat"],
@@ -2184,6 +2223,7 @@ macro_rules! declare_vertcat_binary_scalar {
             name: concat!(stringify!($factory), "<", $name, stringify!($out), stringify!($e0), stringify!($e1), ">"),
             factory_type: $factory<$scalar>,
             contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($factory), "<", $name, stringify!($out), stringify!($e0), stringify!($e1), ">")),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>])),
             extra_cargo_features: ["matrix_vertcat"],
