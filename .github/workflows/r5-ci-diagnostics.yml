@@ -1,0 +1,22 @@
+name: R5 CI diagnostics
+on:
+  push:
+    branches: [codex/r5-ci-diagnostics]
+    paths: [.github/workflows/r5-ci-diagnostics.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Export reviewed source
+        run: git archive --format=tar.gz d96425614d69c61427419e01f4bba1343824ab50 -o /tmp/r5-current-source.tar.gz
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-current-source
+          path: /tmp/r5-current-source.tar.gz
+          retention-days: 1
