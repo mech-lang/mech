@@ -30,6 +30,7 @@ git switch --track origin/codex/mech-program-gpu
 | PyPy textbook-fidelity control | `benchmarks/archive/compute/parallel-ekf/pypy_textbook.py` |
 | PyPy optimized control | `benchmarks/archive/compute/parallel-ekf/pypy_optimized.py` |
 | Mojo textbook-fidelity control | `benchmarks/archive/compute/parallel-ekf/mojo_textbook.mojo` |
+| Mojo textbook fixed-matrix control | `benchmarks/archive/compute/parallel-ekf/mojo_textbook_fixed.mojo` |
 | Mojo expanded scalar control | `benchmarks/archive/compute/parallel-ekf/mojo_scalar.mojo` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -322,7 +323,8 @@ The runner invokes `mojo build -O3 --fp-mode contract=off` so this comparison
 does not use Mojo's default floating-point contraction setting. The strict
 checksum matches the Rust fixed-shape control to the reported precision. The
 source is [`mojo_scalar.mojo`](mojo_scalar.mojo); include it in the complete
-runner with:
+runner with (the same invocation also builds and runs the textbook fixed-matrix
+lane below):
 
 ```text
 python3 benchmarks/archive/compute/parallel-ekf/run.py \
@@ -354,6 +356,17 @@ median of **0.587 M EKF-turns/s unchecked** and **0.586 M EKF-turns/s checked**.
 The checksum was `2682056.075673` in both modes. This is intentionally a
 textbook-fidelity reference, not the optimized scalar control; its temporary
 matrix/list construction is part of the measured implementation.
+
+### Mojo textbook fixed-matrix control
+
+`mojo_textbook_fixed.mojo` keeps the matrix-shaped equations but stores
+`Vec3`, `Mat2`, `Mat32`, and `Mat3` as fixed-size value types. Their operations
+are `@always_inline`, allowing register allocation without changing the
+source-level EKF structure or validation policy.
+
+On the same 10,000-filter, 20-turn workload, five process runs gave medians of
+**20.81 M EKF-turns/s unchecked** and **21.21 M EKF-turns/s checked**. The
+checksum was `2682056.075673` in both modes.
 
 ### Mojo fused workers and native Metal
 

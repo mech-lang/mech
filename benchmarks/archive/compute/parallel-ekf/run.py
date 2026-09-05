@@ -158,6 +158,7 @@ def main() -> None:
         )
         common = [str(args.scalar_instances), str(args.scalar_turns)]
         mojo_binary = None
+        mojo_textbook_fixed_binary = None
         if mojo is not None:
             mojo_binary = Path(temporary) / "mojo-scalar"
             output(
@@ -170,6 +171,20 @@ def main() -> None:
                     str(HERE / "mojo_scalar.mojo"),
                     "-o",
                     str(mojo_binary),
+                ],
+                environment,
+            )
+            mojo_textbook_fixed_binary = Path(temporary) / "mojo-textbook-fixed"
+            output(
+                [
+                    mojo,
+                    "build",
+                    "-O3",
+                    "--fp-mode",
+                    "contract=off",
+                    str(HERE / "mojo_textbook_fixed.mojo"),
+                    "-o",
+                    str(mojo_textbook_fixed_binary),
                 ],
                 environment,
             )
@@ -259,6 +274,17 @@ def main() -> None:
             ]
             language_commands["Mojo fixed-shape scalar (checked)"] = [
                 str(mojo_binary),
+                *common,
+                "checked",
+            ]
+        if mojo_textbook_fixed_binary is not None:
+            language_commands["Mojo textbook fixed matrix (unchecked)"] = [
+                str(mojo_textbook_fixed_binary),
+                *common,
+                "unchecked",
+            ]
+            language_commands["Mojo textbook fixed matrix (checked)"] = [
+                str(mojo_textbook_fixed_binary),
                 *common,
                 "checked",
             ]
