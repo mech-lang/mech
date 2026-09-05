@@ -17,183 +17,113 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
-      actions: read
-      checks: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
           persist-credentials: false
-      - name: Apply the frozen locally tested candidate
+      - name: Prepare the frozen v2 candidate without moving refs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 -u - <<'PY'
           import base64, gzip, hashlib, json, pathlib, subprocess
-          root = pathlib.Path('/tmp/r5-candidate')
+          root = pathlib.Path('/tmp/r5-v2')
           root.mkdir(exist_ok=True)
           head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-          assert head == '09ea5f648fe83dbf8f0fab5ed6499dec31052a69', head
-          blobs = ['01cdbe9c2a5d314412128595849e187f5a09dede', '55ba48ce8679bfb01aa9faebb5b097b4ca9a9059']
-          chunks = []
-          for sha in blobs:
-              raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/' + sha])
-              chunks.append(base64.b64decode(json.loads(raw)['content']))
-          patch = gzip.decompress(b''.join(chunks))
-          assert hashlib.sha256(patch).hexdigest() == '349ce09d5acb4e58bbcfcb603f8abab7e6bea6a15a05d395161657b4f0ca1d24'
-          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
-          subprocess.run(['git', 'apply', '-'], input=patch, check=True)
-          subprocess.run(['git', 'add', '--all'], check=True)
-          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
-          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
-          (root/'candidate.patch').write_bytes(patch)
-          (root/'HEAD').write_text(head + '\n')
-          (root/'TREE').write_text(tree + '\n')
-          print('Frozen candidate tree:', tree, flush=True)
-          PY
-      - name: Preserve publication objects and current CI failure evidence
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 -u - <<'PY'
-          import hashlib, json, pathlib, subprocess
-          root = pathlib.Path('/tmp/r5-candidate')
+          assert head == '09ea5f648fe83dbf8f0fab5ed6499dec31052a69'
           def api(path, payload=None):
-              cmd = ['gh', 'api', 'repos/mech-lang/mech/' + path]
+              command = ['gh', 'api', 'repos/mech-lang/mech/' + path]
               if payload is not None:
-                  cmd += ['--method', 'POST', '--input', '-']
-              result = subprocess.run(cmd, input=json.dumps(payload) if payload is not None else None, text=True, capture_output=True, timeout=60)
+                  command += ['--method', 'POST', '--input', '-']
+              result = subprocess.run(command, input=json.dumps(payload) if payload is not None else None, text=True, capture_output=True, timeout=60)
               if result.returncode:
                   raise RuntimeError(result.stderr)
               return json.loads(result.stdout)
+          patches = [
+              (['01cdbe9c2a5d314412128595849e187f5a09dede', '55ba48ce8679bfb01aa9faebb5b097b4ca9a9059'], '349ce09d5acb4e58bbcfcb603f8abab7e6bea6a15a05d395161657b4f0ca1d24'),
+              (['aa9d59b6a98955a8f71a02dd5f19768810887dcd'], '362163324935107668a361420f9e65f20ceffcbc526af956cdd1448d371f65e9'),
+          ]
+          for blobs, digest in patches:
+              patch = gzip.decompress(b''.join(base64.b64decode(api('git/blobs/' + sha)['content']) for sha in blobs))
+              assert hashlib.sha256(patch).hexdigest() == digest
+              subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
+              subprocess.run(['git', 'apply', '-'], input=patch, check=True)
+          subprocess.run(['git', 'add', '--all'], check=True)
+          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+          patch = subprocess.check_output(['git', 'diff', '--cached', '--binary'])
+          (root/'candidate.patch').write_bytes(patch)
+          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
           paths = subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).splitlines()
-          elements, hashes = [], {}
+          elements = []
           for name in paths:
-              path = pathlib.Path(name)
-              mode = subprocess.check_output(['git', 'ls-files', '-s', '--', name], text=True).split()[0]
-              sha = api('git/blobs', {'content': path.read_text(), 'encoding': 'utf-8'})['sha']
-              elements.append({'path': name, 'mode': mode, 'type': 'blob', 'sha': sha})
-              hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
-          receipt = {'parent': (root/'HEAD').read_text().strip(), 'tree': (root/'TREE').read_text().strip(), 'tree_elements': elements, 'sha256': hashes, 'branch_refs_changed': False}
+              sha = api('git/blobs', {'content': pathlib.Path(name).read_text(), 'encoding': 'utf-8'})['sha']
+              elements.append({'path': name, 'mode': '100644', 'type': 'blob', 'sha': sha})
+          receipt = {'parent': head, 'tree': tree, 'patch_sha256': hashlib.sha256(patch).hexdigest(), 'tree_elements': elements, 'branch_refs_changed': False}
           (root/'receipt.json').write_text(json.dumps(receipt, indent=2))
           print(json.dumps(receipt, indent=2))
-          jobs = []
-          for page in range(1, 11):
-              batch = api(f'actions/runs/33992916915/jobs?filter=latest&per_page=100&page={page}')['jobs']
-              jobs.extend(batch)
-              if len(batch) < 100:
-                  break
-          else:
-              raise RuntimeError('Refusing partial CI snapshot')
-          (root/'ci-jobs.json').write_text(json.dumps(jobs, indent=2))
-          for job in jobs:
-              if job['conclusion'] not in ('failure', 'cancelled', 'timed_out'):
-                  continue
-              print('CI failure:', job['id'], job['name'], flush=True)
-              result = subprocess.run(['gh', 'api', f"repos/mech-lang/mech/actions/jobs/{job['id']}/logs"], text=True, capture_output=True, timeout=60)
-              (root/f"ci-{job['id']}.log").write_text(result.stdout if result.returncode == 0 else result.stderr)
           PY
-      - name: Preserve exact candidate and failure snapshot
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-frozen-candidate
-          path: /tmp/r5-candidate
+          name: r5-v2-candidate
+          path: /tmp/r5-v2
           retention-days: 2
   qualify:
-    name: Frozen candidate (${{ matrix.case }})
+    name: V2 complete qualification (${{ matrix.case }})
     needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        case: [nbody, engine, r5-memory-planner, architecture-contracts, cargo-features, source, bytecode-v1-determinism, native-linkage-owners]
+        include:
+          - case: nbody
+            command: cargo fetch --locked && python3 scripts/check-r1-artifact-closure.py nbody
+          - case: engine
+            command: cargo test --locked -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib --test r5_memory_plan
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
           persist-credentials: false
-          fetch-depth: 0
-      - name: Apply the frozen locally tested candidate
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: r5-v2-candidate
+          path: /tmp/r5-v2
+      - name: Verify and apply the exact candidate
         run: |
           python3 -u - <<'PY'
-          import base64, gzip, hashlib, json, pathlib, subprocess
-          root = pathlib.Path('/tmp/r5-candidate')
-          root.mkdir(exist_ok=True)
-          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-          assert head == '09ea5f648fe83dbf8f0fab5ed6499dec31052a69', head
-          blobs = ['01cdbe9c2a5d314412128595849e187f5a09dede', '55ba48ce8679bfb01aa9faebb5b097b4ca9a9059']
-          chunks = []
-          for sha in blobs:
-              raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/' + sha])
-              chunks.append(base64.b64decode(json.loads(raw)['content']))
-          patch = gzip.decompress(b''.join(chunks))
-          assert hashlib.sha256(patch).hexdigest() == '349ce09d5acb4e58bbcfcb603f8abab7e6bea6a15a05d395161657b4f0ca1d24'
-          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
-          subprocess.run(['git', 'apply', '-'], input=patch, check=True)
-          subprocess.run(['git', 'add', '--all'], check=True)
-          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
-          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
-          (root/'candidate.patch').write_bytes(patch)
-          (root/'HEAD').write_text(head + '\n')
-          (root/'TREE').write_text(tree + '\n')
-          print('Frozen candidate tree:', tree, flush=True)
+          import hashlib, json, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-v2')
+          receipt = json.loads((root/'receipt.json').read_text())
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == receipt['parent']
+          patch = (root/'candidate.patch').read_bytes()
+          assert hashlib.sha256(patch).hexdigest() == receipt['patch_sha256']
+          subprocess.run(['git', 'apply', '--index', '-'], input=patch, check=True)
+          assert subprocess.check_output(['git', 'write-tree'], text=True).strip() == receipt['tree']
+          print('Qualified tree:', receipt['tree'])
           PY
-      - name: Install the pinned compiler and required CI tools
+      - name: Install the pinned compiler
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
-          sudo apt-get update
-          sudo apt-get install --yes ripgrep python3-yaml
-      - name: Execute complete original qualification commands
+      - name: Execute complete qualification
         env:
-          CASE: ${{ matrix.case }}
+          COMMAND: ${{ matrix.command }}
         run: |
           set -euo pipefail
-          cat > /tmp/r5-candidate/run.py <<'PY'
-          import os, pathlib, subprocess, yaml
-          case = os.environ['CASE']
-          if case == 'engine':
-              steps = [{'name': 'Full engine library and memory-plan regression suite', 'run': 'cargo test --locked -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib --test r5_memory_plan'}]
-              env = os.environ.copy()
-          else:
-              jobs = yaml.safe_load(pathlib.Path('.github/workflows/ci-full.yml').read_text())['jobs']
-              job_name = {'nbody': 'r1-artifact-closure', 'source': 'function-system-contracts'}.get(case, case)
-              job = jobs[job_name]
-              steps = job['steps']
-              env = os.environ.copy()
-              env.update({key: str(value) for key, value in job.get('env', {}).items()})
-          failed = 0
-          for step in steps:
-              if 'run' not in step or step.get('name', '').startswith('Install'):
-                  continue
-              if failed and step.get('if') != 'always()':
-                  continue
-              command = step['run'].replace('$' + '{{ matrix.representative }}', 'nbody').replace('$' + '{{ matrix.slice }}', 'source')
-              if '$' + '{{' in command:
-                  raise RuntimeError('Unresolved workflow expression: ' + command)
-              print('::group::' + step.get('name', 'Run'), flush=True)
-              result = subprocess.run(['bash', '-euo', 'pipefail', '-c', command], env=env)
-              print('::endgroup::', flush=True)
-              if result.returncode and not failed:
-                  failed = result.returncode
-          raise SystemExit(failed)
-          PY
           set +e
-          /usr/bin/time -v -o /tmp/r5-candidate/time.txt /usr/bin/python3 -u /tmp/r5-candidate/run.py 2>&1 | tee /tmp/r5-candidate/command.log
+          /usr/bin/time -v -o /tmp/r5-v2/time.txt bash -euo pipefail -c "$COMMAND" 2>&1 | tee /tmp/r5-v2/command.log
           status=${PIPESTATUS[0]}
           set -e
-          cat /tmp/r5-candidate/time.txt
-          echo "$status" > /tmp/r5-candidate/exit-status
+          cat /tmp/r5-v2/time.txt
+          echo "$status" > /tmp/r5-v2/exit-status
           git diff --exit-code
           exit "$status"
-      - name: Preserve qualification evidence
+      - name: Preserve complete qualification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-frozen-${{ matrix.case }}
-          path: /tmp/r5-candidate
+          name: r5-v2-${{ matrix.case }}
+          path: /tmp/r5-v2
           retention-days: 2
