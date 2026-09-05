@@ -1097,7 +1097,12 @@ fn assert_activation_fact_reconfiguration(
     );
     let mut builder = mech_core::FunctionCatalogBuilder::new();
     builder
-        .insert_resident_factory(["test"], "zero-input-state", bind_zero_input_state)
+        .insert_resident_factory(
+            ["test"],
+            "zero-input-state",
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            bind_zero_input_state,
+        )
         .unwrap();
     let zero_catalog = builder.build().unwrap();
     for (id, candidate) in [
@@ -1546,13 +1551,28 @@ fn execute_zero_input_state(
 fn assert_production_dirty_propagation(template: &ProgramArtifact) {
     let mut builder = mech_core::FunctionCatalogBuilder::new();
     builder
-        .insert_resident_factory(["test"], "reported-copy", bind_reported_copy)
+        .insert_resident_factory(
+            ["test"],
+            "reported-copy",
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            bind_reported_copy,
+        )
         .unwrap();
     builder
-        .insert_resident_factory(["test"], "always-copy", bind_always_copy)
+        .insert_resident_factory(
+            ["test"],
+            "always-copy",
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            bind_always_copy,
+        )
         .unwrap();
     builder
-        .insert_resident_factory(["test"], "state-copy", bind_reported_copy)
+        .insert_resident_factory(
+            ["test"],
+            "state-copy",
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            bind_reported_copy,
+        )
         .unwrap();
     let catalog = builder.build().unwrap();
 
