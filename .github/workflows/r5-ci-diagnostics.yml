@@ -5,42 +5,120 @@ on:
     paths: [.github/workflows/r5-ci-diagnostics.yml]
 permissions:
   contents: read
+env:
+  CARGO_BUILD_JOBS: "1"
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_TERM_COLOR: never
 jobs:
-  source-contracts:
+  prepare:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      CARGO_BUILD_JOBS: "1"
-      CARGO_INCREMENTAL: "0"
-      CARGO_PROFILE_DEV_DEBUG: "0"
-      CARGO_PROFILE_TEST_DEBUG: "0"
-      CARGO_TERM_COLOR: never
+    timeout-minutes: 5
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
           persist-credentials: false
-      - name: Install required qualification tools
+      - name: Validate and preserve the exact owner-check patch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ripgrep
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Run the complete source compatibility slice
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/r5-source
-          git rev-parse HEAD | tee /tmp/r5-source/HEAD
-          set +e
-          /usr/bin/time -v -o /tmp/r5-source/time.txt bash scripts/check-function-system-contracts.sh source 2>&1 | tee /tmp/r5-source/command.log
-          status=${PIPESTATUS[0]}
-          set -e
-          cat /tmp/r5-source/time.txt
-          echo "$status" > /tmp/r5-source/exit-status
-          exit "$status"
-      - name: Preserve qualification evidence
+          python3 -u - <<'PY'
+          import base64, hashlib, json, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-owner-patch')
+          root.mkdir(exist_ok=True)
+          raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/f0ff06ad2cfd8b3799f744a2ce1752ebf2bfef42'])
+          patch = base64.b64decode(json.loads(raw)['content'])
+          assert hashlib.sha256(patch).hexdigest() == '249ac89acb39fceb62e8ef1a0c09687908d2ec13d92ab8d6d5e8a77384c479df'
+          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
+          subprocess.run(['git', 'apply', '-'], input=patch, check=True)
+          subprocess.run(['git', 'diff', '--check'], check=True)
+          subprocess.run(['python3', '-B', '-m', 'unittest', 'scripts/tests/test_native_linkage_profiles.py', 'tests/ci/test_ci_full_contract.py'], check=True)
+          expected = {'scripts/check-native-linkage-coverage.py': '340e208b45ebc0ab8e46a6abd2228cb02641112f07e71d5b5daca27eb7c8c842', 'scripts/tests/test_native_linkage_profiles.py': 'b7d079915cecaae4b56909ff81530b9ffec3bb34520fd6aaf820d3a7477925f6', '.github/workflows/ci-full.yml': 'a1d17ae76634a2f0f92c5f6b771025d808002d054e20c6b2b2c6bdfcca3956fb'}
+          entries = []
+          for name, digest in expected.items():
+              content = pathlib.Path(name).read_bytes()
+              assert hashlib.sha256(content).hexdigest() == digest, name
+              result = subprocess.run(['gh', 'api', 'repos/mech-lang/mech/git/blobs', '--method', 'POST', '--input', '-'], input=json.dumps({'content': content.decode(), 'encoding': 'utf-8'}), text=True, capture_output=True)
+              if result.returncode:
+                  print(result.stderr, flush=True)
+                  raise SystemExit(result.returncode)
+              entries.append({'path': name, 'mode': '100644', 'type': 'blob', 'sha': json.loads(result.stdout)['sha']})
+          receipt = {'parent': '09ea5f648fe83dbf8f0fab5ed6499dec31052a69', 'base_tree': '8f4a96e378b5e1fe6c92acbdec5ddbe7c0a4e7f2', 'tree_elements': entries, 'sha256': expected, 'branch_refs_changed': False}
+          (root/'receipt.json').write_text(json.dumps(receipt, indent=2))
+          (root/'candidate.patch').write_bytes(patch)
+          print(json.dumps(receipt, indent=2))
+          PY
+      - name: Preserve patch evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-repaired-source-contracts
-          path: /tmp/r5-source
+          name: r5-owner-patch
+          path: /tmp/r5-owner-patch
+          retention-days: 1
+  math-owner:
+    name: Math native-link partition (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
+          persist-credentials: false
+      - name: Apply the exact owner-check patch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, subprocess
+          raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/f0ff06ad2cfd8b3799f744a2ce1752ebf2bfef42'])
+          patch = base64.b64decode(json.loads(raw)['content'])
+          assert hashlib.sha256(patch).hexdigest() == '249ac89acb39fceb62e8ef1a0c09687908d2ec13d92ab8d6d5e8a77384c479df'
+          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
+          subprocess.run(['git', 'apply', '-'], input=patch, check=True)
+          PY
+          git diff --check
+      - name: Install pinned compiler
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Check all operations and shapes for the selected scalar partition
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python3 -u - <<'PY'
+          import importlib.util, json, os, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-owner-result')
+          root.mkdir(exist_ok=True)
+          spec = importlib.util.spec_from_file_location('linkage', 'scripts/check-native-linkage-coverage.py')
+          linkage = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(linkage)
+          profiles = linkage.owner_native_link_profiles('mech-math')
+          assert len(profiles) == 7
+          index = int(os.environ['SHARD'])
+          command = ['cargo', '+nightly-2026-03-03', 'check', '--manifest-path', 'machines/math/Cargo.toml', '--no-default-features', '--features', profiles[index]]
+          (root/'command.json').write_text(json.dumps(command, indent=2))
+          print(json.dumps(command), flush=True)
+          with (root/'command.log').open('w') as log:
+              child = subprocess.Popen(['/usr/bin/time', '-v', '-o', str(root/'time.txt'), *command], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+              for line in child.stdout:
+                  log.write(line)
+                  log.flush()
+                  print(line, end='', flush=True)
+              status = child.wait()
+          (root/'exit-status').write_text(str(status))
+          print((root/'time.txt').read_text(), flush=True)
+          raise SystemExit(status)
+          PY
+      - name: Preserve native-link qualification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-math-owner-${{ matrix.shard }}
+          path: /tmp/r5-owner-result
           retention-days: 1
