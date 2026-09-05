@@ -24,8 +24,7 @@ jobs:
         with:
           ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
           persist-credentials: false
-      - &apply-patch
-        name: Apply the frozen locally tested candidate
+      - name: Apply the frozen locally tested candidate
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -116,7 +115,33 @@ jobs:
           ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
           persist-credentials: false
           fetch-depth: 0
-      - *apply-patch
+      - name: Apply the frozen locally tested candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -u - <<'PY'
+          import base64, gzip, hashlib, json, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-candidate')
+          root.mkdir(exist_ok=True)
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '09ea5f648fe83dbf8f0fab5ed6499dec31052a69', head
+          blobs = ['01cdbe9c2a5d314412128595849e187f5a09dede', '55ba48ce8679bfb01aa9faebb5b097b4ca9a9059']
+          chunks = []
+          for sha in blobs:
+              raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/' + sha])
+              chunks.append(base64.b64decode(json.loads(raw)['content']))
+          patch = gzip.decompress(b''.join(chunks))
+          assert hashlib.sha256(patch).hexdigest() == '349ce09d5acb4e58bbcfcb603f8abab7e6bea6a15a05d395161657b4f0ca1d24'
+          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
+          subprocess.run(['git', 'apply', '-'], input=patch, check=True)
+          subprocess.run(['git', 'add', '--all'], check=True)
+          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
+          (root/'candidate.patch').write_bytes(patch)
+          (root/'HEAD').write_text(head + '\n')
+          (root/'TREE').write_text(tree + '\n')
+          print('Frozen candidate tree:', tree, flush=True)
+          PY
       - name: Install the pinned compiler and required CI tools
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal
@@ -147,8 +172,8 @@ jobs:
                   continue
               if failed and step.get('if') != 'always()':
                   continue
-              command = step['run'].replace('${{ matrix.representative }}', 'nbody').replace('${{ matrix.slice }}', 'source')
-              if '${{' in command:
+              command = step['run'].replace('$' + '{{ matrix.representative }}', 'nbody').replace('$' + '{{ matrix.slice }}', 'source')
+              if '$' + '{{' in command:
                   raise RuntimeError('Unresolved workflow expression: ' + command)
               print('::group::' + step.get('name', 'Run'), flush=True)
               result = subprocess.run(['bash', '-euo', 'pipefail', '-c', command], env=env)
