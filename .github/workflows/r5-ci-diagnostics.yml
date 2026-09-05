@@ -5,65 +5,170 @@ on:
     paths: [.github/workflows/r5-ci-diagnostics.yml]
 permissions:
   contents: read
+env:
+  CARGO_BUILD_JOBS: "1"
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_TERM_COLOR: never
 jobs:
-  nbody-shape-order:
+  prepare:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     permissions:
       contents: write
-    env:
-      CARGO_BUILD_JOBS: "1"
-      CARGO_INCREMENTAL: "0"
-      CARGO_PROFILE_DEV_DEBUG: "0"
-      CARGO_PROFILE_TEST_DEBUG: "0"
-      CARGO_TERM_COLOR: never
+      actions: read
+      checks: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
           persist-credentials: false
-      - name: Apply and preserve the exact shape-order repair
+      - &apply-patch
+        name: Apply the frozen locally tested candidate
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 -u - <<'PY'
-          import base64, hashlib, json, pathlib, subprocess
-          root = pathlib.Path('/tmp/r5-shape-order')
+          import base64, gzip, hashlib, json, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-candidate')
           root.mkdir(exist_ok=True)
-          raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/3723bac2364351bdb7ca69b5b524bf00a6b835ba'])
-          patch = base64.b64decode(json.loads(raw)['content'])
-          assert hashlib.sha256(patch).hexdigest() == '5e6f7e09e15cafe80be3288b6cbb467844e79c8f029e27e646e055cc8e93e981'
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '09ea5f648fe83dbf8f0fab5ed6499dec31052a69', head
+          blobs = ['01cdbe9c2a5d314412128595849e187f5a09dede', '55ba48ce8679bfb01aa9faebb5b097b4ca9a9059']
+          chunks = []
+          for sha in blobs:
+              raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/' + sha])
+              chunks.append(base64.b64decode(json.loads(raw)['content']))
+          patch = gzip.decompress(b''.join(chunks))
+          assert hashlib.sha256(patch).hexdigest() == '349ce09d5acb4e58bbcfcb603f8abab7e6bea6a15a05d395161657b4f0ca1d24'
           subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
           subprocess.run(['git', 'apply', '-'], input=patch, check=True)
-          subprocess.run(['git', 'diff', '--check'], check=True)
-          path = pathlib.Path('src/engine/src/resident/general/mod.rs')
-          assert hashlib.sha256(path.read_bytes()).hexdigest() == '0e67abd48bc0266d925210845a919bb7edf5f63a7922d0cb7e880b1068eaae0f'
-          result = subprocess.run(['gh', 'api', 'repos/mech-lang/mech/git/blobs', '--method', 'POST', '--input', '-'], input=json.dumps({'content': path.read_text(), 'encoding': 'utf-8'}), text=True, capture_output=True)
-          if result.returncode:
-              print(result.stderr, flush=True)
-              raise SystemExit(result.returncode)
-          receipt = {'parent': '09ea5f648fe83dbf8f0fab5ed6499dec31052a69', 'tree_elements': [{'path': str(path), 'mode': '100644', 'type': 'blob', 'sha': json.loads(result.stdout)['sha']}]}
-          (root/'receipt.json').write_text(json.dumps(receipt, indent=2))
+          subprocess.run(['git', 'add', '--all'], check=True)
+          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
           (root/'candidate.patch').write_bytes(patch)
-          print(json.dumps(receipt, indent=2))
+          (root/'HEAD').write_text(head + '\n')
+          (root/'TREE').write_text(tree + '\n')
+          print('Frozen candidate tree:', tree, flush=True)
           PY
-      - name: Install pinned compiler
-        run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Execute every D2 assertion without changing the fixture or oracle
+      - name: Preserve publication objects and current CI failure evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          git rev-parse HEAD | tee /tmp/r5-shape-order/HEAD
-          set +e
-          /usr/bin/time -v -o /tmp/r5-shape-order/time.txt python3 scripts/check-r1-artifact-closure.py nbody 2>&1 | tee /tmp/r5-shape-order/command.log
-          status=${PIPESTATUS[0]}
-          set -e
-          cat /tmp/r5-shape-order/time.txt
-          echo "$status" > /tmp/r5-shape-order/exit-status
-          exit "$status"
-      - name: Preserve shape-order qualification evidence
+          python3 -u - <<'PY'
+          import hashlib, json, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-candidate')
+          def api(path, payload=None):
+              cmd = ['gh', 'api', 'repos/mech-lang/mech/' + path]
+              if payload is not None:
+                  cmd += ['--method', 'POST', '--input', '-']
+              result = subprocess.run(cmd, input=json.dumps(payload) if payload is not None else None, text=True, capture_output=True, timeout=60)
+              if result.returncode:
+                  raise RuntimeError(result.stderr)
+              return json.loads(result.stdout)
+          paths = subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).splitlines()
+          elements, hashes = [], {}
+          for name in paths:
+              path = pathlib.Path(name)
+              mode = subprocess.check_output(['git', 'ls-files', '-s', '--', name], text=True).split()[0]
+              sha = api('git/blobs', {'content': path.read_text(), 'encoding': 'utf-8'})['sha']
+              elements.append({'path': name, 'mode': mode, 'type': 'blob', 'sha': sha})
+              hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+          receipt = {'parent': (root/'HEAD').read_text().strip(), 'tree': (root/'TREE').read_text().strip(), 'tree_elements': elements, 'sha256': hashes, 'branch_refs_changed': False}
+          (root/'receipt.json').write_text(json.dumps(receipt, indent=2))
+          print(json.dumps(receipt, indent=2))
+          jobs = []
+          for page in range(1, 11):
+              batch = api(f'actions/runs/33992916915/jobs?filter=latest&per_page=100&page={page}')['jobs']
+              jobs.extend(batch)
+              if len(batch) < 100:
+                  break
+          else:
+              raise RuntimeError('Refusing partial CI snapshot')
+          (root/'ci-jobs.json').write_text(json.dumps(jobs, indent=2))
+          for job in jobs:
+              if job['conclusion'] not in ('failure', 'cancelled', 'timed_out'):
+                  continue
+              print('CI failure:', job['id'], job['name'], flush=True)
+              result = subprocess.run(['gh', 'api', f"repos/mech-lang/mech/actions/jobs/{job['id']}/logs"], text=True, capture_output=True, timeout=60)
+              (root/f"ci-{job['id']}.log").write_text(result.stdout if result.returncode == 0 else result.stderr)
+          PY
+      - name: Preserve exact candidate and failure snapshot
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-shape-order
-          path: /tmp/r5-shape-order
-          retention-days: 1
+          name: r5-frozen-candidate
+          path: /tmp/r5-candidate
+          retention-days: 2
+  qualify:
+    name: Frozen candidate (${{ matrix.case }})
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [nbody, engine, r5-memory-planner, architecture-contracts, cargo-features, source, bytecode-v1-determinism, native-linkage-owners]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
+          persist-credentials: false
+          fetch-depth: 0
+      - *apply-patch
+      - name: Install the pinned compiler and required CI tools
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+          sudo apt-get update
+          sudo apt-get install --yes ripgrep python3-yaml
+      - name: Execute complete original qualification commands
+        env:
+          CASE: ${{ matrix.case }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/r5-candidate/run.py <<'PY'
+          import os, pathlib, subprocess, yaml
+          case = os.environ['CASE']
+          if case == 'engine':
+              steps = [{'name': 'Full engine library and memory-plan regression suite', 'run': 'cargo test --locked -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib --test r5_memory_plan'}]
+              env = os.environ.copy()
+          else:
+              jobs = yaml.safe_load(pathlib.Path('.github/workflows/ci-full.yml').read_text())['jobs']
+              job_name = {'nbody': 'r1-artifact-closure', 'source': 'function-system-contracts'}.get(case, case)
+              job = jobs[job_name]
+              steps = job['steps']
+              env = os.environ.copy()
+              env.update({key: str(value) for key, value in job.get('env', {}).items()})
+          failed = 0
+          for step in steps:
+              if 'run' not in step or step.get('name', '').startswith('Install'):
+                  continue
+              if failed and step.get('if') != 'always()':
+                  continue
+              command = step['run'].replace('${{ matrix.representative }}', 'nbody').replace('${{ matrix.slice }}', 'source')
+              if '${{' in command:
+                  raise RuntimeError('Unresolved workflow expression: ' + command)
+              print('::group::' + step.get('name', 'Run'), flush=True)
+              result = subprocess.run(['bash', '-euo', 'pipefail', '-c', command], env=env)
+              print('::endgroup::', flush=True)
+              if result.returncode and not failed:
+                  failed = result.returncode
+          raise SystemExit(failed)
+          PY
+          set +e
+          /usr/bin/time -v -o /tmp/r5-candidate/time.txt /usr/bin/python3 -u /tmp/r5-candidate/run.py 2>&1 | tee /tmp/r5-candidate/command.log
+          status=${PIPESTATUS[0]}
+          set -e
+          cat /tmp/r5-candidate/time.txt
+          echo "$status" > /tmp/r5-candidate/exit-status
+          git diff --exit-code
+          exit "$status"
+      - name: Preserve qualification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-frozen-${{ matrix.case }}
+          path: /tmp/r5-candidate
+          retention-days: 2
