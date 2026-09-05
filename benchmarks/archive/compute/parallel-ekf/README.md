@@ -29,7 +29,8 @@ git switch --track origin/codex/mech-program-gpu
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
 | PyPy textbook-fidelity control | `benchmarks/archive/compute/parallel-ekf/pypy_textbook.py` |
 | PyPy optimized control | `benchmarks/archive/compute/parallel-ekf/pypy_optimized.py` |
-| Mojo control | `benchmarks/archive/compute/parallel-ekf/mojo_scalar.mojo` |
+| Mojo textbook-fidelity control | `benchmarks/archive/compute/parallel-ekf/mojo_textbook.mojo` |
+| Mojo expanded scalar control | `benchmarks/archive/compute/parallel-ekf/mojo_scalar.mojo` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
 
@@ -330,6 +331,29 @@ python3 benchmarks/archive/compute/parallel-ekf/run.py \
 
 The existing Rust scalar row in the runner is an unchecked control, so the
 Mojo checked number is not a checked-vs-checked Rust comparison.
+
+### Mojo textbook-fidelity control
+
+`mojo_textbook.mojo` is the separate faithful baseline. It keeps the EKF
+written as matrix and vector operations: it constructs `F`, `G`, `Q`, `H`,
+`K`, and `A`, then evaluates the textbook expressions
+`F * P * F' + G * Q * G'` and `A * P * A' + R * K * K'`. The helper functions
+use generic loops over the fixed 3x3, 3x2, 2x2, and 3-vector shapes; they are
+not the manually expanded scalar formulas in `mojo_scalar.mojo`.
+
+Build and run it with the same resident timing boundary:
+
+```text
+mojo build -O3 --fp-mode contract=off mojo_textbook.mojo -o mojo-textbook
+./mojo-textbook 10000 20 unchecked
+./mojo-textbook 10000 20 checked
+```
+
+On the Apple M1 Mac mini, five process runs after the built-in warmup gave a
+median of **0.587 M EKF-turns/s unchecked** and **0.586 M EKF-turns/s checked**.
+The checksum was `2682056.075673` in both modes. This is intentionally a
+textbook-fidelity reference, not the optimized scalar control; its temporary
+matrix/list construction is part of the measured implementation.
 
 ### Mojo fused workers and native Metal
 
