@@ -11,57 +11,42 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
-    outputs:
-      fix: ${{ steps.patch.outputs.fix }}
-      experiment: ${{ steps.patch.outputs.experiment }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: e1bdb6363188751565a5c1b4de984e3e49d1a04b
           persist-credentials: false
-      - name: Prepare narrowly scoped candidate commits without moving a branch
-        id: patch
+      - name: Preserve exact patch blobs without changing refs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 -u - <<'PY'
-          import hashlib, json, os, pathlib, re, subprocess
-          head = 'e1bdb6363188751565a5c1b4de984e3e49d1a04b'
-          repo = 'mech-lang/mech'
-          evidence = pathlib.Path('/tmp/r5-candidates')
-          evidence.mkdir(exist_ok=True)
-          def api(path, payload=None):
-              cmd = ['gh', 'api', f'repos/{repo}/{path}']
-              if payload is not None:
-                  cmd += ['--method', 'POST', '--input', '-']
-              result = subprocess.run(cmd, input=json.dumps(payload) if payload is not None else None, text=True, capture_output=True, check=True)
-              return json.loads(result.stdout)
-          assert api('git/ref/heads/codex/v0.4-r5-memory-planner')['object']['sha'] == head
+          import hashlib, json, pathlib, re, subprocess
+          root = pathlib.Path('/tmp/r5-candidates')
+          root.mkdir(exist_ok=True)
           fixture = pathlib.Path('tests/fixtures/d2-contract-generator/src/main.rs')
           text = fixture.read_text()
           for name, function in [('zero-input-state', 'bind_zero_input_state'), ('reported-copy', 'bind_reported_copy'), ('always-copy', 'bind_always_copy'), ('state-copy', 'bind_reported_copy')]:
               old = f'.insert_resident_factory(["test"], "{name}", {function})'
               assert text.count(old) == 1, name
-              new = f'.insert_resident_factory(\n            ["test"],\n            "{name}",\n            mech_core::ImplementationMemoryClass::NoAdditionalScratch,\n            {function},\n        )'
-              text = text.replace(old, new)
+              text = text.replace(old, f'.insert_resident_factory(\n            ["test"],\n            "{name}",\n            mech_core::ImplementationMemoryClass::NoAdditionalScratch,\n            {function},\n        )')
           fixture.write_text(text)
           workflow = pathlib.Path('.github/workflows/ci-full.yml')
           text = workflow.read_text()
           keys = ('CARGO_BUILD_JOBS', 'CARGO_INCREMENTAL', 'CARGO_PROFILE_DEV_DEBUG', 'CARGO_PROFILE_TEST_DEBUG')
           for name in ('r1-artifact-closure', 'architecture-contracts', 'cargo-features', 'function-system-contracts', 'bytecode-v1-determinism', 'native-linkage-owners', 'native-linkage-surfaces'):
-              pattern = re.compile(r'(?ms)^  ' + re.escape(name) + r':\n.*?(?=^  [a-z0-9][a-z0-9-]*:\n|\Z)')
-              match = pattern.search(text)
+              match = re.search(r'(?ms)^  ' + re.escape(name) + r':\n.*?(?=^  [a-z0-9][a-z0-9-]*:\n|\Z)', text)
               assert match, name
               block = match.group()
               added = ''.join(f'      {key}: "{1 if key == "CARGO_BUILD_JOBS" else 0}"\n' for key in keys if not re.search(r'^      ' + key + ':', block, re.M))
               if '    env:\n' in block:
-                  env_match = re.search(r'(?ms)^    env:\n.*?(?=^    [a-z][a-z-]*:)', block)
-                  assert env_match, name
-                  block = block[:env_match.end()] + added + block[env_match.end():]
+                  loc = re.search(r'(?ms)^    env:\n.*?(?=^    [a-z][a-z-]*:)', block)
+                  assert loc, name
+                  block = block[:loc.end()] + added + block[loc.end():]
               else:
-                  line = re.search(r'^    runs-on:.*\n', block, re.M)
-                  assert line, name
-                  block = block[:line.end()] + '    env:\n' + added + block[line.end():]
+                  loc = re.search(r'^    runs-on:.*\n', block, re.M)
+                  assert loc, name
+                  block = block[:loc.end()] + '    env:\n' + added + block[loc.end():]
               text = text[:match.start()] + block + text[match.end():]
           workflow.write_text(text)
           expected = {str(fixture): 'fb7084f3a4a248842096768986b253f9cca2c31a1c75035d23070a04d656a334', str(workflow): '5def0b46b4683e6d6076effdeb6169927c109c4eb2e1f41af5088ca57ba34a3c'}
@@ -69,35 +54,21 @@ jobs:
               assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() == digest, name
           subprocess.run(['git', 'diff', '--check'], check=True)
           subprocess.run(['python3', '-B', '-m', 'unittest', 'tests/ci/test_ci_full_contract.py'], check=True)
-          (evidence/'fix.patch').write_text(subprocess.check_output(['git', 'diff'], text=True))
-          def commit(parent, paths, message):
-              base_tree = api('git/commits/' + parent)['tree']['sha']
-              tree = api('git/trees', {'base_tree': base_tree, 'tree': [{'path': str(p), 'mode': '100644', 'type': 'blob', 'content': p.read_text()} for p in paths]})
-              return api('git/commits', {'message': message, 'tree': tree['sha'], 'parents': [parent]})['sha']
-          fix = commit(head, [fixture, workflow], 'fix(r5): migrate D2 resident fixtures and bound qualification build memory')
-          core = pathlib.Path('src/core/src/function/catalog.rs')
-          text = core.read_text()
-          start = text.index('macro_rules! declare_native_runtime_factory {')
-          end = text.index('\nfn invalid_export_error', start)
-          macro = text[start:end]
-          old = '        #[cfg($cfg)]\n        pub(crate) fn $registration('
-          assert macro.count(old) == 2
-          macro = macro.replace(old, '        #[cfg($cfg)]\n        #[cfg(any(feature = "native-plan", not(feature = "native-link")))]\n        pub(crate) fn $registration(')
-          old = '        #[doc(hidden)]\n        #[cfg(feature = "native-link")]'
-          assert macro.count(old) == 2
-          macro = macro.replace(old, '        #[cfg($cfg)]\n        #[cfg(all(feature = "native-link", not(feature = "native-plan")))]\n        pub(crate) use $installer as $registration;\n\n' + old)
-          core.write_text(text[:start] + macro + text[end:])
-          assert hashlib.sha256(core.read_bytes()).hexdigest() == 'dacd277c1be1f9b157f6e5b37097056e6f3ac6c48afa2b3cf275d2fce002612c'
-          subprocess.run(['git', 'diff', '--check'], check=True)
-          (evidence/'experiment.patch').write_text(subprocess.check_output(['git', 'diff', '--', str(core)], text=True))
-          experiment = commit(fix, [core], 'perf(catalog): alias equivalent native-link runtime registrations')
-          receipt = {'parent': head, 'fix': fix, 'experiment': experiment, 'fix_files_sha256': expected, 'branch_refs_changed': False}
-          (evidence/'receipt.json').write_text(json.dumps(receipt, indent=2))
+          (root/'fix.patch').write_text(subprocess.check_output(['git', 'diff'], text=True))
+          entries = []
+          for path in (fixture, workflow):
+              result = subprocess.run(['gh', 'api', 'repos/mech-lang/mech/git/blobs', '--method', 'POST', '--input', '-'], input=json.dumps({'content': path.read_text(), 'encoding': 'utf-8'}), text=True, capture_output=True)
+              if result.returncode:
+                  print(result.stderr, flush=True)
+                  print(result.stdout, flush=True)
+                  raise SystemExit(result.returncode)
+              blob = json.loads(result.stdout)
+              entries.append({'path': str(path), 'mode': '100644', 'type': 'blob', 'sha': blob['sha']})
+          receipt = {'parent': 'e1bdb6363188751565a5c1b4de984e3e49d1a04b', 'base_tree': '62c9f0004e018154b7d2aa2f1ffac9062eeca9f8', 'tree_elements': entries, 'sha256': expected, 'branch_refs_changed': False}
+          (root/'receipt.json').write_text(json.dumps(receipt, indent=2))
           print(json.dumps(receipt, indent=2))
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write(f'fix={fix}\nexperiment={experiment}\n')
           PY
-      - name: Preserve candidate patches and commit identities
+      - name: Preserve patch and blob identities
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -105,7 +76,6 @@ jobs:
           path: /tmp/r5-candidates
           retention-days: 1
   qualify:
-    needs: prepare
     name: Candidate qualification (${{ matrix.case }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -114,16 +84,12 @@ jobs:
       matrix:
         include:
           - case: nbody
-            experiment: false
             command: python3 scripts/check-r1-artifact-closure.py nbody
           - case: source-contracts
-            experiment: false
             command: bash scripts/check-function-system-contracts.sh source
           - case: bytecode-determinism
-            experiment: false
             command: cargo +nightly-2026-03-03 run --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml -- --check
           - case: math-alias-experiment
-            experiment: true
             command: python3 scripts/check-native-linkage-coverage.py owners mech-math
     env:
       CARGO_BUILD_JOBS: "1"
@@ -134,25 +100,56 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ matrix.experiment && needs.prepare.outputs.experiment || needs.prepare.outputs.fix }}
+          ref: e1bdb6363188751565a5c1b4de984e3e49d1a04b
           persist-credentials: false
+      - name: Apply the exact fixture candidate
+        env:
+          CASE: ${{ matrix.case }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, os, pathlib
+          fixture = pathlib.Path('tests/fixtures/d2-contract-generator/src/main.rs')
+          text = fixture.read_text()
+          for name, function in [('zero-input-state', 'bind_zero_input_state'), ('reported-copy', 'bind_reported_copy'), ('always-copy', 'bind_always_copy'), ('state-copy', 'bind_reported_copy')]:
+              old = f'.insert_resident_factory(["test"], "{name}", {function})'
+              assert text.count(old) == 1, name
+              text = text.replace(old, f'.insert_resident_factory(\n            ["test"],\n            "{name}",\n            mech_core::ImplementationMemoryClass::NoAdditionalScratch,\n            {function},\n        )')
+          fixture.write_text(text)
+          assert hashlib.sha256(fixture.read_bytes()).hexdigest() == 'fb7084f3a4a248842096768986b253f9cca2c31a1c75035d23070a04d656a334'
+          if os.environ['CASE'] == 'math-alias-experiment':
+              core = pathlib.Path('src/core/src/function/catalog.rs')
+              text = core.read_text()
+              start = text.index('macro_rules! declare_native_runtime_factory {')
+              end = text.index('\nfn invalid_export_error', start)
+              macro = text[start:end]
+              old = '        #[cfg($cfg)]\n        pub(crate) fn $registration('
+              assert macro.count(old) == 2
+              macro = macro.replace(old, '        #[cfg($cfg)]\n        #[cfg(any(feature = "native-plan", not(feature = "native-link")))]\n        pub(crate) fn $registration(')
+              old = '        #[doc(hidden)]\n        #[cfg(feature = "native-link")]'
+              assert macro.count(old) == 2
+              macro = macro.replace(old, '        #[cfg($cfg)]\n        #[cfg(all(feature = "native-link", not(feature = "native-plan")))]\n        pub(crate) use $installer as $registration;\n\n' + old)
+              core.write_text(text[:start] + macro + text[end:])
+              assert hashlib.sha256(core.read_bytes()).hexdigest() == 'dacd277c1be1f9b157f6e5b37097056e6f3ac6c48afa2b3cf275d2fce002612c'
+          PY
+          git diff --check
       - name: Install the pinned compiler
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Prefetch the independent bytecode generators
+      - name: Prefetch independent bytecode generators
         if: matrix.case == 'bytecode-determinism'
         run: |
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-source-generator/Cargo.toml
-          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-fixed-source-generator/Cargo.toml
-      - name: Execute the unchanged qualification command
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/bytecode-v1-fixed-generator/Cargo.toml
+      - name: Execute qualification
         env:
           COMMAND: ${{ matrix.command }}
-          EXPERIMENT: ${{ matrix.experiment }}
+          CASE: ${{ matrix.case }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/r5-qualification
           git rev-parse HEAD | tee /tmp/r5-qualification/HEAD
-          if [ "$EXPERIMENT" = true ]; then ulimit -v 12582912; fi
+          git diff > /tmp/r5-qualification/candidate.patch
+          if [ "$CASE" = math-alias-experiment ]; then ulimit -v 12582912; fi
           set +e
           /usr/bin/time -v -o /tmp/r5-qualification/time.txt bash -c "$COMMAND" 2>&1 | tee /tmp/r5-qualification/command.log
           status=${PIPESTATUS[0]}
