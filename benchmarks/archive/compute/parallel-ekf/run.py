@@ -84,7 +84,7 @@ def main() -> None:
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument(
         "--pypy",
-        help="path to pypy3; when supplied, include the pure-Python scalar EKF lanes",
+        help="path to pypy3; when supplied, compare identical scalar sources under CPython and PyPy",
     )
     parser.add_argument(
         "--julia-source",
@@ -199,6 +199,34 @@ def main() -> None:
             ],
         }
         if pypy is not None:
+            # Run the same source through CPython as a control.  Keeping the
+            # command line, workload, and validation mode identical makes the
+            # interpreter comparison a runtime comparison rather than a source
+            # comparison.
+            language_commands["CPython textbook scalar (unchecked)"] = [
+                args.python,
+                str(HERE / "pypy_textbook.py"),
+                *common,
+                "unchecked",
+            ]
+            language_commands["CPython textbook scalar (checked)"] = [
+                args.python,
+                str(HERE / "pypy_textbook.py"),
+                *common,
+                "checked",
+            ]
+            language_commands["CPython optimized scalar (unchecked)"] = [
+                args.python,
+                str(HERE / "pypy_optimized.py"),
+                *common,
+                "unchecked",
+            ]
+            language_commands["CPython optimized scalar (checked)"] = [
+                args.python,
+                str(HERE / "pypy_optimized.py"),
+                *common,
+                "checked",
+            ]
             language_commands["PyPy textbook scalar (unchecked)"] = [
                 pypy,
                 str(HERE / "pypy_textbook.py"),

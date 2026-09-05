@@ -29,7 +29,6 @@ git switch --track origin/codex/mech-program-gpu
 | LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
 | PyPy textbook-fidelity control | `benchmarks/archive/compute/parallel-ekf/pypy_textbook.py` |
 | PyPy optimized control | `benchmarks/archive/compute/parallel-ekf/pypy_optimized.py` |
-| PyPy flattened control | `benchmarks/archive/compute/parallel-ekf/pypy_scalar.py` |
 | Mojo control | `benchmarks/archive/compute/parallel-ekf/mojo_scalar.mojo` |
 | Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
@@ -68,8 +67,7 @@ optimized control: structure-of-arrays float32 storage, expanded fixed-shape
 products, and allocation-free checked publication. Both are pure Python; they
 do not import NumPy or call a native matrix library. The optional `checked`
 mode performs the same finite-state, positive-diagonal, and symmetry checks as
-the Mech control and retains the previous candidate on failure. The existing
-`pypy_scalar.py` is retained as an intermediate flattened control for profiling.
+the Mech control and retains the previous candidate on failure.
 
 Run it with a PyPy 3 interpreter:
 
@@ -78,23 +76,27 @@ pypy3 pypy_textbook.py 10000 20 checked
 pypy3 pypy_optimized.py 10000 20 checked
 ```
 
-To include both lanes in the controlled language runner, pass
-`--pypy /path/to/pypy3`. The runner records the interpreter version and both
-raw outputs in its evidence JSON. A CPython smoke run is useful for correctness
-only; it is not a PyPy performance result.
+To include both interpreters in the controlled language runner, pass
+`--pypy /path/to/pypy3`. The runner executes each identical source once under
+CPython and once under PyPy, records both interpreter versions, and preserves
+all raw outputs in its evidence JSON.
 
 The controlled scalar rerun used the archive's 10,000-filter x 20-turn
 workload, five measured processes after one discarded warmup, and the timing
-boundary above. On PyPy 7.3.23,
-the scalar medians were:
+boundary above. On PyPy 7.3.23 and the matching CPython interpreter, the
+scalar medians were:
 
-| PyPy lane | Checked M/s | Unchecked M/s |
+| Identical source lane | Checked M/s | Unchecked M/s |
 | --- | ---: | ---: |
-| Textbook-fidelity | 0.097 | 0.102 |
-| Optimized SoA/fixed-shape | 1.615 | 1.768 |
+| CPython textbook-fidelity | 0.027 | 0.028 |
+| PyPy textbook-fidelity | 0.097 | 0.102 |
+| CPython optimized SoA/fixed-shape | 0.272 | 0.307 |
+| PyPy optimized SoA/fixed-shape | 1.572 | 1.569 |
 
-All samples reported zero faults. Raw stdout, interpreter version, machine
-metadata, and source hashes are preserved in
+All samples reported zero faults. The textbook lane intentionally retains
+generic nested-list matrix operations; the optimized lane uses the same
+fixed-shape SoA source under both interpreters. Raw stdout, interpreter
+versions, machine metadata, and source hashes are preserved in
 [`results/apple-m1-pypy-2026-09-05.json`](results/apple-m1-pypy-2026-09-05.json).
 
 | Mech backend | Million EKF-turns/s | Scalar speedup |

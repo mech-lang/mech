@@ -1,207 +1,169 @@
 #!/usr/bin/env pypy3
-"""Optimized pure-Python/PyPy scalar EKF control.
-
-This is still the same scalar recurrence, not a native extension or NumPy
-wrapper.  The persistent state uses structure-of-arrays storage so the PyPy
-JIT sees monomorphic scalar loads in the lane loop.  Matrix products are
-expanded once, and checked publication does not allocate a candidate tuple.
-"""
-
 from __future__ import annotations
 
 from array import array
-import math
+import math as m
 import sys
 import time
 
 
-DT = 0.1
-Q0 = 0.01
-Q1 = 0.0025
+D = 0.1
+A = 0.01
+B = 0.0025
 R = 0.25
-TOLERANCE = 1.0e-4
+E = 1.0e-4
 
 
-def reset(state, covariance):
-    for lane in range(len(state[0])):
-        state[0][lane] = 55.0
-        state[1][lane] = 25.0
-        state[2][lane] = 0.4
-        for component in covariance:
-            component[lane] = 0.0
-        covariance[0][lane] = 100.0
-        covariance[4][lane] = 100.0
-        covariance[8][lane] = 0.15
+def Z(x, p):
+    for i in range(len(x[0])):
+        x[0][i] = 55.0
+        x[1][i] = 25.0
+        x[2][i] = 0.4
+        for a in p:
+            a[i] = 0.0
+        p[0][i] = 100.0
+        p[4][i] = 100.0
+        p[8][i] = 0.15
 
 
-def step(lane, state, covariance, velocity, angular_velocity, bearing, checked):
-    x0s, x1s, x2s = state
-    p00s, p01s, p02s, p10s, p11s, p12s, p20s, p21s, p22s = covariance
-    theta = x2s[lane]
-    sine = math.sin(theta)
-    cosine = math.cos(theta)
-    distance = velocity[lane] * DT
-    x0 = x0s[lane] + distance * cosine
-    x1 = x1s[lane] + distance * sine
-    x2 = theta + angular_velocity[lane] * DT
-    fs = -distance * sine
-    fc = distance * cosine
-
-    p00 = p00s[lane]
-    p01 = p01s[lane]
-    p02 = p02s[lane]
-    p10 = p10s[lane]
-    p11 = p11s[lane]
-    p12 = p12s[lane]
-    p20 = p20s[lane]
-    p21 = p21s[lane]
-    p22 = p22s[lane]
-    l00 = p00 + fs * p20
-    l01 = p01 + fs * p21
-    l02 = p02 + fs * p22
-    l10 = p10 + fc * p20
-    l11 = p11 + fc * p21
-    l12 = p12 + fc * p22
-    dt2 = DT * DT
-    pp00 = l00 + l02 * fs + cosine * cosine * dt2 * Q0
-    pp01 = l01 + l02 * fc + cosine * sine * dt2 * Q0
-    pp02 = l02
-    pp10 = l10 + l12 * fs + sine * cosine * dt2 * Q0
-    pp11 = l11 + l12 * fc + sine * sine * dt2 * Q0
-    pp12 = l12
-    pp20 = p20 + p22 * fs
-    pp21 = p21 + p22 * fc
-    pp22 = p22 + dt2 * Q1
-
-    dx = 140.0 - x0
-    dy = 12.0 - x1
-    squared_range = dx * dx + dy * dy
-    predicted_bearing = math.atan2(dy, dx) - x2
-    raw_innovation = bearing[lane] - predicted_bearing
-    innovation = math.atan2(math.sin(raw_innovation), math.cos(raw_innovation))
-    h0 = dy / squared_range
-    h1 = -dx / squared_range
-    h2 = -1.0
-    pht0 = pp00 * h0 + pp01 * h1 - pp02
-    pht1 = pp10 * h0 + pp11 * h1 - pp12
-    pht2 = pp20 * h0 + pp21 * h1 - pp22
-    variance = h0 * pht0 + h1 * pht1 - pht2 + R
-    k0 = pht0 / variance
-    k1 = pht1 / variance
-    k2 = pht2 / variance
-    next_x0 = x0 + k0 * innovation
-    next_x1 = x1 + k1 * innovation
-    next_x2 = x2 + k2 * innovation
-
-    a00 = 1.0 - k0 * h0
-    a01 = -k0 * h1
-    a02 = k0
-    a10 = -k1 * h0
-    a11 = 1.0 - k1 * h1
-    a12 = k1
-    a20 = -k2 * h0
-    a21 = -k2 * h1
-    a22 = 1.0 + k2
-    ap00 = a00 * pp00 + a01 * pp10 + a02 * pp20
-    ap01 = a00 * pp01 + a01 * pp11 + a02 * pp21
-    ap02 = a00 * pp02 + a01 * pp12 + a02 * pp22
-    ap10 = a10 * pp00 + a11 * pp10 + a12 * pp20
-    ap11 = a10 * pp01 + a11 * pp11 + a12 * pp21
-    ap12 = a10 * pp02 + a11 * pp12 + a12 * pp22
-    ap20 = a20 * pp00 + a21 * pp10 + a22 * pp20
-    ap21 = a20 * pp01 + a21 * pp11 + a22 * pp21
-    ap22 = a20 * pp02 + a21 * pp12 + a22 * pp22
-    next_p00 = ap00 * a00 + ap01 * a01 + ap02 * a02 + k0 * k0 * R
-    next_p01 = ap00 * a10 + ap01 * a11 + ap02 * a12 + k0 * k1 * R
-    next_p02 = ap00 * a20 + ap01 * a21 + ap02 * a22 + k0 * k2 * R
-    next_p10 = ap10 * a00 + ap11 * a01 + ap12 * a02 + k1 * k0 * R
-    next_p11 = ap10 * a10 + ap11 * a11 + ap12 * a12 + k1 * k1 * R
-    next_p12 = ap10 * a20 + ap11 * a21 + ap12 * a22 + k1 * k2 * R
-    next_p20 = ap20 * a00 + ap21 * a01 + ap22 * a02 + k2 * k0 * R
-    next_p21 = ap20 * a10 + ap21 * a11 + ap22 * a12 + k2 * k1 * R
-    next_p22 = ap20 * a20 + ap21 * a21 + ap22 * a22 + k2 * k2 * R
-
-    if checked:
-        valid = (
-            math.isfinite(next_x0)
-            and math.isfinite(next_x1)
-            and math.isfinite(next_x2)
-            and math.isfinite(next_p00)
-            and math.isfinite(next_p01)
-            and math.isfinite(next_p02)
-            and math.isfinite(next_p10)
-            and math.isfinite(next_p11)
-            and math.isfinite(next_p12)
-            and math.isfinite(next_p20)
-            and math.isfinite(next_p21)
-            and math.isfinite(next_p22)
-            and next_p00 > 0.0
-            and next_p11 > 0.0
-            and next_p22 > 0.0
-            and abs(next_p01 - next_p10) <= TOLERANCE
-            and abs(next_p02 - next_p20) <= TOLERANCE
-            and abs(next_p12 - next_p21) <= TOLERANCE
-        )
-        if not valid:
-            return True
-
-    x0s[lane] = next_x0
-    x1s[lane] = next_x1
-    x2s[lane] = next_x2
-    p00s[lane] = next_p00
-    p01s[lane] = next_p01
-    p02s[lane] = next_p02
-    p10s[lane] = next_p10
-    p11s[lane] = next_p11
-    p12s[lane] = next_p12
-    p20s[lane] = next_p20
-    p21s[lane] = next_p21
-    p22s[lane] = next_p22
-    return False
+def F(i, x, p, v, w, b, c):
+    x0, x1, x2 = x
+    p00, p01, p02, p10, p11, p12, p20, p21, p22 = p
+    t = x2[i]
+    s = m.sin(t)
+    q = m.cos(t)
+    d = v[i] * D
+    y0 = x0[i] + d * q
+    y1 = x1[i] + d * s
+    y2 = t + w[i] * D
+    fs = -d * s
+    fc = d * q
+    u00 = p00[i] + fs * p20[i]
+    u01 = p01[i] + fs * p21[i]
+    u02 = p02[i] + fs * p22[i]
+    u10 = p10[i] + fc * p20[i]
+    u11 = p11[i] + fc * p21[i]
+    u12 = p12[i] + fc * p22[i]
+    d2 = D * D
+    a00 = u00 + u02 * fs + q * q * d2 * A
+    a01 = u01 + u02 * fc + q * s * d2 * A
+    a02 = u02
+    a10 = u10 + u12 * fs + s * q * d2 * A
+    a11 = u11 + u12 * fc + s * s * d2 * A
+    a12 = u12
+    a20 = p20[i] + p22[i] * fs
+    a21 = p21[i] + p22[i] * fc
+    a22 = p22[i] + d2 * B
+    dx = 140.0 - y0
+    dy = 12.0 - y1
+    rr = dx * dx + dy * dy
+    h0 = dy / rr
+    h1 = -dx / rr
+    n = b[i] - (m.atan2(dy, dx) - y2)
+    n = m.atan2(m.sin(n), m.cos(n))
+    j0 = a00 * h0 + a01 * h1 - a02
+    j1 = a10 * h0 + a11 * h1 - a12
+    j2 = a20 * h0 + a21 * h1 - a22
+    q = h0 * j0 + h1 * j1 - j2 + R
+    k0 = j0 / q
+    k1 = j1 / q
+    k2 = j2 / q
+    y0 += k0 * n
+    y1 += k1 * n
+    y2 += k2 * n
+    c00 = 1.0 - k0 * h0
+    c01 = -k0 * h1
+    c02 = k0
+    c10 = -k1 * h0
+    c11 = 1.0 - k1 * h1
+    c12 = k1
+    c20 = -k2 * h0
+    c21 = -k2 * h1
+    c22 = 1.0 + k2
+    l00 = c00 * a00 + c01 * a10 + c02 * a20
+    l01 = c00 * a01 + c01 * a11 + c02 * a21
+    l02 = c00 * a02 + c01 * a12 + c02 * a22
+    l10 = c10 * a00 + c11 * a10 + c12 * a20
+    l11 = c10 * a01 + c11 * a11 + c12 * a21
+    l12 = c10 * a02 + c11 * a12 + c12 * a22
+    l20 = c20 * a00 + c21 * a10 + c22 * a20
+    l21 = c20 * a01 + c21 * a11 + c22 * a21
+    l22 = c20 * a02 + c21 * a12 + c22 * a22
+    n00 = l00 * c00 + l01 * c01 + l02 * c02 + k0 * k0 * R
+    n01 = l00 * c10 + l01 * c11 + l02 * c12 + k0 * k1 * R
+    n02 = l00 * c20 + l01 * c21 + l02 * c22 + k0 * k2 * R
+    n10 = l10 * c00 + l11 * c01 + l12 * c02 + k1 * k0 * R
+    n11 = l10 * c10 + l11 * c11 + l12 * c12 + k1 * k1 * R
+    n12 = l10 * c20 + l11 * c21 + l12 * c22 + k1 * k2 * R
+    n20 = l20 * c00 + l21 * c01 + l22 * c02 + k2 * k0 * R
+    n21 = l20 * c10 + l21 * c11 + l22 * c12 + k2 * k1 * R
+    n22 = l20 * c20 + l21 * c21 + l22 * c22 + k2 * k2 * R
+    if c and not (
+        m.isfinite(y0) and m.isfinite(y1) and m.isfinite(y2)
+        and m.isfinite(n00) and m.isfinite(n01) and m.isfinite(n02)
+        and m.isfinite(n10) and m.isfinite(n11) and m.isfinite(n12)
+        and m.isfinite(n20) and m.isfinite(n21) and m.isfinite(n22)
+        and n00 > 0.0 and n11 > 0.0 and n22 > 0.0
+        and abs(n01 - n10) <= E and abs(n02 - n20) <= E and abs(n12 - n21) <= E
+    ):
+        return 1
+    x0[i] = y0
+    x1[i] = y1
+    x2[i] = y2
+    p00[i] = n00
+    p01[i] = n01
+    p02[i] = n02
+    p10[i] = n10
+    p11[i] = n11
+    p12[i] = n12
+    p20[i] = n20
+    p21[i] = n21
+    p22[i] = n22
+    return 0
 
 
-def dispatch(turns, state, covariance, velocity, angular_velocity, bearing, checked):
-    faults = 0
-    for _ in range(turns):
-        for lane in range(len(velocity)):
-            faults += step(lane, state, covariance, velocity, angular_velocity, bearing, checked)
-    return faults
+def G(n, x, p, v, w, b, c):
+    f = 0
+    for _ in range(n):
+        for i in range(len(v)):
+            f += F(i, x, p, v, w, b, c)
+    return f
 
 
 def main():
-    instances = max(1, int(sys.argv[1]) if len(sys.argv) > 1 else 10000)
-    turns = max(1, int(sys.argv[2]) if len(sys.argv) > 2 else 5)
-    mode = sys.argv[3].lower() if len(sys.argv) > 3 else "unchecked"
-    if mode not in {"checked", "unchecked"}:
+    n = max(1, int(sys.argv[1]) if len(sys.argv) > 1 else 10000)
+    q = max(1, int(sys.argv[2]) if len(sys.argv) > 2 else 5)
+    z = sys.argv[3].lower() if len(sys.argv) > 3 else "unchecked"
+    if z not in {"checked", "unchecked"}:
         raise SystemExit("mode must be checked or unchecked")
-    checked = mode == "checked"
-    velocity = array("f", [0.0]) * instances
-    angular_velocity = array("f", [0.0]) * instances
-    bearing = array("f", [0.0]) * instances
-    phase_step = 2.0 * math.pi / instances
-    for lane in range(instances):
-        phase = phase_step * lane
-        velocity[lane] = 1.0 + 0.05 * math.sin(phase * 3.0)
-        angular_velocity[lane] = 0.015 * (1.0 + 0.1 * math.sin(phase * 2.0))
-        bearing[lane] = -0.55 + 0.01 * math.sin(phase * 7.0) + 0.005 * math.sin(phase * 11.0)
-    state = tuple(array("f", [0.0]) * instances for _ in range(3))
-    covariance = tuple(array("f", [0.0]) * instances for _ in range(9))
-    reset(state, covariance)
-    dispatch(5, state, covariance, velocity, angular_velocity, bearing, checked)
-    reset(state, covariance)
-    started = time.perf_counter()
-    faults = dispatch(turns, state, covariance, velocity, angular_velocity, bearing, checked)
-    elapsed = time.perf_counter() - started
-    checksum = sum(map(float, state[0])) + sum(map(float, state[1])) + sum(map(float, state[2]))
-    checksum += sum(sum(map(float, component)) for component in covariance)
-    print("lane: PyPy optimized pure-Python scalar outer loop")
-    print(f"mode: {mode}")
-    print(f"instances: {instances}")
-    print(f"turns: {turns}")
-    print(f"elapsed_s: {elapsed:.9f}")
-    print(f"throughput: {instances * turns / elapsed:.3f}")
-    print(f"checksum: {checksum:.9f}")
-    print(f"faults: {faults}")
+    c = z == "checked"
+    v = array("f", [0.0]) * n
+    w = array("f", [0.0]) * n
+    b = array("f", [0.0]) * n
+    h = 2.0 * m.pi / n
+    for i in range(n):
+        t = h * i
+        v[i] = 1.0 + 0.05 * m.sin(t * 3.0)
+        w[i] = 0.015 * (1.0 + 0.1 * m.sin(t * 2.0))
+        b[i] = -0.55 + 0.01 * m.sin(t * 7.0) + 0.005 * m.sin(t * 11.0)
+    x = tuple(array("f", [0.0]) * n for _ in range(3))
+    p = tuple(array("f", [0.0]) * n for _ in range(9))
+    Z(x, p)
+    G(5, x, p, v, w, b, c)
+    Z(x, p)
+    t = time.perf_counter()
+    f = G(q, x, p, v, w, b, c)
+    e = time.perf_counter() - t
+    s = sum(map(float, x[0])) + sum(map(float, x[1])) + sum(map(float, x[2]))
+    s += sum(sum(map(float, a)) for a in p)
+    print("lane: optimized pure-Python scalar outer loop")
+    print(f"mode: {z}")
+    print(f"instances: {n}")
+    print(f"turns: {q}")
+    print(f"elapsed_s: {e:.9f}")
+    print(f"throughput: {n * q / e:.3f}")
+    print(f"checksum: {s:.9f}")
+    print(f"faults: {f}")
 
 
 if __name__ == "__main__":
