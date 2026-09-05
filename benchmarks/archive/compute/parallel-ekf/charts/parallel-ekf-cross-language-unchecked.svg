@@ -169,7 +169,7 @@
 <text x="534" y="219" text-anchor="end" class="label">Mech GPU, unchecked one-submit</text>
 <rect x="550" y="205" width="937.9" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
 <text x="1495.9" y="219" class="value">3729.67</text>
-<text x="534" y="250" text-anchor="end" class="label">Mech direct Metal, generic scalar IR (current)</text>
+<text x="534" y="250" text-anchor="end" class="label">Mech direct Metal, generic IR / per-filter GPU dispatch (current)</text>
 <rect x="550" y="236" width="778.5" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
 <text x="1336.5" y="250" class="value">421.65</text>
 <text x="534" y="281" text-anchor="end" class="label">Mojo native Metal (current)</text>

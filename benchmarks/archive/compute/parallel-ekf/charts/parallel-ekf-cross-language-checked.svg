@@ -158,7 +158,7 @@
 
 
 
-<text x="534" y="219" text-anchor="end" class="label">Mech direct Metal, generic scalar IR (current)</text>
+<text x="534" y="219" text-anchor="end" class="label">Mech direct Metal, generic IR / per-filter GPU dispatch (current)</text>
 <rect x="550" y="205" width="778.7" height="19" rx="3" fill="url(#gpu-mech)" opacity="0.9"/>
 <text x="1336.7" y="219" class="value">422.70</text>
 <text x="534" y="250" text-anchor="end" class="label">Mojo native Metal (current)</text>
