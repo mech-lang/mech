@@ -43,7 +43,15 @@ pub fn plan_compute_memory(
     let mut transfers = placement
         .transfers
         .iter()
-        .map(|boundary| transfer_plan(artifact, &placement, &elements, boundary))
+        .map(|boundary| {
+            transfer_plan(
+                artifact,
+                &placement,
+                &memory.node_positions,
+                &elements,
+                boundary,
+            )
+        })
         .collect::<Result<Vec<_>, _>>()?;
     transfers.sort_by(|left, right| {
         (
@@ -113,6 +121,7 @@ pub fn instantiate_compute_memory(
 fn transfer_plan(
     artifact: &ProgramArtifact,
     placement: &ComputePhysicalPlan,
+    positions: &BTreeMap<mech_core::NodeId, u32>,
     elements: &BTreeMap<mech_core::CellSlotId, Option<u64>>,
     boundary: &TransferBoundary,
 ) -> Result<TransferPlan, MemoryPlanError> {
@@ -142,16 +151,19 @@ fn transfer_plan(
             MemorySpace::Host,
         ),
     };
-    let first = boundary
-        .consumer
-        .map_or_else(
-            || {
-                u32::try_from(artifact.nodes().len())
-                    .ok()
-                    .and_then(|nodes| nodes.checked_mul(2))
-            },
-            |node| node.get().checked_mul(2),
-        )
+    let position = match boundary.consumer {
+        Some(node) => positions
+            .get(&node)
+            .copied()
+            .ok_or(MemoryPlanError::LifetimeOrderInvalid)?,
+        None => {
+            u32::try_from(positions.len()).map_err(|_| MemoryPlanError::ArithmeticOverflow {
+                field: "compute transfer terminal position",
+            })?
+        }
+    };
+    let first = position
+        .checked_mul(2)
         .ok_or(MemoryPlanError::ArithmeticOverflow {
             field: "compute transfer start point",
         })?;

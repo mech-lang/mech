@@ -567,7 +567,9 @@ jobs:
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Check isolated owner native-link profiles
-        run: python3 scripts/check-native-linkage-coverage.py owners
+        run: |
+          python3 -B -m unittest scripts/tests/test_native_linkage_profiles.py
+          python3 scripts/check-native-linkage-coverage.py owners
 
   native-linkage-surfaces:
     name: Native linkage surface (${{ matrix.surface }})

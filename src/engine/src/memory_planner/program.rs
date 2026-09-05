@@ -11,7 +11,7 @@ use mech_core::{
 
 use crate::{ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, SlotRole};
 
-use super::{node_points, remap_call_allocations};
+use super::{remap_call_allocations, schedule_points};
 
 /// Resident value storage owns the stable arena-id range `0..64`. Call-local
 /// arenas live above that range so a sparse value plan cannot accidentally
@@ -130,6 +130,8 @@ pub struct ActivationMemoryFacts {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ProgramMemoryPlanTemplate {
+    /// Execution ordinal by semantic node identity, including non-call nodes.
+    pub node_positions: BTreeMap<mech_core::NodeId, u32>,
     pub values: Box<[ValueMemoryPlanTemplate]>,
     /// Artifact node identity for each entry in `calls`. This remains
     /// explicit because marker, observation, and external-effect nodes may
@@ -139,6 +141,20 @@ pub struct ProgramMemoryPlanTemplate {
     pub calls: Box<[CallMemoryPlan]>,
     pub allocations: Box<[AllocationPlan]>,
     pub transfers: Box<[TransferPlan]>,
+}
+
+impl ProgramMemoryPlanTemplate {
+    fn node_points(
+        &self,
+        node: mech_core::NodeId,
+    ) -> Result<(MemoryPlanPoint, MemoryPlanPoint), MemoryPlanError> {
+        let position = self
+            .node_positions
+            .get(&node)
+            .copied()
+            .ok_or(MemoryPlanError::LifetimeOrderInvalid)?;
+        schedule_points(position)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -259,6 +275,32 @@ pub fn plan_program_memory_template(
         }
     }
 
+    // Calls remain indexed by semantic identity for binary lookup. Their
+    // execution timeline is recorded independently below.
+    let mut entries = call_nodes
+        .into_iter()
+        .zip(call_sites)
+        .zip(calls)
+        .collect::<Vec<_>>();
+    entries.sort_by_key(|((node, _), _)| *node);
+    let (call_nodes, sites_and_calls): (Vec<_>, Vec<_>) = entries
+        .into_iter()
+        .map(|((node, site), call)| (node, (site, call)))
+        .unzip();
+    let (call_sites, mut calls): (Vec<_>, Vec<_>) = sites_and_calls.into_iter().unzip();
+
+    let node_positions = instruction_nodes
+        .iter()
+        .copied()
+        .enumerate()
+        .map(|(position, node)| {
+            u32::try_from(position)
+                .map(|position| (node, position))
+                .map_err(|_| MemoryPlanError::ArithmeticOverflow {
+                    field: "node execution position",
+                })
+        })
+        .collect::<Result<BTreeMap<_, _>, _>>()?;
     let mut consumers = BTreeMap::<CellSlotId, mech_core::NodeId>::new();
     for binding in artifact.bindings() {
         if let BindingDeclaration::Input {
@@ -267,9 +309,16 @@ pub fn plan_program_memory_template(
             ..
         } = binding
         {
+            let position = node_positions
+                .get(node)
+                .ok_or(MemoryPlanError::LifetimeOrderInvalid)?;
             consumers
                 .entry(*slot)
-                .and_modify(|last| *last = (*last).max(*node))
+                .and_modify(|last| {
+                    if node_positions[last] < *position {
+                        *last = *node;
+                    }
+                })
                 .or_insert(*node);
         }
     }
@@ -298,6 +347,7 @@ pub fn plan_program_memory_template(
     }
 
     Ok(ProgramMemoryPlanTemplate {
+        node_positions,
         values: values.into_boxed_slice(),
         call_nodes: call_nodes.into_boxed_slice(),
         call_sites: call_sites.into_boxed_slice(),
@@ -357,7 +407,7 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
             .get(&value.slot)
             .copied()
             .unwrap_or(value.class);
-        let lifetime = value_lifetime(value, class)?;
+        let lifetime = value_lifetime(value, class, template)?;
         let object = MemoryObjectId::new(next_id);
         next_id = checked_next_id(next_id)?;
         allocations.push(AllocationPlan {
@@ -408,7 +458,7 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
             let stage_lifetime = if state_double_buffer {
                 MemoryLifetime::Activation
             } else if let Some(producer) = value.producer {
-                let (first, last) = node_points(producer)?;
+                let (first, last) = template.node_points(producer)?;
                 MemoryLifetime::Transaction { first, last }
             } else {
                 MemoryLifetime::Activation
@@ -581,7 +631,13 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
                 insert_object_mapping(&mut object_map, local_stage, global_stage)?;
             }
         }
-        let remapped_allocations = remap_call_allocations(node, call, &object_map, &mut next_id)?;
+        let remapped_allocations = remap_call_allocations(
+            node,
+            template.node_points(node)?,
+            call,
+            &object_map,
+            &mut next_id,
+        )?;
         for (local, allocation) in &remapped_allocations {
             insert_object_mapping(&mut object_map, *local, allocation.id)?;
         }
@@ -818,7 +874,13 @@ pub(crate) fn attach_resident_call_memory_template(
                 insert_object_mapping(&mut object_map, local_stage, global_stage)?;
             }
         }
-        let remapped_allocations = remap_call_allocations(node, call, &object_map, &mut next_id)?;
+        let remapped_allocations = remap_call_allocations(
+            node,
+            template.node_points(node)?,
+            call,
+            &object_map,
+            &mut next_id,
+        )?;
         for (local, allocation) in &remapped_allocations {
             insert_object_mapping(&mut object_map, *local, allocation.id)?;
         }
@@ -1084,6 +1146,7 @@ fn default_value_class(role: SlotRole, producer: ProducerReference) -> PlannedVa
 fn value_lifetime(
     value: &ValueMemoryPlanTemplate,
     class: PlannedValueClass,
+    template: &ProgramMemoryPlanTemplate,
 ) -> Result<MemoryLifetime, MemoryPlanError> {
     if class != PlannedValueClass::Scratch {
         return Ok(match class {
@@ -1097,9 +1160,9 @@ fn value_lifetime(
     let producer = value
         .producer
         .ok_or(MemoryPlanError::LifetimeOrderInvalid)?;
-    let (first, producer_after) = node_points(producer)?;
+    let (first, producer_after) = template.node_points(producer)?;
     let last = match value.last_consumer {
-        Some(consumer) => node_points(consumer)?.1,
+        Some(consumer) => template.node_points(consumer)?.1,
         None => producer_after,
     };
     if last < first {
@@ -1751,14 +1814,49 @@ mod tests {
     #[test]
     fn plan_points_are_checked_and_exact() {
         assert_eq!(
-            node_points(mech_core::NodeId::new(7)).unwrap(),
+            schedule_points(7).unwrap(),
             (MemoryPlanPoint::new(14), MemoryPlanPoint::new(15))
         );
         assert_eq!(
-            node_points(mech_core::NodeId::new(u32::MAX)),
+            schedule_points(u32::MAX),
             Err(MemoryPlanError::ArithmeticOverflow {
                 field: "node memory-plan point",
             })
+        );
+    }
+
+    #[test]
+    fn scratch_lifetimes_follow_schedule_not_node_identity() {
+        let producer = mech_core::NodeId::new(9);
+        let consumer = mech_core::NodeId::new(2);
+        let value = ValueMemoryPlanTemplate {
+            slot: CellSlotId::new(0),
+            descriptor: None,
+            class: PlannedValueClass::Scratch,
+            producer: Some(producer),
+            last_consumer: Some(consumer),
+            alias_source: None,
+        };
+        let mut template = ProgramMemoryPlanTemplate {
+            node_positions: BTreeMap::from([(producer, 0), (consumer, 1)]),
+            ..ProgramMemoryPlanTemplate::default()
+        };
+        assert_eq!(
+            value_lifetime(&value, value.class, &template).unwrap(),
+            MemoryLifetime::Turn {
+                first: MemoryPlanPoint::new(0),
+                last: MemoryPlanPoint::new(3),
+            }
+        );
+        template.node_positions = BTreeMap::from([(producer, 1), (consumer, 0)]);
+        assert_eq!(
+            value_lifetime(&value, value.class, &template),
+            Err(MemoryPlanError::LifetimeOrderInvalid)
+        );
+        template.node_positions.remove(&consumer);
+        assert_eq!(
+            value_lifetime(&value, value.class, &template),
+            Err(MemoryPlanError::LifetimeOrderInvalid)
         );
     }
 

@@ -3,11 +3,10 @@ use mech_core::{
     MemoryPlanPoint, NodeId, PortDirection,
 };
 
-pub(crate) fn node_points(
-    node: NodeId,
+pub(crate) fn schedule_points(
+    position: u32,
 ) -> Result<(MemoryPlanPoint, MemoryPlanPoint), MemoryPlanError> {
-    let before = node
-        .get()
+    let before = position
         .checked_mul(2)
         .ok_or(MemoryPlanError::ArithmeticOverflow {
             field: "node memory-plan point",
@@ -22,11 +21,12 @@ pub(crate) fn node_points(
 
 pub(crate) fn remap_call_allocations(
     node: NodeId,
+    points: (MemoryPlanPoint, MemoryPlanPoint),
     plan: &mech_core::CallMemoryPlan,
     existing_objects: &std::collections::BTreeMap<MemoryObjectId, MemoryObjectId>,
     next_id: &mut u32,
 ) -> Result<Vec<(MemoryObjectId, AllocationPlan)>, MemoryPlanError> {
-    let (first, last) = node_points(node)?;
+    let (first, last) = points;
     plan.allocations
         .iter()
         // Input and output port storage is owned by artifact slots and was

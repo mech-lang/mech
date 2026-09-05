@@ -645,6 +645,7 @@ pub(crate) fn resident_payload_arena_id(
 pub fn plan_resident_effect_payload(
     plan: &mut ProgramMemoryPlan,
     node: mech_core::NodeId,
+    position: u32,
     kind: ResidentValueKind,
     elements: u64,
 ) -> Result<usize, MemoryPlanError> {
@@ -682,17 +683,7 @@ pub fn plan_resident_effect_payload(
             field: "resident effect memory-object id",
         }
     })?);
-    let before = node
-        .get()
-        .checked_mul(2)
-        .ok_or(MemoryPlanError::ArithmeticOverflow {
-            field: "resident effect start point",
-        })?;
-    let after = before
-        .checked_add(1)
-        .ok_or(MemoryPlanError::ArithmeticOverflow {
-            field: "resident effect end point",
-        })?;
+    let (first, last) = super::schedule_points(position)?;
     let allocation = AllocationPlan {
         id,
         owner: MemoryObjectOwner::NodeInput { node, port: 0 },
@@ -701,10 +692,7 @@ pub fn plan_resident_effect_payload(
         current_bytes: bytes,
         capacity_bytes: bytes,
         alignment: slot.alignment,
-        lifetime: MemoryLifetime::Turn {
-            first: mech_core::MemoryPlanPoint::new(before),
-            last: mech_core::MemoryPlanPoint::new(after),
-        },
+        lifetime: MemoryLifetime::Turn { first, last },
         placement: ArenaPlacement {
             arena: arena_id,
             offset: offset_bytes,

@@ -26,9 +26,9 @@ use sha2::{Digest, Sha256};
 
 use crate::memory_planner::{
     PlannedValueClass, ProgramMemoryPlan, ResidentValuePlanInput,
-    attach_resident_call_memory_template, finalize_resident_current_footprints, node_points,
+    attach_resident_call_memory_template, finalize_resident_current_footprints,
     plan_program_memory_template, plan_resident_arenas, plan_resident_effect_payload,
-    resident_arena_id, resident_payload_arena_id, resident_storage_descriptor,
+    resident_arena_id, resident_payload_arena_id, resident_storage_descriptor, schedule_points,
 };
 use crate::{
     ArtifactSource, BindingDeclaration, InitializerReference, OperationReference,
@@ -1245,14 +1245,16 @@ pub fn preflight_activation(
 ) -> Result<ResidentActivationPreflight, ResidentActivationError> {
     preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
-    let facts = complete_activation_shape_facts(artifact, facts, &classification)?;
-    let layout = build_layout(artifact, &facts, &classification)?;
+    let schedule = build_activation_schedule(artifact, &classification)?;
+    let facts = complete_activation_shape_facts(artifact, facts, &classification, &schedule)?;
+    let layout = build_layout(artifact, &facts, &classification, &schedule.positions)?;
     let facts_fingerprint = activation_facts_fingerprint(&facts);
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
     let plan = build_plan(
         artifact,
         catalog,
         classification,
+        schedule,
         layout,
         facts_fingerprint,
         options,
@@ -1408,14 +1410,16 @@ fn activate_internal(
 ) -> Result<ReactiveInstance, ResidentActivationError> {
     preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
-    let facts = complete_activation_shape_facts(artifact, facts, &classification)?;
-    let layout = build_layout(artifact, &facts, &classification)?;
+    let schedule = build_activation_schedule(artifact, &classification)?;
+    let facts = complete_activation_shape_facts(artifact, facts, &classification, &schedule)?;
+    let layout = build_layout(artifact, &facts, &classification, &schedule.positions)?;
     let facts_fingerprint = activation_facts_fingerprint(&facts);
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
     let mut plan = build_plan(
         artifact,
         catalog,
         classification,
+        schedule,
         layout,
         facts_fingerprint,
         options,
@@ -1968,15 +1972,42 @@ fn complete_activation_shape_facts(
     artifact: &ProgramArtifact,
     supplied: &ActivationFacts,
     classes: &[NodeClass],
+    schedule: &ActivationSchedule,
 ) -> Result<ActivationFacts, ResidentActivationError> {
     let mut facts = supplied.clone();
-    for node in artifact.nodes() {
+    for node_id in &schedule.nodes {
+        let node = &artifact.nodes()[node_id.get() as usize];
         let class = classes[node.node.get() as usize];
         if matches!(class, NodeClass::Observation | NodeClass::External) {
             continue;
         }
         let output = node_output_slot(artifact, node.node)?;
         if facts.slot_shapes.contains_key(&output) {
+            continue;
+        }
+        let output_schema = artifact
+            .schemas()
+            .get(artifact.slots()[output.get() as usize].schema)
+            .expect("validated output schema");
+        // A declared shape relationship is authoritative for custom kernels,
+        // not just operations recognized by the built-in shape rules below.
+        if matches!(output_schema.body(), SchemaBody::Matrix { .. })
+            && let Some(mech_core::ResolvedOperationContract::Declared(contract)) =
+                artifact.contracts().get(node.contract)
+            && let [port] = contract.outputs.as_ref()
+            && let OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input },
+            } = port.construction
+        {
+            let inputs = node_inputs(artifact, node.node)?;
+            let source = inputs
+                .get(input as usize)
+                .copied()
+                .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+            let extents = source_extents(artifact, source, &facts)?;
+            let shape = matrix_shape_for_extents(output_schema, &extents)
+                .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+            facts.slot_shapes.insert(output, shape);
             continue;
         }
         if node.operation.module_path.as_ref() == ["access"]
@@ -2373,6 +2404,7 @@ fn build_layout(
     artifact: &ProgramArtifact,
     facts: &ActivationFacts,
     classes: &[NodeClass],
+    positions: &BTreeMap<NodeId, u32>,
 ) -> Result<LayoutBuild, ResidentActivationError> {
     let mut last_consumers = BTreeMap::<CellSlotId, NodeId>::new();
     for binding in artifact.bindings() {
@@ -2384,7 +2416,11 @@ fn build_layout(
         {
             last_consumers
                 .entry(*slot)
-                .and_modify(|last| *last = (*last).max(*node))
+                .and_modify(|last| {
+                    if positions[last] < positions[node] {
+                        *last = *node;
+                    }
+                })
                 .or_insert(*node);
         }
     }
@@ -2482,6 +2518,7 @@ fn build_layout(
                 declaration,
                 storage,
                 last_consumers.get(&declaration.slot).copied(),
+                positions,
             )?,
             producer: match declaration.producer {
                 ProducerReference::NodeOutput { node, .. } => Some(node),
@@ -2551,6 +2588,7 @@ fn resident_slot_lifetime(
     declaration: &crate::SlotDeclaration,
     storage: ResidentStorageClass,
     last_consumer: Option<NodeId>,
+    positions: &BTreeMap<NodeId, u32>,
 ) -> Result<mech_core::MemoryLifetime, ResidentActivationError> {
     match storage {
         ResidentStorageClass::Input | ResidentStorageClass::State => {
@@ -2564,11 +2602,11 @@ fn resident_slot_lifetime(
             let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
                 return Err(ResidentActivationError::RegionSizeOverflow);
             };
-            let (first, producer_after) =
-                node_points(node).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            let (first, producer_after) = schedule_points(positions[&node])
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
             let last = match last_consumer {
                 Some(consumer) => {
-                    node_points(consumer)
+                    schedule_points(positions[&consumer])
                         .map_err(|_| ResidentActivationError::RegionSizeOverflow)?
                         .1
                 }
@@ -2809,6 +2847,7 @@ fn build_plan(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     classes: Box<[NodeClass]>,
+    schedule: ActivationSchedule,
     mut layout: LayoutBuild,
     activation_facts_fingerprint: [u8; 32],
     options: ResidentActivationOptions,
@@ -2819,7 +2858,12 @@ fn build_plan(
     let mut activation_steps = Vec::new();
     let mut call_memory_plan_nodes = Vec::new();
     let mut call_memory_plans = Vec::new();
-    let mut artifact_to_activated = vec![None; artifact.nodes().len()];
+    let ActivationSchedule {
+        nodes: scheduled_nodes,
+        positions,
+        artifact_to_activated,
+        mut topology,
+    } = schedule;
     let mut effect_ordinal = 0_u32;
     for node in artifact.nodes() {
         let class = classes[node.node.get() as usize];
@@ -2853,6 +2897,7 @@ fn build_plan(
                 offset: plan_resident_effect_payload(
                     &mut layout.memory_plan,
                     node.node,
+                    positions[&node.node],
                     payload_region.kind,
                     u64::try_from(payload_region.len)
                         .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
@@ -2862,8 +2907,6 @@ fn build_plan(
                 shape: payload_region.shape,
             };
             ensure_resident_plan_admitted(&layout.memory_plan)?;
-            let activated = ActivatedNodeIndex(steps.len() as u32);
-            artifact_to_activated[node.node.get() as usize] = Some(activated);
             steps.push(ActivatedTurnStep::External(ActivatedExternalNode {
                 artifact_node: node.node,
                 requirement,
@@ -3045,8 +3088,6 @@ fn build_plan(
             });
             continue;
         }
-        let activated = ActivatedNodeIndex(steps.len() as u32);
-        artifact_to_activated[node.node.get() as usize] = Some(activated);
         let read_start = reads.len() as u32;
         let mut reads_state = false;
         for (ordinal, source) in input_sources.iter().enumerate() {
@@ -3078,8 +3119,15 @@ fn build_plan(
             kernel,
         }));
     }
-    let activation_steps = order_activation_steps(artifact, &classes, activation_steps)?;
-    let mut topology = build_topology(artifact, &classes, &steps, &artifact_to_activated)?;
+    let mut pending = activation_steps
+        .into_iter()
+        .map(|step| (step.artifact_node, step))
+        .collect::<BTreeMap<_, _>>();
+    let activation_steps = scheduled_nodes
+        .iter()
+        .filter_map(|node| pending.remove(node))
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
     let execution_node_order = build_execution_node_order(
         artifact,
         &steps,
@@ -3216,18 +3264,21 @@ fn build_plan(
             .collect::<Vec<_>>()
             .into_boxed_slice()
     });
-    let call_bindings = call_memory_plans
+    let mut plans_by_node = call_memory_plan_nodes
+        .into_iter()
+        .zip(call_memory_plans)
+        .collect::<BTreeMap<_, _>>();
+    let call_plans = scheduled_nodes
         .iter()
-        .map(|plan| Some(plan.bound_call.clone()))
+        .map(|node| plans_by_node.remove(node))
         .collect::<Vec<_>>();
-    let call_plans = call_memory_plans.into_iter().map(Some).collect::<Vec<_>>();
-    let call_template = plan_program_memory_template(
-        artifact,
-        &call_memory_plan_nodes,
-        &call_bindings,
-        &call_plans,
-    )
-    .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+    let call_bindings = call_plans
+        .iter()
+        .map(|plan| plan.as_ref().map(|plan| plan.bound_call.clone()))
+        .collect::<Vec<_>>();
+    let call_template =
+        plan_program_memory_template(artifact, &scheduled_nodes, &call_bindings, &call_plans)
+            .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
     attach_resident_call_memory_template(&mut layout.memory_plan, &call_template)
         .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
     ensure_resident_plan_admitted(&layout.memory_plan)?;
@@ -3514,59 +3565,113 @@ fn execute_activation_graph(
     Ok(())
 }
 
-fn order_activation_steps(
+fn order_activation_nodes(
     artifact: &ProgramArtifact,
     classes: &[NodeClass],
-    steps: Vec<ActivatedOnceNode>,
-) -> Result<Box<[ActivatedOnceNode]>, ResidentActivationError> {
-    let by_node = steps
+) -> Result<Box<[NodeId]>, ResidentActivationError> {
+    let nodes = artifact
+        .nodes()
+        .iter()
+        .filter(|node| classes[node.node.get() as usize] == NodeClass::Activation)
+        .map(|node| node.node)
+        .collect::<Vec<_>>();
+    let by_node = nodes
         .iter()
         .enumerate()
-        .map(|(index, step)| (step.artifact_node, index))
+        .map(|(index, node)| (*node, index))
         .collect::<BTreeMap<_, _>>();
-    let mut downstream = vec![Vec::<usize>::new(); steps.len()];
-    for (current, step) in steps.iter().enumerate() {
-        for source in &step.sources {
+    let mut downstream = vec![Vec::<usize>::new(); nodes.len()];
+    for (current, &node) in nodes.iter().enumerate() {
+        for source in node_inputs(artifact, node)? {
             let ArtifactSource::Slot(slot) = source else {
                 continue;
             };
-            let ProducerReference::NodeOutput { node, .. } =
+            let ProducerReference::NodeOutput { node: parent, .. } =
                 artifact.slots()[slot.get() as usize].producer
             else {
                 continue;
             };
-            if classes[node.get() as usize] != NodeClass::Activation {
-                return Err(ResidentActivationError::InvalidDependency {
-                    node: step.artifact_node,
-                });
-            }
             let parent = *by_node
-                .get(&node)
-                .ok_or(ResidentActivationError::InvalidDependency {
-                    node: step.artifact_node,
-                })?;
+                .get(&parent)
+                .ok_or(ResidentActivationError::InvalidDependency { node })?;
             if !downstream[parent].contains(&current) {
                 downstream[parent].push(current);
             }
         }
     }
-    let keys = steps
-        .iter()
-        .map(|step| step.artifact_node.get())
-        .collect::<Vec<_>>();
+    let keys = nodes.iter().map(|node| node.get()).collect::<Vec<_>>();
     let order = stable_topological_order(&downstream, &keys).ok_or_else(|| {
         ResidentActivationError::InvalidDependency {
-            node: steps
-                .first()
-                .map_or(NodeId::new(0), |step| step.artifact_node),
+            node: nodes.first().copied().unwrap_or(NodeId::new(0)),
         }
     })?;
-    let mut pending = steps.into_iter().map(Some).collect::<Vec<_>>();
     Ok(order
         .into_iter()
-        .map(|index| pending[index].take().expect("unique activation order"))
+        .map(|index| nodes[index])
         .collect::<Vec<_>>()
         .into_boxed_slice())
+}
+
+struct ActivationSchedule {
+    nodes: Box<[NodeId]>,
+    positions: BTreeMap<NodeId, u32>,
+    artifact_to_activated: Box<[Option<ActivatedNodeIndex>]>,
+    topology: DependencyTopology,
+}
+
+fn build_activation_schedule(
+    artifact: &ProgramArtifact,
+    classes: &[NodeClass],
+) -> Result<ActivationSchedule, ResidentActivationError> {
+    let activation = order_activation_nodes(artifact, classes)?;
+    let turn = artifact
+        .nodes()
+        .iter()
+        .filter(|node| {
+            matches!(
+                classes[node.node.get() as usize],
+                NodeClass::Turn | NodeClass::External
+            )
+        })
+        .map(|node| node.node)
+        .collect::<Vec<_>>();
+    let mut artifact_to_activated = vec![None; artifact.nodes().len()].into_boxed_slice();
+    for (index, node) in turn.iter().enumerate() {
+        artifact_to_activated[node.get() as usize] = Some(ActivatedNodeIndex(index as u32));
+    }
+    let topology = build_topology(artifact, classes, &turn, &artifact_to_activated)?;
+    // Published observations precede activation; turn order is the executor's
+    // existing graph order, including its state-writer and external edges.
+    let nodes = artifact
+        .nodes()
+        .iter()
+        .filter(|node| classes[node.node.get() as usize] == NodeClass::Observation)
+        .map(|node| node.node)
+        .chain(activation.iter().copied())
+        .chain(
+            topology
+                .linear_node_order
+                .iter()
+                .map(|index| turn[index.get() as usize]),
+        )
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let positions = nodes
+        .iter()
+        .copied()
+        .enumerate()
+        .map(|(position, node)| {
+            u32::try_from(position)
+                .map(|position| (node, position))
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)
+        })
+        .collect::<Result<BTreeMap<_, _>, _>>()?;
+    Ok(ActivationSchedule {
+        nodes,
+        positions,
+        artifact_to_activated,
+        topology,
+    })
 }
 
 fn stable_topological_order(downstream: &[Vec<usize>], keys: &[u32]) -> Option<Vec<usize>> {
@@ -3710,10 +3815,10 @@ fn owned_activation_input(
 fn build_topology(
     artifact: &ProgramArtifact,
     classes: &[NodeClass],
-    steps: &[ActivatedTurnStep],
+    nodes: &[NodeId],
     artifact_to_activated: &[Option<ActivatedNodeIndex>],
 ) -> Result<DependencyTopology, ResidentActivationError> {
-    let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); steps.len()];
+    let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); nodes.len()];
     let mut latest_state_writer = BTreeMap::<CellSlotId, ActivatedNodeIndex>::new();
     let mut direct_input_consumers = Vec::<ActivatedNodeIndex>::new();
     let mut prior_state_consumers = Vec::<ActivatedNodeIndex>::new();
@@ -3768,7 +3873,7 @@ fn build_topology(
             }
         }
     }
-    let mut indegree = vec![0_usize; steps.len()];
+    let mut indegree = vec![0_usize; nodes.len()];
     for children in &downstream {
         for child in children {
             indegree[child.get() as usize] += 1;
@@ -3805,21 +3910,16 @@ fn build_topology(
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
-    let keys = steps
-        .iter()
-        .map(|step| step.artifact_node().get())
-        .collect::<Vec<_>>();
+    let keys = nodes.iter().map(|node| node.get()).collect::<Vec<_>>();
     let linear_node_order = stable_topological_order(&order_source, &keys)
         .ok_or_else(|| ResidentActivationError::InvalidDependency {
-            node: steps
-                .first()
-                .map_or(NodeId::new(0), ActivatedTurnStep::artifact_node),
+            node: nodes.first().copied().unwrap_or(NodeId::new(0)),
         })?
         .into_iter()
         .map(|index| ActivatedNodeIndex(index as u32))
         .collect::<Vec<_>>();
-    let words = steps.len().div_ceil(64);
-    let mut masks = Vec::with_capacity(steps.len());
+    let words = nodes.len().div_ceil(64);
+    let mut masks = Vec::with_capacity(nodes.len());
     for children in &downstream {
         let mut mask = vec![0_u64; words].into_boxed_slice();
         for child in children {
@@ -3845,7 +3945,7 @@ fn build_topology(
             set_bit(&mut mandatory, activated.get() as usize);
         }
     }
-    let mut offsets = Vec::with_capacity(steps.len() + 1);
+    let mut offsets = Vec::with_capacity(nodes.len() + 1);
     let mut values = Vec::new();
     offsets.push(0_u32);
     for children in downstream {
@@ -4117,4 +4217,196 @@ fn physical_layout_eq(left: &ActivatedPlan, right: &ActivatedPlan) -> bool {
                 && left.storage == right.storage
                 && left.region == right.region
         })
+}
+
+#[cfg(test)]
+mod shape_fact_tests {
+    use super::*;
+    use crate::{NodeDeclaration, ProgramArtifactDraft, SlotDeclaration};
+    use mech_core::{
+        BindingId, ConstantStoreBuilder, DeclaredOperationContract, DimensionParameterDeclaration,
+        DimensionParameterId, DimensionParameterOrigin, FloatWidth, OperationContractTableBuilder,
+        ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaDraft,
+        SchemaTableBuilder, ValueDataDraft, ValueDraft,
+        snapshot::{F64Bits, SnapshotValidationContext},
+    };
+
+    fn copy_chain(output_upper_bound: u64) -> ProgramArtifact {
+        let mut schemas = SchemaTableBuilder::new();
+        let mut matrix = |upper_bound| {
+            schemas
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: vec![DimensionParameterDeclaration {
+                            id: DimensionParameterId::new(0),
+                            origin: DimensionParameterOrigin::Explicit,
+                            lifetime: DimensionLifetime::Turn,
+                            lower_bound: DimensionExpr::Constant(1),
+                            upper_bound: Some(DimensionExpr::Constant(upper_bound)),
+                        }]
+                        .into_boxed_slice(),
+                        body: SchemaBody::Matrix {
+                            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                            dimensions: vec![
+                                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                                DimensionExpr::Constant(1),
+                            ]
+                            .into_boxed_slice(),
+                        },
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap()
+        };
+        let input = matrix(8);
+        let output = matrix(output_upper_bound);
+        let build = schemas.finish().unwrap();
+        let input = build.resolve(input).unwrap();
+        let output = build.resolve(output).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: input,
+            shape_values: vec![3].into_boxed_slice(),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::F64(F64Bits::from_f64(7.0)); 3].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let value = constants.insert(value).unwrap();
+        let build = constants.finish().unwrap();
+        let value = build.resolve(value).unwrap();
+        let (constants, _) = build.into_parts();
+        let mut contracts = OperationContractTableBuilder::new();
+        let mut contract = |input_schema| {
+            contracts
+                .insert(ResolvedOperationContract::Declared(
+                    DeclaredOperationContract {
+                        inputs: vec![ResolvedInputPort {
+                            schema: input_schema,
+                            access: AccessMode::Read,
+                            delivery: DeliveryMode::Signal,
+                        }]
+                        .into_boxed_slice(),
+                        outputs: vec![ResolvedOutputPort {
+                            schema: output,
+                            access: AccessMode::Write,
+                            delivery: DeliveryMode::Signal,
+                            construction: OutputConstruction::FullWrite {
+                                shape: ShapeRule::SameAsInput { input: 0 },
+                            },
+                            alias: AliasPolicy::NoAlias,
+                            change_detection: ChangeDetectionPolicy::KernelReported,
+                        }]
+                        .into_boxed_slice(),
+                        interaction: ExternalInteraction::Pure,
+                    },
+                ))
+                .unwrap()
+        };
+        let consumer = contract(output);
+        let producer = contract(input);
+        let build = contracts.finish().unwrap();
+        let ids = [
+            build.resolve(consumer).unwrap(),
+            build.resolve(producer).unwrap(),
+        ];
+        let (contracts, _) = build.into_parts();
+        let mut nodes = Vec::new();
+        let mut slots = Vec::new();
+        let mut bindings = Vec::new();
+        for raw in 0..2 {
+            let node = NodeId::new(raw);
+            nodes.push(NodeDeclaration {
+                node,
+                operation: OperationReference {
+                    module_path: vec!["custom".to_owned()].into_boxed_slice(),
+                    operation_name: "copy".to_owned(),
+                },
+                contract: ids[raw as usize],
+                requirement: None,
+                input_bindings: raw * 2..raw * 2 + 1,
+                output_bindings: raw * 2 + 1..raw * 2 + 2,
+            });
+            slots.push(SlotDeclaration {
+                slot: CellSlotId::new(raw),
+                schema: output,
+                role: SlotRole::Derived,
+                producer: ProducerReference::NodeOutput {
+                    node,
+                    output_ordinal: 0,
+                },
+                initializer: None,
+            });
+            bindings.push(BindingDeclaration::Input {
+                id: BindingId::new(raw * 2),
+                node,
+                port_ordinal: 0,
+                source: if raw == 0 {
+                    ArtifactSource::Slot(CellSlotId::new(1))
+                } else {
+                    ArtifactSource::Constant(value)
+                },
+            });
+            bindings.push(BindingDeclaration::Output {
+                id: BindingId::new(raw * 2 + 1),
+                node,
+                port_ordinal: 0,
+                target: CellSlotId::new(raw),
+            });
+        }
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: slots.into_boxed_slice(),
+            nodes: nodes.into_boxed_slice(),
+            bindings: bindings.into_boxed_slice(),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn custom_same_input_shape_follows_dependency_order_without_hints() {
+        let artifact = copy_chain(8);
+        let classes = [NodeClass::Activation, NodeClass::Activation];
+        let schedule = build_activation_schedule(&artifact, &classes).unwrap();
+        assert_eq!(schedule.nodes.as_ref(), &[NodeId::new(1), NodeId::new(0)]);
+        let facts = complete_activation_shape_facts(
+            &artifact,
+            &ActivationFacts::default(),
+            &classes,
+            &schedule,
+        )
+        .unwrap();
+        for slot in [CellSlotId::new(0), CellSlotId::new(1)] {
+            assert_eq!(
+                slot_shape(&artifact, slot, &facts)
+                    .unwrap()
+                    .parameter_values(),
+                &[3]
+            );
+        }
+    }
+
+    #[test]
+    fn custom_same_input_shape_still_rejects_output_bound_violations() {
+        let artifact = copy_chain(2);
+        let classes = [NodeClass::Activation, NodeClass::Activation];
+        let schedule = build_activation_schedule(&artifact, &classes).unwrap();
+        assert!(matches!(
+            complete_activation_shape_facts(
+                &artifact, &ActivationFacts::default(), &classes, &schedule,
+            ),
+            Err(ResidentActivationError::UnresolvedShape { slot }) if slot == CellSlotId::new(1)
+        ));
+    }
 }

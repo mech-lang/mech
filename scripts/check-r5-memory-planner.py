@@ -409,10 +409,16 @@ def failures(root: Path) -> list[str]:
         "PlannedValueClass::PublishedOutput",
         "instantiate_program_memory_plan_with_target_overrides",
         "fn transaction_stage_object",
-        "remap_call_allocations(node, call, &object_map",
+        "node_positions",
     ):
         if required not in program:
             found.append(f"program planning omits global identity/liveness closure: {required}")
+    scheduled_remap = (
+        r"remap_call_allocations\(\s*node,\s*template\.node_points\(node\)\?,"
+        r"\s*call,\s*&object_map,\s*&mut next_id,?\s*\)"
+    )
+    if len(re.findall(scheduled_remap, program)) != 2:
+        found.append("program planning omits global identity/liveness closure: scheduled call remapping")
     if not re.search(
         r"SlotRole\s*::\s*Output\s*=>\s*PlannedValueClass\s*::\s*PublishedOutput",
         program,

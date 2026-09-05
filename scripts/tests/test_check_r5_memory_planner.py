@@ -451,6 +451,16 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         self.replace(root, "src/engine/src/resident/general/live.rs", "published_footprints", "lost_published")
         self.assert_failure(root, "live Resident measurement is incomplete: published_footprints")
 
+    def test_41_call_timeline_cannot_use_node_identity(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/memory_planner/program.rs",
+            "template.node_points(node)?",
+            "schedule_points(node.get())?",
+        )
+        self.assert_failure(root, "scheduled call remapping")
+
 
 if __name__ == "__main__":
     unittest.main()

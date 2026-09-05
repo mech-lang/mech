@@ -165,6 +165,9 @@ fn deterministic_program_plan(reverse_facts: bool, allocation_noise: usize) -> P
         reuse_group: None,
     };
     let template = ProgramMemoryPlanTemplate {
+        node_positions: (0..3)
+            .map(|position| (NodeId::new(position), position))
+            .collect(),
         values: values.into_boxed_slice(),
         call_nodes: Box::new([]),
         call_sites: Box::new([]),
@@ -322,6 +325,7 @@ fn call_transaction_identity_selects_published_and_mutated_state_stages() {
     };
     let program = instantiate_program_memory_plan(
         &ProgramMemoryPlanTemplate {
+            node_positions: BTreeMap::from([(node, 0)]),
             values: vec![
                 ValueMemoryPlanTemplate {
                     slot: input_slot,
@@ -409,7 +413,8 @@ fn call_transaction_identity_selects_published_and_mutated_state_stages() {
 fn fresh_process_plan_diagnostic_is_byte_identical() {
     const CHILD: &str = "MECH_R5_PLAN_DIAGNOSTIC_CHILD";
     if std::env::var_os(CHILD).is_some() {
-        println!("{}", deterministic_program_plan(false, 0).diagnostic_text());
+        // Keep the plan separate from libtest progress and elapsed time.
+        eprint!("{}", deterministic_program_plan(false, 0).diagnostic_text());
         return;
     }
     let executable = std::env::current_exe().unwrap();
@@ -429,7 +434,10 @@ fn fresh_process_plan_diagnostic_is_byte_identical() {
     let second = run();
     assert!(first.status.success(), "first child failed: {first:?}");
     assert!(second.status.success(), "second child failed: {second:?}");
-    assert_eq!(first.stdout, second.stdout);
+    let expected = deterministic_program_plan(false, 0).diagnostic_text();
+    assert!(!expected.is_empty());
+    assert_eq!(first.stderr, expected.as_bytes());
+    assert_eq!(second.stderr, expected.as_bytes());
 }
 
 #[test]
@@ -665,6 +673,7 @@ fn current_footprints_are_explicit_values_not_allocation_identity() {
 
 fn empty_template() -> ProgramMemoryPlanTemplate {
     ProgramMemoryPlanTemplate {
+        node_positions: BTreeMap::new(),
         values: Box::new([]),
         call_nodes: Box::new([]),
         call_sites: Box::new([]),

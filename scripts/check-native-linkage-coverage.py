@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 from threading import Event, Thread
+import tomllib
 from typing import Any
 
 
@@ -782,25 +783,72 @@ def report_summary(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def owner_native_link_profiles(package: str) -> list[str]:
+    manifest, _, profile = OWNERS[package]
+    if package != "mech-math":
+        return [f"{profile} native-link"]
+
+    # Reuse the exhaustive surface partition, without its native-plan role.
+    # Each shard retains all operations and shapes for its selected scalars.
+    fixture = tomllib.loads(FIXTURE_MANIFEST.read_text(encoding="utf-8"))["features"]
+    owner = tomllib.loads(manifest.read_text(encoding="utf-8"))["features"]
+
+    def expand(names: set[str], features: dict[str, list[str]]) -> set[str]:
+        pending = list(names)
+        result: set[str] = set()
+        while pending:
+            name = pending.pop()
+            if name not in result:
+                result.add(name)
+                pending.extend(features.get(name, []))
+        return result
+
+    profiles = []
+    covered: set[str] = set()
+    prefix = f"{package}/"
+    for shard in MATH_SURFACE_SHARDS:
+        if shard not in fixture:
+            raise ContractError(f"missing math surface shard {shard!r}")
+        selected = {
+            name.removeprefix(prefix)
+            for name in expand({shard}, fixture)
+            if name.startswith(prefix)
+        }
+        selected.discard("native-plan")
+        selected.add("native-link")
+        unknown = selected.difference(owner)
+        if unknown:
+            raise ContractError(f"{shard} references unknown math features {sorted(unknown)}")
+        expanded = expand(selected, owner)
+        if expanded.intersection({"native-plan", "source", "compiler", "semantic-compiler"}):
+            raise ContractError(f"{shard} leaks source/planning roles into native-link")
+        covered.update(expanded)
+        profiles.append(" ".join(sorted(selected)))
+
+    # Only the two aggregate selectors are absent; all of their dependencies
+    # must remain covered. The frozen linkage union separately checks entries.
+    required = expand({profile, "native-link"}, owner) - {profile, "full_values"}
+    missing = required.difference(covered)
+    if missing:
+        raise ContractError(f"math native-link shards omit features {sorted(missing)}")
+    return profiles
+
+
 def verify_owner_native_link_profiles(packages: list[str]) -> None:
     for package in packages:
-        manifest, _, profile = OWNERS[package]
-        run(
-            [
-                "cargo", "+nightly-2026-03-03", "check",
-                "--manifest-path", str(manifest), "--no-default-features",
-                "--features", f"{profile} native-link",
-            ]
-        )
+        manifest, _, _ = OWNERS[package]
+        profiles = owner_native_link_profiles(package)
         if package == "mech-matrix":
-            for minimal_profile in MATRIX_MINIMAL_NATIVE_LINK_PROFILES:
-                run(
-                    [
-                        "cargo", "+nightly-2026-03-03", "check",
-                        "--manifest-path", str(manifest), "--no-default-features",
-                        "--features", minimal_profile,
-                    ]
-                )
+            profiles.extend(MATRIX_MINIMAL_NATIVE_LINK_PROFILES)
+        for index, profile in enumerate(profiles, start=1):
+            print(f"checking {package} native-link profile {index}/{len(profiles)}", flush=True)
+            run(
+                [
+                    "cargo", "+nightly-2026-03-03", "check",
+                    "--manifest-path", str(manifest), "--no-default-features",
+                    "--features", profile,
+                ]
+            )
 
 
 def verify_owner_contracts() -> None:
@@ -855,7 +903,7 @@ def main() -> int:
             verify_owner_contracts()
             verify_owner_native_link_profiles(requested_owners)
         if mode == "owners":
-            print(f"validated {len(requested_owners)} isolated owner native-link profiles")
+            print(f"validated {len(requested_owners)} isolated native-link owners")
             return 0
         report = build_report_from_ci_surfaces() if mode == "merge" else build_report()
         require_named_closure_regressions(report)

@@ -10,24 +10,24 @@
     "feature_surface_digest": "bf731d9c4f90171581aadf32dfa5dc190551c8dd1441d89c57e25b25cd7c8fbd",
     "runtime_contract_count": 9109,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "abf9451a44ba14c3f7562f7def107f2ce8e2c1faf0b575539ee78112e3fcf5c9",
+    "runtime_contract_surface_digest": "5e707460f4c6f38d95b0ed49fdc0e5ea825aaff1472e9d38892584a65c6a65ed",
     "runtime_signature_count": 9109,
     "missing_signature_count": 0,
     "runtime_signature_surface_digest": "247a963d75d7db79fc5b228bcbe0c54d8ab23c28f620462a58a36e7ae87c5992"
   },
   "extended": {
-    "entry_count": 120568,
-    "linked_entry_count": 120568,
+    "entry_count": 120382,
+    "linked_entry_count": 120382,
     "missing_linkage_count": 0,
-    "runtime_surface_digest": "86529416b74d8aa1237ecf32a68dd86a16c6ae2cf2c40ca3dd5c2edda4949757",
-    "installer_surface_digest": "8905fe088a48486ea8af103b388506abd5cacc6a0242c61f00dd9004dfa0ff74",
-    "feature_surface_digest": "0ad931a48b0d9f57f3d97246974f4b28810f29b0694a58bdcb196902fb50bfd3",
-    "runtime_contract_count": 120568,
+    "runtime_surface_digest": "2b55be06a124f89ad3a8da8145b15a15057564812d2601bdde461286b7b10d41",
+    "installer_surface_digest": "131eb025e27b22e4dd932e6f4c1c6eb68121ae0b3f959b72131fdac5afa06ee8",
+    "feature_surface_digest": "294dfedbd4fdb4cb14da03c52eef40c199285e2f27db6cf57e08dd82535ead23",
+    "runtime_contract_count": 120382,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "e2b0fef7c3ffc4b7e8847248a06c208468102ec9b0ffdb2fabb2e80ab12114eb",
-    "runtime_signature_count": 120568,
+    "runtime_contract_surface_digest": "eb31945fa10a707ad30b6c1cbc50586d2f6b255c1e48bc68d7c1af199aa4fbea",
+    "runtime_signature_count": 120382,
     "missing_signature_count": 0,
-    "runtime_signature_surface_digest": "b93aad865893f12905894b518ec8c1cd56494ac56e3e1ea265827c3eb4d699f0"
+    "runtime_signature_surface_digest": "196e1f40c73fe01a0c9385c50379d3c6839acaa8f59387bcb0d5ec90a7209c18"
   },
   "signature_invariants": {
     "same_runtime_id_different_signature_count": 0,
@@ -48,7 +48,7 @@
   },
   "coverage_digest": {
     "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
-    "sha256": "2a63613c34432215d6f464ed465bdc5c4bb62b7d943be8e60450296dc1156b61"
+    "sha256": "dc3e0549e531f1d0eea50dbc968c34136a0c4f5a9e8f8f2fd489c46654e6e732"
   },
   "detail_artifact": {
     "path": "target/native-linkage/coverage-full.json",
