@@ -11,6 +11,10 @@ pub(crate) struct SetDifferenceFxn {
 }
 
 impl MechFunctionFactory for SetDifferenceFxn {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalSortUnique
+            }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::Set,

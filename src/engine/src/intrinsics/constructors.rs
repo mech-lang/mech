@@ -181,6 +181,7 @@ impl CanonicalFunctionSpecializer for SetDefine {
             mech_core::RuntimeFunctionId::from_name("ValueSet"),
             mech_core::ExecutionTarget::DirectRuntime,
             &inputs,
+            mech_core::ImplementationMemoryClass::CanonicalSortUnique,
         )
     }
 }
@@ -216,6 +217,10 @@ impl MechFunctionImpl for ValueSet {
 
 #[cfg(all(feature = "set", feature = "functions"))]
 impl MechFunctionFactory for ValueSet {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
+
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Set);
 
@@ -304,6 +309,10 @@ impl MechFunctionImpl for ValueSetComprehension {
 
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueSetComprehension {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::AnyValue,
@@ -671,12 +680,17 @@ impl<const VERTICAL: bool> ValueMatrixConcatenation<VERTICAL> {
                 "matrix/horzcat"
             }),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
     }
 }
 
 #[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
 impl<const VERTICAL: bool> MechFunctionFactory for ValueMatrixConcatenation<VERTICAL> {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
         FunctionValueRepresentation::AnyValue,
         FunctionValueRepresentation::AnyValue,
@@ -758,6 +772,10 @@ impl MechFunctionImpl for ValueMatrixComprehension {
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueMatrixComprehension {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
         FunctionValueRepresentation::AnyValue,
         FunctionValueRepresentation::AnyValue,

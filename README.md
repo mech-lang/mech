@@ -98,12 +98,13 @@ The current published package is `v0.3.6`; the active development target is
 `v0.4.0`. The canonical value-system cutover, R1 contract closure, and R2 type-memory
 boundary are complete. R3 Type System v1 and the R4 authority cutover are also
 complete. Semantic inference, built-in predicates, conversion planning, overload
-resolution, and semantic descriptors are authoritative. The next v0.4 phase is R5:
+resolution, semantic descriptors, and deterministic physical memory plans are
+authoritative. The next v0.4 phase is R6:
 
 - R3 Type inference, predicates, and conversions — complete
 - R4 Type-system storage cutover — complete
-- R5 Memory planner — next
-- R6 Memory runtime cutover
+- R5 Memory planner — complete
+- R6 Memory runtime cutover — next
 - R7 Release qualification
 
 The package version remains `v0.3.6` until R7 qualifies the release.

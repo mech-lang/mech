@@ -572,6 +572,7 @@ mod tests {
                 FunctionInstance::new(Box::new(TestFunction(self.0)), invocation),
                 RuntimeFunctionId::from_name(self.0),
                 ExecutionTarget::DirectRuntime,
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch,
             )
         }
     }

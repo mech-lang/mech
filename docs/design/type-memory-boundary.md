@@ -42,8 +42,8 @@ to traverse `SchemaBody`.
 | Can the combination coexist? | R2 compatibility checks |
 | What concrete runtime factory/backing is selected today? | exact R4 operation binding after semantic validation |
 | When does R2 compatibility become binding authority? | before every R4 physical binding |
-| What physical byte layout is chosen? | R5 |
-| How is memory allocated, reused, and reclaimed? | R6 |
+| What physical byte layout is chosen? | the complete R5 memory plan |
+| How is memory allocated, reused, and reclaimed? | R6, which is next |
 
 ## 3. One-way boundary
 
@@ -232,10 +232,14 @@ descriptors are validated before physical selection and allocation;
 
 ## 18. R5/R6 handoff
 
-R5 owns deterministic physical layouts; sizes, alignment, strides, offsets,
-and placement; lifetimes and alias plans; and allocation and resource plans.
-R6 owns allocators, backing cutover, pooling and reuse, copy-on-write,
-reclamation, and runtime enforcement. R2 contains none of those mechanisms.
+R5 Memory planner — complete. R5 owns deterministic physical layouts; sizes,
+alignment, strides, offsets, and placement; lifetimes and alias plans; and
+allocation and resource plans. R6 Memory runtime cutover — next. R6 consumes
+the R5 layouts, capacities, arena placements, lifetimes, alias groups, reuse
+groups, transaction requirements, budgets, and transfer requirements. R6 may
+implement allocation handles, pools, managed backing, actual reuse, movement,
+publication, and reclamation. R6 may not silently derive a different physical
+plan. R2 contains none of those mechanisms.
 
 ## 19. Non-goals
 
@@ -272,5 +276,5 @@ R2 is complete when:
 21. Normal CI runs the architecture checker.
 22. Full CI runs the architecture checker.
 23. Checker changes themselves trigger Full CI.
-24. ROADMAP, type-memory design, and v0.4 endgame agree that R4 is complete and R5 is next.
+24. ROADMAP, type-memory design, and v0.4 endgame agree that R5 is complete and R6 is next.
 25. Package version remains `0.3.6`.

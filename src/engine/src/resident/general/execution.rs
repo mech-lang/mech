@@ -256,6 +256,89 @@ impl Drop for PreparedResidentTurn<'_> {
 }
 
 impl ReactiveInstance {
+    fn with_kernel_turn_plan<T>(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
+    ) -> Result<T, ResidentExecutionError> {
+        let index = node_index.get() as usize;
+        if let Some(cached) = self.workspace.fixed_turn_plans[index].clone() {
+            // Reuse the certified base plan, not a materialization permit.
+            // The kernel still admits its concrete work and scratch demand.
+            return super::super::budget::with_resident_turn_plan(cached, || execute(self));
+        }
+        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
+            &nodes[index]
+        } else {
+            let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
+                unreachable!("external steps are staged by the dispatcher")
+            };
+            node
+        };
+        let artifact_node = node.artifact_node;
+        let fail = || ResidentExecutionError::Kernel {
+            node: artifact_node,
+            error: ResidentKernelError::InvalidShape,
+        };
+        let output_location = match node.write.storage {
+            ResidentStorageClass::State => ResidentReadLocation::State {
+                slot: node.write.slot,
+                region: node.write.region,
+            },
+            ResidentStorageClass::Scratch => ResidentReadLocation::Scratch(node.write.region),
+            ResidentStorageClass::Input => ResidentReadLocation::Input(node.write.region),
+            ResidentStorageClass::Constant => ResidentReadLocation::Constant(node.write.region),
+        };
+        let current = self
+            .read_location(output_location, before_epoch)
+            .ok_or_else(fail)?;
+        let call = self
+            .plan
+            .memory_plan
+            .call_for_node(artifact_node)
+            .ok_or_else(fail)?;
+        let base = match node.construction {
+            OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
+            _ => None,
+        };
+        let mut reads = self.plan.reads[node.reads.start as usize..node.reads.end as usize].iter();
+        let inputs = (0..call.inputs.len())
+            .map(|ordinal| {
+                let location = if Some(ordinal) == base {
+                    output_location
+                } else {
+                    *reads.next().ok_or_else(fail)?
+                };
+                self.read_location(location, working_epoch).ok_or_else(fail)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let facts = super::live::facts(call, artifact_node, &inputs, current, &self.plan.schemas)
+            .map_err(|_| fail())?;
+        let turn_plan = crate::memory_planner::plan_current_resident_turn(
+            &self.plan.memory_plan,
+            artifact_node,
+            &facts,
+        )
+        .map_err(|_| ResidentExecutionError::Kernel {
+            node: artifact_node,
+            error: ResidentKernelError::InvalidShape,
+        })?;
+        if !turn_plan.budget_violations.is_empty() {
+            return Err(ResidentExecutionError::Kernel {
+                node: artifact_node,
+                error: ResidentKernelError::InvalidShape,
+            });
+        }
+        let cacheable = super::live::has_invariant_memory_facts(call);
+        let turn_plan = std::sync::Arc::new(turn_plan);
+        if cacheable {
+            self.workspace.fixed_turn_plans[index] = Some(turn_plan.clone());
+        }
+        super::super::budget::with_resident_turn_plan(turn_plan, || execute(self))
+    }
+
     /// Hash the currently published resident state without beginning a candidate.
     pub fn published_state_hash(&self) -> u64 {
         state_hash(self, self.published_epoch())
@@ -1006,6 +1089,24 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         change_is_observed: bool,
     ) -> Result<bool, ResidentExecutionError> {
+        self.with_kernel_turn_plan(node_index, before_epoch, working_epoch, |this| {
+            this.execute_kernel_without_summary_planned(
+                node_index,
+                before_epoch,
+                working_epoch,
+                change_is_observed,
+            )
+        })
+    }
+
+    #[inline(always)]
+    fn execute_kernel_without_summary_planned(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        change_is_observed: bool,
+    ) -> Result<bool, ResidentExecutionError> {
         let index = node_index.get() as usize;
         let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
             &nodes[index]
@@ -1017,7 +1118,7 @@ impl ReactiveInstance {
         };
         if node.write.storage == ResidentStorageClass::Scratch {
             let mut ignored_probe = ResidentStructuralProbe::default();
-            return self.execute_kernel(
+            return self.execute_kernel_planned(
                 node_index,
                 before_epoch,
                 working_epoch,
@@ -1182,6 +1283,19 @@ impl ReactiveInstance {
 
     #[inline(always)]
     fn execute_kernel(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+    ) -> Result<bool, ResidentExecutionError> {
+        self.with_kernel_turn_plan(node_index, before_epoch, working_epoch, |this| {
+            this.execute_kernel_planned(node_index, before_epoch, working_epoch, probe)
+        })
+    }
+
+    #[inline(always)]
+    fn execute_kernel_planned(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
@@ -2406,8 +2520,8 @@ mod tests {
         };
         let mut state = StateArena {
             buffers: [
-                TypedResidentArena::allocate(sizes),
-                TypedResidentArena::allocate(sizes),
+                TypedResidentArena::allocate_projected_sizes(sizes),
+                TypedResidentArena::allocate_projected_sizes(sizes),
             ],
             versions: vec![
                 StateVersion {

@@ -3,10 +3,11 @@ use mech_core::snapshot::{
 };
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
-    DeliveryMode, DimensionExpr, ExternalInteraction, FunctionCatalogBuilder, MResult,
-    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
-    ResidentKernelInputs, ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, ShapeInstance, ShapeRule, ValueData,
+    DeliveryMode, DimensionExpr, ExternalInteraction, FunctionCatalogBuilder,
+    ImplementationMemoryClass, MResult, OutputConstruction, ResidentKernelBindError,
+    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentShape,
+    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
+    ShapeInstance, ShapeRule, ValueData,
 };
 use std::sync::Arc;
 
@@ -74,7 +75,12 @@ fn cardinality_accepts(
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(["core"], "composite-pack", bind_composite_pack)?;
+    builder.insert_resident_factory(
+        ["core"],
+        "composite-pack",
+        ImplementationMemoryClass::CanonicalFinalize,
+        bind_composite_pack,
+    )?;
     Ok(())
 }
 
@@ -622,8 +628,8 @@ fn composite_pack(
     let admitted_children = super::budget::PreparedKernel::new(
         plan.children.len(),
         super::budget::resident_cost! {
-            comparison_work: measured.comparison_work,
-            compute_work: measured.compute_work
+            comparison_work: measured.comparison_work(),
+            compute_work: measured.compute_work()
                 .checked_add(
                     super::budget::checked_u64(plan.children.len())?
                         .checked_mul(2)
@@ -637,7 +643,7 @@ fn composite_pack(
                 .ok_or(ResidentKernelError::InvalidShape)?,
             cloned_bytes: retained_bytes,
             container_bytes: child_containers,
-            retained_nodes: measured.retained_nodes
+            retained_nodes: measured.retained_nodes()
                 .checked_add(final_output_nodes)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             ..super::budget::KernelCostEstimate::default()

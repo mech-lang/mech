@@ -214,6 +214,7 @@ impl CanonicalFunctionSpecializer for SetComprehensionDefine {
             FunctionInstance::new(implementation, invocation),
             mech_core::RuntimeFunctionId::from_name("set/comprehension"),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalSortUnique,
         )
     }
 }
@@ -238,6 +239,7 @@ impl CanonicalFunctionSpecializer for MatrixComprehensionDefine {
             FunctionInstance::new(implementation, invocation),
             mech_core::RuntimeFunctionId::from_name("matrix/comprehension"),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
     }
 }
@@ -295,6 +297,7 @@ pub fn matrix_comprehension(
             )?,
             mech_core::RuntimeFunctionId::from_name("matrix/comprehension"),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )?;
         return execute_function_instance(p, &plan, specialized);
     }

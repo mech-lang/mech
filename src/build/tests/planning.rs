@@ -535,6 +535,10 @@ impl MechFunctionCompiler for PlanningFunction {
 }
 
 impl MechFunctionFactory for PlanningFunction {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<f64 as FunctionRuntimeType>::REPRESENTATION);
 
@@ -603,6 +607,10 @@ fn malicious_matrix_relations_and_aliases_fail_without_materializing_a_project()
     struct MustNotInstantiate;
 
     impl MechFunctionFactory for MustNotInstantiate {
+        fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch
+        }
+
         const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
             FunctionValueRepresentation::AnyValue,
             FunctionValueRepresentation::AnyValue,

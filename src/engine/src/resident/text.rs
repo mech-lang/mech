@@ -1,18 +1,34 @@
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction, RegionPolicy,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, ShapeRule,
+    ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
+    OutputConstruction, RegionPolicy, ResidentKernelBindError, ResidentKernelBindRequest,
+    ResidentKernelError, ResidentKernelInputs, ResidentShape, ResidentValueKind, ResidentValueMut,
+    ResidentValueRef, ResolvedOperationContract, ShapeRule,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(["string"], "concat", bind_concat)?;
-    builder.insert_resident_factory(["matrix"], "assign-range-all", bind_string_all_assign)?;
-    builder.insert_resident_factory(["matrix"], "assign-scalar", bind_string_index_assign)?;
+    builder.insert_resident_factory(
+        ["string"],
+        "concat",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        bind_concat,
+    )?;
+    builder.insert_resident_factory(
+        ["matrix"],
+        "assign-range-all",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        bind_string_all_assign,
+    )?;
+    builder.insert_resident_factory(
+        ["matrix"],
+        "assign-scalar",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        bind_string_index_assign,
+    )?;
     builder.insert_resident_factory(
         ["matrix"],
         "assign-range",
+        ImplementationMemoryClass::NoAdditionalScratch,
         bind_semantic_string_range_assign,
     )?;
     Ok(())
@@ -33,6 +49,7 @@ fn admit_string_materialization(
     output_payload_bytes: usize,
     cloned_payload_bytes: usize,
     compute_work: usize,
+    publication_comparison_work: usize,
     staged_containers: usize,
     selector_bytes: usize,
     index_bytes: usize,
@@ -47,7 +64,10 @@ fn admit_string_materialization(
     super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
-            compute_work,
+            comparison_work: publication_comparison_work,
+            compute_work: compute_work
+                .checked_add(publication_comparison_work)
+                .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements,
             output_bytes,
             temporary_bytes: cloned_payload_bytes,
@@ -64,17 +84,21 @@ fn admit_string_materialization(
     Ok(())
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-enum StringMutationSelection {
-    Bitmap(Box<[u8]>),
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum StringMutationSelection<'a> {
+    Bitmap(&'a [u8]),
+    Indices(&'a [u64]),
     One(usize),
     All,
 }
 
-impl StringMutationSelection {
+impl StringMutationSelection<'_> {
     fn is_selected(&self, index: usize) -> bool {
         match self {
             Self::Bitmap(selected) => selected[index] != 0,
+            Self::Indices(selected) => selected
+                .iter()
+                .any(|selected| selected.checked_sub(1) == Some(index as u64)),
             Self::One(selected) => *selected == index,
             Self::All => true,
         }
@@ -82,41 +106,20 @@ impl StringMutationSelection {
 
     fn retained_nodes(&self) -> Result<u64, ResidentKernelError> {
         match self {
-            Self::Bitmap(selected) => super::budget::checked_u64(selected.len())?
-                .checked_add(1)
-                .ok_or(ResidentKernelError::InvalidShape),
-            Self::One(_) | Self::All => Ok(1),
+            Self::Bitmap(_) | Self::Indices(_) | Self::One(_) | Self::All => Ok(1),
         }
     }
 }
 
-fn admit_string_selection_normalization(
-    compute_work: usize,
-    selector_bytes: usize,
-    index_bytes: usize,
-) -> Result<(), ResidentKernelError> {
-    super::budget::PreparedKernel::new(
-        (),
-        super::budget::resident_cost! {
-            compute_work,
-            selector_bytes,
-            index_bytes,
-            ..super::budget::KernelCostEstimate::default()
-        },
-    )
-    .admit()?
-    .into_plan();
-    Ok(())
-}
-
-fn prepare_string_mutation(
-    plan: StringMutationSelection,
+fn prepare_string_mutation<'a>(
+    plan: StringMutationSelection<'a>,
     output_elements: usize,
     output_payload_bytes: usize,
     compute_work: usize,
+    publication_comparison_work: usize,
     selector_bytes: usize,
     index_bytes: usize,
-) -> Result<super::budget::AdmittedMutationPlan<StringMutationSelection>, ResidentKernelError> {
+) -> Result<super::budget::AdmittedMutationPlan<StringMutationSelection<'a>>, ResidentKernelError> {
     let container_bytes = output_elements
         .checked_mul(core::mem::size_of::<String>())
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -140,7 +143,10 @@ fn prepare_string_mutation(
             temporary_draft: lane_nodes,
         },
         super::budget::resident_cost! {
-            compute_work,
+            comparison_work: publication_comparison_work,
+            compute_work: compute_work
+                .checked_add(publication_comparison_work)
+                .ok_or(ResidentKernelError::InvalidShape)?,
             temporary_bytes: output_payload_bytes,
             cloned_bytes: output_payload_bytes,
             container_bytes,
@@ -212,11 +218,26 @@ fn string_transpose(
         return Err(ResidentKernelError::InvalidShape);
     }
     let payload_bytes = checked_string_payload(input.iter())?;
+    let publication_work =
+        output
+            .iter()
+            .enumerate()
+            .try_fold(0usize, |work, (index, current)| {
+                let output_row = index % columns;
+                let output_column = index / columns;
+                work.checked_add(
+                    current
+                        .len()
+                        .max(input[output_column + output_row * rows].len()),
+                )
+                .ok_or(ResidentKernelError::InvalidShape)
+            })?;
     admit_string_materialization(
         output.len(),
         payload_bytes,
         payload_bytes,
         output.len(),
+        publication_work,
         output.len(),
         0,
         0,
@@ -310,11 +331,23 @@ fn string_gather(
     let index_bytes = indexes_len
         .checked_mul(core::mem::size_of::<u64>())
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let mut output_ordinal = 0usize;
+    let mut publication_work = 0usize;
+    super::numeric::selector_for_each_access_index(selector, source.len(), |index| {
+        publication_work = publication_work
+            .checked_add(output[output_ordinal].len().max(source[index].len()))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        output_ordinal = output_ordinal
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
+    })?;
     admit_string_materialization(
         output.len(),
         payload_bytes,
         payload_bytes,
         output.len(),
+        publication_work,
         output.len(),
         0,
         index_bytes,
@@ -515,6 +548,7 @@ fn string_scalar_access(
         next.len(),
         next.len(),
         1,
+        target.len().max(next.len()),
         0,
         0,
         core::mem::size_of::<u64>(),
@@ -700,7 +734,7 @@ fn concat(
         .len()
         .checked_add(right.len())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_materialization(1, length, length, length, 0, 0, 0)?;
+    admit_string_materialization(1, length, length, length, target.len().max(length), 0, 0, 0)?;
     let mut next = String::with_capacity(length);
     next.push_str(left);
     next.push_str(right);
@@ -730,25 +764,19 @@ fn string_mask_assign(
         .len()
         .checked_mul(4)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_selection_normalization(compute_work, indexes.len(), 0)?;
     let mut selected = 0usize;
-    let plan = indexes
-        .iter()
-        .map(|selected_value| {
-            if *selected_value > 1 {
-                return Err(ResidentKernelError::InvalidInput);
-            }
-            selected = selected
-                .checked_add(usize::from(*selected_value != 0))
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            Ok(*selected_value)
-        })
-        .collect::<Result<Vec<_>, ResidentKernelError>>()?
-        .into_boxed_slice();
+    for selected_value in indexes {
+        if *selected_value > 1 {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        selected = selected
+            .checked_add(usize::from(*selected_value != 0))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+    }
     if selected == 0 {
         return Ok(false);
     }
-    let plan = StringMutationSelection::Bitmap(plan);
+    let plan = StringMutationSelection::Bitmap(indexes);
     let output_payload_bytes =
         target
             .iter()
@@ -762,11 +790,25 @@ fn string_mask_assign(
                     })
                     .ok_or(ResidentKernelError::InvalidShape)
             })?;
+    let publication_work =
+        target
+            .iter()
+            .enumerate()
+            .try_fold(0usize, |work, (ordinal, current)| {
+                let next_len = if plan.is_selected(ordinal) {
+                    source.len()
+                } else {
+                    current.len()
+                };
+                work.checked_add(current.len().max(next_len))
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
     let admitted = prepare_string_mutation(
         plan,
         target.len(),
         output_payload_bytes,
         compute_work,
+        publication_work,
         indexes.len(),
         0,
     )?;
@@ -828,11 +870,25 @@ fn string_index_assign(
         .len()
         .checked_mul(3)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let publication_work =
+        target
+            .iter()
+            .enumerate()
+            .try_fold(0usize, |work, (ordinal, current)| {
+                let next_len = if plan.is_selected(ordinal) {
+                    source.len()
+                } else {
+                    current.len()
+                };
+                work.checked_add(current.len().max(next_len))
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
     let admitted = prepare_string_mutation(
         plan,
         target.len(),
         output_payload_bytes,
         compute_work,
+        publication_work,
         0,
         core::mem::size_of::<u64>(),
     )?;
@@ -880,13 +936,18 @@ fn string_indices_assign(
         .len()
         .checked_mul(4)
         .and_then(|work| work.checked_add(indexes.len()))
+        .and_then(|work| {
+            target
+                .len()
+                .checked_mul(indexes.len())
+                .and_then(|selection| selection.checked_mul(3))
+                .and_then(|selection| work.checked_add(selection))
+        })
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_selection_normalization(compute_work, 0, index_bytes)?;
-    let mut selected = vec![0u8; target.len()];
     for index in indexes {
-        selected[checked_string_index(*index, target.len())?] = 1;
+        checked_string_index(*index, target.len())?;
     }
-    let plan = StringMutationSelection::Bitmap(selected.into_boxed_slice());
+    let plan = StringMutationSelection::Indices(indexes);
     let output_payload_bytes =
         target
             .iter()
@@ -900,11 +961,25 @@ fn string_indices_assign(
                     })
                     .ok_or(ResidentKernelError::InvalidShape)
             })?;
+    let publication_work =
+        target
+            .iter()
+            .enumerate()
+            .try_fold(0usize, |work, (ordinal, current)| {
+                let next_len = if plan.is_selected(ordinal) {
+                    source.len()
+                } else {
+                    current.len()
+                };
+                work.checked_add(current.len().max(next_len))
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
     let admitted = prepare_string_mutation(
         plan,
         target.len(),
         output_payload_bytes,
         compute_work,
+        publication_work,
         0,
         index_bytes,
     )?;
@@ -965,11 +1040,16 @@ fn string_all_assign(
         .len()
         .checked_mul(2)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let publication_work = target.iter().try_fold(0usize, |work, current| {
+        work.checked_add(current.len().max(source.len()))
+            .ok_or(ResidentKernelError::InvalidShape)
+    })?;
     let admitted = prepare_string_mutation(
         StringMutationSelection::All,
         target.len(),
         output_payload_bytes,
         compute_work,
+        publication_work,
         1,
         0,
     )?;
@@ -1129,7 +1209,7 @@ mod tests {
         );
         assert_eq!(output[1], "old");
 
-        let source = ["y".repeat(super::super::budget::MAX_RESIDENT_CLONED_BYTES as usize / 2)];
+        let source = ["y".repeat(super::super::budget::MAX_RESIDENT_COMPARISON_WORK as usize / 2)];
         let repeated = [2_u64, 2, 2];
         let inputs = Refs(vec![
             ResidentValueRef::String(&source),

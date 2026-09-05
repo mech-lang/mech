@@ -106,6 +106,9 @@ pub struct CompiledBytecode {
     /// Immutable semantic call certificate for each executable instruction,
     /// parallel to `program.instructions`.
     pub instruction_type_bindings: Vec<Option<crate::BoundCall>>,
+    /// Process-local R5 memory plan parallel to `program.instructions`.
+    /// This sidecar is intentionally absent from bytecode-v1.
+    pub instruction_memory_plans: Vec<Option<crate::CallMemoryPlan>>,
     /// Canonical schema authority for registers owned by canonical cells.
     /// Dense and parallel to the register space.
     pub register_schemas: Vec<Option<crate::SchemaBody>>,
@@ -165,6 +168,7 @@ pub struct CompileCtx {
     instruction_operations: Vec<Option<String>>,
     instruction_source_nodes: Vec<Option<u32>>,
     instruction_type_bindings: Vec<Option<crate::BoundCall>>,
+    instruction_memory_plans: Vec<Option<crate::CallMemoryPlan>>,
     register_schemas: BTreeMap<Register, crate::SchemaBody>,
     register_schema_conflicts: BTreeSet<Register>,
     register_type_descriptors: BTreeMap<Register, crate::ResolvedValueDescriptor>,
@@ -179,6 +183,7 @@ pub struct CompileCtx {
     current_node_operation: Option<String>,
     current_source_node: Option<u32>,
     current_node_type_binding: Option<crate::BoundCall>,
+    current_node_memory_plan: Option<crate::CallMemoryPlan>,
     next_source_node: u32,
     integrity_constraints: Vec<CompiledIntegrityConstraint>,
     compute_regions: Vec<CompiledComputeRegion>,
@@ -205,6 +210,7 @@ impl Default for CompileCtx {
             instruction_operations: Vec::new(),
             instruction_source_nodes: Vec::new(),
             instruction_type_bindings: Vec::new(),
+            instruction_memory_plans: Vec::new(),
             register_schemas: BTreeMap::new(),
             register_schema_conflicts: BTreeSet::new(),
             register_type_descriptors: BTreeMap::new(),
@@ -219,6 +225,7 @@ impl Default for CompileCtx {
             current_node_operation: None,
             current_source_node: None,
             current_node_type_binding: None,
+            current_node_memory_plan: None,
             next_source_node: 0,
             integrity_constraints: Vec::new(),
             compute_regions: Vec::new(),
@@ -284,6 +291,7 @@ impl CompileCtx {
         self.instruction_operations.remove(index);
         self.instruction_source_nodes.remove(index);
         self.instruction_type_bindings.remove(index);
+        self.instruction_memory_plans.remove(index);
     }
 
     fn remove_constant_if_unreferenced(&mut self, constant: u32) {
@@ -337,6 +345,7 @@ impl CompileCtx {
         self.current_node_operation = None;
         self.current_node_contract = None;
         self.current_node_type_binding = None;
+        self.current_node_memory_plan = None;
         self.current_source_node = Some(self.next_source_node);
         self.next_source_node = self
             .next_source_node
@@ -349,11 +358,15 @@ impl CompileCtx {
         &mut self,
         kind: CompiledNodeKind,
         type_binding: &crate::BoundCall,
+        memory_plan: &crate::CallMemoryPlan,
     ) -> MResult<()> {
         if self.current_node_kind.is_some() {
             return invalid("cannot begin a bytecode plan node while another node is active");
         }
         type_binding.operation_descriptor().validate()?;
+        if memory_plan.bound_call != *type_binding {
+            return invalid("compiler node memory plan disagrees with its bound call");
+        }
         self.current_node_kind = Some(kind);
         self.current_node_operation = Some(
             type_binding
@@ -363,6 +376,7 @@ impl CompileCtx {
         );
         self.current_node_contract = Some(type_binding.operation_descriptor().contract.clone());
         self.current_node_type_binding = Some(type_binding.clone());
+        self.current_node_memory_plan = Some(memory_plan.clone());
         self.current_source_node = Some(self.next_source_node);
         self.next_source_node = self
             .next_source_node
@@ -377,6 +391,7 @@ impl CompileCtx {
         self.current_node_contract = None;
         self.current_source_node = None;
         self.current_node_type_binding = None;
+        self.current_node_memory_plan = None;
     }
 
     pub fn record_integrity_constraint(
@@ -458,6 +473,7 @@ impl CompileCtx {
         self.instruction_operations.push(None);
         self.instruction_source_nodes.push(None);
         self.instruction_type_bindings.push(None);
+        self.instruction_memory_plans.push(None);
     }
 
     pub fn finish_program(&mut self, return_register: Register) -> MResult<CompiledBytecode> {
@@ -503,6 +519,13 @@ impl CompileCtx {
                 self.instructions.len(),
             ));
         }
+        if self.instruction_memory_plans.len() != self.instructions.len() {
+            return invalid(format!(
+                "instruction memory plan count {} does not match instruction count {}",
+                self.instruction_memory_plans.len(),
+                self.instructions.len(),
+            ));
+        }
 
         let requirements = self
             .requirements
@@ -544,6 +567,22 @@ impl CompileCtx {
         instruction_source_nodes.push(None);
         let mut instruction_type_bindings = self.instruction_type_bindings.clone();
         instruction_type_bindings.push(None);
+        let mut instruction_memory_plans = self.instruction_memory_plans.clone();
+        instruction_memory_plans.push(None);
+        for (binding, plan) in instruction_type_bindings
+            .iter()
+            .zip(&instruction_memory_plans)
+        {
+            match (binding, plan) {
+                (Some(binding), Some(plan)) if binding == &plan.bound_call => {}
+                (None, None) => {}
+                _ => {
+                    return invalid(
+                        "executable compiler type binding and memory plan must be paired",
+                    );
+                }
+            }
+        }
 
         let mut register_schemas = vec![None; self.next_register as usize];
         for (register, schema) in &self.register_schemas {
@@ -649,6 +688,7 @@ impl CompileCtx {
             instruction_operations,
             instruction_source_nodes,
             instruction_type_bindings,
+            instruction_memory_plans,
             register_schemas,
             register_type_descriptors,
             absent_registers: self.absent_registers.clone(),
@@ -1160,6 +1200,7 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations.push(None);
         self.instruction_source_nodes.push(None);
         self.instruction_type_bindings.push(None);
+        self.instruction_memory_plans.push(None);
     }
 
     fn emit_composite_pack(
@@ -1188,6 +1229,7 @@ impl BytecodeCompilerContext for CompileCtx {
         // second lowering of the source plan node whose input requested it.
         self.instruction_source_nodes.push(None);
         self.instruction_type_bindings.push(None);
+        self.instruction_memory_plans.push(None);
     }
 
     fn emit_nullop(&mut self, function: u64, destination: Register) {
@@ -1204,6 +1246,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 
     fn emit_unop(&mut self, function: u64, destination: Register, source: Register) {
@@ -1221,6 +1265,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 
     fn emit_binop(&mut self, function: u64, destination: Register, lhs: Register, rhs: Register) {
@@ -1239,6 +1285,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 
     fn emit_declaration_binary(
@@ -1260,6 +1308,7 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_operations.push(None);
         self.instruction_source_nodes.push(None);
         self.instruction_type_bindings.push(None);
+        self.instruction_memory_plans.push(None);
     }
 
     fn emit_ternop(
@@ -1286,6 +1335,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 
     fn emit_quadop(
@@ -1315,6 +1366,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 
     fn emit_varop(&mut self, function: u64, destination: Register, arguments: Vec<Register>) {
@@ -1333,6 +1386,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 
     fn emit_host_call(
@@ -1355,6 +1410,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 
     fn emit_resource_read(&mut self, requirement: u32, destination: Register) {
@@ -1371,6 +1428,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 
     fn emit_resource_write(&mut self, requirement: u32, destination: Register, source: Register) {
@@ -1388,6 +1447,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 
     fn emit_resource_send(&mut self, requirement: u32, destination: Register, source: Register) {
@@ -1405,6 +1466,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_source_nodes.push(self.current_source_node);
         self.instruction_type_bindings
             .push(self.current_node_type_binding.clone());
+        self.instruction_memory_plans
+            .push(self.current_node_memory_plan.clone());
     }
 }
 

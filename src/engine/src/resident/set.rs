@@ -9,11 +9,11 @@ use mech_core::snapshot::{
 };
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
-    DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, SchemaId, SchemaKey, SetValueRelation, ShapeInstance,
-    ShapeRule, ValueData,
+    DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
+    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
+    ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
+    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, SchemaId, SchemaKey,
+    SetValueRelation, ShapeInstance, ShapeRule, ValueData,
 };
 #[cfg(test)]
 use std::cmp::Ordering;
@@ -79,24 +79,41 @@ fn cardinality_bounds(
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(["set"], "union", bind_union)?;
-    builder.insert_resident_factory(["set"], "cartesian-product", bind_cartesian_product)?;
-    builder.insert_resident_factory(["set"], "difference", bind_difference)?;
-    builder.insert_resident_factory(["set"], "disjoint", bind_disjoint)?;
-    builder.insert_resident_factory(["set"], "equals", bind_equals)?;
-    builder.insert_resident_factory(["set"], "intersection", bind_intersection)?;
-    builder.insert_resident_factory(["set"], "not_equals", bind_not_equals)?;
-    builder.insert_resident_factory(["set"], "powerset", bind_powerset)?;
-    builder.insert_resident_factory(["set"], "proper-superset", bind_proper_superset)?;
-    builder.insert_resident_factory(["set"], "proper_subset", bind_proper_subset)?;
-    builder.insert_resident_factory(["set"], "size", bind_size)?;
-    builder.insert_resident_factory(["set"], "subset", bind_subset)?;
-    builder.insert_resident_factory(["set"], "superset", bind_superset)?;
-    builder.insert_resident_factory(["set"], "symmetric-difference", bind_symmetric_difference)?;
-    builder.insert_resident_factory(["set"], "element-of", bind_element_of)?;
-    builder.insert_resident_factory(["set"], "not-element-of", bind_not_element_of)?;
-    builder.insert_resident_factory(["set"], "insert", bind_insert)?;
-    builder.insert_resident_factory(["set"], "remove", bind_remove)?;
+    let canonical = ImplementationMemoryClass::CanonicalSortUnique;
+    let no_scratch = ImplementationMemoryClass::NoAdditionalScratch;
+    builder.insert_resident_factory(["set"], "union", canonical, bind_union)?;
+    builder.insert_resident_factory(
+        ["set"],
+        "cartesian-product",
+        canonical,
+        bind_cartesian_product,
+    )?;
+    builder.insert_resident_factory(["set"], "difference", canonical, bind_difference)?;
+    builder.insert_resident_factory(["set"], "disjoint", no_scratch, bind_disjoint)?;
+    builder.insert_resident_factory(["set"], "equals", no_scratch, bind_equals)?;
+    builder.insert_resident_factory(["set"], "intersection", canonical, bind_intersection)?;
+    builder.insert_resident_factory(["set"], "not_equals", no_scratch, bind_not_equals)?;
+    builder.insert_resident_factory(["set"], "powerset", canonical, bind_powerset)?;
+    builder.insert_resident_factory(
+        ["set"],
+        "proper-superset",
+        no_scratch,
+        bind_proper_superset,
+    )?;
+    builder.insert_resident_factory(["set"], "proper_subset", no_scratch, bind_proper_subset)?;
+    builder.insert_resident_factory(["set"], "size", no_scratch, bind_size)?;
+    builder.insert_resident_factory(["set"], "subset", no_scratch, bind_subset)?;
+    builder.insert_resident_factory(["set"], "superset", no_scratch, bind_superset)?;
+    builder.insert_resident_factory(
+        ["set"],
+        "symmetric-difference",
+        canonical,
+        bind_symmetric_difference,
+    )?;
+    builder.insert_resident_factory(["set"], "element-of", no_scratch, bind_element_of)?;
+    builder.insert_resident_factory(["set"], "not-element-of", no_scratch, bind_not_element_of)?;
+    builder.insert_resident_factory(["set"], "insert", canonical, bind_insert)?;
+    builder.insert_resident_factory(["set"], "remove", canonical, bind_remove)?;
     Ok(())
 }
 
@@ -796,8 +813,8 @@ fn admit_set_candidate_operation(
     let mut cost = meter.estimate();
     let set_bytes = set_footprint.retained_bytes;
     let set_nodes = set_footprint.node_count;
-    let current_persistent_nodes = cost.retained_nodes;
-    cost.retained_nodes = 0;
+    let current_persistent_nodes = cost.retained_nodes();
+    cost.set_retained_nodes(0);
     let Some(output_elements) = output_elements else {
         return PreparedMutationPlan::new(
             operation,
@@ -832,26 +849,22 @@ fn admit_set_candidate_operation(
         checked_u64(output_elements)?,
         checked_u64(core::mem::size_of::<ValueDataDraft>())?,
     ])?;
-    cost.compute_work = cost
-        .compute_work
-        .checked_add(checked_u64(output_elements)?)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.temporary_bytes = cost
-        .temporary_bytes
-        .checked_add(
-            output_clone_bytes
-                .checked_mul(2)
-                .ok_or(ResidentKernelError::InvalidShape)?,
-        )
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.cloned_bytes = cost
-        .cloned_bytes
-        .checked_add(output_clone_bytes)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.container_bytes = cost
-        .container_bytes
-        .checked_add(container_bytes)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    cost.set_compute_work(
+        cost.compute_work()
+            .checked_add(checked_u64(output_elements)?)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    cost.add_temporary_bytes(
+        output_clone_bytes
+            .checked_mul(2)
+            .and_then(|bytes| bytes.checked_add(container_bytes))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    cost.set_cloned_bytes(
+        cost.cloned_bytes()
+            .checked_add(output_clone_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    );
     let output_footprint = mech_core::snapshot::ValueFootprint {
         encoded_bytes: set_footprint
             .encoded_bytes
@@ -880,14 +893,16 @@ fn admit_set_candidate_operation(
         }
         _ => 0,
     };
-    cost.comparison_work = cost
-        .comparison_work
-        .checked_add(publication_work)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.compute_work = cost
-        .compute_work
-        .checked_add(publication_work)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    cost.set_comparison_work(
+        cost.comparison_work()
+            .checked_add(publication_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    cost.set_compute_work(
+        cost.compute_work()
+            .checked_add(publication_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
     operation.canonicalization_work_limit = Some(finalization_work);
     // The cloned `ValueData` population and the canonical draft tree coexist
     // while the immutable current set remains borrowed. The mutation plan
@@ -1249,7 +1264,7 @@ fn merged_set_element_drafts(
     let mut footprint_meter = ResidentBudgetMeter::default();
     let (left_bytes, left_nodes) = value_retained_cost(&mut footprint_meter, kernel, left)?;
     let (right_bytes, right_nodes) = value_retained_cost(&mut footprint_meter, kernel, right)?;
-    let measurement_work = footprint_meter.estimate().comparison_work;
+    let measurement_work = footprint_meter.estimate().comparison_work();
     let merge_compute_work = checked_u64(checked_sum(&[left_count, right_count])?)?;
     let borrowed_nodes = checked_cost_sum(&[left_nodes, right_nodes])?;
     let staged_output_nodes = borrowed_nodes;
@@ -1448,11 +1463,11 @@ fn set_cartesian_product(
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
         comparison_work: footprint_work
-            .comparison_work
+            .comparison_work()
             .checked_add(finalization_work)
             .ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: checked_cost_sum(&[
-            footprint_work.compute_work,
+            footprint_work.compute_work(),
             checked_u64(output_len)?,
             finalization_work,
         ])?,
@@ -1630,11 +1645,11 @@ fn set_powerset(
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
         comparison_work: checked_cost_sum(&[
-            footprint_work.comparison_work,
+            footprint_work.comparison_work(),
             finalization_work,
         ])?,
         compute_work: checked_cost_sum(&[
-            footprint_work.compute_work,
+            footprint_work.compute_work(),
             checked_u64(output_elements)?,
             finalization_work,
         ])?,
@@ -1736,17 +1751,20 @@ fn admit_set_relation(
         set_cardinality(right)?,
     ])?)?;
     let mut cost = meter.estimate();
-    cost.compute_work = cost
-        .compute_work
-        .checked_add(relation_compute_work)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    cost.output_elements = 1;
-    cost.output_bytes = checked_u64(core::mem::size_of::<u8>())?;
-    cost.retained_nodes = left_footprint
-        .node_count
-        .checked_add(right_footprint.node_count)
-        .and_then(|nodes| nodes.checked_add(1))
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    cost.set_compute_work(
+        cost.compute_work()
+            .checked_add(relation_compute_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    cost.set_output_elements(1);
+    cost.set_output_bytes(checked_u64(core::mem::size_of::<u8>())?);
+    cost.set_retained_nodes(
+        left_footprint
+            .node_count
+            .checked_add(right_footprint.node_count)
+            .and_then(|nodes| nodes.checked_add(1))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    );
     PreparedKernel::new(cost.remaining_incremental_work()?, cost)
         .admit()
         .map(|admitted| admitted.into_plan())

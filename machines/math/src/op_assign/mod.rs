@@ -269,6 +269,10 @@ macro_rules! impl_op_assign_range_fxn_s {
                 IxVec::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
             }
@@ -429,6 +433,10 @@ macro_rules! impl_op_assign_range_fxn_v {
                 <naMatrix<T, R2, C2, S2> as FunctionRuntimeType>::REPRESENTATION,
                 IxVec::REPRESENTATION,
             );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
@@ -752,6 +760,10 @@ macro_rules! impl_assign_scalar_scalar {
           T::REPRESENTATION,
         );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
         fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
           Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
         }
@@ -840,6 +852,10 @@ macro_rules! impl_assign_vector_vector {
           MatA::REPRESENTATION,
           MatB::REPRESENTATION,
         );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
         fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
           Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
@@ -942,6 +958,10 @@ macro_rules! impl_assign_vector_scalar {
           FunctionValueRepresentation::AnyValue,
           T::REPRESENTATION,
         );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
         fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
           Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)

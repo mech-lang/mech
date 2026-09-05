@@ -139,6 +139,10 @@ macro_rules! impl_string_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
                 Some($crate::string_binary_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,

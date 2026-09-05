@@ -10,6 +10,10 @@ pub(crate) struct SetSizeFxn {
 }
 
 impl MechFunctionFactory for SetSizeFxn {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::U64,
         FunctionValueRepresentation::Set,

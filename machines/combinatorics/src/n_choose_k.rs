@@ -602,6 +602,10 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::binary(T::REPRESENTATION, T::REPRESENTATION, T::REPRESENTATION);
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, n, k) = invocation.expect_binary()?;
         let n: Ref<T> = n.try_ref()?;
@@ -746,6 +750,10 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
         T::REPRESENTATION,
     );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, n, k) = invocation.expect_binary()?;

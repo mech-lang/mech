@@ -72,6 +72,10 @@ macro_rules! vertcat_two_args {
                 <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg0, arg1) = invocation.expect_binary()?;
                 let e0: Ref<$e0<T>> = arg0.try_ref()?;
@@ -163,6 +167,10 @@ macro_rules! vertcat_three_args {
                 <$e2<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
                 let e0: Ref<$e0<T>> = arg0.try_ref()?;
@@ -250,6 +258,10 @@ macro_rules! vertcat_four_args {
                 <$e3<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
                 let e0: Ref<$e0<T>> = arg0.try_ref()?;
@@ -335,6 +347,10 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg0, arg1) = invocation.expect_binary()?;
@@ -424,6 +440,10 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
@@ -518,6 +538,10 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
@@ -616,6 +640,10 @@ where
         <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, inputs) = invocation.expect_variadic()?;
@@ -764,6 +792,10 @@ macro_rules! vertical_concatenate {
               FunctionValueRepresentation::AnyValue,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, _arg0) = invocation.expect_unary()?;
                 let output = out.value();
@@ -841,6 +873,10 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg0, arg1) = invocation.expect_binary()?;
@@ -931,6 +967,10 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
@@ -1025,6 +1065,10 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
@@ -1124,6 +1168,10 @@ where
         <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
         FunctionValueRepresentation::AnyValue,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, inputs) = invocation.expect_variadic()?;
@@ -1232,6 +1280,10 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<Matrix1<T> as FunctionRuntimeType>::REPRESENTATION);
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let out = invocation.expect_nullary()?;
         let output = out.value();
@@ -1324,6 +1376,10 @@ where
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<DVector<T> as FunctionRuntimeType>::REPRESENTATION);
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let out = invocation.expect_nullary()?;
@@ -1603,6 +1659,10 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
+
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;

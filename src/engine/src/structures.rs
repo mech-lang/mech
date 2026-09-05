@@ -104,6 +104,7 @@ fn register_composite_pack(
         ResolvedOperationDescriptor::from_name("core/composite-pack", composite_pack_contract())?,
         RuntimeFunctionId::from_name("core/composite-pack"),
         ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
     )?)?;
     Ok(())
 }

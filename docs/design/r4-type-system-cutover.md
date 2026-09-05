@@ -57,7 +57,11 @@ sidecars and are not added to bytecode-v1.
 
 ## Later phases
 
-Allocation and lifetime planning remain R5. Managed allocation, enforcement,
-and reclamation remain R6. R4 exposes the authoritative descriptors and
-compatible physical requirements those phases consume, but performs no
-capacity, placement, reuse, liveness, transfer, or budget planning.
+R5 Memory planner — complete. It consumes R4's authoritative descriptors and
+compatible physical requirements to derive deterministic capacity, placement,
+reuse, liveness, transfer, and budget plans. R6 Memory runtime cutover — next.
+R6 consumes the R5 layouts, capacities, arena placements, lifetimes, alias
+groups, reuse groups, transaction requirements, budgets, and transfer
+requirements. R6 may implement allocation handles, pools, managed backing,
+actual reuse, movement, publication, and reclamation. R6 may not silently
+derive a different physical plan.

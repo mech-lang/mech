@@ -111,6 +111,10 @@ pub struct AtomNeq {
 }
 #[cfg(feature = "atom")]
 impl MechFunctionFactory for AtomNeq {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
         FunctionValueRepresentation::Atom,
@@ -171,6 +175,10 @@ pub struct TableNeq {
 }
 #[cfg(feature = "table")]
 impl MechFunctionFactory for TableNeq {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
         FunctionValueRepresentation::Table,

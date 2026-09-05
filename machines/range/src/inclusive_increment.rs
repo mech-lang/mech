@@ -85,6 +85,10 @@ where
         T::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_INCLUSIVE_INCREMENT_RANGE_CONTRACT)
     }

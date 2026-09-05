@@ -34,6 +34,7 @@ pub(crate) fn activation_failure(error: ResidentActivationError) -> mech_core::M
         | InvalidDependency { .. }
         | UnknownOutput { .. } => ResidentRouteFailureClass::InvalidArtifact,
         RegionSizeOverflow
+        | ResidentMemoryPlanRejected { .. }
         | StaticSelectorResolutionLimit { .. }
         | KernelBind { .. }
         | ActivationKernel { .. }

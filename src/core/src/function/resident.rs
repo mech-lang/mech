@@ -1,7 +1,8 @@
 use core::any::Any;
 
 use crate::{
-    BoundCall, ResolvedOperationContract, SchemaId, SchemaKey, SchemaTable, ShapeInstance, Value,
+    BoundCall, ImplementationMemoryClass, ResolvedOperationContract, SchemaId, SchemaKey,
+    SchemaTable, ShapeInstance, Value,
 };
 
 #[cfg(feature = "no_std")]
@@ -674,5 +675,6 @@ impl ResidentOperationKey {
 #[derive(Clone, Debug)]
 pub struct ResidentKernelFactoryEntry {
     pub key: ResidentOperationKey,
+    pub implementation_memory: ImplementationMemoryClass,
     pub factory: ResidentKernelFactory,
 }

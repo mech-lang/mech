@@ -118,6 +118,10 @@ macro_rules! declare_structural_access_alias {
         }
 
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
             const SIGNATURE: RuntimeFunctionSignature =
                 RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
 
@@ -675,6 +679,7 @@ fn canonical_access(
         ),
         mech_core::RuntimeFunctionId::from_name(name),
         mech_core::ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
     )
 }
 
@@ -788,6 +793,7 @@ fn canonical_swizzle(
         ),
         mech_core::RuntimeFunctionId::from_name("CanonicalSwizzle"),
         mech_core::ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
     )
 }
 

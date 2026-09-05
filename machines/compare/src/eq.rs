@@ -110,6 +110,10 @@ pub struct AtomEq {
 }
 #[cfg(feature = "atom")]
 impl MechFunctionFactory for AtomEq {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
         FunctionValueRepresentation::Atom,
@@ -170,6 +174,10 @@ pub struct TableEq {
 }
 #[cfg(feature = "table")]
 impl MechFunctionFactory for TableEq {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
         FunctionValueRepresentation::Table,

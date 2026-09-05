@@ -21,6 +21,10 @@ impl MechFunctionImpl for TupleAccessElement {
 }
 
 impl MechFunctionFactory for TupleAccessElement {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
 

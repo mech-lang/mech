@@ -224,6 +224,10 @@ macro_rules! impl_logic_binop {
             out: Ref<$out_type>,
         }
         impl MechFunctionFactory for $struct_name {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg1_type as FunctionRuntimeType>::REPRESENTATION,

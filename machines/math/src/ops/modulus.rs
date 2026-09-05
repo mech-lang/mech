@@ -108,6 +108,10 @@ macro_rules! impl_binop2 {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
                 Some(super::arithmetic_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,

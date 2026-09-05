@@ -1,7 +1,7 @@
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    DimensionExpr, ExternalInteraction, FloatWidth, FunctionCatalogBuilder, MResult,
+    ExternalInteraction, FloatWidth, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
     OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
     ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
     ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, ShapeRule,
@@ -17,7 +17,12 @@ struct MatrixLiteralPlan {
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(["matrix"], "literal", bind_matrix_literal)?;
+    builder.insert_resident_factory(
+        ["matrix"],
+        "literal",
+        ImplementationMemoryClass::CanonicalFinalize,
+        bind_matrix_literal,
+    )?;
     Ok(())
 }
 
@@ -63,16 +68,23 @@ fn bind_matrix_literal(
     else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let [
-        DimensionExpr::Constant(rows),
-        DimensionExpr::Constant(columns),
-    ] = dimensions.as_ref()
-    else {
+    let [rows, columns] = dimensions.as_ref() else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let columns =
-        usize::try_from(*columns).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    let rows = request
+        .output
+        .shape_instance
+        .resolve_dimension(rows)
+        .ok()
+        .and_then(|rows| usize::try_from(rows).ok())
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let columns = request
+        .output
+        .shape_instance
+        .resolve_dimension(columns)
+        .ok()
+        .and_then(|columns| usize::try_from(columns).ok())
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let count = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
@@ -149,6 +161,36 @@ fn bind_matrix_literal(
     } else {
         Ok(kernel)
     }
+}
+
+#[cfg(test)]
+fn admit_literal_output(count: usize, kind: ResidentValueKind) -> Result<(), ResidentKernelError> {
+    let slot_bytes = match kind {
+        ResidentValueKind::Bool => core::mem::size_of::<u8>(),
+        ResidentValueKind::Index => core::mem::size_of::<u64>(),
+        ResidentValueKind::F64 => core::mem::size_of::<f64>(),
+        ResidentValueKind::String => core::mem::size_of::<String>(),
+        ResidentValueKind::Snapshot => core::mem::size_of::<Option<mech_core::Value>>(),
+    };
+    let resident_elements = if kind == ResidentValueKind::Snapshot {
+        1
+    } else {
+        count
+    };
+    let output_bytes = resident_elements
+        .checked_mul(slot_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            output_elements: count,
+            output_bytes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
 }
 
 fn target_index(source: usize, rows: usize, columns: usize) -> usize {
@@ -369,8 +411,8 @@ fn matrix_literal(
                 .ok_or(ResidentKernelError::InvalidShape)?;
             let measured = footprint_meter.estimate();
             let cost = super::budget::resident_cost! {
-                comparison_work: measured.comparison_work,
-                compute_work: measured.compute_work
+                comparison_work: measured.comparison_work(),
+                compute_work: measured.compute_work()
                     .checked_add(count_u64.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?)
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 output_elements: count,
@@ -383,7 +425,7 @@ fn matrix_literal(
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 container_bytes,
                 retained_nodes: super::budget::checked_cost_sum(&[
-                    measured.retained_nodes,
+                    measured.retained_nodes(),
                     draft_nodes,
                     final_nodes,
                 ])?,
@@ -434,8 +476,9 @@ fn matrix_literal(
 mod tests {
     use super::*;
     use mech_core::{
-        DeclaredOperationContract, ResidentPortLayout, ResolvedInputPort, ResolvedOutputPort,
-        SchemaDraft, SchemaId, SchemaTable, SchemaTableBuilder, ValueDataDraft, ValueDraft,
+        DeclaredOperationContract, DimensionExpr, ResidentPortLayout, ResolvedInputPort,
+        ResolvedOutputPort, SchemaDraft, SchemaId, SchemaTable, SchemaTableBuilder, ValueDataDraft,
+        ValueDraft,
         snapshot::{F64Bits, SnapshotValidationContext},
     };
 
@@ -938,6 +981,15 @@ mod tests {
             kernel
                 .execute(&Inputs(Vec::new()), ResidentValueMut::F64(&mut output))
                 .unwrap()
+        );
+    }
+
+    #[test]
+    fn snapshot_literal_output_admission_uses_semantic_element_cardinality() {
+        assert!(admit_literal_output(65_536, ResidentValueKind::Snapshot).is_ok());
+        assert_eq!(
+            admit_literal_output(65_537, ResidentValueKind::Snapshot),
+            Err(ResidentKernelError::InvalidShape),
         );
     }
 

@@ -385,6 +385,10 @@ macro_rules! table_join_factory {
         struct $factory;
 
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 FunctionValueRepresentation::Table,
                 FunctionValueRepresentation::Table,
@@ -590,6 +594,7 @@ macro_rules! table_join_specializer {
                         stringify!($mode)
                     )),
                     mech_core::ExecutionTarget::DirectRuntime,
+                    mech_core::ImplementationMemoryClass::CanonicalFinalize,
                 )
             }
         }

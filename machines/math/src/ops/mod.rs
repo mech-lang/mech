@@ -468,6 +468,10 @@ macro_rules! impl_checked_arithmetic_binop {
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
                 arithmetic_semantic_contract!($out_type $(, $semantic_contract)?)
             }

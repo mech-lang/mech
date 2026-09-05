@@ -258,6 +258,10 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(T::REPRESENTATION, T::REPRESENTATION);
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (sink, source) = invocation.expect_unary()?;
         Ok(Box::new(Self {
@@ -1076,6 +1080,7 @@ fn canonical_indexed_assignment(
         ),
         mech_core::RuntimeFunctionId::from_name("AssignCanonicalSelection"),
         mech_core::ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
     )
 }
 
@@ -1118,6 +1123,7 @@ impl CanonicalFunctionSpecializer for AssignValue {
             ),
             runtime_function,
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
     }
 }
@@ -1323,6 +1329,7 @@ impl CanonicalFunctionSpecializer for AddAssignValue {
             ),
             mech_core::RuntimeFunctionId::from_name("AddAssignCanonicalTable"),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
     }
 }

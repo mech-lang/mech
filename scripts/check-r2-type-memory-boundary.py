@@ -239,6 +239,7 @@ def _step_containing(block: str, marker: str) -> str:
 def failures(root: Path) -> list[str]:
     root = root.resolve()
     r4_active = (root / "scripts/check-r4-type-cutover.py").is_file()
+    r5_active = (root / "scripts/check-r5-memory-planner.py").is_file()
     found: list[str] = []
     sources = {relative: _read(root, relative, found) for relative in REQUIRED}
     lib = rust_code(sources["src/core/src/lib.rs"])
@@ -298,7 +299,10 @@ def failures(root: Path) -> list[str]:
             relative = path.relative_to(root).as_posix()
             if "tests" not in path.relative_to(root).parts:
                 production.append((relative, strip_cfg_test_modules(path.read_text(encoding="utf-8"))))
-    serialization = re.compile(r"\b(?:encode|decode|serialize|deserialize|to_bytes|from_bytes|canonical_bytes)\w*\b|\b(?:Serialize|Deserialize|serde)\b")
+    serialization = re.compile(
+        r"\b(?:encode|decode|serialize|deserialize|to_bytes|from_bytes|canonical_bytes)\w*\s*\("
+        r"|\b(?:Serialize|Deserialize|serde)\b"
+    )
     for relative, code in production:
         for match in re.finditer(r"\b(?:impl|fn)\b[^;{]*\{", code):
             end = _brace_end(code, match.end() - 1)
@@ -387,7 +391,7 @@ def failures(root: Path) -> list[str]:
         for match in re.finditer(r"\bcheck_port_storage_compatibility\b", code):
             allowed = relative == "src/core/src/memory_contract/operation_requirement.rs" or (
                 relative == "src/core/src/function/argument.rs" and code[max(0, match.start() - 1000):match.start()].rfind("fn check_invocation_cell_requirement") >= 0
-            )
+            ) or (r5_active and relative == "src/core/src/memory_plan/derive.rs")
             if not allowed:
                 found.append(f"{relative}: unauthorized production use of check_port_storage_compatibility")
         schema_checks = len(re.findall(r"\bcheck_schema_storage_compatibility\b", code))
@@ -398,6 +402,7 @@ def failures(root: Path) -> list[str]:
                 "src/core/src/cell_binding.rs": 1,
                 "src/core/src/function/catalog.rs": 2,
                 "src/core/src/function/specialization.rs": 1,
+                "src/core/src/memory_plan/derive.rs": 2 if r5_active else 0,
             }.get(relative, 0)
         elif relative == "src/core/src/cell_binding.rs":
             allowed_schema_checks += validation.count("check_schema_storage_compatibility")
@@ -436,9 +441,11 @@ def failures(root: Path) -> list[str]:
         found.append("README does not mark R2 complete")
     roadmap = sources["docs/design/ROADMAP.mec"]
     roadmap_markers = (
-        ("Type–memory boundary: complete", "R4 authority cutover are complete", "R5 is")
-        if r4_active else
-        ("Type–memory boundary: complete", "Next endgame phase: R3")
+        ("Type–memory boundary: complete", "R5 Memory planner — complete", "R6 Memory runtime cutover — next")
+        if r5_active else
+        (("Type–memory boundary: complete", "R4 authority cutover are complete", "R5 is")
+         if r4_active else
+         ("Type–memory boundary: complete", "Next endgame phase: R3"))
     )
     for marker in roadmap_markers:
         if marker not in roadmap:

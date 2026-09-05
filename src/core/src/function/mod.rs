@@ -180,6 +180,9 @@ impl MechErrorKind for UserFunctionIdCollision {
 pub trait MechFunctionFactory {
     const SIGNATURE: RuntimeFunctionSignature;
 
+    /// Closed R5 declaration of heap work beyond generic atomic publication.
+    fn implementation_memory_class() -> ImplementationMemoryClass;
+
     /// Semantic memory contract declared by a statically registered runtime
     /// implementation. Fixed operation bindings must provide this authority
     /// before their constructor can be called.
@@ -1242,6 +1245,7 @@ enum ReactivePlanFunctionStorage {
     Bound {
         instance: FunctionInstance,
         bound_call: Option<BoundCall>,
+        memory_plan: Option<CallMemoryPlan>,
     },
 }
 
@@ -1263,16 +1267,22 @@ impl ReactivePlanFunction {
             storage: ReactivePlanFunctionStorage::Bound {
                 instance,
                 bound_call: None,
+                memory_plan: None,
             },
             identity: Rc::new(()),
         }
     }
 
-    fn new_specialized(instance: FunctionInstance, bound_call: BoundCall) -> Self {
+    fn new_specialized(
+        instance: FunctionInstance,
+        bound_call: BoundCall,
+        memory_plan: CallMemoryPlan,
+    ) -> Self {
         Self {
             storage: ReactivePlanFunctionStorage::Bound {
                 instance,
                 bound_call: Some(bound_call),
+                memory_plan: Some(memory_plan),
             },
             identity: Rc::new(()),
         }
@@ -1296,6 +1306,13 @@ impl ReactivePlanFunction {
         match &self.storage {
             ReactivePlanFunctionStorage::Direct(_) => None,
             ReactivePlanFunctionStorage::Bound { bound_call, .. } => bound_call.as_ref(),
+        }
+    }
+
+    pub fn memory_plan(&self) -> Option<&CallMemoryPlan> {
+        match &self.storage {
+            ReactivePlanFunctionStorage::Direct(_) => None,
+            ReactivePlanFunctionStorage::Bound { memory_plan, .. } => memory_plan.as_ref(),
         }
     }
 
@@ -1952,7 +1969,7 @@ impl ReactivePlan {
         instance: FunctionInstance,
         activation: Option<&ActivationRegistrationScope>,
     ) -> MResult<ReactiveNodeId> {
-        self.register_bound_with_activation(instance, None, activation)
+        self.register_bound_with_activation(instance, None, None, activation)
     }
 
     pub fn register_specialized_with_activation(
@@ -1960,14 +1977,20 @@ impl ReactivePlan {
         specialized: SpecializedFunction,
         activation: Option<&ActivationRegistrationScope>,
     ) -> MResult<ReactiveNodeId> {
-        let (instance, bound_call) = specialized.into_parts();
-        self.register_bound_with_activation(instance, Some(bound_call), activation)
+        let (instance, bound_call, memory_plan) = specialized.into_parts();
+        self.register_bound_with_activation(
+            instance,
+            Some(bound_call),
+            Some(memory_plan),
+            activation,
+        )
     }
 
     fn register_bound_with_activation(
         &mut self,
         instance: FunctionInstance,
         bound_call: Option<BoundCall>,
+        memory_plan: Option<CallMemoryPlan>,
         activation: Option<&ActivationRegistrationScope>,
     ) -> MResult<ReactiveNodeId> {
         let node_id = self.nodes.len();
@@ -2082,9 +2105,12 @@ impl ReactivePlan {
             inputs,
             outputs,
             kind: node_kind,
-            function: match bound_call {
-                Some(bound_call) => ReactivePlanFunction::new_specialized(instance, bound_call),
-                None => ReactivePlanFunction::new_instance(instance),
+            function: match (bound_call, memory_plan) {
+                (Some(bound_call), Some(memory_plan)) => {
+                    ReactivePlanFunction::new_specialized(instance, bound_call, memory_plan)
+                }
+                (None, None) => ReactivePlanFunction::new_instance(instance),
+                _ => unreachable!("bound call and memory plan remain paired"),
             },
         };
 

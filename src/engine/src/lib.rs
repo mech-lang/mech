@@ -59,6 +59,8 @@ pub mod intrinsics;
 pub mod literals;
 #[cfg(feature = "semantic-compiler")]
 pub mod mechdown;
+#[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
+pub mod memory_planner;
 #[cfg(feature = "semantic-compiler")]
 pub mod patterns;
 pub mod program;

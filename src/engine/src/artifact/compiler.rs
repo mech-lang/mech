@@ -185,12 +185,13 @@ pub fn resolve_compiled_external_contracts(
     compiled: &mut CompiledBytecode,
     resolver: &dyn ExternalRequirementContractResolver,
 ) -> MResult<()> {
-    for ((instruction, contract), binding) in compiled
+    for (((instruction, contract), binding), memory_plan) in compiled
         .program
         .instructions
         .iter()
         .zip(&mut compiled.instruction_contracts)
         .zip(&mut compiled.instruction_type_bindings)
+        .zip(&mut compiled.instruction_memory_plans)
     {
         let requirement = match instruction {
             BytecodeInstruction::HostCall { requirement, .. }
@@ -223,6 +224,17 @@ pub fn resolve_compiled_external_contracts(
                 )
             })?;
             binding.resolve_operation_contract(resolved)?;
+            let memory_plan = memory_plan.as_mut().ok_or_else(|| {
+                mech_core::MechError::new(
+                    mech_core::GenericError {
+                        msg: "compiled external instruction has no memory-plan certificate"
+                            .to_owned(),
+                    },
+                    None,
+                )
+            })?;
+            *memory_plan = mech_core::replan_call_memory(memory_plan, binding)
+                .map_err(|error| mech_core::MechError::new(error, None).with_compiler_loc())?;
         }
     }
     Ok(())
@@ -1095,6 +1107,11 @@ fn compile_executable_program_artifact_from_semantics(
         "instruction_type_bindings",
         compiled.program.instructions.len(),
         compiled.instruction_type_bindings.len(),
+    )?;
+    validate_compiled_metadata_length(
+        "instruction_memory_plans",
+        compiled.program.instructions.len(),
+        compiled.instruction_memory_plans.len(),
     )?;
     validate_compiled_metadata_length(
         "register_schemas",
@@ -2604,15 +2621,22 @@ fn validate_compiled_type_sidecars(
     compiled: &CompiledBytecode,
     catalog: &FunctionCatalog,
 ) -> Result<(), ArtifactBuildError> {
-    for (index, (instruction, binding)) in compiled
+    for (index, ((instruction, binding), memory_plan)) in compiled
         .program
         .instructions
         .iter()
         .zip(&compiled.instruction_type_bindings)
+        .zip(&compiled.instruction_memory_plans)
         .enumerate()
     {
         let instruction_index = checked_u32(index, "instruction")?;
         let Some(binding) = binding else {
+            if memory_plan.is_some() {
+                return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                    instruction: instruction_index,
+                    reason: "memory plan exists without a semantic type binding".to_owned(),
+                });
+            }
             if matches!(
                 compiled.instruction_roles[index],
                 Some(CompiledInstructionRole::Node(_))
@@ -2625,6 +2649,18 @@ fn validate_compiled_type_sidecars(
             }
             continue;
         };
+        let Some(memory_plan) = memory_plan else {
+            return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                instruction: instruction_index,
+                reason: "semantic type binding has no R5 memory plan".to_owned(),
+            });
+        };
+        if memory_plan.bound_call != *binding {
+            return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
+                instruction: instruction_index,
+                reason: "R5 memory plan disagrees with semantic type binding".to_owned(),
+            });
+        }
         binding.operation_descriptor().validate().map_err(|error| {
             ArtifactBuildError::CompiledTypeBindingMismatch {
                 instruction: instruction_index,

@@ -1,5 +1,48 @@
+use std::sync::{Arc, Mutex};
+
 use mech_core::snapshot::{SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint};
-use mech_core::{ResidentKernelError, SchemaBody, SchemaId, SchemaTable, Value, ValueData};
+use mech_core::{
+    ResidentKernelError, ResourceDemand, SchemaBody, SchemaId, SchemaTable, Value, ValueData,
+};
+
+use crate::memory_planner::{
+    TurnMemoryPlan, apply_observed_turn_demand, check_turn_planning_progress,
+};
+
+thread_local! {
+    static ACTIVE_TURN_PLANS: Mutex<Vec<Arc<TurnMemoryPlan>>> = const { Mutex::new(Vec::new()) };
+}
+
+fn with_active_turn_plans<T>(use_plans: impl FnOnce(&mut Vec<Arc<TurnMemoryPlan>>) -> T) -> T {
+    ACTIVE_TURN_PLANS.with(|plans| {
+        let mut plans = plans
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        use_plans(&mut plans)
+    })
+}
+
+struct ActiveTurnPlanGuard;
+
+impl Drop for ActiveTurnPlanGuard {
+    fn drop(&mut self) {
+        with_active_turn_plans(|plans| {
+            plans.pop();
+        });
+    }
+}
+
+/// Scopes every Resident materialization permit to the real node plan built
+/// from the activated program. Nested execution remains deterministic and a
+/// panic cannot leak authority to the next kernel on the worker thread.
+pub(crate) fn with_resident_turn_plan<T>(
+    plan: impl Into<Arc<TurnMemoryPlan>>,
+    execute: impl FnOnce() -> T,
+) -> T {
+    with_active_turn_plans(|plans| plans.push(plan.into()));
+    let _guard = ActiveTurnPlanGuard;
+    execute()
+}
 
 macro_rules! resident_cost {
     (@value $field:ident, $value:expr) => {
@@ -8,47 +51,73 @@ macro_rules! resident_cost {
     (@value $field:ident) => {
         $field
     };
+    (@set $cost:ident, comparison_work, $value:expr) => {
+        $cost.set_comparison_work($crate::resident::budget::checked_u64($value)?)?;
+    };
+    (@set $cost:ident, compute_work, $value:expr) => {
+        $cost.set_compute_work($crate::resident::budget::checked_u64($value)?)?;
+    };
+    (@set $cost:ident, output_elements, $value:expr) => {
+        $cost.set_output_elements($crate::resident::budget::checked_u64($value)?);
+    };
+    (@set $cost:ident, output_bytes, $value:expr) => {
+        $cost.set_output_bytes($crate::resident::budget::checked_u64($value)?);
+    };
+    (@set $cost:ident, temporary_bytes, $value:expr) => {
+        $cost.add_temporary_bytes($crate::resident::budget::checked_u64($value)?)?;
+    };
+    (@set $cost:ident, container_bytes, $value:expr) => {
+        $cost.add_temporary_bytes($crate::resident::budget::checked_u64($value)?)?;
+    };
+    (@set $cost:ident, selector_bytes, $value:expr) => {
+        $cost.add_temporary_bytes($crate::resident::budget::checked_u64($value)?)?;
+    };
+    (@set $cost:ident, index_bytes, $value:expr) => {
+        $cost.add_temporary_bytes($crate::resident::budget::checked_u64($value)?)?;
+    };
+    (@set $cost:ident, cloned_bytes, $value:expr) => {
+        $cost.set_cloned_bytes($crate::resident::budget::checked_u64($value)?);
+    };
+    (@set $cost:ident, retained_nodes, $value:expr) => {
+        $cost.set_retained_nodes($crate::resident::budget::checked_u64($value)?);
+    };
     (
         $( $field:ident $( : $value:expr )? ,)*
         .. $base:expr $(,)?
     ) => {{
-        $crate::resident::budget::KernelCostEstimate {
-            $(
-                $field: $crate::resident::budget::checked_u64(
-                    $crate::resident::budget::resident_cost!(@value $field $(, $value)?)
-                )?,
-            )*
-            ..$base
-        }
+        let mut cost = $base;
+        $(
+            $crate::resident::budget::resident_cost!(
+                @set cost,
+                $field,
+                $crate::resident::budget::resident_cost!(@value $field $(, $value)?)
+            );
+        )*
+        cost
     }};
 }
 
 pub(crate) use resident_cost;
 
-pub(crate) const MAX_RESIDENT_COMPARISON_WORK: u64 = 65_536;
-pub(crate) const MAX_RESIDENT_COMPUTE_WORK: u64 = 16_777_216;
-pub(crate) const MAX_RESIDENT_OUTPUT_ELEMENTS: u64 = 65_536;
-pub(crate) const MAX_RESIDENT_OUTPUT_BYTES: u64 = 16 * 1024 * 1024;
-pub(crate) const MAX_RESIDENT_TEMPORARY_BYTES: u64 = 16 * 1024 * 1024;
-pub(crate) const MAX_RESIDENT_CLONED_BYTES: u64 = 16 * 1024 * 1024;
-pub(crate) const MAX_RESIDENT_RETAINED_NODES: u64 = 65_536;
+#[cfg(test)]
+pub(crate) use mech_core::RESIDENT_MAX_BYTES as MAX_RESIDENT_CLONED_BYTES;
+#[cfg(test)]
+pub(crate) use mech_core::RESIDENT_MAX_BYTES as MAX_RESIDENT_OUTPUT_BYTES;
+#[cfg(test)]
+pub(crate) use mech_core::RESIDENT_MAX_BYTES as MAX_RESIDENT_TEMPORARY_BYTES;
+#[cfg(test)]
+pub(crate) use mech_core::RESIDENT_MAX_RETAINED_NODES as MAX_RESIDENT_RETAINED_NODES;
+pub(crate) use mech_core::{
+    RESIDENT_MAX_COMPARISON_WORK as MAX_RESIDENT_COMPARISON_WORK,
+    RESIDENT_MAX_COMPUTE_WORK as MAX_RESIDENT_COMPUTE_WORK,
+    RESIDENT_MAX_OUTPUT_ELEMENTS as MAX_RESIDENT_OUTPUT_ELEMENTS,
+};
 
-/// A checked, operation-independent estimate made before a resident kernel
-/// allocates an expansion or starts mutating its output.
+/// Private compatibility shell for existing Resident call sites. It contains
+/// exactly one shared R5 `ResourceDemand`; it has no parallel cost authority.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(crate) struct KernelCostEstimate {
-    pub comparison_work: u64,
-    pub compute_work: u64,
-    pub output_elements: u64,
-    /// Retained output storage after publication.
-    pub output_bytes: u64,
-    /// Peak staging storage retained simultaneously before publication.
-    pub temporary_bytes: u64,
-    pub cloned_bytes: u64,
-    pub container_bytes: u64,
-    pub selector_bytes: u64,
-    pub index_bytes: u64,
-    pub retained_nodes: u64,
+    demand: ResourceDemand,
 }
 
 /// Complete retained state after a mutation publishes, never merely the bytes
@@ -96,20 +165,9 @@ pub(crate) struct ResidentBudgetMeter {
 /// Authority proving one complete checked estimate passed central resident
 /// admission. Its fields and constructor are private so materializers cannot
 /// manufacture a permit locally.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ResidentBudgetPermit {
-    _cost: AdmittedKernelCost,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct AdmittedKernelCost {
-    comparison_work: u64,
-    compute_work: u64,
-    output_elements: u64,
-    output_bytes: u64,
-    temporary_peak_bytes: u64,
-    cloned_bytes: u64,
-    retained_nodes: u64,
+    _plan: TurnMemoryPlan,
 }
 
 #[derive(Clone, Debug)]
@@ -125,33 +183,128 @@ pub(crate) struct AdmittedKernel<P> {
 }
 
 impl KernelCostEstimate {
-    fn checked(self) -> Result<AdmittedKernelCost, ResidentKernelError> {
-        let temporary_peak_bytes = self
-            .temporary_bytes
-            .checked_add(self.container_bytes)
-            .and_then(|bytes| bytes.checked_add(self.selector_bytes))
-            .and_then(|bytes| bytes.checked_add(self.index_bytes))
+    pub(crate) const fn comparison_work(self) -> u64 {
+        self.demand.work.comparison
+    }
+
+    pub(crate) const fn compute_work(self) -> u64 {
+        self.demand.work.compute
+    }
+
+    pub(crate) const fn temporary_bytes(self) -> u64 {
+        self.demand.turn_peak_bytes
+    }
+
+    pub(crate) const fn cloned_bytes(self) -> u64 {
+        self.demand.cloned_bytes
+    }
+
+    pub(crate) const fn retained_nodes(self) -> u64 {
+        self.demand.retained_nodes
+    }
+
+    pub(crate) fn set_comparison_work(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
+        self.demand.work.comparison = amount;
+        Ok(())
+    }
+
+    pub(crate) fn set_compute_work(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
+        self.demand.work.compute = amount;
+        Ok(())
+    }
+
+    pub(crate) fn set_output_elements(&mut self, amount: u64) {
+        self.demand.output_elements = amount;
+    }
+
+    pub(crate) fn set_output_bytes(&mut self, amount: u64) {
+        self.demand.persistent_bytes = amount;
+    }
+
+    pub(crate) fn add_temporary_bytes(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
+        self.demand.turn_peak_bytes = self
+            .demand
+            .turn_peak_bytes
+            .checked_add(amount)
             .ok_or(ResidentKernelError::InvalidShape)?;
-        let cost = AdmittedKernelCost {
-            comparison_work: self.comparison_work,
-            compute_work: self.compute_work,
-            output_elements: self.output_elements,
-            output_bytes: self.output_bytes,
-            temporary_peak_bytes,
-            cloned_bytes: self.cloned_bytes,
-            retained_nodes: self.retained_nodes,
-        };
-        if cost.comparison_work > MAX_RESIDENT_COMPARISON_WORK
-            || cost.compute_work > MAX_RESIDENT_COMPUTE_WORK
-            || cost.output_elements > MAX_RESIDENT_OUTPUT_ELEMENTS
-            || cost.output_bytes > MAX_RESIDENT_OUTPUT_BYTES
-            || cost.temporary_peak_bytes > MAX_RESIDENT_TEMPORARY_BYTES
-            || cost.cloned_bytes > MAX_RESIDENT_CLONED_BYTES
-            || cost.retained_nodes > MAX_RESIDENT_RETAINED_NODES
+        Ok(())
+    }
+
+    pub(crate) fn set_cloned_bytes(&mut self, amount: u64) {
+        self.demand.cloned_bytes = amount;
+    }
+
+    pub(crate) fn set_retained_nodes(&mut self, amount: u64) {
+        self.demand.retained_nodes = amount;
+    }
+
+    fn turn_plan(
+        self,
+        final_output: Option<PublishedOutputFootprint>,
+    ) -> Result<TurnMemoryPlan, ResidentKernelError> {
+        let active = with_active_turn_plans(|plans| plans.last().cloned());
+        if let Some(active) = active {
+            let fixed = active
+                .call
+                .as_ref()
+                .and_then(|call| call.outputs.first())
+                .map_or(0, |output| output.value.current_address_span_bytes);
+            let final_output = final_output
+                .map(|output| {
+                    Ok(mech_core::CurrentMemoryFootprint {
+                        logical_elements: output.elements,
+                        fixed_bytes: fixed,
+                        payload_bytes: output
+                            .retained_bytes
+                            .checked_sub(fixed)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        encoded_bytes: output.retained_bytes,
+                        retained_nodes: output.retained_nodes,
+                        ..mech_core::CurrentMemoryFootprint::default()
+                    })
+                })
+                .transpose()?;
+            return apply_observed_turn_demand((*active).clone(), self.demand, final_output)
+                .map_err(|_| ResidentKernelError::InvalidShape);
+        }
+        #[cfg(test)]
         {
+            return detached_test_turn_plan(self.demand);
+        }
+        #[cfg(not(test))]
+        {
+            Err(ResidentKernelError::InvalidInput)
+        }
+    }
+
+    // This admits another borrowed measurement step, never allocation or
+    // publication. Complete candidate facts still require `turn_plan`.
+    fn check_planning_progress(self) -> Result<(), ResidentKernelError> {
+        let result = with_active_turn_plans(|plans| {
+            plans.last().map(|plan| {
+                check_turn_planning_progress(plan, self.demand)
+                    .map_err(|_| ResidentKernelError::InvalidShape)
+            })
+        });
+        if let Some(result) = result {
+            return result;
+        }
+        #[cfg(test)]
+        {
+            self.checked().map(drop)
+        }
+        #[cfg(not(test))]
+        {
+            Err(ResidentKernelError::InvalidInput)
+        }
+    }
+
+    fn checked(self) -> Result<TurnMemoryPlan, ResidentKernelError> {
+        let plan = self.turn_plan(None)?;
+        if !plan.budget_violations.is_empty() {
             return Err(ResidentKernelError::InvalidShape);
         }
-        Ok(cost)
+        Ok(plan)
     }
 
     #[cfg(test)]
@@ -160,9 +313,7 @@ impl KernelCostEstimate {
     }
 
     fn permit(self) -> Result<ResidentBudgetPermit, ResidentKernelError> {
-        Ok(ResidentBudgetPermit {
-            _cost: self.checked()?,
-        })
+        ResidentBudgetPermit::from_turn_plan(self.checked()?)
     }
 
     /// Returns the single allowance left for data-dependent work that must be
@@ -170,15 +321,67 @@ impl KernelCostEstimate {
     /// work also consumes compute work, so the smaller remaining limit is the
     /// only sound authority to pass into recursive canonicalization.
     pub(crate) fn remaining_incremental_work(&self) -> Result<u64, ResidentKernelError> {
-        self.checked()?;
+        if self.demand.persistent_bytes == 0 && self.demand.output_elements == 0 {
+            self.check_planning_progress()?;
+        } else {
+            self.checked()?;
+        }
         Ok(MAX_RESIDENT_COMPARISON_WORK
-            .checked_sub(self.comparison_work)
+            .checked_sub(self.comparison_work())
             .ok_or(ResidentKernelError::InvalidShape)?
             .min(
                 MAX_RESIDENT_COMPUTE_WORK
-                    .checked_sub(self.compute_work)
+                    .checked_sub(self.compute_work())
                     .ok_or(ResidentKernelError::InvalidShape)?,
             ))
+    }
+}
+
+#[cfg(test)]
+fn detached_test_turn_plan(demand: ResourceDemand) -> Result<TurnMemoryPlan, ResidentKernelError> {
+    let target = mech_core::TargetMemoryProfile::current_resident_cpu()
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let node = mech_core::NodeId::new(0);
+    let program = crate::memory_planner::ProgramMemoryPlan {
+        allocations: vec![mech_core::AllocationPlan {
+            id: mech_core::MemoryObjectId::new(0),
+            owner: mech_core::MemoryObjectOwner::TransactionStage { node, output: 0 },
+            role: mech_core::AllocationRole::TransactionStage,
+            space: mech_core::MemorySpace::ResidentCpu,
+            current_bytes: 0,
+            capacity_bytes: 0,
+            alignment: 1,
+            lifetime: mech_core::MemoryLifetime::Transaction {
+                first: mech_core::MemoryPlanPoint::new(0),
+                last: mech_core::MemoryPlanPoint::new(1),
+            },
+            placement: mech_core::ArenaPlacement {
+                arena: mech_core::MemoryArenaId::new(0),
+                offset: 0,
+            },
+            reuse_group: None,
+        }]
+        .into_boxed_slice(),
+        budget_limits: target.limits,
+        ..crate::memory_planner::ProgramMemoryPlan::default()
+    };
+    crate::memory_planner::plan_turn_memory(
+        &program,
+        node,
+        &crate::memory_planner::TurnMemoryFacts {
+            observed_demand: Some(demand),
+            ..crate::memory_planner::TurnMemoryFacts::default()
+        },
+    )
+    .map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+impl ResidentBudgetPermit {
+    fn from_turn_plan(plan: TurnMemoryPlan) -> Result<Self, ResidentKernelError> {
+        if !plan.budget_violations.is_empty() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(Self { _plan: plan })
     }
 }
 
@@ -209,21 +412,23 @@ impl<P> PreparedMutationPlan<P> {
         retained_nodes: MutationRetainedNodeFootprint,
         mut cost: KernelCostEstimate,
     ) -> Result<Self, ResidentKernelError> {
-        cost.output_elements = final_output.elements;
-        cost.output_bytes = final_output.retained_bytes;
+        cost.set_output_elements(final_output.elements);
+        cost.set_output_bytes(final_output.retained_bytes);
         // The borrowed current value, normalized plan, transient staging
         // trees, and published output can coexist. Every phase is explicit;
         // an ad hoc retained-node estimate in `cost` would either omit or
         // double-count one of those populations.
-        if cost.retained_nodes != 0 {
+        if cost.retained_nodes() != 0 {
             return Err(ResidentKernelError::InvalidShape);
         }
-        cost.retained_nodes = retained_nodes
-            .current_persistent
-            .checked_add(retained_nodes.normalized_plan)
-            .and_then(|nodes| nodes.checked_add(retained_nodes.temporary_draft))
-            .and_then(|nodes| nodes.checked_add(final_output.retained_nodes))
-            .ok_or(ResidentKernelError::InvalidShape)?;
+        cost.set_retained_nodes(
+            retained_nodes
+                .current_persistent
+                .checked_add(retained_nodes.normalized_plan)
+                .and_then(|nodes| nodes.checked_add(retained_nodes.temporary_draft))
+                .and_then(|nodes| nodes.checked_add(final_output.retained_nodes))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        );
         Ok(Self {
             operation,
             final_output,
@@ -232,10 +437,11 @@ impl<P> PreparedMutationPlan<P> {
     }
 
     pub(crate) fn admit(self) -> Result<AdmittedMutationPlan<P>, ResidentKernelError> {
-        let _final_output = self.final_output;
         Ok(AdmittedMutationPlan {
             operation: self.operation,
-            _permit: self.cost.permit()?,
+            _permit: ResidentBudgetPermit::from_turn_plan(
+                self.cost.turn_plan(Some(self.final_output))?,
+            )?,
         })
     }
 }
@@ -499,7 +705,7 @@ impl ResidentBudgetMeter {
     ) -> Result<(), ResidentKernelError> {
         let mut next = self.accumulated;
         update(&mut next)?;
-        next.checked()?;
+        next.check_planning_progress()?;
         self.accumulated = next;
         Ok(())
     }
@@ -509,15 +715,27 @@ impl ResidentBudgetMeter {
         amount: u64,
     ) -> Result<(), ResidentKernelError> {
         self.charge(|cost| {
-            cost.comparison_work = cost
-                .comparison_work
-                .checked_add(amount)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            cost.compute_work = cost
-                .compute_work
-                .checked_add(amount)
-                .ok_or(ResidentKernelError::InvalidShape)?;
+            cost.set_comparison_work(
+                cost.comparison_work()
+                    .checked_add(amount)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
+            cost.set_compute_work(
+                cost.compute_work()
+                    .checked_add(amount)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
             Ok(())
+        })
+    }
+
+    pub(crate) fn charge_compute_work(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
+        self.charge(|cost| {
+            cost.set_compute_work(
+                cost.compute_work()
+                    .checked_add(amount)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )
         })
     }
 
@@ -525,43 +743,33 @@ impl ResidentBudgetMeter {
         &mut self,
         amount: u64,
     ) -> Result<(), ResidentKernelError> {
-        self.charge(|cost| {
-            cost.temporary_bytes = cost
-                .temporary_bytes
-                .checked_add(amount)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            Ok(())
-        })
+        self.charge(|cost| cost.add_temporary_bytes(amount))
     }
 
     pub(crate) fn charge_cloned_bytes(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
         self.charge(|cost| {
-            cost.cloned_bytes = cost
-                .cloned_bytes
-                .checked_add(amount)
-                .ok_or(ResidentKernelError::InvalidShape)?;
+            cost.set_cloned_bytes(
+                cost.cloned_bytes()
+                    .checked_add(amount)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            );
             Ok(())
         })
     }
 
     pub(crate) fn charge_retained_nodes(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
         self.charge(|cost| {
-            cost.retained_nodes = cost
-                .retained_nodes
-                .checked_add(amount)
-                .ok_or(ResidentKernelError::InvalidShape)?;
+            cost.set_retained_nodes(
+                cost.retained_nodes()
+                    .checked_add(amount)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            );
             Ok(())
         })
     }
 
     pub(crate) fn charge_selector_bytes(&mut self, amount: u64) -> Result<(), ResidentKernelError> {
-        self.charge(|cost| {
-            cost.selector_bytes = cost
-                .selector_bytes
-                .checked_add(amount)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            Ok(())
-        })
+        self.charge(|cost| cost.add_temporary_bytes(amount))
     }
 
     pub(crate) fn estimate(self) -> KernelCostEstimate {
@@ -613,12 +821,138 @@ mod tests {
     use super::*;
 
     #[test]
+    fn resident_estimates_reconcile_with_the_real_node_turn_plan() {
+        let node = mech_core::NodeId::new(7);
+        let program = crate::memory_planner::ProgramMemoryPlan {
+            allocations: vec![mech_core::AllocationPlan {
+                id: mech_core::MemoryObjectId::new(3),
+                owner: mech_core::MemoryObjectOwner::NodeScratch { node, ordinal: 0 },
+                role: mech_core::AllocationRole::TransactionStage,
+                space: mech_core::MemorySpace::ResidentCpu,
+                current_bytes: 8,
+                capacity_bytes: 8,
+                alignment: 8,
+                lifetime: mech_core::MemoryLifetime::Transaction {
+                    first: mech_core::MemoryPlanPoint::new(14),
+                    last: mech_core::MemoryPlanPoint::new(15),
+                },
+                placement: mech_core::ArenaPlacement {
+                    arena: mech_core::MemoryArenaId::new(0),
+                    offset: 0,
+                },
+                reuse_group: None,
+            }]
+            .into_boxed_slice(),
+            budget_limits: mech_core::TargetMemoryProfile::current_resident_cpu()
+                .unwrap()
+                .limits,
+            ..crate::memory_planner::ProgramMemoryPlan::default()
+        };
+        let base = crate::memory_planner::plan_turn_memory(
+            &program,
+            node,
+            &crate::memory_planner::TurnMemoryFacts::default(),
+        )
+        .unwrap();
+        let checked = with_resident_turn_plan(base, || {
+            KernelCostEstimate {
+                demand: ResourceDemand {
+                    persistent_bytes: 24,
+                    ..ResourceDemand::default()
+                },
+            }
+            .checked()
+        })
+        .unwrap();
+        assert_eq!(checked.node, node);
+        assert_eq!(checked.allocations[0].capacity_bytes, 24);
+        assert_eq!(checked.arenas[0].capacity_bytes, 24);
+    }
+
+    #[test]
+    fn incremental_progress_checks_match_full_admission_without_rebuilding_the_plan() {
+        let mut base = detached_test_turn_plan(ResourceDemand::default()).unwrap();
+        base.facts.additional_demand.work.compute = 17;
+        let base = Arc::new(base);
+        let snapshot = (*base).clone();
+        for amount in [
+            0,
+            1,
+            MAX_RESIDENT_COMPARISON_WORK,
+            MAX_RESIDENT_COMPARISON_WORK + 1,
+        ] {
+            for demand in [
+                ResourceDemand {
+                    work: mech_core::WorkDemand {
+                        comparison: amount,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    retained_nodes: amount,
+                    ..Default::default()
+                },
+            ] {
+                let full = apply_observed_turn_demand((*base).clone(), demand, None).unwrap();
+                let progress = with_resident_turn_plan(base.clone(), || {
+                    KernelCostEstimate { demand }.check_planning_progress()
+                });
+                assert_eq!(progress.is_ok(), full.budget_violations.is_empty());
+            }
+        }
+        for amount in [
+            MAX_RESIDENT_TEMPORARY_BYTES,
+            MAX_RESIDENT_TEMPORARY_BYTES + 1,
+        ] {
+            let demand = ResourceDemand {
+                turn_peak_bytes: amount,
+                ..Default::default()
+            };
+            let full = apply_observed_turn_demand((*base).clone(), demand, None).unwrap();
+            let progress = with_resident_turn_plan(base.clone(), || {
+                KernelCostEstimate { demand }.check_planning_progress()
+            });
+            assert_eq!(progress.is_ok(), full.budget_violations.is_empty());
+        }
+        assert_eq!(
+            *base, snapshot,
+            "progress must not mutate cached layouts or facts"
+        );
+        assert_eq!(
+            Arc::strong_count(&base),
+            1,
+            "a completed scope must release its plan"
+        );
+    }
+
+    #[test]
+    fn incremental_progress_cannot_admit_candidate_publication_facts() {
+        let base = detached_test_turn_plan(ResourceDemand::default()).unwrap();
+        with_resident_turn_plan(base, || {
+            assert_eq!(
+                KernelCostEstimate {
+                    demand: ResourceDemand {
+                        persistent_bytes: 8,
+                        output_elements: 1,
+                        ..Default::default()
+                    }
+                }
+                .check_planning_progress(),
+                Err(ResidentKernelError::InvalidShape)
+            );
+        });
+    }
+
+    #[test]
     fn resident_budget_fails_closed_on_limits_and_arithmetic() {
         assert!(KernelCostEstimate::default().admit().is_ok());
         assert_eq!(
             KernelCostEstimate {
-                cloned_bytes: MAX_RESIDENT_CLONED_BYTES + 1,
-                ..KernelCostEstimate::default()
+                demand: ResourceDemand {
+                    cloned_bytes: MAX_RESIDENT_CLONED_BYTES + 1,
+                    ..ResourceDemand::default()
+                },
             }
             .admit()
             .unwrap_err(),
@@ -647,10 +981,10 @@ mod tests {
         let prepared = PreparedKernel::new(
             41_u64,
             KernelCostEstimate {
-                temporary_bytes: MAX_RESIDENT_TEMPORARY_BYTES - 2,
-                selector_bytes: 1,
-                index_bytes: 1,
-                ..KernelCostEstimate::default()
+                demand: ResourceDemand {
+                    turn_peak_bytes: MAX_RESIDENT_TEMPORARY_BYTES,
+                    ..ResourceDemand::default()
+                },
             },
         );
         assert_eq!(prepared.admit().unwrap().into_plan(), 41);
@@ -658,10 +992,10 @@ mod tests {
             PreparedKernel::new(
                 (),
                 KernelCostEstimate {
-                    temporary_bytes: MAX_RESIDENT_TEMPORARY_BYTES - 1,
-                    selector_bytes: 1,
-                    index_bytes: 1,
-                    ..KernelCostEstimate::default()
+                    demand: ResourceDemand {
+                        turn_peak_bytes: MAX_RESIDENT_TEMPORARY_BYTES + 1,
+                        ..ResourceDemand::default()
+                    },
                 },
             )
             .admit()
@@ -672,9 +1006,10 @@ mod tests {
             PreparedKernel::new(
                 (),
                 KernelCostEstimate {
-                    temporary_bytes: u64::MAX,
-                    selector_bytes: 1,
-                    ..KernelCostEstimate::default()
+                    demand: ResourceDemand {
+                        turn_peak_bytes: u64::MAX,
+                        ..ResourceDemand::default()
+                    },
                 },
             )
             .admit()
@@ -694,7 +1029,7 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert_eq!(
-            meter.estimate().comparison_work,
+            meter.estimate().comparison_work(),
             MAX_RESIDENT_COMPARISON_WORK,
         );
     }
@@ -703,9 +1038,14 @@ mod tests {
     fn incremental_allowance_respects_comparison_and_compute_remainders() {
         assert_eq!(
             KernelCostEstimate {
-                comparison_work: MAX_RESIDENT_COMPARISON_WORK - 7,
-                compute_work: MAX_RESIDENT_COMPUTE_WORK - 9,
-                ..KernelCostEstimate::default()
+                demand: ResourceDemand {
+                    work: mech_core::WorkDemand {
+                        comparison: MAX_RESIDENT_COMPARISON_WORK - 7,
+                        compute: MAX_RESIDENT_COMPUTE_WORK - 9,
+                        ..mech_core::WorkDemand::default()
+                    },
+                    ..ResourceDemand::default()
+                },
             }
             .remaining_incremental_work()
             .unwrap(),
@@ -713,8 +1053,13 @@ mod tests {
         );
         assert_eq!(
             KernelCostEstimate {
-                compute_work: MAX_RESIDENT_COMPUTE_WORK - 3,
-                ..KernelCostEstimate::default()
+                demand: ResourceDemand {
+                    work: mech_core::WorkDemand {
+                        compute: MAX_RESIDENT_COMPUTE_WORK - 3,
+                        ..mech_core::WorkDemand::default()
+                    },
+                    ..ResourceDemand::default()
+                },
             }
             .remaining_incremental_work()
             .unwrap(),
@@ -785,8 +1130,10 @@ mod tests {
                 },
                 MutationRetainedNodeFootprint::default(),
                 KernelCostEstimate {
-                    retained_nodes: 1,
-                    ..KernelCostEstimate::default()
+                    demand: ResourceDemand {
+                        retained_nodes: 1,
+                        ..ResourceDemand::default()
+                    },
                 },
             )
             .unwrap_err(),

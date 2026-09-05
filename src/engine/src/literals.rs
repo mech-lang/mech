@@ -414,6 +414,7 @@ fn planned_type_conversion_specialized(
         )?,
         RuntimeFunctionId::from_name("convert/kind"),
         ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch,
     )
 }
 
@@ -453,6 +454,10 @@ fn runtime_kind_conversion_plan(
 
 #[cfg(feature = "convert")]
 impl MechFunctionFactory for RuntimeKindConversion {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::AnyValue,
         FunctionValueRepresentation::AnyValue,
@@ -755,6 +760,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
             planned_type_conversion_instance(source, output, target, plan),
             mech_core::RuntimeFunctionId::from_name("convert/kind"),
             mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
     }
 }

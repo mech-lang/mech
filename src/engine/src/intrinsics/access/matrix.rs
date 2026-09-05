@@ -815,6 +815,10 @@ macro_rules! impl_access_fxn {
             $ix_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
@@ -904,6 +908,10 @@ macro_rules! impl_access_all_fxn {
             $arg_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
@@ -1007,6 +1015,10 @@ macro_rules! impl_access_fxn2 {
             $ix2_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
@@ -2597,6 +2609,10 @@ struct CanonicalIndexConversion {
 
 #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
 impl MechFunctionFactory for CanonicalIndexConversion {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::AnyValue,
         FunctionValueRepresentation::AnyValue,
@@ -2770,6 +2786,7 @@ pub(crate) fn canonical_reactive_scalar_index(
             )?,
             RuntimeFunctionId::from_name("access/index"),
             ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
         )?)?;
     Ok(output)
 }
@@ -2845,6 +2862,7 @@ pub(crate) fn canonical_reactive_index_matrix(
             )?,
             RuntimeFunctionId::from_name("access/index"),
             ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
         )?)?;
     Ok(output)
 }

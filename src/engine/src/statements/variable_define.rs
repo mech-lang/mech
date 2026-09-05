@@ -203,6 +203,7 @@ pub fn variable_define(
             )?,
             RuntimeFunctionId::from_name(&runtime_name),
             ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
         )?)?;
     Ok(value)
 }

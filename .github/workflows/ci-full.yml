@@ -58,6 +58,8 @@ jobs:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: "1"
+      CARGO_PROFILE_DEV_DEBUG: "0"
     steps:
       - name: Checkout exact validation head
         uses: actions/checkout@v7.0.1
@@ -78,6 +80,8 @@ jobs:
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: "1"
+      CARGO_PROFILE_DEV_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -103,6 +107,7 @@ jobs:
           python3 scripts/check-r2-type-memory-boundary.py
           python3 scripts/check-r3-type-system.py
           python3 scripts/check-r4-type-cutover.py
+          python3 scripts/check-r5-memory-planner.py
           python3 scripts/check-resident-activation-contract.py
           python3 scripts/check-compiler-planning-quarantine.py
           python3 scripts/generate-d1-contract.py --check
@@ -120,6 +125,7 @@ jobs:
             scripts/tests/test_check_r2_type_memory_boundary.py \
             scripts/tests/test_check_r3_type_system.py \
             scripts/tests/test_check_r4_type_cutover.py \
+            scripts/tests/test_check_r5_memory_planner.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \
@@ -160,6 +166,35 @@ jobs:
             --no-default-features --features full_compiler \
             --test r4_type_cutover
 
+  r5-memory-planner:
+    name: R5 memory planner
+    runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+          fetch-depth: 0
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked R5 dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Execute the complete R5 conformance boundary
+        run: |
+          cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --test r5_memory_plan
+          cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler \
+            --test r5_memory_plan
+          cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+            --no-default-features --features full_compiler \
+            --test r5_memory_contract
+          cargo +nightly-2026-03-03 test --locked -p mech-compute
+          cargo +nightly-2026-03-03 test --locked -p mech-gpu \
+            --test r5_memory_plan
+
   cargo-features:
     name: Cargo feature and example checks
     runs-on: ubuntu-latest
@@ -167,6 +202,9 @@ jobs:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
       CARGO_INCREMENTAL: 0
+      CARGO_BUILD_JOBS: "1"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
@@ -238,6 +276,9 @@ jobs:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
       CARGO_INCREMENTAL: 0
+      CARGO_BUILD_JOBS: "1"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
@@ -489,6 +530,11 @@ jobs:
   bytecode-v1-determinism:
     name: Bytecode v1 determinism
     runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -509,6 +555,11 @@ jobs:
   native-linkage-owners:
     name: Native linkage owner profiles
     runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -521,6 +572,11 @@ jobs:
   native-linkage-surfaces:
     name: Native linkage surface (${{ matrix.surface }})
     runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     strategy:
       fail-fast: false
       matrix:
@@ -799,6 +855,7 @@ jobs:
     if: ${{ always() }}
     needs:
       - cargo-features
+      - r5-memory-planner
       - distribution-contracts
       - engine-catalog
       - function-system-contracts
