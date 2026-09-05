@@ -265,6 +265,16 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "deferred budget closure")
 
+    def test_incremental_progress_cannot_replace_target_limits(self):
+        root = self.fixture()
+        path = "src/engine/src/memory_planner/turn.rs"
+        source = (root / path).read_text(encoding="utf-8")
+        start = source.index("pub(crate) fn check_turn_planning_progress(")
+        prefix, body = source[:start], source[start:]
+        self.assertIn("plan.budget_limits,", body)
+        self.write(root, path, prefix + body.replace("plan.budget_limits,", "Default::default(),", 1))
+        self.assert_failure(root, "deferred budget closure")
+
     def test_25_resident_observation_fails(self):
         root = self.fixture()
         self.replace(

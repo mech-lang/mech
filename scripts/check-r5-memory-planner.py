@@ -432,8 +432,10 @@ def failures(root: Path) -> list[str]:
     ):
         if required not in turn:
             found.append(f"turn planning omits deferred budget closure: {required}")
-    if turn.count("plan.budget_limits") < 3:
-        found.append("turn planning omits deferred budget closure: plan.budget_limits")
+    for name in ("plan_turn_memory", "apply_observed_turn_demand", "check_turn_planning_progress"):
+        body = dict(function_bodies(turn, name)).get(name, "")
+        if not re.search(r"evaluate_memory_budget\([\s\S]*?plan\.budget_limits,\s*\)", body):
+            found.append(f"turn planning omits deferred budget closure: {name} plan.budget_limits")
     if not re.search(
         r"let\s+call_transactions\b.*?\.chain\s*\(\s*&call_transactions\s*\)",
         turn,

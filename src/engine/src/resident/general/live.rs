@@ -5,6 +5,31 @@ use super::*;
 use crate::memory_planner::TurnMemoryFacts;
 use mech_core::{CallMemoryPlan, PortDirection, RegionPolicy, ResourceDemand, ValueData};
 
+/// Resident lane lengths and semantic descriptors cannot change during an
+/// activation. Only fixed-width ports with no value-dependent region have
+/// invariant footprint facts. Never cache a String, Snapshot, or selector plan.
+pub(super) fn has_invariant_memory_facts(call: &CallMemoryPlan) -> bool {
+    call.deferred_witnesses.is_empty()
+        && call.implementation_memory == ImplementationMemoryClass::NoAdditionalScratch
+        && call
+            .output_regions
+            .iter()
+            .all(|region| matches!(region, RegionAccessPlan::WholeValue))
+        && call.inputs.iter().chain(&call.outputs).all(|port| {
+            matches!(
+                port.value.storage,
+                mech_core::StorageLayoutClass::Scalar {
+                    slot: mech_core::PlannedSlotKind::FixedScalar(_)
+                } | mech_core::StorageLayoutClass::DenseColumnMajor {
+                    slot: mech_core::PlannedSlotKind::FixedScalar(_)
+                }
+            ) && port.value.payload.current_bytes == 0
+                && port.value.payload.required_bytes == 0
+                && port.value.payload.current_nodes == 0
+                && port.value.payload.required_nodes == 0
+        })
+}
+
 fn add(left: u64, right: u64) -> Result<u64, MemoryPlanError> {
     left.checked_add(right)
         .ok_or(MemoryPlanError::ArithmeticOverflow {
@@ -370,6 +395,129 @@ mod turn_tests {
         InputPortPolicy, OperationContractDeclaration, OutputPortPolicy,
         ResolvedOperationDescriptor, RuntimeFunctionId, ShapeRule, ValueCell,
     };
+
+    fn fixed_numeric_call() -> CallMemoryPlan {
+        let cell = ValueCell::from_exact(0.0_f64).unwrap();
+        let descriptor = cell.resolved_descriptor().unwrap();
+        let operation = ResolvedOperationDescriptor::from_name(
+            "test/fixed-copy",
+            OperationContractDeclaration {
+                inputs: InputPortLayout::Fixed(
+                    vec![InputPortPolicy {
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    }]
+                    .into(),
+                ),
+                outputs: vec![OutputPortPolicy {
+                    access: AccessMode::Write,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::FullWrite {
+                        shape: ShapeRule::Declared,
+                    },
+                    alias: AliasPolicy::NoAlias,
+                    change_detection: ChangeDetectionPolicy::ExactScalar,
+                }]
+                .into(),
+                interaction: ExternalInteraction::Pure,
+            },
+        )
+        .unwrap();
+        let binding = BoundCall::syntax_directed(
+            operation,
+            vec![descriptor.clone()].into(),
+            vec![descriptor].into(),
+            RuntimeFunctionId::from_name("FixedCopy"),
+            ExecutionTarget::ResidentCpu,
+        )
+        .unwrap();
+        let target = TargetMemoryProfile::current_resident_cpu().unwrap();
+        let storage = mech_core::physical_storage_descriptor(
+            cell.representation(),
+            &target,
+            MemoryLifetime::Turn {
+                first: MemoryPlanPoint::new(0),
+                last: MemoryPlanPoint::new(1),
+            },
+        );
+        let witness = MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+            logical_elements: 1,
+            ..Default::default()
+        });
+        plan_call_memory(CallMemoryPlanningRequest {
+            bound_call: &binding,
+            input_storage: &[storage.clone()],
+            output_storage: &[storage],
+            input_witnesses: &[witness],
+            output_witnesses: &[witness],
+            implementation_memory: ImplementationMemoryClass::NoAdditionalScratch,
+            target: &target,
+            regions: &[RegionAccessPlan::WholeValue],
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn cached_numeric_plan_is_still_subject_to_concrete_kernel_admission() {
+        let call = fixed_numeric_call();
+        assert!(has_invariant_memory_facts(&call));
+        let node = NodeId::new(0);
+        let program = ProgramMemoryPlan {
+            call_nodes: vec![node].into(),
+            calls: vec![call.clone()].into(),
+            allocations: call.allocations.clone(),
+            budget_limits: call.target.limits,
+            ..Default::default()
+        };
+        let mut schemas = mech_core::SchemaTableBuilder::new();
+        schemas
+            .insert(call.inputs[0].descriptor.schema().clone())
+            .unwrap();
+        let schemas = schemas.finish().unwrap().into_parts().0;
+        let values = [0.0];
+        let facts = facts(
+            &call,
+            node,
+            &[ResidentValueRef::F64(&values)],
+            ResidentValueRef::F64(&values),
+            &schemas,
+        )
+        .unwrap();
+        let cached = std::sync::Arc::new(plan_turn_memory(&program, node, &facts).unwrap());
+        let before = (*cached).clone();
+        for amount in [1, mech_core::RESIDENT_MAX_COMPUTE_WORK + 1] {
+            let accepted = crate::resident::budget::with_resident_turn_plan(cached.clone(), || {
+                crate::resident::budget::PreparedKernel::new((), {
+                    let mut cost = crate::resident::budget::KernelCostEstimate::default();
+                    cost.set_compute_work(amount).unwrap();
+                    cost
+                })
+                .admit()
+                .is_ok()
+            });
+            assert_eq!(accepted, amount == 1);
+        }
+        assert_eq!(*cached, before);
+    }
+
+    #[test]
+    fn cache_eligibility_excludes_payloads_deferred_regions_and_scratch() {
+        let call = fixed_numeric_call();
+        let mut selector = call.clone();
+        selector.output_regions[0] = RegionAccessPlan::Deferred(RegionPolicy::WholeValue);
+        assert!(!has_invariant_memory_facts(&selector));
+        let mut scratch = call.clone();
+        scratch.implementation_memory = ImplementationMemoryClass::CloneInput { input: 0 };
+        assert!(!has_invariant_memory_facts(&scratch));
+        for slot in [
+            mech_core::PlannedSlotKind::StringHeader,
+            mech_core::PlannedSlotKind::CanonicalValueHandle,
+        ] {
+            let mut payload = call.clone();
+            payload.inputs[0].value.storage = mech_core::StorageLayoutClass::Scalar { slot };
+            assert!(!has_invariant_memory_facts(&payload));
+        }
+    }
 
     #[test]
     fn one_program_replans_distinct_live_and_candidate_payloads_across_turns() {

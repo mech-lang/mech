@@ -264,6 +264,11 @@ impl ReactiveInstance {
         execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
     ) -> Result<T, ResidentExecutionError> {
         let index = node_index.get() as usize;
+        if let Some(cached) = self.workspace.fixed_turn_plans[index].clone() {
+            // Reuse the certified base plan, not a materialization permit.
+            // The kernel still admits its concrete work and scratch demand.
+            return super::super::budget::with_resident_turn_plan(cached, || execute(self));
+        }
         let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
             &nodes[index]
         } else {
@@ -325,6 +330,11 @@ impl ReactiveInstance {
                 node: artifact_node,
                 error: ResidentKernelError::InvalidShape,
             });
+        }
+        let cacheable = super::live::has_invariant_memory_facts(call);
+        let turn_plan = std::sync::Arc::new(turn_plan);
+        if cacheable {
+            self.workspace.fixed_turn_plans[index] = Some(turn_plan.clone());
         }
         super::super::budget::with_resident_turn_plan(turn_plan, || execute(self))
     }

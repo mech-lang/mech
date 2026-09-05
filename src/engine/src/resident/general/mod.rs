@@ -723,6 +723,9 @@ pub struct TurnWorkspace {
     pub(crate) effect_intents: Vec<ResidentEffectIntent>,
     pub(crate) effect_payloads: TypedResidentArena,
     state_f64_arena_by_slot: Box<[u8]>,
+    // Only activation-invariant fixed-width plans are cached. Payload-bearing
+    // values and deferred regions still supply live facts on every execution.
+    fixed_turn_plans: Box<[Option<std::sync::Arc<crate::memory_planner::TurnMemoryPlan>>]>,
 }
 
 impl TurnWorkspace {
@@ -755,6 +758,7 @@ impl TurnWorkspace {
                 1,
             )?,
             state_f64_arena_by_slot: vec![0; plan.slots.len()].into_boxed_slice(),
+            fixed_turn_plans: vec![None; plan.steps.len()].into_boxed_slice(),
         })
     }
 }

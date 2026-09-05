@@ -263,6 +263,41 @@ pub fn plan_turn_memory(
     })
 }
 
+/// Bounds borrowed planning work against the real node scope without deriving
+/// layouts or making a materialization permit. The meter only accumulates
+/// traversal work and temporary/clone/node demand; publication facts must be
+/// supplied separately at final admission through `apply_observed_turn_demand`.
+#[cfg(feature = "resident-artifact")]
+pub(crate) fn check_turn_planning_progress(
+    plan: &TurnMemoryPlan,
+    progress: ResourceDemand,
+) -> Result<(), MemoryPlanError> {
+    if progress.persistent_bytes != 0 || progress.output_elements != 0 {
+        return Err(MemoryPlanError::DescriptorMismatch);
+    }
+    let demand = demand_max(
+        plan.demand,
+        checked_demand_add(progress, plan.facts.additional_demand)?,
+    );
+    if let Some(violation) = mech_core::evaluate_memory_budget(
+        MemoryObjectOwner::NodeOutput {
+            node: plan.node,
+            port: 0,
+        },
+        demand,
+        plan.output_bytes,
+        plan.storage_buffer_bytes,
+        plan.budget_limits,
+    )
+    .first()
+    {
+        return Err(MemoryPlanError::TargetLimitExceeded {
+            violation: violation.clone(),
+        });
+    }
+    Ok(())
+}
+
 /// Reconciles an executor's complete concrete estimate with the declaration-
 /// and footprint-derived turn plan. This preserves real node identity,
 /// allocations, transactions, and placement while replacing weaker demand

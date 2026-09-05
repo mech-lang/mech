@@ -299,3 +299,17 @@ Aggregate memory admission composes overlapping temporary and transaction
 lifetimes per memory space, and checks transfer/binding totals while preserving
 existing per-call compute, comparison and output limit scopes. It does not add
 new execution quotas or implement managed allocation/reuse.
+
+### Fixed-width execution cost
+
+Resident execution memoizes the validated base turn plan only when all ports
+have activation-invariant fixed-width storage, no deferred witnesses or regions,
+and no additional implementation scratch. Cached plans never contain an
+execution permit: every kernel still admits its concrete demand. String and
+Snapshot payloads and data-dependent selectors continue to supply live facts.
+
+Incremental borrowed traversals check accumulating demand against the active
+node plan without rebuilding schemas, scratch allocations, or arena placement
+for every visited chunk. The progress check cannot accept candidate publication
+facts and cannot issue a materialization permit. Final admission still resolves
+the complete candidate and runs the full checked planner.

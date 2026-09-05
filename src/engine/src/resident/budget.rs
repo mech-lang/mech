@@ -1,17 +1,19 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use mech_core::snapshot::{SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint};
 use mech_core::{
     ResidentKernelError, ResourceDemand, SchemaBody, SchemaId, SchemaTable, Value, ValueData,
 };
 
-use crate::memory_planner::{TurnMemoryPlan, apply_observed_turn_demand};
+use crate::memory_planner::{
+    TurnMemoryPlan, apply_observed_turn_demand, check_turn_planning_progress,
+};
 
 thread_local! {
-    static ACTIVE_TURN_PLANS: Mutex<Vec<TurnMemoryPlan>> = const { Mutex::new(Vec::new()) };
+    static ACTIVE_TURN_PLANS: Mutex<Vec<Arc<TurnMemoryPlan>>> = const { Mutex::new(Vec::new()) };
 }
 
-fn with_active_turn_plans<T>(use_plans: impl FnOnce(&mut Vec<TurnMemoryPlan>) -> T) -> T {
+fn with_active_turn_plans<T>(use_plans: impl FnOnce(&mut Vec<Arc<TurnMemoryPlan>>) -> T) -> T {
     ACTIVE_TURN_PLANS.with(|plans| {
         let mut plans = plans
             .lock()
@@ -33,8 +35,11 @@ impl Drop for ActiveTurnPlanGuard {
 /// Scopes every Resident materialization permit to the real node plan built
 /// from the activated program. Nested execution remains deterministic and a
 /// panic cannot leak authority to the next kernel on the worker thread.
-pub(crate) fn with_resident_turn_plan<T>(plan: TurnMemoryPlan, execute: impl FnOnce() -> T) -> T {
-    with_active_turn_plans(|plans| plans.push(plan));
+pub(crate) fn with_resident_turn_plan<T>(
+    plan: impl Into<Arc<TurnMemoryPlan>>,
+    execute: impl FnOnce() -> T,
+) -> T {
+    with_active_turn_plans(|plans| plans.push(plan.into()));
     let _guard = ActiveTurnPlanGuard;
     execute()
 }
@@ -259,12 +264,34 @@ impl KernelCostEstimate {
                     })
                 })
                 .transpose()?;
-            return apply_observed_turn_demand(active, self.demand, final_output)
+            return apply_observed_turn_demand((*active).clone(), self.demand, final_output)
                 .map_err(|_| ResidentKernelError::InvalidShape);
         }
         #[cfg(test)]
         {
             return detached_test_turn_plan(self.demand);
+        }
+        #[cfg(not(test))]
+        {
+            Err(ResidentKernelError::InvalidInput)
+        }
+    }
+
+    // This admits another borrowed measurement step, never allocation or
+    // publication. Complete candidate facts still require `turn_plan`.
+    fn check_planning_progress(self) -> Result<(), ResidentKernelError> {
+        let result = with_active_turn_plans(|plans| {
+            plans.last().map(|plan| {
+                check_turn_planning_progress(plan, self.demand)
+                    .map_err(|_| ResidentKernelError::InvalidShape)
+            })
+        });
+        if let Some(result) = result {
+            return result;
+        }
+        #[cfg(test)]
+        {
+            self.checked().map(drop)
         }
         #[cfg(not(test))]
         {
@@ -294,7 +321,11 @@ impl KernelCostEstimate {
     /// work also consumes compute work, so the smaller remaining limit is the
     /// only sound authority to pass into recursive canonicalization.
     pub(crate) fn remaining_incremental_work(&self) -> Result<u64, ResidentKernelError> {
-        self.checked()?;
+        if self.demand.persistent_bytes == 0 && self.demand.output_elements == 0 {
+            self.check_planning_progress()?;
+        } else {
+            self.checked()?;
+        }
         Ok(MAX_RESIDENT_COMPARISON_WORK
             .checked_sub(self.comparison_work())
             .ok_or(ResidentKernelError::InvalidShape)?
@@ -674,7 +705,7 @@ impl ResidentBudgetMeter {
     ) -> Result<(), ResidentKernelError> {
         let mut next = self.accumulated;
         update(&mut next)?;
-        next.checked()?;
+        next.check_planning_progress()?;
         self.accumulated = next;
         Ok(())
     }
@@ -836,6 +867,81 @@ mod tests {
         assert_eq!(checked.node, node);
         assert_eq!(checked.allocations[0].capacity_bytes, 24);
         assert_eq!(checked.arenas[0].capacity_bytes, 24);
+    }
+
+    #[test]
+    fn incremental_progress_checks_match_full_admission_without_rebuilding_the_plan() {
+        let mut base = detached_test_turn_plan(ResourceDemand::default()).unwrap();
+        base.facts.additional_demand.work.compute = 17;
+        let base = Arc::new(base);
+        let snapshot = (*base).clone();
+        for amount in [
+            0,
+            1,
+            MAX_RESIDENT_COMPARISON_WORK,
+            MAX_RESIDENT_COMPARISON_WORK + 1,
+        ] {
+            for demand in [
+                ResourceDemand {
+                    work: mech_core::WorkDemand {
+                        comparison: amount,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    retained_nodes: amount,
+                    ..Default::default()
+                },
+            ] {
+                let full = apply_observed_turn_demand((*base).clone(), demand, None).unwrap();
+                let progress = with_resident_turn_plan(base.clone(), || {
+                    KernelCostEstimate { demand }.check_planning_progress()
+                });
+                assert_eq!(progress.is_ok(), full.budget_violations.is_empty());
+            }
+        }
+        for amount in [
+            MAX_RESIDENT_TEMPORARY_BYTES,
+            MAX_RESIDENT_TEMPORARY_BYTES + 1,
+        ] {
+            let demand = ResourceDemand {
+                turn_peak_bytes: amount,
+                ..Default::default()
+            };
+            let full = apply_observed_turn_demand((*base).clone(), demand, None).unwrap();
+            let progress = with_resident_turn_plan(base.clone(), || {
+                KernelCostEstimate { demand }.check_planning_progress()
+            });
+            assert_eq!(progress.is_ok(), full.budget_violations.is_empty());
+        }
+        assert_eq!(
+            *base, snapshot,
+            "progress must not mutate cached layouts or facts"
+        );
+        assert_eq!(
+            Arc::strong_count(&base),
+            1,
+            "a completed scope must release its plan"
+        );
+    }
+
+    #[test]
+    fn incremental_progress_cannot_admit_candidate_publication_facts() {
+        let base = detached_test_turn_plan(ResourceDemand::default()).unwrap();
+        with_resident_turn_plan(base, || {
+            assert_eq!(
+                KernelCostEstimate {
+                    demand: ResourceDemand {
+                        persistent_bytes: 8,
+                        output_elements: 1,
+                        ..Default::default()
+                    }
+                }
+                .check_planning_progress(),
+                Err(ResidentKernelError::InvalidShape)
+            );
+        });
     }
 
     #[test]
