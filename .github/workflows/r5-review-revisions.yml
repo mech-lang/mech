@@ -1,0 +1,54 @@
+name: R5 review correction validation
+on:
+  push:
+    branches: [codex/r5-review-fixes-validation]
+permissions:
+  contents: write
+concurrency:
+  group: r5-review-corrections
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      BASE: f8c96170ed65e999d1ef3ed383e4df69a660e8ee
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Inspect exact-base integration boundaries
+        if: ${{ hashFiles('.r5-review/apply.py') == '' }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          wanted = {
+              'src/engine/src/resident/general/mod.rs': ['resident_value_observed_footprint', 'execute_activation_once'],
+              'src/engine/src/resident/general/execution.rs': ['read_input', 'read_kernel_input', 'impl ResidentKernelInputs'],
+          }
+          for path, names in wanted.items():
+              lines = Path(path).read_text().splitlines()
+              for name in names:
+                  for i, line in enumerate(lines):
+                      if ('fn '+name+'(' in line) or (name.startswith('impl ') and name in line):
+                          print('\n###', path, i+1, name)
+                          print('\n'.join(f'{j+1}: {lines[j]}' for j in range(i, min(i+180,len(lines)))))
+          PY
+      - name: Apply isolated correction patch
+        if: ${{ hashFiles('.r5-review/apply.py') != '' }}
+        run: |
+          git worktree add --detach /tmp/r5-review "$BASE"
+          python3 .r5-review/apply.py /tmp/r5-review
+      - name: Install pinned Rust
+        if: ${{ hashFiles('.r5-review/apply.py') != '' }}
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
+      - name: Format and validate corrections
+        if: ${{ hashFiles('.r5-review/apply.py') != '' }}
+        run: bash .r5-review/validate.sh /tmp/r5-review
+      - name: Publish tested commit object without moving R5
+        if: ${{ hashFiles('.r5-review/apply.py') != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .r5-review/publish.py /tmp/r5-review
