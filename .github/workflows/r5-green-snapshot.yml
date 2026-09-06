@@ -3,15 +3,20 @@ on:
   push:
     branches: [codex/r5-ci-diagnostics]
     paths: [.github/workflows/r5-green-snapshot.yml]
+# Cancel only qualification of the superseded immutable candidate. The PR
+# head and the new a43d2712 candidate have different concurrency groups.
+concurrency:
+  group: ci-full-962c217b10fb5e5a002bda16334dbd1f0d15da16
+  cancel-in-progress: true
 permissions:
   contents: read
-  actions: write
+  actions: read
 jobs:
   snapshot:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Cancel only the superseded diagnostic candidate and preserve failures
+      - name: Preserve current product and candidate failure evidence
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -20,16 +25,6 @@ jobs:
           python3 - <<'PY'
           import concurrent.futures, json, pathlib, re, subprocess
           root = pathlib.Path('/tmp/r5-green-snapshot')
-          def get(path):
-              return json.loads(subprocess.check_output(['gh','api',path],text=True))
-          old = get('repos/mech-lang/mech/actions/runs/34001077477')
-          assert old['head_branch'] == 'codex/r5-ci-diagnostics'
-          assert old['head_sha'] == 'c4185dfb36858c399853b8101f1368d9771d41ee'
-          (root/'obsolete-run.json').write_text(json.dumps(old,indent=2))
-          if old['status'] in ('queued','in_progress'):
-              result = subprocess.run(['gh','api','--method','POST','repos/mech-lang/mech/actions/runs/34001077477/cancel'],capture_output=True,text=True)
-              (root/'obsolete-cancel.txt').write_text(str(result.returncode)+'\n'+result.stdout+result.stderr)
-              print('Cancelled only obsolete diagnostic candidate run:',result.returncode)
           all_failures = []
           for run_id in [33992916915,34001077477,34002605964]:
               pages = json.loads(subprocess.check_output(['gh','api','--paginate','--slurp',f'repos/mech-lang/mech/actions/runs/{run_id}/jobs?per_page=100'],text=True))
