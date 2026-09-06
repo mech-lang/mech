@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  architecture-complete-history:
+  nbody-allocation-diagnosis:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -22,14 +22,15 @@ jobs:
           ref: 251be1356f5049ce00ced8de519e4646d3159e24
           fetch-depth: 0
           persist-credentials: false
-      - name: Apply the unchanged candidate and copy the authoritative architecture commands
+      - name: Preserve exact parent and candidate source before instrumentation
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 -u - <<'PY'
           import base64, hashlib, json, pathlib, subprocess
-          root = pathlib.Path('/tmp/r5-architecture-exact')
+          root = pathlib.Path('/tmp/r5-allocation-diagnosis')
           root.mkdir()
+          subprocess.run(['git', 'archive', '--format=tar.gz', '--output=' + str(root/'parent-source.tar.gz'), 'HEAD'], check=True)
           raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/5bb36788dc7edbc58d63c44ee24297924dbebf50'], timeout=60)
           patch = base64.b64decode(json.loads(raw)['content'])
           assert hashlib.sha256(patch).hexdigest() == 'c8680d73b7283b1006aa66aeb306c104901cc10242e792a114eb9a596f98d67d'
@@ -39,53 +40,64 @@ jobs:
           tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
           assert tree == '43686788eaa0089b351106814fd17b2b57ba70d5'
           (root/'tree').write_text(tree + '\n')
+          (root/'parent').write_text(subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True))
           (root/'candidate.patch').write_bytes(patch)
-          text = pathlib.Path('.github/workflows/ci-full.yml').read_text()
-          job = text.split('\n  architecture-contracts:\n', 1)[1].split('\n  r5-memory-planner:\n', 1)[0]
-          names = ['Validate permanent architecture contracts', 'Execute the complete R2 conformance boundary', 'Execute the complete R3 conformance boundary', 'Execute the complete R4 conformance boundary']
-          commands = []
-          selected = []
-          for step in job.split('\n      - name: ')[1:]:
-              name = step.splitlines()[0]
-              if name not in names:
-                  continue
-              kind, body = step.split('\n        run: ', 1)[1].split('\n', 1)
-              lines = body.rstrip('\n').splitlines()
-              assert kind in ('|', '>-')
-              assert all(not line.strip() or line.startswith('          ') for line in lines)
-              lines = [line[10:] for line in lines]
-              commands.append((' '.join(lines) if kind == '>-' else '\n'.join(lines)) + '\n')
-              selected.append(name)
-          assert selected == names
-          (root/'commands.sh').write_text('set -euo pipefail\n' + '\n'.join(commands))
-          print('Exact tree:', tree)
-          print('Authoritative steps:', selected)
+          subprocess.run(['git', 'archive', '--format=tar.gz', '--output=' + str(root/'candidate-source.tar.gz'), tree], check=True)
           PY
-          bash -n /tmp/r5-architecture-exact/commands.sh
-      - name: Install pinned compiler and original architecture tools
+      - name: Export exact source for local reproduction
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-fixed-source-for-repair
+          path: /tmp/r5-allocation-diagnosis
+          retention-days: 3
+      - name: Install pinned compiler
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Instrument only the diagnostic fixture allocator
         run: |
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          if ! command -v rg >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install --yes ripgrep
-          fi
-          cargo +nightly-2026-03-03 fetch --locked
-      - name: Run the complete unchanged architecture qualification
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('tests/fixtures/d2-contract-generator/src/main.rs')
+          s = p.read_text()
+          old = 'use std::sync::atomic::{AtomicUsize, Ordering};'
+          assert s.count(old) == 1
+          s = s.replace(old, 'use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};')
+          old = 'static ALLOCATIONS: AtomicUsize = AtomicUsize::new(0);'
+          assert s.count(old) == 1
+          s = s.replace(old, old + '\nstatic TRACE_ENABLED: AtomicBool = AtomicBool::new(false);\nstatic TRACE_BUSY: AtomicBool = AtomicBool::new(false);\nstatic TRACE_COUNT: AtomicUsize = AtomicUsize::new(0);')
+          old = '        ALLOCATIONS.fetch_add(1, Ordering::Relaxed);\n        unsafe { System.alloc(layout) }'
+          assert s.count(old) == 1
+          new = '''        ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+                  let pointer = unsafe { System.alloc(layout) };
+                  if TRACE_ENABLED.load(Ordering::Relaxed)
+                      && !TRACE_BUSY.swap(true, Ordering::Relaxed)
+                  {
+                      let index = TRACE_COUNT.fetch_add(1, Ordering::Relaxed);
+                      if index < 40 {
+                          eprintln!("DIAGNOSTIC_ALLOC index={index} bytes={}\\n{}", layout.size(), std::backtrace::Backtrace::force_capture());
+                      }
+                      TRACE_BUSY.store(false, Ordering::Relaxed);
+                  }
+                  pointer'''
+          s = s.replace(old, new)
+          old = '    ALLOCATIONS.store(0, Ordering::SeqCst);'
+          assert s.count(old) == 1
+          s = s.replace(old, '    TRACE_ENABLED.store(true, Ordering::Relaxed);\n' + old)
+          p.write_text(s)
+          PY
+          git diff -- tests/fixtures/d2-contract-generator/src/main.rs > /tmp/r5-allocation-diagnosis/instrumentation.patch
+      - name: Capture allocation call sites without treating instrumentation as qualification
         run: |
           set -euo pipefail
           set +e
-          /usr/bin/time -v -o /tmp/r5-architecture-exact/time.txt bash /tmp/r5-architecture-exact/commands.sh 2>&1 | tee /tmp/r5-architecture-exact/command.log
+          /usr/bin/time -v -o /tmp/r5-allocation-diagnosis/time.txt python3 scripts/check-r1-artifact-closure.py nbody 2>&1 | tee /tmp/r5-allocation-diagnosis/allocations.log
           status=${PIPESTATUS[0]}
           set -e
-          echo "$status" > /tmp/r5-architecture-exact/exit-status
-          git diff HEAD --check
-          test "$(git write-tree)" = 43686788eaa0089b351106814fd17b2b57ba70d5
-          git diff --exit-code
+          echo "$status" > /tmp/r5-allocation-diagnosis/instrumented-exit-status
           exit "$status"
-      - name: Preserve exact architecture qualification evidence
+      - name: Preserve diagnostic evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-fixed-architecture-complete-history
-          path: /tmp/r5-architecture-exact
+          name: r5-nbody-allocation-stacks
+          path: /tmp/r5-allocation-diagnosis
           retention-days: 3
