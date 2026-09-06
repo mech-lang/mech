@@ -47,11 +47,21 @@ git switch --track origin/codex/mech-program-gpu
 | Minimized Julia eight-worker SIMD control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_simd_threads.jl` |
 | Julia/Metal resident GPU control | `benchmarks/archive/compute/parallel-ekf/minimal/julia_metal_ekf.jl` |
 | Pure-Python scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py` |
+| PyPy textbook-fidelity control | `benchmarks/archive/compute/parallel-ekf/pypy_textbook.py` |
+| PyPy optimized control | `benchmarks/archive/compute/parallel-ekf/pypy_optimized.py` |
+| Revised Julia SoA control | `benchmarks/archive/compute/parallel-ekf/julia_mojo_style.jl` |
+| Revised Taichi SoA control | `benchmarks/archive/compute/parallel-ekf/taichi_mojo_style.py` |
 | Minimized LuaJIT scalar control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua` |
 | Minimized LuaJIT flat control | `benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua` |
 | Minimized PUC Lua advanced flat control | `benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua` |
 | Minimized Taichi comparable control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py` |
 | Minimized Taichi optimized control | `benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py` |
+| Mojo textbook-fidelity control | `benchmarks/archive/compute/parallel-ekf/mojo_textbook.mojo` |
+| Mojo textbook fixed-matrix control | `benchmarks/archive/compute/parallel-ekf/mojo_textbook_fixed.mojo` |
+| Mojo scalar control | `benchmarks/archive/compute/parallel-ekf/mojo_scalar.mojo` |
+| Mojo SIMD control | `benchmarks/archive/compute/parallel-ekf/mojo_simd.mojo` |
+| Mojo parallel control | `benchmarks/archive/compute/parallel-ekf/mojo_parallel.mojo` |
+| Mojo native Metal control | `benchmarks/archive/compute/parallel-ekf/mojo_metal.mojo` |
 | Minimal Halide fixed-shape pipeline | `benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp` |
 | Minimal Futhark data-parallel program | `benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut` |
 | Futhark/ISPC compatibility shim | `benchmarks/archive/compute/parallel-ekf/minimal/futhark-ispc-compat.sh` |
@@ -81,6 +91,9 @@ git switch --track origin/codex/mech-program-gpu
 | Rust optimized scalar checked/unchecked evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-rust-scalar-optimized-2026-09-01.json` |
 | PUC Lua baseline/advanced checked/unchecked evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-lua-2026-09-01.json` |
 | LuaJIT scalar checked/unchecked evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-luajit-scalar-2026-09-01.json` |
+| Mojo textbook scalar evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mojo-2026-09-04.json` |
+| Mojo fixed-shape/Metal evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-mojo-advanced-2026-09-04.json` |
+| PyPy textbook/optimized evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-pypy-2026-09-05.json` |
 | Taichi one-worker CPU baseline evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-taichi-cpu-baseline-2026-09-01.json` |
 | Taichi strict one-worker CPU evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-taichi-cpu-strict-2026-09-01.json` |
 | NumPy GPU capability evidence | `benchmarks/archive/compute/parallel-ekf/results/apple-m1-numpy-gpu-2026-08-31.json` |
@@ -789,6 +802,31 @@ seven LuaJIT samples:
 | NumPy sequential small matrices | 0.055 | 0.05x |
 | Julia sequential small matrices | 2.786 | 2.30x |
 | LuaJIT sequential FFI `f32` state | 1.089 | 0.90x |
+
+### Mojo controls
+
+The Mojo sources are kept beside the other language controls so every source
+and its retained evidence live in this benchmark branch. `mojo_textbook.mojo`
+is the matrix/list baseline; `mojo_textbook_fixed.mojo` keeps the same
+matrix-shaped equations in fixed-size value types. `mojo_scalar.mojo`,
+`mojo_simd.mojo`, and `mojo_parallel.mojo` are the progressively specialized
+CPU controls; `mojo_metal.mojo` is the explicit native Metal lane. The source
+is unchanged between checked and unchecked invocations; only candidate
+publication checks are toggled.
+
+Build a control with the installed Mojo compiler and run the same resident
+10,000-filter, 20-turn boundary used by the scalar table:
+
+```text
+mojo build -O3 --fp-mode contract=off mojo_textbook.mojo -o mojo-textbook
+./mojo-textbook 10000 20 checked
+./mojo-textbook 10000 20 unchecked
+```
+
+The retained Apple M1 evidence is in
+[`results/apple-m1-mojo-2026-09-04.json`](results/apple-m1-mojo-2026-09-04.json)
+and
+[`results/apple-m1-mojo-advanced-2026-09-04.json`](results/apple-m1-mojo-advanced-2026-09-04.json).
 
 The Rust control permits inlining of the EKF step and its fixed-shape matrix
 helpers. The previous `#[inline(never)]` control measured `12.947 M/s`, but it

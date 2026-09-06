@@ -1,0 +1,319 @@
+{
+  "generated_at": "2026-09-05T00:33:22.759487-04:00",
+  "lanes": {
+    "cpython_optimized_checked": {
+      "checksum": 2682056.218170356,
+      "command": [
+        "python3",
+        "benchmarks/archive/compute/parallel-ekf/pypy_optimized.py",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.729562584\nthroughput: 274136.865\nchecksum: 2682056.218170356\nfaults: 0\n",
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "interpreter": "python3",
+      "measured_stdout": [
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.734063208\nthroughput: 272456.102\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.731517084\nthroughput: 273404.414\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.739282791\nthroughput: 270532.471\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.749005374\nthroughput: 267020.781\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.728764292\nthroughput: 274437.156\nchecksum: 2682056.218170356\nfaults: 0\n"
+      ],
+      "median_million_ekf_turns_per_second": 0.27245610200000003,
+      "mode": "checked",
+      "source": "pypy_optimized.py",
+      "source_sha256": "1b327ec585959f5fa1ac252f195a6d240c84b8bd1598af23b644b609f2144514",
+      "throughput_ekf_turns_per_second": [
+        272456.102,
+        273404.414,
+        270532.471,
+        267020.781,
+        274437.156
+      ]
+    },
+    "cpython_optimized_unchecked": {
+      "checksum": 2682056.218170356,
+      "command": [
+        "python3",
+        "benchmarks/archive/compute/parallel-ekf/pypy_optimized.py",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.652524121\nthroughput: 306502.079\nchecksum: 2682056.218170356\nfaults: 0\n",
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "interpreter": "python3",
+      "measured_stdout": [
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.650724247\nthroughput: 307349.850\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.652452502\nthroughput: 306535.724\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.649671707\nthroughput: 307847.791\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.655510455\nthroughput: 305105.736\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.648362748\nthroughput: 308469.295\nchecksum: 2682056.218170356\nfaults: 0\n"
+      ],
+      "median_million_ekf_turns_per_second": 0.30734985,
+      "mode": "unchecked",
+      "source": "pypy_optimized.py",
+      "source_sha256": "1b327ec585959f5fa1ac252f195a6d240c84b8bd1598af23b644b609f2144514",
+      "throughput_ekf_turns_per_second": [
+        307349.85,
+        306535.724,
+        307847.791,
+        305105.736,
+        308469.295
+      ]
+    },
+    "cpython_textbook_checked": {
+      "checksum": 2682056.217546967,
+      "command": [
+        "python3",
+        "benchmarks/archive/compute/parallel-ekf/pypy_textbook.py",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 7.364657503\nthroughput: 27156.728\nchecksum: 2682056.217546967\nfaults: 0\n",
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "interpreter": "python3",
+      "measured_stdout": [
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 7.373179208\nthroughput: 27125.341\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 7.356387541\nthroughput: 27187.257\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 7.395943627\nthroughput: 27041.850\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 7.376244083\nthroughput: 27114.070\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 7.409966707\nthroughput: 26990.675\nchecksum: 2682056.217546967\nfaults: 0\n"
+      ],
+      "median_million_ekf_turns_per_second": 0.02711407,
+      "mode": "checked",
+      "source": "pypy_textbook.py",
+      "source_sha256": "82fd812fc098881e953952a5d601a3a9ba31f2e7f48480a9f9c0e6045beee938",
+      "throughput_ekf_turns_per_second": [
+        27125.341,
+        27187.257,
+        27041.85,
+        27114.07,
+        26990.675
+      ]
+    },
+    "cpython_textbook_unchecked": {
+      "checksum": 2682056.217546967,
+      "command": [
+        "python3",
+        "benchmarks/archive/compute/parallel-ekf/pypy_textbook.py",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 7.031667329\nthroughput: 28442.756\nchecksum: 2682056.217546967\nfaults: 0\n",
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "interpreter": "python3",
+      "measured_stdout": [
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 7.065072831\nthroughput: 28308.272\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 7.066589542\nthroughput: 28302.196\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 7.047608290\nthroughput: 28378.422\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 7.057391547\nthroughput: 28339.082\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 7.173352711\nthroughput: 27880.966\nchecksum: 2682056.217546967\nfaults: 0\n"
+      ],
+      "median_million_ekf_turns_per_second": 0.028308272000000002,
+      "mode": "unchecked",
+      "source": "pypy_textbook.py",
+      "source_sha256": "82fd812fc098881e953952a5d601a3a9ba31f2e7f48480a9f9c0e6045beee938",
+      "throughput_ekf_turns_per_second": [
+        28308.272,
+        28302.196,
+        28378.422,
+        28339.082,
+        27880.966
+      ]
+    },
+    "pypy_optimized_checked": {
+      "checksum": 2682056.218170356,
+      "command": [
+        "pypy3.11",
+        "benchmarks/archive/compute/parallel-ekf/pypy_optimized.py",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127293084\nthroughput: 1571177.271\nchecksum: 2682056.218170356\nfaults: 0\n",
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "interpreter": "pypy3.11",
+      "measured_stdout": [
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127287630\nthroughput: 1571244.590\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127217706\nthroughput: 1572108.206\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127193999\nthroughput: 1572401.232\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127517831\nthroughput: 1568408.113\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127145041\nthroughput: 1573006.692\nchecksum: 2682056.218170356\nfaults: 0\n"
+      ],
+      "median_million_ekf_turns_per_second": 1.572108206,
+      "mode": "checked",
+      "source": "pypy_optimized.py",
+      "source_sha256": "1b327ec585959f5fa1ac252f195a6d240c84b8bd1598af23b644b609f2144514",
+      "throughput_ekf_turns_per_second": [
+        1571244.59,
+        1572108.206,
+        1572401.232,
+        1568408.113,
+        1573006.692
+      ]
+    },
+    "pypy_optimized_unchecked": {
+      "checksum": 2682056.218170356,
+      "command": [
+        "pypy3.11",
+        "benchmarks/archive/compute/parallel-ekf/pypy_optimized.py",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127474084\nthroughput: 1568946.353\nchecksum: 2682056.218170356\nfaults: 0\n",
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "interpreter": "pypy3.11",
+      "measured_stdout": [
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127539791\nthroughput: 1568138.055\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127431583\nthroughput: 1569469.639\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127451915\nthroughput: 1569219.258\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127522293\nthroughput: 1568353.223\nchecksum: 2682056.218170356\nfaults: 0\n",
+        "lane: optimized pure-Python scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 0.127483875\nthroughput: 1568825.867\nchecksum: 2682056.218170356\nfaults: 0\n"
+      ],
+      "median_million_ekf_turns_per_second": 1.5688258670000002,
+      "mode": "unchecked",
+      "source": "pypy_optimized.py",
+      "source_sha256": "1b327ec585959f5fa1ac252f195a6d240c84b8bd1598af23b644b609f2144514",
+      "throughput_ekf_turns_per_second": [
+        1568138.055,
+        1569469.639,
+        1569219.258,
+        1568353.223,
+        1568825.867
+      ]
+    },
+    "pypy_textbook_checked": {
+      "checksum": 2682056.217546967,
+      "command": [
+        "pypy3.11",
+        "benchmarks/archive/compute/parallel-ekf/pypy_textbook.py",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "discarded_warmup_stdout": "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 2.186011288\nthroughput: 91490.836\nchecksum: 2682056.217546967\nfaults: 0\n",
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "interpreter": "pypy3.11",
+      "measured_stdout": [
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 2.069853295\nthroughput: 96625.206\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 2.103502836\nthroughput: 95079.501\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 2.082035746\nthroughput: 96059.830\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 2.071729500\nthroughput: 96537.700\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: checked\ninstances: 10000\nturns: 20\nelapsed_s: 2.067691669\nthroughput: 96726.220\nchecksum: 2682056.217546967\nfaults: 0\n"
+      ],
+      "median_million_ekf_turns_per_second": 0.09653769999999999,
+      "mode": "checked",
+      "source": "pypy_textbook.py",
+      "source_sha256": "82fd812fc098881e953952a5d601a3a9ba31f2e7f48480a9f9c0e6045beee938",
+      "throughput_ekf_turns_per_second": [
+        96625.206,
+        95079.501,
+        96059.83,
+        96537.7,
+        96726.22
+      ]
+    },
+    "pypy_textbook_unchecked": {
+      "checksum": 2682056.217546967,
+      "command": [
+        "pypy3.11",
+        "benchmarks/archive/compute/parallel-ekf/pypy_textbook.py",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "discarded_warmup_stdout": "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 1.954598125\nthroughput: 102322.824\nchecksum: 2682056.217546967\nfaults: 0\n",
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "interpreter": "pypy3.11",
+      "measured_stdout": [
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 1.960756503\nthroughput: 102001.447\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 1.981346417\nthroughput: 100941.460\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 1.954519913\nthroughput: 102326.919\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 1.968232330\nthroughput: 101614.020\nchecksum: 2682056.217546967\nfaults: 0\n",
+        "lane: textbook-fidelity scalar outer loop\nmode: unchecked\ninstances: 10000\nturns: 20\nelapsed_s: 1.965380337\nthroughput: 101761.474\nchecksum: 2682056.217546967\nfaults: 0\n"
+      ],
+      "median_million_ekf_turns_per_second": 0.101761474,
+      "mode": "unchecked",
+      "source": "pypy_textbook.py",
+      "source_sha256": "82fd812fc098881e953952a5d601a3a9ba31f2e7f48480a9f9c0e6045beee938",
+      "throughput_ekf_turns_per_second": [
+        102001.447,
+        100941.46,
+        102326.919,
+        101614.02,
+        101761.474
+      ]
+    }
+  },
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "processor": "arm"
+  },
+  "schema_version": 3,
+  "versions": {
+    "cpython": "Python 3.14.6",
+    "pypy": "Python 3.11.15 (194f9f44b505, Aug 22 2026, 09:05:17)\n[PyPy 7.3.23 with GCC Apple LLVM 17.0.0 (clang-1700.6.4.2)]"
+  },
+  "workload": {
+    "instances": 10000,
+    "optimized_precision": "float32 persistent state/covariance; Python scalar intermediates",
+    "textbook_precision": "Python float64 lists",
+    "timed_boundary": "outer EKF turns only; input construction and reset excluded",
+    "turns": 20,
+    "warmup_turns": 5
+  }
+}
