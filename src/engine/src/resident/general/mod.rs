@@ -1475,7 +1475,7 @@ fn activate_internal(
     finalize_resident_backing_footprints(artifact, &mut plan, &activation, &state, &workspace)?;
     ensure_resident_plan_admitted(&plan.memory_plan)?;
     audit_resident_backings(artifact, &plan, &activation, &state, &workspace)?;
-    Ok(ReactiveInstance {
+    let mut instance = ReactiveInstance {
         id,
         plan,
         activation,
@@ -1485,7 +1485,9 @@ fn activate_internal(
         next_epoch: Some(InstanceEpoch::new(1)),
         candidate_active: false,
         candidate_epoch: None,
-    })
+    };
+    instance.prepare_fixed_turn_plans()?;
+    Ok(instance)
 }
 
 fn finalize_resident_backing_footprints(

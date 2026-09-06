@@ -5,30 +5,7 @@ use super::*;
 use crate::memory_planner::TurnMemoryFacts;
 use mech_core::{CallMemoryPlan, PortDirection, RegionPolicy, ResourceDemand, ValueData};
 
-/// Resident lane lengths and semantic descriptors cannot change during an
-/// activation. Only fixed-width ports with no value-dependent region have
-/// invariant footprint facts. Never cache a String, Snapshot, or selector plan.
-pub(super) fn has_invariant_memory_facts(call: &CallMemoryPlan) -> bool {
-    call.deferred_witnesses.is_empty()
-        && call.implementation_memory == ImplementationMemoryClass::NoAdditionalScratch
-        && call
-            .output_regions
-            .iter()
-            .all(|region| matches!(region, RegionAccessPlan::WholeValue))
-        && call.inputs.iter().chain(&call.outputs).all(|port| {
-            matches!(
-                port.value.storage,
-                mech_core::StorageLayoutClass::Scalar {
-                    slot: mech_core::PlannedSlotKind::FixedScalar(_)
-                } | mech_core::StorageLayoutClass::DenseColumnMajor {
-                    slot: mech_core::PlannedSlotKind::FixedScalar(_)
-                }
-            ) && port.value.payload.current_bytes == 0
-                && port.value.payload.required_bytes == 0
-                && port.value.payload.current_nodes == 0
-                && port.value.payload.required_nodes == 0
-        })
-}
+pub(super) use crate::memory_planner::has_invariant_resident_memory_facts as has_invariant_memory_facts;
 
 fn add(left: u64, right: u64) -> Result<u64, MemoryPlanError> {
     left.checked_add(right)
@@ -457,8 +434,7 @@ mod turn_tests {
         .unwrap()
     }
 
-    #[test]
-    fn cached_numeric_plan_is_still_subject_to_concrete_kernel_admission() {
+    fn fixed_numeric_turn() -> crate::memory_planner::TurnMemoryPlan {
         let call = fixed_numeric_call();
         assert!(has_invariant_memory_facts(&call));
         let node = NodeId::new(0);
@@ -483,7 +459,12 @@ mod turn_tests {
             &schemas,
         )
         .unwrap();
-        let cached = std::sync::Arc::new(plan_turn_memory(&program, node, &facts).unwrap());
+        plan_turn_memory(&program, node, &facts).unwrap()
+    }
+
+    #[test]
+    fn cached_numeric_plan_is_still_subject_to_concrete_kernel_admission() {
+        let cached = std::sync::Arc::new(fixed_numeric_turn());
         let before = (*cached).clone();
         for amount in [1, mech_core::RESIDENT_MAX_COMPUTE_WORK + 1] {
             let accepted = crate::resident::budget::with_resident_turn_plan(cached.clone(), || {
@@ -501,20 +482,217 @@ mod turn_tests {
     }
 
     #[test]
-    fn cache_eligibility_excludes_payloads_deferred_regions_and_scratch() {
+    fn fixed_admission_matches_full_reconciliation_for_every_budget_dimension() {
+        use crate::memory_planner::{apply_observed_turn_demand, try_admit_fixed_turn_memory};
+        let mut base = fixed_numeric_turn();
+        base.facts.additional_demand.work.compute = 17;
+        // Re-derive once so the base includes the additional measurement work.
+        base = apply_observed_turn_demand(base, ResourceDemand::default(), None).unwrap();
+        for amount in [0, 1, 1 << 40, u64::MAX] {
+            let demands = [
+                ResourceDemand {
+                    work: mech_core::WorkDemand {
+                        compute: amount,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    work: mech_core::WorkDemand {
+                        comparison: amount,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    work: mech_core::WorkDemand {
+                        canonicalization: amount,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    work: mech_core::WorkDemand {
+                        scalar_instructions: amount,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    turn_peak_bytes: amount,
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    cloned_bytes: amount,
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    retained_nodes: amount,
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    transfer_bytes: amount,
+                    ..Default::default()
+                },
+                ResourceDemand {
+                    storage_bindings: u32::try_from(amount).unwrap_or(u32::MAX),
+                    ..Default::default()
+                },
+            ];
+            for demand in demands {
+                let full = apply_observed_turn_demand(base.clone(), demand, None);
+                let fast = try_admit_fixed_turn_memory(&base, demand, None);
+                let full_admitted = full
+                    .as_ref()
+                    .is_ok_and(|plan| plan.budget_violations.is_empty());
+                assert_eq!(
+                    fast.as_ref().is_ok_and(Option::is_some),
+                    full_admitted,
+                    "{demand:?}"
+                );
+                if let Ok(Some(admitted)) = fast {
+                    assert_eq!(admitted, full.unwrap().demand);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn fixed_admission_reuses_only_unchanged_output_and_transaction_extents() {
+        use crate::memory_planner::{apply_observed_turn_demand, try_admit_fixed_turn_memory};
+        let base = fixed_numeric_turn();
+        let demand = ResourceDemand {
+            persistent_bytes: 8,
+            output_elements: 1,
+            ..Default::default()
+        };
+        let full = apply_observed_turn_demand(base.clone(), demand, None).unwrap();
+        assert_eq!(
+            try_admit_fixed_turn_memory(&base, demand, None).unwrap(),
+            Some(full.demand)
+        );
+        assert_eq!(base.allocations, full.allocations);
+        assert_eq!(base.arenas, full.arenas);
+        assert_eq!(base.transactions, full.transactions);
+        for changed in [
+            ResourceDemand {
+                persistent_bytes: 16,
+                output_elements: 2,
+                ..Default::default()
+            },
+            ResourceDemand {
+                retained_nodes: 1,
+                ..demand
+            },
+            ResourceDemand {
+                persistent_bytes: 9,
+                ..demand
+            },
+        ] {
+            assert_eq!(
+                try_admit_fixed_turn_memory(&base, changed, None).unwrap(),
+                None
+            );
+        }
+        let final_output = CurrentMemoryFootprint {
+            logical_elements: 1,
+            fixed_bytes: 8,
+            ..Default::default()
+        };
+        let full = apply_observed_turn_demand(base.clone(), demand, Some(final_output)).unwrap();
+        assert_eq!(
+            try_admit_fixed_turn_memory(&base, demand, Some(final_output)).unwrap(),
+            Some(full.demand)
+        );
+        assert_eq!(
+            try_admit_fixed_turn_memory(
+                &base,
+                demand,
+                Some(CurrentMemoryFootprint {
+                    payload_bytes: 1,
+                    ..final_output
+                })
+            )
+            .unwrap(),
+            None
+        );
+        let mut undersized = base.clone();
+        for allocation in undersized
+            .allocations
+            .iter_mut()
+            .filter(|a| a.role == mech_core::AllocationRole::TransactionStage)
+        {
+            allocation.current_bytes = 0;
+            allocation.capacity_bytes = 0;
+        }
+        assert_eq!(
+            try_admit_fixed_turn_memory(&undersized, demand, None).unwrap(),
+            None
+        );
+        let mut bounded = base;
+        bounded.budget_limits.max_output_bytes = Some(7);
+        assert!(try_admit_fixed_turn_memory(&bounded, demand, None).is_err());
+    }
+
+    #[test]
+    fn cache_eligibility_accepts_fixed_ordinal_lists_but_not_masks_or_payloads() {
+        use mech_core::{FloatWidth, PlannedSlotKind, ScalarMemoryKind, StorageLayoutClass};
         let call = fixed_numeric_call();
         let mut selector = call.clone();
         selector.output_regions[0] = RegionAccessPlan::Deferred(RegionPolicy::WholeValue);
-        assert!(!has_invariant_memory_facts(&selector));
+        assert!(has_invariant_memory_facts(&selector));
+        for region in [
+            RegionPolicy::IndexedAxis { axis: 0 },
+            RegionPolicy::SingleElement,
+        ] {
+            selector.output_regions[0] = RegionAccessPlan::Deferred(region);
+            for kind in [
+                ScalarMemoryKind::Index,
+                ScalarMemoryKind::Floating(FloatWidth::W64),
+            ] {
+                let slot = PlannedSlotKind::FixedScalar(kind);
+                for storage in [
+                    StorageLayoutClass::Scalar { slot },
+                    StorageLayoutClass::DenseColumnMajor { slot },
+                ] {
+                    selector.inputs[0].value.storage = storage;
+                    assert!(has_invariant_memory_facts(&selector));
+                }
+            }
+            for slot in [
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Bool),
+                PlannedSlotKind::StringHeader,
+                PlannedSlotKind::CanonicalValueHandle,
+            ] {
+                for storage in [
+                    StorageLayoutClass::Scalar { slot },
+                    StorageLayoutClass::DenseColumnMajor { slot },
+                ] {
+                    selector.inputs[0].value.storage = storage;
+                    assert!(!has_invariant_memory_facts(&selector));
+                }
+            }
+        }
+        let mut rectangle = call.clone();
+        rectangle.inputs = vec![call.inputs[0].clone(); 4].into();
+        rectangle.output_regions[0] = RegionAccessPlan::Deferred(RegionPolicy::RectangularRegion);
+        assert!(has_invariant_memory_facts(&rectangle));
+        for index in [2, 3] {
+            let mut masked = rectangle.clone();
+            masked.inputs[index].value.storage = StorageLayoutClass::Scalar {
+                slot: PlannedSlotKind::FixedScalar(ScalarMemoryKind::Bool),
+            };
+            assert!(!has_invariant_memory_facts(&masked));
+        }
         let mut scratch = call.clone();
         scratch.implementation_memory = ImplementationMemoryClass::CloneInput { input: 0 };
         assert!(!has_invariant_memory_facts(&scratch));
         for slot in [
-            mech_core::PlannedSlotKind::StringHeader,
-            mech_core::PlannedSlotKind::CanonicalValueHandle,
+            PlannedSlotKind::StringHeader,
+            PlannedSlotKind::CanonicalValueHandle,
         ] {
             let mut payload = call.clone();
-            payload.inputs[0].value.storage = mech_core::StorageLayoutClass::Scalar { slot };
+            payload.inputs[0].value.storage = StorageLayoutClass::Scalar { slot };
             assert!(!has_invariant_memory_facts(&payload));
         }
     }

@@ -7,28 +7,27 @@ use mech_core::{
 
 use crate::memory_planner::{
     TurnMemoryPlan, apply_observed_turn_demand, check_turn_planning_progress,
+    try_admit_fixed_turn_memory,
 };
 
 thread_local! {
-    static ACTIVE_TURN_PLANS: Mutex<Vec<Arc<TurnMemoryPlan>>> = const { Mutex::new(Vec::new()) };
+    static ACTIVE_TURN_PLAN: Mutex<Option<Arc<TurnMemoryPlan>>> = const { Mutex::new(None) };
 }
 
-fn with_active_turn_plans<T>(use_plans: impl FnOnce(&mut Vec<Arc<TurnMemoryPlan>>) -> T) -> T {
-    ACTIVE_TURN_PLANS.with(|plans| {
+fn with_active_turn_plan<T>(use_plan: impl FnOnce(&mut Option<Arc<TurnMemoryPlan>>) -> T) -> T {
+    ACTIVE_TURN_PLAN.with(|plans| {
         let mut plans = plans
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        use_plans(&mut plans)
+        use_plan(&mut plans)
     })
 }
 
-struct ActiveTurnPlanGuard;
+struct ActiveTurnPlanGuard(Option<Arc<TurnMemoryPlan>>);
 
 impl Drop for ActiveTurnPlanGuard {
     fn drop(&mut self) {
-        with_active_turn_plans(|plans| {
-            plans.pop();
-        });
+        with_active_turn_plan(|plan| *plan = self.0.take());
     }
 }
 
@@ -39,8 +38,8 @@ pub(crate) fn with_resident_turn_plan<T>(
     plan: impl Into<Arc<TurnMemoryPlan>>,
     execute: impl FnOnce() -> T,
 ) -> T {
-    with_active_turn_plans(|plans| plans.push(plan.into()));
-    let _guard = ActiveTurnPlanGuard;
+    let previous = with_active_turn_plan(|active| active.replace(plan.into()));
+    let _guard = ActiveTurnPlanGuard(previous);
     execute()
 }
 
@@ -167,7 +166,9 @@ pub(crate) struct ResidentBudgetMeter {
 /// manufacture a permit locally.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ResidentBudgetPermit {
-    _plan: TurnMemoryPlan,
+    _plan: Arc<TurnMemoryPlan>,
+    // Complete demand checked for this admission, not a cached permit.
+    _demand: ResourceDemand,
 }
 
 #[derive(Clone, Debug)]
@@ -241,8 +242,8 @@ impl KernelCostEstimate {
     fn turn_plan(
         self,
         final_output: Option<PublishedOutputFootprint>,
-    ) -> Result<TurnMemoryPlan, ResidentKernelError> {
-        let active = with_active_turn_plans(|plans| plans.last().cloned());
+    ) -> Result<ResidentBudgetPermit, ResidentKernelError> {
+        let active = with_active_turn_plan(|plan| plan.clone());
         if let Some(active) = active {
             let fixed = active
                 .call
@@ -264,12 +265,22 @@ impl KernelCostEstimate {
                     })
                 })
                 .transpose()?;
+            if let Some(demand) = try_admit_fixed_turn_memory(&active, self.demand, final_output)
+                .map_err(|_| ResidentKernelError::InvalidShape)?
+            {
+                return Ok(ResidentBudgetPermit {
+                    _plan: active,
+                    _demand: demand,
+                });
+            }
             return apply_observed_turn_demand((*active).clone(), self.demand, final_output)
-                .map_err(|_| ResidentKernelError::InvalidShape);
+                .map_err(|_| ResidentKernelError::InvalidShape)
+                .and_then(ResidentBudgetPermit::from_turn_plan);
         }
         #[cfg(test)]
         {
-            return detached_test_turn_plan(self.demand);
+            return detached_test_turn_plan(self.demand)
+                .and_then(ResidentBudgetPermit::from_turn_plan);
         }
         #[cfg(not(test))]
         {
@@ -280,8 +291,8 @@ impl KernelCostEstimate {
     // This admits another borrowed measurement step, never allocation or
     // publication. Complete candidate facts still require `turn_plan`.
     fn check_planning_progress(self) -> Result<(), ResidentKernelError> {
-        let result = with_active_turn_plans(|plans| {
-            plans.last().map(|plan| {
+        let result = with_active_turn_plan(|active| {
+            active.as_ref().map(|plan| {
                 check_turn_planning_progress(plan, self.demand)
                     .map_err(|_| ResidentKernelError::InvalidShape)
             })
@@ -299,21 +310,13 @@ impl KernelCostEstimate {
         }
     }
 
-    fn checked(self) -> Result<TurnMemoryPlan, ResidentKernelError> {
-        let plan = self.turn_plan(None)?;
-        if !plan.budget_violations.is_empty() {
-            return Err(ResidentKernelError::InvalidShape);
-        }
-        Ok(plan)
+    fn checked(self) -> Result<ResidentBudgetPermit, ResidentKernelError> {
+        self.turn_plan(None)
     }
 
     #[cfg(test)]
     pub(crate) fn admit(self) -> Result<(), ResidentKernelError> {
         self.checked().map(drop)
-    }
-
-    fn permit(self) -> Result<ResidentBudgetPermit, ResidentKernelError> {
-        ResidentBudgetPermit::from_turn_plan(self.checked()?)
     }
 
     /// Returns the single allowance left for data-dependent work that must be
@@ -381,7 +384,10 @@ impl ResidentBudgetPermit {
         if !plan.budget_violations.is_empty() {
             return Err(ResidentKernelError::InvalidShape);
         }
-        Ok(Self { _plan: plan })
+        Ok(Self {
+            _demand: plan.demand,
+            _plan: Arc::new(plan),
+        })
     }
 }
 
@@ -393,7 +399,7 @@ impl<P> PreparedKernel<P> {
     pub(crate) fn admit(self) -> Result<AdmittedKernel<P>, ResidentKernelError> {
         Ok(AdmittedKernel {
             plan: self.plan,
-            _permit: self.cost.permit()?,
+            _permit: self.cost.checked()?,
         })
     }
 }
@@ -439,9 +445,7 @@ impl<P> PreparedMutationPlan<P> {
     pub(crate) fn admit(self) -> Result<AdmittedMutationPlan<P>, ResidentKernelError> {
         Ok(AdmittedMutationPlan {
             operation: self.operation,
-            _permit: ResidentBudgetPermit::from_turn_plan(
-                self.cost.turn_plan(Some(self.final_output))?,
-            )?,
+            _permit: self.cost.turn_plan(Some(self.final_output))?,
         })
     }
 }
@@ -821,6 +825,32 @@ mod tests {
     use super::*;
 
     #[test]
+    fn nested_turn_authority_restores_previous_plan_after_panic() {
+        let outer = Arc::new(detached_test_turn_plan(ResourceDemand::default()).unwrap());
+        let inner = Arc::new(detached_test_turn_plan(ResourceDemand::default()).unwrap());
+        assert!(with_active_turn_plan(|plan| plan.is_none()));
+        with_resident_turn_plan(outer.clone(), || {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                with_resident_turn_plan(inner.clone(), || {
+                    assert!(with_active_turn_plan(|plan| Arc::ptr_eq(
+                        plan.as_ref().unwrap(),
+                        &inner
+                    )));
+                    panic!("injected nested kernel failure");
+                });
+            }));
+            assert!(result.is_err());
+            assert!(with_active_turn_plan(|plan| Arc::ptr_eq(
+                plan.as_ref().unwrap(),
+                &outer
+            )));
+        });
+        assert!(with_active_turn_plan(|plan| plan.is_none()));
+        assert_eq!(Arc::strong_count(&outer), 1);
+        assert_eq!(Arc::strong_count(&inner), 1);
+    }
+
+    #[test]
     fn resident_estimates_reconcile_with_the_real_node_turn_plan() {
         let node = mech_core::NodeId::new(7);
         let program = crate::memory_planner::ProgramMemoryPlan {
@@ -864,9 +894,9 @@ mod tests {
             .checked()
         })
         .unwrap();
-        assert_eq!(checked.node, node);
-        assert_eq!(checked.allocations[0].capacity_bytes, 24);
-        assert_eq!(checked.arenas[0].capacity_bytes, 24);
+        assert_eq!(checked._plan.node, node);
+        assert_eq!(checked._plan.allocations[0].capacity_bytes, 24);
+        assert_eq!(checked._plan.arenas[0].capacity_bytes, 24);
     }
 
     #[test]

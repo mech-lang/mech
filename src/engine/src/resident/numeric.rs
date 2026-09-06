@@ -14220,6 +14220,42 @@ mod tests {
     }
 
     #[test]
+    fn fixed_f64_selectors_are_revalidated_on_every_indexed_write() {
+        let kernel = indexed_kernel(add_indexed_rows, 2, 1, 2, 2);
+        let source = [1.0, 2.0];
+        let mut target = [10.0, 20.0];
+        for (indices, expected) in [
+            ([1.0, 2.0], [11.0, 22.0]),
+            ([2.0, 1.0], [13.0, 23.0]),
+            ([1.0, 1.0], [16.0, 23.0]),
+        ] {
+            let inputs = [
+                ResidentValueRef::F64(&source),
+                ResidentValueRef::F64(&indices),
+            ];
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut target)),
+                Ok(true)
+            );
+            assert_eq!(target, expected);
+        }
+        for invalid in [0.0, 3.0, -1.0, f64::NAN, f64::INFINITY] {
+            let indices = [1.0, invalid];
+            let inputs = [
+                ResidentValueRef::F64(&source),
+                ResidentValueRef::F64(&indices),
+            ];
+            let before = target;
+            assert!(
+                kernel
+                    .execute(&Inputs(&inputs), ResidentValueMut::F64(&mut target))
+                    .is_err()
+            );
+            assert_eq!(target, before, "invalid late selector {invalid}");
+        }
+    }
+
+    #[test]
     fn late_out_of_range_index_rejects_before_indexed_row_mutation() {
         let kernel = indexed_kernel(sub_indexed_rows, 2, 1, 2, 2);
         let source = [1.0, 2.0];

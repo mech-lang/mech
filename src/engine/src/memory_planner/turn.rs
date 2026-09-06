@@ -298,6 +298,152 @@ pub(crate) fn check_turn_planning_progress(
     Ok(())
 }
 
+/// Admit a fresh concrete estimate against an unchanged fixed-width plan.
+/// Only invariant footprints may avoid derivation. Changed cardinality,
+/// payload, regions, or transaction extents take the complete planning path.
+/// Work is still checked on every admission, even when the backing is reused.
+#[cfg(feature = "resident-artifact")]
+pub(crate) fn try_admit_fixed_turn_memory(
+    plan: &TurnMemoryPlan,
+    observed: ResourceDemand,
+    final_output: Option<CurrentMemoryFootprint>,
+) -> Result<Option<ResourceDemand>, MemoryPlanError> {
+    let Some(call) = plan.call.as_ref() else {
+        return Ok(None);
+    };
+    if !has_invariant_resident_memory_facts(call) || !plan.budget_violations.is_empty() {
+        return Ok(None);
+    }
+    if call.outputs.len() != 1 {
+        return Ok(None);
+    }
+    if observed.persistent_bytes != 0 || observed.output_elements != 0 || final_output.is_some() {
+        let Some(previous) =
+            plan.facts
+                .resolved_footprints
+                .get(&(plan.node, PortDirection::Output, 0))
+        else {
+            return Ok(None);
+        };
+        let fixed = call.outputs[0].value.current_address_span_bytes;
+        let retained = final_output
+            .map(|f| {
+                f.fixed_bytes
+                    .checked_add(f.payload_bytes)
+                    .ok_or(MemoryPlanError::TargetAddressOverflow)
+            })
+            .transpose()?
+            .unwrap_or(observed.persistent_bytes);
+        let elements = final_output.map_or(observed.output_elements, |f| f.logical_elements);
+        let nodes = final_output.map_or(observed.retained_nodes, |f| f.retained_nodes);
+        if elements != previous.logical_elements
+            || retained != fixed
+            || retained != previous.encoded_bytes
+            || previous.payload_bytes != 0
+            || nodes != previous.retained_nodes
+        {
+            return Ok(None);
+        }
+    }
+    let observed = checked_demand_add(observed, plan.facts.additional_demand)?;
+    let mut current = 0_u64;
+    let mut capacity = 0_u64;
+    for stage in plan
+        .allocations
+        .iter()
+        .filter(|allocation| allocation.role == mech_core::AllocationRole::TransactionStage)
+    {
+        current = current
+            .checked_add(stage.current_bytes)
+            .ok_or(MemoryPlanError::TargetAddressOverflow)?;
+        capacity = capacity
+            .checked_add(stage.capacity_bytes)
+            .ok_or(MemoryPlanError::TargetAddressOverflow)?;
+    }
+    if observed.persistent_bytes > current || observed.persistent_bytes > capacity {
+        return Ok(None);
+    }
+    let demand = demand_max(plan.demand, observed);
+    if let Some(violation) = mech_core::evaluate_memory_budget(
+        MemoryObjectOwner::NodeOutput {
+            node: plan.node,
+            port: 0,
+        },
+        demand,
+        plan.output_bytes.max(observed.persistent_bytes),
+        plan.storage_buffer_bytes,
+        plan.budget_limits,
+    )
+    .first()
+    {
+        return Err(MemoryPlanError::TargetLimitExceeded {
+            violation: violation.clone(),
+        });
+    }
+    Ok(Some(demand))
+}
+
+#[cfg(feature = "resident-artifact")]
+/// Resident lane lengths and semantic descriptors cannot change during an
+/// activation. Index and F64 ordinal lists have invariant cardinality even when their
+/// entries change; execution must still validate those entries on every turn.
+/// Boolean masks, payloads, and other value-dependent regions are not cached.
+pub(crate) fn has_invariant_resident_memory_facts(call: &mech_core::CallMemoryPlan) -> bool {
+    call.deferred_witnesses.is_empty()
+        && call.implementation_memory == mech_core::ImplementationMemoryClass::NoAdditionalScratch
+        && call.output_regions.iter().all(|region| match region {
+            RegionAccessPlan::WholeValue
+            | RegionAccessPlan::Contiguous { .. }
+            | RegionAccessPlan::Strided { .. }
+            | RegionAccessPlan::Rectangle { .. }
+            | RegionAccessPlan::Gather { .. }
+            | RegionAccessPlan::Deferred(mech_core::RegionPolicy::WholeValue) => true,
+            RegionAccessPlan::Deferred(policy) => {
+                let selectors = match policy {
+                    mech_core::RegionPolicy::IndexedAxis { .. }
+                    | mech_core::RegionPolicy::SingleElement => 1,
+                    mech_core::RegionPolicy::RectangularRegion if call.inputs.len() >= 4 => 2,
+                    _ => return false,
+                };
+                call.inputs.len() >= selectors
+                    && call.inputs.iter().rev().take(selectors).all(|port| {
+                        matches!(
+                            port.value.storage,
+                            mech_core::StorageLayoutClass::Scalar {
+                                slot: mech_core::PlannedSlotKind::FixedScalar(
+                                    mech_core::ScalarMemoryKind::Index
+                                        | mech_core::ScalarMemoryKind::Floating(
+                                            mech_core::FloatWidth::W64
+                                        )
+                                )
+                            } | mech_core::StorageLayoutClass::DenseColumnMajor {
+                                slot: mech_core::PlannedSlotKind::FixedScalar(
+                                    mech_core::ScalarMemoryKind::Index
+                                        | mech_core::ScalarMemoryKind::Floating(
+                                            mech_core::FloatWidth::W64
+                                        )
+                                )
+                            }
+                        )
+                    })
+            }
+            RegionAccessPlan::CollectionEntry { .. } => false,
+        })
+        && call.inputs.iter().chain(&call.outputs).all(|port| {
+            matches!(
+                port.value.storage,
+                mech_core::StorageLayoutClass::Scalar {
+                    slot: mech_core::PlannedSlotKind::FixedScalar(_)
+                } | mech_core::StorageLayoutClass::DenseColumnMajor {
+                    slot: mech_core::PlannedSlotKind::FixedScalar(_)
+                }
+            ) && port.value.payload.current_bytes == 0
+                && port.value.payload.required_bytes == 0
+                && port.value.payload.current_nodes == 0
+                && port.value.payload.required_nodes == 0
+        })
+}
+
 /// Reconciles an executor's complete concrete estimate with the declaration-
 /// and footprint-derived turn plan. This preserves real node identity,
 /// allocations, transactions, and placement while replacing weaker demand

@@ -12,9 +12,10 @@ use mech_core::{
 
 use super::{
     ActivatedExternalNode, ActivatedNodeIndex, ActivatedTurnStep, F64_STATE_ARENA_BASE,
-    F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance, ResidentEffectIntent,
-    ResidentExternalPublicationAuthority, ResidentIntegrityMode, ResidentReadLocation,
-    ResidentRegion, ResidentStorageClass, SlotRole, StateArena, StateVersion, TypedResidentArena,
+    F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance, ResidentActivationError,
+    ResidentEffectIntent, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
+    ResidentReadLocation, ResidentRegion, ResidentStorageClass, SlotRole, StateArena, StateVersion,
+    TypedResidentArena,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -256,6 +257,34 @@ impl Drop for PreparedResidentTurn<'_> {
 }
 
 impl ReactiveInstance {
+    /// Resolve invariant lane footprints during activation, before the first
+    /// turn. No kernel executes and no state transition is warmed up here.
+    pub(super) fn prepare_fixed_turn_plans(&mut self) -> Result<(), ResidentActivationError> {
+        for index in 0..self.plan.steps.len() {
+            let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
+                continue;
+            };
+            let artifact_node = node.artifact_node;
+            let call = self.plan.memory_plan.call_for_node(artifact_node).ok_or(
+                ResidentActivationError::InvalidDependency {
+                    node: artifact_node,
+                },
+            )?;
+            if super::live::has_invariant_memory_facts(call) {
+                self.with_kernel_turn_plan(
+                    ActivatedNodeIndex(index as u32),
+                    InstanceEpoch::ZERO,
+                    InstanceEpoch::ZERO,
+                    |_| Ok(()),
+                )
+                .map_err(|_| ResidentActivationError::ActivationKernel {
+                    node: artifact_node,
+                })?;
+            }
+        }
+        Ok(())
+    }
+
     fn with_kernel_turn_plan<T>(
         &mut self,
         node_index: ActivatedNodeIndex,

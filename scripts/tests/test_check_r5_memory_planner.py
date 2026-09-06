@@ -461,6 +461,16 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "scheduled call remapping")
 
+    def test_fixed_turn_admission_keeps_actual_target_limits(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/memory_planner/turn.rs",
+            "plan.output_bytes.max(observed.persistent_bytes),\n        plan.storage_buffer_bytes,\n        plan.budget_limits,",
+            "plan.output_bytes.max(observed.persistent_bytes),\n        plan.storage_buffer_bytes,\n        MemoryBudgetLimits::default(),",
+        )
+        self.assert_failure(root, "try_admit_fixed_turn_memory plan.budget_limits")
+
 
 if __name__ == "__main__":
     unittest.main()

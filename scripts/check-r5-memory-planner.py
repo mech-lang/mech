@@ -438,7 +438,7 @@ def failures(root: Path) -> list[str]:
     ):
         if required not in turn:
             found.append(f"turn planning omits deferred budget closure: {required}")
-    for name in ("plan_turn_memory", "apply_observed_turn_demand", "check_turn_planning_progress"):
+    for name in ("plan_turn_memory", "apply_observed_turn_demand", "check_turn_planning_progress", "try_admit_fixed_turn_memory"):
         body = dict(function_bodies(turn, name)).get(name, "")
         if not re.search(r"evaluate_memory_budget\([\s\S]*?plan\.budget_limits,\s*\)", body):
             found.append(f"turn planning omits deferred budget closure: {name} plan.budget_limits")
