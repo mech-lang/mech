@@ -5,101 +5,196 @@ on:
     paths: [.github/workflows/r5-ci-diagnostics.yml]
 permissions:
   contents: read
-env:
-  CARGO_BUILD_JOBS: "1"
-  CARGO_INCREMENTAL: "0"
-  CARGO_PROFILE_DEV_DEBUG: "0"
-  CARGO_PROFILE_TEST_DEBUG: "0"
-  CARGO_TERM_COLOR: never
-  RUSTUP_TOOLCHAIN: nightly-2026-03-03
+  actions: read
 jobs:
-  cache-exclusions:
-    name: Diagnose remaining activation cache exclusions
+  prepare:
+    name: Materialize exact repair without updating R5
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: 962c217b10fb5e5a002bda16334dbd1f0d15da16
-          persist-credentials: false
-      - name: Install pinned compiler
-        run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Instrument activation only without altering eligibility or execution
-        run: |
-          mkdir -p /tmp/r5-cache-exclusions
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('src/engine/src/resident/general/execution.rs')
-          s = p.read_text()
-          old = '            if super::live::has_invariant_memory_facts(call) {'
-          assert s.count(old) == 1
-          diagnostic = '''            eprintln!("CACHE_DIAGNOSTIC node={} eligible={} operation={} scratch={:?} deferred={:?} regions={:?}", artifact_node.get(), super::live::has_invariant_memory_facts(call), call.bound_call.operation_descriptor().canonical_name, call.implementation_memory, call.deferred_witnesses, call.output_regions);
-                      for (direction, ports) in [("in", call.inputs.as_ref()), ("out", call.outputs.as_ref())] {
-                          for (ordinal, port) in ports.iter().enumerate() {
-                              eprintln!("CACHE_PORT node={} direction={direction} ordinal={ordinal} storage={:?} payload={:?}", artifact_node.get(), port.value.storage, port.value.payload);
-                          }
-                      }
-          '''
-          p.write_text(s.replace(old, diagnostic + old))
-          PY
-          git diff > /tmp/r5-cache-exclusions/instrumentation.patch
-      - name: Reproduce frozen allocation failure with activation evidence
-        run: |
-          set -euo pipefail
-          python3 scripts/check-r1-artifact-closure.py nbody 2>&1 | tee /tmp/r5-cache-exclusions/command.log
-      - name: Preserve diagnostic evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: r5-cache-exclusions
-          path: /tmp/r5-cache-exclusions
-          retention-days: 3
-
-  resolved-specialization:
-    name: Qualify complete frozen specialization cases with resolved contracts
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      candidate: ${{ steps.candidate.outputs.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: 962c217b10fb5e5a002bda16334dbd1f0d15da16
           fetch-depth: 0
           persist-credentials: false
-      - name: Apply only the fixture's production contract-resolution path
+      - name: Verify exact repair and create immutable candidate objects
+        id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 - <<'PY'
-          import base64, hashlib, json, pathlib, subprocess
-          root = pathlib.Path('/tmp/r5-resolved-specialization')
+          python3 -u - <<'PY'
+          import base64, gzip, hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-complete-repair')
           root.mkdir()
-          raw = subprocess.check_output(['gh', 'api', 'repos/mech-lang/mech/git/blobs/d3132bc3ecffddbbe8a27939ed3a1879eb0a8616'])
-          patch = base64.b64decode(json.loads(raw)['content'])
-          assert hashlib.sha256(patch).hexdigest() == '6363de47212892be66b26e9e06043e57c203c1406f683686452281aff7ede828'
+          parent = '962c217b10fb5e5a002bda16334dbd1f0d15da16'
+          expected_tree = '920c207e71ba671b1d8ec43cae45dc68aa8acc6f'
+          def api(path, data=None):
+              args = ['gh', 'api', 'repos/mech-lang/mech/' + path]
+              if data is not None:
+                  args += ['--method', 'POST', '--input', '-']
+              return json.loads(subprocess.check_output(args, input=None if data is None else json.dumps(data).encode(), timeout=120))
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == parent
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip() == 'b2041cb643dfe495389d3b23553f80c187933382'
+          packed = base64.b64decode(api('git/blobs/4902a6512560a5a4d4134bff2651fd55a38cfe63')['content'])
+          patch = gzip.decompress(packed)
+          assert hashlib.sha256(patch).hexdigest() == '2ab9ec3d3d906983f5389bffd5aae8df004719692b7ccf172f1035f1fe868c6a'
           subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
           subprocess.run(['git', 'apply', '-'], input=patch, check=True)
           (root/'candidate.patch').write_bytes(patch)
           subprocess.run(['git', 'add', '-u'], check=True)
-          (root/'tree').write_text(subprocess.check_output(['git', 'write-tree'], text=True))
-          (root/'parent').write_text(subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True))
+          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+          assert subprocess.check_output(['git', 'write-tree'], text=True).strip() == expected_tree
+          paths = subprocess.check_output(['git', 'diff', '--cached', '--name-only', 'HEAD'], text=True).splitlines()
+          assert paths == ['src/engine/src/memory_planner/turn.rs', 'src/engine/src/resident/general/live.rs', 'src/stdlib/tests/specialization_contract.rs']
+          elements = []
+          for path in paths:
+              blob = api('git/blobs', {'content': pathlib.Path(path).read_text(), 'encoding': 'utf-8'})['sha']
+              assert blob == subprocess.check_output(['git', 'hash-object', path], text=True).strip()
+              elements.append({'path': path, 'mode': '100644', 'type': 'blob', 'sha': blob})
+          tree = api('git/trees', {'base_tree': 'b2041cb643dfe495389d3b23553f80c187933382', 'tree': elements})['sha']
+          assert tree == expected_tree
+          commit = api('git/commits', {
+              'message': 'fix(r5): retain fixed finalization reservations and resolve specialization contracts\n\nReuse immutable payload-free turn plans for shared CanonicalFinalize factories without dropping scratch reservations or concrete budget admission. Exercise scratch retention, admission equivalence, and budget rejection. Make the frozen specialization fixture use the same resolved operation contract as the production resolver, preserving and extending its assertions.',
+              'tree': tree,
+              'parents': [parent],
+          })['sha']
+          receipt = {'parent': parent, 'tree': tree, 'commit': commit, 'paths': paths}
+          (root/'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('sha=' + commit + '\n')
+          print(json.dumps(receipt, indent=2))
           PY
-      - name: Install pinned compiler and static tools
+      - name: Capture all previous qualification jobs without truncation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -u - <<'PY'
+          import collections, json, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-complete-repair')
+          jobs = []
+          page = 1
+          while True:
+              data = json.loads(subprocess.check_output(['gh', 'api', f'repos/mech-lang/mech/actions/runs/34001077477/jobs?per_page=100&page={page}'], timeout=120))
+              jobs.extend(data['jobs'])
+              if len(jobs) >= data['total_count']:
+                  break
+              page += 1
+          (root/'previous-jobs.json').write_text(json.dumps(jobs, indent=2) + '\n')
+          print('Previous candidate:', dict(collections.Counter(j['conclusion'] or j['status'] for j in jobs)))
+          for j in jobs:
+              if j['conclusion'] == 'failure':
+                  print('FAILED', j['id'], j['name'], [s['name'] for s in j['steps'] if s['conclusion'] == 'failure'])
+          PY
+      - name: Preserve exact repair receipt and previous job inventory
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-complete-repair-candidate
+          path: /tmp/r5-complete-repair
+          retention-days: 3
+
+  complete-qualification:
+    name: Complete unchanged full qualification
+    needs: prepare
+    uses: mech-lang/mech/.github/workflows/ci-full.yml@251be1356f5049ce00ced8de519e4646d3159e24
+    with:
+      validation_ref: ${{ needs.prepare.outputs.candidate }}
+      release_channel: stable
+
+  static-and-resident-engine:
+    name: Exact static contracts and resident engine regressions
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_TERM_COLOR: never
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.prepare.outputs.candidate }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned compiler and original static tools
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
           if ! command -v rg >/dev/null 2>&1; then
             sudo apt-get update
             sudo apt-get install --yes ripgrep
           fi
-      - name: Run unchanged full-feature frozen test and the complete source qualification
+          cargo +nightly-2026-03-03 fetch --locked
+      - name: Run exact static-contract commands and all resident engine regressions
         run: |
           set -euo pipefail
-          cargo fmt --all -- --check
-          cargo test --locked --manifest-path src/stdlib/Cargo.toml --no-default-features --features full_compiler,matrix2,vector2 --test specialization_contract 2>&1 | tee /tmp/r5-resolved-specialization/specialization.log
-          python3 scripts/check-function-contracts.py source 2>&1 | tee /tmp/r5-resolved-specialization/source.log
-      - name: Preserve qualification evidence
+          mkdir -p /tmp/r5-complete-repair-regressions
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/ci.yml').read_text()
+          body = text.split('      - name: Check formatting and cheap global contracts\n        run: |\n', 1)[1].split('\n  standard-linux:', 1)[0]
+          lines = body.rstrip().splitlines()
+          assert all(not line.strip() or line.startswith('          ') for line in lines)
+          Path('/tmp/r5-complete-repair-regressions/static.sh').write_text('set -euo pipefail\n' + '\n'.join(line[10:] for line in lines) + '\n')
+          PY
+          bash -n /tmp/r5-complete-repair-regressions/static.sh
+          bash /tmp/r5-complete-repair-regressions/static.sh 2>&1 | tee /tmp/r5-complete-repair-regressions/static.log
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib --test r5_memory_plan 2>&1 | tee /tmp/r5-complete-repair-regressions/engine.log
+          python3 -B -m unittest scripts/tests/test_check_r5_memory_planner.py scripts/tests/test_native_linkage_profiles.py 2>&1 | tee /tmp/r5-complete-repair-regressions/checker-tests.log
+          test "$(git rev-parse HEAD^{tree})" = 920c207e71ba671b1d8ec43cae45dc68aa8acc6f
+          git diff --exit-code
+      - name: Preserve static and engine evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r5-resolved-specialization
-          path: /tmp/r5-resolved-specialization
+          name: r5-complete-repair-static-and-engine
+          path: /tmp/r5-complete-repair-regressions
+          retention-days: 3
+
+  qualification-receipt:
+    name: Record complete exact-candidate qualification
+    needs: [prepare, complete-qualification, static-and-resident-engine]
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CANDIDATE: ${{ needs.prepare.outputs.candidate }}
+      FULL_RESULT: ${{ needs.complete-qualification.result }}
+      ENGINE_RESULT: ${{ needs.static-and-resident-engine.result }}
+    steps:
+      - name: Record every job and require both qualification groups to pass
+        run: |
+          python3 -u - <<'PY'
+          import collections, json, os, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-complete-qualification')
+          root.mkdir()
+          jobs = []
+          page = 1
+          while True:
+              data = json.loads(subprocess.check_output(['gh', 'api', f'repos/mech-lang/mech/actions/runs/{os.environ["GITHUB_RUN_ID"]}/jobs?per_page=100&page={page}'], timeout=120))
+              jobs.extend(data['jobs'])
+              if len(jobs) >= data['total_count']:
+                  break
+              page += 1
+          receipt = {'candidate': os.environ['CANDIDATE'], 'full': os.environ['FULL_RESULT'], 'static_and_engine': os.environ['ENGINE_RESULT'], 'jobs': jobs}
+          (root/'qualification.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print('candidate', receipt['candidate'])
+          print('job results', dict(collections.Counter(j['conclusion'] or j['status'] for j in jobs)))
+          for j in jobs:
+              if j['conclusion'] not in ('success', None):
+                  print(j['conclusion'], j['id'], j['name'])
+          assert receipt['full'] == 'success' and receipt['static_and_engine'] == 'success'
+          PY
+      - name: Preserve complete qualification receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-complete-qualification-receipt
+          path: /tmp/r5-complete-qualification
           retention-days: 3
