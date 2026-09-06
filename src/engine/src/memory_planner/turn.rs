@@ -390,7 +390,15 @@ pub(crate) fn try_admit_fixed_turn_memory(
 /// Boolean masks, payloads, and other value-dependent regions are not cached.
 pub(crate) fn has_invariant_resident_memory_facts(call: &mech_core::CallMemoryPlan) -> bool {
     call.deferred_witnesses.is_empty()
-        && call.implementation_memory == mech_core::ImplementationMemoryClass::NoAdditionalScratch
+        // A fixed-width canonical fallback has fixed draft/finalization
+        // obligations too. Cache the complete plan, including its scratch
+        // allocations and work, rather than dropping its declared class.
+        // The zero-payload checks below exclude actual canonical values.
+        && matches!(
+            call.implementation_memory,
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch
+                | mech_core::ImplementationMemoryClass::CanonicalFinalize
+        )
         && call.output_regions.iter().all(|region| match region {
             RegionAccessPlan::WholeValue
             | RegionAccessPlan::Contiguous { .. }

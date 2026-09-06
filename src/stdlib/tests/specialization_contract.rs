@@ -373,8 +373,11 @@ fn canonical_specialization_preserves_the_frozen_operation_factory_and_storage_c
             .collect::<Vec<_>>()
             .into_boxed_slice();
         let predicted_output = resolved.outputs[0].clone();
+        let operation = specializer
+            .resolved_operation(converted_inputs.len(), &resolved.outputs)
+            .unwrap_or_else(|error| panic!("{} operation contract: {error:?}", case.name));
         let resolved_call = ResolvedCall {
-            operation: specializer.operation.clone(),
+            operation: operation.clone(),
             overload_id,
             original_inputs: original_inputs.into_boxed_slice(),
             converted_inputs,
@@ -400,6 +403,12 @@ fn canonical_specialization_preserves_the_frozen_operation_factory_and_storage_c
             .specializer
             .specialize_invocation(&invocation, &mut context)
             .unwrap_or_else(|error| panic!("{} specialization: {error:?}", case.name));
+        assert_eq!(
+            specialized.bound_call().operation_descriptor(),
+            &operation,
+            "{} resolved operation contract",
+            case.name,
+        );
         assert_eq!(
             specialized.output().resolved_type().unwrap(),
             predicted_output,

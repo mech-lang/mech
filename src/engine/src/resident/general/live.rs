@@ -374,6 +374,12 @@ mod turn_tests {
     };
 
     fn fixed_numeric_call() -> CallMemoryPlan {
+        fixed_numeric_call_with_class(ImplementationMemoryClass::NoAdditionalScratch)
+    }
+
+    fn fixed_numeric_call_with_class(
+        implementation_memory: ImplementationMemoryClass,
+    ) -> CallMemoryPlan {
         let cell = ValueCell::from_exact(0.0_f64).unwrap();
         let descriptor = cell.resolved_descriptor().unwrap();
         let operation = ResolvedOperationDescriptor::from_name(
@@ -427,7 +433,7 @@ mod turn_tests {
             output_storage: &[storage],
             input_witnesses: &[witness],
             output_witnesses: &[witness],
-            implementation_memory: ImplementationMemoryClass::NoAdditionalScratch,
+            implementation_memory,
             target: &target,
             regions: &[RegionAccessPlan::WholeValue],
         })
@@ -435,7 +441,13 @@ mod turn_tests {
     }
 
     fn fixed_numeric_turn() -> crate::memory_planner::TurnMemoryPlan {
-        let call = fixed_numeric_call();
+        fixed_numeric_turn_with_class(ImplementationMemoryClass::NoAdditionalScratch)
+    }
+
+    fn fixed_numeric_turn_with_class(
+        implementation_memory: ImplementationMemoryClass,
+    ) -> crate::memory_planner::TurnMemoryPlan {
+        let call = fixed_numeric_call_with_class(implementation_memory);
         assert!(has_invariant_memory_facts(&call));
         let node = NodeId::new(0);
         let program = ProgramMemoryPlan {
@@ -460,6 +472,45 @@ mod turn_tests {
         )
         .unwrap();
         plan_turn_memory(&program, node, &facts).unwrap()
+    }
+
+    #[test]
+    fn fixed_canonical_fallback_caches_scratch_without_weakening_admission() {
+        use crate::memory_planner::{apply_observed_turn_demand, try_admit_fixed_turn_memory};
+        let plan = fixed_numeric_turn_with_class(ImplementationMemoryClass::CanonicalFinalize);
+        assert_eq!(
+            plan.call.as_ref().unwrap().implementation_memory,
+            ImplementationMemoryClass::CanonicalFinalize
+        );
+        assert!(plan.allocations.iter().any(|allocation| {
+            allocation.role == mech_core::AllocationRole::Scratch && allocation.capacity_bytes > 0
+        }));
+        for work in [0, 1, mech_core::RESIDENT_MAX_COMPUTE_WORK + 1] {
+            let observed = ResourceDemand {
+                work: mech_core::WorkDemand {
+                    compute: work,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let cached = try_admit_fixed_turn_memory(&plan, observed, None);
+            let complete = apply_observed_turn_demand(plan.clone(), observed, None);
+            match (cached, complete) {
+                (Ok(Some(demand)), Ok(complete)) => {
+                    assert_eq!(demand, complete.demand);
+                    assert_eq!(plan.allocations, complete.allocations);
+                }
+                (Err(MemoryPlanError::TargetLimitExceeded { violation }), Ok(complete)) => {
+                    assert_eq!(complete.budget_violations.first(), Some(&violation));
+                    assert_eq!(plan.allocations, complete.allocations);
+                }
+                (Err(cached), Err(complete)) => assert_eq!(cached, complete),
+                pair => panic!("fixed and complete admission disagree: {pair:?}"),
+            }
+        }
+        let mut variable = plan.call.unwrap();
+        variable.outputs[0].value.payload.current_bytes = 1;
+        assert!(!has_invariant_memory_facts(&variable));
     }
 
     #[test]
