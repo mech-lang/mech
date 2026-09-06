@@ -1,0 +1,106 @@
+name: R5 green candidate
+on:
+  push:
+    branches: [codex/r5-ci-diagnostics]
+    paths: [.github/workflows/r5-green-candidate.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      candidate: ${{ steps.candidate.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 962c217b10fb5e5a002bda16334dbd1f0d15da16
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Assemble only the reviewed correction patch
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/r5-green-candidate
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path('/tmp/r5-green-candidate')
+          parent = '962c217b10fb5e5a002bda16334dbd1f0d15da16'
+          expected_tree = '8d4d414baa6fbf373a1167d30d3d4d4c34dae71f'
+          def api(path, data=None):
+              command = ['gh', 'api', path]
+              if data is not None: command += ['--method', 'POST', '--input', '-']
+              return json.loads(subprocess.check_output(command, input=None if data is None else json.dumps(data).encode()))
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip() == parent
+          blob = api('repos/mech-lang/mech/git/blobs/d34796b7f6faf6f6e7eff11342f8f9217c80aae9')
+          patch = base64.b64decode(blob['content'])
+          assert hashlib.sha256(patch).hexdigest() == 'ef0b45490766d9070891b4fcf5ada27325771ee1e62644ca6b37c31c8af04c87'
+          subprocess.run(['git','apply','--check','-'],input=patch,check=True)
+          subprocess.run(['git','apply','-'],input=patch,check=True)
+          subprocess.run(['git','diff','--check'],check=True)
+          subprocess.run(['git','add','-u'],check=True)
+          assert subprocess.check_output(['git','write-tree'],text=True).strip() == expected_tree
+          paths = subprocess.check_output(['git','diff','--cached','--name-only','-z']).decode().rstrip('\0').split('\0')
+          assert set(paths) == {'src/engine/src/memory_planner/turn.rs','src/engine/src/resident/general/live.rs','src/stdlib/tests/specialization_contract.rs'}
+          tree = api('repos/mech-lang/mech/git/trees', {'base_tree':'b2041cb643dfe495389d3b23553f80c187933382','tree':[{'path':p,'mode':'100644','type':'blob','content':pathlib.Path(p).read_text()} for p in paths]})
+          assert tree['sha'] == expected_tree
+          commit = api('repos/mech-lang/mech/git/commits', {'message':'fix(r5): preserve fixed canonical plans and resolve specialization contracts\n\nCache complete invariant numeric plans without dropping declared scratch or work. Keep payload-bearing values on live planning, preserve admission limits, and test equivalence with full reconciliation. Resolve the frozen specialization fixture through the production operation-contract path without changing its expected cases.','tree':tree['sha'],'parents':[parent]})
+          api('repos/mech-lang/mech/git/refs', {'ref':'refs/heads/codex/r5-green-candidate-8d4d414b','sha':commit['sha']})
+          (root/'candidate.patch').write_bytes(patch)
+          (root/'receipt.json').write_text(json.dumps({'sha':commit['sha'],'parent':parent,'tree':tree['sha']},indent=2))
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out: out.write('sha='+commit['sha']+'\n')
+          print(json.dumps({'candidate':commit['sha'],'tree':tree['sha']},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-green-candidate-receipt
+          path: /tmp/r5-green-candidate
+          retention-days: 3
+  resident-regressions:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.prepare.outputs.candidate }}
+          persist-credentials: false
+      - name: Install pinned compiler and formatter
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
+      - name: Exercise every Resident unit test and the corrected fixed-plan path
+        run: |
+          set -euo pipefail
+          cargo +nightly-2026-03-03 fmt --all -- --check
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib resident::general::live::turn_tests::fixed_canonical_fallback_caches_scratch_without_weakening_admission -- --exact
+  full:
+    needs: prepare
+    uses: mech-lang/mech/.github/workflows/ci-full.yml@251be1356f5049ce00ced8de519e4646d3159e24
+    with:
+      validation_ref: ${{ needs.prepare.outputs.candidate }}
+  candidate-gate:
+    if: always()
+    needs: [prepare, resident-regressions, full]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require complete exact-candidate qualification
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          results=json.loads(os.environ['RESULTS'])
+          for name,result in results.items():
+              print(name,result['result'])
+              if result['result'] != 'success': raise SystemExit(1)
+          print('Exact R5 candidate is qualified; this workflow never updates PR 808.')
+          PY
