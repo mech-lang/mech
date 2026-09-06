@@ -1,0 +1,49 @@
+name: R5 green snapshot
+on:
+  push:
+    branches: [codex/r5-ci-diagnostics]
+    paths: [.github/workflows/r5-green-snapshot.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Capture source and failed-job logs without changing product code
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/r5-green-snapshot/logs
+          git archive --format=tar.gz HEAD > /tmp/r5-green-snapshot/current.tar.gz
+          git archive --format=tar.gz 962c217b10fb5e5a002bda16334dbd1f0d15da16 > /tmp/r5-green-snapshot/candidate.tar.gz
+          git diff HEAD 962c217b10fb5e5a002bda16334dbd1f0d15da16 > /tmp/r5-green-snapshot/candidate.patch
+          python3 - <<'PY'
+          import concurrent.futures, json, pathlib, re, subprocess
+          root = pathlib.Path('/tmp/r5-green-snapshot')
+          raw = subprocess.check_output(['gh','api','--paginate','repos/mech-lang/mech/actions/runs/33992916915/jobs?per_page=100'], text=True)
+          jobs = json.loads(raw)['jobs']
+          (root/'jobs.json').write_text(json.dumps(jobs,indent=2))
+          failures = [j for j in jobs if j['conclusion'] in ('failure','cancelled','timed_out')]
+          def collect(job):
+              result = subprocess.run(['gh','api','--allow-escape-sequences',f"repos/mech-lang/mech/actions/jobs/{job['id']}/logs"],capture_output=True,text=True,check=True)
+              text = re.sub(r'\x1b\[[0-9;]*m','',result.stdout)
+              (root/'logs'/f"{job['id']}.log").write_text(text)
+              return f"{job['id']} {job['name']} [{job['conclusion']}]\n"+'\n'.join(text.splitlines()[-100:])
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              reports = list(pool.map(collect,failures))
+          (root/'failures.txt').write_text('\n\n'.join(reports))
+          for job in failures: print(job['id'],job['name'],job['conclusion'])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r5-green-snapshot
+          path: /tmp/r5-green-snapshot
+          retention-days: 3
