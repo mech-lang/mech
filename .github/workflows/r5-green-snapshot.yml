@@ -5,44 +5,51 @@ on:
     paths: [.github/workflows/r5-green-snapshot.yml]
 permissions:
   contents: read
-  actions: read
+  actions: write
 jobs:
   snapshot:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: 09ea5f648fe83dbf8f0fab5ed6499dec31052a69
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Capture source and failed-job logs without changing product code
+      - name: Capture product and candidate failures without changing product code
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/r5-green-snapshot/logs
-          git archive --format=tar.gz HEAD > /tmp/r5-green-snapshot/current.tar.gz
-          git archive --format=tar.gz 962c217b10fb5e5a002bda16334dbd1f0d15da16 > /tmp/r5-green-snapshot/candidate.tar.gz
-          git diff HEAD 962c217b10fb5e5a002bda16334dbd1f0d15da16 > /tmp/r5-green-snapshot/candidate.patch
           python3 - <<'PY'
           import concurrent.futures, json, pathlib, re, subprocess
           root = pathlib.Path('/tmp/r5-green-snapshot')
-          raw = subprocess.check_output(['gh','api','--paginate','repos/mech-lang/mech/actions/runs/33992916915/jobs?per_page=100'], text=True)
-          jobs = json.loads(raw)['jobs']
-          (root/'jobs.json').write_text(json.dumps(jobs,indent=2))
-          failures = [j for j in jobs if j['conclusion'] in ('failure','cancelled','timed_out')]
+          def get(path):
+              return json.loads(subprocess.check_output(['gh','api',path],text=True))
+          all_failures = []
+          for run_id in [33992916915,34001077477,34002605964]:
+              pages = json.loads(subprocess.check_output(['gh','api','--paginate','--slurp',f'repos/mech-lang/mech/actions/runs/{run_id}/jobs?per_page=100'],text=True))
+              jobs = [job for page in pages for job in page['jobs']]
+              (root/f'{run_id}-jobs.json').write_text(json.dumps(jobs,indent=2))
+              all_failures.extend(job for job in jobs if job['conclusion'] in ('failure','cancelled','timed_out'))
           def collect(job):
-              result = subprocess.run(['gh','api','--allow-escape-sequences',f"repos/mech-lang/mech/actions/jobs/{job['id']}/logs"],capture_output=True,text=True,check=True)
-              text = re.sub(r'\x1b\[[0-9;]*m','',result.stdout)
+              result = subprocess.run(['gh','api','--allow-escape-sequences',f"repos/mech-lang/mech/actions/jobs/{job['id']}/logs"],capture_output=True,text=True)
+              text = re.sub(r'\x1b\[[0-9;]*m','',result.stdout if result.returncode == 0 else result.stderr)
               (root/'logs'/f"{job['id']}.log").write_text(text)
-              return f"{job['id']} {job['name']} [{job['conclusion']}]\n"+'\n'.join(text.splitlines()[-100:])
+              return f"{job['id']} {job['name']} [{job['conclusion']}] log_status={result.returncode}\n"+'\n'.join(text.splitlines()[-80:])
           with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
-              reports = list(pool.map(collect,failures))
+              reports = list(pool.map(collect,all_failures))
           (root/'failures.txt').write_text('\n\n'.join(reports))
-          for job in failures: print(job['id'],job['name'],job['conclusion'])
+          for job in all_failures: print(job['run_id'],job['id'],job['name'],job['conclusion'])
+          # This helper-only run validates the superseded candidate that still
+          # fails N-body. Do not spend remaining runners on that obsolete tree.
+          old = get('repos/mech-lang/mech/actions/runs/34001077477')
+          assert old['head_branch'] == 'codex/r5-ci-diagnostics'
+          assert old['head_sha'] == 'c4185dfb36858c399853b8101f1368d9771d41ee'
+          (root/'obsolete-run.json').write_text(json.dumps(old,indent=2))
+          if old['status'] in ('queued','in_progress'):
+              result = subprocess.run(['gh','api','--method','POST','repos/mech-lang/mech/actions/runs/34001077477/cancel'],capture_output=True,text=True)
+              (root/'obsolete-cancel.txt').write_text(str(result.returncode)+'\n'+result.stdout+result.stderr)
+              print('Cancelled only obsolete diagnostic candidate run:',result.returncode)
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: r5-green-snapshot
           path: /tmp/r5-green-snapshot
