@@ -214,6 +214,7 @@ struct ObjectAuthorization {
     capacity_bytes: u64,
     alignment: u32,
     offset: u64,
+    lifetime: MemoryLifetime,
 }
 
 #[derive(Clone, Debug)]
@@ -265,12 +266,45 @@ impl Drop for MemoryReservation {
     }
 }
 
+/// RAII authority for one executable point in a realized memory plan.
+///
+/// Program- and activation-lifetime objects are always eligible for access.
+/// Turn-, transaction-, and transfer-lifetime objects can only be leased while
+/// a scope covering their declared interval is active.
+pub struct MemoryPlanScope {
+    domain: Weak<RefCell<DomainState>>,
+    point: MemoryPlanPoint,
+    active: bool,
+}
+
+impl MemoryPlanScope {
+    pub const fn point(&self) -> MemoryPlanPoint {
+        self.point
+    }
+}
+
+impl Drop for MemoryPlanScope {
+    fn drop(&mut self) {
+        if !self.active {
+            return;
+        }
+        if let Some(domain) = self.domain.upgrade()
+            && let Ok(mut state) = domain.try_borrow_mut()
+            && state.active_point == Some(self.point)
+        {
+            state.active_point = None;
+        }
+        self.active = false;
+    }
+}
+
 /// Receipt mapping every R5 plan object to its current live runtime binding.
 #[derive(Clone)]
 pub struct RealizedMemoryPlan {
     domain: MemoryDomainId,
     revision: MemoryPlanRevision,
     bindings: Rc<RefCell<Box<[(PlanObjectKey, RuntimeBinding)]>>>,
+    lifetimes: Rc<Box<[(PlanObjectKey, MemoryLifetime)]>>,
 }
 
 impl RealizedMemoryPlan {
@@ -299,6 +333,14 @@ impl RealizedMemoryPlan {
 
     pub fn bindings(&self) -> Box<[(PlanObjectKey, RuntimeBinding)]> {
         self.bindings.borrow().to_vec().into_boxed_slice()
+    }
+
+    pub(crate) fn lifetime(&self, key: PlanObjectKey) -> MemoryRuntimeResult<MemoryLifetime> {
+        self.lifetimes
+            .binary_search_by_key(&key, |(candidate, _)| *candidate)
+            .ok()
+            .map(|index| self.lifetimes[index].1)
+            .ok_or(MemoryRuntimeError::UnknownPlanObject { key })
     }
 
     pub(crate) fn record_initialized(
@@ -379,6 +421,7 @@ pub(crate) struct DomainState {
     pub ledger: MemoryLedgerSnapshot,
     pub payload_accounting: Arc<super::RetainedPayloadAccounting>,
     pub allocations: Vec<AllocationSlot>,
+    pub active_point: Option<MemoryPlanPoint>,
 }
 
 impl DomainState {
@@ -499,6 +542,7 @@ impl MemoryDomain {
                 ledger: MemoryLedgerSnapshot::default(),
                 payload_accounting: Arc::new(super::RetainedPayloadAccounting::default()),
                 allocations: Vec::new(),
+                active_point: None,
             })),
         })
     }
@@ -772,6 +816,12 @@ impl MemoryDomain {
             bindings.push((object.key, binding));
         }
         bindings.sort_by_key(|(key, _)| *key);
+        let mut lifetimes = reservation
+            .objects
+            .iter()
+            .map(|object| (object.key, object.lifetime))
+            .collect::<Vec<_>>();
+        lifetimes.sort_by_key(|(key, _)| *key);
         state.ledger.committed_bytes = state
             .ledger
             .committed_bytes
@@ -788,6 +838,7 @@ impl MemoryDomain {
             domain: state.id,
             revision: reservation.revision,
             bindings: Rc::new(RefCell::new(bindings.into_boxed_slice())),
+            lifetimes: Rc::new(lifetimes.into_boxed_slice()),
         })
     }
 
@@ -797,9 +848,6 @@ impl MemoryDomain {
             let record = state.record_mut(handle)?;
             if record.state == OwnedAllocationState::Retired {
                 return Ok(());
-            }
-            if !record.leases.is_empty() {
-                return Err(MemoryRuntimeError::OutstandingLease { handle });
             }
             record.state = OwnedAllocationState::Retired;
             record.capacity_bytes
@@ -898,7 +946,7 @@ impl MemoryDomain {
             if state.closed {
                 return Ok(());
             }
-            if state.ledger.active_reservations != 0 {
+            if state.ledger.active_reservations != 0 || state.active_point.is_some() {
                 return Err(MemoryRuntimeError::TurnInFlight);
             }
             state.closed = true;
@@ -927,6 +975,22 @@ impl MemoryDomain {
             exported_snapshot_bytes: state.payload_accounting.bytes(),
             ..state.ledger
         }
+    }
+
+    pub fn enter_plan_point(&self, point: MemoryPlanPoint) -> MemoryRuntimeResult<MemoryPlanScope> {
+        let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        if state.active_point.is_some() {
+            return Err(MemoryRuntimeError::TurnInFlight);
+        }
+        state.active_point = Some(point);
+        Ok(MemoryPlanScope {
+            domain: Rc::downgrade(&self.state),
+            point,
+            active: true,
+        })
     }
 
     pub fn allocation_observations(&self) -> Box<[ManagedAllocationObservation]> {
@@ -1134,6 +1198,7 @@ fn validate_plan_view(
             capacity_bytes: allocation.capacity_bytes,
             alignment: allocation.alignment,
             offset: allocation.placement.offset,
+            lifetime: allocation.lifetime,
         });
     }
     for arena in view.arenas {

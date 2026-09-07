@@ -847,6 +847,187 @@ fn overlapping_regions_require_a_disjoint_lifetime_reuse_group() {
 }
 
 #[test]
+fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [
+        allocation(
+            0,
+            0,
+            0,
+            0,
+            16,
+            MemoryLifetime::Turn {
+                first: MemoryPlanPoint::new(0),
+                last: MemoryPlanPoint::new(1),
+            },
+            Some(7),
+        ),
+        allocation(
+            1,
+            0,
+            0,
+            0,
+            16,
+            MemoryLifetime::Turn {
+                first: MemoryPlanPoint::new(2),
+                last: MemoryPlanPoint::new(3),
+            },
+            Some(7),
+        ),
+    ];
+    let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 16, &[0, 1])];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &allocations,
+                    &arenas,
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let first = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let second = domain
+        .plan_object_key(revision, MemoryObjectId::new(1))
+        .unwrap();
+    assert_eq!(
+        realized.binding(first).unwrap().handle(),
+        realized.binding(second).unwrap().handle()
+    );
+
+    let prepare_write = |object| {
+        domain
+            .prepare_call(
+                &realized,
+                &[CallAccessRequest {
+                    object,
+                    mode: MemoryAccessMode::Write,
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 16,
+                    },
+                }],
+            )
+            .unwrap()
+    };
+    let first_write = prepare_write(first);
+    let second_write = prepare_write(second);
+
+    assert!(matches!(
+        domain.acquire_call(&realized, &first_write),
+        Err(MemoryRuntimeError::InvalidLifetimeTransition { .. })
+    ));
+    {
+        let scope = domain.enter_plan_point(MemoryPlanPoint::new(0)).unwrap();
+        assert_eq!(scope.point(), MemoryPlanPoint::new(0));
+        domain
+            .acquire_call(&realized, &first_write)
+            .unwrap()
+            .with_bytes_mut(first, |bytes| bytes.fill(11))
+            .unwrap();
+        assert!(matches!(
+            domain.acquire_call(&realized, &second_write),
+            Err(MemoryRuntimeError::InvalidLifetimeTransition { .. })
+        ));
+        assert!(matches!(
+            domain.enter_plan_point(MemoryPlanPoint::new(1)),
+            Err(MemoryRuntimeError::TurnInFlight)
+        ));
+    }
+    {
+        let _scope = domain.enter_plan_point(MemoryPlanPoint::new(2)).unwrap();
+        assert!(matches!(
+            domain.acquire_call(&realized, &first_write),
+            Err(MemoryRuntimeError::InvalidLifetimeTransition { .. })
+        ));
+        domain
+            .acquire_call(&realized, &second_write)
+            .unwrap()
+            .with_bytes_mut(second, |bytes| bytes.fill(22))
+            .unwrap();
+    }
+}
+
+#[test]
+fn retired_allocations_wait_for_held_leases_before_reclamation() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &[allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None)],
+                    &[arena(0, ArenaBackingKind::ContiguousBytes, 8, &[0])],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let write = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: 8,
+                },
+            }],
+        )
+        .unwrap();
+    domain
+        .acquire_call(&realized, &write)
+        .unwrap()
+        .with_bytes_mut(object, |bytes| bytes.copy_from_slice(&23_u64.to_ne_bytes()))
+        .unwrap();
+    let read = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
+    let held = domain.acquire_call(&realized, &read).unwrap();
+    let handle = realized.binding(object).unwrap().handle().unwrap();
+    domain.retire(handle).unwrap();
+    assert_eq!(domain.collect_retired().unwrap(), 0);
+    assert!(matches!(
+        domain.acquire_call(&realized, &read),
+        Err(MemoryRuntimeError::InvalidLifetimeTransition { .. })
+    ));
+    assert_eq!(
+        held.with_bytes(object, |bytes| u64::from_ne_bytes(
+            bytes.try_into().unwrap()
+        ))
+        .unwrap(),
+        23
+    );
+    drop(held);
+    assert_eq!(domain.collect_retired().unwrap(), 1);
+    assert!(matches!(
+        domain.acquire_call(&realized, &read),
+        Err(MemoryRuntimeError::StaleAllocationGeneration { .. })
+    ));
+}
+
+#[test]
 fn handles_are_domain_scoped_and_stale_generations_are_rejected() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();

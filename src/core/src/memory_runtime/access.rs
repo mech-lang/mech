@@ -9,8 +9,9 @@ use core::{marker::PhantomData, mem, slice};
 
 use super::{
     ActiveLeaseRecord, AllocationHandle, MemoryDomain, MemoryRuntimeError, MemoryRuntimeResult,
-    PlanObjectKey, RealizedMemoryPlan, RuntimeBinding,
+    OwnedAllocationState, PlanObjectKey, RealizedMemoryPlan, RuntimeBinding,
 };
+use crate::{MemoryLifetime, MemoryPlanPoint};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum MemoryAccessMode {
@@ -148,6 +149,7 @@ struct ResolvedAccessRequest {
     start: u64,
     end: u64,
     relative_end: u64,
+    lifetime: MemoryLifetime,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -193,6 +195,7 @@ impl MemoryDomain {
                 start,
                 end,
                 relative_end,
+                lifetime: realized.lifetime(request.object)?,
             });
         }
         resolved.sort_by_key(|request| {
@@ -248,6 +251,7 @@ impl MemoryDomain {
                 start,
                 end,
                 relative_end,
+                lifetime: realized.lifetime(request.object)?,
             });
         }
         resolved.sort_by_key(|request| {
@@ -295,6 +299,20 @@ impl MemoryDomain {
                 continue;
             };
             let record = state.record(handle)?;
+            if record.state != OwnedAllocationState::Live {
+                return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                    object: Some(request.object.object()),
+                    from: "retired allocation",
+                    to: "leased allocation",
+                });
+            }
+            if !lifetime_is_active(request.lifetime, state.active_point) {
+                return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                    object: Some(request.object.object()),
+                    from: "inactive plan interval",
+                    to: "leased allocation",
+                });
+            }
             if request.end > record.capacity_bytes {
                 return Err(MemoryRuntimeError::CapacityExceeded {
                     object: request.object.object(),
@@ -734,4 +752,19 @@ fn enclosing_span(
 
 const fn overlaps(left_start: u64, left_end: u64, right_start: u64, right_end: u64) -> bool {
     left_start < right_end && right_start < left_end
+}
+
+const fn lifetime_is_active(
+    lifetime: MemoryLifetime,
+    active_point: Option<MemoryPlanPoint>,
+) -> bool {
+    match lifetime {
+        MemoryLifetime::Program | MemoryLifetime::Activation => true,
+        MemoryLifetime::Turn { first, last }
+        | MemoryLifetime::Transaction { first, last }
+        | MemoryLifetime::Transfer { first, last } => match active_point {
+            Some(point) => point.get() >= first.get() && point.get() <= last.get(),
+            None => false,
+        },
+    }
 }
