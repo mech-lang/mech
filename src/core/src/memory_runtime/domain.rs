@@ -9,6 +9,7 @@ use alloc::{
     boxed::Box,
     collections::{BTreeMap, BTreeSet},
     rc::{Rc, Weak},
+    sync::Arc,
     vec::Vec,
 };
 #[cfg(not(feature = "no_std"))]
@@ -16,6 +17,7 @@ use std::{
     boxed::Box,
     collections::{BTreeMap, BTreeSet},
     rc::{Rc, Weak},
+    sync::Arc,
     vec::Vec,
 };
 
@@ -200,6 +202,7 @@ pub struct ManagedAllocationObservation {
     pub active_leases: u32,
     pub snapshot_pins: u32,
     pub submission_pins: u32,
+    pub payload_owner_pins: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -356,6 +359,8 @@ pub(crate) struct AllocationRecord {
     pub leases: Vec<ActiveLeaseRecord>,
     pub snapshot_pins: u32,
     pub submission_pins: u32,
+    pub payload_owner_pins: u32,
+    pub payload_blocks: Vec<super::PayloadBlockRecord>,
 }
 
 pub(crate) struct AllocationSlot {
@@ -372,6 +377,7 @@ pub(crate) struct DomainState {
     pub next_publication: PublishedValueVersion,
     pub next_lease_token: u64,
     pub ledger: MemoryLedgerSnapshot,
+    pub payload_accounting: Arc<super::RetainedPayloadAccounting>,
     pub allocations: Vec<AllocationSlot>,
 }
 
@@ -491,6 +497,7 @@ impl MemoryDomain {
                 next_publication: PublishedValueVersion::initial(),
                 next_lease_token: 1,
                 ledger: MemoryLedgerSnapshot::default(),
+                payload_accounting: Arc::new(super::RetainedPayloadAccounting::default()),
                 allocations: Vec::new(),
             })),
         })
@@ -615,7 +622,7 @@ impl MemoryDomain {
         }
         struct PendingObject {
             authorization: ObjectAuthorization,
-            block: HostBlock,
+            payload_blocks: Vec<super::PayloadBlockRecord>,
         }
 
         let mut contiguous = Vec::new();
@@ -661,15 +668,18 @@ impl MemoryDomain {
                 .map(|arena| arena.backing)
                 .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object.key })?;
             if backing == ArenaBackingKind::IndirectOwnedPayloads {
-                let block = HostBlock::allocate(
-                    Some(object.key.object()),
-                    object.capacity_bytes,
-                    object.alignment,
-                    object.space,
-                )?;
+                let mut payload_blocks = Vec::new();
+                payload_blocks.try_reserve_exact(2).map_err(|_| {
+                    MemoryRuntimeError::AllocationFailed {
+                        object: Some(object.key.object()),
+                        requested: 2,
+                        alignment: 1,
+                        space: object.space,
+                    }
+                })?;
                 indirect.push(PendingObject {
                     authorization: object,
-                    block,
+                    payload_blocks,
                 });
             }
         }
@@ -699,6 +709,8 @@ impl MemoryDomain {
                 leases: Vec::new(),
                 snapshot_pins: 0,
                 submission_pins: 0,
+                payload_owner_pins: 0,
+                payload_blocks: Vec::new(),
             })?;
             arena_handles.insert(pending.authorization.id, handle);
         }
@@ -707,13 +719,15 @@ impl MemoryDomain {
             let capacity = pending.authorization.capacity_bytes;
             let handle = state.insert_record(AllocationRecord {
                 state: OwnedAllocationState::Live,
-                block: Some(pending.block),
+                block: None,
                 capacity_bytes: capacity,
                 alignment: pending.authorization.alignment,
                 space: pending.authorization.space,
                 leases: Vec::new(),
                 snapshot_pins: 0,
                 submission_pins: 0,
+                payload_owner_pins: 0,
+                payload_blocks: pending.payload_blocks,
             })?;
             indirect_handles.insert(pending.authorization.key, handle);
         }
@@ -824,6 +838,7 @@ impl MemoryDomain {
                     && record.leases.is_empty()
                     && record.snapshot_pins == 0
                     && record.submission_pins == 0
+                    && record.payload_owner_pins == 0
             });
             if !reclaimable {
                 continue;
@@ -907,7 +922,11 @@ impl MemoryDomain {
     }
 
     pub fn ledger(&self) -> MemoryLedgerSnapshot {
-        self.state.borrow().ledger
+        let state = self.state.borrow();
+        MemoryLedgerSnapshot {
+            exported_snapshot_bytes: state.payload_accounting.bytes(),
+            ..state.ledger
+        }
     }
 
     pub fn allocation_observations(&self) -> Box<[ManagedAllocationObservation]> {
@@ -918,7 +937,7 @@ impl MemoryDomain {
             .enumerate()
             .filter_map(|(slot, entry)| {
                 entry.record.as_ref().map(|record| {
-                    let (actual_block_bytes, actual_block_alignment) = record
+                    let (fixed_bytes, fixed_alignment) = record
                         .block
                         .as_ref()
                         .map(|block| {
@@ -928,17 +947,27 @@ impl MemoryDomain {
                             )
                         })
                         .unwrap_or((0, 1));
+                    let payload_bytes = record.payload_blocks.iter().fold(0_u64, |total, block| {
+                        total.saturating_add(block.layout.size() as u64)
+                    });
+                    let payload_alignment = record
+                        .payload_blocks
+                        .iter()
+                        .map(|block| u32::try_from(block.layout.align()).unwrap_or(u32::MAX))
+                        .max()
+                        .unwrap_or(1);
                     ManagedAllocationObservation {
                         handle: AllocationHandle::new(state.id, slot as u32, entry.generation),
                         state: record.state,
                         capacity_bytes: record.capacity_bytes,
-                        actual_block_bytes,
+                        actual_block_bytes: fixed_bytes.saturating_add(payload_bytes),
                         alignment: record.alignment,
-                        actual_block_alignment,
+                        actual_block_alignment: fixed_alignment.max(payload_alignment),
                         space: record.space,
                         active_leases: u32::try_from(record.leases.len()).unwrap_or(u32::MAX),
                         snapshot_pins: record.snapshot_pins,
                         submission_pins: record.submission_pins,
+                        payload_owner_pins: record.payload_owner_pins,
                     }
                 })
             })

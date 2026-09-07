@@ -4,11 +4,11 @@ use mech_core::snapshot::F64Bits;
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
     FunctionInvocation, KernelMemoryFrame, ManagedCallAccessRequest, ManagedFunctionInstance,
-    ManagedMechFunctionImpl, ManagedPort, MechExecutionServices, MemoryAccessMode,
-    MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits, MemoryDomain, MemoryLifetime,
-    MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint, MemoryRuntimeError, MemorySpace,
-    NoMechExecutionServices, PublicationCandidate, ReactiveSolveStatus, ResourceDemand,
-    ReuseGroupId, RuntimeBinding, RuntimePlanView, ValueCell,
+    ManagedMechFunctionImpl, ManagedPort, ManagedSequence, ManagedString, MechExecutionServices,
+    MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits, MemoryDomain,
+    MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint, MemoryRuntimeError,
+    MemorySpace, NoMechExecutionServices, PublicationCandidate, ReactiveSolveStatus,
+    ResourceDemand, ReuseGroupId, RuntimeBinding, RuntimePlanView, ValueCell,
 };
 
 fn allocation(
@@ -391,6 +391,271 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
 }
 
 #[test]
+fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
+    struct Sum {
+        input: ManagedPort<f64>,
+        output: ManagedPort<f64>,
+    }
+
+    impl ManagedMechFunctionImpl for Sum {
+        fn solve_managed(
+            &self,
+            frame: &mut KernelMemoryFrame<'_>,
+            _: &mut dyn MechExecutionServices,
+        ) -> mech_core::MResult<ReactiveSolveStatus> {
+            let sum = frame.with_port_slice(self.input, |values| values.iter().sum::<f64>())?;
+            frame.with_port_slice_mut(self.output, |values| values[0] = sum)?;
+            Ok(ReactiveSolveStatus::Changed)
+        }
+    }
+
+    let matrix = ValueCell::dynamic_matrix(
+        mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+        vec![1, 2].into_boxed_slice(),
+        vec![
+            mech_core::ValueDataDraft::F64(F64Bits::from_f64(1.0)),
+            mech_core::ValueDataDraft::F64(F64Bits::from_f64(2.0)),
+        ]
+        .into_boxed_slice(),
+    )
+    .unwrap();
+    let matrix_clone = matrix.clone();
+    let output_cell = ValueCell::from_exact(0.0_f64).unwrap();
+    let invocation = FunctionInvocation::unary(output_cell, matrix.clone());
+    let input = invocation
+        .input(0)
+        .unwrap()
+        .try_managed_matrix::<f64>()
+        .unwrap();
+    let output = invocation.output().try_managed::<f64>().unwrap();
+    let function = ManagedFunctionInstance::new(Box::new(Sum { input, output }), invocation);
+
+    let domain = MemoryDomain::new().unwrap();
+    let initial_revision = domain.issue_plan_revision().unwrap();
+    let initial_allocations = [
+        allocation(0, 0, 0, 16, 16, MemoryLifetime::Activation, None),
+        allocation(1, 0, 16, 0, 8, MemoryLifetime::Activation, None),
+    ];
+    let initial_arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 24, &[0, 1])];
+    let initial = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    initial_revision,
+                    &initial_allocations,
+                    &initial_arenas,
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let initial_input = domain
+        .plan_object_key(initial_revision, MemoryObjectId::new(0))
+        .unwrap();
+    let initial_output = domain
+        .plan_object_key(initial_revision, MemoryObjectId::new(1))
+        .unwrap();
+    initialize_managed_f64(&domain, &initial, input, initial_input, &[1.0, 2.0]);
+    assert_eq!(
+        execute_sum(
+            &domain,
+            &initial,
+            &function,
+            input,
+            initial_input,
+            output,
+            initial_output,
+        ),
+        3.0,
+    );
+    let initial_handle = initial.binding(initial_input).unwrap().handle().unwrap();
+
+    let grown_revision = domain.issue_plan_revision().unwrap();
+    let grown_allocations = [
+        allocation(0, 1, 0, 32, 32, MemoryLifetime::Activation, None),
+        allocation(1, 1, 32, 0, 8, MemoryLifetime::Activation, None),
+    ];
+    let grown_arenas = [arena(1, ArenaBackingKind::ContiguousBytes, 40, &[0, 1])];
+    let grown = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    grown_revision,
+                    &grown_allocations,
+                    &grown_arenas,
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let grown_input = domain
+        .plan_object_key(grown_revision, MemoryObjectId::new(0))
+        .unwrap();
+    let grown_output = domain
+        .plan_object_key(grown_revision, MemoryObjectId::new(1))
+        .unwrap();
+    let grown_handle = grown.binding(grown_input).unwrap().handle().unwrap();
+    assert_ne!(initial_handle, grown_handle);
+    initialize_managed_f64(&domain, &grown, input, grown_input, &[1.0, 2.0, 3.0, 4.0]);
+    let replacement = ValueCell::dynamic_matrix(
+        mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+        vec![2, 2].into_boxed_slice(),
+        [1.0, 2.0, 3.0, 4.0]
+            .into_iter()
+            .map(|value| mech_core::ValueDataDraft::F64(F64Bits::from_f64(value)))
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+    )
+    .unwrap()
+    .snapshot()
+    .unwrap();
+    matrix.replace(&replacement).unwrap();
+    assert_eq!(matrix_clone.shape().parameter_values(), &[2, 2]);
+    assert_eq!(
+        execute_sum(
+            &domain,
+            &grown,
+            &function,
+            input,
+            grown_input,
+            output,
+            grown_output,
+        ),
+        10.0,
+    );
+
+    domain.retire(initial_handle).unwrap();
+    let initial_output_handle = initial.binding(initial_output).unwrap().handle().unwrap();
+    if initial_output_handle != initial_handle {
+        domain.retire(initial_output_handle).unwrap();
+    }
+    assert_eq!(domain.collect_retired().unwrap(), 1);
+
+    let before_failed_growth = matrix_clone.snapshot().unwrap();
+    let rejected_revision = domain.issue_plan_revision().unwrap();
+    let rejected_allocations = [allocation(
+        0,
+        2,
+        0,
+        80,
+        80,
+        MemoryLifetime::Activation,
+        None,
+    )];
+    let rejected_arenas = [arena(2, ArenaBackingKind::ContiguousBytes, 80, &[0])];
+    let limits = MemoryBudgetLimits {
+        max_storage_buffer_bytes: Some(64),
+        ..MemoryBudgetLimits::default()
+    };
+    assert!(matches!(
+        domain.prepare_realization(RuntimePlanView::new(
+            rejected_revision,
+            &rejected_allocations,
+            &rejected_arenas,
+            ResourceDemand::default(),
+            limits,
+            &[],
+        )),
+        Err(MemoryRuntimeError::BudgetExceeded { .. })
+    ));
+    assert_eq!(
+        matrix_clone
+            .snapshot()
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        before_failed_growth.canonical_data_draft().unwrap(),
+    );
+}
+
+fn initialize_managed_f64(
+    domain: &MemoryDomain,
+    realized: &mech_core::RealizedMemoryPlan,
+    port: ManagedPort<f64>,
+    object: mech_core::PlanObjectKey,
+    values: &[f64],
+) {
+    let bytes = (values.len() * core::mem::size_of::<f64>()) as u64;
+    let prepared = domain
+        .prepare_managed_call(
+            realized,
+            &[ManagedCallAccessRequest::new(
+                port,
+                object,
+                MemoryAccessMode::Write,
+                MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: bytes,
+                },
+            )],
+        )
+        .unwrap();
+    domain
+        .acquire_call(realized, &prepared)
+        .unwrap()
+        .with_port_slice_mut(port, |target| target.copy_from_slice(values))
+        .unwrap();
+}
+
+fn execute_sum(
+    domain: &MemoryDomain,
+    realized: &mech_core::RealizedMemoryPlan,
+    function: &ManagedFunctionInstance,
+    input: ManagedPort<f64>,
+    input_object: mech_core::PlanObjectKey,
+    output: ManagedPort<f64>,
+    output_object: mech_core::PlanObjectKey,
+) -> f64 {
+    let prepared = domain
+        .prepare_managed_call(
+            realized,
+            &[
+                ManagedCallAccessRequest::new(
+                    input,
+                    input_object,
+                    MemoryAccessMode::Read,
+                    MemoryAccessRegion::WholeInitialized,
+                ),
+                ManagedCallAccessRequest::new(
+                    output,
+                    output_object,
+                    MemoryAccessMode::Write,
+                    MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 8,
+                    },
+                ),
+            ],
+        )
+        .unwrap();
+    let mut frame = domain.acquire_call(realized, &prepared).unwrap();
+    function
+        .solve_managed(&mut frame, &mut NoMechExecutionServices)
+        .unwrap();
+    drop(frame);
+    let read = domain
+        .prepare_managed_call(
+            realized,
+            &[ManagedCallAccessRequest::new(
+                output,
+                output_object,
+                MemoryAccessMode::Read,
+                MemoryAccessRegion::WholeInitialized,
+            )],
+        )
+        .unwrap();
+    domain
+        .acquire_call(realized, &read)
+        .unwrap()
+        .with_port_slice(output, |values| values[0])
+        .unwrap()
+}
+
+#[test]
 fn lease_acquisition_is_atomic_and_region_aware() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
@@ -670,6 +935,51 @@ fn indirect_payload_envelopes_are_owned_separately_and_charged_once() {
     assert_eq!(realized.bindings().len(), 2);
     assert_eq!(domain.ledger().committed_bytes, 24);
     assert_eq!(domain.allocation_observations().len(), 2);
+
+    let left_key = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let right_key = domain
+        .plan_object_key(revision, MemoryObjectId::new(1))
+        .unwrap();
+    let left_allocator = domain.planned_allocator(&realized, left_key).unwrap();
+    let right_allocator = domain.planned_allocator(&realized, right_key).unwrap();
+    let string = ManagedString::try_new(left_allocator.clone(), "hello world").unwrap();
+    let sequence =
+        ManagedSequence::try_from_slice(right_allocator.clone(), b"hello, world!").unwrap();
+    assert_eq!(string.as_str(), "hello world");
+    assert_eq!(sequence.as_slice(), b"hello, world!");
+    assert_eq!(left_allocator.allocated_bytes().unwrap(), 11);
+    assert_eq!(right_allocator.allocated_bytes().unwrap(), 13);
+    assert_eq!(domain.ledger().committed_bytes, 24);
+    assert!(matches!(
+        ManagedString::try_new(left_allocator.clone(), "x"),
+        Err(MemoryRuntimeError::CapacityExceeded { .. })
+    ));
+    let observations = domain.allocation_observations();
+    assert_eq!(observations[0].actual_block_bytes, 11);
+    assert_eq!(observations[1].actual_block_bytes, 13);
+    assert_eq!(observations[0].payload_owner_pins, 1);
+
+    let left_handle = realized.binding(left_key).unwrap().handle().unwrap();
+    domain.retire(left_handle).unwrap();
+    assert_eq!(domain.collect_retired().unwrap(), 0);
+    drop(string);
+    drop(left_allocator);
+    assert_eq!(domain.collect_retired().unwrap(), 1);
+}
+
+#[test]
+fn detached_payload_ticket_is_send_and_charges_shared_bytes_once() {
+    let domain = MemoryDomain::new().unwrap();
+    let ticket = domain.retain_payload_charge(37).unwrap();
+    let clone = ticket.clone();
+    assert_eq!(ticket.bytes(), 37);
+    assert_eq!(domain.ledger().exported_snapshot_bytes, 37);
+    drop(ticket);
+    assert_eq!(domain.ledger().exported_snapshot_bytes, 37);
+    std::thread::spawn(move || drop(clone)).join().unwrap();
+    assert_eq!(domain.ledger().exported_snapshot_bytes, 0);
 }
 
 #[test]
