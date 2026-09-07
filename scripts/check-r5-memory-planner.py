@@ -401,7 +401,8 @@ def failures(root: Path) -> list[str]:
     program = rust_code(sources.get("src/engine/src/memory_planner/program.rs", ""))
     for required in (
         "CallSiteMemoryTemplate",
-        "instruction_nodes",
+        "execution_nodes",
+        "validate_complete_execution_schedule",
         "fn remap_transaction",
         "validate_global_object_namespace",
         "safe_destructive_alias",
@@ -413,6 +414,14 @@ def failures(root: Path) -> list[str]:
     ):
         if required not in program:
             found.append(f"program planning omits global identity/liveness closure: {required}")
+    complete_schedule = "validate_complete_execution_schedule(artifact, execution_nodes)?;"
+    if (
+        complete_schedule not in program
+        or program.find(complete_schedule) > program.find("let mut calls = Vec::new();")
+    ):
+        found.append(
+            "program planning omits global identity/liveness closure: complete execution schedule"
+        )
     scheduled_remap = (
         r"remap_call_allocations\(\s*node,\s*template\.node_points\(node\)\?,"
         r"\s*call,\s*&object_map,\s*&mut next_id,?\s*\)"

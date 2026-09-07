@@ -255,6 +255,16 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "global identity/liveness closure")
 
+    def test_complete_execution_schedule_cannot_be_bypassed(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/memory_planner/program.rs",
+            "validate_complete_execution_schedule(artifact, execution_nodes)?;",
+            "let _ = (artifact, execution_nodes);",
+        )
+        self.assert_failure(root, "global identity/liveness closure")
+
     def test_24_turn_budget_recheck_fails(self):
         root = self.fixture()
         self.replace(

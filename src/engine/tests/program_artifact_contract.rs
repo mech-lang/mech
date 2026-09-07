@@ -1320,6 +1320,144 @@ fn compiled_assign_artifact_fixture(
     (compiled, catalog)
 }
 
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn compiler_state_hold_uses_the_complete_execution_schedule() {
+    use mech_engine::__resident::{ActivationFacts, activate};
+
+    let mut catalog = FunctionCatalogBuilder::new();
+    install_intrinsic_runtime(&mut catalog).unwrap();
+    install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let variable_define = catalog
+        .runtime_entries()
+        .find(|entry| entry.name == "VariableDefineF64")
+        .expect("the full compiler profile installs scalar variable definition")
+        .id
+        .raw();
+    let mut compiled = compiled_scalar_artifact_fixture(
+        RuntimeType::F64,
+        Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+    );
+    let symbol = mech_core::hash_str("state");
+    compiled.program.symbols.insert(symbol, 0);
+    compiled.program.mutable_symbols.insert(symbol);
+    compiled.program.register_count = 3;
+    compiled.program.constants[1] = EncodedConstant {
+        runtime_type: RuntimeType::String,
+        alignment: 1,
+        bytes: b"state".to_vec(),
+    };
+    compiled.program.constants.push(EncodedConstant {
+        runtime_type: RuntimeType::Bool,
+        alignment: 1,
+        bytes: vec![1],
+    });
+    compiled.program.instructions = vec![
+        BytecodeInstruction::ConstLoad {
+            dst: 0,
+            constant: 0,
+        },
+        BytecodeInstruction::ConstLoad {
+            dst: 1,
+            constant: 1,
+        },
+        BytecodeInstruction::ConstLoad {
+            dst: 2,
+            constant: 2,
+        },
+        BytecodeInstruction::RuntimeBinary {
+            function: variable_define,
+            dst: 0,
+            lhs: 1,
+            rhs: 2,
+        },
+        BytecodeInstruction::Return { src: 0 },
+    ];
+    compiled.instruction_roles = vec![
+        None,
+        None,
+        None,
+        Some(CompiledInstructionRole::DeclarationMarker),
+        None,
+    ];
+    compiled.instruction_contracts = vec![None; 5];
+    compiled.instruction_operations = vec![None; 5];
+    compiled.instruction_source_nodes = vec![None; 5];
+    compiled.instruction_type_bindings = vec![None; 5];
+    compiled.instruction_memory_plans = vec![None; 5];
+    compiled.register_schemas = vec![
+        Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        Some(SchemaBody::String),
+        Some(SchemaBody::Bool),
+    ];
+    compiled.register_type_descriptors = vec![
+        Some(
+            ValueCell::from_exact(0.0_f64)
+                .unwrap()
+                .resolved_descriptor()
+                .unwrap(),
+        ),
+        Some(
+            ValueCell::from_exact("state".to_owned())
+                .unwrap()
+                .resolved_descriptor()
+                .unwrap(),
+        ),
+        Some(
+            ValueCell::from_exact(true)
+                .unwrap()
+                .resolved_descriptor()
+                .unwrap(),
+        ),
+    ];
+    compiled.register_collection_cardinalities = vec![None; 3];
+    compiled.register_state_initializers = vec![Some(0), None, None];
+    compiled.symbol_definitions.push(CompiledSymbolDefinition {
+        id: symbol,
+        name: "state".to_owned(),
+        register: 0,
+        mutable: true,
+        root_visible: true,
+        ordinal: 0,
+    });
+    compiled.return_register = 0;
+
+    let artifact = compile_executable_program_artifact(&compiled, &catalog)
+        .expect("a state without a source writer receives a synthetic hold node");
+    let [hold] = artifact.nodes() else {
+        panic!("the mutable declaration must produce exactly one state-hold node");
+    };
+    assert_eq!(hold.operation.module_path.as_ref(), ["core"]);
+    assert_eq!(hold.operation.operation_name, "assign");
+    assert!(
+        compiled
+            .instruction_source_nodes
+            .iter()
+            .all(Option::is_none)
+    );
+    assert!(matches!(
+        mech_engine::memory_planner::plan_program_memory_template(&artifact, &[], &[], &[]),
+        Err(mech_core::MemoryPlanError::DescriptorArityMismatch)
+    ));
+
+    let instance = activate(
+        ReactiveInstanceId::new(1, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .expect("artifact-only nodes must participate in Resident planning");
+    assert!(
+        instance
+            .plan
+            .steps
+            .iter()
+            .any(|step| step.artifact_node() == hold.node)
+    );
+    assert!(instance.plan.memory_plan.call_for_node(hold.node).is_some());
+}
+
 #[test]
 fn malformed_compiled_scalar_metadata_fails_closed() {
     let (mut missing_kind, catalog) = compiled_assign_artifact_fixture(RuntimeType::F64);

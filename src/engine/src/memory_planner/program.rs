@@ -179,23 +179,24 @@ pub struct ProgramMemoryPlan {
 
 pub fn plan_program_memory_template(
     artifact: &ProgramArtifact,
-    instruction_nodes: &[mech_core::NodeId],
-    instruction_bindings: &[Option<BoundCall>],
-    instruction_memory_plans: &[Option<CallMemoryPlan>],
+    execution_nodes: &[mech_core::NodeId],
+    execution_bindings: &[Option<BoundCall>],
+    execution_memory_plans: &[Option<CallMemoryPlan>],
 ) -> Result<ProgramMemoryPlanTemplate, MemoryPlanError> {
-    if instruction_nodes.len() != instruction_bindings.len()
-        || instruction_bindings.len() != instruction_memory_plans.len()
+    if execution_nodes.len() != execution_bindings.len()
+        || execution_bindings.len() != execution_memory_plans.len()
     {
         return Err(MemoryPlanError::DescriptorArityMismatch);
     }
+    validate_complete_execution_schedule(artifact, execution_nodes)?;
     let mut calls = Vec::new();
     let mut call_nodes = Vec::new();
     let mut call_sites = Vec::new();
     let mut seen_nodes = BTreeSet::new();
-    for ((&node_id, binding), plan) in instruction_nodes
+    for ((&node_id, binding), plan) in execution_nodes
         .iter()
-        .zip(instruction_bindings)
-        .zip(instruction_memory_plans)
+        .zip(execution_bindings)
+        .zip(execution_memory_plans)
     {
         if !seen_nodes.insert(node_id) {
             return Err(MemoryPlanError::DescriptorMismatch);
@@ -289,7 +290,7 @@ pub fn plan_program_memory_template(
         .unzip();
     let (call_sites, mut calls): (Vec<_>, Vec<_>) = sites_and_calls.into_iter().unzip();
 
-    let node_positions = instruction_nodes
+    let node_positions = execution_nodes
         .iter()
         .copied()
         .enumerate()
@@ -355,6 +356,32 @@ pub fn plan_program_memory_template(
         allocations: Box::new([]),
         transfers: Box::new([]),
     })
+}
+
+/// Rejects a partial instruction-sidecar projection before it can become the
+/// program lifetime authority. The execution schedule must contain every
+/// semantic artifact node exactly once, including compiler-synthesized nodes
+/// such as the state hold for a mutable declaration without a writer.
+fn validate_complete_execution_schedule(
+    artifact: &ProgramArtifact,
+    execution_nodes: &[mech_core::NodeId],
+) -> Result<(), MemoryPlanError> {
+    if execution_nodes.len() != artifact.nodes().len() {
+        return Err(MemoryPlanError::DescriptorArityMismatch);
+    }
+    let artifact_nodes = artifact
+        .nodes()
+        .iter()
+        .map(|node| node.node)
+        .collect::<BTreeSet<_>>();
+    let scheduled_nodes = execution_nodes.iter().copied().collect::<BTreeSet<_>>();
+    if artifact_nodes.len() != artifact.nodes().len()
+        || scheduled_nodes.len() != execution_nodes.len()
+        || artifact_nodes != scheduled_nodes
+    {
+        return Err(MemoryPlanError::DescriptorMismatch);
+    }
+    Ok(())
 }
 
 pub fn instantiate_program_memory_plan(
