@@ -1,11 +1,11 @@
-use crate::MemoryObjectId;
+use crate::{CanonicalCellId, MemoryObjectId};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, vec::Vec};
 
-use core::slice;
+use core::{marker::PhantomData, mem, slice};
 
 use super::{
     ActiveLeaseRecord, AllocationHandle, MemoryDomain, MemoryRuntimeError, MemoryRuntimeResult,
@@ -55,8 +55,93 @@ pub struct CallAccessRequest {
     pub region: MemoryAccessRegion,
 }
 
+/// A relocatable typed capability naming one logical cell. It deliberately
+/// contains neither a physical allocation handle nor an owning payload.
+#[derive(Debug)]
+pub struct ManagedPort<T> {
+    cell: CanonicalCellId,
+    marker: PhantomData<fn() -> T>,
+}
+
+impl<T> Copy for ManagedPort<T> {}
+
+impl<T> Clone for ManagedPort<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> ManagedPort<T> {
+    #[cfg(feature = "functions")]
+    pub(crate) const fn new(cell: CanonicalCellId) -> Self {
+        Self {
+            cell,
+            marker: PhantomData,
+        }
+    }
+
+    pub const fn logical_cell_id(self) -> CanonicalCellId {
+        self.cell
+    }
+}
+
+/// One planned access associated with a relocatable logical port.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct ManagedCallAccessRequest {
+    cell: CanonicalCellId,
+    object: PlanObjectKey,
+    mode: MemoryAccessMode,
+    region: MemoryAccessRegion,
+}
+
+impl ManagedCallAccessRequest {
+    pub const fn new<T>(
+        port: ManagedPort<T>,
+        object: PlanObjectKey,
+        mode: MemoryAccessMode,
+        region: MemoryAccessRegion,
+    ) -> Self {
+        Self::for_logical_cell(port.logical_cell_id(), object, mode, region)
+    }
+
+    pub const fn for_logical_cell(
+        cell: CanonicalCellId,
+        object: PlanObjectKey,
+        mode: MemoryAccessMode,
+        region: MemoryAccessRegion,
+    ) -> Self {
+        Self {
+            cell,
+            object,
+            mode,
+            region,
+        }
+    }
+}
+
+mod managed_element_sealed {
+    pub trait Sealed {}
+}
+
+/// A fixed-width initialized element that may be viewed inside a managed
+/// lease. The sealed set excludes owning or recursively allocated values.
+pub trait ManagedElement: managed_element_sealed::Sealed + Copy + 'static {}
+
+impl<T> ManagedElement for T where T: managed_element_sealed::Sealed + Copy + 'static {}
+
+macro_rules! managed_elements {
+    ($($type:ty),+ $(,)?) => {$(
+        impl managed_element_sealed::Sealed for $type {}
+    )+};
+}
+
+managed_elements!(
+    u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64, usize
+);
+
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ResolvedAccessRequest {
+    cell: Option<CanonicalCellId>,
     object: PlanObjectKey,
     handle: Option<AllocationHandle>,
     mode: MemoryAccessMode,
@@ -101,6 +186,7 @@ impl MemoryDomain {
                 request.region,
             )?;
             resolved.push(ResolvedAccessRequest {
+                cell: None,
                 object: request.object,
                 handle: binding.handle(),
                 mode: request.mode,
@@ -117,6 +203,62 @@ impl MemoryDomain {
                 request.end,
                 request.mode,
                 request.object,
+            )
+        });
+        resolved.dedup();
+        Ok(PreparedCallAccess {
+            revision: realized.revision(),
+            requests: resolved.into_boxed_slice(),
+        })
+    }
+
+    pub fn prepare_managed_call(
+        &self,
+        realized: &RealizedMemoryPlan,
+        requests: &[ManagedCallAccessRequest],
+    ) -> MemoryRuntimeResult<PreparedCallAccess> {
+        if realized.domain() != self.id() {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.id(),
+                actual: realized.domain(),
+            });
+        }
+        let mut resolved = Vec::new();
+        resolved.try_reserve_exact(requests.len()).map_err(|_| {
+            MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: requests.len() as u64,
+                alignment: 1,
+                space: crate::MemorySpace::Host,
+            }
+        })?;
+        for request in requests {
+            let binding = realized.binding(request.object)?;
+            let (start, end, relative_end) = enclosing_span(
+                request.object.object(),
+                &binding,
+                request.mode,
+                request.region,
+            )?;
+            resolved.push(ResolvedAccessRequest {
+                cell: Some(request.cell),
+                object: request.object,
+                handle: binding.handle(),
+                mode: request.mode,
+                start,
+                end,
+                relative_end,
+            });
+        }
+        resolved.sort_by_key(|request| {
+            (
+                request.handle.map(AllocationHandle::domain),
+                request.handle.map(AllocationHandle::slot),
+                request.start,
+                request.end,
+                request.mode,
+                request.object,
+                request.cell,
             )
         });
         resolved.dedup();
@@ -211,6 +353,7 @@ impl MemoryDomain {
                 token,
                 handle,
                 object: request.object,
+                cell: request.cell,
                 mode: request.mode,
                 start: request.start,
                 end: request.end,
@@ -231,6 +374,7 @@ struct HeldLease {
     token: u64,
     handle: AllocationHandle,
     object: PlanObjectKey,
+    cell: Option<CanonicalCellId>,
     mode: MemoryAccessMode,
     start: u64,
     end: u64,
@@ -244,6 +388,62 @@ pub struct KernelMemoryFrame<'a> {
 }
 
 impl KernelMemoryFrame<'_> {
+    pub fn with_port_slice<T: ManagedElement, R>(
+        &self,
+        port: ManagedPort<T>,
+        access: impl FnOnce(&[T]) -> R,
+    ) -> MemoryRuntimeResult<R> {
+        let lease = self.port_lease(port.logical_cell_id(), false)?;
+        self.with_bytes(lease.object, |bytes| {
+            validate_typed_bytes::<T>(lease.object.object(), lease.start, bytes.len())?;
+            let count = bytes.len() / mem::size_of::<T>();
+            // SAFETY: ManagedElement is sealed to fixed-width Copy values,
+            // the realized arena and offset satisfy T's alignment, and the
+            // lease restricts this initialized region to shared reads.
+            let values = unsafe { slice::from_raw_parts(bytes.as_ptr().cast::<T>(), count) };
+            Ok(access(values))
+        })?
+    }
+
+    pub fn with_port_slice_mut<T: ManagedElement, R>(
+        &mut self,
+        port: ManagedPort<T>,
+        access: impl FnOnce(&mut [T]) -> R,
+    ) -> MemoryRuntimeResult<R> {
+        let lease = self.port_lease(port.logical_cell_id(), true)?;
+        self.with_bytes_mut(lease.object, |bytes| {
+            validate_typed_bytes::<T>(lease.object.object(), lease.start, bytes.len())?;
+            let count = bytes.len() / mem::size_of::<T>();
+            // SAFETY: ManagedElement is sealed to fixed-width Copy values,
+            // alignment and length were checked, and the exclusive lease
+            // guarantees no overlapping live reference for this closure.
+            let values =
+                unsafe { slice::from_raw_parts_mut(bytes.as_mut_ptr().cast::<T>(), count) };
+            Ok(access(values))
+        })?
+    }
+
+    fn port_lease(&self, cell: CanonicalCellId, write: bool) -> MemoryRuntimeResult<HeldLease> {
+        self.leases
+            .iter()
+            .find(|lease| {
+                lease.cell == Some(cell)
+                    && if write {
+                        lease.mode.writes()
+                    } else {
+                        matches!(
+                            lease.mode,
+                            MemoryAccessMode::Read | MemoryAccessMode::ExclusiveInPlace
+                        )
+                    }
+            })
+            .copied()
+            .ok_or(MemoryRuntimeError::UnplannedAllocation {
+                object: None,
+                requested: 0,
+            })
+    }
+
     pub fn with_bytes<R>(
         &self,
         object: PlanObjectKey,
@@ -365,6 +565,32 @@ impl KernelMemoryFrame<'_> {
             .record_initialized(object, lease.relative_end)?;
         Ok(result)
     }
+}
+
+fn validate_typed_bytes<T: ManagedElement>(
+    object: MemoryObjectId,
+    absolute_offset: u64,
+    bytes: usize,
+) -> MemoryRuntimeResult<()> {
+    let element_bytes = mem::size_of::<T>();
+    let alignment = mem::align_of::<T>();
+    if element_bytes == 0 {
+        return Err(MemoryRuntimeError::InvalidLayout {
+            object: Some(object),
+            size: bytes as u64,
+            alignment: u32::try_from(alignment).unwrap_or(u32::MAX),
+            reason: "zero-sized managed elements are unsupported",
+        });
+    }
+    if bytes % element_bytes != 0 || absolute_offset % alignment as u64 != 0 {
+        return Err(MemoryRuntimeError::InvalidLayout {
+            object: Some(object),
+            size: bytes as u64,
+            alignment: u32::try_from(alignment).unwrap_or(u32::MAX),
+            reason: "managed typed view has incompatible length or alignment",
+        });
+    }
+    Ok(())
 }
 
 impl Drop for KernelMemoryFrame<'_> {

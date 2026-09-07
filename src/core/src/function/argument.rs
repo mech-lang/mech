@@ -18,7 +18,7 @@ use crate::{BytecodeCompilerContext, Register};
 use crate::{
     CanonicalCellId, FunctionArgumentRole, FunctionMatrixRepresentation, FunctionRuntimeType,
     FunctionSignatureViolation, FunctionValueRepresentation, IncorrectNumberOfArguments, MResult,
-    MechError, MechErrorKind, OperationContractDeclaration, OperationContractError,
+    ManagedPort, MechError, MechErrorKind, OperationContractDeclaration, OperationContractError,
     PortMemoryRequirement, PortStorageCompatibilityError, Ref, RuntimeFunctionContract,
     RuntimeFunctionInputs, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaBody,
     SchemaId, ShapeInstance, StorageTopology, Value, ValueCell, ValueData, ValueDataDraft,
@@ -876,6 +876,36 @@ impl FunctionInputPort<'_> {
             })
     }
 
+    /// Binds a scalar logical input without retaining its physical backing.
+    /// The active managed frame resolves the cell's current allocation at
+    /// every invocation.
+    pub fn try_managed<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        validate_cell_representation(
+            cell,
+            T::REPRESENTATION,
+            FunctionArgumentRole::Input(self.index),
+        )?;
+        Ok(ManagedPort::new(cell.reactive_cell_id()))
+    }
+
+    /// Binds a matrix logical input by element capability rather than by an
+    /// owning matrix representation.
+    #[cfg(feature = "matrix")]
+    pub fn try_managed_matrix<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        let expected = crate::matrix_element_for_representation(T::REPRESENTATION);
+        match cell.representation() {
+            FunctionValueRepresentation::Matrix { element, .. } if element == expected => {
+                Ok(ManagedPort::new(cell.reactive_cell_id()))
+            }
+            _ => Err(function_argument_type_mismatch::<T>(
+                cell,
+                FunctionArgumentRole::Input(self.index),
+            )),
+        }
+    }
+
     /// Extracts the exact typed matrix input wrapper without exposing erased values.
     ///
     /// ```compile_fail
@@ -948,6 +978,30 @@ impl FunctionOutputPort<'_> {
         })
     }
 
+    /// Binds a scalar logical output without retaining its physical backing.
+    pub fn try_managed<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        validate_cell_representation(cell, T::REPRESENTATION, FunctionArgumentRole::Output)?;
+        Ok(ManagedPort::new(cell.reactive_cell_id()))
+    }
+
+    /// Binds a matrix logical output by element capability rather than by an
+    /// owning matrix representation.
+    #[cfg(feature = "matrix")]
+    pub fn try_managed_matrix<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        let expected = crate::matrix_element_for_representation(T::REPRESENTATION);
+        match cell.representation() {
+            FunctionValueRepresentation::Matrix { element, .. } if element == expected => {
+                Ok(ManagedPort::new(cell.reactive_cell_id()))
+            }
+            _ => Err(function_argument_type_mismatch::<T>(
+                cell,
+                FunctionArgumentRole::Output,
+            )),
+        }
+    }
+
     pub fn value(self) -> FunctionValueOutput {
         FunctionValueOutput {
             cell: self.invocation.output.clone(),
@@ -975,11 +1029,11 @@ impl FunctionValueInput {
         self.cell.snapshot()
     }
 
-    pub const fn schema(&self) -> SchemaId {
+    pub fn schema(&self) -> SchemaId {
         self.cell.schema()
     }
 
-    pub const fn schema_key(&self) -> crate::SchemaKey {
+    pub fn schema_key(&self) -> crate::SchemaKey {
         self.cell.schema_key()
     }
 
@@ -1080,11 +1134,11 @@ impl FunctionValueOutput {
         self.cell.replace(&next)
     }
 
-    pub const fn schema(&self) -> SchemaId {
+    pub fn schema(&self) -> SchemaId {
         self.cell.schema()
     }
 
-    pub const fn schema_key(&self) -> crate::SchemaKey {
+    pub fn schema_key(&self) -> crate::SchemaKey {
         self.cell.schema_key()
     }
 
@@ -1355,18 +1409,10 @@ mod operation_memory_tests {
     fn operation_aliases_follow_storage_when_logical_identity_disagrees() {
         let first = ValueCell::from_exact(1_f64).unwrap();
         let detached = first.detached_clone().unwrap();
-        let same_logical_different_storage = ValueCell {
-            binding: crate::cell_binding::CellBinding {
-                identity: first.binding.identity,
-                ..detached.binding.clone()
-            },
-        };
-        let different_logical_same_storage = ValueCell {
-            binding: crate::cell_binding::CellBinding {
-                identity: detached.binding.identity,
-                ..first.binding.clone()
-            },
-        };
+        let same_logical_different_storage =
+            ValueCell::test_with_identity_and_storage(&first, &detached).unwrap();
+        let different_logical_same_storage =
+            ValueCell::test_with_identity_and_storage(&detached, &first).unwrap();
 
         assert!(first.same_logical_cell(&same_logical_different_storage));
         assert!(!first.same_storage(&same_logical_different_storage));

@@ -354,6 +354,47 @@ pub trait MechFunctionImpl {
     fn to_string(&self) -> String;
 }
 
+/// R6 execution contract for kernels that retain only relocatable logical
+/// ports. This entry has no unmanaged default: execution authority must be a
+/// complete call-scoped [`KernelMemoryFrame`].
+pub trait ManagedMechFunctionImpl {
+    fn solve_managed(
+        &self,
+        frame: &mut KernelMemoryFrame<'_>,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus>;
+}
+
+/// One managed kernel bound to its visible logical invocation.
+pub struct ManagedFunctionInstance {
+    implementation: Box<dyn ManagedMechFunctionImpl>,
+    invocation: FunctionInvocation,
+}
+
+impl ManagedFunctionInstance {
+    pub fn new(
+        implementation: Box<dyn ManagedMechFunctionImpl>,
+        invocation: FunctionInvocation,
+    ) -> Self {
+        Self {
+            implementation,
+            invocation,
+        }
+    }
+
+    pub fn solve_managed(
+        &self,
+        frame: &mut KernelMemoryFrame<'_>,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        self.implementation.solve_managed(frame, services)
+    }
+
+    pub const fn invocation(&self) -> &FunctionInvocation {
+        &self.invocation
+    }
+}
+
 /// An already validated register write. Implementations must not fail or run
 /// arbitrary reactive work when they are committed.
 pub(crate) mod reactive_register_sealed {

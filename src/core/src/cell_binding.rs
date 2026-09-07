@@ -77,17 +77,97 @@ impl<T> CanonicalCellBacking for T where
 {
 }
 
-#[derive(Clone)]
-pub(crate) struct CellBinding {
+pub(crate) struct CellRecord {
     pub(crate) identity: CanonicalCellId,
     pub(crate) schema: SchemaId,
     pub(crate) schema_key: SchemaKey,
-    pub(crate) shape: Rc<cell::RefCell<ShapeInstance>>,
     pub(crate) schemas: Rc<SchemaTable>,
-    pub(crate) storage: Rc<dyn ErasedCellStorage>,
+    published: cell::RefCell<PublishedCellState>,
+}
+
+struct PublishedCellState {
+    shape: ShapeInstance,
+    version: crate::PublishedValueVersion,
+    storage: CellStorageBinding,
+}
+
+/// Physical backing authority for one published logical cell value during the
+/// first stable-record cutover. Managed variants are added with the planned
+/// payload realization checkpoint, once their adapters can be constructed.
+enum CellStorageBinding {
+    PinnedExternal(Rc<dyn ErasedCellStorage>),
+}
+
+impl CellStorageBinding {
+    fn adapter(&self) -> &Rc<dyn ErasedCellStorage> {
+        match self {
+            Self::PinnedExternal(adapter) => adapter,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct CellBinding {
+    record: Rc<CellRecord>,
     /// Planning-time topology for composites assembled from live canonical
     /// cells. The canonical snapshot remains the runtime value authority.
     pub(crate) compiler_children: Option<Rc<[ValueCell]>>,
+}
+
+impl core::ops::Deref for CellBinding {
+    type Target = CellRecord;
+
+    fn deref(&self) -> &Self::Target {
+        self.record.as_ref()
+    }
+}
+
+impl CellBinding {
+    fn pinned_external(
+        identity: CanonicalCellId,
+        schema: SchemaId,
+        schema_key: SchemaKey,
+        shape: ShapeInstance,
+        schemas: Rc<SchemaTable>,
+        storage: Rc<dyn ErasedCellStorage>,
+    ) -> Self {
+        Self {
+            record: Rc::new(CellRecord {
+                identity,
+                schema,
+                schema_key,
+                schemas,
+                published: cell::RefCell::new(PublishedCellState {
+                    shape,
+                    version: crate::PublishedValueVersion::initial(),
+                    storage: CellStorageBinding::PinnedExternal(storage),
+                }),
+            }),
+            compiler_children: None,
+        }
+    }
+
+    fn shape(&self) -> cell::Ref<'_, ShapeInstance> {
+        cell::Ref::map(self.published.borrow(), |published| &published.shape)
+    }
+
+    fn try_shape(&self, access: CellAccess) -> MResult<cell::Ref<'_, ShapeInstance>> {
+        self.published
+            .try_borrow()
+            .map(|published| cell::Ref::map(published, |published| &published.shape))
+            .map_err(|_| borrow_conflict(access))
+    }
+
+    fn storage(&self) -> MResult<Rc<dyn ErasedCellStorage>> {
+        self.published
+            .try_borrow()
+            .map(|published| published.storage.adapter().clone())
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))
+    }
+
+    fn publication_version(&self) -> crate::PublishedValueVersion {
+        self.published.borrow().version
+    }
 }
 
 pub(crate) trait ErasedCellStorage {
@@ -222,12 +302,7 @@ impl ValueCell {
                     },
                 ))
             })?;
-        let shape = self
-            .binding
-            .shape
-            .try_borrow()
-            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
-            .clone();
+        let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
         crate::ResolvedValueDescriptor::from_schema(schema, shape).map_err(MechError::from)
     }
 
@@ -526,19 +601,17 @@ impl ValueCell {
             .map_err(MechError::from)?;
         let build = builder.finish().map_err(MechError::from)?;
         let schema = build.resolve(handle).map_err(MechError::from)?;
-        let CellBinding {
-            identity, storage, ..
-        } = allocated.binding;
+        let identity = allocated.binding.identity;
+        let storage = allocated.binding.storage()?;
         let cell = Self {
-            binding: CellBinding {
+            binding: CellBinding::pinned_external(
                 identity,
                 schema,
-                schema_key: descriptor.schema().key(),
-                shape: Rc::new(cell::RefCell::new(descriptor.shape().clone())),
-                schemas: Rc::new(build.table),
+                descriptor.schema().key(),
+                descriptor.shape().clone(),
+                Rc::new(build.table),
                 storage,
-                compiler_children: None,
-            },
+            ),
         };
         cell.validate_storage_contract()?;
         cell.snapshot()?;
@@ -572,15 +645,14 @@ impl ValueCell {
             })?;
         let identity = reference.reactive_cell_id();
         let cell = Self {
-            binding: CellBinding {
+            binding: CellBinding::pinned_external(
                 identity,
                 schema,
                 schema_key,
-                shape: Rc::new(cell::RefCell::new(shape)),
+                shape,
                 schemas,
-                storage: Rc::new(ExactCellStorage { reference }),
-                compiler_children: None,
-            },
+                Rc::new(ExactCellStorage { reference }),
+            ),
         };
         cell.validate_storage_contract()?;
         cell.snapshot()?;
@@ -604,15 +676,14 @@ impl ValueCell {
         let reference = Ref::new(value);
         let identity = reference.reactive_cell_id();
         let cell = Self {
-            binding: CellBinding {
+            binding: CellBinding::pinned_external(
                 identity,
                 schema,
                 schema_key,
-                shape: Rc::new(cell::RefCell::new(shape)),
+                shape,
                 schemas,
-                storage: Rc::new(ExactCellStorage { reference }),
-                compiler_children: None,
-            },
+                Rc::new(ExactCellStorage { reference }),
+            ),
         };
         cell.validate_storage_contract()?;
         cell.snapshot()?;
@@ -1061,7 +1132,7 @@ impl ValueCell {
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
-        close_schema_body(schema.body(), &self.binding.shape.borrow())
+        close_schema_body(schema.body(), &self.binding.shape())
     }
 
     /// Returns detached canonical tuple element cells, or `None` when this is
@@ -1261,16 +1332,16 @@ impl ValueCell {
         Self::from_runtime_value(value, schemas)
     }
 
-    pub const fn schema(&self) -> SchemaId {
+    pub fn schema(&self) -> SchemaId {
         self.binding.schema
     }
 
-    pub const fn schema_key(&self) -> SchemaKey {
+    pub fn schema_key(&self) -> SchemaKey {
         self.binding.schema_key
     }
 
     pub fn shape(&self) -> cell::Ref<'_, ShapeInstance> {
-        self.binding.shape.borrow()
+        self.binding.shape()
     }
 
     pub(crate) fn schema_table(&self) -> Rc<SchemaTable> {
@@ -1283,7 +1354,10 @@ impl ValueCell {
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
-        self.binding.storage.representation(schema.body())
+        self.binding
+            .storage()
+            .expect("value-cell published storage remains borrowable")
+            .representation(schema.body())
     }
 
     pub fn type_memory_contract(&self) -> MResult<crate::TypeMemoryContract> {
@@ -1309,17 +1383,15 @@ impl ValueCell {
                     schema: self.binding.schema,
                 })
             })?;
-        let shape = self
-            .binding
-            .shape
-            .try_borrow()
-            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
-            .clone();
+        let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
         Ok(schema.resolved_type_memory_contract(&shape)?)
     }
 
     pub fn storage_capabilities(&self) -> crate::StorageCapabilityDescriptor {
-        self.binding.storage.capabilities()
+        self.binding
+            .storage()
+            .expect("value-cell published storage remains borrowable")
+            .capabilities()
     }
 
     /// Rechecks the mandatory schema/storage compatibility invariant.
@@ -1333,13 +1405,8 @@ impl ValueCell {
                     schema: self.binding.schema,
                 })
             })?;
-        let shape = self
-            .binding
-            .shape
-            .try_borrow()
-            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
-            .clone();
-        validate_storage_compatibility(schema, &shape, &self.binding.storage.capabilities())
+        let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
+        validate_storage_compatibility(schema, &shape, &self.binding.storage()?.capabilities())
     }
 
     /// Describes whether this cell's schema permits its resolved extents to
@@ -1353,9 +1420,9 @@ impl ValueCell {
     }
 
     pub fn snapshot(&self) -> MResult<Value> {
-        let shape = self.binding.shape.borrow().clone();
+        let shape = self.binding.shape().clone();
         self.binding
-            .storage
+            .storage()?
             .snapshot(self.binding.schema, &shape, &self.binding.schemas)
     }
 
@@ -1365,23 +1432,17 @@ impl ValueCell {
     /// cell identity is deliberately fresh. Source specialization uses this
     /// for full-write outputs whose representation mirrors an input.
     pub fn detached_clone(&self) -> MResult<Self> {
-        let detached = self.binding.storage.detached_clone()?;
-        let shape = self
-            .binding
-            .shape
-            .try_borrow()
-            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
-            .clone();
+        let detached = self.binding.storage()?.detached_clone()?;
+        let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
         let cell = Self {
-            binding: CellBinding {
-                identity: detached.identity,
-                schema: self.binding.schema,
-                schema_key: self.binding.schema_key,
-                shape: Rc::new(cell::RefCell::new(shape)),
-                schemas: self.binding.schemas.clone(),
-                storage: detached.storage,
-                compiler_children: None,
-            },
+            binding: CellBinding::pinned_external(
+                detached.identity,
+                self.binding.schema,
+                self.binding.schema_key,
+                shape,
+                self.binding.schemas.clone(),
+                detached.storage,
+            ),
         };
         cell.validate_storage_contract()?;
         cell.snapshot()?;
@@ -1401,12 +1462,12 @@ impl ValueCell {
         }
         let value = rebind_value(value.clone(), self.binding.schemas.as_ref())?;
         debug_assert_eq!(value.schema(), self.binding.schema);
-        let mut shape = self
+        let mut published = self
             .binding
-            .shape
+            .published
             .try_borrow_mut()
             .map_err(|_| borrow_conflict(CellAccess::Replace))?;
-        let current_shape = shape.clone();
+        let current_shape = published.shape.clone();
         let schema = self
             .binding
             .schemas
@@ -1425,20 +1486,25 @@ impl ValueCell {
         value
             .validate_against(&self.binding.schemas)
             .map_err(snapshot_failure)?;
-        self.binding.storage.replace(&value)?;
-        *shape = value.shape().clone();
+        let next_version = published
+            .version
+            .checked_successor("published value version")
+            .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+        published.storage.adapter().replace(&value)?;
+        published.shape = value.shape().clone();
+        published.version = next_version;
         Ok(())
     }
 
     /// Verifies that the cell can be mutably borrowed for a later atomic
     /// replacement without changing its identity.
     pub fn preflight_replace(&self) -> MResult<()> {
-        let _shape = self
+        let published = self
             .binding
-            .shape
+            .published
             .try_borrow_mut()
             .map_err(|_| borrow_conflict(CellAccess::Replace))?;
-        self.binding.storage.preflight_replace()
+        published.storage.adapter().preflight_replace()
     }
 
     pub fn same_logical_cell(&self, other: &Self) -> bool {
@@ -1446,9 +1512,13 @@ impl ValueCell {
     }
 
     pub fn same_storage(&self, other: &Self) -> bool {
-        self.binding
-            .storage
-            .same_storage(other.binding.storage.as_ref())
+        let Ok(storage) = self.binding.storage() else {
+            return false;
+        };
+        let Ok(other_storage) = other.binding.storage() else {
+            return false;
+        };
+        storage.same_storage(other_storage.as_ref())
     }
 
     /// Compatibility spelling for physical storage identity.
@@ -1463,13 +1533,41 @@ impl ValueCell {
         self.binding.identity
     }
 
+    /// Monotonic semantic publication version shared by every clone of this
+    /// logical cell. Physical relocation alone does not advance it.
+    pub fn published_version(&self) -> crate::PublishedValueVersion {
+        self.binding.publication_version()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_with_identity_and_storage(
+        identity_source: &Self,
+        storage_source: &Self,
+    ) -> MResult<Self> {
+        let mut binding = CellBinding::pinned_external(
+            identity_source.binding.identity,
+            storage_source.binding.schema,
+            storage_source.binding.schema_key,
+            storage_source.binding.shape().clone(),
+            storage_source.binding.schemas.clone(),
+            storage_source.binding.storage()?,
+        );
+        binding.compiler_children = storage_source.binding.compiler_children.clone();
+        Ok(Self { binding })
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn same_exact_ref<T: 'static>(&self, reference: &Ref<T>) -> bool {
         self.binding
-            .storage
-            .as_any()
-            .downcast_ref::<ExactCellStorage<T>>()
-            .is_some_and(|storage| storage.reference.same_handle(reference))
+            .storage()
+            .ok()
+            .and_then(|storage| {
+                storage
+                    .as_any()
+                    .downcast_ref::<ExactCellStorage<T>>()
+                    .map(|storage| storage.reference.same_handle(reference))
+            })
+            .unwrap_or(false)
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -1650,12 +1748,7 @@ impl ValueCell {
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
-        let current_shape = self
-            .binding
-            .shape
-            .try_borrow()
-            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
-            .clone();
+        let current_shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
         let shape = output_shape_for_data(schema, &data, &[], Some(&current_shape))?;
         ValueDraft {
             schema: self.binding.schema,
@@ -1693,11 +1786,7 @@ impl ValueCell {
                     expected: declared_dimensions
                         .iter()
                         .filter_map(|dimension| {
-                            self.binding
-                                .shape
-                                .borrow()
-                                .resolve_dimension(dimension)
-                                .ok()
+                            self.binding.shape().resolve_dimension(dimension).ok()
                         })
                         .collect::<Vec<_>>()
                         .into_boxed_slice(),
@@ -1726,7 +1815,7 @@ impl ValueCell {
     pub fn rebuild_data_draft(&self, data: ValueDataDraft) -> MResult<Value> {
         finalize_draft(
             self.binding.schema,
-            &self.binding.shape.borrow(),
+            &self.binding.shape(),
             self.binding.schemas.as_ref(),
             data,
         )
@@ -1734,9 +1823,8 @@ impl ValueCell {
 
     #[cfg(feature = "functions")]
     pub(crate) fn try_ref<T: 'static>(&self) -> MResult<Ref<T>> {
-        let exact = self
-            .binding
-            .storage
+        let storage = self.binding.storage()?;
+        let exact = storage
             .as_any()
             .downcast_ref::<ExactCellStorage<T>>()
             .map(|storage| storage.reference.clone());
@@ -2809,12 +2897,16 @@ fn dynamic_matrix_cell(
 
 impl fmt::Debug for ValueCell {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let storage = self.binding.storage();
         formatter
             .debug_struct("ValueCell")
             .field("schema_key", &self.binding.schema_key)
-            .field("shape", &self.binding.shape)
+            .field("shape", &self.binding.shape())
             .field("representation", &self.representation())
-            .field("borrow_state", &self.binding.storage.borrow_state())
+            .field(
+                "borrow_state",
+                &storage.as_ref().map(|storage| storage.borrow_state()),
+            )
             .finish()
     }
 }
@@ -4218,21 +4310,13 @@ mod tests {
         assert!(!first.same_storage(&detached));
         assert!(first.snapshot_eq(&detached).unwrap());
 
-        let same_identity_detached_storage = ValueCell {
-            binding: CellBinding {
-                identity: first.binding.identity,
-                ..detached.binding.clone()
-            },
-        };
+        let same_identity_detached_storage =
+            ValueCell::test_with_identity_and_storage(&first, &detached).unwrap();
         assert!(first.same_logical_cell(&same_identity_detached_storage));
         assert!(!first.same_storage(&same_identity_detached_storage));
 
-        let different_identity_shared_storage = ValueCell {
-            binding: CellBinding {
-                identity: detached.binding.identity,
-                ..first.binding.clone()
-            },
-        };
+        let different_identity_shared_storage =
+            ValueCell::test_with_identity_and_storage(&detached, &first).unwrap();
         assert!(!first.same_logical_cell(&different_identity_shared_storage));
         assert!(first.same_storage(&different_identity_shared_storage));
 

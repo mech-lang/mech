@@ -123,6 +123,12 @@ impl crate::MechErrorKind for MemoryRuntimeError {
     }
 }
 
+impl From<MemoryRuntimeError> for crate::MechError {
+    fn from(error: MemoryRuntimeError) -> Self {
+        crate::MechError::new(error, None).with_compiler_loc()
+    }
+}
+
 #[cfg(any(not(feature = "no_std"), feature = "std"))]
 impl std::error::Error for MemoryRuntimeError {}
 
