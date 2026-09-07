@@ -1,7 +1,7 @@
 use crate::{
     AllocationPlan, ArenaBackingKind, ArenaPlan, MemoryArenaId, MemoryBudgetLimits,
     MemoryBudgetViolation, MemoryLifetime, MemoryObjectId, MemoryPlanPoint, MemorySpace,
-    ResourceDemand,
+    ResourceDemand, ReuseGroupId,
 };
 
 #[cfg(feature = "no_std")]
@@ -21,7 +21,7 @@ use std::{
     vec::Vec,
 };
 
-use core::cell::RefCell;
+use core::cell::{Cell, RefCell};
 
 use super::{
     AllocationHandle, HostBlock, MemoryDomainId, MemoryPlanRevision, MemoryRuntimeError,
@@ -176,6 +176,31 @@ impl RuntimeBinding {
             | Self::PinnedExternal { incarnation, .. } => *incarnation,
         }
     }
+
+    fn set_incarnation(&mut self, next: RegionIncarnation) {
+        match self {
+            Self::Empty { incarnation, .. }
+            | Self::ManagedHostRegion { incarnation, .. }
+            | Self::ManagedCanonicalPayload { incarnation, .. }
+            | Self::Device { incarnation, .. }
+            | Self::PinnedExternal { incarnation, .. } => *incarnation = next,
+        }
+    }
+
+    fn set_initialized_bytes(&mut self, next: u64) {
+        match self {
+            Self::ManagedHostRegion {
+                initialized_bytes, ..
+            }
+            | Self::ManagedCanonicalPayload {
+                initialized_bytes, ..
+            }
+            | Self::Device {
+                initialized_bytes, ..
+            } => *initialized_bytes = next,
+            Self::Empty { .. } | Self::PinnedExternal { .. } => {}
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -218,6 +243,16 @@ struct ObjectAuthorization {
     alignment: u32,
     offset: u64,
     lifetime: MemoryLifetime,
+    reuse_group: Option<ReuseGroupId>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct RuntimeRegionRecord {
+    pub(crate) handle: Option<AllocationHandle>,
+    lifetime: MemoryLifetime,
+    reuse_group: Option<ReuseGroupId>,
+    pub(crate) incarnation: RegionIncarnation,
+    pub(crate) initialized_bytes: u64,
 }
 
 #[derive(Clone, Debug)]
@@ -229,11 +264,21 @@ struct ArenaAuthorization {
     capacity_bytes: u64,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PlanRevisionLifecycle {
+    Candidate,
+    Admitted,
+    Realized,
+    Active,
+    Retired,
+}
+
 /// Non-forgeable authority to realize exactly one validated R5 plan view.
 pub struct MemoryReservation {
-    domain: Weak<RefCell<DomainState>>,
+    domain: Rc<RefCell<DomainState>>,
     domain_id: MemoryDomainId,
     revision: MemoryPlanRevision,
+    admission: u64,
     bytes: u64,
     active: bool,
     arenas: Box<[ArenaAuthorization]>,
@@ -253,10 +298,14 @@ impl MemoryReservation {
         if !self.active {
             return;
         }
-        if let Some(domain) = self.domain.upgrade()
-            && let Ok(mut state) = domain.try_borrow_mut()
-        {
-            let _ = state.release_reservation(self.bytes);
+        let mut state = self.domain.borrow_mut();
+        let result = state.release_reservation(self.bytes);
+        debug_assert!(result.is_ok());
+        state.admissions.remove(&self.admission);
+        if state.revisions.get(&self.revision) == Some(&PlanRevisionLifecycle::Admitted) {
+            state
+                .revisions
+                .insert(self.revision, PlanRevisionLifecycle::Retired);
         }
         self.active = false;
         self.bytes = 0;
@@ -276,6 +325,8 @@ impl Drop for MemoryReservation {
 /// a scope covering their declared interval is active.
 pub struct MemoryPlanScope {
     domain: Weak<RefCell<DomainState>>,
+    active_point: Rc<Cell<Option<MemoryPlanPoint>>>,
+    cleanup_pending: Rc<Cell<bool>>,
     point: MemoryPlanPoint,
     active: bool,
 }
@@ -291,11 +342,14 @@ impl Drop for MemoryPlanScope {
         if !self.active {
             return;
         }
-        if let Some(domain) = self.domain.upgrade()
-            && let Ok(mut state) = domain.try_borrow_mut()
-            && state.active_point == Some(self.point)
-        {
-            state.active_point = None;
+        if self.active_point.get() == Some(self.point) {
+            self.active_point.set(None);
+            self.cleanup_pending.set(true);
+            if let Some(domain) = self.domain.upgrade()
+                && let Ok(mut state) = domain.try_borrow_mut()
+            {
+                state.finish_plan_scope_cleanup();
+            }
         }
         self.active = false;
     }
@@ -305,7 +359,7 @@ impl Drop for MemoryPlanScope {
 /// admitted domain record. The backend owns the actual buffer; this token
 /// prevents the domain record from being reclaimed before that buffer drops.
 pub struct DeviceAllocationOwner {
-    domain: Weak<RefCell<DomainState>>,
+    domain: Rc<RefCell<DomainState>>,
     handle: AllocationHandle,
     active: bool,
 }
@@ -316,11 +370,7 @@ impl DeviceAllocationOwner {
     }
 
     pub fn mark_lost(&self) -> MemoryRuntimeResult<()> {
-        let domain = self
-            .domain
-            .upgrade()
-            .ok_or(MemoryRuntimeError::DomainClosed)?;
-        let mut state = domain.borrow_mut();
+        let mut state = self.domain.borrow_mut();
         let record = state.record_mut(self.handle)?;
         record.device_lost = true;
         Ok(())
@@ -330,20 +380,17 @@ impl DeviceAllocationOwner {
         if !self.active {
             return Ok(());
         }
-        let Some(domain) = self.domain.upgrade() else {
-            self.active = false;
-            return Ok(());
-        };
-        let mut state = domain.borrow_mut();
+        let mut state = self.domain.borrow_mut();
         let record = state.record_mut(self.handle)?;
-        record.device_owner_pins = record.device_owner_pins.checked_sub(1).ok_or(
+        let next_pins = record.device_owner_pins.checked_sub(1).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
                 dimension: "device owner pins",
                 current: u64::from(record.device_owner_pins),
                 change: 1,
             },
         )?;
-        if record.device_owner_pins == 0 {
+        record.device_owner_pins = next_pins;
+        if next_pins == 0 {
             record.device_actual_bytes = 0;
         }
         self.active = false;
@@ -353,14 +400,15 @@ impl DeviceAllocationOwner {
 
 impl Drop for DeviceAllocationOwner {
     fn drop(&mut self) {
-        debug_assert!(self.release().is_ok());
+        let result = self.release();
+        debug_assert!(result.is_ok());
     }
 }
 
 /// Pins every allocation participating in one submitted device operation.
 /// Completion is observed by the backend and released on the owner thread.
 pub struct DeviceSubmissionHold {
-    domain: Weak<RefCell<DomainState>>,
+    domain: Rc<RefCell<DomainState>>,
     handles: Arc<[AllocationHandle]>,
     device_bytes: u64,
     transfer_bytes: u64,
@@ -386,22 +434,18 @@ impl DeviceSubmissionHold {
         if !self.active {
             return Ok(());
         }
-        let Some(domain) = self.domain.upgrade() else {
-            self.active = false;
-            return Ok(());
-        };
-        let mut state = domain.borrow_mut();
+        let mut state = self.domain.borrow_mut();
         for handle in self.handles.iter().copied() {
-            let record = state.record_mut(handle)?;
-            record.submission_pins = record.submission_pins.checked_sub(1).ok_or(
-                MemoryRuntimeError::AccountingInvariantViolation {
+            let record = state.record(handle)?;
+            if record.submission_pins == 0 {
+                return Err(MemoryRuntimeError::AccountingInvariantViolation {
                     dimension: "device submission pins",
-                    current: u64::from(record.submission_pins),
+                    current: 0,
                     change: 1,
-                },
-            )?;
+                });
+            }
         }
-        state.ledger.in_flight_device_bytes = state
+        let next_device_bytes = state
             .ledger
             .in_flight_device_bytes
             .checked_sub(self.device_bytes)
@@ -410,7 +454,7 @@ impl DeviceSubmissionHold {
                 current: state.ledger.in_flight_device_bytes,
                 change: self.device_bytes,
             })?;
-        state.ledger.in_flight_transfer_bytes = state
+        let next_transfer_bytes = state
             .ledger
             .in_flight_transfer_bytes
             .checked_sub(self.transfer_bytes)
@@ -419,6 +463,11 @@ impl DeviceSubmissionHold {
                 current: state.ledger.in_flight_transfer_bytes,
                 change: self.transfer_bytes,
             })?;
+        for handle in self.handles.iter().copied() {
+            state.record_mut(handle)?.submission_pins -= 1;
+        }
+        state.ledger.in_flight_device_bytes = next_device_bytes;
+        state.ledger.in_flight_transfer_bytes = next_transfer_bytes;
         self.active = false;
         Ok(())
     }
@@ -426,7 +475,8 @@ impl DeviceSubmissionHold {
 
 impl Drop for DeviceSubmissionHold {
     fn drop(&mut self) {
-        debug_assert!(self.release().is_ok());
+        let result = self.release();
+        debug_assert!(result.is_ok());
     }
 }
 
@@ -435,6 +485,7 @@ impl Drop for DeviceSubmissionHold {
 pub struct RealizedMemoryPlan {
     domain: MemoryDomainId,
     revision: MemoryPlanRevision,
+    domain_state: Weak<RefCell<DomainState>>,
     bindings: Rc<RefCell<Box<[(PlanObjectKey, RuntimeBinding)]>>>,
     lifetimes: Rc<Box<[(PlanObjectKey, MemoryLifetime)]>>,
 }
@@ -449,6 +500,12 @@ impl RealizedMemoryPlan {
     }
 
     pub fn binding(&self, key: PlanObjectKey) -> MemoryRuntimeResult<RuntimeBinding> {
+        if key.domain() != self.domain {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.domain,
+                actual: key.domain(),
+            });
+        }
         if key.revision() != self.revision {
             return Err(MemoryRuntimeError::InvalidPlanRevision {
                 expected: self.revision,
@@ -456,11 +513,29 @@ impl RealizedMemoryPlan {
             });
         }
         let bindings = self.bindings.borrow();
-        bindings
+        let mut binding = bindings
             .binary_search_by_key(&key, |(candidate, _)| *candidate)
             .ok()
             .map(|index| bindings[index].1.clone())
-            .ok_or(MemoryRuntimeError::UnknownPlanObject { key })
+            .ok_or(MemoryRuntimeError::UnknownPlanObject { key })?;
+        let state = self
+            .domain_state
+            .upgrade()
+            .ok_or(MemoryRuntimeError::DomainClosed)?;
+        let state = state.borrow();
+        if state.id != self.domain {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.domain,
+                actual: state.id,
+            });
+        }
+        let region = state
+            .regions
+            .get(&key)
+            .ok_or(MemoryRuntimeError::UnknownPlanObject { key })?;
+        binding.set_incarnation(region.incarnation);
+        binding.set_initialized_bytes(region.initialized_bytes);
+        Ok(binding)
     }
 
     pub fn bindings(&self) -> Box<[(PlanObjectKey, RuntimeBinding)]> {
@@ -513,6 +588,16 @@ impl RealizedMemoryPlan {
                 });
             }
         }
+        let state = self
+            .domain_state
+            .upgrade()
+            .ok_or(MemoryRuntimeError::DomainClosed)?;
+        let mut state = state.borrow_mut();
+        let region = state
+            .regions
+            .get_mut(&key)
+            .ok_or(MemoryRuntimeError::UnknownPlanObject { key })?;
+        region.initialized_bytes = region.initialized_bytes.max(initialized_bytes);
         Ok(())
     }
 }
@@ -533,11 +618,10 @@ pub(crate) struct AllocationRecord {
     pub leases: Vec<ActiveLeaseRecord>,
     pub snapshot_pins: u32,
     pub submission_pins: u32,
-    pub payload_owner_pins: u32,
+    pub payload_owner: Option<Rc<super::PayloadEnvelopeOwner>>,
     pub device_owner_pins: u32,
     pub device_actual_bytes: u64,
     pub device_lost: bool,
-    pub payload_blocks: Vec<super::PayloadBlockRecord>,
 }
 
 pub(crate) struct AllocationSlot {
@@ -550,16 +634,32 @@ pub(crate) struct DomainState {
     pub id: MemoryDomainId,
     pub closed: bool,
     pub next_revision: MemoryPlanRevision,
-    pub latest_issued_revision: Option<MemoryPlanRevision>,
+    revisions: BTreeMap<MemoryPlanRevision, PlanRevisionLifecycle>,
+    pub(crate) active_revision: Option<MemoryPlanRevision>,
+    next_admission: u64,
+    admissions: BTreeMap<u64, MemoryPlanRevision>,
     pub next_publication: PublishedValueVersion,
     pub next_lease_token: u64,
     pub ledger: MemoryLedgerSnapshot,
     pub payload_accounting: Arc<super::RetainedPayloadAccounting>,
     pub allocations: Vec<AllocationSlot>,
-    pub active_point: Option<MemoryPlanPoint>,
+    pub(crate) regions: BTreeMap<PlanObjectKey, RuntimeRegionRecord>,
+    active_reuse_regions: BTreeMap<(MemoryPlanRevision, ReuseGroupId), Option<PlanObjectKey>>,
+    pub active_point: Rc<Cell<Option<MemoryPlanPoint>>>,
+    scope_cleanup_pending: Rc<Cell<bool>>,
 }
 
 impl DomainState {
+    fn finish_plan_scope_cleanup(&mut self) {
+        if !self.scope_cleanup_pending.get() {
+            return;
+        }
+        for active in self.active_reuse_regions.values_mut() {
+            *active = None;
+        }
+        self.scope_cleanup_pending.set(false);
+    }
+
     fn release_reservation(&mut self, bytes: u64) -> MemoryRuntimeResult<()> {
         self.ledger.reserved_bytes = self.ledger.reserved_bytes.checked_sub(bytes).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
@@ -671,13 +771,19 @@ impl MemoryDomain {
                 id,
                 closed: false,
                 next_revision: MemoryPlanRevision::initial(),
-                latest_issued_revision: None,
+                revisions: BTreeMap::new(),
+                active_revision: None,
+                next_admission: 1,
+                admissions: BTreeMap::new(),
                 next_publication: PublishedValueVersion::initial(),
                 next_lease_token: 1,
                 ledger: MemoryLedgerSnapshot::default(),
                 payload_accounting: Arc::new(super::RetainedPayloadAccounting::default()),
                 allocations: Vec::new(),
-                active_point: None,
+                regions: BTreeMap::new(),
+                active_reuse_regions: BTreeMap::new(),
+                active_point: Rc::new(Cell::new(None)),
+                scope_cleanup_pending: Rc::new(Cell::new(false)),
             })),
         })
     }
@@ -693,7 +799,9 @@ impl MemoryDomain {
         }
         let revision = state.next_revision;
         state.next_revision = revision.checked_successor("memory plan revision")?;
-        state.latest_issued_revision = Some(revision);
+        state
+            .revisions
+            .insert(revision, PlanRevisionLifecycle::Candidate);
         Ok(revision)
     }
 
@@ -703,13 +811,62 @@ impl MemoryDomain {
         object: MemoryObjectId,
     ) -> MemoryRuntimeResult<PlanObjectKey> {
         let state = self.state.borrow();
-        if state.latest_issued_revision != Some(revision) {
+        if !matches!(
+            state.revisions.get(&revision),
+            Some(PlanRevisionLifecycle::Realized | PlanRevisionLifecycle::Active)
+        ) {
             return Err(MemoryRuntimeError::InvalidPlanRevision {
-                expected: state.latest_issued_revision.unwrap_or(state.next_revision),
+                expected: state.active_revision.unwrap_or(state.next_revision),
                 actual: revision,
             });
         }
-        Ok(PlanObjectKey::new(revision, object))
+        Ok(PlanObjectKey::new(state.id, revision, object))
+    }
+
+    /// Promotes one fully realized candidate to the domain's active revision.
+    /// Issuing or rejecting later candidates never changes this authority.
+    pub fn activate_realization(&self, realized: &RealizedMemoryPlan) -> MemoryRuntimeResult<()> {
+        if realized.domain() != self.id() {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.id(),
+                actual: realized.domain(),
+            });
+        }
+        let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        if state.active_point.get().is_some()
+            || state.allocations.iter().any(|slot| {
+                slot.record
+                    .as_ref()
+                    .is_some_and(|record| !record.leases.is_empty())
+            })
+        {
+            return Err(MemoryRuntimeError::TurnInFlight);
+        }
+        if !matches!(
+            state.revisions.get(&realized.revision()),
+            Some(PlanRevisionLifecycle::Realized | PlanRevisionLifecycle::Active)
+        ) {
+            return Err(MemoryRuntimeError::InvalidPlanRevision {
+                expected: state.active_revision.unwrap_or(state.next_revision),
+                actual: realized.revision(),
+            });
+        }
+        if let Some(previous) = state.active_revision
+            && previous != realized.revision()
+            && state.revisions.get(&previous) == Some(&PlanRevisionLifecycle::Active)
+        {
+            state
+                .revisions
+                .insert(previous, PlanRevisionLifecycle::Realized);
+        }
+        state
+            .revisions
+            .insert(realized.revision(), PlanRevisionLifecycle::Active);
+        state.active_revision = Some(realized.revision());
+        Ok(())
     }
 
     pub fn prepare_realization(
@@ -720,9 +877,9 @@ impl MemoryDomain {
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
         }
-        if state.latest_issued_revision != Some(view.revision) {
+        if state.revisions.get(&view.revision) != Some(&PlanRevisionLifecycle::Candidate) {
             return Err(MemoryRuntimeError::InvalidPlanRevision {
-                expected: state.latest_issued_revision.unwrap_or(state.next_revision),
+                expected: state.active_revision.unwrap_or(state.next_revision),
                 actual: view.revision,
             });
         }
@@ -733,7 +890,7 @@ impl MemoryDomain {
                 limit: violation.limit,
             });
         }
-        let (arenas, objects, bytes) = validate_plan_view(view)?;
+        let (arenas, objects, bytes) = validate_plan_view(state.id, view)?;
         let record_count = arenas
             .iter()
             .filter(|arena| arena.backing == ArenaBackingKind::ContiguousBytes)
@@ -767,10 +924,22 @@ impl MemoryDomain {
                 identity: "active reservation count",
             },
         )?;
+        let admission = state.next_admission;
+        state.next_admission =
+            admission
+                .checked_add(1)
+                .ok_or(MemoryRuntimeError::IdentityExhausted {
+                    identity: "memory admission",
+                })?;
+        state.admissions.insert(admission, view.revision);
+        state
+            .revisions
+            .insert(view.revision, PlanRevisionLifecycle::Admitted);
         Ok(MemoryReservation {
-            domain: Rc::downgrade(&self.state),
+            domain: Rc::clone(&self.state),
             domain_id: state.id,
             revision: view.revision,
+            admission,
             bytes,
             active: true,
             arenas,
@@ -801,7 +970,7 @@ impl MemoryDomain {
         }
         struct PendingObject {
             authorization: ObjectAuthorization,
-            payload_blocks: Vec<super::PayloadBlockRecord>,
+            payload_owner: Rc<super::PayloadEnvelopeOwner>,
         }
 
         let mut contiguous = Vec::new();
@@ -850,18 +1019,15 @@ impl MemoryDomain {
                 .map(|arena| arena.backing)
                 .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object.key })?;
             if backing == ArenaBackingKind::IndirectOwnedPayloads {
-                let mut payload_blocks = Vec::new();
-                payload_blocks.try_reserve_exact(2).map_err(|_| {
-                    MemoryRuntimeError::AllocationFailed {
-                        object: Some(object.key.object()),
-                        requested: 2,
-                        alignment: 1,
-                        space: object.space,
-                    }
-                })?;
+                let payload_owner = super::PayloadEnvelopeOwner::new(
+                    object.key,
+                    object.capacity_bytes,
+                    object.alignment,
+                    2,
+                )?;
                 indirect.push(PendingObject {
                     authorization: object,
-                    payload_blocks,
+                    payload_owner,
                 });
             }
         }
@@ -879,6 +1045,14 @@ impl MemoryDomain {
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
         }
+        if state.admissions.get(&reservation.admission) != Some(&reservation.revision)
+            || state.revisions.get(&reservation.revision) != Some(&PlanRevisionLifecycle::Admitted)
+        {
+            return Err(MemoryRuntimeError::InvalidPlanRevision {
+                expected: state.active_revision.unwrap_or(state.next_revision),
+                actual: reservation.revision,
+            });
+        }
         let mut arena_handles = BTreeMap::new();
         for pending in contiguous {
             let capacity = pending.authorization.capacity_bytes;
@@ -891,11 +1065,10 @@ impl MemoryDomain {
                 leases: Vec::new(),
                 snapshot_pins: 0,
                 submission_pins: 0,
-                payload_owner_pins: 0,
+                payload_owner: None,
                 device_owner_pins: 0,
                 device_actual_bytes: 0,
                 device_lost: false,
-                payload_blocks: Vec::new(),
             })?;
             arena_handles.insert(pending.authorization.id, handle);
         }
@@ -911,11 +1084,10 @@ impl MemoryDomain {
                 leases: Vec::new(),
                 snapshot_pins: 0,
                 submission_pins: 0,
-                payload_owner_pins: 0,
+                payload_owner: Some(pending.payload_owner),
                 device_owner_pins: 0,
                 device_actual_bytes: 0,
                 device_lost: false,
-                payload_blocks: pending.payload_blocks,
             })?;
             indirect_handles.insert(pending.authorization.key, handle);
         }
@@ -972,6 +1144,33 @@ impl MemoryDomain {
                     }
                 }
             };
+            if state
+                .regions
+                .insert(
+                    object.key,
+                    RuntimeRegionRecord {
+                        handle: binding.handle(),
+                        lifetime: object.lifetime,
+                        reuse_group: object.reuse_group,
+                        incarnation,
+                        initialized_bytes: 0,
+                    },
+                )
+                .is_some()
+            {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.key.object()),
+                    size: object.capacity_bytes,
+                    alignment: object.alignment,
+                    reason: "runtime region was already realized",
+                });
+            }
+            if let Some(group) = object.reuse_group {
+                state
+                    .active_reuse_regions
+                    .entry((reservation.revision, group))
+                    .or_insert(None);
+            }
             bindings.push((object.key, binding));
         }
         bindings.sort_by_key(|(key, _)| *key);
@@ -991,11 +1190,20 @@ impl MemoryDomain {
                 change: reservation.bytes,
             })?;
         state.release_reservation(reservation.bytes)?;
+        state.admissions.remove(&reservation.admission);
+        let lifecycle = if state.active_revision.is_none() {
+            state.active_revision = Some(reservation.revision);
+            PlanRevisionLifecycle::Active
+        } else {
+            PlanRevisionLifecycle::Realized
+        };
+        state.revisions.insert(reservation.revision, lifecycle);
         reservation.active = false;
         reservation.bytes = 0;
         Ok(RealizedMemoryPlan {
             domain: state.id,
             revision: reservation.revision,
+            domain_state: Rc::downgrade(&self.state),
             bindings: Rc::new(RefCell::new(bindings.into_boxed_slice())),
             lifetimes: Rc::new(lifetimes.into_boxed_slice()),
         })
@@ -1009,6 +1217,9 @@ impl MemoryDomain {
                 return Ok(());
             }
             record.state = OwnedAllocationState::Retired;
+            if let Some(owner) = &record.payload_owner {
+                owner.revoke();
+            }
             record.capacity_bytes
         };
         state.ledger.live_allocations = state.ledger.live_allocations.checked_sub(1).ok_or(
@@ -1045,7 +1256,10 @@ impl MemoryDomain {
                     && record.leases.is_empty()
                     && record.snapshot_pins == 0
                     && record.submission_pins == 0
-                    && record.payload_owner_pins == 0
+                    && record
+                        .payload_owner
+                        .as_ref()
+                        .is_none_or(|owner| Rc::strong_count(owner) == 1)
                     && record.device_owner_pins == 0
             });
             if !reclaimable {
@@ -1103,10 +1317,11 @@ impl MemoryDomain {
     pub fn close(&self) -> MemoryRuntimeResult<()> {
         let handles = {
             let mut state = self.state.borrow_mut();
+            state.finish_plan_scope_cleanup();
             if state.closed {
                 return Ok(());
             }
-            if state.ledger.active_reservations != 0 || state.active_point.is_some() {
+            if state.ledger.active_reservations != 0 || state.active_point.get().is_some() {
                 return Err(MemoryRuntimeError::TurnInFlight);
             }
             state.closed = true;
@@ -1139,15 +1354,86 @@ impl MemoryDomain {
 
     pub fn enter_plan_point(&self, point: MemoryPlanPoint) -> MemoryRuntimeResult<MemoryPlanScope> {
         let mut state = self.state.borrow_mut();
+        state.finish_plan_scope_cleanup();
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
         }
-        if state.active_point.is_some() {
+        if state.active_point.get().is_some() {
             return Err(MemoryRuntimeError::TurnInFlight);
         }
-        state.active_point = Some(point);
+        if let Some((slot, entry)) = state.allocations.iter().enumerate().find(|(_, entry)| {
+            entry
+                .record
+                .as_ref()
+                .is_some_and(|record| !record.leases.is_empty())
+        }) {
+            return Err(MemoryRuntimeError::OutstandingLease {
+                handle: AllocationHandle::new(state.id, slot as u32, entry.generation),
+            });
+        }
+        let revision = state
+            .active_revision
+            .ok_or(MemoryRuntimeError::InvalidPlanRevision {
+                expected: state.next_revision,
+                actual: state.next_revision,
+            })?;
+        {
+            let DomainState {
+                regions,
+                active_reuse_regions,
+                ..
+            } = &mut *state;
+            for ((group_revision, group), active) in active_reuse_regions.iter() {
+                if *group_revision != revision {
+                    continue;
+                }
+                if active.is_some() {
+                    return Err(MemoryRuntimeError::TurnInFlight);
+                }
+                let mut candidates = regions.iter().filter(|(_, region)| {
+                    region.reuse_group == Some(*group)
+                        && runtime_lifetime_is_active(region.lifetime, Some(point))
+                });
+                let Some((key, region)) = candidates.next() else {
+                    continue;
+                };
+                if candidates.next().is_some() {
+                    return Err(MemoryRuntimeError::InvalidReuse {
+                        object: key.object(),
+                        reason: "multiple reuse-group members are live at one plan point",
+                    });
+                }
+                let _ = region.incarnation.checked_successor()?;
+            }
+            for ((group_revision, group), active) in active_reuse_regions.iter_mut() {
+                if *group_revision != revision {
+                    continue;
+                }
+                let candidate = regions
+                    .iter()
+                    .find(|(_, region)| {
+                        region.reuse_group == Some(*group)
+                            && runtime_lifetime_is_active(region.lifetime, Some(point))
+                    })
+                    .map(|(key, _)| *key);
+                if let Some(key) = candidate {
+                    let region = regions
+                        .get_mut(&key)
+                        .expect("validated reuse-group region exists");
+                    region.incarnation = region
+                        .incarnation
+                        .checked_successor()
+                        .expect("region successor was prevalidated");
+                    region.initialized_bytes = 0;
+                    *active = Some(key);
+                }
+            }
+        }
+        state.active_point.set(Some(point));
         Ok(MemoryPlanScope {
             domain: Rc::downgrade(&self.state),
+            active_point: Rc::clone(&state.active_point),
+            cleanup_pending: Rc::clone(&state.scope_cleanup_pending),
             point,
             active: true,
         })
@@ -1219,7 +1505,7 @@ impl MemoryDomain {
         }
         realized.record_initialized(object, initialized_bytes)?;
         Ok(DeviceAllocationOwner {
-            domain: Rc::downgrade(&self.state),
+            domain: Rc::clone(&self.state),
             handle,
             active: true,
         })
@@ -1449,7 +1735,7 @@ impl MemoryDomain {
         state.ledger.in_flight_device_bytes = next_device_bytes;
         state.ledger.in_flight_transfer_bytes = next_transfer_bytes;
         Ok(DeviceSubmissionHold {
-            domain: Rc::downgrade(&self.state),
+            domain: Rc::clone(&self.state),
             handles: Arc::clone(&prepared.handles),
             device_bytes: prepared.device_bytes,
             transfer_bytes: prepared.transfer_bytes,
@@ -1489,14 +1775,15 @@ impl MemoryDomain {
                             )
                         })
                         .unwrap_or((0, 1));
-                    let payload_bytes = record.payload_blocks.iter().fold(0_u64, |total, block| {
-                        total.saturating_add(block.layout.size() as u64)
-                    });
+                    let payload_bytes = record
+                        .payload_owner
+                        .as_ref()
+                        .and_then(|owner| owner.allocated_bytes().ok())
+                        .unwrap_or(0);
                     let payload_alignment = record
-                        .payload_blocks
-                        .iter()
-                        .map(|block| u32::try_from(block.layout.align()).unwrap_or(u32::MAX))
-                        .max()
+                        .payload_owner
+                        .as_ref()
+                        .map(|owner| owner.max_alignment())
                         .unwrap_or(1);
                     let device_alignment = (record.device_actual_bytes != 0)
                         .then_some(record.alignment)
@@ -1516,7 +1803,12 @@ impl MemoryDomain {
                         active_leases: u32::try_from(record.leases.len()).unwrap_or(u32::MAX),
                         snapshot_pins: record.snapshot_pins,
                         submission_pins: record.submission_pins,
-                        payload_owner_pins: record.payload_owner_pins,
+                        payload_owner_pins: record
+                            .payload_owner
+                            .as_ref()
+                            .map(|owner| Rc::strong_count(owner).saturating_sub(1))
+                            .and_then(|pins| u32::try_from(pins).ok())
+                            .unwrap_or(0),
                         device_owner_pins: record.device_owner_pins,
                         device_lost: record.device_lost,
                     }
@@ -1528,6 +1820,7 @@ impl MemoryDomain {
 }
 
 fn validate_plan_view(
+    domain: MemoryDomainId,
     view: RuntimePlanView<'_>,
 ) -> MemoryRuntimeResult<(Box<[ArenaAuthorization]>, Box<[ObjectAuthorization]>, u64)> {
     let mut arena_ids = BTreeSet::new();
@@ -1651,6 +1944,14 @@ fn validate_plan_view(
             });
         }
         if arena.backing == ArenaBackingKind::ContiguousBytes {
+            if arena.alignment < allocation.alignment {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(allocation.id),
+                    size: allocation.capacity_bytes,
+                    alignment: allocation.alignment,
+                    reason: "arena base alignment is weaker than its member alignment",
+                });
+            }
             if allocation.placement.offset % u64::from(allocation.alignment) != 0 {
                 return Err(MemoryRuntimeError::InvalidLayout {
                     object: Some(allocation.id),
@@ -1678,7 +1979,7 @@ fn validate_plan_view(
             }
         }
         objects.push(ObjectAuthorization {
-            key: PlanObjectKey::new(view.revision, allocation.id),
+            key: PlanObjectKey::new(domain, view.revision, allocation.id),
             arena: arena.id,
             space: allocation.space,
             current_bytes: allocation.current_bytes,
@@ -1686,6 +1987,7 @@ fn validate_plan_view(
             alignment: allocation.alignment,
             offset: allocation.placement.offset,
             lifetime: allocation.lifetime,
+            reuse_group: allocation.reuse_group,
         });
     }
     for arena in view.arenas {
@@ -1802,5 +2104,16 @@ fn lifetimes_disjoint(left: MemoryLifetime, right: MemoryLifetime) -> bool {
             left_last < right_first || right_last < left_first
         }
         _ => false,
+    }
+}
+
+fn runtime_lifetime_is_active(lifetime: MemoryLifetime, active: Option<MemoryPlanPoint>) -> bool {
+    match lifetime {
+        MemoryLifetime::Program | MemoryLifetime::Activation => true,
+        MemoryLifetime::Turn { first, last }
+        | MemoryLifetime::Transaction { first, last }
+        | MemoryLifetime::Transfer { first, last } => {
+            active.is_some_and(|point| first <= point && point <= last)
+        }
     }
 }

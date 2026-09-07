@@ -4,19 +4,19 @@
 use alloc::{
     alloc::{AllocError, Allocator, Global, Layout},
     boxed::Box,
-    rc::{Rc, Weak},
+    rc::Rc,
     sync::Arc,
 };
 #[cfg(not(feature = "no_std"))]
 use std::{
     alloc::{AllocError, Allocator, Global, Layout},
     boxed::Box,
-    rc::{Rc, Weak},
+    rc::Rc,
     sync::Arc,
 };
 
 use core::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
     mem::MaybeUninit,
     ptr::NonNull,
     str,
@@ -24,13 +24,111 @@ use core::{
 };
 
 use super::{
-    AllocationHandle, DomainState, MemoryDomain, MemoryRuntimeError, MemoryRuntimeResult,
-    PlanObjectKey, RealizedMemoryPlan, RuntimeBinding,
+    MemoryDomain, MemoryRuntimeError, MemoryRuntimeResult, PlanObjectKey, RealizedMemoryPlan,
+    RuntimeBinding,
 };
 
 pub(crate) struct PayloadBlockRecord {
     pub pointer: NonNull<u8>,
     pub layout: Layout,
+}
+
+/// Independent owner of one admitted indirect-payload envelope. Runtime
+/// records authorize growth, but the envelope itself owns every live block so
+/// containers remain valid after the creating domain handle is dropped.
+pub(crate) struct PayloadEnvelopeOwner {
+    object: PlanObjectKey,
+    capacity_bytes: u64,
+    alignment: u32,
+    accepting_allocations: Cell<bool>,
+    blocks: RefCell<Vec<PayloadBlockRecord>>,
+}
+
+impl PayloadEnvelopeOwner {
+    pub(crate) fn new(
+        object: PlanObjectKey,
+        capacity_bytes: u64,
+        alignment: u32,
+        block_capacity: usize,
+    ) -> MemoryRuntimeResult<Rc<Self>> {
+        let mut blocks = Vec::new();
+        blocks.try_reserve_exact(block_capacity).map_err(|_| {
+            MemoryRuntimeError::AllocationFailed {
+                object: Some(object.object()),
+                requested: block_capacity as u64,
+                alignment: 1,
+                space: crate::MemorySpace::Host,
+            }
+        })?;
+        Ok(Rc::new(Self {
+            object,
+            capacity_bytes,
+            alignment,
+            accepting_allocations: Cell::new(true),
+            blocks: RefCell::new(blocks),
+        }))
+    }
+
+    pub(crate) fn revoke(&self) {
+        self.accepting_allocations.set(false);
+    }
+
+    pub(crate) fn allocated_bytes(&self) -> MemoryRuntimeResult<u64> {
+        self.blocks.borrow().iter().try_fold(0_u64, |total, block| {
+            total.checked_add(block.layout.size() as u64).ok_or(
+                MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "allocated payload bytes",
+                    current: total,
+                    change: block.layout.size() as u64,
+                },
+            )
+        })
+    }
+
+    pub(crate) fn max_alignment(&self) -> u32 {
+        self.blocks
+            .borrow()
+            .iter()
+            .map(|block| u32::try_from(block.layout.align()).unwrap_or(u32::MAX))
+            .max()
+            .unwrap_or(1)
+    }
+
+    fn check_layout(&self, layout: Layout) -> MemoryRuntimeResult<()> {
+        if !self.accepting_allocations.get() {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        let live = self.allocated_bytes()?;
+        let requested = live.checked_add(layout.size() as u64).ok_or(
+            MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "requested payload bytes",
+                current: live,
+                change: layout.size() as u64,
+            },
+        )?;
+        if requested > self.capacity_bytes {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: self.object.object(),
+                requested,
+                capacity: self.capacity_bytes,
+            });
+        }
+        if layout.align() > self.alignment as usize {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(self.object.object()),
+                size: layout.size() as u64,
+                alignment: u32::try_from(layout.align()).unwrap_or(u32::MAX),
+                reason: "payload alignment exceeds its planned envelope",
+            });
+        }
+        if self.blocks.borrow().len() == self.blocks.borrow().capacity() {
+            return Err(MemoryRuntimeError::UnplannedAllocation {
+                object: Some(self.object.object()),
+                requested: layout.size() as u64,
+            });
+        }
+        Ok(())
+    }
 }
 
 #[derive(Default)]
@@ -99,27 +197,9 @@ impl Drop for PayloadBlockRecord {
 }
 
 struct PlannedAllocationAuthority {
-    domain: Weak<RefCell<DomainState>>,
-    handle: AllocationHandle,
+    owner: Rc<PayloadEnvelopeOwner>,
     object: PlanObjectKey,
     realized: RealizedMemoryPlan,
-}
-
-impl Drop for PlannedAllocationAuthority {
-    fn drop(&mut self) {
-        let Some(domain) = self.domain.upgrade() else {
-            return;
-        };
-        let Ok(mut state) = domain.try_borrow_mut() else {
-            return;
-        };
-        let Ok(record) = state.record_mut(self.handle) else {
-            return;
-        };
-        if let Some(next) = record.payload_owner_pins.checked_sub(1) {
-            record.payload_owner_pins = next;
-        }
-    }
 }
 
 /// Sealed allocator backed by one realized indirect-payload envelope.
@@ -133,54 +213,7 @@ pub struct PlannedAllocator {
 
 impl PlannedAllocator {
     fn check_layout(&self, layout: Layout) -> MemoryRuntimeResult<()> {
-        let domain = self
-            .authority
-            .domain
-            .upgrade()
-            .ok_or(MemoryRuntimeError::DomainClosed)?;
-        let state = domain.borrow();
-        let record = state.record(self.authority.handle)?;
-        let live = record
-            .payload_blocks
-            .iter()
-            .try_fold(0_u64, |total, block| {
-                total.checked_add(block.layout.size() as u64).ok_or(
-                    MemoryRuntimeError::AccountingInvariantViolation {
-                        dimension: "live payload bytes",
-                        current: total,
-                        change: block.layout.size() as u64,
-                    },
-                )
-            })?;
-        let requested = live.checked_add(layout.size() as u64).ok_or(
-            MemoryRuntimeError::AccountingInvariantViolation {
-                dimension: "requested payload bytes",
-                current: live,
-                change: layout.size() as u64,
-            },
-        )?;
-        if requested > record.capacity_bytes {
-            return Err(MemoryRuntimeError::CapacityExceeded {
-                object: self.authority.object.object(),
-                requested,
-                capacity: record.capacity_bytes,
-            });
-        }
-        if layout.align() > record.alignment as usize {
-            return Err(MemoryRuntimeError::InvalidLayout {
-                object: Some(self.authority.object.object()),
-                size: layout.size() as u64,
-                alignment: u32::try_from(layout.align()).unwrap_or(u32::MAX),
-                reason: "payload alignment exceeds its planned envelope",
-            });
-        }
-        if record.payload_blocks.len() == record.payload_blocks.capacity() {
-            return Err(MemoryRuntimeError::UnplannedAllocation {
-                object: Some(self.authority.object.object()),
-                requested: layout.size() as u64,
-            });
-        }
-        Ok(())
+        self.authority.owner.check_layout(layout)
     }
 
     fn allocate_checked(&self, layout: Layout, zeroed: bool) -> MemoryRuntimeResult<NonNull<[u8]>> {
@@ -197,14 +230,8 @@ impl PlannedAllocator {
             space: crate::MemorySpace::Host,
         })?;
         let pointer = allocation.cast::<u8>();
-        let domain = self
-            .authority
-            .domain
-            .upgrade()
-            .ok_or(MemoryRuntimeError::DomainClosed)?;
-        let mut state = domain.borrow_mut();
-        let record = state.record_mut(self.authority.handle)?;
-        if record.payload_blocks.len() == record.payload_blocks.capacity() {
+        let mut blocks = self.authority.owner.blocks.borrow_mut();
+        if blocks.len() == blocks.capacity() {
             // SAFETY: Global returned this pointer for this exact layout and
             // ownership has not escaped this function.
             unsafe { Global.deallocate(pointer, layout) };
@@ -213,44 +240,16 @@ impl PlannedAllocator {
                 requested: layout.size() as u64,
             });
         }
-        record
-            .payload_blocks
-            .push(PayloadBlockRecord { pointer, layout });
+        blocks.push(PayloadBlockRecord { pointer, layout });
         Ok(allocation)
     }
 
     pub fn capacity_bytes(&self) -> MemoryRuntimeResult<u64> {
-        let domain = self
-            .authority
-            .domain
-            .upgrade()
-            .ok_or(MemoryRuntimeError::DomainClosed)?;
-        Ok(domain
-            .borrow()
-            .record(self.authority.handle)?
-            .capacity_bytes)
+        Ok(self.authority.owner.capacity_bytes)
     }
 
     pub fn allocated_bytes(&self) -> MemoryRuntimeResult<u64> {
-        let domain = self
-            .authority
-            .domain
-            .upgrade()
-            .ok_or(MemoryRuntimeError::DomainClosed)?;
-        domain
-            .borrow()
-            .record(self.authority.handle)?
-            .payload_blocks
-            .iter()
-            .try_fold(0_u64, |total, block| {
-                total.checked_add(block.layout.size() as u64).ok_or(
-                    MemoryRuntimeError::AccountingInvariantViolation {
-                        dimension: "allocated payload bytes",
-                        current: total,
-                        change: block.layout.size() as u64,
-                    },
-                )
-            })
+        self.authority.owner.allocated_bytes()
     }
 
     fn record_initialized(&self, bytes: u64) -> MemoryRuntimeResult<()> {
@@ -270,23 +269,14 @@ unsafe impl Allocator for PlannedAllocator {
     }
 
     unsafe fn deallocate(&self, pointer: NonNull<u8>, layout: Layout) {
-        let Some(domain) = self.authority.domain.upgrade() else {
-            return;
-        };
-        let Ok(mut state) = domain.try_borrow_mut() else {
-            return;
-        };
-        let Ok(record) = state.record_mut(self.authority.handle) else {
-            return;
-        };
-        let Some(index) = record
-            .payload_blocks
+        let mut blocks = self.authority.owner.blocks.borrow_mut();
+        let Some(index) = blocks
             .iter()
             .position(|block| block.pointer == pointer && block.layout == layout)
         else {
             return;
         };
-        drop(record.payload_blocks.swap_remove(index));
+        drop(blocks.swap_remove(index));
     }
 }
 
@@ -319,17 +309,25 @@ impl MemoryDomain {
                 reason: "planned allocator requires an indirect payload envelope",
             });
         };
-        let mut state = self.state.borrow_mut();
-        let record = state.record_mut(handle)?;
-        record.payload_owner_pins = record.payload_owner_pins.checked_add(1).ok_or(
-            MemoryRuntimeError::IdentityExhausted {
-                identity: "payload owner pin count",
-            },
-        )?;
+        let state = self.state.borrow();
+        if state.closed {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        let record = state.record(handle)?;
+        let owner =
+            record
+                .payload_owner
+                .as_ref()
+                .cloned()
+                .ok_or(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: binding.capacity_bytes(),
+                    alignment: 1,
+                    reason: "payload envelope has no independent owner",
+                })?;
         Ok(PlannedAllocator {
             authority: Rc::new(PlannedAllocationAuthority {
-                domain: Rc::downgrade(&self.state),
-                handle,
+                owner,
                 object,
                 realized: realized.clone(),
             }),

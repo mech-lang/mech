@@ -67,8 +67,9 @@ pub fn prepare_managed_function_call(
                 alignment: 1,
                 reason: "input memory policy is absent",
             })?;
-        accesses.push(ManagedCallAccessRequest::for_logical_cell(
+        accesses.push(ManagedCallAccessRequest::for_input_cell(
             cell.reactive_cell_id(),
+            index,
             domain.plan_object_key(realized.revision(), port.object)?,
             access_mode(policy.access),
             access_region(port, false),
@@ -85,8 +86,9 @@ pub fn prepare_managed_function_call(
                 alignment: 1,
                 reason: "output memory policy is absent",
             })?;
-        accesses.push(ManagedCallAccessRequest::for_logical_cell(
+        accesses.push(ManagedCallAccessRequest::for_output_cell(
             output_cell.reactive_cell_id(),
+            index,
             domain.plan_object_key(realized.revision(), port.object)?,
             access_mode(policy.access),
             access_region(port, true),

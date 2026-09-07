@@ -1,0 +1,339 @@
+use mech_core::{
+    AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
+    ManagedString, MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits,
+    MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint,
+    MemoryRuntimeError, MemorySpace, ResourceDemand, ReuseGroupId, RuntimePlanView,
+};
+
+fn allocation(id: u32, offset: u64, lifetime: MemoryLifetime) -> AllocationPlan {
+    AllocationPlan {
+        id: MemoryObjectId::new(id),
+        owner: MemoryObjectOwner::NodeScratch {
+            node: mech_core::NodeId::new(id),
+            ordinal: 0,
+        },
+        role: AllocationRole::Scratch,
+        space: MemorySpace::Host,
+        current_bytes: 8,
+        capacity_bytes: 8,
+        alignment: 8,
+        lifetime,
+        placement: ArenaPlacement {
+            arena: MemoryArenaId::new(0),
+            offset,
+        },
+        reuse_group: None,
+    }
+}
+
+#[test]
+fn payload_owner_outlives_domain_and_close_revokes_growth() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut payload = allocation(0, 0, MemoryLifetime::Activation);
+    payload.role = AllocationRole::VariablePayload;
+    payload.current_bytes = 0;
+    payload.capacity_bytes = 8;
+    payload.alignment = 1;
+    let payload_arena = ArenaPlan {
+        id: MemoryArenaId::new(0),
+        space: MemorySpace::Host,
+        backing: ArenaBackingKind::IndirectOwnedPayloads,
+        capacity_bytes: 8,
+        alignment: 1,
+        members: vec![MemoryObjectId::new(0)].into_boxed_slice(),
+    };
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &[payload],
+                    &[payload_arena],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let allocator = domain.planned_allocator(&realized, object).unwrap();
+    let text = ManagedString::try_new(allocator.clone(), "retained").unwrap();
+    domain.close().unwrap();
+    assert!(matches!(
+        ManagedString::try_new(allocator, "x"),
+        Err(MemoryRuntimeError::DomainClosed)
+    ));
+    drop(realized);
+    drop(domain);
+    assert_eq!(text.as_str(), "retained");
+}
+
+#[test]
+fn initializer_marks_only_successfully_constructed_prefix() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [allocation(0, 0, MemoryLifetime::Activation)];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &allocations,
+                    &[arena(&[0], 8)],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let write = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
+    let mut frame = domain.acquire_call(&realized, &write).unwrap();
+    frame
+        .with_object_init_writer::<u8, _>(object, |_writer| ())
+        .unwrap();
+    drop(frame);
+    assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 0);
+
+    let mut frame = domain.acquire_call(&realized, &write).unwrap();
+    let injected = frame
+        .with_object_init_writer::<u8, _>(object, |writer| {
+            writer.write_next(7)?;
+            Err::<(), _>(MemoryRuntimeError::DomainClosed)
+        })
+        .unwrap();
+    assert!(matches!(injected, Err(MemoryRuntimeError::DomainClosed)));
+    drop(frame);
+    assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 1);
+    assert!(matches!(
+        domain.prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        ),
+        Err(MemoryRuntimeError::UninitializedAccess { .. })
+    ));
+}
+
+fn arena(objects: &[u32], bytes: u64) -> ArenaPlan {
+    ArenaPlan {
+        id: MemoryArenaId::new(0),
+        space: MemorySpace::Host,
+        backing: ArenaBackingKind::ContiguousBytes,
+        capacity_bytes: bytes,
+        alignment: 8,
+        members: objects
+            .iter()
+            .copied()
+            .map(MemoryObjectId::new)
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+    }
+}
+
+#[test]
+fn invalid_alias_construction_is_rejected_before_materialization() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [
+        allocation(0, 0, MemoryLifetime::Activation),
+        allocation(1, 0, MemoryLifetime::Activation),
+    ];
+    assert!(matches!(
+        domain.prepare_realization(RuntimePlanView::new(
+            revision,
+            &allocations,
+            &[arena(&[0, 1], 8)],
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        )),
+        Err(MemoryRuntimeError::InvalidReuse { .. })
+    ));
+}
+
+#[test]
+fn a_lease_cannot_observe_a_reused_region_outside_its_lifetime() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let lifetime = MemoryLifetime::Turn {
+        first: MemoryPlanPoint::new(1),
+        last: MemoryPlanPoint::new(1),
+    };
+    let allocations = [allocation(0, 0, lifetime)];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &allocations,
+                    &[arena(&[0], 8)],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let prepared = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::ExclusiveInPlace,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
+    assert!(matches!(
+        domain.acquire_call(&realized, &prepared),
+        Err(MemoryRuntimeError::InvalidLifetimeTransition { .. })
+    ));
+    let _scope = domain.enter_plan_point(MemoryPlanPoint::new(1)).unwrap();
+    let mut frame = domain.acquire_call(&realized, &prepared).unwrap();
+    frame
+        .with_object_init_writer::<u8, _>(object, |writer| {
+            writer.copy_from_slice(&7_u64.to_ne_bytes())
+        })
+        .unwrap()
+        .unwrap();
+    frame
+        .with_bytes(object, |bytes| assert_eq!(bytes, 7_u64.to_ne_bytes()))
+        .unwrap();
+}
+
+#[test]
+fn unwind_releases_every_scoped_lease() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [allocation(0, 0, MemoryLifetime::Activation)];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &allocations,
+                    &[arena(&[0], 8)],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let prepared = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _frame = domain.acquire_call(&realized, &prepared).unwrap();
+        panic!("injected kernel unwind");
+    }));
+    assert_eq!(domain.allocation_observations()[0].active_leases, 0);
+    drop(domain.acquire_call(&realized, &prepared).unwrap());
+}
+
+#[test]
+fn region_reuse_revokes_the_previous_incarnation_and_waits_for_leases() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut first_allocation = allocation(
+        0,
+        0,
+        MemoryLifetime::Turn {
+            first: MemoryPlanPoint::new(1),
+            last: MemoryPlanPoint::new(1),
+        },
+    );
+    let mut second_allocation = allocation(
+        1,
+        0,
+        MemoryLifetime::Turn {
+            first: MemoryPlanPoint::new(2),
+            last: MemoryPlanPoint::new(2),
+        },
+    );
+    first_allocation.reuse_group = Some(ReuseGroupId::new(4));
+    second_allocation.reuse_group = Some(ReuseGroupId::new(4));
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &[first_allocation, second_allocation],
+                    &[arena(&[0, 1], 8)],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let first = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let second = domain
+        .plan_object_key(revision, MemoryObjectId::new(1))
+        .unwrap();
+    let first_write = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object: first,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
+
+    let initial = realized.binding(first).unwrap().incarnation();
+    let first_scope = domain.enter_plan_point(MemoryPlanPoint::new(1)).unwrap();
+    let first_live = realized.binding(first).unwrap().incarnation();
+    assert!(first_live > initial);
+    let held = domain.acquire_call(&realized, &first_write).unwrap();
+    drop(first_scope);
+    assert!(matches!(
+        domain.enter_plan_point(MemoryPlanPoint::new(2)),
+        Err(MemoryRuntimeError::OutstandingLease { .. })
+    ));
+    drop(held);
+
+    let second_scope = domain.enter_plan_point(MemoryPlanPoint::new(2)).unwrap();
+    let second_live = realized.binding(second).unwrap().incarnation();
+    drop(second_scope);
+    let first_before_reentry = realized.binding(first).unwrap().incarnation();
+    let _first_scope = domain.enter_plan_point(MemoryPlanPoint::new(1)).unwrap();
+    assert!(realized.binding(first).unwrap().incarnation() > first_before_reentry);
+    assert_ne!(second_live, initial);
+}

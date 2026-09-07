@@ -137,7 +137,10 @@ fn realization_tracks_initialization_and_scoped_access() {
     domain
         .acquire_call(&realized, &write)
         .unwrap()
-        .with_bytes_mut(key, |bytes| bytes.copy_from_slice(&42_u64.to_ne_bytes()))
+        .with_object_init_writer::<u8, _>(key, |writer| {
+            writer.copy_from_slice(&42_u64.to_ne_bytes())
+        })
+        .unwrap()
         .unwrap();
     assert_eq!(realized.binding(key).unwrap().initialized_bytes(), 8);
 
@@ -209,7 +212,8 @@ fn logical_managed_ports_resolve_only_inside_the_prepared_lease_scope() {
         .unwrap();
     let mut frame = domain.acquire_call(&realized, &prepared).unwrap();
     frame
-        .with_port_slice_mut(port, |values| values[0] = 17)
+        .with_port_init_writer(port, |writer| writer.write_next(17))
+        .unwrap()
         .unwrap();
     drop(frame);
 
@@ -282,7 +286,7 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
             _: &mut dyn MechExecutionServices,
         ) -> mech_core::MResult<ReactiveSolveStatus> {
             let value = frame.with_port_slice(self.input, |values| values[0])?;
-            frame.with_port_slice_mut(self.output, |values| values[0] = value * 2)?;
+            frame.with_port_init_writer(self.output, |writer| writer.write_next(value * 2))??;
             Ok(ReactiveSolveStatus::Changed)
         }
     }
@@ -338,7 +342,8 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
     domain
         .acquire_call(&realized, &initialize)
         .unwrap()
-        .with_port_slice_mut(input, |values| values[0] = 21)
+        .with_port_init_writer(input, |writer| writer.write_next(21))
+        .unwrap()
         .unwrap();
     let prepared = domain
         .prepare_managed_call(
@@ -404,7 +409,7 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
             _: &mut dyn MechExecutionServices,
         ) -> mech_core::MResult<ReactiveSolveStatus> {
             let sum = frame.with_port_slice(self.input, |values| values.iter().sum::<f64>())?;
-            frame.with_port_slice_mut(self.output, |values| values[0] = sum)?;
+            frame.with_port_init_writer(self.output, |writer| writer.write_next(sum))??;
             Ok(ReactiveSolveStatus::Changed)
         }
     }
@@ -492,6 +497,7 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
                 .unwrap(),
         )
         .unwrap();
+    domain.activate_realization(&grown).unwrap();
     let grown_input = domain
         .plan_object_key(grown_revision, MemoryObjectId::new(0))
         .unwrap();
@@ -597,7 +603,8 @@ fn initialize_managed_f64(
     domain
         .acquire_call(realized, &prepared)
         .unwrap()
-        .with_port_slice_mut(port, |target| target.copy_from_slice(values))
+        .with_port_init_writer(port, |writer| writer.copy_from_slice(values))
+        .unwrap()
         .unwrap();
 }
 
@@ -701,7 +708,13 @@ fn lease_acquisition_is_atomic_and_region_aware() {
         domain
             .acquire_call(&realized, &write)
             .unwrap()
-            .with_bytes_mut(key, |bytes| bytes.fill(key.object().get() as u8))
+            .with_object_init_writer::<u8, _>(key, |writer| {
+                for _ in 0..8 {
+                    writer.write_next(key.object().get() as u8)?;
+                }
+                Ok::<(), MemoryRuntimeError>(())
+            })
+            .unwrap()
             .unwrap();
     }
 
@@ -930,7 +943,13 @@ fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
         domain
             .acquire_call(&realized, &first_write)
             .unwrap()
-            .with_bytes_mut(first, |bytes| bytes.fill(11))
+            .with_object_init_writer::<u8, _>(first, |writer| {
+                for _ in 0..16 {
+                    writer.write_next(11)?;
+                }
+                Ok::<(), MemoryRuntimeError>(())
+            })
+            .unwrap()
             .unwrap();
         assert!(matches!(
             domain.acquire_call(&realized, &second_write),
@@ -950,7 +969,13 @@ fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
         domain
             .acquire_call(&realized, &second_write)
             .unwrap()
-            .with_bytes_mut(second, |bytes| bytes.fill(22))
+            .with_object_init_writer::<u8, _>(second, |writer| {
+                for _ in 0..16 {
+                    writer.write_next(22)?;
+                }
+                Ok::<(), MemoryRuntimeError>(())
+            })
+            .unwrap()
             .unwrap();
     }
 }
@@ -992,7 +1017,10 @@ fn retired_allocations_wait_for_held_leases_before_reclamation() {
     domain
         .acquire_call(&realized, &write)
         .unwrap()
-        .with_bytes_mut(object, |bytes| bytes.copy_from_slice(&23_u64.to_ne_bytes()))
+        .with_object_init_writer::<u8, _>(object, |writer| {
+            writer.copy_from_slice(&23_u64.to_ne_bytes())
+        })
+        .unwrap()
         .unwrap();
     let read = domain
         .prepare_call(

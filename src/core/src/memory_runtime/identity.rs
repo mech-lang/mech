@@ -76,6 +76,15 @@ impl RegionIncarnation {
     pub(crate) const fn initial() -> Self {
         Self(1)
     }
+
+    pub(crate) fn checked_successor(self) -> Result<Self, MemoryRuntimeError> {
+        self.0
+            .checked_add(1)
+            .map(Self)
+            .ok_or(MemoryRuntimeError::IdentityExhausted {
+                identity: "region incarnation",
+            })
+    }
 }
 
 /// Domain-local physical ownership identity.
@@ -114,11 +123,16 @@ impl AllocationHandle {
 /// Stable R5 object coordinate scoped to one realized plan revision.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct PlanObjectKey {
+    domain: MemoryDomainId,
     revision: MemoryPlanRevision,
     object: MemoryObjectId,
 }
 
 impl PlanObjectKey {
+    pub const fn domain(self) -> MemoryDomainId {
+        self.domain
+    }
+
     pub const fn revision(self) -> MemoryPlanRevision {
         self.revision
     }
@@ -127,7 +141,15 @@ impl PlanObjectKey {
         self.object
     }
 
-    pub(crate) const fn new(revision: MemoryPlanRevision, object: MemoryObjectId) -> Self {
-        Self { revision, object }
+    pub(crate) const fn new(
+        domain: MemoryDomainId,
+        revision: MemoryPlanRevision,
+        object: MemoryObjectId,
+    ) -> Self {
+        Self {
+            domain,
+            revision,
+            object,
+        }
     }
 }

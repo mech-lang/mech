@@ -286,12 +286,8 @@ impl ManagedGpuMemory {
         let mut frame = self
             .domain
             .acquire_call(&self.realized, &self.host_transfer_writes[index].1)?;
-        Ok(
-            frame.with_bytes_mut_prefix(key, source.len() as u64, |target| {
-                target.copy_from_slice(source);
-                consume(target)
-            })?,
-        )
+        frame.with_object_init_writer::<u8, _>(key, |writer| writer.copy_from_slice(source))??;
+        Ok(frame.with_bytes_mut_prefix(key, source.len() as u64, |target| consume(target))?)
     }
 
     pub fn ledger(&self) -> MemoryLedgerSnapshot {

@@ -5,7 +5,7 @@ use alloc::{boxed::Box, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, vec::Vec};
 
-use core::{marker::PhantomData, mem, slice};
+use core::{marker::PhantomData, mem, mem::MaybeUninit, slice};
 
 use super::{
     ActiveLeaseRecord, AllocationHandle, MemoryDomain, MemoryRuntimeError, MemoryRuntimeResult,
@@ -50,6 +50,12 @@ pub enum MemoryAccessRegion {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ManagedPortRole {
+    Input(usize),
+    Output(usize),
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CallAccessRequest {
     pub object: PlanObjectKey,
     pub mode: MemoryAccessMode,
@@ -61,6 +67,7 @@ pub struct CallAccessRequest {
 #[derive(Debug)]
 pub struct ManagedPort<T> {
     cell: CanonicalCellId,
+    role: ManagedPortRole,
     marker: PhantomData<fn() -> T>,
 }
 
@@ -74,9 +81,19 @@ impl<T> Clone for ManagedPort<T> {
 
 impl<T> ManagedPort<T> {
     #[cfg(feature = "functions")]
-    pub(crate) const fn new(cell: CanonicalCellId) -> Self {
+    pub(crate) const fn input(cell: CanonicalCellId, index: usize) -> Self {
         Self {
             cell,
+            role: ManagedPortRole::Input(index),
+            marker: PhantomData,
+        }
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) const fn output(cell: CanonicalCellId) -> Self {
+        Self {
+            cell,
+            role: ManagedPortRole::Output(0),
             marker: PhantomData,
         }
     }
@@ -84,12 +101,17 @@ impl<T> ManagedPort<T> {
     pub const fn logical_cell_id(self) -> CanonicalCellId {
         self.cell
     }
+
+    pub const fn role(self) -> ManagedPortRole {
+        self.role
+    }
 }
 
 /// One planned access associated with a relocatable logical port.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ManagedCallAccessRequest {
     cell: CanonicalCellId,
+    role: ManagedPortRole,
     object: PlanObjectKey,
     mode: MemoryAccessMode,
     region: MemoryAccessRegion,
@@ -102,17 +124,41 @@ impl ManagedCallAccessRequest {
         mode: MemoryAccessMode,
         region: MemoryAccessRegion,
     ) -> Self {
-        Self::for_logical_cell(port.logical_cell_id(), object, mode, region)
+        Self {
+            cell: port.logical_cell_id(),
+            role: port.role(),
+            object,
+            mode,
+            region,
+        }
     }
 
-    pub const fn for_logical_cell(
+    pub const fn for_input_cell(
         cell: CanonicalCellId,
+        index: usize,
         object: PlanObjectKey,
         mode: MemoryAccessMode,
         region: MemoryAccessRegion,
     ) -> Self {
         Self {
             cell,
+            role: ManagedPortRole::Input(index),
+            object,
+            mode,
+            region,
+        }
+    }
+
+    pub const fn for_output_cell(
+        cell: CanonicalCellId,
+        index: usize,
+        object: PlanObjectKey,
+        mode: MemoryAccessMode,
+        region: MemoryAccessRegion,
+    ) -> Self {
+        Self {
+            cell,
+            role: ManagedPortRole::Output(index),
             object,
             mode,
             region,
@@ -140,9 +186,53 @@ managed_elements!(
     u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64, usize
 );
 
+/// Sealed sequential constructor for fresh planned storage. It exposes only
+/// `MaybeUninit<T>` writes and records how many leading elements were actually
+/// constructed; it never permits reading an uninitialized slot.
+pub struct InitWriter<'a, T: ManagedElement> {
+    slots: &'a mut [MaybeUninit<T>],
+    initialized: usize,
+}
+
+impl<T: ManagedElement> InitWriter<'_, T> {
+    pub fn remaining(&self) -> usize {
+        self.slots.len().saturating_sub(self.initialized)
+    }
+
+    pub fn write_next(&mut self, value: T) -> MemoryRuntimeResult<()> {
+        let capacity = self.slots.len();
+        let slot =
+            self.slots
+                .get_mut(self.initialized)
+                .ok_or(MemoryRuntimeError::CapacityExceeded {
+                    object: MemoryObjectId::new(0),
+                    requested: self.initialized.saturating_add(1) as u64,
+                    capacity: capacity as u64,
+                })?;
+        slot.write(value);
+        self.initialized += 1;
+        Ok(())
+    }
+
+    pub fn copy_from_slice(&mut self, values: &[T]) -> MemoryRuntimeResult<()> {
+        if values.len() > self.remaining() {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: MemoryObjectId::new(0),
+                requested: values.len() as u64,
+                capacity: self.remaining() as u64,
+            });
+        }
+        for value in values {
+            self.write_next(*value)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ResolvedAccessRequest {
     cell: Option<CanonicalCellId>,
+    role: Option<ManagedPortRole>,
     object: PlanObjectKey,
     handle: Option<AllocationHandle>,
     mode: MemoryAccessMode,
@@ -150,6 +240,7 @@ struct ResolvedAccessRequest {
     end: u64,
     relative_end: u64,
     lifetime: MemoryLifetime,
+    region: MemoryAccessRegion,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -189,6 +280,7 @@ impl MemoryDomain {
             )?;
             resolved.push(ResolvedAccessRequest {
                 cell: None,
+                role: None,
                 object: request.object,
                 handle: binding.handle(),
                 mode: request.mode,
@@ -196,6 +288,7 @@ impl MemoryDomain {
                 end,
                 relative_end,
                 lifetime: realized.lifetime(request.object)?,
+                region: request.region,
             });
         }
         resolved.sort_by_key(|request| {
@@ -245,6 +338,7 @@ impl MemoryDomain {
             )?;
             resolved.push(ResolvedAccessRequest {
                 cell: Some(request.cell),
+                role: Some(request.role),
                 object: request.object,
                 handle: binding.handle(),
                 mode: request.mode,
@@ -252,6 +346,7 @@ impl MemoryDomain {
                 end,
                 relative_end,
                 lifetime: realized.lifetime(request.object)?,
+                region: request.region,
             });
         }
         resolved.sort_by_key(|request| {
@@ -263,6 +358,7 @@ impl MemoryDomain {
                 request.mode,
                 request.object,
                 request.cell,
+                request.role,
             )
         });
         resolved.dedup();
@@ -294,8 +390,46 @@ impl MemoryDomain {
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
         }
+        if state.active_revision != Some(realized.revision()) {
+            return Err(MemoryRuntimeError::InvalidPlanRevision {
+                expected: state.active_revision.unwrap_or(realized.revision()),
+                actual: realized.revision(),
+            });
+        }
         for (position, request) in prepared.requests.iter().enumerate() {
+            let region = state.regions.get(&request.object).ok_or(
+                MemoryRuntimeError::UnknownPlanObject {
+                    key: request.object,
+                },
+            )?;
+            if region.handle != request.handle {
+                let handle = request.handle.ok_or(MemoryRuntimeError::InvalidLayout {
+                    object: Some(request.object.object()),
+                    size: request.relative_end,
+                    alignment: 1,
+                    reason: "empty plan object unexpectedly acquired physical storage",
+                })?;
+                return Err(MemoryRuntimeError::StaleAllocationGeneration {
+                    handle,
+                    current: region.handle.map(AllocationHandle::generation).unwrap_or(0),
+                });
+            }
             let Some(handle) = request.handle else {
+                if request.start != request.end || request.relative_end != 0 {
+                    return Err(MemoryRuntimeError::InvalidLayout {
+                        object: Some(request.object.object()),
+                        size: request.relative_end,
+                        alignment: 1,
+                        reason: "empty plan object has a nonempty access span",
+                    });
+                }
+                if !lifetime_is_active(request.lifetime, state.active_point.get()) {
+                    return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                        object: Some(request.object.object()),
+                        from: "inactive plan interval",
+                        to: "leased empty allocation",
+                    });
+                }
                 continue;
             };
             let record = state.record(handle)?;
@@ -314,7 +448,7 @@ impl MemoryDomain {
                     reason: "device allocation requires a backend submission hold",
                 });
             }
-            if !lifetime_is_active(request.lifetime, state.active_point) {
+            if !lifetime_is_active(request.lifetime, state.active_point.get()) {
                 return Err(MemoryRuntimeError::InvalidLifetimeTransition {
                     object: Some(request.object.object()),
                     from: "inactive plan interval",
@@ -359,31 +493,42 @@ impl MemoryDomain {
                 space: crate::MemorySpace::Host,
             })?;
         for request in &prepared.requests {
-            let Some(handle) = request.handle else {
-                continue;
+            let token = if let Some(handle) = request.handle {
+                let token = state.next_lease_token;
+                state.next_lease_token =
+                    token
+                        .checked_add(1)
+                        .ok_or(MemoryRuntimeError::IdentityExhausted {
+                            identity: "lease token",
+                        })?;
+                state.record_mut(handle)?.leases.push(ActiveLeaseRecord {
+                    token,
+                    start: request.start,
+                    end: request.end,
+                    write: request.mode.writes(),
+                });
+                Some(token)
+            } else {
+                None
             };
-            let token = state.next_lease_token;
-            state.next_lease_token =
-                token
-                    .checked_add(1)
-                    .ok_or(MemoryRuntimeError::IdentityExhausted {
-                        identity: "lease token",
-                    })?;
-            state.record_mut(handle)?.leases.push(ActiveLeaseRecord {
-                token,
-                start: request.start,
-                end: request.end,
-                write: request.mode.writes(),
-            });
             held.push(HeldLease {
                 token,
-                handle,
+                handle: request.handle,
                 object: request.object,
                 cell: request.cell,
+                role: request.role,
                 mode: request.mode,
                 start: request.start,
                 end: request.end,
                 relative_end: request.relative_end,
+                region: request.region,
+                incarnation: state
+                    .regions
+                    .get(&request.object)
+                    .ok_or(MemoryRuntimeError::UnknownPlanObject {
+                        key: request.object,
+                    })?
+                    .incarnation,
             });
         }
         drop(state);
@@ -397,16 +542,41 @@ impl MemoryDomain {
 
 #[derive(Clone, Copy, Debug)]
 struct HeldLease {
-    token: u64,
-    handle: AllocationHandle,
+    token: Option<u64>,
+    handle: Option<AllocationHandle>,
     object: PlanObjectKey,
     cell: Option<CanonicalCellId>,
+    role: Option<ManagedPortRole>,
     mode: MemoryAccessMode,
     start: u64,
     end: u64,
     relative_end: u64,
+    region: MemoryAccessRegion,
+    incarnation: super::RegionIncarnation,
 }
 
+/// Complete call-scoped authority for one managed kernel invocation.
+///
+/// Leased storage can be observed only inside the accessor closure, so a
+/// borrowed slice cannot escape the frame:
+///
+/// ```compile_fail
+/// use mech_core::{KernelMemoryFrame, ManagedPort};
+///
+/// fn escape<'a>(frame: &'a KernelMemoryFrame<'_>, port: ManagedPort<u64>) -> &'a [u64] {
+///     frame.with_port_slice(port, |values| values).unwrap()
+/// }
+/// ```
+///
+/// A read accessor cannot be used to obtain write authority:
+///
+/// ```compile_fail
+/// use mech_core::{KernelMemoryFrame, ManagedPort};
+///
+/// fn unauthorized_write(frame: &KernelMemoryFrame<'_>, port: ManagedPort<u64>) {
+///     frame.with_port_slice(port, |values| values[0] = 1).unwrap();
+/// }
+/// ```
 pub struct KernelMemoryFrame<'a> {
     domain: &'a MemoryDomain,
     realized: &'a RealizedMemoryPlan,
@@ -419,9 +589,18 @@ impl KernelMemoryFrame<'_> {
         port: ManagedPort<T>,
         access: impl FnOnce(&[T]) -> R,
     ) -> MemoryRuntimeResult<R> {
-        let lease = self.port_lease(port.logical_cell_id(), false)?;
+        let lease = self.port_lease(port.logical_cell_id(), port.role(), false)?;
+        validate_contiguous_typed_region(lease.object.object(), lease.region)?;
         self.with_bytes(lease.object, |bytes| {
-            validate_typed_bytes::<T>(lease.object.object(), lease.start, bytes.len())?;
+            if bytes.is_empty() {
+                return Ok(access(&[]));
+            }
+            validate_typed_bytes::<T>(
+                lease.object.object(),
+                lease.start,
+                bytes.as_ptr() as usize,
+                bytes.len(),
+            )?;
             let count = bytes.len() / mem::size_of::<T>();
             // SAFETY: ManagedElement is sealed to fixed-width Copy values,
             // the realized arena and offset satisfy T's alignment, and the
@@ -436,9 +615,18 @@ impl KernelMemoryFrame<'_> {
         port: ManagedPort<T>,
         access: impl FnOnce(&mut [T]) -> R,
     ) -> MemoryRuntimeResult<R> {
-        let lease = self.port_lease(port.logical_cell_id(), true)?;
+        let lease = self.port_lease(port.logical_cell_id(), port.role(), true)?;
+        validate_contiguous_typed_region(lease.object.object(), lease.region)?;
         self.with_bytes_mut(lease.object, |bytes| {
-            validate_typed_bytes::<T>(lease.object.object(), lease.start, bytes.len())?;
+            if bytes.is_empty() {
+                return Ok(access(&mut []));
+            }
+            validate_typed_bytes::<T>(
+                lease.object.object(),
+                lease.start,
+                bytes.as_ptr() as usize,
+                bytes.len(),
+            )?;
             let count = bytes.len() / mem::size_of::<T>();
             // SAFETY: ManagedElement is sealed to fixed-width Copy values,
             // alignment and length were checked, and the exclusive lease
@@ -449,11 +637,136 @@ impl KernelMemoryFrame<'_> {
         })?
     }
 
-    fn port_lease(&self, cell: CanonicalCellId, write: bool) -> MemoryRuntimeResult<HeldLease> {
+    pub fn with_port_init_writer<T: ManagedElement, R>(
+        &mut self,
+        port: ManagedPort<T>,
+        access: impl FnOnce(&mut InitWriter<'_, T>) -> R,
+    ) -> MemoryRuntimeResult<R> {
+        let lease = self.port_lease(port.logical_cell_id(), port.role(), true)?;
+        validate_contiguous_typed_region(lease.object.object(), lease.region)?;
+        self.with_init_writer(lease, access)
+    }
+
+    pub fn with_object_init_writer<T: ManagedElement, R>(
+        &mut self,
+        object: PlanObjectKey,
+        access: impl FnOnce(&mut InitWriter<'_, T>) -> R,
+    ) -> MemoryRuntimeResult<R> {
+        let lease = self
+            .leases
+            .iter()
+            .find(|lease| lease.object == object && lease.mode.writes())
+            .copied()
+            .ok_or(MemoryRuntimeError::BorrowConflict {
+                object: object.object(),
+            })?;
+        validate_contiguous_typed_region(lease.object.object(), lease.region)?;
+        self.with_init_writer(lease, access)
+    }
+
+    fn with_init_writer<T: ManagedElement, R>(
+        &mut self,
+        lease: HeldLease,
+        access: impl FnOnce(&mut InitWriter<'_, T>) -> R,
+    ) -> MemoryRuntimeResult<R> {
+        let length = lease.end.checked_sub(lease.start).ok_or(
+            MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "initialization lease span",
+                current: lease.start,
+                change: lease.end,
+            },
+        )?;
+        if length == 0 {
+            let mut writer = InitWriter {
+                slots: &mut [],
+                initialized: 0,
+            };
+            return Ok(access(&mut writer));
+        }
+        let (pointer, capacity) = {
+            let state = self.domain.state.borrow();
+            let region = state
+                .regions
+                .get(&lease.object)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+            if region.incarnation != lease.incarnation {
+                return Err(MemoryRuntimeError::StaleRegionIncarnation {
+                    key: lease.object,
+                    expected: lease.incarnation,
+                    actual: region.incarnation,
+                });
+            }
+            let handle = lease.handle.ok_or(MemoryRuntimeError::InvalidLayout {
+                object: Some(lease.object.object()),
+                size: length,
+                alignment: mem::align_of::<T>() as u32,
+                reason: "nonempty initialization has no allocation",
+            })?;
+            let record = state.record(handle)?;
+            let block = record
+                .block
+                .as_ref()
+                .ok_or(MemoryRuntimeError::InvalidAllocationHandle { handle })?;
+            let pointer = block
+                .pointer()
+                .ok_or(MemoryRuntimeError::InvalidAllocationHandle { handle })?;
+            (pointer, record.capacity_bytes)
+        };
+        let start =
+            usize::try_from(lease.start).map_err(|_| MemoryRuntimeError::CapacityExceeded {
+                object: lease.object.object(),
+                requested: lease.start,
+                capacity,
+            })?;
+        let length_usize =
+            usize::try_from(length).map_err(|_| MemoryRuntimeError::CapacityExceeded {
+                object: lease.object.object(),
+                requested: length,
+                capacity,
+            })?;
+        let address = unsafe { pointer.as_ptr().add(start) } as usize;
+        validate_typed_bytes::<T>(lease.object.object(), lease.start, address, length_usize)?;
+        let count = length_usize / mem::size_of::<T>();
+        // SAFETY: the lease owns this uninitialized range exclusively; the
+        // resulting writer exposes only MaybeUninit writes and cannot escape.
+        let slots = unsafe {
+            slice::from_raw_parts_mut(pointer.as_ptr().add(start).cast::<MaybeUninit<T>>(), count)
+        };
+        let mut writer = InitWriter {
+            slots,
+            initialized: 0,
+        };
+        let result = access(&mut writer);
+        let initialized_bytes = u64::try_from(writer.initialized)
+            .ok()
+            .and_then(|count| count.checked_mul(mem::size_of::<T>() as u64))
+            .and_then(|bytes| {
+                lease
+                    .relative_end
+                    .checked_sub(length)
+                    .and_then(|start| start.checked_add(bytes))
+            })
+            .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "initialized element bytes",
+                current: writer.initialized as u64,
+                change: mem::size_of::<T>() as u64,
+            })?;
+        self.realized
+            .record_initialized(lease.object, initialized_bytes)?;
+        Ok(result)
+    }
+
+    fn port_lease(
+        &self,
+        cell: CanonicalCellId,
+        role: ManagedPortRole,
+        write: bool,
+    ) -> MemoryRuntimeResult<HeldLease> {
         self.leases
             .iter()
             .find(|lease| {
                 lease.cell == Some(cell)
+                    && lease.role == Some(role)
                     && if write {
                         lease.mode.writes()
                     } else {
@@ -489,14 +802,36 @@ impl KernelMemoryFrame<'_> {
                 object: object.object(),
             })?;
         self.realized.binding(object)?;
-        let state = self.domain.state.borrow();
-        let record = state.record(lease.handle)?;
-        let block = record
-            .block
-            .as_ref()
-            .ok_or(MemoryRuntimeError::InvalidAllocationHandle {
-                handle: lease.handle,
-            })?;
+        let (base, capacity) = {
+            let state = self.domain.state.borrow();
+            let region = state
+                .regions
+                .get(&lease.object)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+            if region.incarnation != lease.incarnation {
+                return Err(MemoryRuntimeError::StaleRegionIncarnation {
+                    key: lease.object,
+                    expected: lease.incarnation,
+                    actual: region.incarnation,
+                });
+            }
+            let Some(handle) = lease.handle else {
+                return Ok(access(&[]));
+            };
+            let record = state.record(handle)?;
+            let block = record
+                .block
+                .as_ref()
+                .ok_or(MemoryRuntimeError::InvalidAllocationHandle { handle })?;
+            let base = block
+                .pointer()
+                .ok_or(MemoryRuntimeError::UninitializedAccess {
+                    object: object.object(),
+                    requested: lease.relative_end,
+                    initialized: 0,
+                })?;
+            (base, record.capacity_bytes)
+        };
         let length = lease.end.checked_sub(lease.start).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
                 dimension: "lease span",
@@ -507,23 +842,16 @@ impl KernelMemoryFrame<'_> {
         if length == 0 {
             return Ok(access(&[]));
         }
-        let base = block
-            .pointer()
-            .ok_or(MemoryRuntimeError::UninitializedAccess {
-                object: object.object(),
-                requested: length,
-                initialized: 0,
-            })?;
         let start =
             usize::try_from(lease.start).map_err(|_| MemoryRuntimeError::CapacityExceeded {
                 object: object.object(),
                 requested: lease.start,
-                capacity: record.capacity_bytes,
+                capacity,
             })?;
         let length = usize::try_from(length).map_err(|_| MemoryRuntimeError::CapacityExceeded {
             object: object.object(),
             requested: length,
-            capacity: record.capacity_bytes,
+            capacity,
         })?;
         // SAFETY: plan validation proved this half-open span belongs to the
         // live block; the read lease keeps it initialized, live, and
@@ -545,8 +873,36 @@ impl KernelMemoryFrame<'_> {
             .ok_or(MemoryRuntimeError::BorrowConflict {
                 object: object.object(),
             })?;
-        let mut state = self.domain.state.borrow_mut();
-        let record = state.record_mut(lease.handle)?;
+        let (base, capacity, initialized_bytes) = {
+            let state = self.domain.state.borrow();
+            let region = state
+                .regions
+                .get(&lease.object)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+            if region.incarnation != lease.incarnation {
+                return Err(MemoryRuntimeError::StaleRegionIncarnation {
+                    key: lease.object,
+                    expected: lease.incarnation,
+                    actual: region.incarnation,
+                });
+            }
+            let Some(handle) = lease.handle else {
+                return Ok(access(&mut []));
+            };
+            let record = state.record(handle)?;
+            let block = record
+                .block
+                .as_ref()
+                .ok_or(MemoryRuntimeError::InvalidAllocationHandle { handle })?;
+            let base = block
+                .pointer()
+                .ok_or(MemoryRuntimeError::UninitializedAccess {
+                    object: object.object(),
+                    requested: lease.relative_end,
+                    initialized: region.initialized_bytes,
+                })?;
+            (base, record.capacity_bytes, region.initialized_bytes)
+        };
         let length = lease.end.checked_sub(lease.start).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
                 dimension: "lease span",
@@ -554,42 +910,32 @@ impl KernelMemoryFrame<'_> {
                 change: lease.end,
             },
         )?;
+        if lease.relative_end > initialized_bytes {
+            return Err(MemoryRuntimeError::UninitializedAccess {
+                object: object.object(),
+                requested: lease.relative_end,
+                initialized: initialized_bytes,
+            });
+        }
         if length == 0 {
             return Ok(access(&mut []));
         }
-        let block = record
-            .block
-            .as_mut()
-            .ok_or(MemoryRuntimeError::InvalidAllocationHandle {
-                handle: lease.handle,
-            })?;
-        let base = block
-            .pointer()
-            .ok_or(MemoryRuntimeError::UninitializedAccess {
-                object: object.object(),
-                requested: length,
-                initialized: 0,
-            })?;
         let start =
             usize::try_from(lease.start).map_err(|_| MemoryRuntimeError::CapacityExceeded {
                 object: object.object(),
                 requested: lease.start,
-                capacity: record.capacity_bytes,
+                capacity,
             })?;
         let length = usize::try_from(length).map_err(|_| MemoryRuntimeError::CapacityExceeded {
             object: object.object(),
             requested: length,
-            capacity: record.capacity_bytes,
+            capacity,
         })?;
         // SAFETY: complete acquisition proved this write span has no live
         // overlapping read or write lease; the mutable slice cannot escape
         // the closure and remains within the validated block.
         let bytes = unsafe { slice::from_raw_parts_mut(base.as_ptr().add(start), length) };
-        let result = access(bytes);
-        drop(state);
-        self.realized
-            .record_initialized(object, lease.relative_end)?;
-        Ok(result)
+        Ok(access(bytes))
     }
 
     /// Writes an initialized prefix of an already leased planned region.
@@ -632,49 +978,76 @@ impl KernelMemoryFrame<'_> {
                 current: lease.relative_end,
                 change: length_bytes,
             })?;
-        let mut state = self.domain.state.borrow_mut();
-        let record = state.record_mut(lease.handle)?;
+        let (base, capacity, initialized_bytes) = {
+            let state = self.domain.state.borrow();
+            let region = state
+                .regions
+                .get(&lease.object)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+            if region.incarnation != lease.incarnation {
+                return Err(MemoryRuntimeError::StaleRegionIncarnation {
+                    key: lease.object,
+                    expected: lease.incarnation,
+                    actual: region.incarnation,
+                });
+            }
+            let Some(handle) = lease.handle else {
+                if length_bytes != 0 {
+                    return Err(MemoryRuntimeError::CapacityExceeded {
+                        object: object.object(),
+                        requested: length_bytes,
+                        capacity: 0,
+                    });
+                }
+                return Ok(access(&mut []));
+            };
+            let record = state.record(handle)?;
+            let block = record
+                .block
+                .as_ref()
+                .ok_or(MemoryRuntimeError::InvalidAllocationHandle { handle })?;
+            let base = block
+                .pointer()
+                .ok_or(MemoryRuntimeError::UninitializedAccess {
+                    object: object.object(),
+                    requested: relative_end,
+                    initialized: region.initialized_bytes,
+                })?;
+            (base, record.capacity_bytes, region.initialized_bytes)
+        };
+        if relative_end > initialized_bytes {
+            return Err(MemoryRuntimeError::UninitializedAccess {
+                object: object.object(),
+                requested: relative_end,
+                initialized: initialized_bytes,
+            });
+        }
         if length_bytes == 0 {
             return Ok(access(&mut []));
         }
-        let block = record
-            .block
-            .as_mut()
-            .ok_or(MemoryRuntimeError::InvalidAllocationHandle {
-                handle: lease.handle,
-            })?;
-        let base = block
-            .pointer()
-            .ok_or(MemoryRuntimeError::UninitializedAccess {
-                object: object.object(),
-                requested: length_bytes,
-                initialized: 0,
-            })?;
         let start =
             usize::try_from(lease.start).map_err(|_| MemoryRuntimeError::CapacityExceeded {
                 object: object.object(),
                 requested: lease.start,
-                capacity: record.capacity_bytes,
+                capacity,
             })?;
         let length =
             usize::try_from(length_bytes).map_err(|_| MemoryRuntimeError::CapacityExceeded {
                 object: object.object(),
                 requested: length_bytes,
-                capacity: record.capacity_bytes,
+                capacity,
             })?;
         // SAFETY: the exclusive planned lease owns the complete enclosing
         // region, and the checked prefix remains within that region.
         let bytes = unsafe { slice::from_raw_parts_mut(base.as_ptr().add(start), length) };
-        let result = access(bytes);
-        drop(state);
-        self.realized.record_initialized(object, relative_end)?;
-        Ok(result)
+        Ok(access(bytes))
     }
 }
 
 fn validate_typed_bytes<T: ManagedElement>(
     object: MemoryObjectId,
     absolute_offset: u64,
+    address: usize,
     bytes: usize,
 ) -> MemoryRuntimeResult<()> {
     let element_bytes = mem::size_of::<T>();
@@ -687,7 +1060,10 @@ fn validate_typed_bytes<T: ManagedElement>(
             reason: "zero-sized managed elements are unsupported",
         });
     }
-    if bytes % element_bytes != 0 || absolute_offset % alignment as u64 != 0 {
+    if bytes % element_bytes != 0
+        || absolute_offset % alignment as u64 != 0
+        || address % alignment != 0
+    {
         return Err(MemoryRuntimeError::InvalidLayout {
             object: Some(object),
             size: bytes as u64,
@@ -698,19 +1074,40 @@ fn validate_typed_bytes<T: ManagedElement>(
     Ok(())
 }
 
+fn validate_contiguous_typed_region(
+    object: MemoryObjectId,
+    region: MemoryAccessRegion,
+) -> MemoryRuntimeResult<()> {
+    if matches!(
+        region,
+        MemoryAccessRegion::WholeInitialized | MemoryAccessRegion::Contiguous { .. }
+    ) {
+        return Ok(());
+    }
+    Err(MemoryRuntimeError::InvalidLayout {
+        object: Some(object),
+        size: 0,
+        alignment: 1,
+        reason: "noncontiguous planned access requires a geometry-preserving managed view",
+    })
+}
+
 impl Drop for KernelMemoryFrame<'_> {
     fn drop(&mut self) {
-        if let Ok(mut state) = self.domain.state.try_borrow_mut() {
-            for held in self.leases.drain(..) {
-                if let Ok(record) = state.record_mut(held.handle)
-                    && let Some(position) = record
-                        .leases
-                        .iter()
-                        .position(|lease| lease.token == held.token)
-                {
-                    record.leases.remove(position);
-                }
-            }
+        let mut state = self.domain.state.borrow_mut();
+        for held in self.leases.drain(..) {
+            let (Some(handle), Some(token)) = (held.handle, held.token) else {
+                continue;
+            };
+            let record = state
+                .record_mut(handle)
+                .expect("a live frame retains every leased allocation record");
+            let position = record
+                .leases
+                .iter()
+                .position(|lease| lease.token == token)
+                .expect("a live frame retains every installed lease token");
+            record.leases.remove(position);
         }
     }
 }
@@ -733,6 +1130,16 @@ fn enclosing_span(
     } else {
         binding.initialized_bytes()
     };
+    if !mode.writes()
+        && matches!(region, MemoryAccessRegion::WholeInitialized)
+        && binding.initialized_bytes() < binding.required_initialization_bytes()
+    {
+        return Err(MemoryRuntimeError::UninitializedAccess {
+            object,
+            requested: binding.required_initialization_bytes(),
+            initialized: binding.initialized_bytes(),
+        });
+    }
     let relative = match region {
         MemoryAccessRegion::WholeInitialized => (0, accessible),
         MemoryAccessRegion::Contiguous {

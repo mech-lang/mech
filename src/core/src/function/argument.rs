@@ -886,7 +886,7 @@ impl FunctionInputPort<'_> {
             T::REPRESENTATION,
             FunctionArgumentRole::Input(self.index),
         )?;
-        Ok(ManagedPort::new(cell.reactive_cell_id()))
+        Ok(ManagedPort::input(cell.reactive_cell_id(), self.index))
     }
 
     /// Binds a matrix logical input by element capability rather than by an
@@ -897,7 +897,7 @@ impl FunctionInputPort<'_> {
         let expected = crate::matrix_element_for_representation(T::REPRESENTATION);
         match cell.representation() {
             FunctionValueRepresentation::Matrix { element, .. } if element == expected => {
-                Ok(ManagedPort::new(cell.reactive_cell_id()))
+                Ok(ManagedPort::input(cell.reactive_cell_id(), self.index))
             }
             _ => Err(function_argument_type_mismatch::<T>(
                 cell,
@@ -982,7 +982,7 @@ impl FunctionOutputPort<'_> {
     pub fn try_managed<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
         let cell = &self.invocation.output;
         validate_cell_representation(cell, T::REPRESENTATION, FunctionArgumentRole::Output)?;
-        Ok(ManagedPort::new(cell.reactive_cell_id()))
+        Ok(ManagedPort::output(cell.reactive_cell_id()))
     }
 
     /// Binds a matrix logical output by element capability rather than by an
@@ -993,7 +993,7 @@ impl FunctionOutputPort<'_> {
         let expected = crate::matrix_element_for_representation(T::REPRESENTATION);
         match cell.representation() {
             FunctionValueRepresentation::Matrix { element, .. } if element == expected => {
-                Ok(ManagedPort::new(cell.reactive_cell_id()))
+                Ok(ManagedPort::output(cell.reactive_cell_id()))
             }
             _ => Err(function_argument_type_mismatch::<T>(
                 cell,
